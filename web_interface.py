@@ -72,11 +72,16 @@ def format_validation_results(issues, dataset_stats, dataset_path):
     
     valid_files = []
     invalid_files = []
+    file_paths = set()
     
     for issue in issues:
         if len(issue) >= 2:
             level, message = issue[0], issue[1]
             file_path = issue[2] if len(issue) > 2 else None
+            
+            # Add file path to our set for counting
+            if file_path:
+                file_paths.add(file_path)
             
             # Extract error code from message if possible
             error_code = 'GENERAL_ERROR'
@@ -122,21 +127,40 @@ def format_validation_results(issues, dataset_stats, dataset_path):
                     }
                 warning_groups[error_code]['files'].append(formatted_issue)
                 warning_groups[error_code]['count'] += 1
+                
+                if file_path:
+                    valid_files.append({'path': file_path})  # Warnings don't make files invalid
             else:
-                # Valid file
+                # Valid file or other status
                 if file_path:
                     valid_files.append({'path': file_path})
+    
+    # If we don't have file paths from issues, try to count files in dataset
+    if not file_paths and dataset_path:
+        try:
+            for root, dirs, files in os.walk(dataset_path):
+                for file in files:
+                    if not file.startswith('.'):  # Skip hidden files
+                        file_paths.add(os.path.join(root, file))
+        except:
+            pass
     
     # Calculate summary
     total_errors = sum(group['count'] for group in error_groups.values())
     total_warnings = sum(group['count'] for group in warning_groups.values())
     
+    # Count valid vs invalid files
+    invalid_file_paths = {f['path'] for f in invalid_files}
+    total_files = len(file_paths) if file_paths else len(valid_files) + len(invalid_files)
+    invalid_count = len(invalid_file_paths)
+    valid_count = total_files - invalid_count
+    
     return {
         'valid': total_errors == 0,
         'summary': {
-            'total_files': len(valid_files) + len(invalid_files),
-            'valid_files': len(valid_files),
-            'invalid_files': len(invalid_files),
+            'total_files': total_files,
+            'valid_files': valid_count,
+            'invalid_files': invalid_count,
             'total_errors': total_errors,
             'total_warnings': total_warnings
         },

@@ -35,7 +35,7 @@
                 <div class="card bg-primary text-white">
                     <div class="card-body text-center">
                         <i class="fas fa-files fa-2x mb-2"></i>
-                        <h3 class="mb-0">{{ total_files }}</h3>
+                        <h3 class="mb-0">{{ results.summary.total_files if results.summary else total_files }}</h3>
                         <small>Total Files</small>
                     </div>
                 </div>
@@ -44,7 +44,7 @@
                 <div class="card bg-success text-white">
                     <div class="card-body text-center">
                         <i class="fas fa-check-circle fa-2x mb-2"></i>
-                        <h3 class="mb-0">{{ valid_files }}</h3>
+                        <h3 class="mb-0">{{ results.summary.valid_files if results.summary else valid_files }}</h3>
                         <small>Valid Files</small>
                     </div>
                 </div>
@@ -53,7 +53,7 @@
                 <div class="card bg-danger text-white">
                     <div class="card-body text-center">
                         <i class="fas fa-exclamation-circle fa-2x mb-2"></i>
-                        <h3 class="mb-0">{{ invalid_files }}</h3>
+                        <h3 class="mb-0">{{ results.summary.invalid_files if results.summary else invalid_files }}</h3>
                         <small>Invalid Files</small>
                     </div>
                 </div>
@@ -62,7 +62,7 @@
                 <div class="card bg-warning text-white">
                     <div class="card-body text-center">
                         <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                        <h3 class="mb-0">{{ results.warnings|length }}</h3>
+                        <h3 class="mb-0">{{ results.summary.total_warnings if results.summary else results.warnings|length }}</h3>
                         <small>Warnings</small>
                     </div>
                 </div>
@@ -74,29 +74,33 @@
             <div class="card-body">
                 <div class="row align-items-center">
                     <div class="col-md-8">
-                        {% if results.errors|length == 0 %}
+                        {% if results.summary and results.summary.total_errors == 0 %}
                             <h4 class="text-success mb-2">
                                 <i class="fas fa-check-circle me-2"></i>
                                 Dataset is Valid!
                             </h4>
                             <p class="text-muted mb-0">
                                 Your dataset passed all validation checks.
-                                {% if results.warnings|length > 0 %}
-                                However, there are {{ results.warnings|length }} warning(s) you might want to review.
+                                {% if results.summary.total_warnings > 0 %}
+                                However, there are {{ results.summary.total_warnings }} warning(s) you might want to review.
                                 {% endif %}
                             </p>
                         {% else %}
+                            {% set error_count = results.summary.total_errors if results.summary else results.errors|length %}
                             <h4 class="text-danger mb-2">
                                 <i class="fas fa-times-circle me-2"></i>
-                                Dataset has {{ results.errors|length }} Error(s)
+                                Dataset has {{ error_count }} Error(s)
                             </h4>
                             <p class="text-muted mb-0">
                                 Please fix the errors below to make your dataset compliant.
+                                {% if results.error_groups %}
+                                Errors are grouped by type to help you fix them systematically.
+                                {% endif %}
                             </p>
                         {% endif %}
                     </div>
                     <div class="col-md-4 text-end">
-                        {% if results.errors|length == 0 %}
+                        {% if results.summary and results.summary.total_errors == 0 %}
                             <span class="badge bg-success status-badge">VALID</span>
                         {% else %}
                             <span class="badge bg-danger status-badge">INVALID</span>
@@ -163,9 +167,23 @@
                     {% set remaining_count = error_group.count - shown_files|length %}
                     
                     {% for error in shown_files %}
-                    <div class="error-item">
-                        <strong>{{ error.file if error.file else 'General' }}</strong>
-                        <p class="mb-1">{{ error.message }}</p>
+                    <div class="error-item mb-3">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <strong class="text-break">
+                                    {{ error.file.split('/')[-1] if error.file else 'General' }}
+                                </strong>
+                                <br>
+                                <small class="text-muted">
+                                    <i class="fas fa-folder-open me-1"></i>
+                                    ...{{ error.file.split('/')[-3:] | join('/') if error.file and '/' in error.file else error.file }}
+                                </small>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="badge bg-danger">{{ error.level }}</span>
+                            </div>
+                        </div>
+                        <p class="mb-1 mt-2">{{ error.message }}</p>
                     </div>
                     {% endfor %}
                     
