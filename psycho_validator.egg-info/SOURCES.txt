@@ -1,5 +1,5 @@
 README.md
-psycho-validator-streamlined.py
+launch_web.py
 psycho-validator.py
 setup.py
 psycho_validator.egg-info/PKG-INFO
@@ -8,6 +8,7 @@ psycho_validator.egg-info/dependency_links.txt
 psycho_validator.egg-info/requires.txt
 psycho_validator.egg-info/top_level.txt
 src/__init__.py
+src/cross_platform.py
 src/fair_checker.py
 src/fair_export.py
 src/reporting.py
@@ -16,3 +17,4 @@ src/stats.py
 src/validator.py
 tests/test_reorganization.py
 tests/test_validator.py
+tests/test_windows_compatibility.py

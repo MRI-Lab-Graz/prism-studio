@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}Validation Results - {{ filename }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>
+                    <i class="fas fa-chart-line text-primary me-2"></i>
+                    Validation Results
+                </h2>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-folder me-1"></i>{{ filename }}
+                </p>
+            </div>
+            <div>
+                <a href="{{ url_for('download_report', result_id=result_id) }}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-download me-2"></i>Download Report
+                </a>
+                <a href="{{ url_for('cleanup', result_id=result_id) }}" class="btn btn-outline-secondary me-2">
+                    <i class="fas fa-trash me-2"></i>Cleanup
+                </a>
+                <a href="{{ url_for('index') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Validate Another
+                </a>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-files fa-2x mb-2"></i>
+                        <h3 class="mb-0">{{ total_files }}</h3>
+                        <small>Total Files</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                        <h3 class="mb-0">{{ valid_files }}</h3>
+                        <small>Valid Files</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-danger text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-exclamation-circle fa-2x mb-2"></i>
+                        <h3 class="mb-0">{{ invalid_files }}</h3>
+                        <small>Invalid Files</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                        <h3 class="mb-0">{{ results.warnings|length }}</h3>
+                        <small>Warnings</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overall Status -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        {% if results.errors|length == 0 %}
+                            <h4 class="text-success mb-2">
+                                <i class="fas fa-check-circle me-2"></i>
+                                Dataset is Valid!
+                            </h4>
+                            <p class="text-muted mb-0">
+                                Your dataset passed all validation checks.
+                                {% if results.warnings|length > 0 %}
+                                However, there are {{ results.warnings|length }} warning(s) you might want to review.
+                                {% endif %}
+                            </p>
+                        {% else %}
+                            <h4 class="text-danger mb-2">
+                                <i class="fas fa-times-circle me-2"></i>
+                                Dataset has {{ results.errors|length }} Error(s)
+                            </h4>
+                            <p class="text-muted mb-0">
+                                Please fix the errors below to make your dataset compliant.
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 text-end">
+                        {% if results.errors|length == 0 %}
+                            <span class="badge bg-success status-badge">VALID</span>
+                        {% else %}
+                            <span class="badge bg-danger status-badge">INVALID</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dataset Statistics -->
+        {% if dataset_stats %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar text-primary me-2"></i>
+                    Dataset Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Structure</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-users me-2"></i>Subjects: <strong>{{ dataset_stats.total_subjects }}</strong></li>
+                            <li><i class="fas fa-calendar me-2"></i>Sessions: <strong>{{ dataset_stats.total_sessions }}</strong></li>
+                            <li><i class="fas fa-tasks me-2"></i>Tasks: <strong>{{ dataset_stats.tasks|join(', ') }}</strong></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Modalities</h6>
+                        <ul class="list-unstyled">
+                            {% for modality, count in dataset_stats.modalities.items() %}
+                            <li>
+                                <i class="fas fa-{{ 'image' if modality == 'image' else 'video' if modality == 'movie' else 'volume-up' if modality == 'audio' else 'brain' if modality == 'eeg' else 'eye' if modality == 'eyetracking' else 'chart-line' }} me-2"></i>
+                                {{ modality }}: <strong>{{ count }}</strong> files
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Errors Section -->
+        {% if results.error_groups %}
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Errors ({{ results.summary.total_errors if results.summary else results.errors|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for error_code, error_group in results.error_groups.items() %}
+                <div class="mb-4">
+                    <h6 class="text-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        [ERROR] {{ error_code }}
+                    </h6>
+                    <p class="text-muted mb-3">{{ error_group.description }}</p>
+                    
+                    {% set shown_files = error_group.files[:5] %}
+                    {% set remaining_count = error_group.count - shown_files|length %}
+                    
+                    {% for error in shown_files %}
+                    <div class="error-item">
+                        <strong>{{ error.file if error.file else 'General' }}</strong>
+                        <p class="mb-1">{{ error.message }}</p>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if remaining_count > 0 %}
+                    <div class="text-muted small mt-2">
+                        <i class="fas fa-ellipsis-h me-1"></i>
+                        {{ remaining_count }} more files with the same issue
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-question-circle me-1"></i>
+                            For help with this issue, search for "{{ error_code }}" in the documentation.
+                        </small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% elif results.errors %}
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Errors ({{ results.errors|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for error in results.errors %}
+                <div class="error-item">
+                    <strong>{{ error.file if error.file else 'General' }}</strong>
+                    <p class="mb-1">{{ error.message if error.message else error }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Warnings Section -->
+        {% if warning_groups %}
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Warnings ({{ results.warnings|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for warning_type, warnings in warning_groups.items() %}
+                <div class="mb-4">
+                    <h6 class="text-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {{ warning_type }} ({{ warnings|length }})
+                    </h6>
+                    {% for warning in warnings %}
+                    <div class="warning-item">
+                        <strong>{{ warning.file if warning.file else 'General' }}</strong>
+                        <p class="mb-1">{{ warning.message }}</p>
+                        {% if warning.details %}
+                        <small class="text-muted">{{ warning.details }}</small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Valid Files Section -->
+        {% if results.valid_files %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    Valid Files ({{ results.valid_files|length }})
+                    <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#validFiles">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </h5>
+            </div>
+            <div class="collapse" id="validFiles">
+                <div class="card-body">
+                    <div class="row">
+                        {% for file in results.valid_files %}
+                        <div class="col-md-6 col-lg-4 mb-2">
+                            <small class="text-success">
+                                <i class="fas fa-check me-1"></i>
+                                {{ file.path if file.path else file }}
+                            </small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Invalid Files Section -->
+        {% if results.invalid_files %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-times-circle text-danger me-2"></i>
+                    Invalid Files ({{ results.invalid_files|length }})
+                    <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#invalidFiles">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </h5>
+            </div>
+            <div class="collapse show" id="invalidFiles">
+                <div class="card-body">
+                    {% for file in results.invalid_files %}
+                    <div class="mb-3 p-3 border-start border-danger border-3 bg-light">
+                        <h6 class="text-danger mb-2">
+                            <i class="fas fa-times me-2"></i>
+                            {{ file.path if file.path else file }}
+                        </h6>
+                        {% if file.errors %}
+                        <ul class="list-unstyled mb-0">
+                            {% for error in file.errors %}
+                            <li class="text-danger small">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {{ error }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Back to Top -->
+        <div class="text-center">
+            <a href="#" class="btn btn-outline-secondary" onclick="window.scrollTo(0,0); return false;">
+                <i class="fas fa-arrow-up me-2"></i>Back to Top
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-expand error sections if there are errors
+document.addEventListener('DOMContentLoaded', function() {
+    const errorCount = {{ results.errors|length }};
+    if (errorCount > 0) {
+        // Keep invalid files section expanded by default (already has 'show' class)
+    }
+});
+</script>
+{% endblock %}

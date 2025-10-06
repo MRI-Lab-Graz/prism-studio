@@ -216,12 +216,37 @@ For Windows-specific setup instructions, see [`docs/WINDOWS_SETUP.md`](docs/WIND
 
 ## Usage
 
-### Basic Validation
+### Web Interface (Recommended for most users)
+
+For an easy-to-use graphical interface:
+
+**Windows:**
+```cmd
+launch_web.bat
+```
+
+**Linux/macOS:**
+```bash
+python launch_web.py
+```
+
+The web interface provides:
+- 🎯 User-friendly drag & drop interface
+- 📊 Visual validation results with charts
+- 🔒 Local processing (no data uploaded)
+- 📁 Support for ZIP uploads and local folders
+
+See [`docs/WEB_INTERFACE.md`](docs/WEB_INTERFACE.md) for detailed usage instructions.
+
+### Command Line Interface
+
+For automation and advanced usage:
+
 ```bash
 python psycho-validator.py /path/to/your/dataset
 ```
 
-### Command Line Options
+#### Command Line Options
 ```bash
 python psycho-validator.py --help
 ```
