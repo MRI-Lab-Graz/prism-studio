@@ -5,7 +5,12 @@ Core validation logic for psycho-validator
 import os
 import re
 import json
+from pathlib import Path
 from jsonschema import validate, ValidationError
+from .cross_platform import (
+    normalize_path, safe_path_join, CrossPlatformFile,
+    validate_filename_cross_platform, get_platform_info
+)
 
 # Modality patterns
 MODALITY_PATTERNS = {
@@ -52,10 +57,11 @@ def split_compound_ext(filename):
 
 def derive_sidecar_path(file_path):
     """Derive the JSON sidecar path for a data file."""
+    file_path = normalize_path(file_path)
     dirname = os.path.dirname(file_path)
     fname = os.path.basename(file_path)
     stem, _ext = split_compound_ext(fname)
-    return os.path.join(dirname, f"{stem}.json")
+    return safe_path_join(dirname, f"{stem}.json")
 
 
 class DatasetValidator:
@@ -67,6 +73,11 @@ class DatasetValidator:
     def validate_filename(self, filename, modality):
         """Validate filename against BIDS conventions and modality patterns"""
         issues = []
+        
+        # Cross-platform filename validation
+        platform_issues = validate_filename_cross_platform(filename)
+        for issue in platform_issues:
+            issues.append(("WARNING", issue))
         
         base, ext = split_compound_ext(filename)
         pattern = re.compile(MODALITY_PATTERNS.get(modality, r".*"))
@@ -92,11 +103,12 @@ class DatasetValidator:
         issues = []
         
         if not os.path.exists(sidecar_path):
-            return [("ERROR", f"Missing sidecar for {file_path}")]
+            return [("ERROR", f"Missing sidecar for {normalize_path(file_path)}")]
             
         try:
-            with open(sidecar_path) as f:
-                sidecar_data = json.load(f)
+            # Use cross-platform file reading
+            content = CrossPlatformFile.read_text(sidecar_path)
+            sidecar_data = json.loads(content)
                 
             # Validate against schema if available
             schema = self.schemas.get(modality)
@@ -104,10 +116,10 @@ class DatasetValidator:
                 validate(instance=sidecar_data, schema=schema)
                 
         except ValidationError as e:
-            issues.append(("ERROR", f"{sidecar_path} schema error: {e.message}"))
-        except json.JSONDecodeError:
-            issues.append(("ERROR", f"{sidecar_path} is not valid JSON"))
+            issues.append(("ERROR", f"{normalize_path(sidecar_path)} schema error: {e.message}"))
+        except json.JSONDecodeError as e:
+            issues.append(("ERROR", f"{normalize_path(sidecar_path)} is not valid JSON: {e}"))
         except Exception as e:
-            issues.append(("ERROR", f"Error processing {sidecar_path}: {e}"))
+            issues.append(("ERROR", f"Error processing {normalize_path(sidecar_path)}: {e}"))
             
         return issues

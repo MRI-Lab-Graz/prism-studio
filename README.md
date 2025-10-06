@@ -162,6 +162,70 @@ The included `test_dataset/` demonstrates:
 4. **Web interface**: Create a web-based validation tool
 5. **Batch processing**: Support for validating multiple datasets
 
+## Installation
+
+### Quick Start
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/your-repo/psycho-validator.git
+   cd psycho-validator
+   ```
+
+2. **Set up the environment**:
+   
+   **Linux/macOS**:
+   ```bash
+   bash scripts/setup.sh
+   ```
+   
+   **Windows**:
+   ```cmd
+   scripts\setup-windows.bat
+   ```
+
+3. **Test the installation**:
+   ```bash
+   python psycho-validator.py --help
+   ```
+
+### Manual Installation
+
+1. **Create virtual environment**:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # Linux/macOS
+   # or
+   .venv\Scripts\activate     # Windows
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### Cross-Platform Support
+
+The psycho-validator is designed to work on Windows, macOS, and Linux with automatic handling of:
+- Path separators and file encodings
+- Line ending differences (CRLF vs LF)
+- Case-sensitive vs case-insensitive filesystems
+- Platform-specific filename restrictions
+
+For Windows-specific setup instructions, see [`docs/WINDOWS_SETUP.md`](docs/WINDOWS_SETUP.md).
+
+## Usage
+
+### Basic Validation
+```bash
+python psycho-validator.py /path/to/your/dataset
+```
+
+### Command Line Options
+```bash
+python psycho-validator.py --help
+```
+
 ## Dependencies
 
 - Python 3.6+
