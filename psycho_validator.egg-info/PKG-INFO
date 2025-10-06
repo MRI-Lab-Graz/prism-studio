@@ -1,0 +1,224 @@
+Metadata-Version: 2.4
+Name: psycho-validator
+Version: 1.3.0
+Summary: BIDS-inspired validation tool for psychological research datasets
+Home-page: https://github.com/MRI-Lab-Graz/psycho-validator
+Author: MRI-Lab-Graz
+Author-email: contact@mri-lab-graz.at
+Keywords: bids validation psychology neuroscience research data
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Science/Research
+Classifier: Topic :: Scientific/Engineering
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: jsonschema
+Requires-Dist: Pillow
+Requires-Dist: numpy
+Requires-Dist: Nibabel
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+Requires-Dist: black; extra == "dev"
+Requires-Dist: flake8; extra == "dev"
+Provides-Extra: full
+Requires-Dist: bidsschematools; extra == "full"
+Requires-Dist: nibabel; extra == "full"
+Provides-Extra: demo
+Requires-Dist: Pillow; extra == "demo"
+Requires-Dist: numpy; extra == "demo"
+Requires-Dist: matplotlib; extra == "demo"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+# Psycho-Validator: BIDS-inspired Validation Tool
+
+## Overview
+
+This tool validates datasets containing psychological/psychophysical stimuli and experimental data following a BIDS-inspired structure. It's designed specifically for experiments involving multiple stimulus modalities like images, videos, audio, etc.
+
+## Features
+
+- **Multi-modal validation**: Supports images, movies, audio, EEG, eye-tracking, and behavioral data
+- **BIDS-inspired naming**: Validates filenames follow the pattern `sub-<label>_[ses-<label>_]task-<label>_[run-<index>_]<suffix>`
+- **JSON schema validation**: Validates sidecar metadata files against modality-specific schemas
+- **Flexible structure**: Supports both session-based and direct subject organization
+- **Cross-subject consistency checking**: Warns when subjects have inconsistent modalities or tasks (critical for scientific datasets)
+- **Comprehensive reporting**: 
+  - Dataset summary with subject/session counts
+  - Modality breakdown with file counts
+  - Task detection and listing
+  - File statistics (data files vs sidecars)
+  - Cross-subject consistency warnings
+  - Clear error and warning categorization
+  - Exit codes for automation
+
+## Directory Structure
+
+```
+dataset/
+├── dataset_description.json     # Required dataset metadata
+├── participants.tsv            # Optional participant information
+├── sub-<label>/               # Subject directories
+│   ├── ses-<label>/          # Optional session directories
+│   │   └── <modality>/       # Modality-specific folders
+│   └── <modality>/           # Or direct modality folders
+```
+
+## Supported Modalities
+
+| Modality | File Extensions | Required Fields |
+|----------|----------------|-----------------|
+| `image` | .png, .jpg, .jpeg, .tiff | StimulusType, FileFormat, Resolution, TaskName |
+| `movie` | .mp4, .avi, .mov | StimulusType, FileFormat, Resolution, Duration, TaskName |
+| `audio` | .wav, .mp3, .flac | StimulusType, FileFormat, SampleRate, Duration, TaskName |
+| `eyetracking` | .tsv, .edf | (Schema not implemented yet) |
+| `eeg` | .edf, .bdf, .eeg | (Schema not implemented yet) |
+| `behavior` | .tsv | (Schema not implemented yet) |
+
+## Schema Structure
+
+Each stimulus file must have a corresponding `.json` sidecar file with the same basename. These JSON files contain metadata about the stimulus and are validated against JSON schemas in the `schemas/` directory.
+
+### Example Image Metadata (`.json` sidecar):
+```json
+{
+  "StimulusType": "Image",
+  "FileFormat": "png",
+  "Resolution": [800, 600],
+  "ColorSpace": "RGB",
+  "TaskName": "facerecognition",
+  "StimulusID": "face_001",
+  "PresentedWith": "PsychoPy 2023.1"
+}
+```
+
+## Usage
+
+### Basic validation:
+```bash
+python psycho-validator.py /path/to/dataset
+```
+
+### Verbose output (shows scanning details):
+```bash
+python psycho-validator.py /path/to/dataset -v
+```
+
+### Example Output:
+
+For a valid dataset:
+```
+🔍 Validating dataset: valid_test_dataset/
+
+============================================================
+🗂️  DATASET SUMMARY
+============================================================
+📁 Dataset: valid_test_dataset
+👥 Subjects: 2
+📋 Sessions: No session structure detected
+
+🎯 MODALITIES (2 found):
+  ✅ audio: 2 files
+  ✅ image: 2 files
+
+📝 TASKS (2 found):
+  • listening
+  • recognition
+
+📄 FILES:
+  • Data files: 2
+  • Sidecar files: 2
+  • Total files: 4
+
+============================================================
+✅ VALIDATION RESULTS
+============================================================
+🎉 No issues found! Dataset is valid.
+```
+
+For a dataset with issues:
+```
+============================================================
+🔍 VALIDATION RESULTS
+============================================================
+
+🔴 ERRORS (1):
+   1. Missing sidecar for test_dataset/sub-003/image/invalid-file.jpg
+
+� WARNINGS (3):
+   1. Subject sub-003 session ses-001 missing audio data
+   2. Subject sub-003 session ses-001 missing task soundrecognition
+   3. Mixed session structure: 2 subjects have sessions, 1 don't
+
+�📊 SUMMARY: 1 errors, 3 warnings
+❌ Dataset validation failed due to errors.
+```
+
+## Consistency Checking
+
+The validator performs cross-subject consistency checks to ensure scientific rigor:
+
+- **Modality consistency**: All subjects should have the same modalities (e.g., if one subject has both image and audio data, all should)
+- **Task consistency**: All subjects should perform the same tasks within each session
+- **Session structure**: Warns if mixing subjects with and without session directories
+- **Per-session consistency**: For multi-session studies, ensures each subject has consistent data across sessions
+
+These checks generate **warnings** (not errors) since missing data might be due to technical issues, dropouts, or valid experimental design decisions.
+
+### Exit codes:
+- `0`: Dataset is valid
+- `1`: Validation errors found
+
+## Test Dataset
+
+The included `test_dataset/` demonstrates:
+- ✅ Valid files with proper naming and metadata
+- ❌ Invalid naming conventions
+- ❌ Missing sidecar files
+- ✅ Mixed session/no-session structures
+
+## Files in this Repository
+
+- `psycho-validator.py` - Main validation script
+- `schemas/` - JSON schemas for each modality
+- `test_dataset/` - Example dataset for testing
+- `test_validator.py` - Comprehensive test script
+- `create_dummy_files.py` - Script to generate realistic test files
+- `docs/` - Project documentation and examples
+
+## Future Enhancements
+
+1. **Additional modalities**: Add schemas for EEG, eye-tracking, and behavioral data
+2. **Cross-file validation**: Validate stimulus-response timing relationships
+3. **BIDS compatibility**: Ensure full compatibility with official BIDS standard
+4. **Web interface**: Create a web-based validation tool
+5. **Batch processing**: Support for validating multiple datasets
+
+## Dependencies
+
+- Python 3.6+
+- `jsonschema` - For JSON schema validation
+
+Optional (for dummy file generation):
+
+- `Pillow` - For creating test images
+- `numpy` - For generating test data
+
+## Documentation
+
+See the `docs/` directory for FAIR policy/implementation, proposed modalities, schema versioning, and examples.

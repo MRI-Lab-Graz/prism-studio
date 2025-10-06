@@ -57,10 +57,20 @@ echo_success "Virtual environment created."
 echo_info "Installing dependencies from '$REQUIREMENTS_FILE'..."
 # Activate the venv to install packages into it
 source $VENV_DIR/bin/activate
+
+# Install core dependencies
 uv pip install -r $REQUIREMENTS_FILE
 if [ $? -ne 0 ]; then
     echo_error "Failed to install dependencies."
     exit 1
+fi
+
+# Install the project in development mode (editable install)
+echo_info "Installing psycho-validator in development mode..."
+uv pip install -e .
+if [ $? -ne 0 ]; then
+    echo_error "Failed to install psycho-validator package. Check if setup.py exists."
+    # Continue anyway as this is optional for direct script usage
 fi
 
 # Ensure bidsschematools is available for --bids-schema support
