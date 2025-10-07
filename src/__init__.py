@@ -1,3 +1,5 @@
+# src package marker for psycho-validator
+__all__ = []
 """
 Psycho-Validator: BIDS-inspired validation tool for psychological research data
 

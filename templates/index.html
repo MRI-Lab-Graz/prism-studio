@@ -46,6 +46,13 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                     
+                    <!-- Metadata-Only Upload Notice -->
+                    <div class="alert alert-success mb-3">
+                        <i class="fas fa-lightning me-2"></i>
+                        <strong>Fast Upload:</strong> Only metadata files (.json, .tsv, .csv, .txt) are uploaded. 
+                        Large data files (.nii.gz, .mp4, images) are automatically skipped - we only validate their JSON sidecars!
+                    </div>
+                    
                     <form action="{{ url_for('upload_dataset') }}" method="post" enctype="multipart/form-data">
                         <div class="upload-area" id="uploadArea">
                             <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
@@ -86,36 +93,32 @@
                 <!-- Local Folder Section -->
                 <div class="mb-4">
                     <h5 class="mb-3">
-                        <i class="fas fa-desktop me-2"></i>
-                        Validate Local Folder
-                        <small class="text-muted">(Recommended for large datasets)</small>
+                        <i class="fas fa-bolt me-2 text-success"></i>
+                        Validate Local Folder (Best for Your Dataset!)
                     </h5>
-                    <div class="alert alert-light border">
+                    <div class="alert alert-success border">
                         <div class="row align-items-center">
-                            <div class="col-md-9">
+                            <div class="col-md-12">
                                 <form action="{{ url_for('validate_folder') }}" method="post" class="mb-0">
-                                    <div class="input-group">
+                                    <div class="input-group input-group-lg">
                                         <span class="input-group-text">
                                             <i class="fas fa-folder-open"></i>
                                         </span>
                                         <input type="text" class="form-control" name="folder_path" 
-                                               placeholder="Enter full path to dataset folder (e.g., /Users/username/Documents/my_dataset)" 
+                                               placeholder="Paste path here: /Users/karl/work/107/107" 
+                                               value="/Users/karl/work/107/107"
                                                required>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-search me-2"></i>Validate
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-bolt me-2"></i>Validate Now
                                         </button>
                                     </div>
                                 </form>
                             </div>
-                            <div class="col-md-3 text-end">
-                                <small class="text-success">
-                                    <i class="fas fa-bolt me-1"></i>
-                                    <strong>Fastest option</strong>
-                                </small>
-                            </div>
                         </div>
-                        <small class="text-muted mt-2 d-block">
-                            <i class="fas fa-lightbulb me-1"></i>
+                        <small class="text-success mt-2 d-block">
+                            <i class="fas fa-check-circle me-1"></i>
+                            <strong>✨ No upload needed!</strong> Works with datasets of any size - validates directly from your disk.
+                        </small>
                             <strong>Tip:</strong> Copy the full path from your file manager. No upload needed - validates directly from your computer.
                         </small>
                     </div>
@@ -300,7 +303,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // Folder selection handling
     folderInput.addEventListener('change', function() {
         if (folderInput.files.length > 0) {
-            updateUploadButton('folder', null, folderInput.files.length);
+            // Filter to metadata files only
+            const metadataExtensions = ['.json', '.tsv', '.csv', '.txt', '.edf', '.bdf'];
+            const skipExtensions = ['.nii', '.gz', '.mp4', '.avi', '.mov', '.png', '.jpg', '.jpeg', '.tiff', '.mat'];
+            
+            let metadataCount = 0;
+            let skippedCount = 0;
+            
+            for (let file of folderInput.files) {
+                const fileName = file.name.toLowerCase();
+                const isSkipped = skipExtensions.some(ext => fileName.endsWith(ext));
+                const isMetadata = metadataExtensions.some(ext => fileName.endsWith(ext));
+                
+                if (isMetadata) {
+                    metadataCount++;
+                } else if (isSkipped || fileName.endsWith('.nii.gz')) {
+                    skippedCount++;
+                }
+            }
+            
+            updateUploadButton('folder', null, metadataCount, skippedCount);
         }
     });
 
@@ -311,7 +333,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    function updateUploadButton(type, file, fileCount) {
+    function updateUploadButton(type, file, fileCount, skippedCount) {
         uploadBtn.disabled = false;
         
         if (type === 'folder') {
@@ -323,7 +345,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             uploadBtn.innerHTML = `<i class="fas fa-check-circle me-2"></i>Validate Folder "${folderName}"`;
-            uploadInfo.innerHTML = `<i class="fas fa-folder me-1 text-success"></i>${actualFileCount} files selected from folder`;
+            
+            let infoText = `<i class="fas fa-folder me-1 text-success"></i>${actualFileCount} metadata files selected`;
+            if (skippedCount > 0) {
+                infoText += ` <span class="text-muted">(${skippedCount} data files will be skipped)</span>`;
+            }
+            uploadInfo.innerHTML = infoText;
             
             // Clear ZIP input
             zipInput.value = '';
@@ -351,22 +378,90 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Show loading state on form submission
     document.querySelector('form[action*="upload"]').addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default submission
+        
         // Validate that something is selected
         if (folderInput.files.length === 0 && zipInput.files.length === 0) {
-            e.preventDefault();
             alert('Please select a folder or ZIP file before validating.');
             return false;
         }
         
-        uploadBtn.disabled = true;
-        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
-        uploadInfo.innerHTML = '<i class="fas fa-cog fa-spin me-1"></i>Uploading and validating dataset...';
+        // Filter files to metadata only
+        const metadataExtensions = ['.json', '.tsv', '.csv', '.txt', '.edf', '.bdf'];
+        const skipExtensions = ['.nii', '.gz', '.mp4', '.avi', '.mov', '.png', '.jpg', '.jpeg', '.tiff', '.mat', '.eeg', '.dat', '.fif'];
         
-        // Show progress message
-        const progressDiv = document.createElement('div');
-        progressDiv.className = 'alert alert-info mt-3';
-        progressDiv.innerHTML = '<i class="fas fa-clock me-2"></i>This may take a few moments for large datasets...';
-        uploadBtn.parentElement.appendChild(progressDiv);
+        const form = e.target;
+        const formData = new FormData();
+        
+        let includedCount = 0;
+        let skippedCount = 0;
+        let totalSize = 0;
+        let allFilePaths = [];
+        
+        // Get the files to process
+        const filesToProcess = folderInput.files.length > 0 ? folderInput.files : zipInput.files;
+        
+        // Filter and add only metadata files, but track all file paths
+        for (let i = 0; i < filesToProcess.length; i++) {
+            const file = filesToProcess[i];
+            const fileName = file.name.toLowerCase();
+            const filePath = file.webkitRelativePath || file.name;
+            
+            // Track all file paths
+            allFilePaths.push(filePath);
+            
+            // Check if it's a metadata file
+            const isMetadata = metadataExtensions.some(ext => fileName.endsWith(ext));
+            const isSkipped = skipExtensions.some(ext => fileName.endsWith(ext)) || fileName.endsWith('.nii.gz');
+            
+            if (isMetadata && !isSkipped) {
+                formData.append('dataset', file);
+                includedCount++;
+                totalSize += file.size;
+            } else if (isSkipped) {
+                skippedCount++;
+            }
+        }
+        
+        // Send the complete file list so server can create structure
+        formData.append('all_files', JSON.stringify(allFilePaths));
+        
+        console.log(`Uploading ${includedCount} metadata files (${(totalSize/1024/1024).toFixed(2)} MB), skipping ${skippedCount} data files`);
+        
+        // Check if we have any files to upload
+        if (includedCount === 0 && skippedCount === 0) {
+            alert('No files found. Please ensure your dataset contains files.');
+            return false;
+        }
+        
+        // Show progress
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
+        uploadInfo.innerHTML = `<i class="fas fa-cog fa-spin me-1"></i>Uploading ${includedCount} metadata files, creating structure for ${skippedCount} data files...`;
+        
+        // Submit filtered data via fetch
+        fetch(form.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else {
+                return response.text().then(text => {
+                    throw new Error('Upload failed: ' + text);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Upload error:', error);
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Validate Dataset';
+            uploadInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-danger"></i>Upload failed: ' + error.message;
+            alert('Upload failed: ' + error.message);
+        });
+        
+        return false;
     });
 
     document.querySelector('form[action*="validate_folder"]').addEventListener('submit', function(e) {
