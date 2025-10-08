@@ -36,18 +36,27 @@
         </div>
 
         <!-- Summary Cards -->
-        <div class="row mb-4">
-            <div class="col-md-3">
+        <div class="row mb-4 g-3">
+            <div class="col-12">
                 <div class="card bg-primary text-white">
-                    <div class="card-body text-center">
-                        <i class="fas fa-files fa-2x mb-2"></i>
-                        <h3 class="mb-0">{{ results.summary.total_files if results.summary else total_files }}</h3>
-                        <small>Total Files</small>
+                    <div class="card-body text-center py-4">
+                        <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-3">
+                            <div>
+                                <i class="fas fa-layer-group fa-2x"></i>
+                            </div>
+                            <div>
+                                <h2 class="mb-0 display-6">{{ results.summary.total_files if results.summary else total_files }}</h2>
+                                <small class="text-uppercase tracking-wide">Total files analyzed</small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-success text-white">
+        </div>
+
+        <div class="row mb-4 g-3">
+            <div class="col-md-4">
+                <div class="card bg-success text-white h-100">
                     <div class="card-body text-center">
                         <i class="fas fa-check-circle fa-2x mb-2"></i>
                         <h3 class="mb-0">{{ results.summary.valid_files if results.summary else valid_files }}</h3>
@@ -55,8 +64,8 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-danger text-white">
+            <div class="col-md-4">
+                <div class="card bg-danger text-white h-100">
                     <div class="card-body text-center">
                         <i class="fas fa-exclamation-circle fa-2x mb-2"></i>
                         <h3 class="mb-0">{{ results.summary.invalid_files if results.summary else invalid_files }}</h3>
@@ -64,8 +73,8 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="card bg-warning text-white">
+            <div class="col-md-4">
+                <div class="card bg-warning text-white h-100">
                     <div class="card-body text-center">
                         <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
                         <h3 class="mb-0">{{ results.summary.total_warnings if results.summary else results.warnings|length }}</h3>
@@ -342,7 +351,7 @@
 <script>
 // Auto-expand error sections if there are errors
 document.addEventListener('DOMContentLoaded', function() {
-    const errorCount = {{ results.errors|length }};
+    const errorCount = Number('{{ results.summary.total_errors if results.summary else (results.errors|length if results.errors else 0) }}');
     if (errorCount > 0) {
         // Keep invalid files section expanded by default (already has 'show' class)
     }

@@ -50,20 +50,49 @@
         .navbar-brand {
             font-weight: bold;
         }
+        .navbar-brand .brand-logo {
+            height: 48px;
+            width: 48px;
+            object-fit: contain;
+            border-radius: 50%;
+            box-shadow: 0 0 6px rgba(0,0,0,0.15);
+            background-color: #fff;
+        }
+        .navbar-brand .brand-text {
+            line-height: 1.1;
+        }
+        .navbar-brand .brand-text small {
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+        }
         .footer {
             margin-top: 50px;
             padding: 30px 0;
             background-color: #f8f9fa;
             border-top: 1px solid #dee2e6;
         }
+        .footer-logo {
+            height: 60px;
+            width: 60px;
+            object-fit: contain;
+            border-radius: 50%;
+            background-color: #fff;
+            box-shadow: 0 0 4px rgba(0,0,0,0.1);
+        }
+        .footer-contact a {
+            color: inherit;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="fas fa-brain text-primary me-2"></i>
-                <strong>Psycho-Validator</strong>
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='img/mri-lab-graz-logo.png') }}" alt="MRI-Lab Graz logo" class="brand-logo me-3">
+                <div class="brand-text">
+                    <div class="fw-bold text-uppercase">MRI-Lab Graz</div>
+                    <small class="text-muted">Psycho-Validator Web Interface</small>
+                </div>
             </a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link text-muted" href="{{ url_for('index') }}">
@@ -91,21 +120,27 @@
 
     <footer class="footer">
         <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>Psycho-Validator</h5>
-                    <p class="text-muted">A BIDS-inspired validation tool for psychological and psychophysical datasets.</p>
+            <div class="row align-items-center gy-3">
+                <div class="col-md-4 d-flex align-items-center">
+                    <img src="{{ url_for('static', filename='img/mri-lab-graz-logo.png') }}" alt="MRI-Lab Graz logo" class="footer-logo me-3">
+                    <div>
+                        <h5 class="mb-1">MRI-Lab Graz</h5>
+                        <p class="text-muted mb-0 small">University of Graz • Applied Neuroscience &amp; Imaging</p>
+                    </div>
                 </div>
-                <div class="col-md-6 text-md-end">
-                    <p class="text-muted">
+                <div class="col-md-5 footer-contact text-md-center">
+                    <p class="mb-1 text-muted small">
+                        <i class="fas fa-envelope me-1"></i>
+                        <a href="mailto:karl.koschutnig@uni-graz.at" class="text-decoration-none">karl.koschutnig@uni-graz.at</a>
+                    </p>
+                    <p class="mb-0 text-muted small">
                         <i class="fab fa-github me-1"></i>
-                        <a href="https://github.com/MRI-Lab-Graz/psycho-validator" class="text-decoration-none">
-                            Open Source on GitHub
-                        </a>
+                        <a href="https://github.com/MRI-Lab-Graz" class="text-decoration-none" target="_blank" rel="noopener">GitHub: MRI-Lab-Graz</a>
                     </p>
-                    <p class="text-muted small">
-                        Built with ❤️ for the research community
-                    </p>
+                </div>
+                <div class="col-md-3 text-md-end">
+                    <p class="text-muted mb-0 small">Maintained by <strong>Karl Koschutnig</strong></p>
+                    <p class="text-muted mb-0 small">Built with ❤️ for the research community</p>
                 </div>
             </div>
         </div>

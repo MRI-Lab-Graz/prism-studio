@@ -860,9 +860,17 @@ def show_results(result_id):
     stats_obj = results.get('dataset_stats')
     if stats_obj:
         try:
+            session_entries = getattr(stats_obj, 'sessions', set()) or set()
+            unique_sessions = set()
+            for entry in session_entries:
+                if isinstance(entry, str) and '/' in entry:
+                    unique_sessions.add(entry.split('/', 1)[1])
+                elif entry:
+                    unique_sessions.add(entry)
+
             dataset_stats = {
                 'total_subjects': len(getattr(stats_obj, 'subjects', [])),
-                'total_sessions': len(getattr(stats_obj, 'sessions', [])),
+                'total_sessions': len(unique_sessions),
                 'modalities': getattr(stats_obj, 'modalities', {}),
                 'tasks': sorted(getattr(stats_obj, 'tasks', [])),
                 'total_files': getattr(stats_obj, 'total_files', 0),
