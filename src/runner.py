@@ -5,10 +5,19 @@ without executing the top-level CLI script.
 """
 import os
 
-from .schema_manager import load_all_schemas
-from .validator import DatasetValidator, MODALITY_PATTERNS
-from .stats import DatasetStats
-from .reporting import print_dataset_summary, print_validation_results
+import os
+import sys
+
+# Add current directory to path for imports
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+from schema_manager import load_all_schemas
+from validator import DatasetValidator, MODALITY_PATTERNS
+from stats import DatasetStats
+from reporting import print_dataset_summary, print_validation_results
+from system_files import filter_system_files, should_validate_file
 
 
 def validate_dataset(root_dir, verbose=False):
@@ -36,7 +45,14 @@ def validate_dataset(root_dir, verbose=False):
         issues.append(("ERROR", "Missing dataset_description.json"))
 
     # Walk through subject directories
-    for item in os.listdir(root_dir):
+    all_items = os.listdir(root_dir)
+    filtered_items = filter_system_files(all_items)
+    
+    if verbose and len(all_items) != len(filtered_items):
+        ignored_count = len(all_items) - len(filtered_items)
+        print(f"🗑️  Ignored {ignored_count} system files (.DS_Store, Thumbs.db, etc.)")
+    
+    for item in filtered_items:
         item_path = os.path.join(root_dir, item)
         if os.path.isdir(item_path) and item.startswith("sub-"):
             subject_issues = _validate_subject(item_path, item, validator, stats, root_dir)
@@ -52,7 +68,10 @@ def validate_dataset(root_dir, verbose=False):
 def _validate_subject(subject_dir, subject_id, validator, stats, root_dir):
     issues = []
 
-    for item in os.listdir(subject_dir):
+    all_items = os.listdir(subject_dir)
+    filtered_items = filter_system_files(all_items)
+    
+    for item in filtered_items:
         item_path = os.path.join(subject_dir, item)
         if os.path.isdir(item_path):
             if item.startswith("ses-"):
@@ -66,7 +85,10 @@ def _validate_subject(subject_dir, subject_id, validator, stats, root_dir):
 def _validate_session(session_dir, subject_id, session_id, validator, stats, root_dir):
     issues = []
 
-    for item in os.listdir(session_dir):
+    all_items = os.listdir(session_dir)
+    filtered_items = filter_system_files(all_items)
+    
+    for item in filtered_items:
         item_path = os.path.join(session_dir, item)
         if os.path.isdir(item_path) and item in MODALITY_PATTERNS:
             issues.extend(_validate_modality_dir(item_path, subject_id, session_id, item, validator, stats, root_dir))
@@ -77,7 +99,10 @@ def _validate_session(session_dir, subject_id, session_id, validator, stats, roo
 def _validate_modality_dir(modality_dir, subject_id, session_id, modality, validator, stats, root_dir):
     issues = []
 
-    for fname in os.listdir(modality_dir):
+    all_files = os.listdir(modality_dir)
+    filtered_files = filter_system_files(all_files)
+    
+    for fname in filtered_files:
         file_path = os.path.join(modality_dir, fname)
         if os.path.isfile(file_path):
             # Extract task from filename

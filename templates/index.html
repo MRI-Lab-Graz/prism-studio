@@ -46,11 +46,15 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                     
-                    <!-- Metadata-Only Upload Notice -->
+                    <!-- DataLad-Style Upload Notice -->
                     <div class="alert alert-success mb-3">
                         <i class="fas fa-lightning me-2"></i>
-                        <strong>Fast Upload:</strong> Only metadata files (.json, .tsv, .csv, .txt) are uploaded. 
-                        Large data files (.nii.gz, .mp4, images) are automatically skipped - we only validate their JSON sidecars!
+                        <strong>DataLad-Style Upload:</strong> Only structure and metadata (.json, .tsv, .csv, .txt) are uploaded. 
+                        Large data files (.nii.gz, .mp4, images) are automatically skipped - placeholders are created for structure validation!
+                        <br><small class="mt-1 d-block">
+                            <i class="fas fa-info-circle me-1"></i>
+                            This validates naming conventions, directory structure, and metadata completeness without transferring GB of data.
+                        </small>
                     </div>
                     
                     <form action="{{ url_for('upload_dataset') }}" method="post" enctype="multipart/form-data">
@@ -390,13 +394,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const metadataExtensions = ['.json', '.tsv', '.csv', '.txt', '.edf', '.bdf'];
         const skipExtensions = ['.nii', '.gz', '.mp4', '.avi', '.mov', '.png', '.jpg', '.jpeg', '.tiff', '.mat', '.eeg', '.dat', '.fif'];
         
-        const form = e.target;
-        const formData = new FormData();
+    const form = e.target;
+    const formData = new FormData();
         
-        let includedCount = 0;
-        let skippedCount = 0;
-        let totalSize = 0;
-        let allFilePaths = [];
+    let includedCount = 0;
+    let skippedCount = 0;
+    let totalSize = 0;
+    let allFilePaths = [];
+    let metadataPaths = [];
         
         // Get the files to process
         const filesToProcess = folderInput.files.length > 0 ? folderInput.files : zipInput.files;
@@ -415,7 +420,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const isSkipped = skipExtensions.some(ext => fileName.endsWith(ext)) || fileName.endsWith('.nii.gz');
             
             if (isMetadata && !isSkipped) {
-                formData.append('dataset', file);
+                formData.append('dataset', file, filePath);
+                metadataPaths.push(filePath);
                 includedCount++;
                 totalSize += file.size;
             } else if (isSkipped) {
@@ -425,6 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Send the complete file list so server can create structure
         formData.append('all_files', JSON.stringify(allFilePaths));
+        metadataPaths.forEach(path => formData.append('metadata_paths[]', path));
         
         console.log(`Uploading ${includedCount} metadata files (${(totalSize/1024/1024).toFixed(2)} MB), skipping ${skippedCount} data files`);
         

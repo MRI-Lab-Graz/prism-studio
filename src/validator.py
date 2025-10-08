@@ -7,7 +7,7 @@ import re
 import json
 from pathlib import Path
 from jsonschema import validate, ValidationError
-from .cross_platform import (
+from cross_platform import (
     normalize_path, safe_path_join, CrossPlatformFile,
     validate_filename_cross_platform, get_platform_info
 )

@@ -12,9 +12,13 @@ src/cross_platform.py
 src/fair_checker.py
 src/fair_export.py
 src/reporting.py
+src/runner.py
 src/schema_manager.py
 src/stats.py
+src/system_files.py
 src/validator.py
 tests/test_reorganization.py
+tests/test_runner.py
 tests/test_validator.py
+tests/test_web_formatting.py
 tests/test_windows_compatibility.py

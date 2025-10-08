@@ -9,25 +9,155 @@ import json
 import tempfile
 import shutil
 from pathlib import Path
+from datetime import datetime
 from flask import Flask, render_template, request, jsonify, send_file, flash, redirect, url_for
 from werkzeug.utils import secure_filename
 import zipfile
 import io
 
-# Add src to path
-src_path = os.path.join(os.path.dirname(__file__), 'src')
-if src_path not in sys.path:
-    sys.path.insert(0, src_path)
+# Ensure we can import core validator logic from src
+BASE_DIR = Path(__file__).resolve().parent
+SRC_DIR = BASE_DIR / 'src'
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
 try:
-    from src.validator import DatasetValidator
-    from src.reporting import print_dataset_summary
-    from src.stats import DatasetStats
-    # Import the canonical validate_dataset from src.runner
-    from src.runner import validate_dataset
-except ImportError as e:
-    print(f"Error importing core modules: {e}")
-    print("Ensure you're running from the project root and that .venv is activated")
-    sys.exit(1)
+    from runner import validate_dataset as core_validate_dataset
+except Exception as import_error:
+    core_validate_dataset = None
+    print(f"⚠️  Could not import core validator: {import_error}")
+
+# Use subprocess to run the main validator script - single source of truth
+def run_main_validator(dataset_path, verbose=False):
+    """
+    Run the main psycho-validator.py script via subprocess.
+    This ensures the web interface uses exactly the same logic as the terminal version.
+    """
+    import subprocess
+    import json
+    import re
+    
+    try:
+        # Run the main validator script 
+        cmd = [sys.executable, 'psycho-validator.py', dataset_path]
+        if verbose:
+            cmd.append('--verbose')
+            
+        result = subprocess.run(cmd, 
+                              capture_output=True, 
+                              text=True, 
+                              cwd=os.path.dirname(__file__))
+        
+        # The validator script exits with 0 for success, 1 for validation errors.
+        # We need to parse the output in both cases.
+        if result.returncode in [0, 1]:
+            # Parse the terminal output to extract validation results
+            stdout = result.stdout
+            stderr = result.stderr
+            
+            # Extract statistics from output
+            stats = SimpleStats()
+            issues = []
+            
+            # Parse output for file counts and issues
+            for line in stdout.split('\n') + stderr.split('\n'):
+                line = line.strip()
+                # Parse file count from the new output format
+                if 'Total files:' in line:
+                    match = re.search(r'Total files:\s*(\d+)', line)
+                    if match:
+                        stats.total_files = int(match.group(1))
+                elif '📊 Found' in line and 'files' in line:
+                    match = re.search(r'Found (\d+) files', line)
+                    if match:
+                        stats.total_files = int(match.group(1))
+                # Parse error and warning counts
+                elif 'Errors:' in line:
+                    match = re.search(r'Errors:\s*(\d+)', line)
+                    if match and int(match.group(1)) > 0:
+                        # Add a generic error - we'll get the specific errors from other lines
+                        pass
+                elif 'Warnings:' in line:
+                    match = re.search(r'Warnings:\s*(\d+)', line) 
+                    if match and int(match.group(1)) > 0:
+                        # Add a generic warning - we'll get the specific warnings from other lines
+                        pass
+                # Parse specific error messages
+                elif line.startswith('•') and ('❌' in stdout or 'ERROR' in stdout):
+                    # This is a specific error message
+                    issues.append(('ERROR', line.replace('•', '').strip(), dataset_path))
+                elif line.startswith('•') and ('⚠️' in stdout or 'WARNING' in stdout):
+                    # This is a specific warning message
+                    issues.append(('WARNING', line.replace('•', '').strip(), dataset_path))
+            
+            # If we got valid output, extract more detailed info
+            if '✅ Dataset is valid!' in stdout:
+                pass  # No issues to add
+            elif '❌ Dataset has validation errors' in stdout:
+                if not issues:  # Add generic error if no specific issues found
+                    issues.append(('ERROR', 'Dataset validation failed - see terminal output for details', dataset_path))
+            elif result.returncode != 0 and not issues:
+                # Add error for non-zero exit code if we didn't parse any specific errors
+                issues.append(('ERROR', 'Dataset validation failed', dataset_path))
+                    
+            return issues, stats
+            
+        else:
+            # Handle validation failures
+            error_msg = result.stderr or "Validation failed"
+            print(f"❌ Validator subprocess failed (code {result.returncode}): {error_msg}")
+            
+            # Create minimal stats and error
+            stats = SimpleStats()
+            issues = [('ERROR', f"Validation process failed: {error_msg}", dataset_path)]
+            return issues, stats
+            
+    except FileNotFoundError:
+        error_msg = "psycho-validator.py script not found"
+        print(f"❌ {error_msg}")
+        stats = SimpleStats()
+        issues = [('ERROR', error_msg, dataset_path)]
+        return issues, stats
+        
+    except Exception as e:
+        error_msg = f"Failed to run validator: {str(e)}"
+        print(f"❌ {error_msg}")
+        stats = SimpleStats() 
+        issues = [('ERROR', error_msg, dataset_path)]
+        return issues, stats
+
+class SimpleStats:
+    """Simple stats class to hold validation statistics"""
+    def __init__(self, *args):
+        self.total_files = 0
+        self.subjects = set()
+        self.sessions = set() 
+        self.tasks = set()
+        self.modalities = set()
+        
+    def add_file(self, subject, session, modality, task, filename):
+        self.total_files += 1
+        if subject: self.subjects.add(subject)
+        if session: self.sessions.add(session)
+        if modality: self.modalities.add(modality)
+        if task: self.tasks.add(task)
+        
+    def check_consistency(self):
+        return []
+
+def simple_is_system_file(filename):
+    """Simple system file detection"""
+    if not filename:
+        return True
+    system_files = ['.DS_Store', '._.DS_Store', 'Thumbs.db', 'ehthumbs.db', 'Desktop.ini']
+    if filename in system_files:
+        return True
+    if filename.startswith('._') or filename.startswith('.#'):
+        return True
+    return False
+
+# Use simple system file detection
+is_system_file = simple_is_system_file
 
 app = Flask(__name__)
 app.secret_key = 'psycho-validator-secret-key'  # Change this in production
@@ -42,13 +172,14 @@ METADATA_EXTENSIONS = {
     '.txt',       # Text data/logs
     '.edf',       # EEG/eye-tracking (relatively small)
     '.bdf',       # BioSemi EEG format
+    '.png', '.jpg', '.jpeg',  # Stimulus images (psychology experiments)
 }
 
 # Extensions to SKIP (large data files we don't need)
 SKIP_EXTENSIONS = {
     '.nii', '.nii.gz',      # NIfTI neuroimaging (can be GB)
     '.mp4', '.avi', '.mov',  # Video files
-    '.png', '.jpg', '.jpeg', '.tiff',  # Large images
+    '.tiff',                 # Large TIFF images
     '.eeg', '.dat', '.fif',  # Large electrophysiology raw data
     '.mat',                  # MATLAB files (can be large)
 }
@@ -173,6 +304,27 @@ def format_validation_results(issues, dataset_stats, dataset_path):
     else:
         total_files = len(file_paths) if file_paths else len(valid_files) + len(invalid_files)
 
+    # Add error if no files found
+    if stats_total == 0 and len(file_paths) == 0:
+        # Add a specific error for empty dataset
+        error_code = 'EMPTY_DATASET'
+        if error_code not in error_groups:
+            error_groups[error_code] = {
+                'code': error_code,
+                'description': 'Dataset contains no data files',
+                'files': [],
+                'count': 0
+            }
+        
+        empty_dataset_issue = {
+            'code': error_code,
+            'message': 'No data files found in dataset. Dataset may be empty or all files were filtered out as system files.',
+            'file': dataset_path,
+            'level': 'ERROR'
+        }
+        error_groups[error_code]['files'].append(empty_dataset_issue)
+        error_groups[error_code]['count'] += 1
+
     # Calculate summary
     total_errors = sum(group['count'] for group in error_groups.values())
     total_warnings = sum(group['count'] for group in warning_groups.values())
@@ -186,8 +338,11 @@ def format_validation_results(issues, dataset_stats, dataset_path):
     else:
         valid_count = total_files - invalid_count
     
+    # A dataset is valid only if it has no errors AND has at least some files
+    is_valid = total_errors == 0 and total_files > 0
+    
     return {
-        'valid': total_errors == 0,
+        'valid': is_valid,
         'summary': {
             'total_files': total_files,
             'valid_files': valid_count,
@@ -213,6 +368,7 @@ def get_error_description(error_code):
         'SCHEMA_VALIDATION_ERROR': 'JSON sidecar content does not match required schema',
         'INVALID_JSON': 'JSON files contain syntax errors or are not valid JSON',
         'FILENAME_PATTERN_MISMATCH': 'Filenames do not match expected patterns for their modality',
+        'EMPTY_DATASET': 'Dataset contains no data files or all files were filtered as system files',
         'GENERAL_ERROR': 'General validation error'
     }
     return descriptions.get(error_code, 'Validation error')
@@ -272,11 +428,13 @@ def upload_dataset():
     # Create temporary directory for processing
     temp_dir = tempfile.mkdtemp(prefix='psycho_validator_')
     
+    metadata_paths = request.form.getlist('metadata_paths[]')
+
     try:
         # Check if this is a folder upload (multiple files) or ZIP upload (single file)
         if len(files) > 1 or (len(files) == 1 and not files[0].filename.lower().endswith('.zip')):
             # Handle folder upload
-            dataset_path = process_folder_upload(files, temp_dir)
+            dataset_path = process_folder_upload(files, temp_dir, metadata_paths)
             filename = f"folder_upload_{len(files)}_files"
         else:
             # Handle ZIP upload
@@ -289,66 +447,43 @@ def upload_dataset():
             
             dataset_path = process_zip_upload(file, temp_dir, filename)
         
-        # DEBUG: Print dataset_path and sample files
+        # DEBUG: Print dataset_path and sample files (excluding system files)
         print(f"📁 [UPLOAD] Validating dataset at: {dataset_path}")
         for root, dirs, files in os.walk(dataset_path):
-            for file in files[:10]:
+            # Filter out system files from debug output
+            try:
+                filtered_files = [f for f in files if not is_system_file(f)]
+            except NameError:
+                # Fallback filtering
+                filtered_files = [f for f in files if not (f.startswith('.') or f in ['Thumbs.db', 'ehthumbs.db', 'Desktop.ini'])]
+            
+            for file in filtered_files[:10]:
                 print(f"   {os.path.relpath(os.path.join(root, file), dataset_path)}")
+            if len(files) != len(filtered_files):
+                print(f"   (+ {len(files) - len(filtered_files)} system files ignored)")
             break
-        # Validate the dataset
-        validate_fn = globals().get('validate_dataset')
-        if callable(validate_fn):
-            issues, dataset_stats = validate_fn(dataset_path, verbose=True)
-            results = format_validation_results(issues, dataset_stats, dataset_path)
+        # Validate the dataset using core validator when available
+        if callable(core_validate_dataset):
+            issues, dataset_stats = core_validate_dataset(dataset_path, verbose=True)
         else:
-            # Fallback to class-based scanning using DatasetValidator and DatasetStats
-            validator = DatasetValidator()
-            ds = DatasetStats()
-            issues = []
-
-            for root, dirs, files in os.walk(dataset_path):
-                for file in files:
-                    if file.startswith('.'):
-                        continue
-                    file_path = os.path.join(root, file)
-                    # try to infer modality from parent dir name
-                    modality = os.path.basename(os.path.dirname(file_path)) or 'unknown'
-                    filename_issues = validator.validate_filename(file, modality)
-                    for level, message in filename_issues:
-                        # normalize to tuple form (level, message, file_path)
-                        issues.append((level, message, file_path))
-                    # sidecar validation for non-json files
-                    if not file.endswith('.json'):
-                        sidecar_issues = validator.validate_sidecar(file_path, modality, dataset_path)
-                        for level, message in sidecar_issues:
-                            issues.append((level, message, file_path))
-                    # update stats
-                    # try to derive subject/session/task from filename pattern like sub-XX
-                    subject_id = None
-                    session_id = None
-                    task = None
-                    try:
-                        # naive extraction
-                        import re
-                        m = re.search(r'sub-[A-Za-z0-9]+' , file)
-                        if m:
-                            subject_id = m.group(0)
-                        s = re.search(r'ses-[A-Za-z0-9]+', file)
-                        if s:
-                            session_id = s.group(0)
-                        t = re.search(r'task-[A-Za-z0-9]+', file)
-                        if t:
-                            task = t.group(0)
-                    except:
-                        pass
-                    ds.add_file(subject_id or 'unknown', session_id, modality, task, file)
-
-            dataset_stats = ds
-            results = format_validation_results(issues, dataset_stats, dataset_path)
+            issues, dataset_stats = run_main_validator(dataset_path, verbose=True)
+        results = format_validation_results(issues, dataset_stats, dataset_path)
         
-        # Add timestamp
+        # Add timestamp and upload type info
         from datetime import datetime
         results['timestamp'] = datetime.now().isoformat()
+        results['upload_type'] = 'structure_only'
+        
+        # Check if manifest exists and add details
+        manifest_path = os.path.join(dataset_path, '.upload_manifest.json')
+        if os.path.exists(manifest_path):
+            with open(manifest_path, 'r') as f:
+                manifest = json.load(f)
+            results['upload_manifest'] = {
+                'metadata_files': len(manifest.get('uploaded_files', [])),
+                'placeholder_files': len(manifest.get('placeholder_files', [])),
+                'upload_mode': 'DataLad-style (structure + metadata only)'
+            }
         
         # DEBUG: Print summary to console
         print(f"📊 Validation complete:")
@@ -378,65 +513,232 @@ def upload_dataset():
         flash(f'Error processing dataset: {str(e)}', 'error')
         return redirect(url_for('index'))
 
-def process_folder_upload(files, temp_dir):
-    """Process uploaded folder files and recreate directory structure
+def create_placeholder_content(file_path, extension):
+    """Create informative placeholder content for data files (DataLad-style)"""
+    filename = os.path.basename(file_path)
     
-    Only processes metadata files (JSON, TSV, etc.) to reduce upload size.
-    Creates placeholders for skipped large data files based on all_files list.
+    # For JSON files, create valid JSON placeholders
+    if extension.lower() == '.json':
+        return json.dumps({
+            "_placeholder": True,
+            "_upload_mode": "DataLad-style (structure + metadata only)",
+            "_original_filename": filename,
+            "_created": datetime.now().isoformat(),
+            "_note": "This is a placeholder file. Original JSON was not uploaded to reduce transfer size."
+        }, indent=2)
+    
+    # For TSV files, create valid TSV placeholders
+    elif extension.lower() == '.tsv':
+        return f"# PLACEHOLDER TSV - DataLad-style Upload\n# Original filename: {filename}\n# Created: {datetime.now().isoformat()}\n_placeholder\ttrue\n"
+    
+    # For other file types, use text placeholder
+    else:
+        # Determine file type from extension
+        file_type_map = {
+            '.nii': 'NIfTI neuroimaging data',
+            '.nii.gz': 'Compressed NIfTI neuroimaging data',
+            '.png': 'PNG image stimulus',
+            '.jpg': 'JPEG image stimulus', 
+            '.jpeg': 'JPEG image stimulus',
+            '.tiff': 'TIFF image data',
+            '.mp4': 'MP4 video stimulus',
+            '.avi': 'AVI video data',
+            '.mov': 'QuickTime video',
+            '.eeg': 'EEG raw data',
+            '.dat': 'Binary data file',
+            '.fif': 'Neuromag/MNE data',
+            '.mat': 'MATLAB data file'
+        }
+        
+        file_type = file_type_map.get(extension, f'{extension} data file')
+        
+        placeholder = f"""# PLACEHOLDER FILE - DataLad-style Upload
+# This is a placeholder for the original data file that was not uploaded
+# to reduce transfer size and processing time.
+
+Original filename: {filename}
+File type: {file_type}
+Upload mode: Structure-only validation
+Created: {datetime.now().isoformat()}
+
+# The validator can still check:
+# - File naming conventions
+# - Directory structure  
+# - Metadata completeness (via JSON sidecars)
+# - BIDS compliance
+
+# Note: Full content validation requires the complete dataset.
+"""
+        return placeholder
+
+def detect_dataset_prefix(all_paths):
+    """Detect a common leading folder that should be stripped from uploaded paths."""
+    sanitized_parts = []
+    has_root_level_files = False
+    for path in all_paths or []:
+        if not path:
+            continue
+        parts = [part for part in path.replace('\\', '/').split('/') if part]
+        if not parts:
+            continue
+        if len(parts) == 1:
+            has_root_level_files = True
+        sanitized_parts.append(parts)
+    if has_root_level_files or not sanitized_parts:
+        return None
+    first_components = {parts[0] for parts in sanitized_parts}
+    if len(first_components) != 1:
+        return None
+    candidate = first_components.pop()
+    restricted_names = {'image', 'audio', 'movie', 'behavior', 'eeg', 'eyetracking', 'physiological', 'dataset'}
+    if candidate.startswith(('sub-', 'ses-')) or candidate in restricted_names:
+        return None
+    has_dataset_description = any(
+        len(parts) >= 2 and parts[0] == candidate and parts[1] == 'dataset_description.json'
+        for parts in sanitized_parts
+    )
+    has_subject_dirs = any(
+        len(parts) >= 2 and parts[0] == candidate and parts[1].startswith('sub-')
+        for parts in sanitized_parts
+    )
+    if not (has_dataset_description or has_subject_dirs):
+        return None
+    return candidate
+
+
+def normalize_relative_path(path, prefix_to_strip):
+    """Normalise an uploaded path so it is safe and relative to the dataset root."""
+    if not path:
+        return None
+    cleaned = path.replace('\\', '/').lstrip('/')
+    if prefix_to_strip:
+        prefix = prefix_to_strip.strip('/')
+        if cleaned.startswith(prefix + '/'):
+            cleaned = cleaned[len(prefix) + 1:]
+    normalized = os.path.normpath(cleaned)
+    normalized = normalized.replace('\\', '/')
+    if normalized in ('', '.'):  # Directory only
+        return None
+    if normalized.startswith('..'):
+        return None
+    return normalized
+
+
+def process_folder_upload(files, temp_dir, metadata_paths=None):
+    """Process uploaded folder files and recreate directory structure (DataLad-style)
+    
+    DataLad-inspired approach: Upload only structure and metadata, create placeholders
+    for large data files. This allows full dataset validation without transferring GB of data.
     """
     dataset_root = os.path.join(temp_dir, 'dataset')
     os.makedirs(dataset_root, exist_ok=True)
     
     processed_count = 0
     skipped_count = 0
+    manifest = {
+        'uploaded_files': [],
+        'placeholder_files': [],
+        'upload_type': 'structure_only',
+        'timestamp': datetime.now().isoformat()
+    }
     
     # Get the list of all files (including skipped ones) from form data
     all_files_json = request.form.get('all_files')
     all_files_list = json.loads(all_files_json) if all_files_json else []
+    metadata_paths = metadata_paths or []
+
+    candidate_paths = list(all_files_list or [])
+    if metadata_paths:
+        candidate_paths.extend(metadata_paths)
+    else:
+        candidate_paths.extend([f.filename for f in files if getattr(f, 'filename', None)])
+
+    prefix_to_strip = detect_dataset_prefix(candidate_paths)
+    if prefix_to_strip:
+        print(f"📁 [UPLOAD] Stripping leading folder: {prefix_to_strip}")
     
     # Create a set of uploaded file paths for quick lookup
     uploaded_paths = set()
     
-    for file in files:
-        if file.filename:
-            relative_path = file.filename
-            
-            # Strip the dataset name prefix if present (e.g., "107/" -> "")
-            # Browser uploads may include the folder name as a prefix
-            path_parts = relative_path.split('/')
-            if path_parts and not path_parts[0].startswith('sub-'):
-                # First part is not a subject dir, so it's likely the dataset name - skip it
-                relative_path = '/'.join(path_parts[1:])
-            
-            # Skip if the path is empty or just a directory (no filename)
-            if not relative_path or relative_path.endswith('/'):
-                continue
-            
-            uploaded_paths.add(relative_path)
-            
-            # Save the metadata file
-            file_path = os.path.join(dataset_root, relative_path)
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            file.save(file_path)
-            processed_count += 1
-    
-    # Create placeholders for all files that weren't uploaded
-    for relative_path in all_files_list:
-        # Strip the dataset name prefix if present
-        path_parts = relative_path.split('/')
-        if path_parts and not path_parts[0].startswith('sub-'):
-            relative_path = '/'.join(path_parts[1:])
+    if metadata_paths and len(metadata_paths) != len(files):
+        print(f"⚠️  Metadata path count ({len(metadata_paths)}) does not match uploaded files ({len(files)}).")
+
+    for index, file in enumerate(files):
+        original_path = metadata_paths[index] if index < len(metadata_paths) else getattr(file, 'filename', '')
+        if not original_path:
+            continue
+        normalized_path = normalize_relative_path(original_path, prefix_to_strip)
+        if not normalized_path:
+            continue
         
-        if relative_path not in uploaded_paths:
-            file_path = os.path.join(dataset_root, relative_path)
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            # Create empty placeholder
-            with open(file_path, 'w') as f:
-                f.write('')
-            skipped_count += 1
+        # Skip system files (like .DS_Store, Thumbs.db, etc.)
+        filename = os.path.basename(normalized_path)
+        try:
+            if is_system_file(filename):
+                continue
+        except NameError:
+            if filename.startswith('.') and filename in ['.DS_Store', '._.DS_Store', '.Spotlight-V100', '.Trashes']:
+                continue
+            if filename in ['Thumbs.db', 'ehthumbs.db', 'Desktop.ini']:
+                continue
+        
+        uploaded_paths.add(normalized_path)
+        file_path = os.path.join(dataset_root, *normalized_path.split('/'))
+        target_dir = os.path.dirname(file_path)
+        if target_dir:
+            os.makedirs(target_dir, exist_ok=True)
+        file.save(file_path)
+        processed_count += 1
+        
+        manifest['uploaded_files'].append({
+            'path': normalized_path,
+            'size': file.content_length or 0,
+            'type': 'metadata'
+        })
+    
+    # Create smart placeholders for all files that weren't uploaded
+    for relative_path in all_files_list:
+        normalized_path = normalize_relative_path(relative_path, prefix_to_strip)
+        if not normalized_path or normalized_path in uploaded_paths:
+            continue
+        
+        filename = os.path.basename(normalized_path)
+        try:
+            if is_system_file(filename):
+                continue
+        except NameError:
+            if filename.startswith('.') and filename in ['.DS_Store', '._.DS_Store', '.Spotlight-V100', '.Trashes']:
+                continue
+            if filename in ['Thumbs.db', 'ehthumbs.db', 'Desktop.ini']:
+                continue
+        
+        file_path = os.path.join(dataset_root, *normalized_path.split('/'))
+        target_dir = os.path.dirname(file_path)
+        if target_dir:
+            os.makedirs(target_dir, exist_ok=True)
+        
+        lower_path = normalized_path.lower()
+        if lower_path.endswith('.nii.gz'):
+            ext = '.nii.gz'
+        else:
+            _, ext = os.path.splitext(lower_path)
+        placeholder_content = create_placeholder_content(normalized_path, ext)
+        with open(file_path, 'w') as f:
+            f.write(placeholder_content)
+        skipped_count += 1
+        
+        manifest['placeholder_files'].append({
+            'path': normalized_path,
+            'extension': ext,
+            'type': 'placeholder'
+        })
+    
+    # Save manifest file for debugging and transparency
+    manifest_path = os.path.join(dataset_root, '.upload_manifest.json')
+    with open(manifest_path, 'w') as f:
+        json.dump(manifest, f, indent=2)
     
     print(f"📁 Processed {processed_count} metadata files, created {skipped_count} placeholders for data files")
-    # DEBUG: Print the full file tree
     print(f"📁 [UPLOAD] File tree in temp_dir after upload:")
     for root, dirs, files in os.walk(dataset_root):
         for file in files:
@@ -502,11 +804,31 @@ def validate_folder():
         return redirect(url_for('index'))
     
     try:
-        # Validate the dataset using canonical runner
-        issues, stats = validate_dataset(folder_path, verbose=False)
+        # Print validation start info to terminal
+        print(f"\n📁 [VALIDATE_FOLDER] Validating local directory: {folder_path}")
+        
+        # Count files for debug output
+        file_count = 0
+        for root, dirs, files in os.walk(folder_path):
+            file_count += len([f for f in files if not is_system_file(f)])
+        print(f"   Found {file_count} non-system files in directory")
+        
+        # Use the core validator when available for direct integration
+        if callable(core_validate_dataset):
+            issues, stats = core_validate_dataset(folder_path, verbose=True)
+        else:
+            issues, stats = run_main_validator(folder_path, verbose=True)
         
         # Format results for web display
         formatted_results = format_validation_results(issues, stats, folder_path)
+        
+        # Print validation results to terminal
+        print(f"📊 [VALIDATE_FOLDER] Validation complete:")
+        print(f"   Total files: {formatted_results['summary']['total_files']}")
+        print(f"   Valid files: {formatted_results['summary']['valid_files']}")
+        print(f"   Invalid files: {formatted_results['summary']['invalid_files']}")
+        print(f"   Errors: {formatted_results['summary']['total_errors']}")
+        print(f"   Warnings: {formatted_results['summary']['total_warnings']}")
         
         # Store results
         result_id = f"result_{len(validation_results)}"
@@ -535,17 +857,19 @@ def show_results(result_id):
     
     # Get dataset stats if available
     dataset_stats = None
-    if results.get('dataset_description'):
+    stats_obj = results.get('dataset_stats')
+    if stats_obj:
         try:
-            stats = DatasetStats(data['dataset_path'])
             dataset_stats = {
-                'total_subjects': len(stats.subjects),
-                'total_sessions': len(stats.sessions),
-                'modalities': stats.modality_counts,
-                'tasks': list(stats.tasks)
+                'total_subjects': len(getattr(stats_obj, 'subjects', [])),
+                'total_sessions': len(getattr(stats_obj, 'sessions', [])),
+                'modalities': getattr(stats_obj, 'modalities', {}),
+                'tasks': sorted(getattr(stats_obj, 'tasks', [])),
+                'total_files': getattr(stats_obj, 'total_files', 0),
+                'sidecar_files': getattr(stats_obj, 'sidecar_files', 0)
             }
-        except:
-            pass
+        except Exception as stats_error:
+            print(f"⚠️  Failed to prepare dataset stats for display: {stats_error}")
     
     return render_template('results.html', 
                          results=results,
@@ -616,8 +940,9 @@ def api_validate():
         if not os.path.exists(dataset_path):
             return jsonify({'error': 'Dataset path does not exist'}), 400
         
-        validator = DatasetValidator()
-        results = validator.validate_dataset(dataset_path)
+        # Use main validator script
+        issues, stats = run_main_validator(dataset_path, verbose=False)
+        results = format_validation_results(issues, stats, dataset_path)
         
         return jsonify(results)
         
