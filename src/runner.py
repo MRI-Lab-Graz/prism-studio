@@ -20,20 +20,26 @@ from reporting import print_dataset_summary, print_validation_results
 from system_files import filter_system_files, should_validate_file
 
 
-def validate_dataset(root_dir, verbose=False):
+def validate_dataset(root_dir, verbose=False, schema_version=None):
     """Main dataset validation function (refactored from psycho-validator.py)
+    
+    Args:
+        root_dir: Root directory of the dataset
+        verbose: Enable verbose output
+        schema_version: Schema version to use (e.g., 'stable', 'v0.1', '0.1')
 
     Returns: (issues, stats)
     """
     issues = []
     stats = DatasetStats()
 
-    # Load schemas
+    # Load schemas with specified version
     schema_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'schemas')
-    schemas = load_all_schemas(schema_dir)
+    schemas = load_all_schemas(schema_dir, version=schema_version)
 
     if verbose:
-        print(f"📋 Loaded {len(schemas)} schemas")
+        version_tag = schema_version or 'stable'
+        print(f"📋 Loaded {len(schemas)} schemas (version: {version_tag})")
         print(f"📁 Scanning modalities: {list(MODALITY_PATTERNS.keys())}")
 
     # Initialize validator

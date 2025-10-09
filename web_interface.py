@@ -28,10 +28,15 @@ except Exception as import_error:
     print(f"⚠️  Could not import core validator: {import_error}")
 
 # Use subprocess to run the main validator script - single source of truth
-def run_main_validator(dataset_path, verbose=False):
+def run_main_validator(dataset_path, verbose=False, schema_version=None):
     """
     Run the main psycho-validator.py script via subprocess.
     This ensures the web interface uses exactly the same logic as the terminal version.
+    
+    Args:
+        dataset_path: Path to the dataset to validate
+        verbose: Enable verbose output
+        schema_version: Schema version to use (e.g., 'stable', 'v0.1', '0.1')
     """
     import subprocess
     import json
@@ -42,6 +47,8 @@ def run_main_validator(dataset_path, verbose=False):
         cmd = [sys.executable, 'psycho-validator.py', dataset_path]
         if verbose:
             cmd.append('--verbose')
+        if schema_version:
+            cmd.extend(['--schema-version', schema_version])
             
         result = subprocess.run(cmd, 
                               capture_output=True, 
@@ -411,7 +418,17 @@ validation_results = {}
 @app.route('/')
 def index():
     """Main page with upload form"""
-    return render_template('index.html')
+    # Get available schema versions
+    schema_dir = os.path.join(os.path.dirname(__file__), 'schemas')
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+    try:
+        from schema_manager import get_available_schema_versions
+        available_versions = get_available_schema_versions(schema_dir)
+    except Exception as e:
+        print(f"Warning: Could not load schema versions: {e}")
+        available_versions = ['stable']
+    
+    return render_template('index.html', schema_versions=available_versions)
 
 @app.route('/upload', methods=['POST'])
 def upload_dataset():
@@ -424,6 +441,9 @@ def upload_dataset():
     if not files or (len(files) == 1 and files[0].filename == ''):
         flash('No files selected', 'error')
         return redirect(url_for('index'))
+    
+    # Get schema version from form
+    schema_version = request.form.get('schema_version', 'stable')
     
     # Create temporary directory for processing
     temp_dir = tempfile.mkdtemp(prefix='psycho_validator_')
@@ -464,15 +484,18 @@ def upload_dataset():
             break
         # Validate the dataset using core validator when available
         if callable(core_validate_dataset):
-            issues, dataset_stats = core_validate_dataset(dataset_path, verbose=True)
+            issues, dataset_stats = core_validate_dataset(dataset_path, verbose=True, 
+                                                         schema_version=schema_version)
         else:
-            issues, dataset_stats = run_main_validator(dataset_path, verbose=True)
+            issues, dataset_stats = run_main_validator(dataset_path, verbose=True, 
+                                                       schema_version=schema_version)
         results = format_validation_results(issues, dataset_stats, dataset_path)
         
-        # Add timestamp and upload type info
+        # Add timestamp, upload type info, and schema version
         from datetime import datetime
         results['timestamp'] = datetime.now().isoformat()
         results['upload_type'] = 'structure_only'
+        results['schema_version'] = schema_version
         
         # Check if manifest exists and add details
         manifest_path = os.path.join(dataset_path, '.upload_manifest.json')
@@ -803,6 +826,9 @@ def validate_folder():
         flash('Path is not a directory', 'error')
         return redirect(url_for('index'))
     
+    # Get schema version from form
+    schema_version = request.form.get('schema_version', 'stable')
+    
     try:
         # Print validation start info to terminal
         print(f"\n📁 [VALIDATE_FOLDER] Validating local directory: {folder_path}")
@@ -815,12 +841,15 @@ def validate_folder():
         
         # Use the core validator when available for direct integration
         if callable(core_validate_dataset):
-            issues, stats = core_validate_dataset(folder_path, verbose=True)
+            issues, stats = core_validate_dataset(folder_path, verbose=True, 
+                                                 schema_version=schema_version)
         else:
-            issues, stats = run_main_validator(folder_path, verbose=True)
+            issues, stats = run_main_validator(folder_path, verbose=True, 
+                                              schema_version=schema_version)
         
         # Format results for web display
         formatted_results = format_validation_results(issues, stats, folder_path)
+        formatted_results['schema_version'] = schema_version
         
         # Print validation results to terminal
         print(f"📊 [VALIDATE_FOLDER] Validation complete:")

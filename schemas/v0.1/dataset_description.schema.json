@@ -1,0 +1,326 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://psycho-validator.org/schemas/dataset_description.schema.json",
+  "version": "1.0.0",
+  "title": "FAIR-compliant Dataset Description Schema",
+  "description": "Schema for BIDS dataset_description.json with FAIR principles integration",
+  "type": "object",
+  "required": [
+    "Name",
+    "BIDSVersion",
+    "DatasetType",
+    "Authors"
+  ],
+  "properties": {
+    "Name": {
+      "type": "string",
+      "title": "Dataset Name",
+      "description": "Human-readable name of the dataset",
+      "minLength": 3
+    },
+    "BIDSVersion": {
+      "type": "string",
+      "title": "BIDS Version",
+      "description": "Version of the BIDS specification used",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "DatasetType": {
+      "type": "string",
+      "title": "Dataset Type",
+      "description": "Type of dataset according to BIDS",
+      "enum": ["raw", "derivative"]
+    },
+    "License": {
+      "type": "string",
+      "title": "License",
+      "description": "License under which the dataset is made available",
+      "enum": [
+        "CC0",
+        "CC-BY-4.0", 
+        "CC-BY-SA-4.0",
+        "CC-BY-NC-4.0",
+        "CC-BY-NC-SA-4.0",
+        "MIT",
+        "Apache-2.0",
+        "GPL-3.0",
+        "All rights reserved"
+      ]
+    },
+    "Authors": {
+      "type": "array",
+      "title": "Authors",
+      "description": "List of dataset authors with FAIR identifiers",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "type": "string",
+            "description": "Simple author name"
+          },
+          {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "title": "Author Name",
+                "description": "Full name of the author"
+              },
+              "orcid": {
+                "type": "string",
+                "title": "ORCID ID",
+                "description": "ORCID identifier for author",
+                "pattern": "^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$"
+              },
+              "affiliation": {
+                "type": "string",
+                "title": "Affiliation",
+                "description": "Institutional affiliation"
+              },
+              "ror": {
+                "type": "string",
+                "title": "ROR ID",
+                "description": "Research Organization Registry identifier",
+                "format": "uri"
+              },
+              "email": {
+                "type": "string",
+                "title": "Email",
+                "description": "Contact email address",
+                "format": "email"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "DatasetDOI": {
+      "type": "string",
+      "title": "Dataset DOI",
+      "description": "Digital Object Identifier for the dataset",
+      "pattern": "^10\\..+/.+"
+    },
+    "Description": {
+      "type": "string",
+      "title": "Description",
+      "description": "Detailed description of the dataset",
+      "minLength": 50
+    },
+    "Keywords": {
+      "type": "array",
+      "title": "Keywords",
+      "description": "Keywords describing the dataset content",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 3
+    },
+    "ResearchDomains": {
+      "type": "array",
+      "title": "Research Domains",
+      "description": "Research fields and domains",
+      "items": {
+        "type": "string",
+        "enum": [
+          "cognitive neuroscience",
+          "experimental psychology",
+          "clinical psychology",
+          "developmental psychology",
+          "social psychology",
+          "behavioral neuroscience",
+          "psychophysiology",
+          "neuropsychology",
+          "human computer interaction",
+          "perception and action"
+        ]
+      }
+    },
+    "Funding": {
+      "type": "array",
+      "title": "Funding Information",
+      "description": "Funding sources for the research",
+      "items": {
+        "type": "object",
+        "required": ["agency"],
+        "properties": {
+          "agency": {
+            "type": "string",
+            "title": "Funding Agency",
+            "description": "Name of the funding agency"
+          },
+          "grant_number": {
+            "type": "string",
+            "title": "Grant Number",
+            "description": "Grant or award number"
+          },
+          "funder_id": {
+            "type": "string",
+            "title": "Funder ID",
+            "description": "Crossref Funder Registry identifier",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "EthicsApprovals": {
+      "type": "array",
+      "title": "Ethics Approvals",
+      "description": "Ethics committee approvals",
+      "items": {
+        "type": "object",
+        "required": ["committee"],
+        "properties": {
+          "committee": {
+            "type": "string",
+            "title": "Ethics Committee",
+            "description": "Name of the ethics committee"
+          },
+          "approval_number": {
+            "type": "string",
+            "title": "Approval Number",
+            "description": "Ethics approval reference number"
+          },
+          "date": {
+            "type": "string",
+            "title": "Approval Date",
+            "description": "Date of ethics approval",
+            "format": "date"
+          }
+        }
+      }
+    },
+    "Contact": {
+      "type": "object",
+      "title": "Contact Information",
+      "description": "Primary contact for the dataset",
+      "required": ["name", "email"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Contact Name",
+          "description": "Name of the contact person"
+        },
+        "email": {
+          "type": "string",
+          "title": "Contact Email",
+          "description": "Email address of the contact person",
+          "format": "email"
+        },
+        "orcid": {
+          "type": "string",
+          "title": "Contact ORCID",
+          "description": "ORCID ID of the contact person",
+          "pattern": "^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$"
+        }
+      }
+    },
+    "DataCollection": {
+      "type": "object",
+      "title": "Data Collection Information",
+      "description": "Information about data collection process",
+      "properties": {
+        "start_date": {
+          "type": "string",
+          "title": "Start Date",
+          "description": "Data collection start date",
+          "format": "date"
+        },
+        "end_date": {
+          "type": "string",
+          "title": "End Date",
+          "description": "Data collection end date",
+          "format": "date"
+        },
+        "location": {
+          "type": "string",
+          "title": "Collection Location",
+          "description": "Where the data was collected"
+        },
+        "sample_size": {
+          "type": "integer",
+          "title": "Sample Size",
+          "description": "Number of participants",
+          "minimum": 1
+        }
+      }
+    },
+    "Publications": {
+      "type": "array",
+      "title": "Related Publications",
+      "description": "Publications related to this dataset",
+      "items": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Publication Title",
+            "description": "Title of the related publication"
+          },
+          "doi": {
+            "type": "string",
+            "title": "Publication DOI",
+            "description": "DOI of the publication",
+            "pattern": "^10\\..+/.+"
+          },
+          "year": {
+            "type": "string",
+            "title": "Publication Year",
+            "description": "Year of publication",
+            "pattern": "^[0-9]{4}$"
+          },
+          "authors": {
+            "type": "array",
+            "title": "Publication Authors",
+            "description": "Authors of the publication",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "ReferencesAndLinks": {
+      "type": "array",
+      "title": "References and Links",
+      "description": "Related references, repositories, and links",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      }
+    },
+    "Acknowledgements": {
+      "type": "string",
+      "title": "Acknowledgements",
+      "description": "Acknowledgements for the dataset"
+    },
+    "GeneratedBy": {
+      "type": "array",
+      "title": "Generated By",
+      "description": "Software used to generate or process the dataset",
+      "items": {
+        "type": "object",
+        "required": ["Name"],
+        "properties": {
+          "Name": {
+            "type": "string",
+            "title": "Software Name",
+            "description": "Name of the software"
+          },
+          "Version": {
+            "type": "string",
+            "title": "Software Version",
+            "description": "Version of the software"
+          },
+          "CodeURL": {
+            "type": "string",
+            "title": "Code URL",
+            "description": "URL to the software repository",
+            "format": "uri"
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,282 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://psycho-validator.org/schemas/behavior/v1.0.0",
+  "version": "1.0.0",
+  "title": "Behavioral Data Metadata",
+  "description": "Schema for behavioral performance data (reaction times, accuracy, responses)",
+  "type": "object",
+  "properties": {
+    "Technical": {
+      "type": "object",
+      "description": "Technical behavioral data properties",
+      "properties": {
+        "StimulusType": {
+          "type": "string",
+          "enum": ["Behavior"],
+          "description": "Must be 'Behavior' for behavioral data"
+        },
+        "FileFormat": {
+          "type": "string",
+          "enum": ["tsv", "csv", "json", "mat", "txt"],
+          "description": "Behavioral data file format"
+        },
+        "ResponseType": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["keypress", "mouse_click", "touchscreen", "voice", "joystick", "eye_gaze", "gesture"]
+          },
+          "description": "Types of behavioral responses recorded"
+        },
+        "TimingPrecision": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1000,
+          "description": "Timing precision in milliseconds"
+        },
+        "InputDevices": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["keyboard", "mouse", "touchscreen", "response_box", "joystick", "microphone", "custom"]
+          },
+          "description": "Input devices used for responses"
+        },
+        "SoftwarePlatform": {
+          "type": "string",
+          "enum": ["PsychoPy", "Psychtoolbox", "E-Prime", "Presentation", "OpenSesame", "jsPsych", "Gorilla", "custom"],
+          "description": "Software platform used for data collection"
+        }
+      },
+      "required": ["StimulusType", "FileFormat", "ResponseType", "SoftwarePlatform"]
+    },
+    "Study": {
+      "type": "object",
+      "description": "Study-specific behavioral parameters",
+      "properties": {
+        "Task": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]+$",
+          "description": "Task identifier (alphanumeric, no spaces)"
+        },
+        "Subject": {
+          "type": "string",
+          "pattern": "^sub-[0-9]+$",
+          "description": "Subject identifier in BIDS format (e.g., sub-001)"
+        },
+        "Session": {
+          "type": "string",
+          "pattern": "^ses-[a-zA-Z0-9]+$",
+          "description": "Session identifier in BIDS format (e.g., ses-001)"
+        },
+        "Run": {
+          "type": "string",
+          "pattern": "^run-[0-9]+$",
+          "description": "Run identifier in BIDS format (e.g., run-01)"
+        },
+        "TaskType": {
+          "type": "string",
+          "enum": ["reaction_time", "decision_making", "memory_task", "attention_task", "learning_task", "cognitive_control", "perceptual_task", "motor_task"],
+          "description": "Type of behavioral task"
+        },
+        "ExperimentalDesign": {
+          "type": "string",
+          "enum": ["within_subjects", "between_subjects", "mixed_design", "single_case"],
+          "description": "Experimental design type"
+        },
+        "TrialStructure": {
+          "type": "object",
+          "description": "Trial structure parameters",
+          "properties": {
+            "TrialCount": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Total number of trials"
+            },
+            "BlockCount": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Number of experimental blocks"
+            },
+            "TrialsPerBlock": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Number of trials per block"
+            },
+            "InterTrialInterval": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "Inter-trial interval range in seconds [min, max]"
+            }
+          },
+          "required": ["TrialCount"]
+        },
+        "Conditions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ConditionID": {
+                "type": "string",
+                "description": "Unique identifier for the condition"
+              },
+              "ConditionName": {
+                "type": "string",
+                "description": "Descriptive name of the condition"
+              },
+              "TrialCount": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Number of trials in this condition"
+              }
+            },
+            "required": ["ConditionID", "ConditionName", "TrialCount"]
+          },
+          "description": "Experimental conditions"
+        }
+      },
+      "required": ["Task", "Subject", "Run", "TaskType", "TrialStructure"]
+    },
+    "Categories": {
+      "type": "object",
+      "description": "Behavioral analysis categorization",
+      "properties": {
+        "CognitiveDomains": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["attention", "memory", "executive_function", "processing_speed", "language", "visuospatial", "motor_control", "social_cognition"]
+          },
+          "description": "Cognitive domains assessed"
+        },
+        "PerformanceMetrics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["accuracy", "reaction_time", "response_time", "error_rate", "response_bias", "sensitivity", "efficiency", "learning_rate"]
+          },
+          "description": "Performance metrics analyzed"
+        },
+        "TaskDifficulty": {
+          "type": "string",
+          "enum": ["easy", "moderate", "difficult", "adaptive"],
+          "description": "Overall task difficulty level"
+        },
+        "DataQuality": {
+          "type": "object",
+          "description": "Data quality indicators",
+          "properties": {
+            "CompletionRate": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Percentage of trials completed"
+            },
+            "OutlierPercentage": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Percentage of outlier responses"
+            },
+            "MissedResponses": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Percentage of missed responses"
+            }
+          }
+        },
+        "BehavioralPhenotypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["impulsivity", "attention_deficit", "response_inhibition", "working_memory_capacity", "cognitive_flexibility", "processing_efficiency"]
+          },
+          "description": "Behavioral phenotypes or characteristics measured"
+        }
+      }
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "Additional metadata and administrative information",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Version of the schema used (semantic versioning)"
+        },
+        "CreationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date when the metadata was created (YYYY-MM-DD)"
+        },
+        "Creator": {
+          "type": "string",
+          "description": "Person or system that created this metadata"
+        },
+        "Institution": {
+          "type": "string",
+          "description": "Institution where the data was collected"
+        },
+        "TaskValidation": {
+          "type": "object",
+          "description": "Task validation information",
+          "properties": {
+            "ValidatedPopulation": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["adults", "children", "elderly", "clinical", "healthy", "cross_cultural"]
+              },
+              "description": "Populations where task has been validated"
+            },
+            "ReliabilityCoefficient": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Task reliability coefficient (e.g., Cronbach's alpha)"
+            },
+            "ValidityType": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["construct", "content", "criterion", "convergent", "discriminant"]
+              },
+              "description": "Types of validity established for the task"
+            }
+          }
+        },
+        "TestingEnvironment": {
+          "type": "object",
+          "description": "Testing environment details",
+          "properties": {
+            "Setting": {
+              "type": "string",
+              "enum": ["laboratory", "classroom", "home", "clinic", "online"],
+              "description": "Testing environment"
+            },
+            "Supervision": {
+              "type": "string",
+              "enum": ["supervised", "unsupervised", "semi_supervised"],
+              "description": "Level of supervision during testing"
+            },
+            "DistractionsControlled": {
+              "type": "boolean",
+              "description": "Whether environmental distractions were controlled"
+            }
+          }
+        },
+        "AnalysisNotes": {
+          "type": "string",
+          "description": "Notes about behavioral data analysis and interpretation"
+        }
+      },
+      "required": ["SchemaVersion", "CreationDate"]
+    }
+  },
+  "required": ["Technical", "Study", "Metadata"]
+}

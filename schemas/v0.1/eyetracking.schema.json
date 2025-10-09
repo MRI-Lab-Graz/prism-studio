@@ -1,0 +1,283 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://psycho-validator.org/schemas/eyetracking/v1.0.0",
+  "version": "1.0.0",
+  "title": "Eyetracking Data Metadata",
+  "description": "Schema for eyetracking data metadata with technical and study parameters",
+  "type": "object",
+  "properties": {
+    "Technical": {
+      "type": "object",
+      "description": "Technical eyetracking properties",
+      "properties": {
+        "StimulusType": {
+          "type": "string",
+          "enum": ["Eyetracking"],
+          "description": "Must be 'Eyetracking' for eyetracking data"
+        },
+        "FileFormat": {
+          "type": "string",
+          "enum": ["asc", "edf", "tsv", "csv", "mat"],
+          "description": "Eyetracking data file format"
+        },
+        "SamplingRate": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 2000,
+          "description": "Sampling rate in Hz"
+        },
+        "TrackingMode": {
+          "type": "string",
+          "enum": ["binocular", "monocular"],
+          "description": "Eye tracking mode"
+        },
+        "EyeTracked": {
+          "type": "string",
+          "enum": ["left", "right", "both"],
+          "description": "Which eye(s) were tracked"
+        },
+        "CalibrationMethod": {
+          "type": "string",
+          "enum": ["3_point", "5_point", "9_point", "13_point", "custom"],
+          "description": "Calibration procedure used"
+        },
+        "CalibrationAccuracy": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 5.0,
+          "description": "Average calibration accuracy in degrees of visual angle"
+        },
+        "SpatialResolution": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2.0,
+          "description": "Spatial resolution in degrees of visual angle"
+        },
+        "ScreenResolution": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Screen resolution [width, height] in pixels"
+        },
+        "ScreenSize": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Physical screen size [width, height] in cm"
+        },
+        "ViewingDistance": {
+          "type": "number",
+          "minimum": 10,
+          "maximum": 200,
+          "description": "Viewing distance in cm"
+        }
+      },
+      "required": ["StimulusType", "FileFormat", "SamplingRate", "TrackingMode", "EyeTracked", "CalibrationMethod"]
+    },
+    "Study": {
+      "type": "object",
+      "description": "Study-specific eyetracking parameters",
+      "properties": {
+        "Task": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]+$",
+          "description": "Task identifier (alphanumeric, no spaces)"
+        },
+        "Subject": {
+          "type": "string",
+          "pattern": "^sub-[0-9]+$",
+          "description": "Subject identifier in BIDS format (e.g., sub-001)"
+        },
+        "Session": {
+          "type": "string",
+          "pattern": "^ses-[a-zA-Z0-9]+$",
+          "description": "Session identifier in BIDS format (e.g., ses-001)"
+        },
+        "Run": {
+          "type": "string",
+          "pattern": "^run-[0-9]+$",
+          "description": "Run identifier in BIDS format (e.g., run-01)"
+        },
+        "ParadigmType": {
+          "type": "string",
+          "enum": ["free_viewing", "visual_search", "reading", "scene_perception", "face_processing", "attention_cueing", "smooth_pursuit", "saccade_task"],
+          "description": "Type of eyetracking paradigm"
+        },
+        "StimulusPresentation": {
+          "type": "object",
+          "description": "Stimulus presentation parameters",
+          "properties": {
+            "Duration": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Stimulus presentation duration in seconds"
+            },
+            "TrialCount": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Number of trials in the session"
+            },
+            "InterTrialInterval": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Inter-trial interval in seconds"
+            }
+          }
+        },
+        "AOIDefinitions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "AOI_ID": {
+                "type": "string",
+                "description": "Unique identifier for the AOI"
+              },
+              "AOI_Name": {
+                "type": "string",
+                "description": "Descriptive name of the AOI"
+              },
+              "Coordinates": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 4,
+                "maxItems": 4,
+                "description": "AOI coordinates [x1, y1, x2, y2] in pixels"
+              }
+            },
+            "required": ["AOI_ID", "AOI_Name", "Coordinates"]
+          },
+          "description": "Areas of Interest definitions"
+        }
+      },
+      "required": ["Task", "Subject", "Run", "ParadigmType"]
+    },
+    "Categories": {
+      "type": "object",
+      "description": "Eyetracking analysis categorization",
+      "properties": {
+        "DataQuality": {
+          "type": "string",
+          "enum": ["excellent", "good", "acceptable", "poor"],
+          "description": "Overall data quality assessment"
+        },
+        "AnalysisMetrics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["fixation_duration", "saccade_amplitude", "fixation_count", "dwell_time", "first_fixation", "pupil_size", "blink_rate", "scan_path"]
+          },
+          "description": "Eyetracking metrics analyzed"
+        },
+        "CognitiveProcesses": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["attention", "visual_search", "reading_comprehension", "face_recognition", "scene_perception", "working_memory", "decision_making"]
+          },
+          "description": "Cognitive processes investigated"
+        },
+        "DataValidation": {
+          "type": "object",
+          "description": "Data validation parameters",
+          "properties": {
+            "DataLossPercentage": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Percentage of data loss due to tracking failures"
+            },
+            "FixationMinDuration": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Minimum fixation duration threshold in ms"
+            },
+            "SaccadeVelocityThreshold": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Saccade velocity threshold in degrees/second"
+            }
+          }
+        }
+      }
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "Additional metadata and administrative information",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Version of the schema used (semantic versioning)"
+        },
+        "CreationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date when the metadata was created (YYYY-MM-DD)"
+        },
+        "Creator": {
+          "type": "string",
+          "description": "Person or system that created this metadata"
+        },
+        "Institution": {
+          "type": "string",
+          "description": "Institution where the data was collected"
+        },
+        "Equipment": {
+          "type": "object",
+          "description": "Eyetracker equipment details",
+          "properties": {
+            "Manufacturer": {
+              "type": "string",
+              "enum": ["EyeLink", "Tobii", "SMI", "EyeTech", "Gazepoint", "PupilLabs", "Other"],
+              "description": "Eyetracker manufacturer"
+            },
+            "Model": {
+              "type": "string",
+              "description": "Eyetracker model"
+            },
+            "SerialNumber": {
+              "type": "string",
+              "description": "Device serial number"
+            },
+            "SoftwareVersion": {
+              "type": "string",
+              "description": "Recording software version"
+            }
+          }
+        },
+        "EnvironmentalConditions": {
+          "type": "object",
+          "description": "Environmental recording conditions",
+          "properties": {
+            "LightingConditions": {
+              "type": "string",
+              "enum": ["controlled", "ambient", "bright", "dim"],
+              "description": "Laboratory lighting conditions"
+            },
+            "HeadStabilization": {
+              "type": "boolean",
+              "description": "Whether head stabilization (chin rest) was used"
+            }
+          }
+        },
+        "ProcessingNotes": {
+          "type": "string",
+          "description": "Notes about data processing and analysis"
+        }
+      },
+      "required": ["SchemaVersion", "CreationDate"]
+    }
+  },
+  "required": ["Technical", "Study", "Metadata"]
+}

@@ -6,6 +6,9 @@ import os
 import json
 import re
 
+# Default schema version to use when not specified
+DEFAULT_SCHEMA_VERSION = "stable"
+
 
 def parse_version(version_string):
     """Parse semantic version string to tuple of integers"""
@@ -32,9 +35,24 @@ def is_compatible_version(required_version, provided_version):
     return True
 
 
-def load_schema(name, schema_dir="schemas"):
-    """Load schema with version information"""
-    schema_path = os.path.join(schema_dir, f"{name}.schema.json")
+def load_schema(name, schema_dir="schemas", version=None):
+    """Load schema with version information
+    
+    Args:
+        name: Schema name (e.g., 'image', 'eeg')
+        schema_dir: Base schemas directory
+        version: Schema version to load (e.g., 'stable', 'v0.1', '0.1'). 
+                 If None, uses DEFAULT_SCHEMA_VERSION
+    """
+    # Normalize version string
+    if version is None:
+        version = DEFAULT_SCHEMA_VERSION
+    elif version and not version.startswith('v') and version != 'stable':
+        version = f"v{version}"
+    
+    # Build schema path with version
+    schema_path = os.path.join(schema_dir, version, f"{name}.schema.json")
+    
     if os.path.exists(schema_path):
         try:
             with open(schema_path) as f:
@@ -45,6 +63,7 @@ def load_schema(name, schema_dir="schemas"):
             schema['_validator_info'] = {
                 'schema_version': schema_version,
                 'modality': name,
+                'version_tag': version,
                 'loaded_at': json.dumps({"timestamp": "runtime"})
             }
             return schema
@@ -53,8 +72,20 @@ def load_schema(name, schema_dir="schemas"):
     return None
 
 
-def load_all_schemas(schema_dir="schemas"):
-    """Load all available schemas"""
+def load_all_schemas(schema_dir="schemas", version=None):
+    """Load all available schemas for a specific version
+    
+    Args:
+        schema_dir: Base schemas directory
+        version: Schema version to load (e.g., 'stable', 'v0.1', '0.1').
+                 If None, uses DEFAULT_SCHEMA_VERSION
+    """
+    # Normalize version
+    if version is None:
+        version = DEFAULT_SCHEMA_VERSION
+    elif version and not version.startswith('v') and version != 'stable':
+        version = f"v{version}"
+    
     schemas = {}
     
     # Standard modalities
@@ -64,18 +95,33 @@ def load_all_schemas(schema_dir="schemas"):
     ]
     
     for modality in modalities:
-        schema = load_schema(modality, schema_dir)
+        schema = load_schema(modality, schema_dir, version)
         if schema:
             schemas[modality] = schema
             
     # MRI nested schemas (if they exist)
     mri_modalities = ["anat", "func", "fmap", "dwi"]
     for modality in mri_modalities:
-        mri_schema_path = os.path.join(schema_dir, "mri", f"{modality}.schema.json")
+        mri_schema_path = os.path.join(schema_dir, version, "mri", f"{modality}.schema.json")
         if os.path.exists(mri_schema_path):
-            schemas[modality] = load_schema(os.path.join("mri", modality), schema_dir)
+            schemas[modality] = load_schema(os.path.join("mri", modality), schema_dir, version)
             
     return schemas
+
+
+def get_available_schema_versions(schema_dir="schemas"):
+    """Get list of available schema versions
+    
+    Returns:
+        List of version strings (e.g., ['stable', 'v0.1'])
+    """
+    versions = []
+    if os.path.exists(schema_dir):
+        for item in os.listdir(schema_dir):
+            item_path = os.path.join(schema_dir, item)
+            if os.path.isdir(item_path) and (item == 'stable' or item.startswith('v')):
+                versions.append(item)
+    return sorted(versions, key=lambda x: (x != 'stable', x))
 
 
 def validate_schema_version(metadata, schema):

@@ -25,17 +25,24 @@ except ImportError as e:
     sys.exit(1)
 
 
-def validate_dataset(root_dir, verbose=False):
-    """Main dataset validation function"""
+def validate_dataset(root_dir, verbose=False, schema_version=None):
+    """Main dataset validation function
+    
+    Args:
+        root_dir: Root directory of the dataset
+        verbose: Enable verbose output
+        schema_version: Schema version to use (e.g., 'stable', 'v0.1', '0.1')
+    """
     issues = []
     stats = DatasetStats()
     
-    # Load schemas
+    # Load schemas with specified version
     schema_dir = os.path.join(os.path.dirname(__file__), 'schemas')
-    schemas = load_all_schemas(schema_dir)
+    schemas = load_all_schemas(schema_dir, version=schema_version)
     
     if verbose:
-        print(f"📋 Loaded {len(schemas)} schemas")
+        version_tag = schema_version or 'stable'
+        print(f"📋 Loaded {len(schemas)} schemas (version: {version_tag})")
         print(f"📁 Scanning modalities: {list(MODALITY_PATTERNS.keys())}")
     
     # Initialize validator
@@ -128,6 +135,7 @@ def main():
 Examples:
   %(prog)s /path/to/dataset
   %(prog)s /path/to/dataset --verbose
+  %(prog)s /path/to/dataset --schema-version 0.1
   %(prog)s --schema-info image
         """
     )
@@ -135,11 +143,26 @@ Examples:
     parser.add_argument("dataset", nargs='?', help="Path to dataset root directory")
     parser.add_argument("-v", "--verbose", action="store_true", 
                        help="Show detailed validation information")
+    parser.add_argument("--schema-version", metavar="VERSION",
+                       help="Schema version to use (e.g., 'stable', '0.1'). Default: stable")
     parser.add_argument("--schema-info", metavar="MODALITY",
                        help="Display schema details for a specific modality")
+    parser.add_argument("--list-versions", action="store_true",
+                       help="List available schema versions")
     parser.add_argument("--version", action="version", version="Psycho-Validator 1.3.0")
     
     args = parser.parse_args()
+    
+    # Handle list versions request
+    if args.list_versions:
+        schema_dir = os.path.join(os.path.dirname(__file__), 'schemas')
+        from schema_manager import get_available_schema_versions
+        versions = get_available_schema_versions(schema_dir)
+        print("Available schema versions:")
+        for v in versions:
+            default_marker = " (default)" if v == "stable" else ""
+            print(f"  • {v}{default_marker}")
+        return
     
     # Handle schema info request
     if args.schema_info:
@@ -156,11 +179,15 @@ Examples:
         print(f"❌ Dataset directory not found: {args.dataset}")
         sys.exit(1)
     
-    # Run validation
+    # Run validation with schema version
+    schema_version = args.schema_version or "stable"
     print(f"🔍 Validating dataset: {args.dataset}")
+    if args.schema_version:
+        print(f"📋 Using schema version: {schema_version}")
     
     try:
-        issues, stats = validate_dataset(args.dataset, verbose=args.verbose)
+        issues, stats = validate_dataset(args.dataset, verbose=args.verbose, 
+                                        schema_version=schema_version)
         
         # Print results
         print_dataset_summary(args.dataset, stats)

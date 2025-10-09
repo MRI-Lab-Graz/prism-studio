@@ -1,0 +1,282 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://psycho-validator.org/schemas/physiological/v1.0.0",
+  "version": "1.0.0",
+  "title": "Physiological Data Metadata",
+  "description": "Schema for physiological measurements (GSR, HR, EMG, etc.) metadata",
+  "type": "object",
+  "properties": {
+    "Technical": {
+      "type": "object",
+      "description": "Technical physiological recording properties",
+      "properties": {
+        "StimulusType": {
+          "type": "string",
+          "enum": ["Physiological"],
+          "description": "Must be 'Physiological' for physiological data"
+        },
+        "FileFormat": {
+          "type": "string",
+          "enum": ["edf", "bdf", "txt", "csv", "mat", "acq"],
+          "description": "Physiological data file format"
+        },
+        "MeasurementType": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["ECG", "GSR", "EMG", "PPG", "respiration", "temperature", "blood_pressure", "SpO2"]
+          },
+          "description": "Types of physiological measurements"
+        },
+        "SamplingRate": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000,
+          "description": "Sampling rate in Hz"
+        },
+        "ChannelCount": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "description": "Number of physiological channels"
+        },
+        "Resolution": {
+          "type": "integer",
+          "minimum": 8,
+          "maximum": 32,
+          "description": "ADC resolution in bits"
+        },
+        "SensorPlacements": {
+          "type": "object",
+          "description": "Sensor placement locations",
+          "patternProperties": {
+            "^[a-zA-Z0-9_]+$": {
+              "type": "string",
+              "description": "Sensor placement description (e.g., 'left_wrist', 'chest')"
+            }
+          }
+        },
+        "FilterSettings": {
+          "type": "object",
+          "description": "Hardware filter settings",
+          "properties": {
+            "HighPass": {
+              "type": "number",
+              "minimum": 0,
+              "description": "High-pass filter cutoff in Hz"
+            },
+            "LowPass": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Low-pass filter cutoff in Hz"
+            },
+            "NotchFilter": {
+              "type": "number",
+              "enum": [50, 60, null],
+              "description": "Notch filter frequency (50/60 Hz or null)"
+            }
+          }
+        }
+      },
+      "required": ["StimulusType", "FileFormat", "MeasurementType", "SamplingRate", "ChannelCount"]
+    },
+    "Study": {
+      "type": "object",
+      "description": "Study-specific physiological parameters",
+      "properties": {
+        "Task": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]+$",
+          "description": "Task identifier (alphanumeric, no spaces)"
+        },
+        "Subject": {
+          "type": "string",
+          "pattern": "^sub-[0-9]+$",
+          "description": "Subject identifier in BIDS format (e.g., sub-001)"
+        },
+        "Session": {
+          "type": "string",
+          "pattern": "^ses-[a-zA-Z0-9]+$",
+          "description": "Session identifier in BIDS format (e.g., ses-001)"
+        },
+        "Run": {
+          "type": "string",
+          "pattern": "^run-[0-9]+$",
+          "description": "Run identifier in BIDS format (e.g., run-01)"
+        },
+        "ParadigmType": {
+          "type": "string",
+          "enum": ["stress_induction", "relaxation", "emotion_elicitation", "cognitive_load", "physical_exercise", "baseline_recording", "biofeedback"],
+          "description": "Type of physiological paradigm"
+        },
+        "BaselinePeriod": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Baseline recording period in seconds [start, end]"
+        },
+        "StimulusPeriods": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "PeriodID": {
+                "type": "string",
+                "description": "Identifier for this stimulus period"
+              },
+              "StartTime": {
+                "type": "number",
+                "description": "Start time in seconds"
+              },
+              "Duration": {
+                "type": "number",
+                "description": "Duration in seconds"
+              },
+              "StimulusType": {
+                "type": "string",
+                "enum": ["stressor", "relaxation", "cognitive_task", "physical_activity", "emotion_induction"],
+                "description": "Type of stimulus applied"
+              }
+            },
+            "required": ["PeriodID", "StartTime", "Duration", "StimulusType"]
+          },
+          "description": "Stimulus application periods"
+        },
+        "RecoveryPeriod": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Recovery period in seconds [start, end]"
+        }
+      },
+      "required": ["Task", "Subject", "Run", "ParadigmType"]
+    },
+    "Categories": {
+      "type": "object",
+      "description": "Physiological analysis categorization",
+      "properties": {
+        "AnalysisMetrics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["heart_rate", "heart_rate_variability", "skin_conductance", "muscle_tension", "breathing_rate", "blood_pressure", "temperature", "response_amplitude"]
+          },
+          "description": "Physiological metrics analyzed"
+        },
+        "StressIndicators": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["acute_stress", "chronic_stress", "relaxation_response", "arousal", "sympathetic_activation", "parasympathetic_activation"]
+          },
+          "description": "Stress-related indicators measured"
+        },
+        "EmotionalStates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["positive_valence", "negative_valence", "high_arousal", "low_arousal", "anxiety", "calm", "excitement"]
+          },
+          "description": "Emotional states assessed"
+        },
+        "DataQuality": {
+          "type": "string",
+          "enum": ["excellent", "good", "acceptable", "poor"],
+          "description": "Overall data quality assessment"
+        },
+        "ArtifactTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["motion_artifact", "electrode_displacement", "electrical_interference", "breathing_artifact", "talking_artifact"]
+          },
+          "description": "Types of artifacts present in the data"
+        }
+      }
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "Additional metadata and administrative information",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Version of the schema used (semantic versioning)"
+        },
+        "CreationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date when the metadata was created (YYYY-MM-DD)"
+        },
+        "Creator": {
+          "type": "string",
+          "description": "Person or system that created this metadata"
+        },
+        "Institution": {
+          "type": "string",
+          "description": "Institution where the data was collected"
+        },
+        "Equipment": {
+          "type": "object",
+          "description": "Physiological recording equipment",
+          "properties": {
+            "Manufacturer": {
+              "type": "string",
+              "enum": ["Biopac", "ADInstruments", "Thought Technology", "Nexus", "empatica", "Polar", "Garmin", "Other"],
+              "description": "Equipment manufacturer"
+            },
+            "Model": {
+              "type": "string",
+              "description": "Device model"
+            },
+            "SerialNumber": {
+              "type": "string",
+              "description": "Device serial number"
+            },
+            "SoftwareVersion": {
+              "type": "string",
+              "description": "Recording software version"
+            },
+            "CalibrationDate": {
+              "type": "string",
+              "format": "date",
+              "description": "Last calibration date"
+            }
+          }
+        },
+        "SubjectFactors": {
+          "type": "object",
+          "description": "Subject-specific factors affecting physiology",
+          "properties": {
+            "CaffeineIntake": {
+              "type": "boolean",
+              "description": "Whether subject consumed caffeine before recording"
+            },
+            "MedicationStatus": {
+              "type": "string",
+              "enum": ["none", "cardiac", "psychiatric", "other", "unknown"],
+              "description": "Medication status that might affect physiology"
+            },
+            "PhysicalActivity": {
+              "type": "string",
+              "enum": ["none", "light", "moderate", "intense"],
+              "description": "Physical activity level before recording"
+            }
+          }
+        },
+        "ProcessingNotes": {
+          "type": "string",
+          "description": "Notes about data processing and analysis"
+        }
+      },
+      "required": ["SchemaVersion", "CreationDate"]
+    }
+  },
+  "required": ["Technical", "Study", "Metadata"]
+}

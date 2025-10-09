@@ -9,6 +9,7 @@ This tool validates datasets containing psychological/psychophysical stimuli and
 - **Multi-modal validation**: Supports images, movies, audio, EEG, eye-tracking, and behavioral data
 - **BIDS-inspired naming**: Validates filenames follow the pattern `sub-<label>_[ses-<label>_]task-<label>_[run-<index>_]<suffix>`
 - **JSON schema validation**: Validates sidecar metadata files against modality-specific schemas
+- **Schema versioning**: Support for multiple schema versions (stable, v0.1, etc.) - similar to Docker tags
 - **Flexible structure**: Supports both session-based and direct subject organization
 - **Cross-subject consistency checking**: Warns when subjects have inconsistent modalities or tasks (critical for scientific datasets)
 - **Comprehensive reporting**: 
@@ -243,8 +244,28 @@ See [`docs/WEB_INTERFACE.md`](docs/WEB_INTERFACE.md) for detailed usage instruct
 For automation and advanced usage:
 
 ```bash
+# Basic validation (uses stable schema version)
 python psycho-validator.py /path/to/your/dataset
+
+# Validate with specific schema version
+python psycho-validator.py /path/to/your/dataset --schema-version v0.1
+
+# List available schema versions
+python psycho-validator.py --list-versions
+
+# Verbose mode
+python psycho-validator.py /path/to/your/dataset -v
 ```
+
+#### Schema Versioning
+
+Psycho-validator supports multiple schema versions (similar to Docker tags):
+- **`stable`** (default) - Current recommended version
+- **`v0.1`** - Version 0.1
+
+Select schema version in the web interface dropdown or use `--schema-version` flag in CLI.
+
+See [`docs/SCHEMA_VERSIONING_GUIDE.md`](docs/SCHEMA_VERSIONING_GUIDE.md) for details.
 
 #### Command Line Options
 ```bash

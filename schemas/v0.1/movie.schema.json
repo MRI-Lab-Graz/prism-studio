@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://psycho-validator.org/schemas/movie/v1.0.0",
+  "version": "1.0.0",
+  "title": "Movie Stimulus Metadata",
+  "description": "Schema for movie stimulus metadata with technical and study parameters",
+  "type": "object",
+  "properties": {
+    "Technical": {
+      "type": "object",
+      "description": "Technical video properties",
+      "properties": {
+        "StimulusType": {
+          "type": "string",
+          "enum": ["Movie"],
+          "description": "Must be 'Movie' for movie stimuli"
+        },
+        "FileFormat": {
+          "type": "string",
+          "enum": ["mp4", "avi", "mov", "mkv", "wmv", "webm"],
+          "description": "Video file format"
+        },
+        "Resolution": {
+          "type": "object",
+          "description": "Video resolution",
+          "properties": {
+            "Width": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Width in pixels"
+            },
+            "Height": {
+              "type": "integer", 
+              "minimum": 1,
+              "description": "Height in pixels"
+            }
+          },
+          "required": ["Width", "Height"]
+        },
+        "FrameRate": {
+          "type": "number",
+          "minimum": 0.1,
+          "description": "Frames per second (fps)"
+        },
+        "Duration": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Duration in seconds"
+        }
+      },
+      "required": ["StimulusType", "FileFormat", "Resolution", "FrameRate", "Duration"]
+    },
+    "Study": {
+      "type": "object",
+      "description": "Study-specific parameters",
+      "properties": {
+        "Task": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]+$",
+          "description": "Task identifier (alphanumeric, no spaces)"
+        },
+        "Subject": {
+          "type": "string",
+          "pattern": "^sub-[0-9]+$",
+          "description": "Subject identifier in BIDS format (e.g., sub-001)"
+        },
+        "Run": {
+          "type": "string",
+          "pattern": "^run-[0-9]+$",
+          "description": "Run identifier in BIDS format (e.g., run-01)"
+        }
+      },
+      "required": ["Task", "Subject", "Run"]
+    },
+    "Categories": {
+      "type": "object",
+      "description": "Content categorization and tags",
+      "properties": {
+        "ContentTags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["Action", "Drama", "Comedy", "Documentary", "Animation"]
+          },
+          "description": "Content category tags"
+        }
+      }
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "Additional metadata and administrative information",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Version of the schema used (semantic versioning)"
+        },
+        "CreationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date when the metadata was created (YYYY-MM-DD)"
+        },
+        "Creator": {
+          "type": "string",
+          "description": "Person or system that created this metadata"
+        },
+        "Description": {
+          "type": "string",
+          "description": "Free-text description of the movie stimulus"
+        },
+        "License": {
+          "type": "string",
+          "enum": ["CC0", "CC BY", "CC BY-NC", "CC BY-SA", "proprietary", "restricted"],
+          "description": "Usage license"
+        },
+        "AccessLevel": {
+          "type": "string",
+          "enum": ["public", "institutional", "restricted", "private"],
+          "description": "Access level for this stimulus"
+        },
+        "CopyrightInfo": {
+          "type": "string",
+          "description": "Copyright information for the movie content"
+        }
+      },
+      "required": ["SchemaVersion", "CreationDate"]
+    }
+  },
+  "required": ["Technical", "Study", "Metadata"]
+}
