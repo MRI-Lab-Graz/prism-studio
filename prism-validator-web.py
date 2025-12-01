@@ -41,6 +41,12 @@ except Exception as import_error:
     core_validate_dataset = None
     print(f"⚠️  Could not import core validator: {import_error}")
 
+try:
+    from limesurvey_exporter import generate_lss
+except Exception as import_error:
+    generate_lss = None
+    print(f"⚠️  Could not import limesurvey_exporter: {import_error}")
+
 
 # Use subprocess to run the main validator script - single source of truth
 def run_main_validator(dataset_path, verbose=False, schema_version=None):
@@ -1540,6 +1546,158 @@ def load_survey_template(filename):
             data = json.load(f)
 
         return jsonify({"data": data})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/browse-folder")
+def browse_folder():
+    """Open a system dialog to select a folder"""
+    folder_path = ""
+    try:
+        if sys.platform == 'darwin':
+            # Use AppleScript on macOS to avoid Tkinter threading issues
+            import subprocess
+            try:
+                script = 'POSIX path of (choose folder)'
+                # Run osascript
+                result = subprocess.check_output(['osascript', '-e', script], stderr=subprocess.STDOUT)
+                folder_path = result.decode('utf-8').strip()
+            except subprocess.CalledProcessError:
+                # User cancelled
+                folder_path = ""
+        else:
+            # Fallback to Tkinter for Windows/Linux
+            # Note: This might still have threading issues on some systems
+            import tkinter as tk
+            from tkinter import filedialog
+            
+            # Create a root window and hide it
+            root = tk.Tk()
+            root.withdraw()
+            
+            # Make it appear on top
+            root.attributes('-topmost', True)
+            
+            folder_path = filedialog.askdirectory()
+            
+            root.destroy()
+        
+        if folder_path:
+            return jsonify({"path": folder_path})
+        else:
+            return jsonify({"path": ""}) # User cancelled
+            
+    except Exception as e:
+        print(f"Error opening file dialog: {e}")
+        return jsonify({"error": "Could not open file dialog. Please enter path manually."}), 500
+
+
+@app.route("/api/list-library-files")
+def list_library_files():
+    """List JSON files in a user-specified library path"""
+    library_path = request.args.get("path")
+    if not library_path:
+        return jsonify({"error": "Path parameter is required"}), 400
+    
+    if not os.path.exists(library_path):
+        return jsonify({"error": "Path does not exist"}), 404
+        
+    if not os.path.isdir(library_path):
+        return jsonify({"error": "Path is not a directory"}), 400
+        
+    try:
+        files = []
+        for f in os.listdir(library_path):
+            if f.endswith(".json") and not f.startswith("."):
+                full_path = os.path.join(library_path, f)
+                # Try to read description and metadata
+                desc = ""
+                original_name = ""
+                questions = []
+                try:
+                    with open(full_path, 'r') as jf:
+                        data = json.load(jf)
+                        study = data.get("Study", {})
+                        desc = study.get("Description", "")
+                        original_name = study.get("OriginalName", "")
+                        if not desc:
+                            desc = data.get("TaskName", "")
+                        
+                        # Extract questions
+                        reserved = ["Technical", "Study", "Metadata", "Categories", "TaskName"]
+                        questions = []
+                        for k, v in data.items():
+                            if k not in reserved:
+                                q_desc = ""
+                                q_levels = None
+                                if isinstance(v, dict):
+                                    q_desc = v.get("Description", "")
+                                    q_levels = v.get("Levels")
+                                questions.append({"id": k, "description": q_desc, "levels": q_levels})
+                except:
+                    pass
+                    
+                files.append({
+                    "filename": f,
+                    "path": full_path,
+                    "description": desc,
+                    "original_name": original_name,
+                    "questions": questions,
+                    "question_count": len(questions)
+                })
+        
+        return jsonify({"files": sorted(files, key=lambda x: x['filename'])})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/generate-lss", methods=["POST"])
+def generate_lss_endpoint():
+    """Generate LSS from selected JSON files"""
+    if not generate_lss:
+        return jsonify({"error": "LSS exporter not available"}), 500
+        
+    try:
+        data = request.get_json()
+        if not data or "files" not in data:
+            return jsonify({"error": "No files selected"}), 400
+            
+        files = data["files"]
+        if not files:
+            return jsonify({"error": "File list is empty"}), 400
+            
+        # Verify files exist
+        valid_files = []
+        for item in files:
+            f_path = item
+            if isinstance(item, dict):
+                f_path = item.get("path")
+                
+            if f_path and os.path.exists(f_path):
+                valid_files.append(item)
+            else:
+                print(f"Warning: File not found: {f_path}")
+                
+        if not valid_files:
+            return jsonify({"error": "No valid files found"}), 404
+            
+        # Generate LSS content
+        # We return it as a downloadable file
+        
+        # Create a temporary file
+        fd, temp_path = tempfile.mkstemp(suffix=".lss")
+        os.close(fd)
+        
+        generate_lss(valid_files, temp_path)
+        
+        return send_file(
+            temp_path,
+            as_attachment=True,
+            download_name="survey_export.lss",
+            mimetype="application/xml"
+        )
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
