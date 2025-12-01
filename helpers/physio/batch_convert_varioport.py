@@ -1,6 +1,5 @@
 import os
 import sys
-import glob
 from pathlib import Path
 import argparse
 

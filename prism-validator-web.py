@@ -47,6 +47,12 @@ except Exception as import_error:
     generate_lss = None
     print(f"⚠️  Could not import limesurvey_exporter: {import_error}")
 
+try:
+    from survey_manager import SurveyManager
+except Exception as import_error:
+    SurveyManager = None
+    print(f"⚠️  Could not import SurveyManager: {import_error}")
+
 
 # Use subprocess to run the main validator script - single source of truth
 def run_main_validator(dataset_path, verbose=False, schema_version=None):
@@ -242,6 +248,13 @@ app.secret_key = "prism-validator-secret-key"  # Change this in production
 app.config["MAX_CONTENT_LENGTH"] = (
     100 * 1024 * 1024
 )  # 100MB max file size (metadata only)
+
+# Initialize Survey Manager
+survey_library_path = BASE_DIR / "survey_library"
+survey_manager = None
+if SurveyManager:
+    survey_manager = SurveyManager(survey_library_path)
+    print(f"✓ Survey Manager initialized at {survey_library_path}")
 
 # Register JSON Editor blueprint if available
 try:
@@ -1372,7 +1385,7 @@ def download_report(result_id):
         output,
         mimetype="application/json",
         as_attachment=True,
-        download_name=f'validation_report_{data["filename"]}.json',
+        download_name=f"validation_report_{data['filename']}.json",
     )
 
 
@@ -1481,7 +1494,16 @@ def main():
         browser_thread = threading.Thread(target=open_browser, daemon=True)
         browser_thread.start()
 
-    app.run(host=host, port=args.port, debug=args.debug)
+    if args.debug:
+        app.run(host=host, port=args.port, debug=True)
+    else:
+        try:
+            from waitress import serve
+            print(f"🚀 Running with Waitress server on {host}:{args.port}")
+            serve(app, host=host, port=args.port)
+        except ImportError:
+            print("⚠️  Waitress not installed, falling back to Flask development server")
+            app.run(host=host, port=args.port, debug=False)
 
 
 @app.route("/survey-generator")
@@ -1490,62 +1512,85 @@ def survey_generator():
     return render_template("survey_generator.html")
 
 
-@app.route("/api/save-survey-template", methods=["POST"])
-def save_survey_template():
-    """Save a survey template to the templates/surveys directory"""
+# ==========================================
+# Survey Library Management Routes
+# ==========================================
+
+
+@app.route("/library")
+def library_view():
+    """View the survey library management page"""
+    if not survey_manager:
+        return "Survey Manager not initialized", 500
+    
+    surveys = survey_manager.list_surveys()
+    return render_template("library.html", surveys=surveys)
+
+
+@app.route("/library/edit/<filename>")
+def edit_survey(filename):
+    """Edit a survey draft"""
+    if not survey_manager:
+        return "Survey Manager not initialized", 500
+    
     try:
-        data = request.get_json()
-        if not data or "name" not in data or "data" not in data:
-            return jsonify({"success": False, "error": "Invalid data"}), 400
-
-        name = secure_filename(data["name"])
-        if not name.endswith(".json"):
-            name += ".json"
-
-        # Ensure templates/surveys directory exists
-        template_dir = os.path.join(os.path.dirname(__file__), "templates", "surveys")
-        os.makedirs(template_dir, exist_ok=True)
-
-        file_path = os.path.join(template_dir, name)
-
-        with open(file_path, "w") as f:
-            json.dump(data["data"], f, indent=2)
-
-        return jsonify({"success": True, "filename": name})
-
+        content = survey_manager.get_draft_content(filename)
+        return render_template("library_editor.html", filename=filename, content=content)
+    except FileNotFoundError:
+        return "Draft not found", 404
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return str(e), 500
 
 
-@app.route("/api/list-survey-templates")
-def list_survey_templates():
-    """List available survey templates"""
+@app.route("/library/api/draft/<filename>", methods=["POST"])
+def create_draft(filename):
+    """Create a new draft from master"""
+    if not survey_manager:
+        return jsonify({"error": "Survey Manager not initialized"}), 500
+    
     try:
-        template_dir = os.path.join(os.path.dirname(__file__), "templates", "surveys")
-        if not os.path.exists(template_dir):
-            return jsonify({"templates": []})
-
-        templates = [f for f in os.listdir(template_dir) if f.endswith(".json")]
-        return jsonify({"templates": sorted(templates)})
+        survey_manager.create_draft(filename)
+        return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/api/load-survey-template/<filename>")
-def load_survey_template(filename):
-    """Load a specific survey template"""
+@app.route("/library/api/draft/<filename>", methods=["DELETE"])
+def discard_draft(filename):
+    """Discard a draft"""
+    if not survey_manager:
+        return jsonify({"error": "Survey Manager not initialized"}), 500
+    
     try:
-        template_dir = os.path.join(os.path.dirname(__file__), "templates", "surveys")
-        filename = secure_filename(filename)
-        file_path = os.path.join(template_dir, filename)
+        survey_manager.discard_draft(filename)
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-        if not os.path.exists(file_path):
-            return jsonify({"error": "Template not found"}), 404
 
-        with open(file_path, "r") as f:
-            data = json.load(f)
+@app.route("/library/api/save/<filename>", methods=["POST"])
+def save_draft(filename):
+    """Save content to draft"""
+    if not survey_manager:
+        return jsonify({"error": "Survey Manager not initialized"}), 500
+    
+    try:
+        content = request.json
+        survey_manager.save_draft(filename, content)
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-        return jsonify({"data": data})
+
+@app.route("/library/api/publish/<filename>", methods=["POST"])
+def publish_draft(filename):
+    """Submit draft as merge request"""
+    if not survey_manager:
+        return jsonify({"error": "Survey Manager not initialized"}), 500
+    
+    try:
+        survey_manager.publish_draft(filename)
+        return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -1555,14 +1600,17 @@ def browse_folder():
     """Open a system dialog to select a folder"""
     folder_path = ""
     try:
-        if sys.platform == 'darwin':
+        if sys.platform == "darwin":
             # Use AppleScript on macOS to avoid Tkinter threading issues
             import subprocess
+
             try:
-                script = 'POSIX path of (choose folder)'
+                script = "POSIX path of (choose folder)"
                 # Run osascript
-                result = subprocess.check_output(['osascript', '-e', script], stderr=subprocess.STDOUT)
-                folder_path = result.decode('utf-8').strip()
+                result = subprocess.check_output(
+                    ["osascript", "-e", script], stderr=subprocess.STDOUT
+                )
+                folder_path = result.decode("utf-8").strip()
             except subprocess.CalledProcessError:
                 # User cancelled
                 folder_path = ""
@@ -1571,26 +1619,31 @@ def browse_folder():
             # Note: This might still have threading issues on some systems
             import tkinter as tk
             from tkinter import filedialog
-            
+
             # Create a root window and hide it
             root = tk.Tk()
             root.withdraw()
-            
+
             # Make it appear on top
-            root.attributes('-topmost', True)
-            
+            root.attributes("-topmost", True)
+
             folder_path = filedialog.askdirectory()
-            
+
             root.destroy()
-        
+
         if folder_path:
             return jsonify({"path": folder_path})
         else:
-            return jsonify({"path": ""}) # User cancelled
-            
+            return jsonify({"path": ""})  # User cancelled
+
     except Exception as e:
         print(f"Error opening file dialog: {e}")
-        return jsonify({"error": "Could not open file dialog. Please enter path manually."}), 500
+        return (
+            jsonify(
+                {"error": "Could not open file dialog. Please enter path manually."}
+            ),
+            500,
+        )
 
 
 @app.route("/api/list-library-files")
@@ -1599,13 +1652,13 @@ def list_library_files():
     library_path = request.args.get("path")
     if not library_path:
         return jsonify({"error": "Path parameter is required"}), 400
-    
+
     if not os.path.exists(library_path):
         return jsonify({"error": "Path does not exist"}), 404
-        
+
     if not os.path.isdir(library_path):
         return jsonify({"error": "Path is not a directory"}), 400
-        
+
     try:
         files = []
         for f in os.listdir(library_path):
@@ -1616,38 +1669,119 @@ def list_library_files():
                 original_name = ""
                 questions = []
                 try:
-                    with open(full_path, 'r') as jf:
+                    with open(full_path, "r") as jf:
                         data = json.load(jf)
                         study = data.get("Study", {})
                         desc = study.get("Description", "")
                         original_name = study.get("OriginalName", "")
                         if not desc:
                             desc = data.get("TaskName", "")
-                        
+
                         # Extract questions
-                        reserved = ["Technical", "Study", "Metadata", "Categories", "TaskName"]
                         questions = []
-                        for k, v in data.items():
-                            if k not in reserved:
+                        
+                        # Check for "Questions" key (New Format)
+                        if "Questions" in data and isinstance(data["Questions"], dict):
+                            for k, v in data["Questions"].items():
                                 q_desc = ""
                                 q_levels = None
+                                q_units = None
+                                q_min = None
+                                q_max = None
+                                q_warn_min = None
+                                q_warn_max = None
+                                q_type = None
+                                
                                 if isinstance(v, dict):
                                     q_desc = v.get("Description", "")
                                     q_levels = v.get("Levels")
-                                questions.append({"id": k, "description": q_desc, "levels": q_levels})
+                                    q_units = v.get("Units")
+                                    q_min = v.get("MinValue")
+                                    q_max = v.get("MaxValue")
+                                    q_warn_min = v.get("WarnMinValue")
+                                    q_warn_max = v.get("WarnMaxValue")
+                                    q_type = v.get("DataType")
+                                    
+                                questions.append(
+                                    {
+                                        "id": k, 
+                                        "description": q_desc, 
+                                        "levels": q_levels,
+                                        "units": q_units,
+                                        "min": q_min,
+                                        "max": q_max,
+                                        "warn_min": q_warn_min,
+                                        "warn_max": q_warn_max,
+                                        "type": q_type
+                                    }
+                                )
+                        else:
+                            # Fallback for Old Format (Flat structure)
+                            reserved = [
+                                "Technical",
+                                "Study",
+                                "Metadata",
+                                "Categories",
+                                "TaskName",
+                                "Name",
+                                "BIDSVersion",
+                                "Description",
+                                "URL",
+                                "License",
+                                "Authors",
+                                "Acknowledgements",
+                                "References",
+                                "Funding"
+                            ]
+                            for k, v in data.items():
+                                if k not in reserved:
+                                    q_desc = ""
+                                    q_levels = None
+                                    q_units = None
+                                    q_min = None
+                                    q_max = None
+                                    q_warn_min = None
+                                    q_warn_max = None
+                                    q_type = None
+                                    
+                                    if isinstance(v, dict):
+                                        q_desc = v.get("Description", "")
+                                        q_levels = v.get("Levels")
+                                        q_units = v.get("Units")
+                                        q_min = v.get("MinValue")
+                                        q_max = v.get("MaxValue")
+                                        q_warn_min = v.get("WarnMinValue")
+                                        q_warn_max = v.get("WarnMaxValue")
+                                        q_type = v.get("DataType")
+                                        
+                                    questions.append(
+                                        {
+                                            "id": k, 
+                                            "description": q_desc, 
+                                            "levels": q_levels,
+                                            "units": q_units,
+                                            "min": q_min,
+                                            "max": q_max,
+                                            "warn_min": q_warn_min,
+                                            "warn_max": q_warn_max,
+                                            "type": q_type
+                                        }
+                                    )
                 except:
                     pass
-                    
-                files.append({
-                    "filename": f,
-                    "path": full_path,
-                    "description": desc,
-                    "original_name": original_name,
-                    "questions": questions,
-                    "question_count": len(questions)
-                })
-        
-        return jsonify({"files": sorted(files, key=lambda x: x['filename'])})
+
+                files.append(
+                    {
+                        "filename": f,
+                        "path": full_path,
+                        "description": desc,
+                        "original_name": original_name,
+                        "questions": questions,
+                        "question_count": len(questions),
+                    }
+                )
+
+        return jsonify({"files": sorted(files, key=lambda x: x["filename"])})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -1657,47 +1791,47 @@ def generate_lss_endpoint():
     """Generate LSS from selected JSON files"""
     if not generate_lss:
         return jsonify({"error": "LSS exporter not available"}), 500
-        
+
     try:
         data = request.get_json()
         if not data or "files" not in data:
             return jsonify({"error": "No files selected"}), 400
-            
+
         files = data["files"]
         if not files:
             return jsonify({"error": "File list is empty"}), 400
-            
+
         # Verify files exist
         valid_files = []
         for item in files:
             f_path = item
             if isinstance(item, dict):
                 f_path = item.get("path")
-                
+
             if f_path and os.path.exists(f_path):
                 valid_files.append(item)
             else:
                 print(f"Warning: File not found: {f_path}")
-                
+
         if not valid_files:
             return jsonify({"error": "No valid files found"}), 404
-            
+
         # Generate LSS content
         # We return it as a downloadable file
-        
+
         # Create a temporary file
         fd, temp_path = tempfile.mkstemp(suffix=".lss")
         os.close(fd)
-        
+
         generate_lss(valid_files, temp_path)
-        
+
         return send_file(
             temp_path,
             as_attachment=True,
             download_name="survey_export.lss",
-            mimetype="application/xml"
+            mimetype="application/xml",
         )
-        
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 import os
 
+
 def add_row(parent, data):
     """Add a <row> element with child tags based on dictionary"""
     row = ET.SubElement(parent, "row")
@@ -10,21 +11,22 @@ def add_row(parent, data):
         child = ET.SubElement(row, key)
         child.text = str(value)
 
+
 def generate_lss(json_files, output_path=None):
     """
     Generate a LimeSurvey Structure (.lss) file from a list of Prism JSON sidecars.
-    
+
     Args:
         json_files (list): List of paths to JSON files.
         output_path (str, optional): Path to write the .lss file. If None, returns the XML string.
-        
+
     Returns:
         str: The XML content if output_path is None, else None.
     """
-    
+
     # IDs
     sid = "123456"  # Dummy Survey ID
-    
+
     # Root element
     root = ET.Element("document")
     ET.SubElement(root, "LimeSurveyDocType").text = "Survey"
@@ -83,18 +85,22 @@ def generate_lss(json_files, output_path=None):
             for k, v in data.items()
             if k not in ["Technical", "Study", "Metadata", "Categories", "TaskName"]
         }
-        
+
         # Apply inclusion filter if provided
         if include_keys is not None:
-            questions_data = {k: v for k, v in all_questions.items() if k in include_keys}
+            questions_data = {
+                k: v for k, v in all_questions.items() if k in include_keys
+            }
         else:
             questions_data = all_questions
 
         gid = str(gid_counter)
         gid_counter += 1
         group_sort_order += 1
-        
-        group_name = data.get("TaskName", os.path.splitext(os.path.basename(json_path))[0])
+
+        group_name = data.get(
+            "TaskName", os.path.splitext(os.path.basename(json_path))[0]
+        )
         group_desc = data.get("Study", {}).get("Description", "")
 
         # Add Group
@@ -133,7 +139,7 @@ def generate_lss(json_files, output_path=None):
                 relevance = q_data["LimeSurvey"]["Relevance"]
 
             # Determine Type
-            q_type = "L" if levels else "T" # List (Radio) or Long Free Text
+            q_type = "L" if levels else "T"  # List (Radio) or Long Free Text
 
             # Add Question
             add_row(
@@ -217,7 +223,7 @@ def generate_lss(json_files, output_path=None):
     tree = ET.ElementTree(root)
     if hasattr(ET, "indent"):
         ET.indent(tree, space="  ", level=0)
-        
+
     if output_path:
         tree.write(output_path, encoding="UTF-8", xml_declaration=True)
         return output_path
@@ -226,17 +232,21 @@ def generate_lss(json_files, output_path=None):
         tree.write(f, encoding="UTF-8", xml_declaration=True)
         return f.getvalue().decode("utf-8")
 
+
 if __name__ == "__main__":
     import sys
     import io
+
     if len(sys.argv) < 2:
-        print("Usage: python limesurvey_exporter.py <json_file1> [json_file2 ...] <output.lss>")
+        print(
+            "Usage: python limesurvey_exporter.py <json_file1> [json_file2 ...] <output.lss>"
+        )
         sys.exit(1)
-    
+
     # Last arg is output if it ends with .lss, otherwise all are inputs
     output = None
     inputs = sys.argv[1:]
-    if inputs[-1].endswith('.lss'):
+    if inputs[-1].endswith(".lss"):
         output = inputs.pop()
-        
+
     generate_lss(inputs, output)

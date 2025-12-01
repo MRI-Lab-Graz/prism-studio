@@ -178,9 +178,10 @@ def main():
     ambiguous_log = os.path.join(dst, "ambiguous_matches.csv")
     ensure_dir(dst)
 
-    with open(map_log_path, "w", newline="", encoding="utf-8") as mapf, open(
-        ambiguous_log, "w", newline="", encoding="utf-8"
-    ) as ambf:
+    with (
+        open(map_log_path, "w", newline="", encoding="utf-8") as mapf,
+        open(ambiguous_log, "w", newline="", encoding="utf-8") as ambf,
+    ):
         map_writer = csv.writer(mapf)
         amb_writer = csv.writer(ambf)
         map_writer.writerow(

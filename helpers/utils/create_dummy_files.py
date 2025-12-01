@@ -6,8 +6,6 @@ Generate a hybrid BIDS/PRISM demo dataset for prism-validator testing.
 import os
 import json
 
-import os
-import json
 import shutil
 import gzip
 import csv

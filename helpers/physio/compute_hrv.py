@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import json
 import os
-from hrvanalysis import remove_outliers, remove_ectopic_beats, interpolate_nan_values
+from hrvanalysis import remove_outliers, interpolate_nan_values
 from hrvanalysis import get_time_domain_features, get_frequency_domain_features
 
 

@@ -27,18 +27,20 @@ import argparse
 SURVEY_METADATA = {
     "ads": {
         "OriginalName": "Allgemeine Depressionsskala (ADS)",
-        "Citation": "Hautzinger, M., & Bailer, M. (1993). Allgemeine Depressionsskala (ADS). Göttingen: Hogrefe."
+        "Citation": "Hautzinger, M., & Bailer, M. (1993). Allgemeine Depressionsskala (ADS). Göttingen: Hogrefe.",
     },
     "bdi": {
         "OriginalName": "Beck Depression Inventory (BDI-II)",
-        "Citation": "Beck, A. T., Steer, R. A., & Brown, G. K. (1996). Manual for the Beck Depression Inventory-II. San Antonio, TX: Psychological Corporation."
-    }
+        "Citation": "Beck, A. T., Steer, R. A., & Brown, G. K. (1996). Manual for the Beck Depression Inventory-II. San Antonio, TX: Psychological Corporation.",
+    },
     # Add more here...
 }
+
 
 def clean_variable_name(name):
     """Clean variable name to be used as a key."""
     return str(name).strip()
+
 
 def extract_prefix(var_name):
     """
@@ -50,6 +52,7 @@ def extract_prefix(var_name):
         return match.group(1)
     return "unknown"
 
+
 def parse_levels(scale_str):
     """
     Parse scale string into a dictionary.
@@ -57,69 +60,68 @@ def parse_levels(scale_str):
     """
     if pd.isna(scale_str):
         return None
-    
+
     levels = {}
-    parts = re.split(r'[;,]\s*', str(scale_str))
+    parts = re.split(r"[;,]\s*", str(scale_str))
     for part in parts:
-        if '=' in part:
-            val, label = part.split('=', 1)
+        if "=" in part:
+            val, label = part.split("=", 1)
             levels[val.strip()] = label.strip()
     return levels if levels else None
+
 
 def process_excel(excel_file, output_dir):
     print(f"Loading metadata from {excel_file}...")
     try:
         # Read header=None to inspect first row
         df_meta = pd.read_excel(excel_file, header=None)
-        
+
         # Simple heuristic to skip header if present
         first_cell = str(df_meta.iloc[0, 0])
         if "Variable" in first_cell or "Name" in first_cell:
             print("Detected header row, skipping...")
             df_meta = df_meta.iloc[1:]
-            
+
     except Exception as e:
         print(f"Error reading Excel file: {e}")
         sys.exit(1)
 
-    surveys = {} 
+    surveys = {}
 
     print("Processing metadata...")
     for index, row in df_meta.iterrows():
         var_name = clean_variable_name(row[0])
         question = row[1] if len(row) > 1 else ""
         scale = row[2] if len(row) > 2 else None
-        
+
         if var_name.lower() == "nan" or not var_name:
             continue
 
         prefix = extract_prefix(var_name).lower()
-        
+
         if prefix not in surveys:
             surveys[prefix] = {}
-            
+
         description = str(question).strip() if pd.notna(question) else var_name
         # Remove brackets [] and their content from description (common in codebooks)
-        description = re.sub(r'\[.*?\]', '', description).strip()
-        
-        entry = {
-            "Description": description
-        }
-        
+        description = re.sub(r"\[.*?\]", "", description).strip()
+
+        entry = {"Description": description}
+
         levels = parse_levels(scale)
         if levels:
             entry["Levels"] = levels
-            
+
         surveys[prefix][var_name] = entry
 
     # Generate JSON Sidecars
     print(f"Generating JSON sidecars in {output_dir}...")
     os.makedirs(output_dir, exist_ok=True)
-    
+
     for prefix, variables in surveys.items():
         # Check if this prefix is designated as participants (demographics)
-        is_participants = (prefix == args.participants_prefix)
-        
+        is_participants = prefix == args.participants_prefix
+
         # Get metadata if available
         meta = SURVEY_METADATA.get(prefix, {})
         original_name = meta.get("OriginalName", f"{prefix} Questionnaire")
@@ -132,53 +134,64 @@ def process_excel(excel_file, output_dir):
                 "StimulusType": "Questionnaire",
                 "FileFormat": "tsv",
                 "SoftwarePlatform": "Legacy/Imported",
-                "Language": "en", # Default to English, change as needed
+                "Language": "en",  # Default to English, change as needed
                 "Respondent": "self",
-                "ResponseType": ["paper-pencil"]
+                "ResponseType": ["paper-pencil"],
             },
             "Study": {
                 "TaskName": prefix,
                 "OriginalName": original_name,
                 "Version": "1.0",
-                "Description": f"Imported {prefix} survey data"
+                "Description": f"Imported {prefix} survey data",
             },
             "Metadata": {
                 "SchemaVersion": "1.0.0",
                 "CreationDate": pd.Timestamp.now().strftime("%Y-%m-%d"),
-                "Creator": "excel_to_library.py"
-            }
+                "Creator": "excel_to_library.py",
+            },
         }
-        
+
         if citation:
             sidecar["Study"]["Citation"] = citation
         if domain:
             sidecar["Study"]["Domain"] = domain
         if keywords:
             sidecar["Study"]["Keywords"] = keywords
-            
+
         # Add variables
         sidecar.update(variables)
-        
+
         if is_participants:
             json_filename = "participants.json"
-            # participants.json doesn't strictly need Technical/Study headers in BIDS, 
-            # but keeping them for PRISM consistency is fine. 
+            # participants.json doesn't strictly need Technical/Study headers in BIDS,
+            # but keeping them for PRISM consistency is fine.
             # BIDS apps usually ignore extra keys in participants.json.
         else:
             json_filename = f"survey-{prefix}.json"
-            
+
         json_path = os.path.join(output_dir, json_filename)
-        with open(json_path, 'w') as f:
+        with open(json_path, "w") as f:
             json.dump(sidecar, f, indent=2)
             print(f"  - Created {json_path}")
 
     print("Done!")
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Convert Excel data dictionary to PRISM JSON library.")
-    parser.add_argument("--excel", required=True, help="Path to the Excel metadata file.")
-    parser.add_argument("--output", default="survey_library", help="Output directory for JSON files.")
-    parser.add_argument("--participants-prefix", default=None, help="Prefix to treat as participants.json (e.g., 'demo').")
-    
+    parser = argparse.ArgumentParser(
+        description="Convert Excel data dictionary to PRISM JSON library."
+    )
+    parser.add_argument(
+        "--excel", required=True, help="Path to the Excel metadata file."
+    )
+    parser.add_argument(
+        "--output", default="survey_library", help="Output directory for JSON files."
+    )
+    parser.add_argument(
+        "--participants-prefix",
+        default=None,
+        help="Prefix to treat as participants.json (e.g., 'demo').",
+    )
+
     args = parser.parse_args()
     process_excel(args.excel, args.output)

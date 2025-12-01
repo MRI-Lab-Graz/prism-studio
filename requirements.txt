@@ -9,6 +9,7 @@ requests>=2.25.0
 bids-validator
 pandas
 openpyxl
+waitress
 
 # Documentation
 sphinx

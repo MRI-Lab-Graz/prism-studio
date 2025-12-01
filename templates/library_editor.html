@@ -1,0 +1,318 @@
+{% extends "index.html" %}
+
+{% block content %}
+<div class="container-fluid mt-3" style="height: 90vh; display: flex; flex-direction: column;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="mb-0">Editing: <span class="text-primary">{{ filename }}</span> <span class="badge bg-warning text-dark">Draft</span></h3>
+        </div>
+        <div>
+            <button onclick="saveSurvey()" class="btn btn-success"><i class="bi bi-save"></i> Save Draft</button>
+            <a href="{{ url_for('library_view') }}" class="btn btn-secondary">Close</a>
+        </div>
+    </div>
+
+    <!-- View Switcher -->
+    <ul class="nav nav-tabs mb-3" id="editorTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="simple-tab" data-bs-toggle="tab" data-bs-target="#simple-view" type="button" role="tab" onclick="syncToSimple()">
+                <i class="bi bi-ui-checks-grid"></i> Simple Editor
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="json-tab" data-bs-toggle="tab" data-bs-target="#json-view" type="button" role="tab" onclick="syncToJson()">
+                <i class="bi bi-code-slash"></i> Advanced JSON
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content flex-grow-1" style="overflow: hidden; display: flex; flex-direction: column;">
+        
+        <!-- Simple Editor View -->
+        <div class="tab-pane fade show active h-100" id="simple-view" role="tabpanel" style="overflow-y: auto; padding-bottom: 50px;">
+            <div class="container">
+                <!-- Global Metadata -->
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header bg-light fw-bold">Survey Metadata</div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Survey Name</label>
+                                <input type="text" class="form-control" id="meta-name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Description</label>
+                                <input type="text" class="form-control" id="meta-desc">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Questions List -->
+                <h5 class="mb-3">Questions</h5>
+                <div id="questions-container">
+                    <!-- Questions will be rendered here -->
+                </div>
+
+                <div class="text-center mt-4 mb-5">
+                    <button onclick="addQuestionCard()" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-circle"></i> Add New Question
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced JSON View -->
+        <div class="tab-pane fade h-100" id="json-view" role="tabpanel">
+            <div id="jsoneditor" style="height: 100%;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- JSON Editor CDN -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.10.0/jsoneditor.min.css" rel="stylesheet" type="text/css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/9.10.0/jsoneditor.min.js"></script>
+
+<script>
+    // --- Initialization ---
+    const container = document.getElementById("jsoneditor");
+    const options = { mode: 'tree', modes: ['code', 'tree'] };
+    const editor = new JSONEditor(container, options);
+    
+    // Initial Data
+    let currentData = {{ content | tojson }};
+    editor.set(currentData);
+    
+    // Render Simple View on Load
+    document.addEventListener('DOMContentLoaded', () => {
+        renderSimpleEditor(currentData);
+    });
+
+    // --- Sync Logic ---
+    function syncToSimple() {
+        try {
+            currentData = editor.get();
+            renderSimpleEditor(currentData);
+        } catch(e) {
+            alert("Invalid JSON in Advanced View. Please fix it before switching.");
+        }
+    }
+
+    function syncToJson() {
+        currentData = scrapeSimpleEditor();
+        editor.set(currentData);
+    }
+
+    // --- Simple Editor Rendering ---
+    function renderSimpleEditor(data) {
+        // Metadata
+        document.getElementById('meta-name').value = data.Name || '';
+        document.getElementById('meta-desc').value = data.Description || '';
+
+        // Questions
+        const container = document.getElementById('questions-container');
+        container.innerHTML = '';
+
+        const questions = data.Questions || {};
+        
+        Object.entries(questions).forEach(([key, q]) => {
+            container.appendChild(createQuestionCard(key, q));
+        });
+    }
+
+    function createQuestionCard(key, q) {
+        const card = document.createElement('div');
+        card.className = 'card mb-3 shadow-sm question-card';
+        card.dataset.originalKey = key; 
+
+        // Levels HTML
+        let levelsHtml = '';
+        if (q.Levels) {
+            Object.entries(q.Levels).forEach(([val, label]) => {
+                levelsHtml += createLevelRow(val, label);
+            });
+        }
+
+        card.innerHTML = `
+            <div class="card-header d-flex justify-content-between align-items-center bg-white">
+                <div class="input-group" style="max-width: 400px;">
+                    <span class="input-group-text bg-light fw-bold">ID</span>
+                    <input type="text" class="form-control fw-bold question-id" value="${key}" placeholder="Question ID (e.g. Q1)">
+                </div>
+                <button class="btn btn-outline-danger btn-sm" onclick="this.closest('.question-card').remove()">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Question Text / Description</label>
+                    <textarea class="form-control question-desc" rows="2">${q.Description || ''}</textarea>
+                </div>
+                
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Type</label>
+                        <select class="form-select question-type">
+                            <option value="integer" ${q.DataType === 'integer' ? 'selected' : ''}>Integer</option>
+                            <option value="float" ${q.DataType === 'float' ? 'selected' : ''}>Float</option>
+                            <option value="string" ${q.DataType === 'string' ? 'selected' : ''}>String</option>
+                            <option value="boolean" ${q.DataType === 'boolean' ? 'selected' : ''}>Boolean</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Units</label>
+                        <input type="text" class="form-control question-units" value="${q.Units || ''}">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3 bg-light p-2 rounded mx-0">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Min</label>
+                        <input type="number" class="form-control question-min" value="${q.MinValue !== undefined ? q.MinValue : ''}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Max</label>
+                        <input type="number" class="form-control question-max" value="${q.MaxValue !== undefined ? q.MaxValue : ''}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted text-warning">Warn Min</label>
+                        <input type="number" class="form-control question-warn-min" value="${q.WarnMinValue !== undefined ? q.WarnMinValue : ''}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted text-warning">Warn Max</label>
+                        <input type="number" class="form-control question-warn-max" value="${q.WarnMaxValue !== undefined ? q.WarnMaxValue : ''}">
+                    </div>
+                </div>
+
+                <div class="levels-section">
+                    <label class="form-label small text-muted">Answer Levels (Likert / Categories)</label>
+                    <div class="levels-container">
+                        ${levelsHtml}
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary mt-2" onclick="addLevelRow(this)">
+                        <i class="bi bi-plus"></i> Add Level
+                    </button>
+                </div>
+            </div>
+        `;
+        return card;
+    }
+
+    function createLevelRow(val='', label='') {
+        return `
+            <div class="input-group mb-1 level-row">
+                <input type="text" class="form-control" placeholder="Value (e.g. 1)" value="${val}" style="max-width: 100px;">
+                <input type="text" class="form-control" placeholder="Label (e.g. Strongly Disagree)" value="${label}">
+                <button class="btn btn-outline-secondary" onclick="this.closest('.level-row').remove()"><i class="bi bi-x"></i></button>
+            </div>
+        `;
+    }
+
+    function addLevelRow(btn) {
+        const container = btn.previousElementSibling;
+        const div = document.createElement('div');
+        div.innerHTML = createLevelRow();
+        container.appendChild(div.firstElementChild);
+    }
+
+    function addQuestionCard() {
+        const container = document.getElementById('questions-container');
+        const newId = `New_Question_${container.children.length + 1}`;
+        const defaultQ = {
+            Description: "",
+            DataType: "integer",
+            Levels: { "1": "No", "2": "Yes" }
+        };
+        container.appendChild(createQuestionCard(newId, defaultQ));
+        setTimeout(() => window.scrollTo(0, document.body.scrollHeight), 100);
+    }
+
+    // --- Scrape Logic ---
+    function scrapeSimpleEditor() {
+        const data = { ...currentData }; 
+        
+        data.Name = document.getElementById('meta-name').value;
+        data.Description = document.getElementById('meta-desc').value;
+
+        const questions = {};
+        document.querySelectorAll('.question-card').forEach(card => {
+            const id = card.querySelector('.question-id').value.trim();
+            if (!id) return; 
+
+            const q = {};
+            q.Description = card.querySelector('.question-desc').value;
+            q.DataType = card.querySelector('.question-type').value;
+            
+            const units = card.querySelector('.question-units').value;
+            if (units) q.Units = units;
+
+            const min = card.querySelector('.question-min').value;
+            if (min !== '') q.MinValue = Number(min);
+            
+            const max = card.querySelector('.question-max').value;
+            if (max !== '') q.MaxValue = Number(max);
+
+            const warnMin = card.querySelector('.question-warn-min').value;
+            if (warnMin !== '') q.WarnMinValue = Number(warnMin);
+
+            const warnMax = card.querySelector('.question-warn-max').value;
+            if (warnMax !== '') q.WarnMaxValue = Number(warnMax);
+
+            const levels = {};
+            let hasLevels = false;
+            card.querySelectorAll('.level-row').forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                const val = inputs[0].value.trim();
+                const label = inputs[1].value.trim();
+                if (val) {
+                    levels[val] = label;
+                    hasLevels = true;
+                }
+            });
+            if (hasLevels) q.Levels = levels;
+
+            questions[id] = q;
+        });
+
+        data.Questions = questions;
+        return data;
+    }
+
+    // --- Save ---
+    function saveSurvey() {
+        let dataToSave;
+        if (document.getElementById('simple-view').classList.contains('active')) {
+            dataToSave = scrapeSimpleEditor();
+            editor.set(dataToSave);
+            currentData = dataToSave;
+        } else {
+            dataToSave = editor.get();
+            currentData = dataToSave;
+        }
+        
+        fetch(`/library/api/save/${'{{ filename }}'}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataToSave)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.success) {
+                const btn = document.querySelector('.btn-success');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check"></i> Saved!';
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-success');
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.classList.add('btn-success');
+                    btn.classList.remove('btn-outline-success');
+                }, 2000);
+            } else {
+                alert("Error saving: " + data.error);
+            }
+        })
+        .catch(err => alert("Network error: " + err));
+    }
+</script>
+{% endblock %}

@@ -1,6 +1,5 @@
 import struct
 import os
-import numpy as np
 
 file_path = "test_dataset/sub-001/ses-001/image/VPDATA.RAW"
 

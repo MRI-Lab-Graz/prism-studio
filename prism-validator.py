@@ -5,7 +5,6 @@ Prism-Validator: Streamlined main entry point
 A modular, BIDS-inspired validation tool for psychological research datasets.
 """
 
-
 import os
 import sys
 import argparse

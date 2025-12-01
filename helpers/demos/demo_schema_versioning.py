@@ -10,18 +10,18 @@ import sys
 
 def run_command(cmd, description):
     """Run a command and display its output with formatting"""
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print(f"🚀 {description}")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
     print(f"💻 Command: {cmd}")
-    print(f"{'-'*80}")
+    print(f"{'-' * 80}")
 
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     print(result.stdout)
     if result.stderr:
         print("STDERR:", result.stderr)
 
-    print(f"{'-'*80}")
+    print(f"{'-' * 80}")
     print(f"📊 Exit code: {result.returncode}")
     return result.returncode
 
@@ -80,7 +80,7 @@ def main():
         "DEMO 5: Validation of Valid Test Dataset",
     )
 
-    print(f"\n{'='*80}")
+    print(f"\n{'=' * 80}")
     print("🎉 SHOWCASE COMPLETE!")
     print("💡 Key Schema Versioning Features Demonstrated:")
     print("   ✅ Semantic versioning (MAJOR.MINOR.PATCH)")
@@ -88,7 +88,7 @@ def main():
     print("   ✅ Schema metadata with version information")
     print("   ✅ Automatic version validation during dataset validation")
     print("   ✅ Future-proofing for schema evolution")
-    print(f"{'='*80}")
+    print(f"{'=' * 80}")
 
 
 if __name__ == "__main__":

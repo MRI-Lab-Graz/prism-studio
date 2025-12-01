@@ -58,7 +58,7 @@ def validate_dataset(root_dir, verbose=False, schema_version=None, run_bids=Fals
             root_dir, list(MODALITY_PATTERNS.keys())
         )
         if added_rules and verbose:
-            print(f"ℹ️  Updated .bidsignore for BIDS-App compatibility:")
+            print("ℹ️  Updated .bidsignore for BIDS-App compatibility:")
             for rule in added_rules:
                 print(f"   + {rule}")
     except Exception as e:
