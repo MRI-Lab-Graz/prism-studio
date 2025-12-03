@@ -69,7 +69,6 @@ args = [
     # Explicitly include hidden imports that PyInstaller might miss
     '--hidden-import=jsonschema',
     '--hidden-import=xml.etree.ElementTree',
-    '--hidden-import=pkg_resources.extern',
 ]
 
 if icon_file:
