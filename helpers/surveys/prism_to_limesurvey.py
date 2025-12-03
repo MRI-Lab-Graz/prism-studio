@@ -12,6 +12,7 @@ and automatically generate the importable LimeSurvey structure.
 import sys
 import os
 import json
+import argparse
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
@@ -31,7 +32,7 @@ def add_row(parent, data):
         child.text = str(value)
 
 
-def json_to_lss(json_path, output_path):
+def json_to_lss(json_path, output_path, matrix_mode=False):
     with open(json_path, "r") as f:
         data = json.load(f)
 
@@ -68,6 +69,10 @@ def json_to_lss(json_path, output_path):
     groups_elem = ET.SubElement(root, "groups")
     groups_rows = ET.SubElement(groups_elem, "rows")
 
+    # 4. SUBQUESTIONS Section
+    subquestions_elem = ET.SubElement(root, "subquestions")
+    subquestions_rows = ET.SubElement(subquestions_elem, "rows")
+
     # Add the single group
     add_row(
         groups_rows,
@@ -83,77 +88,191 @@ def json_to_lss(json_path, output_path):
         },
     )
 
+    # Prepare Groups of Questions
+    grouped_questions = []
+    if matrix_mode:
+        current_group = []
+        last_levels_str = None
+
+        for q_code, q_data in questions.items():
+            if not isinstance(q_data, dict):
+                continue
+
+            levels = q_data.get("Levels", {})
+            # Only group if levels exist. Text questions shouldn't be grouped this way usually.
+            levels_str = json.dumps(levels, sort_keys=True) if levels else "NO_LEVELS"
+
+            if not current_group:
+                current_group.append((q_code, q_data))
+                last_levels_str = levels_str
+            else:
+                # Check if matches previous
+                if levels and levels_str == last_levels_str:
+                    current_group.append((q_code, q_data))
+                else:
+                    # Flush current group
+                    grouped_questions.append(current_group)
+                    # Start new
+                    current_group = [(q_code, q_data)]
+                    last_levels_str = levels_str
+
+        if current_group:
+            grouped_questions.append(current_group)
+    else:
+        # No grouping
+        for q_code, q_data in questions.items():
+            if isinstance(q_data, dict):
+                grouped_questions.append([(q_code, q_data)])
+
     # Process Questions
     qid_counter = 100
     sort_order = 0
 
-    for q_code, q_data in questions.items():
-        # Skip if not a dictionary (e.g. extra metadata fields like "Instructions")
-        if not isinstance(q_data, dict):
-            continue
+    for group in grouped_questions:
+        # group is a list of (q_code, q_data)
+
+        # Common data from first item
+        first_code, first_data = group[0]
+        levels = first_data.get("Levels", {})
+
+        # Determine if it's a Matrix or Single
+        is_matrix = (len(group) > 1)
 
         qid = str(qid_counter)
         qid_counter += 1
         sort_order += 1
 
-        description = q_data.get("Description", q_code)
-        levels = q_data.get("Levels", {})
-
         # Logic / Relevance
         # Check for "Relevance" key directly, or inside a "LimeSurvey" object
         relevance = "1"  # Default: Always visible
-        if "Relevance" in q_data:
-            relevance = q_data["Relevance"]
-        elif "LimeSurvey" in q_data and "Relevance" in q_data["LimeSurvey"]:
-            relevance = q_data["LimeSurvey"]["Relevance"]
+        if "Relevance" in first_data:
+            relevance = first_data["Relevance"]
+        elif "LimeSurvey" in first_data and "Relevance" in first_data["LimeSurvey"]:
+            relevance = first_data["LimeSurvey"]["Relevance"]
 
-        # Determine Type
-        # L = List (Radio) - if levels exist
-        # T = Long Free Text - if no levels
-        q_type = "L" if levels else "T"
+        if is_matrix:
+            # Matrix Question (Array)
+            # Type 'F' is Array (Flexible Labels)
+            q_type = "F"
 
-        # Add Question Row
-        add_row(
-            questions_rows,
-            {
-                "qid": qid,
-                "parent_qid": "0",
-                "sid": sid,
-                "gid": gid,
-                "type": q_type,
-                "title": q_code,
-                "question": description,
-                "other": "N",
-                "mandatory": "Y",
-                "question_order": str(sort_order),
-                "language": "en",
-                "scale_id": "0",
-                "same_default": "0",
-                "relevance": relevance,
-            },
-        )
+            # Matrix Title
+            matrix_title = f"M_{first_code}"
 
-        # Add Answers if applicable
-        if levels:
-            sort_ans = 0
-            for code, answer_text in levels.items():
-                sort_ans += 1
+            # Matrix Text - Use a generic prompt
+            matrix_text = "Please answer the following questions:"
+
+            add_row(
+                questions_rows,
+                {
+                    "qid": qid,
+                    "parent_qid": "0",
+                    "sid": sid,
+                    "gid": gid,
+                    "type": q_type,
+                    "title": matrix_title,
+                    "question": matrix_text,
+                    "other": "N",
+                    "mandatory": "Y",
+                    "question_order": str(sort_order),
+                    "language": "en",
+                    "scale_id": "0",
+                    "same_default": "0",
+                    "relevance": relevance,
+                },
+            )
+
+            # Add Subquestions
+            sub_sort = 0
+            for code, data_item in group:
+                sub_sort += 1
+                sub_qid = str(qid_counter)
+                qid_counter += 1
+
                 add_row(
-                    answers_rows,
+                    subquestions_rows,
                     {
-                        "qid": qid,
-                        "code": code,
-                        "answer": answer_text,
-                        "sortorder": str(sort_ans),
+                        "qid": sub_qid,
+                        "parent_qid": qid,
+                        "sid": sid,
+                        "gid": gid,
+                        "type": "T",
+                        "title": code,
+                        "question": data_item.get("Description", code),
+                        "question_order": str(sub_sort),
                         "language": "en",
-                        "assessment_value": "0",
                         "scale_id": "0",
+                        "same_default": "0",
+                        "relevance": "1",
                     },
                 )
 
-    # 4. SUBQUESTIONS (Empty for now, unless we implement arrays later)
-    subquestions_elem = ET.SubElement(root, "subquestions")
-    ET.SubElement(subquestions_elem, "rows")
+            # Add Answers (Only once for the matrix parent)
+            if levels:
+                sort_ans = 0
+                for code, answer_text in levels.items():
+                    sort_ans += 1
+                    add_row(
+                        answers_rows,
+                        {
+                            "qid": qid,
+                            "code": code,
+                            "answer": answer_text,
+                            "sortorder": str(sort_ans),
+                            "language": "en",
+                            "assessment_value": "0",
+                            "scale_id": "0",
+                        },
+                    )
+
+        else:
+            # Single Question
+            q_code = first_code
+            q_data = first_data
+            description = q_data.get("Description", q_code)
+
+            # Determine Type
+            # L = List (Radio) - if levels exist
+            # T = Long Free Text - if no levels
+            q_type = "L" if levels else "T"
+
+            # Add Question Row
+            add_row(
+                questions_rows,
+                {
+                    "qid": qid,
+                    "parent_qid": "0",
+                    "sid": sid,
+                    "gid": gid,
+                    "type": q_type,
+                    "title": q_code,
+                    "question": description,
+                    "other": "N",
+                    "mandatory": "Y",
+                    "question_order": str(sort_order),
+                    "language": "en",
+                    "scale_id": "0",
+                    "same_default": "0",
+                    "relevance": relevance,
+                },
+            )
+
+            # Add Answers if applicable
+            if levels:
+                sort_ans = 0
+                for code, answer_text in levels.items():
+                    sort_ans += 1
+                    add_row(
+                        answers_rows,
+                        {
+                            "qid": qid,
+                            "code": code,
+                            "answer": answer_text,
+                            "sortorder": str(sort_ans),
+                            "language": "en",
+                            "assessment_value": "0",
+                            "scale_id": "0",
+                        },
+                    )
 
     # 5. SURVEYS Section (General Settings)
     surveys_elem = ET.SubElement(root, "surveys")
@@ -201,21 +320,32 @@ def json_to_lss(json_path, output_path):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print(
-            "Usage: python prism_to_limesurvey.py <input_sidecar.json> [output_structure.lss]"
-        )
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description="Convert Prism/BIDS JSON sidecar to LimeSurvey Structure File (.lss)."
+    )
+    parser.add_argument("input_json", help="Path to the input JSON sidecar file")
+    parser.add_argument(
+        "output_lss",
+        nargs="?",
+        help="Path to the output LSS file (optional, defaults to input name)",
+    )
+    parser.add_argument(
+        "--matrix",
+        action="store_true",
+        help="Auto-detect and group consecutive questions with identical answer options into Matrix questions",
+    )
 
-    json_path = sys.argv[1]
+    args = parser.parse_args()
+
+    json_path = args.input_json
     if not os.path.exists(json_path):
         print(f"File not found: {json_path}")
         sys.exit(1)
 
-    if len(sys.argv) >= 3:
-        output_path = sys.argv[2]
+    if args.output_lss:
+        output_path = args.output_lss
     else:
         base_name = os.path.splitext(os.path.basename(json_path))[0]
         output_path = f"{base_name}.lss"
 
-    json_to_lss(json_path, output_path)
+    json_to_lss(json_path, output_path, matrix_mode=args.matrix)

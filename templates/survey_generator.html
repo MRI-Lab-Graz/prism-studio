@@ -49,6 +49,7 @@
                                 <th style="width: 40px;"></th>
                                 <th>Filename</th>
                                 <th>Original Name</th>
+                                <th class="text-center">Matrix</th>
                                 <th>Questions</th>
                                 <th>Description</th>
                             </tr>
@@ -131,6 +132,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             </td>
                             <td class="fw-bold">${file.filename}</td>
                             <td>${file.original_name || '-'}</td>
+                            <td class="text-center">
+                                <div class="form-check form-switch d-flex justify-content-center">
+                                    <input class="form-check-input matrix-checkbox" type="checkbox" id="matrix-${index}" title="Group consecutive questions into a Matrix">
+                                </div>
+                            </td>
                             <td><span class="badge bg-secondary">${file.question_count || 0} items</span></td>
                             <td class="text-muted small">${file.description || '-'}</td>
                         `;
@@ -140,10 +146,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         const trDetails = document.createElement('tr');
                         trDetails.className = 'collapse-row';
                         trDetails.innerHTML = `
-                            <td colspan="6" class="p-0 border-0">
+                            <td colspan="7" class="p-0 border-0">
                                 <div class="collapse bg-light p-3" id="${collapseId}">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <small class="text-muted fw-bold">Questions to include:</small>
+                                        <div class="d-flex align-items-center">
+                                            <small class="text-muted fw-bold me-3">Questions to include:</small>
+                                        </div>
                                         <div>
                                             <button class="btn btn-xs btn-outline-secondary select-all-q" data-target="${collapseId}">All</button>
                                             <button class="btn btn-xs btn-outline-secondary deselect-all-q" data-target="${collapseId}">None</button>
@@ -270,7 +278,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedFiles = [];
         document.querySelectorAll('.file-checkbox:checked').forEach(cb => {
             const collapseId = cb.dataset.target;
-            const questionCheckboxes = document.querySelector(`#${collapseId}`).querySelectorAll('.question-checkbox:checked');
+            const collapseDiv = document.getElementById(collapseId);
+            const questionCheckboxes = collapseDiv.querySelectorAll('.question-checkbox:checked');
+            
+            // Find matrix checkbox in the main row (parent tr of the file checkbox)
+            const mainRow = cb.closest('tr');
+            const matrixCheckbox = mainRow.querySelector('.matrix-checkbox');
+            const isMatrix = matrixCheckbox ? matrixCheckbox.checked : false;
             
             // If no questions selected for this file, skip it? Or include all?
             // Let's assume we only include selected questions.
@@ -279,7 +293,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (selectedQuestions.length > 0) {
                 selectedFiles.push({
                     path: cb.value,
-                    questions: selectedQuestions
+                    include: selectedQuestions,
+                    matrix: isMatrix
                 });
             }
         });

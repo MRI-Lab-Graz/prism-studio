@@ -30,7 +30,13 @@ import requests
 from functools import lru_cache
 
 # Ensure we can import core validator logic from src
-BASE_DIR = Path(__file__).resolve().parent
+if getattr(sys, 'frozen', False):
+    # Running in a PyInstaller bundle
+    BASE_DIR = Path(sys._MEIPASS)
+else:
+    # Running in a normal Python environment
+    BASE_DIR = Path(__file__).resolve().parent
+
 SRC_DIR = BASE_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
@@ -54,17 +60,49 @@ except Exception as import_error:
     print(f"⚠️  Could not import SurveyManager: {import_error}")
 
 
+class SimpleStats:
+    """Simple stats class to hold validation statistics"""
+
+    def __init__(self, *args):
+        self.total_files = 0
+        self.subjects = set()
+        self.sessions = set()
+        self.tasks = set()
+        self.modalities = set()
+
+
 # Use subprocess to run the main validator script - single source of truth
 def run_main_validator(dataset_path, verbose=False, schema_version=None):
     """
-    Run the main prism-validator.py script via subprocess.
-    This ensures the web interface uses exactly the same logic as the terminal version.
-
-    Args:
-        dataset_path: Path to the dataset to validate
-        verbose: Enable verbose output
-        schema_version: Schema version to use (e.g., 'stable', 'v0.1', '0.1')
+    Run the validation logic.
+    Prefer importing core logic directly. Fallback to subprocess if needed.
     """
+    # Try to use core validator directly first
+    if core_validate_dataset:
+        try:
+            issues, stats = core_validate_dataset(
+                dataset_path, 
+                verbose=verbose, 
+                schema_version=schema_version
+            )
+            
+            # Convert issues to web format if needed
+            # core_validate_dataset returns list of tuples. 
+            # If they are (level, msg), we need to add path.
+            # If they are (level, msg, path), we are good.
+            
+            web_issues = []
+            for issue in issues:
+                if len(issue) == 2:
+                    web_issues.append((issue[0], issue[1], dataset_path))
+                else:
+                    web_issues.append(issue)
+            
+            return web_issues, stats
+        except Exception as e:
+            print(f"⚠️  Error running core validator directly: {e}")
+            # Fallthrough to subprocess if direct call fails (though unlikely to work in frozen app)
+
     import subprocess
     import re
 
@@ -197,26 +235,7 @@ def run_main_validator(dataset_path, verbose=False, schema_version=None):
         return issues, stats
 
 
-class SimpleStats:
-    """Simple stats class to hold validation statistics"""
 
-    def __init__(self, *args):
-        self.total_files = 0
-        self.subjects = set()
-        self.sessions = set()
-        self.tasks = set()
-        self.modalities = set()
-
-    def add_file(self, subject, session, modality, task, filename):
-        self.total_files += 1
-        if subject:
-            self.subjects.add(subject)
-        if session:
-            self.sessions.add(session)
-        if modality:
-            self.modalities.add(modality)
-        if task:
-            self.tasks.add(task)
 
     def check_consistency(self):
         return []
@@ -243,7 +262,13 @@ def simple_is_system_file(filename):
 # Use simple system file detection
 is_system_file = simple_is_system_file
 
-app = Flask(__name__)
+if getattr(sys, 'frozen', False):
+    template_folder = os.path.join(sys._MEIPASS, 'templates')
+    static_folder = os.path.join(sys._MEIPASS, 'static')
+    app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+else:
+    app = Flask(__name__)
+
 app.secret_key = "prism-validator-secret-key"  # Change this in production
 app.config["MAX_CONTENT_LENGTH"] = (
     100 * 1024 * 1024
@@ -1438,6 +1463,17 @@ def find_dataset_root(extract_dir):
     return extract_dir
 
 
+def find_free_port(start_port):
+    """Find a free port starting from start_port"""
+    import socket
+    port = start_port
+    while port < 65535:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex(('127.0.0.1', port)) != 0:
+                return port
+            port += 1
+    return start_port
+
 def main():
     """Run the web application"""
     import argparse
@@ -1467,8 +1503,16 @@ def main():
     args = parser.parse_args()
 
     host = "0.0.0.0" if args.public else args.host
+    
+    # Find a free port if the default one is taken
+    port = args.port
+    if not args.public: # Only auto-find port for local binding
+        port = find_free_port(args.port)
+        if port != args.port:
+            print(f"ℹ️  Port {args.port} is in use, using {port} instead")
+
     display_host = "localhost" if host == "127.0.0.1" else host
-    url = f"http://{display_host}:{args.port}"
+    url = f"http://{display_host}:{port}"
 
     print("🌐 Starting Prism-Validator Web Interface")
     print(f"🔗 URL: {url}")
@@ -1495,14 +1539,15 @@ def main():
         browser_thread.start()
 
     if args.debug:
-        app.run(host=host, port=args.port, debug=True)
+        app.run(host=host, port=port, debug=True)
     else:
         try:
             from waitress import serve
-            print(f"🚀 Running with Waitress server on {host}:{args.port}")
-            serve(app, host=host, port=args.port)
+            print(f"🚀 Running with Waitress server on {host}:{port}")
+            serve(app, host=host, port=port)
         except ImportError:
             print("⚠️  Waitress not installed, falling back to Flask development server")
+            app.run(host=host, port=port)
             app.run(host=host, port=args.port, debug=False)
 
 

@@ -60,3 +60,10 @@ fair_dataset_description.json
 example_*_metadata.json
 *test*
 test*
+
+# PyInstaller / Build artifacts
+build/
+dist/
+*.spec
+PrismValidator.iconset/
+PrismValidator.icns

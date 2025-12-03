@@ -47,7 +47,7 @@ def generate_lss(json_files, output_path=None):
     groups_rows = ET.SubElement(groups_elem, "rows")
 
     subquestions_elem = ET.SubElement(root, "subquestions")
-    ET.SubElement(subquestions_elem, "rows")
+    subquestions_rows = ET.SubElement(subquestions_elem, "rows")
 
     surveys_elem = ET.SubElement(root, "surveys")
     surveys_rows = ET.SubElement(surveys_elem, "rows")
@@ -66,9 +66,11 @@ def generate_lss(json_files, output_path=None):
         if isinstance(item, str):
             json_path = item
             include_keys = None
+            matrix_mode = False
         elif isinstance(item, dict):
             json_path = item.get("path")
             include_keys = item.get("include")
+            matrix_mode = item.get("matrix", False)
         else:
             continue
 
@@ -118,67 +120,183 @@ def generate_lss(json_files, output_path=None):
             },
         )
 
+        # Prepare Groups of Questions
+        grouped_questions = []
+        if matrix_mode:
+            current_group = []
+            last_levels_str = None
+
+            for q_code, q_data in questions_data.items():
+                if not isinstance(q_data, dict):
+                    continue
+
+                levels = q_data.get("Levels", {})
+                # Only group if levels exist. Text questions shouldn't be grouped this way usually.
+                levels_str = json.dumps(levels, sort_keys=True) if levels else "NO_LEVELS"
+
+                if not current_group:
+                    current_group.append((q_code, q_data))
+                    last_levels_str = levels_str
+                else:
+                    # Check if matches previous
+                    if levels and levels_str == last_levels_str:
+                        current_group.append((q_code, q_data))
+                    else:
+                        # Flush current group
+                        grouped_questions.append(current_group)
+                        # Start new
+                        current_group = [(q_code, q_data)]
+                        last_levels_str = levels_str
+
+            if current_group:
+                grouped_questions.append(current_group)
+        else:
+            # No grouping
+            for q_code, q_data in questions_data.items():
+                if isinstance(q_data, dict):
+                    grouped_questions.append([(q_code, q_data)])
+
         # Process Questions in this Group
         q_sort_order = 0
-        for q_code, q_data in questions_data.items():
-            if not isinstance(q_data, dict):
-                continue
+        for group in grouped_questions:
+            # group is a list of (q_code, q_data)
+            
+            first_code, first_data = group[0]
+            levels = first_data.get("Levels", {})
+            is_matrix = (len(group) > 1)
 
             qid = str(qid_counter)
             qid_counter += 1
             q_sort_order += 1
 
-            description = q_data.get("Description", q_code)
-            levels = q_data.get("Levels", {})
-
             # Logic / Relevance
             relevance = "1"
-            if "Relevance" in q_data:
-                relevance = q_data["Relevance"]
-            elif "LimeSurvey" in q_data and "Relevance" in q_data["LimeSurvey"]:
-                relevance = q_data["LimeSurvey"]["Relevance"]
+            if "Relevance" in first_data:
+                relevance = first_data["Relevance"]
+            elif "LimeSurvey" in first_data and "Relevance" in first_data["LimeSurvey"]:
+                relevance = first_data["LimeSurvey"]["Relevance"]
 
-            # Determine Type
-            q_type = "L" if levels else "T"  # List (Radio) or Long Free Text
+            if is_matrix:
+                # Matrix Question (Array)
+                # Type 'F' is Array (Flexible Labels)
+                q_type = "F"
 
-            # Add Question
-            add_row(
-                questions_rows,
-                {
-                    "qid": qid,
-                    "parent_qid": "0",
-                    "sid": sid,
-                    "gid": gid,
-                    "type": q_type,
-                    "title": q_code,
-                    "question": description,
-                    "other": "N",
-                    "mandatory": "Y",
-                    "question_order": str(q_sort_order),
-                    "language": "en",
-                    "scale_id": "0",
-                    "same_default": "0",
-                    "relevance": relevance,
-                },
-            )
+                # Matrix Title
+                matrix_title = f"M_{first_code}"
 
-            # Add Answers
-            if levels:
-                sort_ans = 0
-                for code, answer_text in levels.items():
-                    sort_ans += 1
+                # Matrix Text - Use a generic prompt
+                matrix_text = "Please answer the following questions:"
+
+                add_row(
+                    questions_rows,
+                    {
+                        "qid": qid,
+                        "parent_qid": "0",
+                        "sid": sid,
+                        "gid": gid,
+                        "type": q_type,
+                        "title": matrix_title,
+                        "question": matrix_text,
+                        "other": "N",
+                        "mandatory": "Y",
+                        "question_order": str(q_sort_order),
+                        "language": "en",
+                        "scale_id": "0",
+                        "same_default": "0",
+                        "relevance": relevance,
+                    },
+                )
+
+                # Add Subquestions
+                sub_sort = 0
+                for code, data_item in group:
+                    sub_sort += 1
+                    sub_qid = str(qid_counter)
+                    qid_counter += 1
+
                     add_row(
-                        answers_rows,
+                        subquestions_rows,
                         {
-                            "qid": qid,
-                            "code": code,
-                            "answer": answer_text,
-                            "sortorder": str(sort_ans),
+                            "qid": sub_qid,
+                            "parent_qid": qid,
+                            "sid": sid,
+                            "gid": gid,
+                            "type": "T",
+                            "title": code,
+                            "question": data_item.get("Description", code),
+                            "question_order": str(sub_sort),
                             "language": "en",
-                            "assessment_value": "0",
                             "scale_id": "0",
+                            "same_default": "0",
+                            "relevance": "1",
                         },
                     )
+
+                # Add Answers (Only once for the matrix parent)
+                if levels:
+                    sort_ans = 0
+                    for code, answer_text in levels.items():
+                        sort_ans += 1
+                        add_row(
+                            answers_rows,
+                            {
+                                "qid": qid,
+                                "code": code,
+                                "answer": answer_text,
+                                "sortorder": str(sort_ans),
+                                "language": "en",
+                                "assessment_value": "0",
+                                "scale_id": "0",
+                            },
+                        )
+
+            else:
+                # Single Question
+                q_code = first_code
+                q_data = first_data
+                description = q_data.get("Description", q_code)
+
+                # Determine Type
+                q_type = "L" if levels else "T"  # List (Radio) or Long Free Text
+
+                # Add Question
+                add_row(
+                    questions_rows,
+                    {
+                        "qid": qid,
+                        "parent_qid": "0",
+                        "sid": sid,
+                        "gid": gid,
+                        "type": q_type,
+                        "title": q_code,
+                        "question": description,
+                        "other": "N",
+                        "mandatory": "Y",
+                        "question_order": str(q_sort_order),
+                        "language": "en",
+                        "scale_id": "0",
+                        "same_default": "0",
+                        "relevance": relevance,
+                    },
+                )
+
+                # Add Answers
+                if levels:
+                    sort_ans = 0
+                    for code, answer_text in levels.items():
+                        sort_ans += 1
+                        add_row(
+                            answers_rows,
+                            {
+                                "qid": qid,
+                                "code": code,
+                                "answer": answer_text,
+                                "sortorder": str(sort_ans),
+                                "language": "en",
+                                "assessment_value": "0",
+                                "scale_id": "0",
+                            },
+                        )
 
     # --- Survey Settings ---
     add_row(

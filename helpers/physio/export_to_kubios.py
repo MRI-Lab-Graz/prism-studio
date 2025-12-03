@@ -120,13 +120,53 @@ def export_to_edf(df, output_file, fs, ecg_col, marker_col):
         print(f"Error writing EDF: {e}")
 
 
+def export_to_mat(df, output_file, fs, ecg_col, marker_col):
+    try:
+        from scipy.io import savemat
+    except ImportError:
+        print("Error: scipy is not installed. Please run: pip install scipy")
+        return
+
+    print(f"Exporting to MAT at {fs} Hz...")
+    
+    # Create dictionary for MAT file
+    # Kubios typically looks for a variable named 'data' or 'ecg'
+    # Reshape to column vectors (Nx1) which is standard for MATLAB signals
+    mat_dict = {
+        'data': df[ecg_col].values.reshape(-1, 1),
+        'fs': float(fs)
+    }
+    
+    if marker_col:
+        # Add markers if available
+        mat_dict['markers'] = df[marker_col].values.reshape(-1, 1)
+        print(f"Including marker channel: {marker_col}")
+
+    try:
+        savemat(output_file, mat_dict)
+        print(f"Saved to {output_file}")
+        print("INSTRUCTIONS FOR KUBIOS (MAT):")
+        print("1. Open Kubios HRV.")
+        print("2. Open the .mat file.")
+        print("3. Kubios should auto-detect 'ecg' and 'fs'.")
+    except Exception as e:
+        print(f"Error writing MAT: {e}")
+
+
 def export_to_kubios(bids_tsv, output_file=None, fmt="dat"):
     """
     Converts a BIDS physio TSV to a Kubios-friendly format (ASCII .dat or EDF+).
     """
     
     if not output_file:
-        ext = ".edf" if fmt == "edf" else ".dat"
+        if fmt == "edf":
+            ext = ".edf"
+        elif fmt == "mat":
+            ext = ".mat"
+        elif fmt == "csv":
+            ext = ".csv"
+        else:
+            ext = ".dat"
         output_file = bids_tsv.replace(".tsv.gz", ext).replace(".tsv", ext)
 
     print(f"Reading {bids_tsv}...")
@@ -170,6 +210,8 @@ def export_to_kubios(bids_tsv, output_file=None, fmt="dat"):
 
     if fmt == "edf":
         export_to_edf(df, output_file, fs, ecg_col, marker_col)
+    elif fmt == "mat":
+        export_to_mat(df, output_file, fs, ecg_col, marker_col)
     else:
         # ASCII Export
         # Prepare output DataFrame
@@ -203,7 +245,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Export BIDS physio to Kubios format")
     parser.add_argument("input_file", help="Path to BIDS .tsv.gz file")
     parser.add_argument("--output", help="Path to output file", default=None)
-    parser.add_argument("--format", choices=["dat", "edf"], default="dat", help="Output format: 'dat' (ASCII) or 'edf' (EDF+)")
+    parser.add_argument("--format", choices=["dat", "edf", "mat", "csv"], default="dat", help="Output format: 'dat'/'csv' (ASCII), 'edf' (EDF+), or 'mat' (Kubios MAT)")
     
     args = parser.parse_args()
     
