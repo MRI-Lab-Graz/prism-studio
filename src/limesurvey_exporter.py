@@ -303,7 +303,7 @@ def generate_lss(json_files, output_path=None):
         surveys_rows,
         {
             "sid": sid,
-            "gsid": "1",
+            "owner_id": "1",
             "admin": "Administrator",
             "active": "N",
             "anonymized": "N",
@@ -334,6 +334,32 @@ def generate_lss(json_files, output_path=None):
             "surveyls_description": f"Generated from {len(json_files)} Prism JSON files on {datetime.now().isoformat()}",
             "surveyls_welcometext": "",
             "surveyls_endtext": "",
+        },
+    )
+
+    # --- Themes (Required for LS 3+) ---
+    themes_elem = ET.SubElement(root, "themes")
+    themes_rows = ET.SubElement(themes_elem, "rows")
+
+    add_row(
+        themes_rows,
+        {
+            "sid": sid,
+            "template_name": "vanilla",
+            "config": '{"options":{"ajaxmode":"on","brandlogo":"on","container":"on","hideprivacyinfo":"off","brandlogofile":"./files/logo.png","font":"noto","showpopups":"1"}}',
+        },
+    )
+
+    # --- Themes Inherited (Required for LS 3+) ---
+    themes_inh_elem = ET.SubElement(root, "themes_inherited")
+    themes_inh_rows = ET.SubElement(themes_inh_elem, "rows")
+
+    add_row(
+        themes_inh_rows,
+        {
+            "sid": sid,
+            "template_name": "vanilla",
+            "config": '{"options":{"ajaxmode":"on","brandlogo":"on","container":"on","hideprivacyinfo":"off","brandlogofile":"./files/logo.png","font":"noto","showpopups":"1"}}',
         },
     )
 
