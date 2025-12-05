@@ -8,7 +8,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from convert_varioport import convert_varioport
 
 
-def batch_convert(sourcedata_root):
+def batch_convert(sourcedata_root, base_freq=None):
     # Find all .RAW and .vpd files
     files = []
     for ext in ["*.RAW", "*.vpd"]:
@@ -68,7 +68,7 @@ def batch_convert(sourcedata_root):
 
         try:
             convert_varioport(
-                str(file_path), str(output_tsv), str(output_json), task_name="rest"
+                str(file_path), str(output_tsv), str(output_json), task_name="rest", base_freq=base_freq
             )
         except Exception as e:
             print(f"Error converting {file_path}: {e}")
@@ -81,6 +81,7 @@ if __name__ == "__main__":
         default="/Volumes/Evo/data/prism_output/sourcedata",
         help="Path to sourcedata root",
     )
+    parser.add_argument("--base-freq", type=float, help="Override base frequency (e.g. 1000)")
     args = parser.parse_args()
 
-    batch_convert(args.sourcedata)
+    batch_convert(args.sourcedata, base_freq=args.base_freq)

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 
-def read_varioport_header(f):
+def read_varioport_header(f, override_base_freq=None):
     """
     Reads the Varioport file header and channel definitions.
     Based on the R code 'read_vpd.R' and inspection of VPDATA.RAW.
@@ -31,10 +31,19 @@ def read_varioport_header(f):
 
     # Byte 20: Global Scan Rate (Not in R code, but found in file)
     f.seek(20)
-    scnrate = struct.unpack(">H", f.read(2))[0]
-    if scnrate == 0:
+    file_scnrate = struct.unpack(">H", f.read(2))[0]
+    
+    if override_base_freq:
+        scnrate = override_base_freq
+        print(f"Using overridden base frequency: {scnrate} Hz (File says: {file_scnrate})")
+    elif file_scnrate == 150:
+        print("File header specifies Base Rate 150. Based on device specs (ECG=500Hz), assuming effective Base Rate of 1000 Hz.")
+        scnrate = 1000
+    elif file_scnrate == 0:
         print("Warning: Global Scan Rate at offset 20 is 0. Defaulting to 150 Hz.")
         scnrate = 150
+    else:
+        scnrate = file_scnrate
 
     print(
         f"Header Info: Length={hdrlen}, Type={hdrtype}, Channels={chcnt}, BaseRate={scnrate}"
@@ -128,13 +137,13 @@ def get_default_scaling(name):
     return None
 
 
-def convert_varioport(raw_path, output_path, sidecar_path, task_name="rest"):
+def convert_varioport(raw_path, output_path, sidecar_path, task_name="rest", base_freq=None):
     """
     Converts a Varioport .RAW file to BIDS .tsv.gz and .json.
     """
 
     with open(raw_path, "rb") as f:
-        hdrlen, hdrtype, channels = read_varioport_header(f)
+        hdrlen, hdrtype, channels = read_varioport_header(f, override_base_freq=base_freq)
 
         # Identify active channels
         # In the test file, EKG has len=-1 (0xFFFFFFFF), others have 0.
@@ -426,7 +435,8 @@ if __name__ == "__main__":
     parser.add_argument("input_file", help="Path to VPDATA.RAW")
     parser.add_argument("output_tsv", help="Path to output .tsv.gz")
     parser.add_argument("output_json", help="Path to output .json")
+    parser.add_argument("--base-freq", type=float, help="Override base frequency (e.g. 1000)")
 
     args = parser.parse_args()
 
-    convert_varioport(args.input_file, args.output_tsv, args.output_json)
+    convert_varioport(args.input_file, args.output_tsv, args.output_json, base_freq=args.base_freq)
