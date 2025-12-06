@@ -3,6 +3,8 @@ import json
 import argparse
 import numpy as np
 import pandas as pd
+import pyedflib
+import math
 
 
 def read_varioport_header(f, override_base_freq=None):
@@ -36,11 +38,11 @@ def read_varioport_header(f, override_base_freq=None):
     if override_base_freq:
         scnrate = override_base_freq
         print(f"Using overridden base frequency: {scnrate} Hz (File says: {file_scnrate})")
-    elif file_scnrate == 0:
-        print("Warning: Global Scan Rate at offset 20 is 0. Defaulting to 150 Hz.")
-        scnrate = 150
     else:
-        scnrate = file_scnrate
+        # FORCE 512 Hz base rate to achieve 256 Hz effective rate (since scnfac=2)
+        # This overrides the file header (usually 150) based on technician's note and PI's duration confirmation.
+        print(f"Forcing Base Rate to 512 Hz (File says: {file_scnrate}). Effective fs will be 256 Hz.")
+        scnrate = 512
 
     print(
         f"Header Info: Length={hdrlen}, Type={hdrtype}, Channels={chcnt}, BaseRate={scnrate}"
@@ -136,7 +138,7 @@ def get_default_scaling(name):
 
 def convert_varioport(raw_path, output_path, sidecar_path, task_name="rest", base_freq=None):
     """
-    Converts a Varioport .RAW file to BIDS .tsv.gz and .json.
+    Converts a Varioport .RAW file to BIDS .edf and .json.
     """
 
     with open(raw_path, "rb") as f:
@@ -162,8 +164,18 @@ def convert_varioport(raw_path, output_path, sidecar_path, task_name="rest", bas
             )
             active_channels = channels
 
+        # Filter out unsupported dsize
+        supported_channels = []
+        for c in active_channels:
+            if c["dsize"] in [1, 2]:
+                supported_channels.append(c)
+            else:
+                print(f"Warning: Skipping channel {c['name']} with unsupported dsize {c['dsize']}")
+        
+        active_channels = supported_channels
+
         print(
-            f"Found {len(active_channels)} active channels: {[c['name'] for c in active_channels]}"
+            f"Found {len(active_channels)} active supported channels: {[c['name'] for c in active_channels]}"
         )
 
         # Check if all active channels have the same sampling rate
@@ -171,16 +183,52 @@ def convert_varioport(raw_path, output_path, sidecar_path, task_name="rest", bas
             print("Error: No channels to process.")
             return
 
-        fs_set = set(c["fs"] for c in active_channels)
-        if len(fs_set) > 1:
-            print(
-                f"Warning: Multiple sampling rates detected: {fs_set}. Assuming interleaved data follows the highest rate (or first channel)."
-            )
-            # We do NOT filter channels here anymore, we assume they are all in the stream.
-            # We use the maximum FS for the sidecar and upsampling target.
+        # Determine effective sampling rate
+        # We assume the stream is uniform with the highest rate found (usually EKG).
+        # This handles the case where Marker is 1Hz in header but interleaved 1-to-1 with 256Hz EKG.
+        effective_fs = max(c["fs"] for c in active_channels)
+        print(f"Effective sampling rate for all channels: {effective_fs} Hz")
+
+        # Prepare EDF headers
+        signal_headers = []
+        for c in active_channels:
+            header = {
+                'label': c["name"],
+                'dimension': c["unit"],
+                'sample_frequency': effective_fs,
+                'physical_max': 32767, 
+                'physical_min': -32768,
+                'digital_max': 32767,
+                'digital_min': -32768,
+                'transducer': 'Varioport',
+                'prefilter': ''
+            }
             
-        target_fs = max(c["fs"] for c in active_channels)
-        channel_data = {}
+            # Set reasonable physical ranges to avoid clipping
+            if "ekg" in c["name"].lower():
+                header['physical_min'] = -50000
+                header['physical_max'] = 50000
+            elif "marker" in c["name"].lower():
+                header['physical_min'] = 0
+                header['physical_max'] = 255
+            elif "batt" in c["name"].lower():
+                header['physical_min'] = 0
+                header['physical_max'] = 20
+            else:
+                header['physical_min'] = -32768
+                header['physical_max'] = 32767
+                
+            signal_headers.append(header)
+
+        # Initialize EDF Writer
+        try:
+            f_edf = pyedflib.EdfWriter(output_path, len(active_channels), file_type=pyedflib.FILETYPE_EDFPLUS)
+            f_edf.setSignalHeaders(signal_headers)
+        except Exception as e:
+            print(f"Error initializing EDF writer: {e}")
+            return
+
+        channel_data = {} # Only used for Type 6
 
         if hdrtype == 6:
             # Type 6: Reconfigured / Demultiplexed
@@ -246,179 +294,117 @@ def convert_varioport(raw_path, output_path, sidecar_path, task_name="rest", bas
                 data_array = (data_array - doffs) * mul / div
 
                 channel_data[name] = data_array
+            
+            # Write Type 6 data to EDF
+            # We need to pad to match lengths if they differ
+            lengths = [len(d) for d in channel_data.values()]
+            max_len = max(lengths)
+            
+            signals = []
+            for h in signal_headers:
+                name = h['label']
+                data = channel_data.get(name, np.array([]))
+                if len(data) < max_len:
+                    padding = np.zeros(max_len - len(data))
+                    data = np.concatenate([data, padding])
+                signals.append(data)
+            
+            f_edf.writeSamples(signals)
+            f_edf.close()
 
         else:
             # Type 7: Raw / Multiplexed (or other)
             # The data starts after the header and is interleaved.
             print(
-                f"Detected Type {hdrtype} (Raw/Multiplexed). Warning: Assuming interleaved data for active channels."
+                f"Detected Type {hdrtype} (Raw/Multiplexed). Streaming data to EDF..."
             )
 
             data_start = hdrlen
             f.seek(data_start)
-
-            # Read all remaining data
-            raw_bytes = f.read()
-            num_bytes = len(raw_bytes)
-
-            # Calculate total block size (sum of dsize of all active channels)
-            # This assumes 1 sample per channel per block (round robin)
+            
             block_size = sum(c["dsize"] for c in active_channels)
-            num_blocks = num_bytes // block_size
-
-            print(
-                f"Read {num_bytes} bytes. Block size={block_size}. Expected samples per channel={num_blocks}."
-            )
-
-            for ch in active_channels:
-                name = ch["name"]
-                dsize = ch["dsize"]
-
-                # Extract strided data
-                # This is slow in pure Python, but let's try
-                # Better: use numpy frombuffer with stride?
-                # But dsize varies.
-
-                # If all dsize are same (e.g. 2), we can use numpy reshape
-                if all(c["dsize"] == dsize for c in active_channels):
-                    # Assuming uniform dsize
-                    # dt = np.dtype(np.uint16).newbyteorder('>') if dsize == 2 else np.dtype(np.uint8)
-                    # all_data = np.frombuffer(raw_bytes, dtype=dt)
-                    # Reshape: (num_blocks, num_channels)
-                    # But we need to know channel order. Assuming active_channels order matches file order.
-                    # active_channels is sorted by index?
-                    # We should sort active_channels by 'index' just in case
-                    pass
-
-                # Fallback to simple extraction for now (imperfect but better than before)
-                # Actually, let's just warn and try to read as single stream if only 1 channel
-                if len(active_channels) == 1:
-                    # Same logic as before
-                    if dsize == 2:
-                        fmt = f">{num_blocks}H"
-                        raw_values = struct.unpack(fmt, raw_bytes[: num_blocks * dsize])
-                    else:
-                        fmt = f">{num_blocks}B"
-                        raw_values = struct.unpack(fmt, raw_bytes[: num_blocks * dsize])
-
-                    # Scaling logic (same as above)
-                    doffs = ch["doffs"]
-                    mul = ch["mul"]
-                    div = ch["div"]
+            
+            # Define chunk size (e.g. 60 seconds)
+            # Must be multiple of effective_fs to align with 1s records
+            chunk_duration = 60 # seconds
+            samples_per_chunk = int(chunk_duration * effective_fs)
+            bytes_per_chunk = samples_per_chunk * block_size
+            
+            # Prepare dtype for numpy
+            dtype_list = []
+            for c in active_channels:
+                fmt = '>u2' if c["dsize"] == 2 else '>u1'
+                safe_name = c["name"].replace(" ", "_").replace("(", "").replace(")", "")
+                dtype_list.append((safe_name, fmt))
+            dt = np.dtype(dtype_list)
+            
+            total_samples = 0
+            
+            while True:
+                raw_bytes = f.read(bytes_per_chunk)
+                if not raw_bytes:
+                    break
+                
+                read_len = len(raw_bytes)
+                num_blocks = read_len // block_size
+                
+                if num_blocks == 0:
+                    break
+                
+                valid_bytes = num_blocks * block_size
+                
+                try:
+                    raw_data = np.frombuffer(raw_bytes[:valid_bytes], dtype=dt)
+                except Exception as e:
+                    print(f"Error parsing buffer: {e}")
+                    break
+                
+                chunk_signals = []
+                for i, c in enumerate(active_channels):
+                    safe_name = dtype_list[i][0]
+                    raw_vals = raw_data[safe_name]
+                    
+                    # Scaling
+                    doffs = c["doffs"]
+                    mul = c["mul"]
+                    div = c["div"]
+                    
                     if mul == 0 or div == 0:
-                        defaults = get_default_scaling(name)
+                        defaults = get_default_scaling(c["name"])
                         if defaults:
                             doffs = defaults["doffs"]
                             mul = defaults["mul"]
                             div = defaults["div"]
                         else:
-                            doffs = 0
-                            mul = 1
-                            div = 1
-                    if div == 0:
-                        div = 1
-
-                    data_array = np.array(raw_values, dtype=float)
+                            doffs, mul, div = 0, 1, 1
+                    if div == 0: div = 1
+                    
+                    data_array = raw_vals.astype(float)
                     data_array = (data_array - doffs) * mul / div
-                    channel_data[name] = data_array
-                else:
-                    # Multiple channels, interleaved
-                    print(f"Reading {len(active_channels)} interleaved channels using numpy...")
-                    dtype_list = []
-                    for c in active_channels:
-                        # dsize=2 -> >u2, dsize=1 -> >u1
-                        if c["dsize"] == 2:
-                            fmt = '>u2'
-                        elif c["dsize"] == 1:
-                            fmt = '>u1'
-                        else:
-                            print(f"Unsupported dsize {c['dsize']} for channel {c['name']}")
-                            return
-                        # Sanitize name for numpy field
-                        safe_name = c["name"].replace(" ", "_").replace("(", "").replace(")", "")
-                        dtype_list.append((safe_name, fmt))
-                    
-                    dt = np.dtype(dtype_list)
-                    
-                    # Read data
-                    # Ensure we only read complete blocks
-                    valid_bytes = num_blocks * block_size
-                    try:
-                        raw_data = np.frombuffer(raw_bytes[:valid_bytes], dtype=dt)
-                    except Exception as e:
-                        print(f"Error reading buffer: {e}")
-                        return
-
-                    # Process each channel
-                    for i, c in enumerate(active_channels):
-                        name = c["name"]
-                        safe_name = dtype_list[i][0]
-                        raw_vals = raw_data[safe_name]
-                        
-                        # Scaling
-                        doffs = c["doffs"]
-                        mul = c["mul"]
-                        div = c["div"]
-                        
-                        if mul == 0 or div == 0:
-                            defaults = get_default_scaling(name)
-                            if defaults:
-                                doffs = defaults["doffs"]
-                                mul = defaults["mul"]
-                                div = defaults["div"]
-                            else:
-                                doffs = 0
-                                mul = 1
-                                div = 1
-                        if div == 0: div = 1
-                        
-                        data_array = raw_vals.astype(float)
-                        data_array = (data_array - doffs) * mul / div
-                        channel_data[name] = data_array
-
-        # Create DataFrame
-        if not channel_data:
-            print("No data extracted.")
-            return
-
-        # Check lengths
-        lengths = [len(d) for d in channel_data.values()]
-        max_len = max(lengths)
-        
-        if len(set(lengths)) > 1:
-            print(f"Warning: Channel lengths differ: {lengths}. Upsampling to maximum {max_len}.")
+                    chunk_signals.append(data_array)
+                
+                # Write chunk
+                try:
+                    f_edf.writeSamples(chunk_signals)
+                except Exception as e:
+                    print(f"Error writing chunk to EDF: {e}")
+                    break
+                
+                total_samples += num_blocks
+                print(f"Processed {total_samples} samples...", end='\r')
             
-            for k in channel_data:
-                current_len = len(channel_data[k])
-                if current_len < max_len:
-                    print(f"  Upsampling {k} from {current_len} to {max_len}...")
-                    
-                    old_indices = np.linspace(0, 1, current_len)
-                    new_indices = np.linspace(0, 1, max_len)
-                    
-                    # If it's a marker channel, use nearest neighbor (step) to preserve integer codes
-                    if "marker" in k.lower() or "trg" in k.lower():
-                         indices = np.round((new_indices) * (current_len - 1)).astype(int)
-                         channel_data[k] = channel_data[k][indices]
-                    else:
-                        # Linear interpolation for continuous signals
-                        channel_data[k] = np.interp(new_indices, old_indices, channel_data[k])
-
-        df = pd.DataFrame(channel_data)
-
-        # Save to TSV
-        print(f"Saving to {output_path}...")
-        df.to_csv(output_path, sep="\t", index=False, compression="gzip")
+            print(f"\nFinished streaming. Total samples: {total_samples}")
+            f_edf.close()
 
         # Create Sidecar JSON
         sidecar = {
             "TaskName": task_name,
-            "SamplingFrequency": target_fs,
+            "SamplingFrequency": effective_fs,
             "StartTime": 0,
-            "Columns": list(channel_data.keys()),
+            "Columns": [h['label'] for h in signal_headers],
             "Manufacturer": "Becker Meditec",
             "ManufacturersModelName": "Varioport",
-            "Note": "Converted from VPDATA.RAW using reverse-engineered specs.",
+            "Note": "Converted from VPDATA.RAW. Forced Base Rate 512Hz (Effective 256Hz).",
         }
 
         with open(sidecar_path, "w") as jf:
@@ -430,10 +416,10 @@ def convert_varioport(raw_path, output_path, sidecar_path, task_name="rest", bas
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert Varioport RAW to BIDS")
     parser.add_argument("input_file", help="Path to VPDATA.RAW")
-    parser.add_argument("output_tsv", help="Path to output .tsv.gz")
+    parser.add_argument("output_edf", help="Path to output .edf")
     parser.add_argument("output_json", help="Path to output .json")
     parser.add_argument("--base-freq", type=float, help="Override base frequency (e.g. 1000)")
 
     args = parser.parse_args()
 
-    convert_varioport(args.input_file, args.output_tsv, args.output_json, base_freq=args.base_freq)
+    convert_varioport(args.input_file, args.output_edf, args.output_json, base_freq=args.base_freq)

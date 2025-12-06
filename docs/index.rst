@@ -14,6 +14,7 @@ Prism-Validator is a hybrid dataset validation tool for psychological experiment
 
    INSTALLATION
    USAGE
+   PRISM_TOOLS
    SURVEY_DATA_IMPORT
 
 .. toctree::

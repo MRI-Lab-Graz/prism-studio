@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+import argparse
+import sys
+import os
+import shutil
+from pathlib import Path
+import glob
+
+# Add project root to path to import helpers
+project_root = Path(__file__).resolve().parent
+sys.path.append(str(project_root))
+
+from helpers.physio.convert_varioport import convert_varioport
+from scripts.check_survey_library import check_uniqueness
+from scripts.limesurvey_to_prism import convert_lsa_to_prism
+# excel_to_library might not be in python path if it's in scripts/ and we are in root.
+# sys.path.append(str(project_root / "scripts")) # Already added project_root, but scripts is a subdir.
+# We need to import from scripts.excel_to_library
+from scripts.excel_to_library import process_excel
+
+def cmd_convert_physio(args):
+    """
+    Handles the 'convert physio' command.
+    """
+    input_dir = Path(args.input)
+    output_dir = Path(args.output)
+    
+    if not input_dir.exists():
+        print(f"Error: Input directory '{input_dir}' does not exist.")
+        sys.exit(1)
+
+    print(f"Scanning {input_dir} for raw physio files...")
+    
+    # Expected structure: sourcedata/sub-XXX/ses-YYY/physio/filename.raw
+    # We search recursively for the raw files
+    # The pattern should be flexible but ideally match the BIDS-like structure
+    
+    # Find all files matching the pattern
+    # We assume files end with .raw or .RAW (case insensitive check later if needed)
+    # But glob is case sensitive on Linux.
+    files = list(input_dir.rglob("*.[rR][aA][wW]"))
+    
+    if not files:
+        print("No .raw files found in input directory.")
+        return
+
+    print(f"Found {len(files)} files to process.")
+    
+    success_count = 0
+    error_count = 0
+    
+    for raw_file in files:
+        # Infer subject and session from path or filename
+        # Expected filename: sub-<id>_ses-<id>_physio.raw
+        filename = raw_file.name
+        
+        # Simple parsing logic
+        parts = filename.split('_')
+        sub_id = None
+        ses_id = None
+        
+        for part in parts:
+            if part.startswith('sub-'):
+                sub_id = part
+            elif part.startswith('ses-'):
+                ses_id = part
+        
+        # Fallback: try to get from parent folders if not in filename
+        if not sub_id:
+            for parent in raw_file.parents:
+                if parent.name.startswith('sub-'):
+                    sub_id = parent.name
+                    break
+        
+        if not ses_id:
+            for parent in raw_file.parents:
+                if parent.name.startswith('ses-'):
+                    ses_id = parent.name
+                    break
+        
+        if not sub_id or not ses_id:
+            print(f"Skipping {filename}: Could not determine subject or session ID.")
+            continue
+            
+        # Construct output path
+        # rawdata/sub-XXX/ses-YYY/physio/
+        target_dir = output_dir / sub_id / ses_id / "physio"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Construct output filename
+        # sub-XXX_ses-YYY_task-<task>_<suffix>.edf
+        out_base = f"{sub_id}_{ses_id}_task-{args.task}_{args.suffix}"
+        out_edf = target_dir / f"{out_base}.edf"
+        out_json = target_dir / f"{out_base}.json"
+        
+        print(f"Converting {filename} -> {out_base}.edf")
+        
+        try:
+            convert_varioport(
+                str(raw_file),
+                str(out_edf),
+                str(out_json),
+                task_name=args.task,
+                base_freq=args.sampling_rate
+            )
+            success_count += 1
+        except Exception as e:
+            print(f"Error converting {filename}: {e}")
+            error_count += 1
+            
+    print(f"\nConversion finished. Success: {success_count}, Errors: {error_count}")
+
+def cmd_demo_create(args):
+    """
+    Creates a demo dataset.
+    """
+    output_path = Path(args.output)
+    demo_source = project_root / "prism_demo"
+    
+    if output_path.exists():
+        print(f"Error: Output path '{output_path}' already exists.")
+        sys.exit(1)
+        
+    print(f"Creating demo dataset at {output_path}...")
+    try:
+        shutil.copytree(demo_source, output_path)
+        print("✅ Demo dataset created successfully.")
+    except Exception as e:
+        print(f"Error creating demo dataset: {e}")
+        sys.exit(1)
+
+def cmd_survey_import_excel(args):
+    """
+    Imports survey library from Excel.
+    """
+    print(f"Importing survey library from {args.excel}...")
+    try:
+        process_excel(args.excel, args.output)
+    except Exception as e:
+        print(f"Error importing Excel: {e}")
+        sys.exit(1)
+
+def cmd_survey_validate(args):
+    """
+    Validates the survey library.
+    """
+    print(f"Validating survey library at {args.library}...")
+    if check_uniqueness(args.library):
+        sys.exit(0)
+    else:
+        sys.exit(1)
+
+def cmd_survey_import_limesurvey(args):
+    """
+    Imports LimeSurvey structure.
+    """
+    print(f"Importing LimeSurvey structure from {args.input}...")
+    try:
+        convert_lsa_to_prism(args.input, args.output)
+    except Exception as e:
+        print(f"Error importing LimeSurvey: {e}")
+        sys.exit(1)
+
+def main():
+    parser = argparse.ArgumentParser(description="Prism Tools: Utilities for PRISM/BIDS datasets")
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    
+    # Command: convert
+    parser_convert = subparsers.add_parser("convert", help="Convert raw data to BIDS format")
+    convert_subparsers = parser_convert.add_subparsers(dest="modality", help="Modality to convert")
+    
+    # Subcommand: convert physio
+    parser_physio = convert_subparsers.add_parser("physio", help="Convert physiological data (Varioport)")
+    parser_physio.add_argument("--input", required=True, help="Path to sourcedata directory")
+    parser_physio.add_argument("--output", required=True, help="Path to output rawdata directory")
+    parser_physio.add_argument("--task", default="rest", help="Task name (default: rest)")
+    parser_physio.add_argument("--suffix", default="physio", help="Output suffix (default: physio)")
+    parser_physio.add_argument("--sampling-rate", type=float, help="Override sampling rate (e.g. 256)")
+    
+    # Command: demo
+    parser_demo = subparsers.add_parser("demo", help="Demo dataset operations")
+    demo_subparsers = parser_demo.add_subparsers(dest="action", help="Action")
+    
+    # Subcommand: demo create
+    parser_demo_create = demo_subparsers.add_parser("create", help="Create a demo dataset")
+    parser_demo_create.add_argument("--output", default="prism_demo_copy", help="Output path for the demo dataset")
+
+    # Command: survey
+    parser_survey = subparsers.add_parser("survey", help="Survey library operations")
+    survey_subparsers = parser_survey.add_subparsers(dest="action", help="Action")
+    
+    # Subcommand: survey import-excel
+    parser_survey_excel = survey_subparsers.add_parser("import-excel", help="Import survey library from Excel")
+    parser_survey_excel.add_argument("--excel", required=True, help="Path to Excel file")
+    parser_survey_excel.add_argument("--output", default="survey_library", help="Output directory")
+    
+    # Subcommand: survey validate
+    parser_survey_validate = survey_subparsers.add_parser("validate", help="Validate survey library")
+    parser_survey_validate.add_argument("--library", default="survey_library", help="Path to survey library")
+    
+    # Subcommand: survey import-limesurvey
+    parser_survey_limesurvey = survey_subparsers.add_parser("import-limesurvey", help="Import LimeSurvey structure")
+    parser_survey_limesurvey.add_argument("--input", required=True, help="Path to .lsa/.lss file")
+    parser_survey_limesurvey.add_argument("--output", help="Path to output .json file")
+
+    args = parser.parse_args()
+    
+    if args.command == "convert" and args.modality == "physio":
+        cmd_convert_physio(args)
+    elif args.command == "demo" and args.action == "create":
+        cmd_demo_create(args)
+    elif args.command == "survey":
+        if args.action == "import-excel":
+            cmd_survey_import_excel(args)
+        elif args.action == "validate":
+            cmd_survey_validate(args)
+        elif args.action == "import-limesurvey":
+            cmd_survey_import_limesurvey(args)
+        else:
+            parser_survey.print_help()
+    else:
+        parser.print_help()
+
+if __name__ == "__main__":
+    main()

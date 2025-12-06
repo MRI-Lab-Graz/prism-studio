@@ -48,6 +48,73 @@ Prism-Validator is a **BIDS Extension** framework and validation tool designed t
 A complete toolset for converting external survey data (CSV/Excel) into PRISM-compliant datasets:
 1.  **Excel to Library**: Convert data dictionaries into a "Golden Master" JSON library (`scripts/excel_to_library.py`).
 2.  **Library Validation**: Ensure variable uniqueness and generate catalogs (`scripts/check_survey_library.py`).
+
+## 🔌 Prism Tools (CLI)
+
+For advanced data conversion tasks, use the `prism_tools.py` utility.
+
+### Physiological Data Conversion
+
+```bash
+./prism_tools.py convert physio \
+  --input ./sourcedata \
+  --output ./rawdata \
+  --task rest \
+  --suffix ecg \
+  --sampling-rate 256
+```
+
+### Survey & Demo Tools
+
+```bash
+# Create a demo dataset
+./prism_tools.py demo create --output my_demo
+
+# Import survey library from Excel
+./prism_tools.py survey import-excel --excel metadata.xlsx
+
+# Validate survey library
+./prism_tools.py survey validate
+
+# Import LimeSurvey structure
+./prism_tools.py survey import-limesurvey --input survey.lsa
+```
+
+See [`docs/PRISM_TOOLS.rst`](docs/PRISM_TOOLS.rst) for full documentation.
+
+### 1. Prepare your `sourcedata`
+Before conversion, organize your raw files into a BIDS-compliant `sourcedata` structure. This ensures the tool can automatically detect subjects and sessions.
+
+```text
+sourcedata/
+  sub-1292001/
+    ses-1/
+      physio/
+        sub-1292001_ses-1_physio.raw   <-- Renamed from VPDATA.RAW
+  sub-1292002/
+    ses-1/
+      physio/
+        sub-1292002_ses-1_physio.raw
+```
+
+### 2. Run the Conversion
+Use the `convert physio` command to process the data.
+
+```bash
+./prism_tools.py convert physio \
+  --input ./sourcedata \
+  --output ./rawdata \
+  --task rest \
+  --suffix ecg \
+  --sampling-rate 256
+```
+
+**Arguments:**
+*   `--input`: Path to your organized `sourcedata` folder.
+*   `--output`: Where the BIDS-compliant `rawdata` should be generated.
+*   `--task`: The task name to assign (e.g., `rest`, `task`).
+*   `--suffix`: The filename suffix (e.g., `ecg`, `physio`).
+*   `--sampling-rate`: (Optional) Force a specific sampling rate if the header is incorrect.
 3.  **Data Import**: Automatically extract data from raw CSVs and generate BIDS file structures (`scripts/csv_to_prism.py`).
 
 [Read the full guide here](docs/SURVEY_DATA_IMPORT.md).
