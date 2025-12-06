@@ -36,9 +36,6 @@ def read_varioport_header(f, override_base_freq=None):
     if override_base_freq:
         scnrate = override_base_freq
         print(f"Using overridden base frequency: {scnrate} Hz (File says: {file_scnrate})")
-    elif file_scnrate == 150:
-        print("File header specifies Base Rate 150. Based on device specs (ECG=500Hz), assuming effective Base Rate of 1000 Hz.")
-        scnrate = 1000
     elif file_scnrate == 0:
         print("Warning: Global Scan Rate at offset 20 is 0. Defaulting to 150 Hz.")
         scnrate = 150
