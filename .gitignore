@@ -67,3 +67,4 @@ dist/
 *.spec
 PrismValidator.iconset/
 PrismValidator.icns
+survey_library/
