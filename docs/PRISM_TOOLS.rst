@@ -68,6 +68,16 @@ Import from Excel
 
 Converts a data dictionary (Excel) into PRISM-compliant JSON sidecars.
 
+Accepted columns (header-friendly, case-insensitive):
+- `item_id` (aliases: id, code, variable, name)
+- `question` (aliases: item, description, text)
+- `scale` (aliases: levels, options, answers)
+- `group` (aliases: survey, section, domain, category) – optional override to force items into the same survey (e.g., `demographics`) even without a shared prefix. Set to `disable`/`skip`/`omit`/`ignore` to drop an item entirely.
+- `alias_of` (aliases: alias, canonical, duplicate_of, merge_into) – optional; keeps the current `item_id` as the key but annotates it as an alias of the given canonical ID.
+- `session` (aliases: visit, wave, timepoint) – optional per-item session hint (e.g., `ses-2`, `t2`, `visit2`). Useful when the same item code appears in multiple timepoints; the value is normalized to `ses-<n>`.
+- `run` (aliases: repeat) – optional per-item run hint (e.g., `run-2`).
+If no header row is present, positional columns map in order: item_id, question, scale, group, alias_of, session, run.
+
 .. code-block:: bash
 
     ./prism_tools.py survey import-excel \
@@ -93,4 +103,15 @@ Converts a LimeSurvey structure file (`.lss` or `.lsa`) into a PRISM JSON sideca
     ./prism_tools.py survey import-limesurvey \
       --input survey_archive.lsa \
       --output survey-mysurvey.json
+
+Batch import with session mapping (e.g., t1/t2/t3 -> ses-1/ses-2/ses-3) and subject inference from the path:
+
+.. code-block:: bash
+
+    ./prism_tools.py survey import-limesurvey-batch \
+      --input-dir /Volumes/Evo/data/AF134/sourcedata \
+      --output-dir /Volumes/Evo/data/AF134/survey_json \
+      --session-map t1:ses-1,t2:ses-2,t3:ses-3
+
+The batch command walks `input-dir` for `.lsa/.lss` files, looks for `sub-*` and session tokens (e.g., `t1`) in the path, and writes sidecars like `sub-<id>/ses-1/survey/sub-<id>_ses-1_task-<task>_beh.json` under `output-dir`.
 

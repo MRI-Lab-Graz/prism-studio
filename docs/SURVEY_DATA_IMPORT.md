@@ -18,6 +18,9 @@ Use `scripts/excel_to_library.py` to convert a study-specific Excel data diction
 - **Column 1**: Variable Name (e.g., `ADS1`, `BDI_1`)
 - **Column 2**: Question/Description (e.g., "I feel sad")
 - **Column 3**: Scale/Levels (e.g., "1=Not at all; 2=Very much")
+- **Column 4 (optional)**: Group override (e.g., `demographics`), or `disable/skip/omit/ignore` to drop the item.
+- **Column 5 (optional)**: `alias_of` to mark duplicates (keeps `item_id` as the column name but annotates it as an alias of the canonical ID).
+- **Column 6/7 (optional)**: `session` / `run` hints. Defaults: `ses-1` and implicit `run-1` (no run suffix unless run > 1). Use multiple rows for repeated occurrences: set `alias_of` to the canonical ID and per-row `session`/`run` to route occurrences into the right `ses-*/run-*` TSV.
 
 **Usage:**
 

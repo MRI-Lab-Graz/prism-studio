@@ -191,7 +191,30 @@ class DatasetValidator:
                             if "AllowedValues" in col_def:
                                 allowed = [str(x) for x in col_def["AllowedValues"]]
                             elif "Levels" in col_def:
-                                allowed = list(col_def["Levels"].keys())
+                                levels = col_def["Levels"]
+                                level_keys = list(levels.keys())
+
+                                # If level keys are numeric endpoints (e.g., {"0": "...", "5": "..."})
+                                # allow the full inclusive integer range to avoid over-rejecting mid-scale values.
+                                numeric_level_keys = []
+                                try:
+                                    numeric_level_keys = [int(float(k)) for k in level_keys]
+                                except ValueError:
+                                    numeric_level_keys = []
+
+                                if numeric_level_keys:
+                                    min_level = min(numeric_level_keys)
+                                    max_level = max(numeric_level_keys)
+
+                                    # Only expand when we clearly have an ordinal numeric scale that might omit midpoints.
+                                    # If the provided keys already cover every integer in the range, keep them as-is.
+                                    full_range = [str(i) for i in range(min_level, max_level + 1)]
+                                    if set(full_range).issuperset(set(level_keys)):
+                                        allowed = full_range
+                                    else:
+                                        allowed = level_keys
+                                else:
+                                    allowed = level_keys
 
                             if allowed:
                                 if value not in allowed:

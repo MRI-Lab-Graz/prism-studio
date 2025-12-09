@@ -12,7 +12,7 @@ sys.path.append(str(project_root))
 
 from helpers.physio.convert_varioport import convert_varioport
 from scripts.check_survey_library import check_uniqueness
-from scripts.limesurvey_to_prism import convert_lsa_to_prism
+from scripts.limesurvey_to_prism import convert_lsa_to_prism, batch_convert_lsa
 # excel_to_library might not be in python path if it's in scripts/ and we are in root.
 # sys.path.append(str(project_root / "scripts")) # Already added project_root, but scripts is a subdir.
 # We need to import from scripts.excel_to_library
@@ -156,7 +156,46 @@ def cmd_survey_import_limesurvey(args):
     """
     print(f"Importing LimeSurvey structure from {args.input}...")
     try:
-        convert_lsa_to_prism(args.input, args.output)
+        convert_lsa_to_prism(args.input, args.output, task_name=args.task)
+    except Exception as e:
+        print(f"Error importing LimeSurvey: {e}")
+        sys.exit(1)
+
+
+def parse_session_map(map_str):
+    mapping = {}
+    for item in map_str.split(','):
+        token = item.strip()
+        if not token:
+            continue
+        sep = ':' if ':' in token else ('=' if '=' in token else None)
+        if not sep:
+            # allow shorthand like t1_ses-1
+            if '_' in token:
+                raw, mapped = token.split('_', 1)
+            else:
+                continue
+        else:
+            raw, mapped = token.split(sep, 1)
+        mapping[raw.strip().lower()] = mapped.strip()
+    return mapping
+
+
+def cmd_survey_import_limesurvey_batch(args):
+    """Batch convert LimeSurvey archives with session mapping (t1/t2/t3 -> ses-1/2/3)."""
+    session_map = parse_session_map(args.session_map)
+    if not session_map:
+        print("No valid session mapping provided. Example: t1:ses-1,t2:ses-2,t3:ses-3")
+        sys.exit(1)
+    try:
+        batch_convert_lsa(
+            args.input_dir,
+            args.output_dir,
+            session_map,
+            library_path=args.library,
+            task_fallback=args.task,
+            id_column=args.subject_id_col,
+        )
     except Exception as e:
         print(f"Error importing LimeSurvey: {e}")
         sys.exit(1)
@@ -202,6 +241,32 @@ def main():
     parser_survey_limesurvey = survey_subparsers.add_parser("import-limesurvey", help="Import LimeSurvey structure")
     parser_survey_limesurvey.add_argument("--input", required=True, help="Path to .lsa/.lss file")
     parser_survey_limesurvey.add_argument("--output", help="Path to output .json file")
+    parser_survey_limesurvey.add_argument("--task", help="Optional task name override (defaults from file name)")
+
+    parser_survey_limesurvey_batch = survey_subparsers.add_parser(
+        "import-limesurvey-batch", help="Batch import LimeSurvey files with session mapping"
+    )
+    parser_survey_limesurvey_batch.add_argument("--input-dir", required=True, help="Root directory containing .lsa/.lss files")
+    parser_survey_limesurvey_batch.add_argument("--output-dir", required=True, help="Output root for generated PRISM dataset")
+    parser_survey_limesurvey_batch.add_argument(
+        "--session-map",
+        default="t1:ses-1,t2:ses-2,t3:ses-3",
+        help="Comma-separated mapping, e.g. t1:ses-1,t2:ses-2,t3:ses-3",
+    )
+    parser_survey_limesurvey_batch.add_argument(
+        "--task",
+        help="Optional task name fallback (otherwise derived from file name)",
+    )
+    parser_survey_limesurvey_batch.add_argument(
+        "--library",
+        default="survey_library",
+        help="Path to survey library (survey-*.json and optional participants.json)",
+    )
+    parser_survey_limesurvey_batch.add_argument(
+        "--subject-id-col",
+        dest="subject_id_col",
+        help="Preferred column name to use for participant ID (e.g., ID, code, token)",
+    )
 
     args = parser.parse_args()
     
@@ -216,6 +281,8 @@ def main():
             cmd_survey_validate(args)
         elif args.action == "import-limesurvey":
             cmd_survey_import_limesurvey(args)
+        elif args.action == "import-limesurvey-batch":
+            cmd_survey_import_limesurvey_batch(args)
         else:
             parser_survey.print_help()
     else:
