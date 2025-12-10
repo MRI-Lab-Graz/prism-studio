@@ -213,6 +213,8 @@ def process_dataframe(df, schemas, output_root, library_path, session_override=N
     )
 
     # Iterate over each defined survey schema
+    GLOBAL_METADATA_COLS = ["startlanguage"]
+    
     for task_name, schema in schemas.items():
         print(f"Processing survey: {task_name}...")
 
@@ -262,6 +264,9 @@ def process_dataframe(df, schemas, output_root, library_path, session_override=N
             continue
 
         print(f"  - Found {len(found_vars)} variables for {task_name}.")
+        
+        # Identify available global metadata columns
+        available_meta_cols = [c for c in GLOBAL_METADATA_COLS if c in df.columns]
 
         # 3. Create TSV for each participant, respecting per-variable session/run hints
         for _, row in df.iterrows():
@@ -317,6 +322,14 @@ def process_dataframe(df, schemas, output_root, library_path, session_override=N
                         clean_data[k] = "n/a"
                     else:
                         clean_data[k] = val
+                
+                # Add global metadata columns
+                for meta_col in available_meta_cols:
+                    val = row[meta_col]
+                    if pd.notna(val):
+                        clean_data[meta_col] = val
+                    else:
+                        clean_data[meta_col] = "n/a"
 
                 df_task = pd.DataFrame([clean_data])
 
