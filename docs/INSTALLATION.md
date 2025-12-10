@@ -5,6 +5,7 @@ Prism-Validator is designed to be easy to install on Windows, macOS, and Linux.
 ## Prerequisites
 
 - **Python 3.8 or higher**: [Download Python](https://www.python.org/downloads/)
+- **Deno** (for BIDS validation): [Download Deno](https://deno.com/) (Automatically installed by setup script)
 - **Git** (optional, for cloning the repository): [Download Git](https://git-scm.com/downloads)
 
 ## Quick Install (Recommended)

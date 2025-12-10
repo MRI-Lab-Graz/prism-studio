@@ -109,6 +109,90 @@ def _run_bids_validator(root_dir, verbose=False):
     issues = []
     print("\n🤖 Running standard BIDS Validator...")
 
+    # 1. Try Deno-based validator (modern)
+    deno_found = False
+    try:
+        # Check if deno is installed
+        subprocess.run(
+            ["deno", "--version"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        deno_found = True
+        print("   Using Deno-based validator (jsr:@bids/validator)")
+
+        # Run Deno validator
+        process = subprocess.run(
+            ["deno", "run", "-ERWN", "jsr:@bids/validator", root_dir, "--json"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+        if process.stdout:
+            try:
+                bids_report = json.loads(process.stdout)
+                
+                # Handle Deno validator structure
+                issue_list = []
+                if "issues" in bids_report:
+                    if isinstance(bids_report["issues"], dict) and "issues" in bids_report["issues"]:
+                         issue_list = bids_report["issues"]["issues"]
+                    elif isinstance(bids_report["issues"], list):
+                         issue_list = bids_report["issues"]
+
+                for issue in issue_list:
+                    severity = issue.get("severity", "warning").upper()
+                    # Map severity to our levels
+                    if severity == "ERROR":
+                        level = "ERROR"
+                    else:
+                        level = "WARNING"
+
+                    code = issue.get("code", "UNKNOWN_CODE")
+                    sub_code = issue.get("subCode", "")
+                    location = issue.get("location", "")
+                    issue_msg = issue.get("issueMessage", "")
+
+                    msg = f"[BIDS] {code}"
+                    if sub_code:
+                        msg += f".{sub_code}"
+                    
+                    if issue_msg:
+                        msg += f": {issue_msg}"
+                    
+                    if location:
+                        msg += f"\n    Location: {location}"
+
+                    issues.append((level, msg))
+                
+                return issues
+
+            except json.JSONDecodeError:
+                print("   ❌ Error: Could not parse Deno BIDS validator JSON output.")
+                issues.append(
+                    (
+                        "ERROR",
+                        "BIDS Validator (Deno) ran but output could not be parsed.",
+                    )
+                )
+                return issues
+        else:
+            # Deno ran but produced no output (likely an error)
+            print(f"   ❌ Error: Deno validator produced no output. Stderr: {process.stderr}")
+            issues.append(("ERROR", f"BIDS Validator (Deno) failed: {process.stderr}"))
+            return issues
+
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        # Deno not found
+        pass
+
+    # If we found Deno but crashed, we returned above.
+    # If we are here, Deno was not found.
+
+    # 2. Try legacy Python/Node CLI validator
+    print("   ⚠️  Deno not found. Falling back to legacy 'bids-validator' CLI...")
     try:
         # Check if bids-validator is installed
         subprocess.run(
@@ -119,10 +203,6 @@ def _run_bids_validator(root_dir, verbose=False):
         )
 
         # Run validation
-        # We use --json to parse the output easily, but for now let's just run it
-        # and capture the output to show to the user or parse it.
-        # To integrate with our issue reporting, we should probably parse the JSON output.
-
         process = subprocess.run(
             ["bids-validator", root_dir, "--json"],
             stdout=subprocess.PIPE,

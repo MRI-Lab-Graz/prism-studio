@@ -115,7 +115,7 @@ def print_dataset_summary(dataset_path, stats):
     # File statistics intentionally omitted (counts often exclude inherited sidecars and can be misleading)
 
 
-def print_validation_results(problems):
+def print_validation_results(problems, show_bids_warnings=True):
     """Print validation results with proper categorization"""
     if not problems:
         print("\n" + "=" * 60)
@@ -174,10 +174,13 @@ def print_validation_results(problems):
                 print(f"    \033[31m{i:2d}. {clean_error}\033[0m")
 
         if bids_warnings:
-            print(f"\n\033[33m  🟡 WARNINGS ({len(bids_warnings)}):\033[0m")
-            for i, warning in enumerate(bids_warnings, 1):
-                clean_warning = warning.replace("[BIDS] ", "", 1)
-                print(f"    \033[33m{i:2d}. {clean_warning}\033[0m")
+            if show_bids_warnings:
+                print(f"\n\033[33m  🟡 WARNINGS ({len(bids_warnings)}):\033[0m")
+                for i, warning in enumerate(bids_warnings, 1):
+                    clean_warning = warning.replace("[BIDS] ", "", 1)
+                    print(f"    \033[33m{i:2d}. {clean_warning}\033[0m")
+            else:
+                print(f"\n\033[33m  🟡 WARNINGS ({len(bids_warnings)}): [Hidden] Use --bids-warnings to view\033[0m")
 
         if bids_infos:
             print(f"\n\033[34m  🔵 INFO ({len(bids_infos)}):\033[0m")

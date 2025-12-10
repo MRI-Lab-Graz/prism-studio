@@ -36,7 +36,21 @@ if ! command -v uv &> /dev/null; then
 fi
 echo_info "'uv' is installed."
 
-# 2. Check for requirements.txt
+# 2. Check for Deno (Required for BIDS validation)
+if ! command -v deno &> /dev/null; then
+    echo_info "Deno not found (required for BIDS validation). Installing..."
+    curl -fsSL https://deno.land/install.sh | sh
+    
+    # Add to path for current session
+    export DENO_INSTALL="$HOME/.deno"
+    export PATH="$DENO_INSTALL/bin:$PATH"
+    
+    echo_success "Deno installed."
+else
+    echo_info "Deno is already installed."
+fi
+
+# 3. Check for requirements.txt
 if [ ! -f "$REQUIREMENTS_FILE" ]; then
     echo_error "'$REQUIREMENTS_FILE' not found."
     echo_info "Please make sure the requirements file exists in the project root."

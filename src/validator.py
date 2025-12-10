@@ -23,9 +23,9 @@ MODALITY_PATTERNS = {
     "physio": r".+_ecg\.edf$",
     # MRI submodalities
     "anat": r".+_(T1w|T2w|T2star|FLAIR|PD|PDw|T1map|T2map)\.nii(\.gz)?$",
-    "func": r".+_bold\.nii(\.gz)?$",
+    "func": r".+(_bold\.nii(\.gz)?|_sbref\.nii(\.gz)?|_(events|physio|stim)\.tsv(\.gz)?)$",
     "fmap": r".+_(magnitude1|magnitude2|phasediff|fieldmap|epi)\.nii(\.gz)?$",
-    "dwi": r".+_dwi\.nii(\.gz)?$",
+    "dwi": r".+_dwi(\.nii(\.gz)?|\.bvec|\.bval)$",
 }
 
 # BIDS naming patterns
@@ -37,7 +37,7 @@ BIDS_REGEX = re.compile(
 )
 
 MRI_SUFFIX_REGEX = re.compile(
-    r"_(T1w|T2w|T2star|FLAIR|PD|PDw|T1map|T2map|bold|dwi|magnitude1|magnitude2|phasediff|fieldmap|epi)$"
+    r"_(T1w|T2w|T2star|FLAIR|PD|PDw|T1map|T2map|bold|dwi|magnitude1|magnitude2|phasediff|fieldmap|epi|sbref)$"
 )
 
 # File extensions that need special handling

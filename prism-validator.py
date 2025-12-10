@@ -80,6 +80,11 @@ Examples:
         action="store_true",
         help="Run the standard BIDS validator in addition to PRISM validation",
     )
+    parser.add_argument(
+        "--bids-warnings",
+        action="store_true",
+        help="Show warnings from the BIDS validator (default: hidden)",
+    )
     parser.add_argument("--version", action="version", version="Prism-Validator 1.3.0")
 
     args = parser.parse_args()
@@ -127,7 +132,7 @@ Examples:
 
         # Print results
         print_dataset_summary(args.dataset, stats)
-        print_validation_results(issues)
+        print_validation_results(issues, show_bids_warnings=args.bids_warnings)
 
         # Exit with appropriate code
         error_count = sum(1 for level, _ in issues if level == "ERROR")
