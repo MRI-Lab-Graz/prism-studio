@@ -468,6 +468,10 @@ def convert_lsa_to_dataset(
     # process_dataframe will copy needed sidecars into rawdata
     # We iterate manually to inject task-specific durations if available
     for t_name, t_schema in schemas.items():
+        # Skip the internal 'limesurvey' metadata container; it's not a task to be exported.
+        if t_name == "limesurvey":
+            continue
+
         # Work on a copy to avoid side effects between tasks
         task_df = df.copy()
         
