@@ -4,14 +4,20 @@
 
 ## 🚀 Quick Start
 
-**👉 Run the web interface** (recommended for all users):
+**👉 Run the Desktop GUI** (recommended):
+
+```bash
+python prism-validator-gui.py
+```
+
+**👉 Run the Web Interface**:
 
 ```bash
 bash scripts/setup/setup.sh    # One-time setup (macOS/Linux)
 python prism-validator-web.py
 ```
 
-The web interface will open automatically at `http://localhost:5001`. No additional configuration needed!
+The web interface will open automatically at `http://localhost:5001`.
 
 ---
 
@@ -30,7 +36,13 @@ Prism-Validator is a **BIDS Extension** framework and validation tool designed t
 - **Biometrics Modality (`biometrics/`)**: Structured storage for physiological assessments (VO2max, planks, balance tests) that don't fit into standard `beh` or `physio` categories.
 - **Non-Destructive**: Your standard BIDS files (`participants.tsv`, `dataset_description.json`) remain untouched. We only validate the extensions.
 
-### 🎯 Web Interface (Primary Method)
+### 🖥️ Desktop GUI
+- **Native Application** - Fast and responsive interface with a modern dark/green theme.
+- **Dataset Validator** - Validate your BIDS/PRISM datasets with a single click.
+- **Survey Tools** - Browse the survey library and export questionnaires to LimeSurvey (.lss).
+- **Privacy First** - All processing happens locally on your machine.
+
+### 🎯 Web Interface
 - **Drag & drop dataset upload** - Just drop a folder or ZIP file
 - **Interactive validation** - Real-time results with visual charts
 - **🧠 NeuroBagel Integration** - Annotate participants with standardized ontologies

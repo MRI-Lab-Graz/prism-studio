@@ -16,4 +16,7 @@ sphinx
 sphinx-rtd-theme
 myst-parser
 
+# GUI
+ttkthemes
+
 pyedflib

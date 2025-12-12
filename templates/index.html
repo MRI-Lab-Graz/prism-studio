@@ -306,6 +306,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/jszip.min.js') }}"></script>
 <script>
 // File upload handling
 document.addEventListener('DOMContentLoaded', function() {
@@ -471,7 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Show loading state on form submission
-    document.querySelector('form[action*="upload"]').addEventListener('submit', function(e) {
+    document.querySelector('form[action*="upload"]').addEventListener('submit', async function(e) {
         e.preventDefault(); // Prevent default submission
         
         // Validate that something is selected
@@ -480,50 +481,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
         
-        // Filter files to metadata only
-        const metadataExtensions = ['.json', '.tsv', '.csv', '.txt', '.bvec', '.bval', '.vhdr', '.vmrk'];
-        const skipExtensions = ['.nii', '.gz', '.mp4', '.avi', '.mov', '.png', '.jpg', '.jpeg', '.tiff', '.mat', '.eeg', '.dat', '.fif', '.edf', '.bdf', '.set', '.fdt'];
+        const form = e.target;
+        const formData = new FormData();
         
-    const form = e.target;
-    const formData = new FormData();
-        
-    let includedCount = 0;
-    let skippedCount = 0;
-    let totalSize = 0;
-    let allFilePaths = [];
-    let metadataPaths = [];
-        
-        // Get the files to process
-        const filesToProcess = folderInput.files.length > 0 ? folderInput.files : zipInput.files;
-        
-        // Filter and add only metadata files, but track all file paths
-        for (let i = 0; i < filesToProcess.length; i++) {
-            const file = filesToProcess[i];
-            const fileName = file.name.toLowerCase();
-            const filePath = file.webkitRelativePath || file.name;
-            
-            // Track all file paths
-            allFilePaths.push(filePath);
-            
-            // Check if it's a metadata file
-            const isMetadata = metadataExtensions.some(ext => fileName.endsWith(ext));
-            const isSkipped = skipExtensions.some(ext => fileName.endsWith(ext)) || fileName.endsWith('.nii.gz');
-            
-            if (isMetadata && !isSkipped) {
-                formData.append('dataset', file, filePath);
-                metadataPaths.push(filePath);
-                includedCount++;
-                totalSize += file.size;
-            } else if (isSkipped) {
-                skippedCount++;
-            }
-        }
-        
-        // Send the complete file list so server can create structure
-        formData.append('all_files', JSON.stringify(allFilePaths));
-        // Send metadata paths as a single JSON string to avoid MAX_FORM_PARTS limits
-        formData.append('metadata_paths_json', JSON.stringify(metadataPaths));
-
         // Add BIDS options
         const runBidsCheckbox = document.getElementById('run_bids');
         const bidsWarningsCheckbox = document.getElementById('bids_warnings');
@@ -533,41 +493,82 @@ document.addEventListener('DOMContentLoaded', function() {
         if (bidsWarningsCheckbox && bidsWarningsCheckbox.checked) {
             formData.append('bids_warnings', 'true');
         }
-        
-        console.log(`Uploading ${includedCount} metadata files (${(totalSize/1024/1024).toFixed(2)} MB), skipping ${skippedCount} data files`);
-        
-        // Check if we have any files to upload
-        if (includedCount === 0 && skippedCount === 0) {
-            alert('No files found. Please ensure your dataset contains files.');
-            return false;
-        }
-        
+
         // Show progress
         uploadBtn.disabled = true;
-        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading...';
-        uploadInfo.innerHTML = `<i class="fas fa-cog fa-spin me-1"></i>Uploading ${includedCount} metadata files, creating structure for ${skippedCount} data files...`;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Preparing upload...';
         
-        // Submit filtered data via fetch
-        fetch(form.action, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
+        try {
+            if (folderInput.files.length > 0) {
+                // Folder upload: Zip client-side
+                // This avoids "too many files" errors and reduces upload size
+                const zip = new JSZip();
+                const metadataExtensions = ['.json', '.tsv', '.csv', '.txt', '.bvec', '.bval', '.vhdr', '.vmrk'];
+                const skipExtensions = ['.nii', '.gz', '.mp4', '.avi', '.mov', '.png', '.jpg', '.jpeg', '.tiff', '.mat', '.eeg', '.dat', '.fif', '.edf', '.bdf', '.set', '.fdt'];
+                
+                let includedCount = 0;
+                let skippedCount = 0;
+                let totalSize = 0;
+                
+                uploadInfo.innerHTML = '<i class="fas fa-cog fa-spin me-1"></i>Compressing metadata...';
+                
+                // Process files in chunks to avoid blocking UI too much
+                const files = folderInput.files;
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const fileName = file.name.toLowerCase();
+                    const filePath = file.webkitRelativePath || file.name;
+                    
+                    const isMetadata = metadataExtensions.some(ext => fileName.endsWith(ext));
+                    const isSkipped = skipExtensions.some(ext => fileName.endsWith(ext)) || fileName.endsWith('.nii.gz');
+                    
+                    if (isMetadata && !isSkipped) {
+                        zip.file(filePath, file);
+                        includedCount++;
+                        totalSize += file.size;
+                    } else if (isSkipped) {
+                        // Add empty placeholder for skipped files
+                        zip.file(filePath, "");
+                        skippedCount++;
+                    }
+                }
+                
+                if (includedCount === 0 && skippedCount === 0) {
+                    throw new Error('No valid files found in the selected folder.');
+                }
+                
+                console.log(`Zipping ${includedCount} metadata files, skipping ${skippedCount} data files`);
+                uploadInfo.innerHTML = `<i class="fas fa-cog fa-spin me-1"></i>Uploading ${includedCount} metadata files (zipped)...`;
+                
+                const zipBlob = await zip.generateAsync({type: "blob"});
+                formData.append('dataset', zipBlob, "dataset.zip");
+                
+            } else {
+                // ZIP upload: Send as is
+                formData.append('dataset', zipInput.files[0]);
+                uploadInfo.innerHTML = '<i class="fas fa-cog fa-spin me-1"></i>Uploading ZIP file...';
+            }
+            
+            // Submit via fetch
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData
+            });
+            
             if (response.redirected) {
                 window.location.href = response.url;
             } else {
-                return response.text().then(text => {
-                    throw new Error('Upload failed: ' + text);
-                });
+                const text = await response.text();
+                throw new Error(text);
             }
-        })
-        .catch(error => {
+            
+        } catch (error) {
             console.error('Upload error:', error);
             uploadBtn.disabled = false;
             uploadBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Validate Dataset';
             uploadInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-danger"></i>Upload failed: ' + error.message;
             alert('Upload failed: ' + error.message);
-        });
+        }
         
         return false;
     });
