@@ -1,0 +1,4 @@
+# Minimal dependencies to build the documentation on Read the Docs
+sphinx
+sphinx-rtd-theme
+myst-parser
