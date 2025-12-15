@@ -23,6 +23,18 @@ STANDARD_BIDS_FOLDERS = {
 }
 
 
+# Extra non-BIDS artifacts that can confuse BIDS apps/validators.
+#
+# `MRI-Lab-Graz/check_repo` is a generic repository QA tool; it doesn't validate
+# PRISM/BIDS datasets, but it does write a timestamped report file in the
+# working directory (e.g., "<name>_report_<timestamp>.txt"). If users run it in
+# a dataset root, that report shouldn't be considered part of the dataset by
+# BIDS tooling.
+EXTRA_BIDSIGNORE_RULES = {
+    "*_report_*.txt",
+}
+
+
 def check_and_update_bidsignore(dataset_root, supported_modalities):
     """
     Ensure that custom modalities are listed in .bidsignore
@@ -40,9 +52,6 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
     # Determine which modalities are non-standard
     non_standard = [m for m in supported_modalities if m not in STANDARD_BIDS_FOLDERS]
 
-    if not non_standard:
-        return []
-
     # Read existing .bidsignore
     existing_rules = set()
     if os.path.exists(bidsignore_path):
@@ -55,9 +64,13 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
     # Check what needs to be added
     added_rules = []
 
-    # We use the pattern "modality/" to match directories of that name anywhere
-    # This is standard .gitignore syntax which .bidsignore follows
-    needed_rules = {f"{m}/" for m in non_standard}
+    # We use the pattern "modality/" to match directories of that name anywhere.
+    # This is standard .gitignore syntax which .bidsignore follows.
+    needed_rules = set(EXTRA_BIDSIGNORE_RULES)
+    needed_rules.update({f"{m}/" for m in non_standard})
+
+    if not needed_rules:
+        return []
 
     # Filter out rules that already exist
     rules_to_add = [r for r in needed_rules if r not in existing_rules]
