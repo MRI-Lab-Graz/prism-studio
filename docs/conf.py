@@ -29,7 +29,10 @@ exclude_patterns = [
 
 # -- Options for HTML output -------------------------------------------------
 html_theme = "sphinx_rtd_theme"
-html_static_path = ["_static"]
+html_static_path = ["_static", "img"]
+
+# Logo for ReadTheDocs / HTML output. The file is at docs/img/prism_logo.jpg
+html_logo = "img/prism_logo.jpg"
 
 # -- MyST Parser configuration -----------------------------------------------
 myst_enable_extensions = [
