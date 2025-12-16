@@ -398,16 +398,27 @@ def cmd_dataset_build_biometrics_smoketest(args):
     if participants_json.exists():
         shutil.copy(participants_json, output_root / "participants.json")
 
-    def _write_task_files(sub_id: str, ses_id: str, grp: str, df_out: "pd.DataFrame", add_instance_meta: bool) -> None:
-        if df_out is None or df_out.empty:
+    def _ensure_inherited_sidecar(grp: str, add_instance_meta: bool) -> None:
+        """Write an inherited (dataset-level) sidecar for this biometrics task.
+
+        Uses BIDS inheritance: `task-<grp>_biometrics.json` in the dataset root.
+        """
+        sidecar_path = output_root / f"task-{grp}_biometrics.json"
+        if sidecar_path.exists():
+            # If we later discover that we need instance metadata, patch it in.
+            if add_instance_meta:
+                try:
+                    sidecar = _read_json(sidecar_path)
+                    if "instance" not in sidecar:
+                        sidecar["instance"] = {
+                            "Description": "Instance index (e.g., trial/repetition)",
+                            "Units": "n/a",
+                            "DataType": "integer",
+                        }
+                        _write_json(sidecar_path, sidecar)
+                except Exception:
+                    pass
             return
-
-        modality_dir = _ensure_dir(output_root / sub_id / ses_id / "biometrics")
-        stem = f"{sub_id}_{ses_id}_task-{grp}_biometrics"
-        tsv_path = modality_dir / f"{stem}.tsv"
-        json_path = modality_dir / f"{stem}.json"
-
-        df_out.to_csv(tsv_path, sep="\t", index=False)
 
         template_path = biometrics_library / f"biometrics-{grp}.json"
         if not template_path.exists():
@@ -420,7 +431,16 @@ def cmd_dataset_build_biometrics_smoketest(args):
                 "Units": "n/a",
                 "DataType": "integer",
             }
-        _write_json(json_path, sidecar)
+        _write_json(sidecar_path, sidecar)
+
+    def _write_task_files(sub_id: str, ses_id: str, grp: str, df_out: "pd.DataFrame") -> None:
+        if df_out is None or df_out.empty:
+            return
+
+        modality_dir = _ensure_dir(output_root / sub_id / ses_id / "biometrics")
+        stem = f"{sub_id}_{ses_id}_task-{grp}_biometrics"
+        tsv_path = modality_dir / f"{stem}.tsv"
+        df_out.to_csv(tsv_path, sep="\t", index=False)
 
     # 5) Generate per-subject biometrics TSVs + matching sidecars
     if is_long:
@@ -461,6 +481,10 @@ def cmd_dataset_build_biometrics_smoketest(args):
             df_long = df_long[df_long["instance"].notna()]
             df_long["instance"] = df_long["instance"].astype(int)
 
+        # Ensure dataset-level inherited sidecars (one per biometrics task)
+        for grp in group_to_items.keys():
+            _ensure_inherited_sidecar(grp, add_instance_meta=has_instance)
+
         for (sub_id, ses_id), df_ps in df_long.groupby(["participant_id", "session"], dropna=True):
             for grp, items in group_to_items.items():
                 df_grp = df_ps[df_ps["group"] == grp]
@@ -482,7 +506,7 @@ def cmd_dataset_build_biometrics_smoketest(args):
                         if col not in wide.columns:
                             wide[col] = "n/a"
                     wide = wide[["instance"] + items]
-                    _write_task_files(sub_id, ses_id, grp, wide, add_instance_meta=True)
+                    _write_task_files(sub_id, ses_id, grp, wide)
                 else:
                     values = {col: "n/a" for col in items}
                     for col in items:
@@ -490,10 +514,15 @@ def cmd_dataset_build_biometrics_smoketest(args):
                         if len(s) > 0:
                             values[col] = s.iloc[0]
                     df_out = pd.DataFrame([values], columns=items)
-                    _write_task_files(sub_id, ses_id, grp, df_out, add_instance_meta=False)
+                    _write_task_files(sub_id, ses_id, grp, df_out)
 
     else:
         # Wide: one row per subject (optionally with session column)
+
+        # Ensure dataset-level inherited sidecars (one per biometrics task)
+        for grp in group_to_items.keys():
+            _ensure_inherited_sidecar(grp, add_instance_meta=False)
+
         for _, row in df_data.iterrows():
             pid = str(row[col_pid]).strip()
             if not pid:
@@ -514,7 +543,7 @@ def cmd_dataset_build_biometrics_smoketest(args):
                     else:
                         values[col] = "n/a"
                 df_out = pd.DataFrame([values], columns=items)
-                _write_task_files(sub_id, ses_id, grp, df_out, add_instance_meta=False)
+                _write_task_files(sub_id, ses_id, grp, df_out)
 
     print(f"✅ Created dataset: {output_root}")
     print(f"✅ Biometrics library: {biometrics_library}")

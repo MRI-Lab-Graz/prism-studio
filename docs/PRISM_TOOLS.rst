@@ -212,6 +212,8 @@ Dataset Helpers
 
 Build a small PRISM-valid biometrics dataset from the biometrics codebook and dummy CSV. This is intended as a smoke test.
 
+The builder uses the BIDS inheritance principle for biometrics sidecars: it writes one root-level sidecar per task (`task-<task>_biometrics.json`) instead of duplicating JSON files per subject/session.
+
 Dummy data formats
 
 - **Long format (recommended):** columns ``participant_id``, ``session``, ``item_id``, ``value`` (optional ``group``; optional ``instance`` for trials/repeats). The builder will create one TSV per subject/session/task and (if ``instance`` is present) multiple rows per TSV.

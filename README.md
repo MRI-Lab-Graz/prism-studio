@@ -113,6 +113,8 @@ python prism-validator.py test_dataset/_tmp_prism_biometrics_dataset
 
 Note: the repo ships a wide dummy CSV at `test_dataset/Biometrics_dummy_data.csv`. Long-format dummy files (e.g., `test_dataset/Biometrics_dummy_data_long.csv`) are intended to be generated locally.
 
+The generated dataset uses the BIDS inheritance principle for biometrics sidecars: one `task-<task>_biometrics.json` at the dataset root is used for all subjects/sessions for that task.
+
 ## 🔌 Prism Tools (CLI)
 
 For advanced data conversion tasks, use the `prism_tools.py` utility.
