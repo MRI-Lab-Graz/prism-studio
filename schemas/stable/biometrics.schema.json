@@ -138,6 +138,13 @@
         },
         "description": "List of allowed values for this column"
       },
+      "Levels": {
+        "type": "object",
+        "description": "Optional mapping of coded values to human-readable labels (e.g., Likert scales)",
+        "patternProperties": {
+          "^.*$": { "type": "string" }
+        }
+      },
       "DataType": {
         "type": "string",
         "enum": ["string", "integer", "float"],

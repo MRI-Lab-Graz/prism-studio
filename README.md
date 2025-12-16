@@ -62,6 +62,23 @@ A complete toolset for converting external survey data (CSV/Excel) into PRISM-co
 2.  **Library Validation**: Ensure variable uniqueness and generate catalogs (via `prism_tools.py survey validate`).
 3.  **Session/Run-aware items**: In the Excel/CSV, you can add columns `session` and `run` per item; defaults are `ses-1` and no run suffix (run-1 is implicit). Use multiple rows for repeat occurrences: set `alias_of` to the canonical item_id, and set per-row `session`/`run` hints. Example header: `item_id,question,scale,group,alias_of,session,run`.
 
+## 💓 Biometrics Template Workflow (Codebook → JSON)
+
+For biometrics assessments (e.g., Y-Balance, CMJ, Sit-and-Reach), PRISM supports generating **biometrics JSON templates** from a single-sheet Excel *codebook* (no data required).
+
+1. **Create a codebook** (one row per variable/TSV column) with headers like:
+   `item_id,description,units,datatype,minvalue,maxvalue,allowedvalues,group,originalname,protocol,instructions,reference,estimatedduration,equipment,supervisor`
+2. **Generate templates**:
+
+```bash
+./prism_tools.py biometrics import-excel \
+  --excel test_dataset/Biometrics_variables.xlsx \
+  --sheet biometrics_codebook \
+  --output biometrics_library
+```
+
+The `group` column controls whether you get one combined `biometrics-biometrics.json` or multiple files like `biometrics-ybalance.json`, `biometrics-cmj.json`, etc. Labeled scales like `0=...;1=...` are preserved as `Levels` (value→label mapping) for reproducibility.
+
 ## 🔌 Prism Tools (CLI)
 
 For advanced data conversion tasks, use the `prism_tools.py` utility.

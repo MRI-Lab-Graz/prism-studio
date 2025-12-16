@@ -29,6 +29,7 @@ from scripts.limesurvey_to_prism import convert_lsa_to_prism, batch_convert_lsa
 # sys.path.append(str(project_root / "scripts")) # Already added project_root, but scripts is a subdir.
 # We need to import from scripts.excel_to_library
 from scripts.excel_to_library import process_excel
+from scripts.excel_to_biometrics_library import process_excel_biometrics
 
 def sanitize_id(id_str):
     """
@@ -243,6 +244,23 @@ def cmd_survey_import_excel(args):
         print(f"Error importing Excel: {e}")
         sys.exit(1)
 
+
+def cmd_biometrics_import_excel(args):
+    """Imports biometrics templates/library from Excel."""
+    print(f"Importing biometrics library from {args.excel} (sheet={args.sheet})...")
+    try:
+        sheet = int(args.sheet) if isinstance(args.sheet, str) and args.sheet.isdigit() else args.sheet
+        process_excel_biometrics(
+            args.excel,
+            args.output,
+            sheet_name=sheet,
+            equipment=args.equipment,
+            supervisor=args.supervisor,
+        )
+    except Exception as e:
+        print(f"Error importing Excel: {e}")
+        sys.exit(1)
+
 def cmd_survey_validate(args):
     """
     Validates the survey library.
@@ -336,6 +354,33 @@ def main():
     parser_survey_excel = survey_subparsers.add_parser("import-excel", help="Import survey library from Excel")
     parser_survey_excel.add_argument("--excel", required=True, help="Path to Excel file")
     parser_survey_excel.add_argument("--output", default="survey_library", help="Output directory")
+
+    # Command: biometrics
+    parser_biometrics = subparsers.add_parser("biometrics", help="Biometrics library operations")
+    biometrics_subparsers = parser_biometrics.add_subparsers(dest="action", help="Action")
+
+    # Subcommand: biometrics import-excel
+    parser_biometrics_excel = biometrics_subparsers.add_parser(
+        "import-excel", help="Import biometrics templates/library from Excel"
+    )
+    parser_biometrics_excel.add_argument("--excel", required=True, help="Path to Excel file")
+    parser_biometrics_excel.add_argument("--output", default="biometrics_library", help="Output directory")
+    parser_biometrics_excel.add_argument(
+        "--sheet",
+        default=0,
+        help="Sheet name or index containing the data dictionary (e.g., 'Description').",
+    )
+    parser_biometrics_excel.add_argument(
+        "--equipment",
+        default="Legacy/Imported",
+        help="Default Technical.Equipment value written to biometrics JSON (required by schema).",
+    )
+    parser_biometrics_excel.add_argument(
+        "--supervisor",
+        default="investigator",
+        choices=["investigator", "physician", "trainer", "self"],
+        help="Default Technical.Supervisor value written to biometrics JSON.",
+    )
     
     # Subcommand: survey validate
     parser_survey_validate = survey_subparsers.add_parser("validate", help="Validate survey library")
@@ -394,6 +439,11 @@ def main():
             cmd_survey_import_limesurvey_batch(args)
         else:
             parser_survey.print_help()
+    elif args.command == "biometrics":
+        if args.action == "import-excel":
+            cmd_biometrics_import_excel(args)
+        else:
+            parser_biometrics.print_help()
     else:
         parser.print_help()
 

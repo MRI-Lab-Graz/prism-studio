@@ -135,3 +135,55 @@ Batch import with session mapping (e.g., t1/t2/t3 -> ses-1/ses-2/ses-3) and subj
 
 The batch command walks `input-dir` for `.lsa/.lss` files, looks for `sub-*` and session tokens (e.g., `t1`) in the path, and writes sidecars like `sub-<id>/ses-1/survey/sub-<id>_ses-1_task-<task>_beh.json` under `output-dir`.
 
+
+Biometrics Library Management
+-----------------------------
+
+Tools for managing biometrics JSON templates/libraries (schema: ``schemas/stable/biometrics.schema.json``).
+
+Import from Excel
+~~~~~~~~~~~~~~~~~
+
+Converts a biometrics *codebook* (Excel, **no data required**) into PRISM-compliant biometrics JSON sidecars.
+
+Recommended Excel structure (header-friendly, case-insensitive):
+
+- ``item_id`` (aliases: id, code, variable, name) – the TSV column name
+- ``description`` (aliases: question, text, item)
+- ``units`` (aliases: unit) – **required** by the biometrics schema
+- ``datatype`` (optional; one of: string, integer, float)
+- ``minvalue`` / ``maxvalue`` (optional)
+- ``warnminvalue`` / ``warnmaxvalue`` (optional)
+- ``allowedvalues`` (optional; comma/semicolon list or ``1=foo;2=bar``)
+- ``group`` (aliases: test, instrument, category) – optional; creates one ``biometrics-<group>.json`` per group. If omitted, all rows go into ``biometrics-biometrics.json``.
+- ``alias_of`` (optional)
+- ``session`` (optional; normalized to ``ses-<n>``)
+- ``run`` (optional; normalized to ``run-<n>``)
+
+Optional per-group metadata columns (can be repeated on any row; the first non-empty value per group is used to fill the JSON header):
+
+- ``originalname`` (or ``test_name`` / ``testname``) -> ``Study.OriginalName``
+- ``protocol`` -> ``Study.Protocol``
+- ``instructions`` -> ``Study.Instructions``
+- ``reference`` (or ``citation`` / ``doi``) -> ``Study.Reference``
+- ``estimatedduration`` (or ``duration``) -> ``Study.EstimatedDuration``
+- ``equipment`` -> ``Technical.Equipment``
+- ``supervisor`` -> ``Technical.Supervisor`` (enum: investigator|physician|trainer|self)
+
+Notes on scales / levels
+
+- If you provide labeled values like ``0=selten;1=manchmal;2=...`` in ``allowedvalues`` (or in ``scaling``), the importer stores them as ``Levels`` (value->label mapping) **and** derives ``AllowedValues`` from the codes.
+- For numeric ranges, you can write ``1-10`` in ``allowedvalues`` to expand to allowed integers 1..10 (kept small by design).
+
+If no header row is present, positional columns map in order: item_id, description, units, datatype, minvalue, maxvalue, allowedvalues, group, alias_of, session, run.
+
+Example:
+
+.. code-block:: bash
+
+    ./prism_tools.py biometrics import-excel \
+      --excel test_dataset/Biometrics_variables.xlsx \
+      --sheet biometrics_codebook \
+      --output biometrics_library \
+      --equipment "Functional Movement Screen – Y Balance Test Kit"
+

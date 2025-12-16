@@ -66,6 +66,42 @@ The JSON structure is divided into three main objects to organize metadata logic
 | `CreationDate` | **REQUIRED** | `string` | Date of file creation in `YYYY-MM-DD` format. |
 | `Creator` | OPTIONAL | `string` | Tool or person who created the file. |
 
+## Metric (Column) Definitions
+
+In addition to the three top-level objects, a biometrics sidecar typically contains **one object per TSV column** (the column name is the JSON key). These entries document how to interpret and validate each metric.
+
+Common fields for each metric:
+
+| Key | Requirement | Type | Description |
+| --- | --- | --- | --- |
+| `Description` | **REQUIRED** | `string` | Human-readable description of the metric/column. |
+| `Units` | **REQUIRED** | `string` | Unit of measurement (e.g., `cm`, `sec`, `percent`, `score`). |
+| `DataType` | OPTIONAL | `string` | Expected type: `string`, `integer`, `float`. |
+| `MinValue` / `MaxValue` | OPTIONAL | `number` | Hard bounds for valid values. |
+| `AllowedValues` | OPTIONAL | `array` | Enumerated allowed values (numbers/strings). |
+| `Levels` | OPTIONAL | `object` | Mapping of coded values to labels (e.g., Likert scale). |
+
+**Example metric with labeled levels:**
+
+```json
+"rpe_scale": {
+  "Description": "Rate of perceived exertion",
+  "Units": "score",
+  "DataType": "integer",
+  "AllowedValues": [0, 1, 2, 3],
+  "Levels": {
+    "0": "selten oder überhaupt nicht",
+    "1": "manchmal",
+    "2": "öfter",
+    "3": "meistens"
+  }
+}
+```
+
+## Generating Templates from Excel
+
+You can generate biometrics JSON templates from a single-sheet Excel **codebook** (no data required) using `prism_tools.py biometrics import-excel`. See `docs/PRISM_TOOLS.rst` for the full column list and an example.
+
 ## Example Sidecar
 
 ```json
