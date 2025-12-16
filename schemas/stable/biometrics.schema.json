@@ -149,6 +149,16 @@
         "type": "string",
         "enum": ["string", "integer", "float"],
         "description": "Expected data type for this column"
+      },
+      "SessionHint": {
+        "type": "string",
+        "pattern": "^ses-[a-zA-Z0-9]+$",
+        "description": "Optional session hint for repeated assessments (e.g., 'ses-1')"
+      },
+      "RunHint": {
+        "type": "string",
+        "pattern": "^run-[a-zA-Z0-9]+$",
+        "description": "Optional run hint for repeated assessments (e.g., 'run-2')"
       }
     },
     "required": ["Description", "Units"]

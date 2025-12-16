@@ -80,6 +80,8 @@ Common fields for each metric:
 | `MinValue` / `MaxValue` | OPTIONAL | `number` | Hard bounds for valid values. |
 | `AllowedValues` | OPTIONAL | `array` | Enumerated allowed values (numbers/strings). |
 | `Levels` | OPTIONAL | `object` | Mapping of coded values to labels (e.g., Likert scale). |
+| `SessionHint` | OPTIONAL | `string` | Optional session hint for repeated assessments (e.g., `ses-1`). |
+| `RunHint` | OPTIONAL | `string` | Optional run hint for repeated assessments (e.g., `run-2`). |
 
 **Example metric with labeled levels:**
 

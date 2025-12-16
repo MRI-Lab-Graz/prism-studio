@@ -3,6 +3,7 @@ import argparse
 import sys
 import os
 import shutil
+import json
 from pathlib import Path
 import glob
 
@@ -31,6 +32,21 @@ from scripts.limesurvey_to_prism import convert_lsa_to_prism, batch_convert_lsa
 from scripts.excel_to_library import process_excel
 from scripts.excel_to_biometrics_library import process_excel_biometrics
 
+
+def _ensure_dir(path: Path) -> Path:
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _read_json(path: Path) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _write_json(path: Path, obj: dict) -> None:
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(obj, f, indent=2, ensure_ascii=False)
+
 def sanitize_id(id_str):
     """
     Sanitizes subject/session IDs by replacing German umlauts and special characters.
@@ -46,7 +62,6 @@ def sanitize_id(id_str):
         id_str = id_str.replace(char, repl)
     return id_str
 
-import json
 import hashlib
 
 def get_json_hash(json_path):
@@ -239,7 +254,10 @@ def cmd_survey_import_excel(args):
     """
     print(f"Importing survey library from {args.excel}...")
     try:
-        process_excel(args.excel, args.output)
+        output_dir = args.output
+        if getattr(args, "library_root", None):
+            output_dir = str(_ensure_dir(Path(args.library_root) / "survey"))
+        process_excel(args.excel, output_dir)
     except Exception as e:
         print(f"Error importing Excel: {e}")
         sys.exit(1)
@@ -250,9 +268,12 @@ def cmd_biometrics_import_excel(args):
     print(f"Importing biometrics library from {args.excel} (sheet={args.sheet})...")
     try:
         sheet = int(args.sheet) if isinstance(args.sheet, str) and args.sheet.isdigit() else args.sheet
+        output_dir = args.output
+        if getattr(args, "library_root", None):
+            output_dir = str(_ensure_dir(Path(args.library_root) / "biometrics"))
         process_excel_biometrics(
             args.excel,
-            args.output,
+            output_dir,
             sheet_name=sheet,
             equipment=args.equipment,
             supervisor=args.supervisor,
@@ -260,6 +281,121 @@ def cmd_biometrics_import_excel(args):
     except Exception as e:
         print(f"Error importing Excel: {e}")
         sys.exit(1)
+
+
+def cmd_dataset_build_biometrics_smoketest(args):
+    """Generate a small PRISM-valid dataset from a biometrics codebook and dummy CSV."""
+    import pandas as pd
+    import numpy as np
+
+    output_root = Path(args.output).resolve()
+    if output_root.exists() and any(output_root.iterdir()):
+        print(f"Error: Output directory is not empty: {output_root}")
+        sys.exit(1)
+
+    library_root = Path(args.library_root).resolve()
+    biometrics_library = _ensure_dir(library_root / "biometrics")
+
+    # 1) Generate biometrics templates into the library
+    sheet = int(args.sheet) if isinstance(args.sheet, str) and args.sheet.isdigit() else args.sheet
+    process_excel_biometrics(
+        args.codebook,
+        str(biometrics_library),
+        sheet_name=sheet,
+        equipment=args.equipment,
+        supervisor=args.supervisor,
+    )
+
+    # 2) Load codebook to map item_id -> group
+    df_codebook = pd.read_excel(args.codebook, sheet_name=sheet)
+    if "item_id" not in df_codebook.columns:
+        print("Error: codebook must contain an 'item_id' column")
+        sys.exit(1)
+    if "group" not in df_codebook.columns:
+        print("Error: codebook must contain a 'group' column")
+        sys.exit(1)
+
+    item_to_group: dict[str, str] = {}
+    for _, row in df_codebook.iterrows():
+        item_id = str(row.get("item_id", "")).strip()
+        if not item_id or item_id.lower() == "nan":
+            continue
+        grp = row.get("group", "biometrics")
+        if grp is None or (isinstance(grp, float) and np.isnan(grp)):
+            grp = "biometrics"
+        grp_s = str(grp).strip().lower() or "biometrics"
+        if grp_s in {"disable", "skip", "omit", "ignore"}:
+            continue
+        item_to_group[item_id] = grp_s
+
+    # Ignore participant-only variables for biometrics TSV creation
+    participant_groups = {"participant", "participants"}
+
+    group_to_items: dict[str, list[str]] = {}
+    for item_id, grp in item_to_group.items():
+        if grp in participant_groups:
+            continue
+        group_to_items.setdefault(grp, []).append(item_id)
+
+    # 3) Load dummy data
+    df_data = pd.read_csv(args.data)
+    if "participant_id" not in df_data.columns:
+        print("Error: dummy data must include a 'participant_id' column")
+        sys.exit(1)
+
+    # 4) Create dataset root files
+    _ensure_dir(output_root)
+    dataset_description = {
+        "Name": args.name,
+        "BIDSVersion": "1.8.0",
+        "DatasetType": "raw",
+        "Authors": args.authors or ["PRISM smoketest"],
+    }
+    _write_json(output_root / "dataset_description.json", dataset_description)
+
+    # participants.tsv (+ optional participants.json from library if present)
+    df_part = pd.DataFrame({"participant_id": df_data["participant_id"].astype(str)})
+    df_part.to_csv(output_root / "participants.tsv", sep="\t", index=False)
+    participants_json = biometrics_library / "participants.json"
+    if participants_json.exists():
+        shutil.copy(participants_json, output_root / "participants.json")
+
+    # 5) Generate per-subject biometrics TSVs + matching sidecars
+    for _, row in df_data.iterrows():
+        pid = str(row["participant_id"]).strip()
+        if not pid:
+            continue
+        sub_id = pid if pid.startswith("sub-") else f"sub-{pid}"
+        ses_id = args.session
+
+        for grp, items in group_to_items.items():
+            modality_dir = _ensure_dir(output_root / sub_id / ses_id / "biometrics")
+            stem = f"{sub_id}_{ses_id}_task-{grp}_biometrics"
+            tsv_path = modality_dir / f"{stem}.tsv"
+            json_path = modality_dir / f"{stem}.json"
+
+            # Write single-row TSV
+            values = {}
+            for col in items:
+                if col in df_data.columns:
+                    v = row[col]
+                    if v is None or (isinstance(v, float) and np.isnan(v)):
+                        values[col] = "n/a"
+                    else:
+                        values[col] = v
+                else:
+                    values[col] = "n/a"
+            pd.DataFrame([values], columns=items).to_csv(tsv_path, sep="\t", index=False)
+
+            # Sidecar from generated library template
+            template_path = biometrics_library / f"biometrics-{grp}.json"
+            if not template_path.exists():
+                print(f"Warning: Missing biometrics template for group '{grp}': {template_path}")
+                continue
+            _write_json(json_path, _read_json(template_path))
+
+    print(f"✅ Created dataset: {output_root}")
+    print(f"✅ Biometrics library: {biometrics_library}")
 
 def cmd_survey_validate(args):
     """
@@ -354,6 +490,11 @@ def main():
     parser_survey_excel = survey_subparsers.add_parser("import-excel", help="Import survey library from Excel")
     parser_survey_excel.add_argument("--excel", required=True, help="Path to Excel file")
     parser_survey_excel.add_argument("--output", default="survey_library", help="Output directory")
+    parser_survey_excel.add_argument(
+        "--library-root",
+        dest="library_root",
+        help="If set, writes to <library-root>/survey instead of --output.",
+    )
 
     # Command: biometrics
     parser_biometrics = subparsers.add_parser("biometrics", help="Biometrics library operations")
@@ -365,6 +506,11 @@ def main():
     )
     parser_biometrics_excel.add_argument("--excel", required=True, help="Path to Excel file")
     parser_biometrics_excel.add_argument("--output", default="biometrics_library", help="Output directory")
+    parser_biometrics_excel.add_argument(
+        "--library-root",
+        dest="library_root",
+        help="If set, writes to <library-root>/biometrics instead of --output.",
+    )
     parser_biometrics_excel.add_argument(
         "--sheet",
         default=0,
@@ -380,6 +526,67 @@ def main():
         default="investigator",
         choices=["investigator", "physician", "trainer", "self"],
         help="Default Technical.Supervisor value written to biometrics JSON.",
+    )
+
+    # Command: dataset
+    parser_dataset = subparsers.add_parser("dataset", help="Dataset helper commands")
+    dataset_subparsers = parser_dataset.add_subparsers(dest="action", help="Action")
+
+    parser_ds_bio = dataset_subparsers.add_parser(
+        "build-biometrics-smoketest",
+        help="Build a small PRISM-valid biometrics dataset from a codebook and dummy CSV",
+    )
+    parser_ds_bio.add_argument(
+        "--codebook",
+        default="test_dataset/Biometrics_variables.xlsx",
+        help="Path to Biometrics codebook Excel (default: test_dataset/Biometrics_variables.xlsx)",
+    )
+    parser_ds_bio.add_argument(
+        "--sheet",
+        default="biometrics_codebook",
+        help="Sheet name or index for the codebook (default: biometrics_codebook)",
+    )
+    parser_ds_bio.add_argument(
+        "--data",
+        default="test_dataset/Biometrics_dummy_data.csv",
+        help="Path to dummy biometrics data CSV with participant_id column",
+    )
+    parser_ds_bio.add_argument(
+        "--output",
+        default="test_dataset/_tmp_prism_biometrics_dataset",
+        help="Output dataset directory (must be empty or non-existent)",
+    )
+    parser_ds_bio.add_argument(
+        "--library-root",
+        default="library",
+        help="Library root directory to write templates into (creates <library-root>/biometrics)",
+    )
+    parser_ds_bio.add_argument(
+        "--name",
+        default="PRISM Biometrics Smoketest",
+        help="Dataset name for dataset_description.json",
+    )
+    parser_ds_bio.add_argument(
+        "--authors",
+        nargs="+",
+        default=None,
+        help="Authors for dataset_description.json (default: 'PRISM smoketest')",
+    )
+    parser_ds_bio.add_argument(
+        "--session",
+        default="ses-01",
+        help="Session folder label to use (default: ses-01)",
+    )
+    parser_ds_bio.add_argument(
+        "--equipment",
+        default="Legacy/Imported",
+        help="Default Technical.Equipment value for generated biometrics templates",
+    )
+    parser_ds_bio.add_argument(
+        "--supervisor",
+        default="investigator",
+        choices=["investigator", "physician", "trainer", "self"],
+        help="Default Technical.Supervisor value for generated biometrics templates",
     )
     
     # Subcommand: survey validate
@@ -444,6 +651,11 @@ def main():
             cmd_biometrics_import_excel(args)
         else:
             parser_biometrics.print_help()
+    elif args.command == "dataset":
+        if args.action == "build-biometrics-smoketest":
+            cmd_dataset_build_biometrics_smoketest(args)
+        else:
+            parser_dataset.print_help()
     else:
         parser.print_help()
 

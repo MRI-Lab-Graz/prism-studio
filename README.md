@@ -68,6 +68,7 @@ For biometrics assessments (e.g., Y-Balance, CMJ, Sit-and-Reach), PRISM supports
 
 1. **Create a codebook** (one row per variable/TSV column) with headers like:
    `item_id,description,units,datatype,minvalue,maxvalue,allowedvalues,group,originalname,protocol,instructions,reference,estimatedduration,equipment,supervisor`
+  Optional: add per-variable `session` and `run` columns (e.g., `ses-1`, `run-2`). The importer stores these as `SessionHint`/`RunHint` in the generated template.
 2. **Generate templates**:
 
 ```bash
@@ -78,6 +79,32 @@ For biometrics assessments (e.g., Y-Balance, CMJ, Sit-and-Reach), PRISM supports
 ```
 
 The `group` column controls whether you get one combined `biometrics-biometrics.json` or multiple files like `biometrics-ybalance.json`, `biometrics-cmj.json`, etc. Labeled scales like `0=...;1=...` are preserved as `Levels` (value→label mapping) for reproducibility.
+
+If you want a single library root, write templates into subfolders:
+
+```bash
+./prism_tools.py biometrics import-excel \
+  --excel test_dataset/Biometrics_variables.xlsx \
+  --sheet biometrics_codebook \
+  --library-root library
+```
+
+This creates `library/biometrics/biometrics-*.json` (and `library/survey/` for surveys when using `--library-root` there too).
+
+## 🧪 Biometrics Smoke Test Dataset
+
+To generate a small PRISM-valid dataset from the biometrics codebook and dummy data (for quick end-to-end testing):
+
+```bash
+./prism_tools.py dataset build-biometrics-smoketest \
+  --codebook test_dataset/Biometrics_variables.xlsx \
+  --sheet biometrics_codebook \
+  --data test_dataset/Biometrics_dummy_data.csv \
+  --library-root library \
+  --output test_dataset/_tmp_prism_biometrics_dataset
+
+python prism-validator.py test_dataset/_tmp_prism_biometrics_dataset
+```
 
 ## 🔌 Prism Tools (CLI)
 

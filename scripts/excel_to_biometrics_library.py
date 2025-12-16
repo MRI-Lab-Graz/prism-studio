@@ -481,43 +481,51 @@ def process_excel_biometrics(
     print(f"Generating biometrics JSON sidecars in {output_dir}...")
     os.makedirs(output_dir, exist_ok=True)
 
+    participant_groups = {"participant", "participants"}
+
     for group, variables in biometrics.items():
-        meta = group_meta.get(group, {})
-        equipment_value = meta.get("Equipment") or equipment
-        supervisor_value = meta.get("Supervisor") or supervisor
+        if group in participant_groups:
+            sidecar = {}
+            sidecar.update(variables)
+            json_filename = "participants.json"
+            json_path = os.path.join(output_dir, json_filename)
+        else:
+            meta = group_meta.get(group, {})
+            equipment_value = meta.get("Equipment") or equipment
+            supervisor_value = meta.get("Supervisor") or supervisor
 
-        original_name = meta.get("OriginalName") or f"{group} assessment"
-        study_description = meta.get("StudyDescription") or f"Imported {group} biometrics data"
-        sidecar = {
-            "Technical": {
-                "StimulusType": "Biometrics",
-                "FileFormat": "tsv",
-                "Equipment": equipment_value,
-                "Supervisor": supervisor_value,
-            },
-            "Study": {
-                "BiometricName": group,
-                "OriginalName": original_name,
-                "Protocol": meta.get("Protocol") or "",
-                "Description": study_description,
-            },
-            "Metadata": {
-                "SchemaVersion": "1.0.0",
-                "CreationDate": pd.Timestamp.now().strftime("%Y-%m-%d"),
-                "Creator": "excel_to_biometrics_library.py",
-            },
-        }
+            original_name = meta.get("OriginalName") or f"{group} assessment"
+            study_description = meta.get("StudyDescription") or f"Imported {group} biometrics data"
+            sidecar = {
+                "Technical": {
+                    "StimulusType": "Biometrics",
+                    "FileFormat": "tsv",
+                    "Equipment": equipment_value,
+                    "Supervisor": supervisor_value,
+                },
+                "Study": {
+                    "BiometricName": group,
+                    "OriginalName": original_name,
+                    "Protocol": meta.get("Protocol") or "",
+                    "Description": study_description,
+                },
+                "Metadata": {
+                    "SchemaVersion": "1.0.0",
+                    "CreationDate": pd.Timestamp.now().strftime("%Y-%m-%d"),
+                    "Creator": "excel_to_biometrics_library.py",
+                },
+            }
 
-        if meta.get("Instructions"):
-            sidecar["Study"]["Instructions"] = meta["Instructions"]
-        if meta.get("Reference"):
-            sidecar["Study"]["Reference"] = meta["Reference"]
-        if meta.get("EstimatedDuration"):
-            sidecar["Study"]["EstimatedDuration"] = meta["EstimatedDuration"]
-        sidecar.update(variables)
+            if meta.get("Instructions"):
+                sidecar["Study"]["Instructions"] = meta["Instructions"]
+            if meta.get("Reference"):
+                sidecar["Study"]["Reference"] = meta["Reference"]
+            if meta.get("EstimatedDuration"):
+                sidecar["Study"]["EstimatedDuration"] = meta["EstimatedDuration"]
+            sidecar.update(variables)
 
-        json_filename = f"biometrics-{group}.json"
-        json_path = os.path.join(output_dir, json_filename)
+            json_filename = f"biometrics-{group}.json"
+            json_path = os.path.join(output_dir, json_filename)
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(sidecar, f, indent=2, ensure_ascii=False)
         print(f"  - Created {json_path}")

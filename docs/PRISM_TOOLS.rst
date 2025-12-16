@@ -104,6 +104,14 @@ If no header row is present, positional columns map in order: item_id, question,
       --excel metadata.xlsx \
       --output survey_library
 
+To use a unified library layout, pass ``--library-root`` to write into ``<library-root>/survey``:
+
+.. code-block:: bash
+
+    ./prism_tools.py survey import-excel \
+      --excel metadata.xlsx \
+      --library-root library
+
 Validate Library
 ~~~~~~~~~~~~~~~~
 
@@ -155,10 +163,12 @@ Recommended Excel structure (header-friendly, case-insensitive):
 - ``minvalue`` / ``maxvalue`` (optional)
 - ``warnminvalue`` / ``warnmaxvalue`` (optional)
 - ``allowedvalues`` (optional; comma/semicolon list or ``1=foo;2=bar``)
-- ``group`` (aliases: test, instrument, category) – optional; creates one ``biometrics-<group>.json`` per group. If omitted, all rows go into ``biometrics-biometrics.json``.
+- ``group`` (aliases: test, instrument, category) – optional; creates one ``biometrics-<group>.json`` per group. If omitted, all rows go into ``biometrics-biometrics.json``. Special case: set ``group`` to ``participant`` to write those rows to ``participants.json`` instead.
 - ``alias_of`` (optional)
 - ``session`` (optional; normalized to ``ses-<n>``)
 - ``run`` (optional; normalized to ``run-<n>``)
+
+If provided, ``session``/``run`` are written to the metric entries as ``SessionHint``/``RunHint``.
 
 Optional per-group metadata columns (can be repeated on any row; the first non-empty value per group is used to fill the JSON header):
 
@@ -186,4 +196,28 @@ Example:
       --sheet biometrics_codebook \
       --output biometrics_library \
       --equipment "Functional Movement Screen – Y Balance Test Kit"
+
+To use a unified library layout, pass ``--library-root`` to write into ``<library-root>/biometrics``:
+
+.. code-block:: bash
+
+    ./prism_tools.py biometrics import-excel \
+      --excel test_dataset/Biometrics_variables.xlsx \
+      --sheet biometrics_codebook \
+      --library-root library
+
+
+Dataset Helpers
+---------------
+
+Build a small PRISM-valid biometrics dataset from the biometrics codebook and dummy CSV. This is intended as a smoke test.
+
+.. code-block:: bash
+
+    ./prism_tools.py dataset build-biometrics-smoketest \
+      --codebook test_dataset/Biometrics_variables.xlsx \
+      --sheet biometrics_codebook \
+      --data test_dataset/Biometrics_dummy_data.csv \
+      --library-root library \
+      --output test_dataset/_tmp_prism_biometrics_dataset
 

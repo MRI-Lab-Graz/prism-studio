@@ -68,3 +68,8 @@ dist/
 PrismValidator.iconset/
 PrismValidator.icns
 survey_library/
+
+# Local-only generated libraries / smoketest outputs
+library/
+test_dataset/_tmp_prism_biometrics_dataset/
+
