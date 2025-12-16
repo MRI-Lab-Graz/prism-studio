@@ -113,7 +113,7 @@ python prism-validator.py test_dataset/_tmp_prism_biometrics_dataset
 
 Note: the repo ships a wide dummy CSV at `test_dataset/Biometrics_dummy_data.csv`. Long-format dummy files (e.g., `test_dataset/Biometrics_dummy_data_long.csv`) are intended to be generated locally.
 
-The generated dataset uses the BIDS inheritance principle for biometrics sidecars: one `task-<task>_biometrics.json` at the dataset root is used for all subjects/sessions for that task.
+The generated dataset uses the BIDS inheritance principle for biometrics sidecars: one dataset-level sidecar per task (`task-<task>_biometrics.json` at the dataset root) is used for all subjects/sessions unless you intentionally override it with a subject/session-specific sidecar.
 
 ## 🔌 Prism Tools (CLI)
 
@@ -252,7 +252,7 @@ This ensures that years later, you know exactly what software version and OS wer
 
 ## Schema Structure
 
-Each stimulus file must have a corresponding `.json` sidecar file with the same basename. These JSON files contain metadata about the stimulus and are validated against JSON schemas in the `schemas/` directory.
+Each stimulus file must be associated with metadata in a `.json` sidecar. Sidecars can be adjacent (same basename) **or** inherited via the BIDS inheritance principle (e.g., dataset-level sidecars shared across subjects/sessions). These JSON files are validated against JSON schemas in the `schemas/` directory.
 
 ### Example Survey Metadata (`.json` sidecar):
 ```json

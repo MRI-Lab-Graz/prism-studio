@@ -21,7 +21,12 @@ Biometric data files MUST follow this naming convention:
 
 ## Sidecar JSON (`*_biometrics.json`)
 
-Each biometric data file MUST be associated with a JSON sidecar file. This file contains metadata about the assessment protocol.
+Each biometric data file MUST be associated with metadata in a JSON sidecar. This file contains metadata about the assessment protocol.
+
+PRISM follows the BIDS inheritance principle for biometrics sidecars:
+
+- **Preferred (inherited):** one dataset-level sidecar per task, named `task-<task>_biometrics.json` in the dataset root.
+- **Override (if metadata truly differs):** a subject/session-specific sidecar next to the TSV (e.g., `sub-01_ses-01_task-<task>_biometrics.json`).
 
 ### Top-Level Objects
 
