@@ -93,7 +93,12 @@ This creates `library/biometrics/biometrics-*.json` (and `library/survey/` for s
 
 ## 🧪 Biometrics Smoke Test Dataset
 
-To generate a small PRISM-valid dataset from the biometrics codebook and dummy data (for quick end-to-end testing):
+To generate a small PRISM-valid dataset from the biometrics codebook and dummy data (for quick end-to-end testing).
+
+The dummy CSV can be either:
+
+- **Long format (recommended):** columns `participant_id`, `session`, `item_id`, `value` (optional `group`, optional `instance` for trials/repeats)
+- **Wide format (supported):** one row per participant (optional `session` column) and one column per `item_id`
 
 ```bash
 ./prism_tools.py dataset build-biometrics-smoketest \
@@ -105,6 +110,8 @@ To generate a small PRISM-valid dataset from the biometrics codebook and dummy d
 
 python prism-validator.py test_dataset/_tmp_prism_biometrics_dataset
 ```
+
+Note: the repo ships a wide dummy CSV at `test_dataset/Biometrics_dummy_data.csv`. Long-format dummy files (e.g., `test_dataset/Biometrics_dummy_data_long.csv`) are intended to be generated locally.
 
 ## 🔌 Prism Tools (CLI)
 

@@ -212,6 +212,11 @@ Dataset Helpers
 
 Build a small PRISM-valid biometrics dataset from the biometrics codebook and dummy CSV. This is intended as a smoke test.
 
+Dummy data formats
+
+- **Long format (recommended):** columns ``participant_id``, ``session``, ``item_id``, ``value`` (optional ``group``; optional ``instance`` for trials/repeats). The builder will create one TSV per subject/session/task and (if ``instance`` is present) multiple rows per TSV.
+- **Wide format (supported):** one row per participant (optional ``session`` column) and one column per ``item_id``.
+
 .. code-block:: bash
 
     ./prism_tools.py dataset build-biometrics-smoketest \

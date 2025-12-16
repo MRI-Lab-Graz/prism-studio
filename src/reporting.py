@@ -45,19 +45,26 @@ def print_dataset_summary(dataset_path, stats):
 
     # Subject and session counts
     num_subjects = len(stats.subjects)
-    num_sessions = len(stats.sessions)
-    has_sessions = num_sessions > 0
+    has_sessions = len(stats.sessions) > 0
 
     print(f"👥 Subjects: {num_subjects}")
     if has_sessions:
-        print(f"📋 Sessions: {num_sessions}")
-        # Calculate sessions per subject
-        sessions_per_subject = {}
+        # stats.sessions is a list of subject/session combinations like "sub-01/ses-01".
+        # For the summary, report the number of unique session *labels* (e.g., ses-01),
+        # not the number of subject-session folders.
+        sessions_per_subject: dict[str, set[str]] = {}
+        unique_session_labels: set[str] = set()
         for session in stats.sessions:
-            subj = session.split("/")[0]
-            sessions_per_subject[subj] = sessions_per_subject.get(subj, 0) + 1
+            parts = session.split("/")
+            subj = parts[0] if parts else session
+            ses = parts[1] if len(parts) > 1 else session
+            sessions_per_subject.setdefault(subj, set()).add(ses)
+            unique_session_labels.add(ses)
+
+        print(f"📋 Sessions: {len(unique_session_labels)} (unique labels)")
+
         avg_sessions = (
-            sum(sessions_per_subject.values()) / len(sessions_per_subject)
+            sum(len(v) for v in sessions_per_subject.values()) / len(sessions_per_subject)
             if sessions_per_subject
             else 0
         )
