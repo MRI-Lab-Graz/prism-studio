@@ -1,0 +1,49 @@
+{
+  "RecipeVersion": "0.1",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "ADS",
+    "TaskName": "ads"
+  },
+  "Transforms": {
+    "Invert": {
+      "Scale": {"min": 0, "max": 3},
+      "Items": ["ADS04", "ADS08", "ADS12", "ADS16"]
+    }
+  },
+  "Scores": [
+    {
+      "Name": "ADS_total",
+      "Method": "sum",
+      "Items": [
+        "ADS01",
+        "ADS02",
+        "ADS03",
+        "ADS04",
+        "ADS05",
+        "ADS06",
+        "ADS07",
+        "ADS08",
+        "ADS09",
+        "ADS10",
+        "ADS11",
+        "ADS12",
+        "ADS13",
+        "ADS14",
+        "ADS15",
+        "ADS16",
+        "ADS17",
+        "ADS18",
+        "ADS19",
+        "ADS20"
+      ],
+      "Missing": "ignore"
+    },
+    {
+      "Name": "ADS_luegen",
+      "Method": "sum",
+      "Items": ["ADS04", "ADS08", "ADS12", "ADS16"],
+      "Missing": "ignore"
+    }
+  ]
+}

@@ -144,6 +144,37 @@ Acceptance criteria:
 ### Milestone 6 — Web UI integration (later)
 Because the web interface is based on `prism-validator.py` logic, keep conversion as a core utility that the web UI can call.
 
+## New feature stream: Derivatives (survey scoring)
+Once a PRISM dataset is already valid, we also want to generate **derivatives** for one or more surveys, e.g.:
+- reverse-code (invert) specific items (e.g. `0→3`, `1→2`, …)
+- compute subscores / total scores (sum or mean)
+
+### Derivative “recipes” (rules)
+Recipes live in the repo under:
+- `derivatives/surveys/*.json`
+
+Each recipe targets a survey via `Survey.TaskName` (e.g. `ads`) and defines:
+- `Transforms.Invert` (optional): list of items + min/max scale
+- `Scores`: list of computed columns (`sum` or `mean`)
+
+### CLI
+Compute survey derivatives for a PRISM dataset root:
+
+```bash
+python prism_tools.py derivatives surveys --prism /path/to/prism
+```
+
+Run only one survey recipe (optional):
+
+```bash
+python prism_tools.py derivatives surveys --prism /path/to/prism --survey ADS
+```
+
+Behavior:
+- If `--survey` is omitted, all recipes under `derivatives/surveys/` are considered.
+- A recipe is applied only if matching survey TSVs exist in the dataset (e.g. `sub-*/ses-*/survey/*_task-ads_*`).
+- Outputs are written into the dataset under `derivatives/surveys/<recipe>/...`.
+
 ## CLI sketch (suggested)
 A single entry point is enough:
 
