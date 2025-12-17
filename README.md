@@ -61,6 +61,7 @@ A complete toolset for converting external survey data (CSV/Excel) into PRISM-co
 1.  **Excel to Library**: Convert data dictionaries into a "Golden Master" JSON library (via `prism_tools.py survey import-excel`).
 2.  **Library Validation**: Ensure variable uniqueness and generate catalogs (via `prism_tools.py survey validate`).
 3.  **Session/Run-aware items**: In the Excel/CSV, you can add columns `session` and `run` per item; defaults are `ses-1` and no run suffix (run-1 is implicit). Use multiple rows for repeat occurrences: set `alias_of` to the canonical item_id, and set per-row `session`/`run` hints. Example header: `item_id,question,scale,group,alias_of,session,run`.
+4.  **Convert survey responses (Excel)**: Convert a wide survey export (`.xlsx`) into a PRISM/BIDS-like dataset (via `prism_tools.py survey convert`). The converter matches your column headers against the item IDs in `library/survey/survey-*.json` (e.g., `ADS01`, `ADS02`, …).
 
 ## 💓 Biometrics Template Workflow (Codebook → JSON)
 
@@ -141,6 +142,13 @@ For advanced data conversion tasks, use the `prism_tools.py` utility.
 
 # Validate survey library
 ./prism_tools.py survey validate
+
+# Convert a wide survey export (.xlsx) to a PRISM dataset (survey only)
+./prism_tools.py survey convert \
+  --input responses.xlsx \
+  --library library/survey \
+  --output my_survey_dataset \
+  --survey ads
 
 # Import LimeSurvey structure
 ./prism_tools.py survey import-limesurvey --input survey.lsa

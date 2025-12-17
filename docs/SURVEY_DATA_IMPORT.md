@@ -54,6 +54,22 @@ python scripts/catalog_survey_library.py
 
 ## Step 3: Convert Data to PRISM Structure
 
+For “wide” exports (one row per participant, one column per item like `ADS01`) you can convert directly into a PRISM/BIDS-like dataset.
+
+### Option A (recommended): Prism Tools (`.xlsx`)
+
+Use `prism_tools.py survey convert` to convert an Excel export into a dataset structure. The converter matches your column headers against the item IDs in your survey library templates (`survey-*.json`).
+
+```bash
+./prism_tools.py survey convert \
+  --input responses.xlsx \
+  --library library/survey \
+  --output my_dataset \
+  --survey ads
+```
+
+### Option B: Legacy script (`.csv`)
+
 Use `scripts/csv_to_prism.py` to extract data from your raw CSV export and generate the BIDS/PRISM directory structure.
 
 **How it works:**

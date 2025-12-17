@@ -138,22 +138,57 @@ class DatasetStats:
         for data in subjects_with_sessions.values():
             all_sessions.update(data["sessions"])
 
-        # Aggregate missing sessions across subjects to reduce noise
-        missing_by_session = {}
+        # Summarize session prevalence to avoid huge "missing for subjects" lists
+        subject_ids = sorted(subjects_with_sessions.keys())
+        total_subjects = len(subject_ids)
+        present_by_session = {s: 0 for s in all_sessions}
+        for _subject_id, data in subjects_with_sessions.items():
+            for ses in data["sessions"]:
+                if ses in present_by_session:
+                    present_by_session[ses] += 1
 
-        for subject_id, data in subjects_with_sessions.items():
-            missing_sessions = all_sessions - data["sessions"]
-            for session in missing_sessions:
-                missing_by_session.setdefault(session, []).append(subject_id)
+        # Heuristic: if a session exists in very few subjects, it's more likely a mislabeled session
+        # than "missing" for everyone else.
+        rare_threshold = max(1, int(round(total_subjects * 0.05)))  # 5% of subjects (min 1)
 
-        for session in sorted(missing_by_session.keys()):
-            subjects = sorted(missing_by_session[session])
-            warnings.append(
-                (
-                    "WARNING",
-                    f"Session {session} missing for subjects: {', '.join(subjects)}",
+        for session in sorted(all_sessions):
+            present = present_by_session.get(session, 0)
+            missing = total_subjects - present
+            if present == 0:
+                continue
+
+            if present <= rare_threshold and missing >= (total_subjects - rare_threshold):
+                warnings.append(
+                    (
+                        "WARNING",
+                        f"Session {session} appears only in {present}/{total_subjects} subjects. "
+                        "This is often caused by a mislabeled session column/value (e.g., one accidental '2' among '1's).",
+                    )
                 )
-            )
+                continue
+
+            # Otherwise, list missing subjects, but keep it bounded.
+            missing_subjects = [sid for sid, data in subjects_with_sessions.items() if session not in data["sessions"]]
+            missing_subjects = sorted(missing_subjects)
+            if not missing_subjects:
+                continue
+
+            max_list = 50
+            if len(missing_subjects) > max_list:
+                shown = ", ".join(missing_subjects[:max_list])
+                warnings.append(
+                    (
+                        "WARNING",
+                        f"Session {session} missing for {len(missing_subjects)}/{total_subjects} subjects (showing first {max_list}): {shown}",
+                    )
+                )
+            else:
+                warnings.append(
+                    (
+                        "WARNING",
+                        f"Session {session} missing for subjects: {', '.join(missing_subjects)}",
+                    )
+                )
 
         return warnings
 

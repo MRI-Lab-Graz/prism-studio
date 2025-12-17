@@ -10,6 +10,23 @@
 # --- Configuration ---
 VENV_DIR=".venv"
 REQUIREMENTS_FILE="requirements.txt"
+BUILD_REQUIREMENTS_FILE="requirements-build.txt"
+
+INSTALL_BUILD_DEPS=false
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --build)
+            INSTALL_BUILD_DEPS=true
+            shift
+            ;;
+        *)
+            echo_error "Unknown argument: $1"
+            echo "Usage: bash scripts/setup/setup.sh [--build]"
+            exit 1
+            ;;
+    esac
+done
 
 # --- Functions ---
 echo_info() {
@@ -77,6 +94,20 @@ uv pip install -r $REQUIREMENTS_FILE
 if [ $? -ne 0 ]; then
     echo_error "Failed to install dependencies."
     exit 1
+fi
+
+if [ "$INSTALL_BUILD_DEPS" = true ]; then
+    if [ ! -f "$BUILD_REQUIREMENTS_FILE" ]; then
+        echo_error "'$BUILD_REQUIREMENTS_FILE' not found."
+        exit 1
+    fi
+    echo_info "Installing build dependencies from '$BUILD_REQUIREMENTS_FILE'..."
+    uv pip install -r $BUILD_REQUIREMENTS_FILE
+    if [ $? -ne 0 ]; then
+        echo_error "Failed to install build dependencies."
+        exit 1
+    fi
+    echo_success "Build dependencies installed successfully."
 fi
 
 # Install the project in development mode (editable install)

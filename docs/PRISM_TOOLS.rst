@@ -83,6 +83,45 @@ Survey Library Management
 
 Tools for managing the JSON survey library used by the validator.
 
+Convert Survey Data (Wide Table)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Convert a “wide” survey export (one row per participant and one column per item, e.g., ``ADS01``) into a PRISM/BIDS-like dataset.
+
+The converter:
+
+- Reads a tabular input file (currently ``.xlsx``)
+- Matches column headers against item IDs in your survey templates (``survey-*.json``)
+- Writes a dataset with ``participants.tsv`` and per-subject TSVs under ``sub-*/ses-*/survey/``
+- Copies inherited sidecars to ``surveys/survey-<task>_beh.json`` for BIDS inheritance
+
+Minimum expected columns in the input table:
+
+- ``participant_id`` (or specify ``--id-column``)
+- Optional session column: ``ses`` / ``session`` / ``visit`` (or specify ``--session-column``). If missing, all rows are written to ``ses-1``.
+
+Example
+
+.. code-block:: bash
+
+  ./prism_tools.py survey convert \
+    --input responses.xlsx \
+    --library library/survey \
+    --output my_survey_dataset \
+    --survey ads
+
+Useful options
+
+- ``--dry-run``: print a mapping report but do not write files
+- ``--unknown {error,warn,ignore}``: control how unmapped columns are handled
+- ``--sheet``: choose the Excel sheet by index/name
+
+After conversion, validate the output with:
+
+.. code-block:: bash
+
+  python prism-validator.py my_survey_dataset
+
 Import from Excel
 ~~~~~~~~~~~~~~~~~
 
