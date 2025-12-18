@@ -161,6 +161,51 @@ Checks the survey library for duplicate variable names across different instrume
 
     ./prism_tools.py survey validate --library survey_library
 
+Bilingual Survey Templates (i18n)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Prism-Validator supports bilingual survey templates that contain both German and English in a single JSON file. At "compile time," you select the language to produce a clean, single-language output.
+
+**Template Format:**
+
+Each item can have ``question_de`` and ``question_en`` keys (or ``Levels_de``/``Levels_en`` for response scales).
+
+**Migrate Existing Survey to i18n Format:**
+
+.. code-block:: bash
+
+    ./prism_tools.py survey i18n-migrate \
+      --input library/survey/survey-ads.json \
+      --output library/survey/survey-ads.json
+
+This adds the ``_de`` and ``_en`` suffix keys to each item, marking them for translation.
+
+**Build Compiled Survey (Choose Language):**
+
+.. code-block:: bash
+
+    # Build German version
+    ./prism_tools.py survey i18n-build \
+      library/survey/survey-phq9.json \
+      --lang de \
+      --output survey-phq9-de.json
+
+    # Build English version
+    ./prism_tools.py survey i18n-build \
+      library/survey/survey-phq9.json \
+      --lang en \
+      --output survey-phq9-en.json
+
+If no ``--output`` is specified, the result is written to stdout (suitable for piping).
+
+**Available Bilingual Surveys:**
+
+- ``survey-phq9.json`` - Patient Health Questionnaire (PHQ-9)
+- ``survey-gad7.json`` - Generalized Anxiety Disorder (GAD-7)
+- ``survey-pss10.json`` - Perceived Stress Scale (PSS-10)
+- ``survey-who5.json`` - WHO Well-Being Index (WHO-5)
+- ``survey-rosenberg.json`` - Rosenberg Self-Esteem Scale
+
 Import from LimeSurvey
 ~~~~~~~~~~~~~~~~~~~~~~
 

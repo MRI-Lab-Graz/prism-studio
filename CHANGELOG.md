@@ -5,6 +5,78 @@ All notable changes to the Prism-Validator project will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+#### Structured Issue System
+- **PRISM error codes** (PRISM001-PRISM9xx) with severity levels and categories
+- Error categories: dataset structure, file naming, sidecar/metadata, schema validation, content validation, BIDS compatibility, plugin errors
+- Comprehensive `src/issues.py` module for consistent error reporting
+- Updated `docs/ERROR_CODES.md` with complete error code reference
+
+#### Output Formats
+- **JSON output** (`--json`, `--json-pretty`) for CI/CD integration
+- **SARIF format** (`--format sarif`) for GitHub Code Scanning
+- **JUnit XML** (`--format junit`) for test runners
+- **Markdown** (`--format markdown`) for documentation
+- **CSV export** (`--format csv`) for spreadsheet analysis
+- Output file redirection (`-o`, `--output`)
+
+#### Auto-Fix System
+- **Automatic fixing** of common issues (`--fix`)
+- **Dry-run mode** (`--dry-run`) to preview fixes
+- **Fixable issues**: missing dataset_description.json, missing sidecars, .bidsignore updates
+- List all fixable issues (`--list-fixes`)
+
+#### Plugin System
+- **Custom validators** via Python plugins in `<dataset>/validators/`
+- **Plugin template generator** (`--init-plugin <name>`)
+- **Plugin discovery** and loading (`--list-plugins`)
+- **Plugin disable flag** (`--no-plugins`)
+- Context-aware API with access to files, subjects, modalities
+
+#### REST API
+- **Blueprint-based API** at `/api/v1/`
+- Endpoints: `/health`, `/schemas`, `/schemas/<version>`, `/validate`
+- JSON request/response format
+- Async validation with progress tracking
+
+#### New Schemas
+- **Physiological (physio)** schema: ECG, EDA, respiration, PPG, EMG support
+- **Eyetracking** schema: gaze tracking, fixations, saccades
+
+#### Survey Library
+- **Bilingual survey templates** (German + English in single JSON)
+- **i18n system** for compile-time language selection
+- Surveys: PHQ-9, GAD-7, PSS-10, WHO-5, Rosenberg, MAIA, PSQI, BDI, DANCEQ, HFerst, GoldDSI
+- Migration tools: `prism_tools.py survey i18n-migrate` and `i18n-build`
+
+#### Project Configuration
+- **`.prismrc.json`** project config file support
+- Settings: default schema version, output format, strict mode, ignored patterns
+- Per-dataset configuration
+
+#### Testing
+- **30 pytest unit tests** covering core functionality
+- Test coverage for issues, validators, config, formatters
+
+#### Web Interface Enhancements
+- **Progress tracking** with percentage and current file
+- Server-Sent Events for real-time updates
+- API blueprint integration
+
+### Changed
+- CLI now uses structured error codes instead of free-form messages
+- Validation results include severity levels (error, warning, info)
+- Improved error messages with fix hints
+
+### Technical Details
+- New dependencies: None (pure Python implementation)
+- Backwards compatible with v1.0.0
+
+---
+
 ## [1.0.0] - 2025-10-09
 
 ### Added - Major Release 🎉

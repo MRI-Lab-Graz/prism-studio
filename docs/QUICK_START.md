@@ -8,10 +8,20 @@
 ## 2) Validate a dataset (CLI)
 
 ```bash
+# Basic validation
 python prism-validator.py /path/to/dataset
+
+# JSON output for CI/CD
+python prism-validator.py /path/to/dataset --json
+
+# Auto-fix common issues
+python prism-validator.py /path/to/dataset --fix
+
+# Export as SARIF (GitHub Code Scanning)
+python prism-validator.py /path/to/dataset --format sarif -o results.sarif
 ```
 
-See [USAGE.md](USAGE.md) for CLI options (including optional BIDS validation).
+See [USAGE.md](USAGE.md) for all CLI options.
 
 ## 3) Run the web interface
 
@@ -19,10 +29,23 @@ See [USAGE.md](USAGE.md) for CLI options (including optional BIDS validation).
 python prism-validator-web.py
 ```
 
+Open http://localhost:5001 in your browser.
+
 ## 4) Use PRISM tools
 
 ```bash
+# List all commands
 python prism_tools.py --help
+
+# Build bilingual survey template
+python prism_tools.py survey i18n-build library/survey/survey-phq9.json --lang en
+
+# Initialize a plugin
+python prism-validator.py --init-plugin my_validator /path/to/dataset
 ```
 
-See [PRISM_TOOLS.rst](PRISM_TOOLS.rst).
+See [PRISM_TOOLS.rst](PRISM_TOOLS.rst) and [USAGE.md](USAGE.md).
+
+## 5) Error Codes
+
+All errors use structured PRISM codes (PRISM001-PRISM9xx). See [ERROR_CODES.md](ERROR_CODES.md) for the complete reference.

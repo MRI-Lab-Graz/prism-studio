@@ -63,6 +63,16 @@ python prism-validator.py /path/to/your/dataset
 |------|-------------|---------|
 | `--schema-version` | Specify which schema version to use (default: `stable`). | `python prism-validator.py /data --schema-version v0.1` |
 | `-v`, `--verbose` | Show detailed progress and file scanning info. | `python prism-validator.py /data -v` |
+| `--json` | Output results as JSON (compact). | `python prism-validator.py /data --json` |
+| `--json-pretty` | Output results as formatted JSON. | `python prism-validator.py /data --json-pretty` |
+| `--format` | Output format: json, sarif, junit, markdown, csv. | `python prism-validator.py /data --format sarif` |
+| `-o`, `--output` | Write output to file instead of stdout. | `python prism-validator.py /data --format junit -o report.xml` |
+| `--fix` | Automatically fix common issues. | `python prism-validator.py /data --fix` |
+| `--dry-run` | Preview what --fix would do without making changes. | `python prism-validator.py /data --dry-run` |
+| `--list-fixes` | List all auto-fixable issue types. | `python prism-validator.py --list-fixes` |
+| `--init-plugin` | Generate a plugin template in validators/. | `python prism-validator.py /data --init-plugin custom` |
+| `--list-plugins` | List loaded plugins for the dataset. | `python prism-validator.py /data --list-plugins` |
+| `--no-plugins` | Disable plugin loading. | `python prism-validator.py /data --no-plugins` |
 | `--bids` | Run the standard BIDS validator in addition to PRISM validation. | `python prism-validator.py /data --bids` |
 | `--bids-warnings` | Show warnings from the BIDS validator (default: hidden). | `python prism-validator.py /data --bids --bids-warnings` |
 | `--list-versions` | Show all available schema versions. | `python prism-validator.py --list-versions` |
@@ -84,4 +94,195 @@ python prism-validator.py /path/to/your/dataset
 ✅ VALIDATION RESULTS
 ============================================================
 🎉 No issues found! Dataset is valid.
+```
+
+---
+
+## 🔧 Auto-Fix Mode
+
+Prism-Validator can automatically fix common issues in your dataset.
+
+### Preview Fixes (Dry Run)
+
+```bash
+python prism-validator.py /path/to/dataset --dry-run
+```
+
+Output:
+```
+🔧 Found 3 fixable issue(s):
+==============================================================
+  1. [PRISM001] Missing dataset_description.json
+     Action: create → dataset_description.json
+  2. [PRISM201] Missing sidecar for sub-01/survey/sub-01_task-bdi_survey.tsv
+     Action: create → sub-01_task-bdi_survey.json
+  3. [PRISM501] .bidsignore needs update for PRISM compatibility
+     Action: update → .bidsignore
+==============================================================
+🔍 Dry run - no changes made.
+   Run with --fix to apply these changes.
+```
+
+### Apply Fixes
+
+```bash
+python prism-validator.py /path/to/dataset --fix
+```
+
+### List Fixable Issues
+
+```bash
+python prism-validator.py --list-fixes
+```
+
+---
+
+## 📄 Output Formats
+
+### JSON Output (for CI/CD)
+
+```bash
+# Compact JSON
+python prism-validator.py /data --json
+
+# Pretty-printed JSON
+python prism-validator.py /data --json-pretty
+```
+
+### SARIF (GitHub/GitLab Code Scanning)
+
+```bash
+python prism-validator.py /data --format sarif -o report.sarif
+```
+
+Upload to GitHub Actions or GitLab SAST for inline annotations.
+
+### JUnit XML (CI Test Results)
+
+```bash
+python prism-validator.py /data --format junit -o junit-results.xml
+```
+
+Compatible with Jenkins, GitLab CI, GitHub Actions test reporting.
+
+### Markdown Report
+
+```bash
+python prism-validator.py /data --format markdown -o report.md
+```
+
+Generates a human-readable report with validation badge.
+
+### CSV Export
+
+```bash
+python prism-validator.py /data --format csv -o issues.csv
+```
+
+Simple spreadsheet-compatible export of all issues.
+
+---
+
+## 🔌 Plugin System
+
+Extend validation with custom checks by creating plugins.
+
+### Create a Plugin
+
+```bash
+python prism-validator.py /path/to/dataset --init-plugin my_custom_checks
+```
+
+This creates `<dataset>/validators/my_custom_checks.py` with a template.
+
+### Plugin Structure
+
+```python
+# validators/my_custom_checks.py
+PLUGIN_NAME = "my_custom_checks"
+PLUGIN_DESCRIPTION = "Custom validation rules"
+PLUGIN_VERSION = "1.0.0"
+
+def validate(dataset_path: str, context: dict) -> list:
+    """
+    Returns list of issues as tuples: (severity, message, [file_path])
+    severity: "ERROR", "WARNING", or "INFO"
+    """
+    issues = []
+    
+    # Your custom validation logic here
+    if not os.path.exists(os.path.join(dataset_path, "README.md")):
+        issues.append(("WARNING", "Dataset should include a README file"))
+    
+    return issues
+```
+
+### List Loaded Plugins
+
+```bash
+python prism-validator.py /path/to/dataset --list-plugins
+```
+
+### Disable Plugins
+
+```bash
+python prism-validator.py /path/to/dataset --no-plugins
+```
+
+---
+
+## 📋 Project Configuration
+
+Create a `.prismrc.json` file in your dataset root:
+
+```json
+{
+  "schema_version": "stable",
+  "strict_mode": false,
+  "run_bids": false,
+  "ignore_paths": ["sourcedata/", "derivatives/", "code/"],
+  "plugins": ["./validators/custom_checks.py"]
+}
+```
+
+| Setting | Type | Description |
+|---------|------|-------------|
+| `schema_version` | string | Schema version to use (default: "stable") |
+| `strict_mode` | boolean | Treat warnings as errors |
+| `run_bids` | boolean | Run BIDS validator in addition to PRISM |
+| `ignore_paths` | array | Paths to skip during validation |
+| `plugins` | array | Additional plugin paths to load |
+
+CLI arguments override config file settings.
+
+---
+
+## 🌐 REST API
+
+Prism-Validator includes a REST API for programmatic access.
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/health` | Health check |
+| GET | `/api/v1/schemas` | List available schemas |
+| POST | `/api/v1/validate` | Validate a dataset path |
+
+### Example: Validate via API
+
+```bash
+curl -X POST http://localhost:5001/api/v1/validate \
+  -H "Content-Type: application/json" \
+  -d '{"path": "/path/to/dataset"}'
+```
+
+Response:
+```json
+{
+  "valid": false,
+  "summary": {"errors": 1, "warnings": 2, "info": 0},
+  "issues": [...],
+  "statistics": {...}
+}
 ```

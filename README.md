@@ -194,13 +194,18 @@ Use the `convert physio` command to process the data.
 [Read the full guide here](docs/SURVEY_DATA_IMPORT.md).
 
 ### ✅ Validation Features
-- **Multi-modal validation**: Supports survey, biometrics, and physiological data
+- **Multi-modal validation**: Supports survey, biometrics, physiological, eyetracking data
 - **BIDS-App Compatibility**: Automatically updates `.bidsignore` to ensure custom modalities are ignored by standard BIDS tools (e.g., fMRIPrep), preventing crashes.
 - **BIDS-inspired naming**: Validates filenames follow the pattern `sub-<label>_[ses-<label>_]task-<label>_[run-<index>_]<suffix>`
 - **JSON schema validation**: Validates sidecar metadata against modality-specific schemas
 - **Schema versioning**: Multiple schema versions (stable, v0.1, etc.) selectable in UI
 - **Flexible structure**: Supports both session-based and direct subject organization
 - **Cross-subject consistency**: Warns when subjects have inconsistent modalities or tasks
+- **Structured error codes**: All issues have unique codes (PRISM001-PRISM9xx) with fix hints
+- **Auto-fix mode**: Automatically repair common issues with `--fix`
+- **Multiple output formats**: JSON, SARIF, JUnit XML, Markdown, CSV for CI/CD integration
+- **Plugin system**: Extend validation with custom checks via `validators/` directory
+- **Project configuration**: Per-dataset settings via `.prismrc.json`
 - **Comprehensive reporting**: 
   - Dataset summary with subject/session counts
   - Modality breakdown with file counts
@@ -231,7 +236,8 @@ dataset/
 | `survey` | .tsv | StimulusType, FileFormat, TaskName, OriginalName |
 | `biometrics` | .tsv | StimulusType, FileFormat, Equipment, BiometricName, OriginalName |
 | `events` | .tsv | StimulusPresentation (OperatingSystem, SoftwareName) |
-| `physiological` | .edf, .bdf, .txt, .csv | (Standard BIDS physio) |
+| `physio` | .tsv, .edf, .bdf | SamplingFrequency, StartTime, Columns |
+| `eyetracking` | .tsv, .edf, .asc | SamplingFrequency, Manufacturer, EyeTracker |
 
 ## Super-BIDS: Enhanced Validation
 
@@ -298,6 +304,34 @@ Each stimulus file must be associated with metadata in a `.json` sidecar. Sideca
 ### Basic validation:
 ```bash
 python prism-validator.py /path/to/dataset
+```
+
+### JSON output for CI/CD:
+```bash
+python prism-validator.py /path/to/dataset --json
+python prism-validator.py /path/to/dataset --json-pretty
+```
+
+### Auto-fix common issues:
+```bash
+python prism-validator.py /path/to/dataset --fix          # Apply fixes
+python prism-validator.py /path/to/dataset --dry-run      # Preview fixes
+python prism-validator.py --list-fixes                    # List fixable issues
+```
+
+### Output formats (SARIF, JUnit, etc.):
+```bash
+python prism-validator.py /path/to/dataset --format sarif -o report.sarif
+python prism-validator.py /path/to/dataset --format junit -o report.xml
+python prism-validator.py /path/to/dataset --format markdown -o report.md
+python prism-validator.py /path/to/dataset --format csv -o report.csv
+```
+
+### Plugin system:
+```bash
+python prism-validator.py /path/to/dataset --init-plugin my_checks  # Create plugin template
+python prism-validator.py /path/to/dataset --list-plugins           # List loaded plugins
+python prism-validator.py /path/to/dataset --no-plugins             # Disable plugins
 ```
 
 ### Verbose output (shows scanning details):
@@ -473,11 +507,26 @@ See [`docs/LIMESURVEY_INTEGRATION.md`](docs/LIMESURVEY_INTEGRATION.md) for the f
 
 ## 🔮 Future Enhancements
 
-1. **Additional modalities**: Add schemas for eye-tracking
-2. **Cross-file validation**: Validate stimulus-response timing relationships
-3. **BIDS compatibility**: Ensure full compatibility with official BIDS standard
-4. **Batch processing**: Support for validating multiple datasets via web UI
-5. **Export formats**: BIDS package export, DataLad integration
+1. **Cross-file validation**: Validate stimulus-response timing relationships
+2. **BIDS compatibility**: Ensure full compatibility with official BIDS standard
+3. **Batch processing**: Support for validating multiple datasets via web UI
+4. **Export formats**: BIDS package export, DataLad integration
+
+## 📋 Project Configuration (.prismrc.json)
+
+Create a `.prismrc.json` file in your dataset root for per-project settings:
+
+```json
+{
+  "schema_version": "stable",
+  "strict_mode": false,
+  "run_bids": false,
+  "ignore_paths": ["sourcedata/", "derivatives/"],
+  "plugins": ["./validators/custom_checks.py"]
+}
+```
+
+Settings can be overridden via CLI arguments.
 
 ## Installation
 
@@ -576,8 +625,27 @@ python prism-validator.py /path/to/dataset
 # Validate with specific schema version
 python prism-validator.py /path/to/dataset --schema-version v0.1
 
+# JSON output for CI/CD pipelines
+python prism-validator.py /path/to/dataset --json
+python prism-validator.py /path/to/dataset --json-pretty
+
+# Auto-fix common issues
+python prism-validator.py /path/to/dataset --fix
+python prism-validator.py /path/to/dataset --dry-run  # Preview only
+
+# Output to different formats
+python prism-validator.py /path/to/dataset --format sarif -o report.sarif
+python prism-validator.py /path/to/dataset --format junit -o results.xml
+
+# Plugin management
+python prism-validator.py /path/to/dataset --init-plugin custom_rules
+python prism-validator.py /path/to/dataset --list-plugins
+
 # List available schema versions
 python prism-validator.py --list-versions
+
+# List auto-fixable issues
+python prism-validator.py --list-fixes
 
 # Verbose output
 python prism-validator.py /path/to/dataset -v

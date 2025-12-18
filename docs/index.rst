@@ -8,6 +8,16 @@ Prism-Validator Documentation
 
 Prism-Validator is a hybrid dataset validation tool for psychological experiments. It validates standard BIDS datasets and additionally enforces PRISM extensions (e.g., stricter metadata requirements for certain files and support for non-BIDS modalities like surveys/biometrics/physio) while remaining compatible with BIDS tools/apps.
 
+**Key Features:**
+
+- **Multi-modal validation**: survey, physio, eyetracking, biometrics, events, anat, func, dwi, fmap
+- **Structured error codes**: PRISM001-PRISM9xx with severity levels
+- **Auto-fix**: Automatically fix common issues (``--fix``)
+- **Multiple output formats**: JSON, SARIF, JUnit XML, Markdown, CSV
+- **Plugin system**: Custom validators for project-specific rules
+- **REST API**: Integrate validation into workflows
+- **Bilingual surveys**: German + English templates in single JSON files
+
 .. toctree::
    :maxdepth: 2
    :caption: Getting Started

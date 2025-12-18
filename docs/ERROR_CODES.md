@@ -2,235 +2,251 @@
 
 This document describes all validation error codes used by Prism-Validator and how to fix them.
 
-## Table of Contents
+## PRISM Error Code System
 
-- [INVALID_BIDS_FILENAME](#invalid_bids_filename)
-- [MISSING_SIDECAR](#missing_sidecar)
-- [SCHEMA_VALIDATION_ERROR](#schema_validation_error)
-- [INVALID_JSON](#invalid_json)
-- [FILENAME_PATTERN_MISMATCH](#filename_pattern_mismatch)
+All errors now use structured codes in the format `PRISMxxx`:
+
+| Code Range | Category | Description |
+|------------|----------|-------------|
+| PRISM0xx | Dataset Structure | Dataset-level issues |
+| PRISM1xx | File Naming | Filename pattern errors |
+| PRISM2xx | Sidecar/Metadata | Missing or invalid sidecars |
+| PRISM3xx | Schema Validation | JSON schema errors |
+| PRISM4xx | Content Validation | Data content issues |
+| PRISM5xx | BIDS Compatibility | BIDS-specific warnings |
+| PRISM9xx | System/Plugin | Internal or plugin errors |
 
 ---
 
-## INVALID_BIDS_FILENAME
+## Dataset Structure Errors (PRISM0xx)
 
-**Description:** Filenames must follow BIDS naming convention (sub-\<label\>_[ses-\<label\>_]...)
+### PRISM001 - Missing dataset_description.json
 
-**Common Causes:**
-- Missing required `sub-` prefix
-- Invalid characters in labels (only alphanumeric allowed)
-- Missing required entities for certain modalities
-- Incorrect ordering of BIDS entities
+**Description:** The required `dataset_description.json` file is missing from the dataset root.
 
-**How to Fix:**
+**Fix Hint:** Create a `dataset_description.json` file at the dataset root with required fields: `Name`, `BIDSVersion`
 
-BIDS filenames follow this pattern:
+**Auto-fixable:** ✅ Yes (`--fix` creates a template)
+
+**Example Fix:**
+```json
+{
+  "Name": "My Dataset",
+  "BIDSVersion": "1.9.0",
+  "DatasetType": "raw"
+}
 ```
-sub-<label>_[ses-<label>_][task-<label>_][run-<index>_]<suffix>.<extension>
-```
+
+---
+
+### PRISM002 - No subjects found
+
+**Description:** No subject directories (starting with `sub-`) were found in the dataset.
+
+**Fix Hint:** Ensure subject folders are named `sub-<label>` and located at the dataset root.
+
+**Auto-fixable:** ❌ No (requires data reorganization)
+
+---
+
+### PRISM003 - Invalid dataset_description.json
+
+**Description:** The `dataset_description.json` file exists but contains invalid JSON or missing required fields.
+
+**Fix Hint:** Ensure the file contains valid JSON with required BIDS fields.
+
+---
+
+### PRISM004 - Missing participants.tsv
+
+**Description:** The `participants.tsv` file is missing.
+
+**Fix Hint:** Create a `participants.tsv` file listing all subjects with at least a `participant_id` column.
+
+---
+
+## File Naming Errors (PRISM1xx)
+
+### PRISM101 - Invalid filename pattern
+
+**Description:** Filename does not follow BIDS naming conventions.
+
+**Fix Hint:** Use BIDS naming: `sub-<label>[_ses-<label>][_task-<label>]_<suffix>.<ext>`
 
 **Examples of Valid Filenames:**
 - `sub-01_task-faces_bold.nii.gz`
 - `sub-01_ses-01_task-nback_eeg.edf`
 - `sub-02_task-rest_physio.tsv`
-- `sub-01_T1w.nii.gz`
 
 **Examples of Invalid Filenames:**
 - `subject01_task-faces.nii.gz` ❌ (missing `sub-` prefix)
 - `sub-01-task-faces.nii.gz` ❌ (use `_` not `-` between entities)
-- `task-recognition_stim.json` ❌ (missing `sub-` prefix)
-- `dataset_description.json` ❌ (root-level files don't follow BIDS naming - this is a special case that should be at dataset root)
-
-**Resources:**
-- [BIDS Specification: Common Principles](https://bids-specification.readthedocs.io/en/stable/02-common-principles.html#file-name-structure)
-- [BIDS Specification: Entity Key Table](https://bids-specification.readthedocs.io/en/stable/99-appendices/04-entity-table.html)
 
 ---
 
-## MISSING_SIDECAR
+### PRISM102 - Subject ID mismatch
 
-**Description:** Required JSON sidecar files are missing for data files
+**Description:** The subject ID in the filename doesn't match the parent directory.
 
-**Common Causes:**
-- JSON sidecar file was not created for a data file
-- JSON sidecar has different base name than the data file
-- JSON sidecar is in a different directory
+**Fix Hint:** Ensure the `sub-<label>` in the filename matches the parent directory name.
 
-**How to Fix:**
+---
 
-Each data file needs a corresponding JSON sidecar with metadata. The JSON file should have the same base name as the data file but with `.json` extension.
+### PRISM103 - Session ID mismatch
+
+**Description:** The session ID in the filename doesn't match the parent directory.
+
+**Fix Hint:** Ensure the `ses-<label>` in the filename matches the parent directory name.
+
+---
+
+### PRISM104 - Invalid characters
+
+**Description:** Filename contains invalid characters.
+
+**Fix Hint:** Use only alphanumeric characters, hyphens, and underscores.
+
+---
+
+## Sidecar/Metadata Errors (PRISM2xx)
+
+### PRISM201 - Missing sidecar
+
+**Description:** A data file is missing its required JSON sidecar.
+
+**Fix Hint:** Create a JSON sidecar with the same base name as the data file.
+
+**Auto-fixable:** ✅ Yes (`--fix` creates template sidecars)
 
 **Example:**
 ```
-sub-01/
-  ses-01/
-    func/
-      sub-01_ses-01_task-nback_bold.nii.gz     # Data file
-      sub-01_ses-01_task-nback_bold.json       # Required sidecar
+sub-01/survey/sub-01_task-bdi_survey.tsv     # Data file
+sub-01/survey/sub-01_task-bdi_survey.json    # Required sidecar (auto-created by --fix)
 ```
-
-**Minimum Required Fields** (vary by modality):
-```json
-{
-  "TaskName": "N-back working memory",
-  "SamplingFrequency": 1000,
-  "TaskDescription": "Participants view stimuli..."
-}
-```
-
-**Resources:**
-- [BIDS Specification: Metadata Files](https://bids-specification.readthedocs.io/en/stable/02-common-principles.html#metadata-files)
 
 ---
 
-## SCHEMA_VALIDATION_ERROR
+### PRISM202 - Invalid JSON syntax
 
-**Description:** JSON sidecar content does not match required schema
+**Description:** The JSON sidecar contains syntax errors.
 
-**Common Causes:**
-- Required fields are missing
-- Field values have incorrect type (e.g., string instead of number)
-- Field values are outside valid range
-- Extra fields that are not allowed
-
-**How to Fix:**
-
-Check the schema requirements for your modality:
-- `schemas/eeg.schema.json` for EEG data
-- `schemas/eyetracking.schema.json` for eye-tracking data
-- `schemas/physiological.schema.json` for physiological recordings
-- etc.
-
-**Example Error:**
-```
-"SamplingFrequency" is required but missing
-```
-
-**Fix:**
-```json
-{
-  "SamplingFrequency": 1000,
-  "TaskName": "rest"
-}
-```
-
-**Common Required Fields by Modality:**
-
-**EEG:**
-- `SamplingFrequency` (number, Hz)
-- `EEGReference` (string)
-- `PowerLineFrequency` (number, 50 or 60)
-
-**Eye-tracking:**
-- `SamplingFrequency` (number, Hz)
-- `ScreenResolution` (array of 2 numbers)
-- `EyeTrackingSoftware` (string)
-
-**Physiological:**
-- `SamplingFrequency` (number, Hz)
-- `Columns` (array of strings)
-
-**Resources:**
-- [Schema Versioning Guide](SCHEMA_VERSIONING_GUIDE.md)
-- Check `schemas/` directory for complete requirements
+**Fix Hint:** Validate JSON syntax - check for missing quotes, trailing commas, etc.
 
 ---
 
-## INVALID_JSON
+### PRISM203 - Empty sidecar
 
-**Description:** JSON files contain syntax errors or are not valid JSON
+**Description:** The JSON sidecar is empty or contains only `{}`.
 
-**Common Causes:**
-- Missing quotes around strings
-- Missing commas between fields
-- Trailing commas after last field
-- Using single quotes instead of double quotes
-- Unescaped special characters
-- Invalid UTF-8 encoding
-
-**How to Fix:**
-
-**Invalid JSON:**
-```text
-{
-  "TaskName": 'faces',    # Single quotes - invalid!
-  "Duration": 300,        # Trailing comma - invalid!
-}
-```
-
-**Valid JSON:**
-```json
-{
-  "TaskName": "faces",
-  "Duration": 300
-}
-```
-
-**Validation Tools:**
-- Use `jsonlint` or online JSON validators
-- Most code editors have JSON validation built-in
-- Python: `python -m json.tool your_file.json`
-
-**Resources:**
-- [JSON Specification](https://www.json.org/)
-- [JSONLint Online Validator](https://jsonlint.com/)
+**Fix Hint:** Add required metadata fields to the sidecar.
 
 ---
 
-## FILENAME_PATTERN_MISMATCH
+## Schema Validation Errors (PRISM3xx)
 
-**Description:** Filenames do not match expected patterns for their modality
+### PRISM301 - Missing required field
 
-**Common Causes:**
-- Wrong file extension for modality
-- Missing required suffix
-- File is in wrong modality directory
+**Description:** A required field is missing from the sidecar.
 
-**How to Fix:**
+**Fix Hint:** Add the missing field to the JSON sidecar.
 
-Each modality expects specific file extensions and suffixes:
+---
 
-**Movie/Video:**
-- Extension: `.mp4`
-- Directory: `movie/`
+### PRISM302 - Invalid field type
 
-**Images:**
-- Extensions: `.png`, `.jpg`, `.jpeg`, `.tiff`
-- Directory: `image/`
+**Description:** A field has the wrong data type (e.g., string instead of number).
 
-**EEG:**
-- Extensions: `.edf`, `.bdf`, `.eeg`
-- Directory: `eeg/`
+**Fix Hint:** Correct the field type according to the schema.
 
-**Eye-tracking:**
-- Extensions: `.tsv`, `.edf`
-- Directory: `eyetracking/`
+---
 
-**Behavioral:**
-- Extension: `.tsv`
-- Directory: `behavior/`
+### PRISM303 - Invalid field value
 
-**MRI (Anatomical):**
-- Extension: `.nii` or `.nii.gz`
-- Required suffix: `_T1w`, `_T2w`, `_FLAIR`, etc.
-- Directory: `anat/`
+**Description:** A field value is outside the allowed range or not in the enum.
 
-**MRI (Functional):**
-- Extension: `.nii` or `.nii.gz`
-- Required suffix: `_bold`
-- Directory: `func/`
+**Fix Hint:** Use a valid value from the schema definition.
 
-**Example Error:**
+---
+
+## BIDS Compatibility Warnings (PRISM5xx)
+
+### PRISM501 - .bidsignore needs update
+
+**Description:** The `.bidsignore` file needs to be updated for PRISM compatibility.
+
+**Fix Hint:** Add PRISM-specific directories to `.bidsignore` so standard BIDS tools ignore them.
+
+**Auto-fixable:** ✅ Yes
+
+---
+
+### PRISM502 - BIDS validator warning
+
+**Description:** The standard BIDS validator reported a warning.
+
+**Fix Hint:** Review the BIDS validator output for details.
+
+---
+
+## Plugin/System Errors (PRISM9xx)
+
+### PRISM900 - Plugin issue
+
+**Description:** A validation issue reported by a custom plugin.
+
+**Fix Hint:** Check the plugin-specific message for details.
+
+---
+
+### PRISM901 - Plugin failure
+
+**Description:** A plugin failed to execute.
+
+**Fix Hint:** Check plugin code for errors; ensure `validate()` function returns a list.
+
+---
+
+### PRISM999 - Internal error
+
+**Description:** An unexpected internal error occurred.
+
+**Fix Hint:** Report this issue on GitHub with full error details.
+
+---
+
+## Legacy Error Names
+
+For backwards compatibility, these legacy error names map to PRISM codes:
+
+| Legacy Name | PRISM Code |
+|-------------|------------|
+| INVALID_BIDS_FILENAME | PRISM101 |
+| MISSING_SIDECAR | PRISM201 |
+| SCHEMA_VALIDATION_ERROR | PRISM301-303 |
+| INVALID_JSON | PRISM202 |
+| FILENAME_PATTERN_MISMATCH | PRISM101 |
+
+---
+
+## Auto-Fix Support
+
+Many issues can be automatically fixed using `--fix`:
+
+```bash
+# Preview fixes without applying
+python prism-validator.py /path/to/dataset --dry-run
+
+# Apply fixes
+python prism-validator.py /path/to/dataset --fix
+
+# List all fixable issues
+python prism-validator.py --list-fixes
 ```
-sub-01_task-faces_bold.mp4 in func/ directory
-```
 
-**Fix:** Either:
-1. Change extension to `.nii.gz` if it's actually fMRI data
-2. Move to `movie/` directory and rename to valid movie filename
-
-**Resources:**
-- [BIDS Specification: Modality Specific Files](https://bids-specification.readthedocs.io/en/stable/04-modality-specific-files/01-magnetic-resonance-imaging-data.html)
+**Auto-fixable issues:**
+- PRISM001: Creates template `dataset_description.json`
+- PRISM201: Creates template JSON sidecars
+- PRISM501: Updates `.bidsignore` for PRISM compatibility
 
 ---
 
@@ -242,14 +258,3 @@ If you're still stuck after reading this documentation:
 2. Review example datasets in `docs/examples/`
 3. Open an issue on [GitHub](https://github.com/MRI-Lab-Graz/prism-validator/issues)
 4. Consult the [BIDS Specification](https://bids-specification.readthedocs.io/)
-
-## Quick Fixes Checklist
-
-- [ ] All filenames start with `sub-<label>_`
-- [ ] Entities are separated by `_` not `-`
-- [ ] File extensions match modality (`.nii.gz` for MRI, `.edf` for EEG, etc.)
-- [ ] JSON sidecar exists for every data file
-- [ ] JSON files are valid (no syntax errors)
-- [ ] JSON sidecars contain all required fields for the modality
-- [ ] Files are in correct modality directories
-- [ ] `dataset_description.json` exists at dataset root
