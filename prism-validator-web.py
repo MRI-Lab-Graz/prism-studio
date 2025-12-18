@@ -60,10 +60,59 @@ except Exception as import_error:
     print(f"⚠️  Could not import SurveyManager: {import_error}")
 
 try:
-    from survey_convert import convert_survey_xlsx_to_prism_dataset
+    from survey_convert import (
+        convert_survey_xlsx_to_prism_dataset,
+        convert_survey_lsa_to_prism_dataset,
+        infer_lsa_metadata,
+    )
 except Exception as import_error:
     convert_survey_xlsx_to_prism_dataset = None
+    convert_survey_lsa_to_prism_dataset = None
+    infer_lsa_metadata = None
     print(f"⚠️  Could not import survey_convert: {import_error}")
+
+
+def _list_survey_template_languages(library_path: str) -> tuple[list[str], str | None]:
+    """Return (languages, default_language) from survey templates in a folder."""
+    langs: set[str] = set()
+    defaults: set[str] = set()
+
+    try:
+        root = Path(library_path).resolve()
+    except Exception:
+        return [], None
+
+    if not root.exists() or not root.is_dir():
+        return [], None
+
+    for p in sorted(root.glob("survey-*.json")):
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            continue
+
+        i18n = data.get("I18n")
+        if isinstance(i18n, dict):
+            i18n_langs = i18n.get("Languages")
+            if isinstance(i18n_langs, list):
+                for v in i18n_langs:
+                    if isinstance(v, str) and v.strip():
+                        langs.add(v.strip())
+            d = i18n.get("DefaultLanguage")
+            if isinstance(d, str) and d.strip():
+                defaults.add(d.strip())
+
+        tech = data.get("Technical")
+        if isinstance(tech, dict):
+            tl = tech.get("Language")
+            if isinstance(tl, str) and tl.strip():
+                langs.add(tl.strip())
+
+    default = None
+    if len(defaults) == 1:
+        default = next(iter(defaults))
+    return sorted(langs), default
 
 try:
     from derivatives_surveys import compute_survey_derivatives
@@ -1507,22 +1556,32 @@ def api_validate():
     
 @app.route("/api/survey-convert", methods=["POST"])
 def api_survey_convert():
-    """Convert an uploaded survey Excel file (.xlsx) to a PRISM dataset and return it as a zip."""
-    if not convert_survey_xlsx_to_prism_dataset:
+    """Convert an uploaded survey file (.xlsx or .lsa) to a PRISM dataset and return it as a zip.
+
+    Note: For .lsa inputs, language=auto will try to infer the language from the archive.
+    """
+    if not convert_survey_xlsx_to_prism_dataset and not convert_survey_lsa_to_prism_dataset:
         return jsonify({"error": "Survey conversion module not available"}), 500
 
-    excel_file = request.files.get("excel")
+    uploaded_file = request.files.get("excel") or request.files.get("file")
     library_path = (request.form.get("library_path") or "").strip()
 
-    if not excel_file or not getattr(excel_file, "filename", ""):
-        return jsonify({"error": "Missing Excel file"}), 400
+    if not uploaded_file or not getattr(uploaded_file, "filename", ""):
+        return jsonify({"error": "Missing input file"}), 400
 
-    filename = secure_filename(excel_file.filename)
-    if not filename.lower().endswith(".xlsx"):
-        return jsonify({"error": "Only .xlsx files are supported"}), 400
+    filename = secure_filename(uploaded_file.filename)
+    suffix = Path(filename).suffix.lower()
+    if suffix not in {".xlsx", ".lsa"}:
+        return jsonify({"error": "Only .xlsx and .lsa files are supported"}), 400
 
     if not library_path:
-        library_path = str((BASE_DIR / "survey_library").resolve())
+        # Prefer shipped survey templates if available.
+        preferred = (BASE_DIR / "library" / "survey_i18n").resolve()
+        fallback = (BASE_DIR / "survey_library").resolve()
+        if preferred.exists() and any(preferred.glob("survey-*.json")):
+            library_path = str(preferred)
+        else:
+            library_path = str(fallback)
 
     if not os.path.exists(library_path) or not os.path.isdir(library_path):
         return jsonify({"error": f"Library path is not a directory: {library_path}"}), 400
@@ -1533,29 +1592,64 @@ def api_survey_convert():
     sheet = (request.form.get("sheet") or "0").strip() or 0
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
+    language = (request.form.get("language") or "").strip() or None
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_")
     try:
         tmp_dir_path = Path(tmp_dir)
         input_path = tmp_dir_path / filename
-        excel_file.save(str(input_path))
+        uploaded_file.save(str(input_path))
 
         output_root = tmp_dir_path / "prism_dataset"
 
-        convert_survey_xlsx_to_prism_dataset(
-            input_path=input_path,
-            library_dir=library_path,
-            output_root=output_root,
-            survey=survey_filter,
-            id_column=id_column,
-            session_column=session_column,
-            sheet=sheet,
-            unknown=unknown,
-            dry_run=False,
-            force=True,
-            name=dataset_name,
-            authors=["prism-validator-web"],
-        )
+        detected_language = None
+        detected_platform = None
+        detected_version = None
+
+        if suffix == ".lsa" and infer_lsa_metadata:
+            try:
+                meta = infer_lsa_metadata(input_path)
+                detected_language = meta.get("language")
+                detected_platform = meta.get("software_platform")
+                detected_version = meta.get("software_version")
+            except Exception:
+                pass
+
+        if suffix == ".xlsx":
+            if not convert_survey_xlsx_to_prism_dataset:
+                return jsonify({"error": "Excel conversion is not available in this build"}), 500
+            convert_survey_xlsx_to_prism_dataset(
+                input_path=input_path,
+                library_dir=library_path,
+                output_root=output_root,
+                survey=survey_filter,
+                id_column=id_column,
+                session_column=session_column,
+                sheet=sheet,
+                unknown=unknown,
+                dry_run=False,
+                force=True,
+                name=dataset_name,
+                authors=["prism-validator-web"],
+                language=language,
+            )
+        else:
+            if not convert_survey_lsa_to_prism_dataset:
+                return jsonify({"error": "LimeSurvey (.lsa) conversion is not available in this build"}), 500
+            convert_survey_lsa_to_prism_dataset(
+                input_path=input_path,
+                library_dir=library_path,
+                output_root=output_root,
+                survey=survey_filter,
+                id_column=id_column,
+                session_column=session_column,
+                unknown=unknown,
+                dry_run=False,
+                force=True,
+                name=dataset_name,
+                authors=["prism-validator-web"],
+                language=language,
+            )
 
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -1565,12 +1659,23 @@ def api_survey_convert():
                     zf.write(p, arcname.as_posix())
         mem.seek(0)
 
-        return send_file(
+        resp = send_file(
             mem,
             mimetype="application/zip",
             as_attachment=True,
             download_name="prism_survey_dataset.zip",
         )
+
+        # Lightweight UI feedback: expose inferred metadata via headers.
+        # Frontend reads these and shows a message without extra endpoints.
+        if detected_language:
+            resp.headers["X-Prism-Detected-Language"] = str(detected_language)
+        if detected_platform:
+            resp.headers["X-Prism-Detected-SoftwarePlatform"] = str(detected_platform)
+        if detected_version:
+            resp.headers["X-Prism-Detected-SoftwareVersion"] = str(detected_version)
+
+        return resp
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
@@ -1578,6 +1683,22 @@ def api_survey_convert():
             shutil.rmtree(tmp_dir, ignore_errors=True)
         except Exception:
             pass
+
+
+@app.route("/api/survey-languages", methods=["GET"])
+def api_survey_languages():
+    """List available languages for the selected survey template library folder."""
+    library_path = (request.args.get("library_path") or "").strip()
+    if not library_path:
+        preferred = (BASE_DIR / "library" / "survey_i18n").resolve()
+        fallback = (BASE_DIR / "survey_library").resolve()
+        if preferred.exists() and any(preferred.glob("survey-*.json")):
+            library_path = str(preferred)
+        else:
+            library_path = str(fallback)
+
+    langs, default = _list_survey_template_languages(library_path)
+    return jsonify({"languages": langs, "default": default, "library_path": library_path})
 
 
 def find_dataset_root(extract_dir):
@@ -1685,7 +1806,10 @@ def main():
 @app.route("/survey-generator")
 def survey_generator():
     """Survey generator page"""
-    default_library_path = (BASE_DIR / "survey_library").resolve()
+    preferred = (BASE_DIR / "library" / "survey_i18n").resolve()
+    default_library_path = preferred
+    if not (preferred.exists() and any(preferred.glob("survey-*.json"))):
+        default_library_path = (BASE_DIR / "survey_library").resolve()
     return render_template(
         "survey_generator.html",
         default_survey_library_path=str(default_library_path),

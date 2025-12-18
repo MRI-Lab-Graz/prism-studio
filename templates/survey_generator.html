@@ -78,10 +78,10 @@
 
     <div class="card mt-4" id="landgig-convert">
         <div class="card-header bg-light">
-            <h5 class="mb-0">Convert Excel to PRISM Dataset</h5>
+            <h5 class="mb-0">Convert Survey to PRISM Dataset</h5>
         </div>
         <div class="card-body">
-            <p class="text-muted">Upload a wide-format survey Excel file (.xlsx) and download a PRISM/BIDS-style survey dataset (ZIP).</p>
+            <p class="text-muted">Upload a wide-format survey file (.xlsx) or a LimeSurvey response archive (.lsa) and download a PRISM/BIDS-style survey dataset (ZIP).</p>
 
             <div class="row g-3 align-items-end">
                 <div class="col-md-8">
@@ -95,12 +95,19 @@
                     <div class="form-text">Folder containing <code>survey-*.json</code> templates.</div>
                 </div>
                 <div class="col-md-4">
-                    <label for="convertExcelFile" class="form-label">Excel File (.xlsx)</label>
-                    <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx">
+                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx or .lsa)</label>
+                    <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa">
                 </div>
                 <div class="col-md-4">
                     <label for="convertDatasetName" class="form-label">Dataset Name (optional)</label>
                     <input type="text" class="form-control" id="convertDatasetName" placeholder="PRISM Survey Dataset">
+                </div>
+                <div class="col-md-4">
+                    <label for="convertLanguage" class="form-label">Language</label>
+                    <select class="form-select" id="convertLanguage">
+                        <option value="auto" selected>Auto (template default)</option>
+                    </select>
+                    <div class="form-text">Used to generate schema-valid survey sidecars (single-language).</div>
                 </div>
                 <div class="col-md-4">
                     <label for="convertUnknown" class="form-label">Unmapped Columns</label>
@@ -137,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const isConvert = window.location.hash === '#landgig-convert';
         if (isConvert) {
             if (pageTitleEl) pageTitleEl.textContent = 'Survey Convert';
-            if (pageSubtitleEl) pageSubtitleEl.textContent = 'Convert Excel exports to a PRISM dataset.';
+            if (pageSubtitleEl) pageSubtitleEl.textContent = 'Convert Excel exports or LimeSurvey archives to a PRISM dataset.';
             document.title = 'Prism-Validator - Survey Convert';
             if (exportCardEl) exportCardEl.classList.add('d-none');
         } else {
@@ -170,6 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const convertBtn = document.getElementById('convertBtn');
     const convertDatasetName = document.getElementById('convertDatasetName');
     const convertUnknown = document.getElementById('convertUnknown');
+    const convertLanguage = document.getElementById('convertLanguage');
     const convertError = document.getElementById('convertError');
     const convertInfo = document.getElementById('convertInfo');
 
@@ -328,9 +336,53 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.path) {
                     convertLibraryPathInput.value = data.path;
+                    refreshConvertLanguages();
                 }
             });
     });
+
+    function refreshConvertLanguages() {
+        const libraryPath = convertLibraryPathInput.value.trim();
+        const url = `/api/survey-languages?library_path=${encodeURIComponent(libraryPath)}`;
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                if (!convertLanguage) return;
+                const current = convertLanguage.value || 'auto';
+
+                // Reset options (keep Auto)
+                convertLanguage.innerHTML = '';
+                const autoOpt = document.createElement('option');
+                autoOpt.value = 'auto';
+                autoOpt.textContent = 'Auto (template default)';
+                convertLanguage.appendChild(autoOpt);
+
+                const langs = (data && data.languages) ? data.languages : [];
+                langs.forEach(lang => {
+                    const opt = document.createElement('option');
+                    opt.value = lang;
+                    opt.textContent = lang;
+                    convertLanguage.appendChild(opt);
+                });
+
+                const preferred = (data && data.default) ? data.default : null;
+                if (preferred && langs.includes(preferred)) {
+                    convertLanguage.value = preferred;
+                } else if (langs.includes(current)) {
+                    convertLanguage.value = current;
+                } else {
+                    convertLanguage.value = 'auto';
+                }
+            })
+            .catch(() => {
+                // If this fails, keep the dropdown as-is (Auto only)
+            });
+    }
+
+    if (convertLibraryPathInput) {
+        convertLibraryPathInput.addEventListener('change', refreshConvertLanguages);
+        convertLibraryPathInput.addEventListener('blur', refreshConvertLanguages);
+    }
 
     function updateConvertBtn() {
         const hasFile = convertExcelFile.files && convertExcelFile.files.length === 1;
@@ -352,10 +404,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const formData = new FormData();
+        // Backend accepts both field names; keep 'excel' for backwards compatibility.
         formData.append('excel', file);
         formData.append('library_path', convertLibraryPathInput.value.trim());
         formData.append('dataset_name', convertDatasetName.value.trim());
         formData.append('unknown', convertUnknown.value);
+        formData.append('language', convertLanguage ? convertLanguage.value : 'auto');
 
         convertBtn.disabled = true;
         convertInfo.textContent = 'Converting... this may take a moment.';
@@ -366,14 +420,22 @@ document.addEventListener('DOMContentLoaded', function() {
             body: formData,
         })
         .then(async response => {
-            if (response.ok) {
-                return response.blob();
+            if (!response.ok) {
+                const data = await response.json().catch(() => null);
+                const msg = data && data.error ? data.error : 'Conversion failed';
+                throw new Error(msg);
             }
-            const data = await response.json().catch(() => null);
-            const msg = data && data.error ? data.error : 'Conversion failed';
-            throw new Error(msg);
+
+            const detected = {
+                language: response.headers.get('X-Prism-Detected-Language'),
+                platform: response.headers.get('X-Prism-Detected-SoftwarePlatform'),
+                version: response.headers.get('X-Prism-Detected-SoftwareVersion'),
+            };
+
+            const blob = await response.blob();
+            return { blob, detected };
         })
-        .then(blob => {
+        .then(({ blob, detected }) => {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -382,7 +444,14 @@ document.addEventListener('DOMContentLoaded', function() {
             a.click();
             a.remove();
 
-            convertInfo.textContent = 'Done. Your ZIP download should start automatically.';
+            const parts = [];
+            if (detected && detected.language) parts.push(`language=${detected.language}`);
+            if (detected && detected.platform) {
+                if (detected.version) parts.push(`${detected.platform} ${detected.version}`);
+                else parts.push(`${detected.platform}`);
+            }
+            const detectedMsg = parts.length ? ` Detected: ${parts.join(', ')}.` : '';
+            convertInfo.textContent = 'Done. Your ZIP download should start automatically.' + detectedMsg;
             convertInfo.classList.remove('d-none');
         })
         .catch(err => {
@@ -393,6 +462,9 @@ document.addEventListener('DOMContentLoaded', function() {
             updateConvertBtn();
         });
     });
+
+    // Initial populate
+    refreshConvertLanguages();
 
     // Select/Deselect All Files
     selectAllBtn.addEventListener('click', () => {
