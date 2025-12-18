@@ -2,6 +2,11 @@
 """
 Web interface for prism-validator
 A simple Flask web app that provides a user-friendly interface for dataset validation
+
+This module has been refactored to use modular components from src/web/:
+- src/web/utils.py: Utility functions (path handling, error formatting)
+- src/web/validation.py: Validation logic and progress tracking
+- src/web/upload.py: File upload processing
 """
 
 import os
@@ -41,30 +46,36 @@ SRC_DIR = BASE_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
+# Import refactored web modules
 try:
-    from runner import validate_dataset as core_validate_dataset
-except Exception as import_error:
-    core_validate_dataset = None
-    print(f"⚠️  Could not import core validator: {import_error}")
+    from src.web import (
+        # Utils
+        is_system_file,
+        format_validation_results,
+        get_error_description,
+        get_error_documentation_url,
+        shorten_path,
+        get_filename_from_path,
+        # Validation
+        run_validation,
+        update_progress,
+        get_progress,
+        clear_progress,
+        SimpleStats,
+        # Upload
+        process_folder_upload as _process_folder_upload,
+        process_zip_upload as _process_zip_upload,
+        find_dataset_root,
+        METADATA_EXTENSIONS,
+        SKIP_EXTENSIONS,
+    )
+    print("✓ Web modules loaded from src/web/")
+except ImportError as e:
+    print(f"⚠️  Could not import web modules: {e}")
+    # Fallback definitions will be provided inline if needed
 
-# Progress tracking for validation jobs
-_validation_progress = {}  # job_id -> {progress, message, status}
-
-def update_progress(job_id: str, progress: int, message: str):
-    """Update progress for a validation job."""
-    _validation_progress[job_id] = {
-        "progress": progress,
-        "message": message,
-        "status": "running" if progress < 100 else "complete"
-    }
-
-def get_progress(job_id: str) -> dict:
-    """Get progress for a validation job."""
-    return _validation_progress.get(job_id, {"progress": 0, "message": "Starting...", "status": "pending"})
-
-def clear_progress(job_id: str):
-    """Clear progress for a completed job."""
-    _validation_progress.pop(job_id, None)
+# Legacy alias for backwards compatibility
+run_main_validator = run_validation
 
 try:
     from limesurvey_exporter import generate_lss
@@ -152,210 +163,14 @@ except Exception as import_error:
     print(f"⚠️  Could not import derivatives_surveys: {import_error}")
 
 
-class SimpleStats:
-    """Simple stats class to hold validation statistics"""
+# Note: run_main_validator is already aliased to run_validation above
 
-    def __init__(self, *args):
-        self.total_files = 0
-        self.subjects = set()
-        self.sessions = set()
-        self.tasks = set()
-        self.modalities = set()
-
-
-# Use subprocess to run the main validator script - single source of truth
-def run_main_validator(dataset_path, verbose=False, schema_version=None, run_bids=False):
-    """
-    Run the validation logic.
-    Prefer importing core logic directly. Fallback to subprocess if needed.
-    """
-    # Try to use core validator directly first
-    if core_validate_dataset:
-        try:
-            issues, stats = core_validate_dataset(
-                dataset_path, 
-                verbose=verbose, 
-                schema_version=schema_version,
-                run_bids=run_bids
-            )
-            
-            # Convert issues to web format if needed
-            # core_validate_dataset returns list of tuples. 
-            # If they are (level, msg), we need to add path.
-            # If they are (level, msg, path), we are good.
-            
-            web_issues = []
-            for issue in issues:
-                if len(issue) == 2:
-                    web_issues.append((issue[0], issue[1], dataset_path))
-                else:
-                    web_issues.append(issue)
-            
-            return web_issues, stats
-        except Exception as e:
-            print(f"⚠️  Error running core validator directly: {e}")
-            # Fallthrough to subprocess if direct call fails (though unlikely to work in frozen app)
-
-    import subprocess
-    import re
-
-    try:
-        # Run the main validator script
-        cmd = [sys.executable, "prism-validator.py", dataset_path]
-        if verbose:
-            cmd.append("--verbose")
-        if schema_version:
-            cmd.extend(["--schema-version", schema_version])
-        if run_bids:
-            cmd.append("--bids")
-
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, cwd=os.path.dirname(__file__)
-        )
-
-        # Helper to strip ANSI codes
-        def strip_ansi(text):
-            ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
-            return ansi_escape.sub("", text)
-
-        # The validator script exits with 0 for success, 1 for validation errors.
-        # We need to parse the output in both cases.
-        if result.returncode in [0, 1]:
-            # Parse the terminal output to extract validation results
-            stdout = result.stdout
-            stderr = result.stderr
-
-            # Extract statistics from output
-            stats = SimpleStats()
-            issues = []
-
-            # Parse output for file counts and issues
-            for line in stdout.split("\n") + stderr.split("\n"):
-                clean_line = strip_ansi(line).strip()
-
-                # Parse file count from the new output format
-                if "Total files:" in clean_line:
-                    match = re.search(r"Total files:\s*(\d+)", clean_line)
-                    if match:
-                        stats.total_files = int(match.group(1))
-                elif "📊 Found" in clean_line and "files" in clean_line:
-                    match = re.search(r"Found (\d+) files", clean_line)
-                    if match:
-                        stats.total_files = int(match.group(1))
-                # Parse error and warning counts
-                elif "Errors:" in clean_line:
-                    match = re.search(r"Errors:\s*(\d+)", clean_line)
-                    if match and int(match.group(1)) > 0:
-                        # Add a generic error - we'll get the specific errors from other lines
-                        pass
-                elif "Warnings:" in clean_line:
-                    match = re.search(r"Warnings:\s*(\d+)", clean_line)
-                    if match and int(match.group(1)) > 0:
-                        # Add a generic warning - we'll get the specific warnings from other lines
-                        pass
-                # Parse specific error messages (bullet style)
-                elif clean_line.startswith("•") and (
-                    "❌" in stdout or "ERROR" in stdout
-                ):
-                    # This is a specific error message
-                    issues.append(
-                        ("ERROR", clean_line.replace("•", "").strip(), dataset_path)
-                    )
-                # Parse numbered error messages (reporting.py style)
-                elif re.search(r"^\d+\.\s+", clean_line) and (
-                    "❌" in stdout or "ERROR" in stdout
-                ):
-                    # Remove the number and dot
-                    msg = re.sub(r"^\d+\.\s+", "", clean_line).strip()
-                    issues.append(("ERROR", msg, dataset_path))
-
-                elif clean_line.startswith("•") and (
-                    "⚠️" in stdout or "WARNING" in stdout
-                ):
-                    # This is a specific warning message
-                    issues.append(
-                        ("WARNING", clean_line.replace("•", "").strip(), dataset_path)
-                    )
-                # Parse numbered warning messages
-                elif re.search(r"^\d+\.\s+", clean_line) and (
-                    "⚠️" in stdout or "WARNING" in stdout
-                ):
-                    msg = re.sub(r"^\d+\.\s+", "", clean_line).strip()
-                    issues.append(("WARNING", msg, dataset_path))
-
-            # If we got valid output, extract more detailed info
-            if "✅ Dataset is valid!" in stdout:
-                pass  # No issues to add
-            elif "❌ Dataset has validation errors" in stdout:
-                if not issues:  # Add generic error if no specific issues found
-                    issues.append(
-                        (
-                            "ERROR",
-                            "Dataset validation failed - see terminal output for details",
-                            dataset_path,
-                        )
-                    )
-            elif result.returncode != 0 and not issues:
-                # Add error for non-zero exit code if we didn't parse any specific errors
-                issues.append(("ERROR", "Dataset validation failed", dataset_path))
-
-            return issues, stats
-
-        else:
-            # Handle validation failures
-            error_msg = result.stderr or "Validation failed"
-            print(
-                f"❌ Validator subprocess failed (code {result.returncode}): {error_msg}"
-            )
-
-            # Create minimal stats and error
-            stats = SimpleStats()
-            issues = [
-                ("ERROR", f"Validation process failed: {error_msg}", dataset_path)
-            ]
-            return issues, stats
-
-    except FileNotFoundError:
-        error_msg = "prism-validator.py script not found"
-        print(f"❌ {error_msg}")
-        stats = SimpleStats()
-        issues = [("ERROR", error_msg, dataset_path)]
-        return issues, stats
-
-    except Exception as e:
-        error_msg = f"Failed to run validator: {str(e)}"
-        print(f"❌ {error_msg}")
-        stats = SimpleStats()
-        issues = [("ERROR", error_msg, dataset_path)]
-        return issues, stats
-
-
-
-
-    def check_consistency(self):
-        return []
-
-
+# Note: is_system_file is imported from src.web.utils
+# simple_is_system_file is kept for backwards compatibility only
 def simple_is_system_file(filename):
-    """Simple system file detection"""
-    if not filename:
-        return True
-    system_files = [
-        ".DS_Store",
-        "._.DS_Store",
-        "Thumbs.db",
-        "ehthumbs.db",
-        "Desktop.ini",
-    ]
-    if filename in system_files:
-        return True
-    if filename.startswith("._") or filename.startswith(".#"):
-        return True
-    return False
+    """Simple system file detection - use is_system_file from web.utils instead."""
+    return is_system_file(filename)
 
-
-# Use simple system file detection
-is_system_file = simple_is_system_file
 
 if getattr(sys, 'frozen', False):
     template_folder = os.path.join(sys._MEIPASS, 'templates')
@@ -402,319 +217,9 @@ except ImportError as e:
 except Exception as e:
     print(f"⚠️  Error registering REST API blueprint: {e}")
 
-# File extensions to process (metadata and small data files only)
-# We skip large neuroimaging data files - we only validate their JSON sidecars
-METADATA_EXTENSIONS = {
-    ".json",  # Sidecar metadata
-    ".tsv",  # Behavioral/events data
-    ".csv",  # Alternative tabular format
-    ".txt",  # Text data/logs
-    ".edf",  # EEG/eye-tracking (relatively small)
-    ".bdf",  # BioSemi EEG format
-    ".png",
-    ".jpg",
-    ".jpeg",  # Stimulus images (psychology experiments)
-}
-
-# Extensions to SKIP (large data files we don't need)
-SKIP_EXTENSIONS = {
-    ".nii",
-    ".nii.gz",  # NIfTI neuroimaging (can be GB)
-    ".mp4",
-    ".avi",
-    ".mov",  # Video files
-    ".tiff",  # Large TIFF images
-    ".eeg",
-    ".dat",
-    ".fif",  # Large electrophysiology raw data
-    ".mat",  # MATLAB files (can be large)
-}
-
-
-def format_validation_results(issues, dataset_stats, dataset_path):
-    """Format validation results in BIDS-validator style with grouped errors"""
-    # Group issues by error code and type
-    error_groups = {}
-    warning_groups = {}
-
-    valid_files = []
-    invalid_files = []
-    file_paths = set()
-
-    def strip_temp_path(file_path):
-        """Strip temporary folder path prefix and keep only relative path from dataset root"""
-        if not file_path:
-            return None
-
-        # If it's a temp path, try to extract the relative path
-        if (
-            "/tmp/" in file_path
-            or "/T/prism_validator_" in file_path
-            or "/var/folders/" in file_path
-            or "prism_validator_" in file_path
-        ):
-            # Find the dataset root marker - typically after 'dataset/'
-            if "/dataset/" in file_path:
-                parts = file_path.split("/dataset/", 1)
-                if len(parts) > 1:
-                    return parts[1]
-
-            # Alternative: look for BIDS structure markers (sub-, dataset_description.json)
-            import re
-
-            match = re.search(r"((?:sub-|ses-|dataset_description\.json).*)", file_path)
-            if match:
-                return match.group(1)
-
-        # If dataset_path is a temp directory, strip it
-        if dataset_path and file_path.startswith(dataset_path):
-            relative = file_path[len(dataset_path) :].lstrip("/")
-            return relative if relative else file_path
-
-        return file_path
-
-    def extract_path_from_message(msg):
-        """Try to heuristically extract a file path or filename from a validator message."""
-        if not msg:
-            return None
-        # If message explicitly contains an absolute path
-        import re
-
-        abs_path_match = re.search(r"(/[^\s:,]+\.[A-Za-z0-9]+(?:\.gz)?)", msg)
-        if abs_path_match:
-            extracted = abs_path_match.group(1)
-            return strip_temp_path(extracted)
-        # dataset_description.json special case
-        if "dataset_description.json" in msg:
-            return "dataset_description.json"
-        # Look for sub-... filenames like sub-01_task-foo_blah.ext
-        name_match = re.search(r"(sub-[A-Za-z0-9._-]+\.[A-Za-z0-9]+(?:\.gz)?)", msg)
-        if name_match:
-            return name_match.group(1)
-        # Generic filename with extension (e.g., task-recognition_stim.json)
-        generic_match = re.search(
-            r"([A-Za-z0-9._\-]+\.(?:json|tsv|edf|nii|nii\.gz|txt|csv|mp4|png|jpg|jpeg))",
-            msg,
-        )
-        if generic_match:
-            return generic_match.group(1)
-        return None
-
-    for issue in issues:
-        # Support tuples like (level, message) or (level, message, path)
-        if isinstance(issue, dict):
-            level = (
-                issue.get("type")
-                or issue.get("level")
-                or issue.get("severity")
-                or "ERROR"
-            )
-            message = issue.get("message", "")
-            file_path = issue.get("file")
-        elif isinstance(issue, (list, tuple)):
-            if len(issue) >= 2:
-                level, message = issue[0], issue[1]
-                file_path = issue[2] if len(issue) > 2 else None
-            else:
-                continue
-        else:
-            # Unknown shape: stringify
-            level = "ERROR"
-            message = str(issue)
-            file_path = None
-
-        # Always strip temp path from file_path
-        if not file_path:
-            file_path = extract_path_from_message(message)
-        file_path = strip_temp_path(file_path) if file_path else None
-
-        if file_path:
-            file_paths.add(file_path)
-
-        # Also strip temp path from message text itself
-        def strip_temp_path_from_message(msg):
-            if not msg:
-                return msg
-            import re
-
-            # Replace temp folder paths in the message with just the relative path
-            # Match various temp folder patterns: /tmp/, /T/, /var/folders/, prism_validator_
-            msg = re.sub(
-                r"(/tmp/[^\s,:]+/dataset/|/T/prism_validator_[^\s,:]+/dataset/|/var/folders/[^\s,:]+/dataset/|prism_validator_[^\s,:]+/dataset/)([^\s,:]+)",
-                r"\2",
-                msg,
-            )
-            # Also replace standalone temp paths that lead to sub- or ses- files
-            msg = re.sub(
-                r"(/tmp/[^\s,:]+/|/var/folders/[^\s,:]+/)(sub-[^\s,:/]+)", r"\2", msg
-            )
-            return msg
-
-        message = strip_temp_path_from_message(message)
-
-        # Extract error code from message if possible
-        error_code = "GENERAL_ERROR"
-        if (
-            "Invalid BIDS filename" in message
-            or "Invalid BIDS filename format" in message
-        ):
-            error_code = "INVALID_BIDS_FILENAME"
-        elif "Missing sidecar" in message or "Missing sidecar for" in message:
-            error_code = "MISSING_SIDECAR"
-        elif "schema error" in message:
-            error_code = "SCHEMA_VALIDATION_ERROR"
-        elif "not valid JSON" in message or "is not valid JSON" in message:
-            error_code = "INVALID_JSON"
-        elif (
-            "doesn't match expected pattern" in message
-            or "doesn't match expected pattern" in message
-        ):
-            error_code = "FILENAME_PATTERN_MISMATCH"
-
-        formatted_issue = {
-            "code": error_code,
-            "message": message,
-            "file": file_path,
-            "level": level,
-        }
-
-        if level == "ERROR":
-            if error_code not in error_groups:
-                error_groups[error_code] = {
-                    "code": error_code,
-                    "description": get_error_description(error_code),
-                    "files": [],
-                    "count": 0,
-                }
-            error_groups[error_code]["files"].append(formatted_issue)
-            error_groups[error_code]["count"] += 1
-
-            if file_path:
-                invalid_files.append({"path": file_path, "errors": [message]})
-
-        elif level == "WARNING":
-            if error_code not in warning_groups:
-                warning_groups[error_code] = {
-                    "code": error_code,
-                    "description": get_error_description(error_code),
-                    "files": [],
-                    "count": 0,
-                }
-            warning_groups[error_code]["files"].append(formatted_issue)
-            warning_groups[error_code]["count"] += 1
-
-            if file_path:
-                valid_files.append(
-                    {"path": file_path}
-                )  # Warnings don't make files invalid
-        else:
-            # Treat other levels as info/valid
-            if file_path:
-                valid_files.append({"path": file_path})
-
-    # If we don't have file paths from issues, prefer dataset_stats total
-    try:
-        stats_total = getattr(dataset_stats, "total_files", 0)
-    except Exception:
-        stats_total = 0
-
-    # Prefer authoritative dataset_stats.total_files when available so counts align
-    if stats_total:
-        total_files = stats_total
-    else:
-        total_files = (
-            len(file_paths) if file_paths else len(valid_files) + len(invalid_files)
-        )
-
-    # Add error if no files found
-    if stats_total == 0 and len(file_paths) == 0:
-        # Add a specific error for empty dataset
-        error_code = "EMPTY_DATASET"
-        if error_code not in error_groups:
-            error_groups[error_code] = {
-                "code": error_code,
-                "description": "Dataset contains no data files",
-                "files": [],
-                "count": 0,
-            }
-
-        empty_dataset_issue = {
-            "code": error_code,
-            "message": "No data files found in dataset. Dataset may be empty or all files were filtered out as system files.",
-            "file": dataset_path,
-            "level": "ERROR",
-        }
-        error_groups[error_code]["files"].append(empty_dataset_issue)
-        error_groups[error_code]["count"] += 1
-
-    # Calculate summary
-    total_errors = sum(group["count"] for group in error_groups.values())
-    total_warnings = sum(group["count"] for group in warning_groups.values())
-
-    # Count valid vs invalid files
-    invalid_file_paths = {f["path"] for f in invalid_files if f.get("path")}
-    invalid_count = len(invalid_file_paths)
-    # If we have dataset total, infer valid_count
-    if stats_total:
-        valid_count = max(0, stats_total - invalid_count)
-    else:
-        valid_count = total_files - invalid_count
-
-    # A dataset is valid only if it has no errors AND has at least some files
-    is_valid = total_errors == 0 and total_files > 0
-
-    return {
-        "valid": is_valid,
-        "summary": {
-            "total_files": total_files,
-            "valid_files": valid_count,
-            "invalid_files": invalid_count,
-            "total_errors": total_errors,
-            "total_warnings": total_warnings,
-        },
-        "error_groups": error_groups,
-        "warning_groups": warning_groups,
-        "valid_files": valid_files,
-        "invalid_files": invalid_files,
-        "errors": [item for group in error_groups.values() for item in group["files"]],
-        "warnings": [
-            item for group in warning_groups.values() for item in group["files"]
-        ],
-        "dataset_path": dataset_path,
-        "dataset_stats": dataset_stats,
-    }
-
-
-def get_error_description(error_code):
-    """Get user-friendly descriptions for error codes"""
-    descriptions = {
-        "INVALID_BIDS_FILENAME": "Filenames must follow BIDS naming convention (sub-<label>_[ses-<label>_]...)",
-        "MISSING_SIDECAR": "Required JSON sidecar files are missing for data files",
-        "SCHEMA_VALIDATION_ERROR": "JSON sidecar content does not match required schema",
-        "INVALID_JSON": "JSON files contain syntax errors or are not valid JSON",
-        "FILENAME_PATTERN_MISMATCH": "Filenames do not match expected patterns for their modality",
-        "EMPTY_DATASET": "Dataset contains no data files or all files were filtered as system files",
-        "GENERAL_ERROR": "General validation error",
-    }
-    return descriptions.get(error_code, "Validation error")
-
-
-def get_error_documentation_url(error_code):
-    """Get documentation URL for an error code"""
-    # Map error codes to documentation anchors
-    base_url = (
-        "https://github.com/MRI-Lab-Graz/prism-validator/blob/main/docs/ERROR_CODES.md"
-    )
-
-    doc_anchors = {
-        "INVALID_BIDS_FILENAME": f"{base_url}#invalid_bids_filename",
-        "MISSING_SIDECAR": f"{base_url}#missing_sidecar",
-        "SCHEMA_VALIDATION_ERROR": f"{base_url}#schema_validation_error",
-        "INVALID_JSON": f"{base_url}#invalid_json",
-        "FILENAME_PATTERN_MISMATCH": f"{base_url}#filename_pattern_mismatch",
-        "GENERAL_ERROR": base_url,
-    }
-    return doc_anchors.get(error_code, base_url)
+# Note: METADATA_EXTENSIONS and SKIP_EXTENSIONS are now imported from src.web.upload
+# Note: format_validation_results, get_error_description, get_error_documentation_url 
+#       are now imported from src.web.utils
 
 
 @lru_cache(maxsize=8)
@@ -894,23 +399,7 @@ def neurobagel_participants():
     )
 
 
-def shorten_path(file_path, max_parts=3):
-    """Shorten a file path to show only the last N parts with ellipsis"""
-    if not file_path:
-        return "General"
-
-    parts = file_path.replace("\\", "/").split("/")
-    if len(parts) <= max_parts:
-        return "/".join(parts)
-
-    return ".../" + "/".join(parts[-max_parts:])
-
-
-def get_filename_from_path(file_path):
-    """Extract just the filename from a path"""
-    if not file_path:
-        return "General"
-    return os.path.basename(file_path)
+# Note: shorten_path and get_filename_from_path are now imported from src.web.utils
 
 
 # Global storage for validation results
@@ -1028,22 +517,14 @@ def upload_dataset():
         def progress_callback(progress: int, message: str):
             update_progress(job_id, progress, message)
 
-        # Validate the dataset using core validator when available
-        if callable(core_validate_dataset):
-            issues, dataset_stats = core_validate_dataset(
-                dataset_path, 
-                verbose=True, 
-                schema_version=schema_version,
-                run_bids=run_bids,
-                progress_callback=progress_callback
-            )
-        else:
-            issues, dataset_stats = run_main_validator(
-                dataset_path, 
-                verbose=True, 
-                schema_version=schema_version,
-                run_bids=run_bids
-            )
+        # Validate the dataset using unified validation function
+        issues, dataset_stats = run_validation(
+            dataset_path, 
+            verbose=True, 
+            schema_version=schema_version,
+            run_bids=run_bids,
+            progress_callback=progress_callback
+        )
         
         # Mark progress as complete
         update_progress(job_id, 100, "Validation complete")
@@ -1459,22 +940,14 @@ def validate_folder():
         def progress_callback(progress: int, message: str):
             update_progress(job_id, progress, message)
 
-        # Use the core validator when available for direct integration
-        if callable(core_validate_dataset):
-            issues, stats = core_validate_dataset(
-                folder_path, 
-                verbose=True, 
-                schema_version=schema_version,
-                run_bids=run_bids,
-                progress_callback=progress_callback
-            )
-        else:
-            issues, stats = run_main_validator(
-                folder_path, 
-                verbose=True, 
-                schema_version=schema_version,
-                run_bids=run_bids
-            )
+        # Use unified validation function
+        issues, stats = run_validation(
+            folder_path, 
+            verbose=True, 
+            schema_version=schema_version,
+            run_bids=run_bids,
+            progress_callback=progress_callback
+        )
         
         # Mark progress as complete
         update_progress(job_id, 100, "Validation complete")
@@ -1620,8 +1093,8 @@ def api_validate():
         if not os.path.exists(dataset_path):
             return jsonify({"error": "Dataset path does not exist"}), 400
 
-        # Use main validator script
-        issues, stats = run_main_validator(dataset_path, verbose=False)
+        # Use unified validation function
+        issues, stats = run_validation(dataset_path, verbose=False)
         results = format_validation_results(issues, stats, dataset_path)
 
         return jsonify(results)
@@ -2068,7 +1541,7 @@ def api_derivatives_surveys():
         return jsonify({"error": f"Dataset path is not a directory: {dataset_path}"}), 400
 
     # Validate that the dataset is PRISM-valid before writing derivatives.
-    issues, _stats = run_main_validator(dataset_path, verbose=False, schema_version=None, run_bids=False)
+    issues, _stats = run_validation(dataset_path, verbose=False, schema_version=None, run_bids=False)
     error_issues = [i for i in (issues or []) if (len(i) >= 1 and str(i[0]).upper() == "ERROR")]
     if error_issues:
         # Keep message compact but actionable.
