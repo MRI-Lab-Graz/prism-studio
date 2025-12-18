@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Prism-Validator - Derivatives{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2><i class="fas fa-chart-line text-primary me-2"></i>Derivatives</h2>
+      <p class="text-muted">Generate survey derivatives (subscales, reverse coding) inside a PRISM-valid dataset.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header bg-light">
+      <h5 class="mb-0">Survey Derivatives</h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-8">
+          <label for="derivDatasetPath" class="form-label">PRISM Dataset Folder</label>
+          <div class="input-group">
+            <input type="text" class="form-control" id="derivDatasetPath" placeholder="/path/to/prism_dataset">
+            <button class="btn btn-outline-secondary" type="button" id="derivBrowseBtn" title="Browse Folder">
+              <i class="fas fa-folder-open"></i>
+            </button>
+          </div>
+          <div class="form-text">Must be a valid PRISM dataset root (will be validated before running derivatives).</div>
+        </div>
+
+        <div class="col-md-4">
+          <label for="derivModality" class="form-label">Modality</label>
+          <select class="form-select" id="derivModality">
+            <option value="survey" selected>Survey</option>
+            <option value="biometrics">Biometrics</option>
+            <option value="physio">Physio</option>
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label for="derivFormat" class="form-label">Output Format</label>
+          <select class="form-select" id="derivFormat">
+            <option value="sav">SPSS (.sav)</option>
+            <option value="r">R (feather/.feather if r writer missing)</option>
+            <option value="csv" selected>CSV (.csv)</option>
+            <option value="xlsx">Excel (.xlsx)</option>
+          </select>
+        </div>
+
+        <div class="col-md-8">
+          <label for="derivSurvey" class="form-label">Recipe Filter (optional)</label>
+          <input type="text" class="form-control" id="derivSurvey" placeholder="e.g. ads,psqi">
+          <div class="form-text">Leave empty to run all matching recipes.</div>
+        </div>
+
+        <div class="col-md-4">
+          <button class="btn btn-success w-100" type="button" id="derivRunBtn">
+            <i class="fas fa-play me-2"></i>Run Derivatives
+          </button>
+        </div>
+      </div>
+
+      <div id="derivError" class="alert alert-danger d-none mt-3"></div>
+      <div id="derivInfo" class="alert alert-info d-none mt-3"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const derivDatasetPath = document.getElementById('derivDatasetPath');
+  const derivBrowseBtn = document.getElementById('derivBrowseBtn');
+  const derivFormat = document.getElementById('derivFormat');
+  const derivSurvey = document.getElementById('derivSurvey');
+  const derivRunBtn = document.getElementById('derivRunBtn');
+  const derivError = document.getElementById('derivError');
+  const derivInfo = document.getElementById('derivInfo');
+
+  derivBrowseBtn.addEventListener('click', function() {
+    fetch('/api/browse-folder')
+      .then(r => r.json())
+      .then(data => {
+        if (data.path) derivDatasetPath.value = data.path;
+      });
+  });
+
+  derivRunBtn.addEventListener('click', function() {
+    derivError.classList.add('d-none');
+    derivInfo.classList.add('d-none');
+    derivError.textContent = '';
+    derivInfo.textContent = '';
+
+    const datasetPath = derivDatasetPath.value.trim();
+    if (!datasetPath) {
+      derivError.textContent = 'Please choose a dataset folder.';
+      derivError.classList.remove('d-none');
+      return;
+    }
+
+    const payload = {
+      dataset_path: datasetPath,
+      modality: document.getElementById('derivModality').value,
+      format: derivFormat.value,
+      survey: derivSurvey.value.trim(),
+    };
+
+    derivRunBtn.disabled = true;
+    derivInfo.textContent = 'Running derivatives... this may take a moment.';
+    derivInfo.classList.remove('d-none');
+
+    fetch('/api/derivatives-surveys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then(async response => {
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          const msg = data && data.error ? data.error : 'Derivatives failed';
+          throw new Error(msg);
+        }
+        return data;
+      })
+      .then(data => {
+        derivInfo.textContent = data && data.message ? data.message : 'Done.';
+        derivInfo.classList.remove('d-none');
+      })
+      .catch(err => {
+        derivError.textContent = err.message;
+        derivError.classList.remove('d-none');
+      })
+      .finally(() => {
+        derivRunBtn.disabled = false;
+      });
+  });
+});
+</script>
+{% endblock %}

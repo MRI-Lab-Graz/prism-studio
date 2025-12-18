@@ -38,17 +38,17 @@
                 </div>
             </div>
 
-            <!-- JSON Editor Card -->
+            <!-- Derivatives Card -->
             <div class="col-md-6">
                 <div class="card feature-card h-100">
                     <div class="card-body text-center p-4">
-                        <i class="fas fa-pen-fancy fa-3x text-primary mb-3"></i>
-                        <h5 class="card-title mb-3">JSON Editor</h5>
+                        <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                        <h5 class="card-title mb-3">Derivatives</h5>
                         <p class="card-text text-muted mb-4">
-                            Edit and annotate BIDS metadata files with NeuroBagel integration for standardized participant descriptions.
+                            Generate survey derivatives (subscales, reverse coding) inside a PRISM-valid dataset.
                         </p>
-                        <a href="/editor" class="btn btn-primary">
-                            <i class="fas fa-arrow-right me-2"></i>JSON Editor
+                        <a href="{{ url_for('derivatives') }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-right me-2"></i>Derivatives
                         </a>
                     </div>
                 </div>
@@ -65,6 +65,22 @@
                         </p>
                         <a href="{{ url_for('survey_generator') }}" class="btn btn-info text-white">
                             <i class="fas fa-arrow-right me-2"></i>Create Survey
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Survey Convert Card -->
+            <div class="col-md-6">
+                <div class="card feature-card h-100">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-file-excel fa-3x text-success mb-3"></i>
+                        <h5 class="card-title mb-3">Survey Convert</h5>
+                        <p class="card-text text-muted mb-4">
+                            Upload a wide-format Excel file and download a PRISM/BIDS-style survey dataset.
+                        </p>
+                        <a href="{{ url_for('survey_generator') }}#landgig-convert" class="btn btn-success">
+                            <i class="fas fa-arrow-right me-2"></i>Convert Excel
                         </a>
                     </div>
                 </div>
@@ -134,7 +150,7 @@
         <!-- Info Section -->
         <div class="alert alert-info mt-5" role="alert">
             <i class="fas fa-info-circle me-2"></i>
-            <strong>Getting Started:</strong> Choose one of the tools above to begin. Start with <strong>Validate Dataset</strong> to check your dataset, or use <strong>JSON Editor</strong> to annotate your participants data.
+            <strong>Getting Started:</strong> Choose one of the tools above to begin. Start with <strong>Validate Dataset</strong> to check your dataset, then use <strong>Derivatives</strong> to generate survey scores.
         </div>
     </div>
 </div>

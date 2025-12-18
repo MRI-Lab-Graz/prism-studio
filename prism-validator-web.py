@@ -59,6 +59,18 @@ except Exception as import_error:
     SurveyManager = None
     print(f"⚠️  Could not import SurveyManager: {import_error}")
 
+try:
+    from survey_convert import convert_survey_xlsx_to_prism_dataset
+except Exception as import_error:
+    convert_survey_xlsx_to_prism_dataset = None
+    print(f"⚠️  Could not import survey_convert: {import_error}")
+
+try:
+    from derivatives_surveys import compute_survey_derivatives
+except Exception as import_error:
+    compute_survey_derivatives = None
+    print(f"⚠️  Could not import derivatives_surveys: {import_error}")
+
 
 class SimpleStats:
     """Simple stats class to hold validation statistics"""
@@ -1492,6 +1504,80 @@ def api_validate():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route("/api/survey-convert", methods=["POST"])
+def api_survey_convert():
+    """Convert an uploaded survey Excel file (.xlsx) to a PRISM dataset and return it as a zip."""
+    if not convert_survey_xlsx_to_prism_dataset:
+        return jsonify({"error": "Survey conversion module not available"}), 500
+
+    excel_file = request.files.get("excel")
+    library_path = (request.form.get("library_path") or "").strip()
+
+    if not excel_file or not getattr(excel_file, "filename", ""):
+        return jsonify({"error": "Missing Excel file"}), 400
+
+    filename = secure_filename(excel_file.filename)
+    if not filename.lower().endswith(".xlsx"):
+        return jsonify({"error": "Only .xlsx files are supported"}), 400
+
+    if not library_path:
+        library_path = str((BASE_DIR / "survey_library").resolve())
+
+    if not os.path.exists(library_path) or not os.path.isdir(library_path):
+        return jsonify({"error": f"Library path is not a directory: {library_path}"}), 400
+
+    survey_filter = (request.form.get("survey") or "").strip() or None
+    id_column = (request.form.get("id_column") or "").strip() or None
+    session_column = (request.form.get("session_column") or "").strip() or None
+    sheet = (request.form.get("sheet") or "0").strip() or 0
+    unknown = (request.form.get("unknown") or "warn").strip() or "warn"
+    dataset_name = (request.form.get("dataset_name") or "").strip() or None
+
+    tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_")
+    try:
+        tmp_dir_path = Path(tmp_dir)
+        input_path = tmp_dir_path / filename
+        excel_file.save(str(input_path))
+
+        output_root = tmp_dir_path / "prism_dataset"
+
+        convert_survey_xlsx_to_prism_dataset(
+            input_path=input_path,
+            library_dir=library_path,
+            output_root=output_root,
+            survey=survey_filter,
+            id_column=id_column,
+            session_column=session_column,
+            sheet=sheet,
+            unknown=unknown,
+            dry_run=False,
+            force=True,
+            name=dataset_name,
+            authors=["prism-validator-web"],
+        )
+
+        mem = io.BytesIO()
+        with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for p in output_root.rglob("*"):
+                if p.is_file():
+                    arcname = p.relative_to(output_root)
+                    zf.write(p, arcname.as_posix())
+        mem.seek(0)
+
+        return send_file(
+            mem,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name="prism_survey_dataset.zip",
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        try:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+        except Exception:
+            pass
 
 
 def find_dataset_root(extract_dir):
@@ -1599,7 +1685,71 @@ def main():
 @app.route("/survey-generator")
 def survey_generator():
     """Survey generator page"""
-    return render_template("survey_generator.html")
+    default_library_path = (BASE_DIR / "survey_library").resolve()
+    return render_template(
+        "survey_generator.html",
+        default_survey_library_path=str(default_library_path),
+    )
+
+
+@app.route("/derivatives")
+def derivatives():
+    return render_template("derivatives.html")
+
+
+@app.route("/api/derivatives-surveys", methods=["POST"])
+def api_derivatives_surveys():
+    """Run survey-derivatives generation inside an existing PRISM dataset."""
+
+    if not compute_survey_derivatives:
+        return jsonify({"error": "Derivatives module not available"}), 500
+
+    data = request.get_json(silent=True) or {}
+    dataset_path = (data.get("dataset_path") or "").strip()
+    modality = (data.get("modality") or "survey").strip().lower() or "survey"
+    out_format = (data.get("format") or "csv").strip().lower() or "csv"
+    survey_filter = (data.get("survey") or "").strip() or None
+
+    if not dataset_path:
+        return jsonify({"error": "Missing dataset_path"}), 400
+    if not os.path.exists(dataset_path) or not os.path.isdir(dataset_path):
+        return jsonify({"error": f"Dataset path is not a directory: {dataset_path}"}), 400
+
+    # Validate that the dataset is PRISM-valid before writing derivatives.
+    issues, _stats = run_main_validator(dataset_path, verbose=False, schema_version=None, run_bids=False)
+    error_issues = [i for i in (issues or []) if (len(i) >= 1 and str(i[0]).upper() == "ERROR")]
+    if error_issues:
+        # Keep message compact but actionable.
+        first = error_issues[0][1] if len(error_issues[0]) > 1 else "Dataset has validation errors"
+        return jsonify({
+            "error": f"Dataset is not PRISM-valid (errors: {len(error_issues)}). First error: {first}",
+        }), 400
+
+    try:
+        result = compute_survey_derivatives(
+            prism_root=dataset_path,
+            repo_root=BASE_DIR,
+            survey=survey_filter,
+            out_format=out_format,
+            modality=modality,
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    msg = f"✅ Survey derivatives complete: wrote {result.written_files} file(s)"
+    if result.flat_out_path:
+        msg = f"✅ Survey derivatives complete: wrote {result.flat_out_path}"
+    return jsonify(
+        {
+            "ok": True,
+            "message": msg,
+            "written_files": result.written_files,
+            "processed_files": result.processed_files,
+            "out_format": result.out_format,
+            "out_root": str(result.out_root),
+            "flat_out_path": str(result.flat_out_path) if result.flat_out_path else None,
+        }
+    )
 
 
 # ==========================================

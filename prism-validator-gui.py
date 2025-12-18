@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+import sys
+import os
+import json
+import io
+import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk
@@ -5,11 +11,6 @@ try:
     from ttkthemes import ThemedTk
 except ImportError:
     ThemedTk = None
-import threading
-import sys
-import os
-import json
-import io
 from contextlib import redirect_stdout
 from pathlib import Path
 
@@ -29,6 +30,8 @@ try:
     from runner import validate_dataset
     from schema_manager import get_available_schema_versions
     from limesurvey_exporter import generate_lss
+    from survey_convert import convert_survey_xlsx_to_prism_dataset
+    from derivatives_surveys import compute_survey_derivatives
     from reporting import print_dataset_summary, print_validation_results
     from theme import apply_prism_theme
 except ImportError as e:
@@ -37,6 +40,8 @@ except ImportError as e:
     validate_dataset = None
     get_available_schema_versions = lambda x: ["stable"]
     generate_lss = None
+    convert_survey_xlsx_to_prism_dataset = None
+    compute_survey_derivatives = None
     print_dataset_summary = None
     print_validation_results = None
     apply_prism_theme = None
@@ -163,7 +168,16 @@ class PrismValidatorGUI:
         # Tab 2: Survey Tools
         self.survey_tab = ttk.Frame(self.notebook, padding="20")
         self.notebook.add(self.survey_tab, text="Survey Tools")
+        # Tab 2.5: Convert (duplicate of Landgig convert for quick access)
+        self.convert_tab = ttk.Frame(self.notebook, padding="20")
+        self.notebook.add(self.convert_tab, text="Convert")
+        self.setup_convert_tab()
         self.setup_survey_tab()
+
+        # Tab 3: Derivatives
+        self.derivatives_tab = ttk.Frame(self.notebook, padding="20")
+        self.notebook.add(self.derivatives_tab, text="Derivatives")
+        self.setup_derivatives_tab()
 
     def setup_validator_tab(self):
         # Configuration Section
@@ -318,9 +332,135 @@ class PrismValidatorGUI:
         
         ttk.Button(action_frame, text="Export Selected to LimeSurvey (.lss)", command=self.export_lss).pack(side="right", ipadx=20, ipady=5)
 
+        # --- Landgig: Survey Convert (Excel -> PRISM dataset) ---
+        convert_frame = ttk.LabelFrame(self.survey_tab, text="  Landgig: Convert Excel to PRISM Dataset  ", padding="20")
+        convert_frame.pack(fill="x", pady=(20, 0))
+
+        convert_frame.columnconfigure(1, weight=1)
+
+        ttk.Label(convert_frame, text="Excel File (.xlsx):").grid(row=0, column=0, sticky="w", pady=6)
+        self.convert_excel_var = tk.StringVar(value="")
+        excel_entry = ttk.Entry(convert_frame, textvariable=self.convert_excel_var)
+        excel_entry.grid(row=0, column=1, sticky="ew", padx=10)
+        ttk.Button(convert_frame, text="Browse...", style="Secondary.TButton", command=self.browse_convert_excel).grid(row=0, column=2, padx=5)
+
+        ttk.Label(convert_frame, text="Survey Library Folder:").grid(row=1, column=0, sticky="w", pady=6)
+        self.convert_library_var = tk.StringVar(value=self.lib_path_var.get())
+        lib_entry = ttk.Entry(convert_frame, textvariable=self.convert_library_var)
+        lib_entry.grid(row=1, column=1, sticky="ew", padx=10)
+        ttk.Button(convert_frame, text="Browse...", style="Secondary.TButton", command=self.browse_convert_library).grid(row=1, column=2, padx=5)
+
+        ttk.Label(convert_frame, text="Output Folder:").grid(row=2, column=0, sticky="w", pady=6)
+        self.convert_output_var = tk.StringVar(value="")
+        out_entry = ttk.Entry(convert_frame, textvariable=self.convert_output_var)
+        out_entry.grid(row=2, column=1, sticky="ew", padx=10)
+        ttk.Button(convert_frame, text="Browse...", style="Secondary.TButton", command=self.browse_convert_output).grid(row=2, column=2, padx=5)
+
+        ttk.Label(convert_frame, text="Dataset Name (optional):").grid(row=3, column=0, sticky="w", pady=6)
+        self.convert_name_var = tk.StringVar(value="PRISM Survey Dataset")
+        name_entry = ttk.Entry(convert_frame, textvariable=self.convert_name_var)
+        name_entry.grid(row=3, column=1, sticky="ew", padx=10)
+
+        self.convert_force_var = tk.BooleanVar(value=False)
+        force_check = ttk.Checkbutton(convert_frame, text="Allow overwrite / non-empty output", variable=self.convert_force_var)
+        force_check.grid(row=4, column=1, sticky="w", padx=10, pady=(6, 0))
+
+        self.convert_btn = ttk.Button(convert_frame, text="Convert Excel → PRISM Dataset", command=self.start_survey_convert)
+        self.convert_btn.grid(row=5, column=1, sticky="e", padx=10, pady=(12, 0), ipadx=20, ipady=5)
+
         # Data storage
         self.survey_data = {} 
         self.selected_questions = {} 
+
+    def setup_convert_tab(self):
+        # Provide a dedicated Convert tab that mirrors the Landgig converter
+        convert_frame = ttk.LabelFrame(self.convert_tab, text="  Landgig: Convert Excel to PRISM Dataset  ", padding="20")
+        convert_frame.pack(fill="x", pady=(0, 20))
+
+        convert_frame.columnconfigure(1, weight=1)
+
+        ttk.Label(convert_frame, text="Excel File (.xlsx):").grid(row=0, column=0, sticky="w", pady=6)
+        # Reuse the same variables so state is shared with the Survey Tools converter
+        try:
+            _ = self.convert_excel_var
+        except AttributeError:
+            self.convert_excel_var = tk.StringVar(value="")
+        excel_entry = ttk.Entry(convert_frame, textvariable=self.convert_excel_var)
+        excel_entry.grid(row=0, column=1, sticky="ew", padx=10)
+        ttk.Button(convert_frame, text="Browse...", style="Secondary.TButton", command=self.browse_convert_excel).grid(row=0, column=2, padx=5)
+
+        ttk.Label(convert_frame, text="Survey Library Folder:").grid(row=1, column=0, sticky="w", pady=6)
+        try:
+            _ = self.convert_library_var
+        except AttributeError:
+            self.convert_library_var = tk.StringVar(value=str(BASE_DIR / "survey_library"))
+        lib_entry = ttk.Entry(convert_frame, textvariable=self.convert_library_var)
+        lib_entry.grid(row=1, column=1, sticky="ew", padx=10)
+        ttk.Button(convert_frame, text="Browse...", style="Secondary.TButton", command=self.browse_convert_library).grid(row=1, column=2, padx=5)
+
+        ttk.Label(convert_frame, text="Output Folder:").grid(row=2, column=0, sticky="w", pady=6)
+        try:
+            _ = self.convert_output_var
+        except AttributeError:
+            self.convert_output_var = tk.StringVar(value="")
+        out_entry = ttk.Entry(convert_frame, textvariable=self.convert_output_var)
+        out_entry.grid(row=2, column=1, sticky="ew", padx=10)
+        ttk.Button(convert_frame, text="Browse...", style="Secondary.TButton", command=self.browse_convert_output).grid(row=2, column=2, padx=5)
+
+        ttk.Label(convert_frame, text="Dataset Name (optional):").grid(row=3, column=0, sticky="w", pady=6)
+        try:
+            _ = self.convert_name_var
+        except AttributeError:
+            self.convert_name_var = tk.StringVar(value="PRISM Survey Dataset")
+        name_entry = ttk.Entry(convert_frame, textvariable=self.convert_name_var)
+        name_entry.grid(row=3, column=1, sticky="ew", padx=10)
+
+        try:
+            _ = self.convert_force_var
+        except AttributeError:
+            self.convert_force_var = tk.BooleanVar(value=False)
+        force_check = ttk.Checkbutton(convert_frame, text="Allow overwrite / non-empty output", variable=self.convert_force_var)
+        force_check.grid(row=4, column=1, sticky="w", padx=10, pady=(6, 0))
+
+        try:
+            _ = self.convert_btn
+        except AttributeError:
+            self.convert_btn = ttk.Button(convert_frame, text="Convert Excel → PRISM Dataset", command=self.start_survey_convert)
+        self.convert_btn.grid(row=5, column=1, sticky="e", padx=10, pady=(12, 0), ipadx=20, ipady=5)
+
+    def setup_derivatives_tab(self):
+        frame = ttk.LabelFrame(self.derivatives_tab, text="  Survey Derivatives  ", padding="20")
+        frame.pack(fill="x")
+
+        frame.columnconfigure(1, weight=1)
+
+        ttk.Label(frame, text="PRISM Dataset Path:").grid(row=0, column=0, sticky="w", pady=6)
+        self.deriv_path_var = tk.StringVar(value="")
+        path_entry = ttk.Entry(frame, textvariable=self.deriv_path_var)
+        path_entry.grid(row=0, column=1, sticky="ew", padx=10)
+        ttk.Button(frame, text="Browse...", command=self.browse_deriv_dataset).grid(row=0, column=2, padx=5)
+
+        ttk.Label(frame, text="Modality:").grid(row=1, column=0, sticky="w", pady=6)
+        self.deriv_modality_var = tk.StringVar(value="survey")
+        modality_combo = ttk.Combobox(frame, textvariable=self.deriv_modality_var, values=("survey", "biometrics", "physio"), state="readonly")
+        modality_combo.grid(row=1, column=1, sticky="w", padx=10)
+
+        ttk.Label(frame, text="Output Format:").grid(row=2, column=0, sticky="w", pady=6)
+        self.deriv_format_var = tk.StringVar(value="csv")
+        format_combo = ttk.Combobox(frame, textvariable=self.deriv_format_var, values=("csv", "xlsx", "sav", "r"), state="readonly")
+        format_combo.grid(row=2, column=1, sticky="w", padx=10)
+
+        ttk.Label(frame, text="Recipe Filter (optional):").grid(row=3, column=0, sticky="w", pady=6)
+        self.deriv_survey_var = tk.StringVar(value="")
+        survey_entry = ttk.Entry(frame, textvariable=self.deriv_survey_var)
+        survey_entry.grid(row=3, column=1, sticky="ew", padx=10)
+
+        self.deriv_run_btn = ttk.Button(frame, text="Run Derivatives", command=self.start_derivatives)
+        self.deriv_run_btn.grid(row=4, column=1, sticky="e", padx=10, pady=(12, 0))
+
+        # Status
+        self.deriv_status = ttk.Label(frame, text="")
+        self.deriv_status.grid(row=5, column=0, columnspan=3, sticky="w", pady=(10,0))
         self.current_survey_filename = None
 
     # --- Validator Methods ---
@@ -411,6 +551,7 @@ class PrismValidatorGUI:
             messagebox.showerror("Error", "Library path does not exist")
             return
 
+
         # Clear existing
         for item in self.survey_tree.get_children():
             self.survey_tree.delete(item)
@@ -427,7 +568,7 @@ class PrismValidatorGUI:
                         with open(full_path, "r") as jf:
                             data = json.load(jf)
                             desc = data.get("Study", {}).get("Description", "") or data.get("TaskName", "")
-                            
+
                             # Extract questions
                             questions = []
                             if "Questions" in data and isinstance(data["Questions"], dict):
@@ -446,30 +587,151 @@ class PrismValidatorGUI:
                                         q_choices = v.get("Options") if isinstance(v, dict) else None
                                         q_unit = (v.get("Unit") or v.get("Units")) if isinstance(v, dict) else None
                                         questions.append({"id": k, "description": q_desc, "levels": q_levels, "choices": q_choices, "unit": q_unit})
-                            
+
                             self.survey_data[f] = {
                                 "path": full_path,
                                 "questions": questions,
                                 "description": desc
                             }
-                            
+
                             # Initialize selection state (all selected by default)
                             self.selected_questions[f] = {
                                 "questions": {q["id"]: tk.BooleanVar(value=True) for q in questions},
                                 "matrix": tk.BooleanVar(value=False)
                             }
-                            
+
                             files.append((f, len(questions)))
-                    except:
+                    except Exception:
                         continue
-            
+
             # Sort and insert
             files.sort(key=lambda x: x[0])
             for f in files:
-                self.survey_tree.insert("", "end", values=(f[0], f[1]), tags=(f[0],)) # Store filename in tags
-                
+                self.survey_tree.insert("", "end", values=(f[0], f[1]), tags=(f[0],))  # Store filename in tags
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load library: {e}")
+
+    # --- Landgig: Survey Convert helpers ---
+    def browse_convert_excel(self):
+        file_path = filedialog.askopenfilename(filetypes=[("Excel Files", "*.xlsx")])
+        if file_path:
+            self.convert_excel_var.set(file_path)
+
+    def browse_convert_library(self):
+        folder = filedialog.askdirectory()
+        if folder:
+            self.convert_library_var.set(folder)
+
+    def browse_convert_output(self):
+        folder = filedialog.askdirectory()
+        if folder:
+            self.convert_output_var.set(folder)
+
+    def start_survey_convert(self):
+        if not convert_survey_xlsx_to_prism_dataset:
+            messagebox.showerror("Error", "Survey conversion module not loaded")
+            return
+
+        excel_path = self.convert_excel_var.get().strip()
+        library_path = self.convert_library_var.get().strip()
+        output_path = self.convert_output_var.get().strip()
+        dataset_name = self.convert_name_var.get().strip() or None
+        force = bool(self.convert_force_var.get())
+
+        if not excel_path or not os.path.exists(excel_path):
+            messagebox.showerror("Error", "Please select a valid .xlsx file")
+            return
+        if not library_path or not os.path.isdir(library_path):
+            messagebox.showerror("Error", "Please select a valid survey library folder")
+            return
+        if not output_path or not os.path.isdir(output_path):
+            messagebox.showerror("Error", "Please select a valid output folder")
+            return
+
+        target = Path(output_path) / "prism_survey_dataset"
+        if target.exists() and any(target.iterdir()) and not force:
+            messagebox.showwarning(
+                "Output Not Empty",
+                f"{target} already exists and is not empty. Enable overwrite or choose another output folder.",
+            )
+            return
+
+        self.convert_btn.config(state="disabled")
+        thread = threading.Thread(
+            target=self._survey_convert_thread,
+            args=(excel_path, library_path, str(target), dataset_name, force),
+        )
+        thread.daemon = True
+        thread.start()
+
+    def _survey_convert_thread(self, excel_path: str, library_path: str, target: str, dataset_name: str | None, force: bool):
+        try:
+            convert_survey_xlsx_to_prism_dataset(
+                input_path=excel_path,
+                library_dir=library_path,
+                output_root=target,
+                force=force,
+                name=dataset_name,
+                authors=["prism-validator-gui"],
+            )
+            self.root.after(0, lambda: messagebox.showinfo("Success", f"PRISM dataset written to:\n{target}"))
+        except Exception as e:
+            self.root.after(0, lambda: messagebox.showerror("Conversion Error", str(e)))
+        finally:
+            self.root.after(0, lambda: self.convert_btn.config(state="normal"))
+
+    def browse_deriv_dataset(self):
+        folder = filedialog.askdirectory()
+        if folder:
+            self.deriv_path_var.set(folder)
+
+    def start_derivatives(self):
+        if not compute_survey_derivatives:
+            messagebox.showerror("Error", "Derivatives module not loaded")
+            return
+
+        dataset_path = self.deriv_path_var.get().strip()
+        modality = self.deriv_modality_var.get().strip()
+        out_format = self.deriv_format_var.get().strip()
+        survey_filter = self.deriv_survey_var.get().strip() or None
+
+        if not dataset_path or not os.path.isdir(dataset_path):
+            messagebox.showerror("Error", "Please select a valid PRISM dataset folder")
+            return
+
+        self.deriv_run_btn.config(state="disabled")
+        self.deriv_status.config(text="Running derivatives...")
+
+        thread = threading.Thread(target=self._derivatives_thread, args=(dataset_path, modality, out_format, survey_filter))
+        thread.daemon = True
+        thread.start()
+
+    def _derivatives_thread(self, dataset_path, modality, out_format, survey_filter):
+        try:
+            # Validate dataset first (block on ERROR-level issues)
+            if validate_dataset:
+                try:
+                    issues, stats = validate_dataset(str(dataset_path), schema_version='stable', verbose=False, run_bids=False)
+                except Exception as e:
+                    raise RuntimeError(f"Validation failed: {e}")
+                error_issues = [i for i in (issues or []) if str(i[0]).upper() == 'ERROR']
+                if error_issues:
+                    first = error_issues[0][1] if len(error_issues[0]) > 1 else 'Dataset has validation errors'
+                    raise RuntimeError(f"Dataset is not PRISM-valid (errors: {len(error_issues)}). First error: {first}")
+
+            result = compute_survey_derivatives(prism_root=dataset_path, repo_root=BASE_DIR, survey=survey_filter, out_format=out_format, modality=modality)
+            msg = f"Wrote {result.written_files} file(s) to {result.out_root}"
+            self.root.after(0, lambda: self._deriv_finished(msg))
+        except Exception as e:
+            self.root.after(0, lambda: messagebox.showerror("Derivatives Error", str(e)))
+            self.root.after(0, lambda: self.deriv_status.config(text="Error"))
+        finally:
+            self.root.after(0, lambda: self.deriv_run_btn.config(state="normal"))
+
+    def _deriv_finished(self, msg: str):
+        self.deriv_status.config(text=msg)
+        messagebox.showinfo("Derivatives Complete", msg)
 
     def on_survey_select(self, event):
         selected_items = self.survey_tree.selection()

@@ -20,7 +20,7 @@
                 <div class="col-md-8">
                     <label for="libraryPath" class="form-label">Library Path</label>
                     <div class="input-group">
-                        <input type="text" class="form-control" id="libraryPath" placeholder="/path/to/survey_library" value="survey_library">
+                        <input type="text" class="form-control" id="libraryPath" placeholder="/path/to/survey_library" value="{{ default_survey_library_path | default('survey_library') }}">
                         <button class="btn btn-outline-secondary" type="button" id="browseBtn" title="Browse Folder">
                             <i class="fas fa-folder-open"></i>
                         </button>
@@ -75,6 +75,52 @@
             <div id="libraryError" class="alert alert-danger d-none mt-3"></div>
         </div>
     </div>
+
+    <div class="card mt-4" id="landgig-convert">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Landgig (Part 4): Convert Excel to PRISM Dataset</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Upload a wide-format survey Excel file (.xlsx) and download a PRISM/BIDS-style survey dataset (ZIP).</p>
+
+            <div class="row g-3 align-items-end">
+                <div class="col-md-8">
+                    <label for="convertLibraryPath" class="form-label">Survey Library Folder</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="convertLibraryPath" value="{{ default_survey_library_path | default('survey_library') }}">
+                        <button class="btn btn-outline-secondary" type="button" id="convertBrowseLibraryBtn" title="Browse Folder">
+                            <i class="fas fa-folder-open"></i>
+                        </button>
+                    </div>
+                    <div class="form-text">Folder containing <code>survey-*.json</code> templates.</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="convertExcelFile" class="form-label">Excel File (.xlsx)</label>
+                    <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx">
+                </div>
+                <div class="col-md-4">
+                    <label for="convertDatasetName" class="form-label">Dataset Name (optional)</label>
+                    <input type="text" class="form-control" id="convertDatasetName" placeholder="PRISM Survey Dataset">
+                </div>
+                <div class="col-md-4">
+                    <label for="convertUnknown" class="form-label">Unmapped Columns</label>
+                    <select class="form-select" id="convertUnknown">
+                        <option value="warn" selected>Warn</option>
+                        <option value="ignore">Ignore</option>
+                        <option value="error">Error</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-success w-100" type="button" id="convertBtn" disabled>
+                        <i class="fas fa-wand-magic-sparkles me-2"></i>Convert & Download ZIP
+                    </button>
+                </div>
+            </div>
+
+            <div id="convertError" class="alert alert-danger d-none mt-3"></div>
+            <div id="convertInfo" class="alert alert-info d-none mt-3"></div>
+        </div>
+    </div>
 </div>
 
 {% endblock %}
@@ -93,6 +139,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectAllBtn = document.getElementById('selectAllBtn');
     const deselectAllBtn = document.getElementById('deselectAllBtn');
     const generateLssBtn = document.getElementById('generateLssBtn');
+
+    // --- Landgig: Survey Convert ---
+    const convertLibraryPathInput = document.getElementById('convertLibraryPath');
+    const convertBrowseLibraryBtn = document.getElementById('convertBrowseLibraryBtn');
+    const convertExcelFile = document.getElementById('convertExcelFile');
+    const convertBtn = document.getElementById('convertBtn');
+    const convertDatasetName = document.getElementById('convertDatasetName');
+    const convertUnknown = document.getElementById('convertUnknown');
+    const convertError = document.getElementById('convertError');
+    const convertInfo = document.getElementById('convertInfo');
 
     loadLibraryBtn.addEventListener('click', function() {
         const path = libraryPathInput.value.trim();
@@ -241,6 +297,78 @@ document.addEventListener('DOMContentLoaded', function() {
                     libraryPathInput.value = data.path;
                 }
             });
+    });
+
+    convertBrowseLibraryBtn.addEventListener('click', function() {
+        fetch('/api/browse-folder')
+            .then(r => r.json())
+            .then(data => {
+                if (data.path) {
+                    convertLibraryPathInput.value = data.path;
+                }
+            });
+    });
+
+    function updateConvertBtn() {
+        const hasFile = convertExcelFile.files && convertExcelFile.files.length === 1;
+        convertBtn.disabled = !hasFile;
+    }
+
+    convertExcelFile.addEventListener('change', updateConvertBtn);
+    updateConvertBtn();
+
+    convertBtn.addEventListener('click', function() {
+        convertError.classList.add('d-none');
+        convertInfo.classList.add('d-none');
+        convertError.textContent = '';
+        convertInfo.textContent = '';
+
+        const file = convertExcelFile.files && convertExcelFile.files[0];
+        if (!file) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('excel', file);
+        formData.append('library_path', convertLibraryPathInput.value.trim());
+        formData.append('dataset_name', convertDatasetName.value.trim());
+        formData.append('unknown', convertUnknown.value);
+
+        convertBtn.disabled = true;
+        convertInfo.textContent = 'Converting... this may take a moment.';
+        convertInfo.classList.remove('d-none');
+
+        fetch('/api/survey-convert', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(async response => {
+            if (response.ok) {
+                return response.blob();
+            }
+            const data = await response.json().catch(() => null);
+            const msg = data && data.error ? data.error : 'Conversion failed';
+            throw new Error(msg);
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'prism_survey_dataset.zip';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            convertInfo.textContent = 'Done. Your ZIP download should start automatically.';
+            convertInfo.classList.remove('d-none');
+        })
+        .catch(err => {
+            convertError.textContent = err.message;
+            convertError.classList.remove('d-none');
+        })
+        .finally(() => {
+            updateConvertBtn();
+        });
     });
 
     // Select/Deselect All Files

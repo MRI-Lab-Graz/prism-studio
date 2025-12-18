@@ -242,6 +242,25 @@ def cmd_derivatives_surveys(args):
         sys.exit(1)
 
     out_root = prism_root / "derivatives" / "surveys"
+    _ensure_dir(out_root)
+
+    # Ensure derivative dataset has a dataset_description.json (BIDS derivatives convention)
+    out_desc = out_root / "dataset_description.json"
+    if not out_desc.exists():
+        _write_json(
+            out_desc,
+            {
+                "Name": "PRISM Survey Derivatives",
+                "BIDSVersion": "1.8.0",
+                "DatasetType": "derivative",
+                "GeneratedBy": [
+                    {
+                        "Name": "prism_tools",
+                        "Description": "Survey derivative scoring (reverse coding, subscales)",
+                    }
+                ],
+            },
+        )
     processed_files = 0
     written_files = 0
 
@@ -558,293 +577,65 @@ def cmd_survey_import_excel(args):
 
 def cmd_survey_convert(args):
     """Convert a wide survey table (currently .xlsx) into a PRISM/BIDS survey dataset."""
-    import pandas as pd
-
-    input_path = Path(args.input).resolve()
-    library_dir = Path(args.library).resolve()
-    output_root = Path(args.output).resolve()
-
-    if not input_path.exists():
-        print(f"Error: Input file does not exist: {input_path}")
-        sys.exit(1)
-
-    if not library_dir.exists() or not library_dir.is_dir():
-        print(f"Error: Library folder does not exist or is not a directory: {library_dir}")
-        sys.exit(1)
-
-    if output_root.exists() and any(output_root.iterdir()) and not args.force:
-        print(f"Error: Output directory is not empty: {output_root}")
-        print("       Use --force to write into a non-empty directory.")
-        sys.exit(1)
-
-    if input_path.suffix.lower() not in {".xlsx"}:
-        print("Error: Currently only .xlsx input is supported.")
-        print("       Later: .sav (SPSS) and .csv.")
-        sys.exit(1)
-
-    # --- Load survey templates ---
-    templates = {}
-    item_to_task = {}
-    duplicate_items = {}
-
-    for json_path in sorted(library_dir.glob("survey-*.json")):
+    try:
         try:
-            sidecar = _read_json(json_path)
-        except Exception as e:
-            print(f"Warning: Failed to read {json_path.name}: {e}")
-            continue
-
-        task_from_name = json_path.stem.replace("survey-", "")
-        task = str(sidecar.get("Study", {}).get("TaskName") or task_from_name).strip()
-        if not task:
-            task = task_from_name
-        task_norm = task.lower()
-        templates[task_norm] = {"path": json_path, "json": sidecar, "task": task_norm}
-
-        for k in sidecar.keys():
-            if k in {"Technical", "Study", "Metadata"}:
-                continue
-            if k in item_to_task and item_to_task[k] != task_norm:
-                duplicate_items.setdefault(k, set()).update({item_to_task[k], task_norm})
-            else:
-                item_to_task[k] = task_norm
-
-    if not templates:
-        print(f"Error: No survey templates found in: {library_dir} (expected survey-*.json)")
+            from survey_convert import convert_survey_xlsx_to_prism_dataset
+        except Exception:
+            # `survey_convert.py` lives in `src/` for reuse by web+GUI.
+            src_dir = project_root / "src"
+            if str(src_dir) not in sys.path:
+                sys.path.insert(0, str(src_dir))
+            from survey_convert import convert_survey_xlsx_to_prism_dataset
+    except Exception as e:
+        print(f"Error: Could not import survey conversion module: {e}")
         sys.exit(1)
-
-    if duplicate_items:
-        print("Error: Duplicate item IDs found across survey templates (ambiguous mapping):")
-        for item_id, tasks in sorted(duplicate_items.items()):
-            print(f"  - {item_id}: {', '.join(sorted(tasks))}")
-        sys.exit(1)
-
-    # --- Parse --survey filter ---
-    selected_tasks = None
-    if args.survey:
-        raw = args.survey
-        parts = [p.strip() for p in raw.replace(";", ",").split(",")]
-        parts = [p for p in parts if p]
-        selected = set()
-        for p in parts:
-            p_norm = p.lower().replace("survey-", "")
-            selected.add(p_norm)
-
-        unknown = sorted([t for t in selected if t not in templates])
-        if unknown:
-            print("Error: Unknown survey names in --survey:")
-            for t in unknown:
-                print(f"  - {t}")
-            print("Available surveys:")
-            for t in sorted(templates.keys()):
-                print(f"  - {t}")
-            sys.exit(1)
-        selected_tasks = selected
-
-    # --- Read input table ---
-    sheet = args.sheet
-    sheet = int(sheet) if isinstance(sheet, str) and sheet.isdigit() else sheet
 
     try:
-        df = pd.read_excel(input_path, sheet_name=sheet)
+        result = convert_survey_xlsx_to_prism_dataset(
+            input_path=args.input,
+            library_dir=args.library,
+            output_root=args.output,
+            survey=args.survey,
+            id_column=args.id_column,
+            session_column=args.session_column,
+            sheet=args.sheet,
+            unknown=args.unknown,
+            dry_run=bool(args.dry_run),
+            force=bool(args.force),
+            name=args.name,
+            authors=args.authors,
+        )
     except Exception as e:
-        print(f"Error: Failed to read Excel: {e}")
+        print(f"Error: {e}")
         sys.exit(1)
 
-    if df is None or df.empty:
-        print("Error: Input table is empty.")
-        sys.exit(1)
-
-    # Normalize headers: keep conservative to avoid breaking item IDs.
-    df = df.rename(columns={c: str(c).strip() for c in df.columns})
-
-    def _find_col(candidates: set[str]) -> str | None:
-        lower_map = {str(c).strip().lower(): str(c).strip() for c in df.columns}
-        for c in candidates:
-            if c in lower_map:
-                return lower_map[c]
-        return None
-
-    id_col = args.id_column
-    if id_col:
-        if id_col not in df.columns:
-            print(f"Error: --id-column '{id_col}' not found in input columns")
-            print(f"Columns: {', '.join([str(c) for c in df.columns])}")
-            sys.exit(1)
-    else:
-        id_col = _find_col({"participant_id", "subject", "id", "sub_id", "participant", "code"})
-        if not id_col:
-            print("Error: Could not determine participant id column.")
-            print("       Provide --id-column explicitly (e.g., participant_id, CODE).")
-            sys.exit(1)
-
-    session_col = None
-    if args.session_column:
-        if args.session_column not in df.columns:
-            print(f"Error: --session-column '{args.session_column}' not found in input columns")
-            sys.exit(1)
-        session_col = args.session_column
-    else:
-        session_col = _find_col({"session", "ses", "visit", "timepoint"})
-
-    def _normalize_sub_id(val) -> str:
-        s = sanitize_id(str(val).strip())
-        if not s:
-            return s
-        if s.startswith("sub-"):
-            return s
-        if s.isdigit():
-            if len(s) < 3:
-                s = s.zfill(3)
-        return f"sub-{s}"
-
-    def _normalize_ses_id(val) -> str:
-        s = sanitize_id(str(val).strip())
-        if not s:
-            return "ses-1"
-        if s.startswith("ses-"):
-            return s
-        return f"ses-{s}"
-
-    # --- Determine which columns map to which surveys ---
-    cols = [c for c in df.columns if c not in {id_col} and c != session_col]
-    col_to_task = {}
-    unknown_cols = []
-    for c in cols:
-        if c in item_to_task:
-            col_to_task[c] = item_to_task[c]
-        else:
-            unknown_cols.append(c)
-
-    tasks_with_data = set(col_to_task.values())
-    if selected_tasks is not None:
-        tasks_with_data = tasks_with_data.intersection(selected_tasks)
-
-    if not tasks_with_data:
-        print("Error: No survey item columns matched the selected templates.")
-        if selected_tasks is not None:
-            print(f"Selected surveys: {', '.join(sorted(selected_tasks))}")
-        print("Tip: Ensure the Excel headers use item IDs like 'ADS01'.")
-        sys.exit(1)
-
-    # --- Report mapping ---
+    # Keep CLI output similar to previous behavior
     print("Survey convert mapping report")
     print("-----------------------------")
-    print(f"Input:   {input_path}")
-    print(f"Library: {library_dir}")
-    print(f"Output:  {output_root}")
-    print(f"ID col:  {id_col}")
-    if session_col:
-        print(f"Session: {session_col}")
+    print(f"Input:   {Path(args.input).resolve()}")
+    print(f"Library: {Path(args.library).resolve()}")
+    print(f"Output:  {Path(args.output).resolve()}")
+    print(f"ID col:  {result.id_column}")
+    if result.session_column:
+        print(f"Session: {result.session_column}")
     else:
         print("Session: (default ses-1)")
 
-    for task in sorted(tasks_with_data):
-        schema = templates[task]["json"]
-        expected = [k for k in schema.keys() if k not in {"Technical", "Study", "Metadata"}]
-        present = [c for c, t in col_to_task.items() if t == task]
-        missing = [k for k in expected if k not in present]
+    for task in result.tasks_included:
+        missing = result.missing_items_by_task.get(task, 0)
         print(f"\nSurvey: {task}")
-        print(f"  - matched columns: {len(present)}")
         if missing:
-            print(f"  - missing items:   {len(missing)} (will be written as 'n/a')")
+            print(f"  - missing items:   {missing} (will be written as 'n/a')")
 
-    if unknown_cols and args.unknown != "ignore":
+    if result.unknown_columns and args.unknown != "ignore":
         msg = "WARNING" if args.unknown == "warn" else "ERROR"
         print(f"\n{msg}: Unmapped columns (not found in any survey template):")
-        for c in unknown_cols:
+        for c in result.unknown_columns:
             print(f"  - {c}")
-        if args.unknown == "error":
-            sys.exit(1)
 
     if args.dry_run:
         print("\nDry-run: no files written.")
         return
-
-    # --- Write output dataset ---
-    _ensure_dir(output_root)
-
-    # dataset_description.json (minimal, only if missing)
-    ds_desc = output_root / "dataset_description.json"
-    if not ds_desc.exists():
-        dataset_description = {
-            "Name": args.name or "PRISM Survey Dataset",
-            "BIDSVersion": "1.8.0",
-            "DatasetType": "raw",
-            "Authors": args.authors or ["prism_tools"],
-        }
-        _write_json(ds_desc, dataset_description)
-
-    # participants.tsv
-    df_part = pd.DataFrame({"participant_id": df[id_col].astype(str).map(_normalize_sub_id)})
-    # Include common participant attributes if present (kept minimal by design)
-    lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
-    extra_part_cols = []
-    for candidate in ["age", "sex", "gender"]:
-        col = lower_to_col.get(candidate)
-        if col and col not in {id_col, session_col}:
-            extra_part_cols.append(col)
-
-    if extra_part_cols:
-        df_extra = df[[id_col] + extra_part_cols].copy()
-        for c in extra_part_cols:
-            df_extra[c] = df_extra[c].apply(lambda v: "n/a" if pd.isna(v) else v)
-        df_extra[id_col] = df_extra[id_col].astype(str).map(_normalize_sub_id)
-        df_extra = df_extra.groupby(id_col, dropna=False)[extra_part_cols].first().reset_index()
-        df_extra = df_extra.rename(columns={id_col: "participant_id"})
-        df_part = df_part.merge(df_extra, on="participant_id", how="left")
-
-    df_part = df_part.drop_duplicates(subset=["participant_id"]).reset_index(drop=True)
-    df_part.to_csv(output_root / "participants.tsv", sep="\t", index=False)
-
-    # inherited sidecars under surveys/
-    surveys_dir = _ensure_dir(output_root / "surveys")
-    for task in sorted(tasks_with_data):
-        sidecar_path = surveys_dir / f"survey-{task}_beh.json"
-        if not sidecar_path.exists() or args.force:
-            _write_json(sidecar_path, templates[task]["json"])
-
-    # per-subject TSVs
-    def _normalize_item_value(val) -> str:
-        # Important: Excel often yields floats (e.g., 2.0). Convert integer-like floats to integer strings.
-        # Keep non-numeric strings as-is so the validator can catch whitespace/typos.
-        if pd.isna(val):
-            return "n/a"
-        if isinstance(val, bool):
-            return str(val)
-        if isinstance(val, (int,)):
-            return str(int(val))
-        if isinstance(val, float):
-            if val.is_integer():
-                return str(int(val))
-            return str(val)
-        return str(val)
-
-    for _, row in df.iterrows():
-        sub_id = _normalize_sub_id(row[id_col])
-        ses_id = _normalize_ses_id(row[session_col]) if session_col else "ses-1"
-
-        modality_dir = _ensure_dir(output_root / sub_id / ses_id / "survey")
-
-        for task in sorted(tasks_with_data):
-            schema = templates[task]["json"]
-            expected = [k for k in schema.keys() if k not in {"Technical", "Study", "Metadata"}]
-            present_cols = [c for c, t in col_to_task.items() if t == task]
-            if selected_tasks is not None and task not in selected_tasks:
-                continue
-            if not present_cols:
-                continue
-
-            out = {}
-            for item_id in expected:
-                if item_id in df.columns:
-                    out[item_id] = _normalize_item_value(row[item_id])
-                else:
-                    out[item_id] = "n/a"
-
-            df_out = pd.DataFrame([out])
-            stem = f"{sub_id}_{ses_id}_task-{task}_beh"
-            df_out.to_csv(modality_dir / f"{stem}.tsv", sep="\t", index=False)
 
     print("\n✅ Survey conversion complete.")
 
