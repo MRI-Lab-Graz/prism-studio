@@ -71,6 +71,18 @@ except Exception as import_error:
     infer_lsa_metadata = None
     print(f"⚠️  Could not import survey_convert: {import_error}")
 
+try:
+    from biometrics_convert import convert_biometrics_table_to_prism_dataset
+except Exception as import_error:
+    convert_biometrics_table_to_prism_dataset = None
+    print(f"⚠️  Could not import biometrics_convert: {import_error}")
+
+try:
+    from helpers.physio.convert_varioport import convert_varioport
+except Exception as import_error:
+    convert_varioport = None
+    print(f"⚠️  Could not import convert_varioport: {import_error}")
+
 
 def _list_survey_template_languages(library_path: str) -> tuple[list[str], str | None]:
     """Return (languages, default_language) from survey templates in a folder."""
@@ -1564,6 +1576,7 @@ def api_survey_convert():
         return jsonify({"error": "Survey conversion module not available"}), 500
 
     uploaded_file = request.files.get("excel") or request.files.get("file")
+    alias_upload = request.files.get("alias") or request.files.get("alias_file")
     library_path = (request.form.get("library_path") or "").strip()
 
     if not uploaded_file or not getattr(uploaded_file, "filename", ""):
@@ -1573,6 +1586,14 @@ def api_survey_convert():
     suffix = Path(filename).suffix.lower()
     if suffix not in {".xlsx", ".lsa"}:
         return jsonify({"error": "Only .xlsx and .lsa files are supported"}), 400
+
+    alias_filename = None
+    alias_suffix = None
+    if alias_upload and getattr(alias_upload, "filename", ""):
+        alias_filename = secure_filename(alias_upload.filename)
+        alias_suffix = Path(alias_filename).suffix.lower()
+        if alias_suffix and alias_suffix not in {".tsv", ".txt"}:
+            return jsonify({"error": "Alias file must be a .tsv or .txt mapping file"}), 400
 
     if not library_path:
         # Prefer shipped survey templates if available.
@@ -1599,6 +1620,11 @@ def api_survey_convert():
         tmp_dir_path = Path(tmp_dir)
         input_path = tmp_dir_path / filename
         uploaded_file.save(str(input_path))
+
+        alias_path = None
+        if alias_filename:
+            alias_path = tmp_dir_path / alias_filename
+            alias_upload.save(str(alias_path))
 
         output_root = tmp_dir_path / "prism_dataset"
 
@@ -1632,6 +1658,7 @@ def api_survey_convert():
                 name=dataset_name,
                 authors=["prism-validator-web"],
                 language=language,
+                alias_file=alias_path,
             )
         else:
             if not convert_survey_lsa_to_prism_dataset:
@@ -1649,6 +1676,7 @@ def api_survey_convert():
                 name=dataset_name,
                 authors=["prism-validator-web"],
                 language=language,
+                alias_file=alias_path,
             )
 
         mem = io.BytesIO()
@@ -1699,6 +1727,143 @@ def api_survey_languages():
 
     langs, default = _list_survey_template_languages(library_path)
     return jsonify({"languages": langs, "default": default, "library_path": library_path})
+
+
+@app.route("/api/biometrics-convert", methods=["POST"])
+def api_biometrics_convert():
+    """Convert an uploaded biometrics table (.csv or .xlsx) into a PRISM/BIDS-style dataset ZIP."""
+    if not convert_biometrics_table_to_prism_dataset:
+        return jsonify({"error": "Biometrics conversion module not available"}), 500
+
+    uploaded_file = request.files.get("data") or request.files.get("file")
+    library_path = (request.form.get("library_path") or "").strip()
+
+    if not uploaded_file or not getattr(uploaded_file, "filename", ""):
+        return jsonify({"error": "Missing input file"}), 400
+
+    filename = secure_filename(uploaded_file.filename)
+    suffix = Path(filename).suffix.lower()
+    if suffix not in {".csv", ".xlsx"}:
+        return jsonify({"error": "Only .csv and .xlsx files are supported"}), 400
+
+    if not library_path:
+        preferred = (BASE_DIR / "library" / "biometrics").resolve()
+        fallback = (BASE_DIR / "library").resolve() / "biometrics"
+        library_path = str(preferred if preferred.exists() else fallback)
+
+    if not os.path.exists(library_path) or not os.path.isdir(library_path):
+        return jsonify({"error": f"Library path is not a directory: {library_path}"}), 400
+
+    id_column = (request.form.get("id_column") or "").strip() or None
+    session_column = (request.form.get("session_column") or "").strip() or None
+    sheet = (request.form.get("sheet") or "0").strip() or 0
+    unknown = (request.form.get("unknown") or "warn").strip() or "warn"
+    dataset_name = (request.form.get("dataset_name") or "").strip() or None
+
+    tmp_dir = tempfile.mkdtemp(prefix="prism_biometrics_convert_")
+    try:
+        tmp_dir_path = Path(tmp_dir)
+        input_path = tmp_dir_path / filename
+        uploaded_file.save(str(input_path))
+
+        output_root = tmp_dir_path / "prism_dataset"
+
+        convert_biometrics_table_to_prism_dataset(
+            input_path=input_path,
+            library_dir=library_path,
+            output_root=output_root,
+            id_column=id_column,
+            session_column=session_column,
+            sheet=sheet,
+            unknown=unknown,
+            force=True,
+            name=dataset_name,
+            authors=["prism-validator-web"],
+        )
+
+        mem = io.BytesIO()
+        with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for p in output_root.rglob("*"):
+                if p.is_file():
+                    arcname = p.relative_to(output_root)
+                    zf.write(p, arcname.as_posix())
+        mem.seek(0)
+
+        return send_file(
+            mem,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name="prism_biometrics_dataset.zip",
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        try:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+        except Exception:
+            pass
+
+
+@app.route("/api/physio-convert", methods=["POST"])
+def api_physio_convert():
+    """Convert an uploaded Varioport file (.raw/.vpd) into EDF+ (.edf) + sidecar (.json) and return as ZIP."""
+    if not convert_varioport:
+        return jsonify({"error": "Physio conversion (Varioport) not available"}), 500
+
+    uploaded_file = request.files.get("raw") or request.files.get("file")
+    if not uploaded_file or not getattr(uploaded_file, "filename", ""):
+        return jsonify({"error": "Missing input file"}), 400
+
+    filename = secure_filename(uploaded_file.filename)
+    suffix = Path(filename).suffix.lower()
+    if suffix not in {".raw", ".vpd"}:
+        return jsonify({"error": "Only Varioport .raw and .vpd files are supported"}), 400
+
+    task = (request.form.get("task") or "rest").strip() or "rest"
+    base_freq = (request.form.get("sampling_rate") or "").strip() or None
+    try:
+        base_freq_val = float(base_freq) if base_freq is not None else None
+    except Exception:
+        return jsonify({"error": "sampling_rate must be a number"}), 400
+
+    tmp_dir = tempfile.mkdtemp(prefix="prism_physio_convert_")
+    try:
+        tmp_dir_path = Path(tmp_dir)
+        input_path = tmp_dir_path / filename
+        uploaded_file.save(str(input_path))
+
+        out_edf = tmp_dir_path / (input_path.stem + ".edf")
+        out_json = tmp_dir_path / (input_path.stem + ".json")
+
+        convert_varioport(
+            str(input_path),
+            str(out_edf),
+            str(out_json),
+            task_name=task,
+            base_freq=base_freq_val,
+        )
+
+        mem = io.BytesIO()
+        with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+            if out_edf.exists():
+                zf.write(out_edf, out_edf.name)
+            if out_json.exists():
+                zf.write(out_json, out_json.name)
+        mem.seek(0)
+
+        return send_file(
+            mem,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name="varioport_edfplus.zip",
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        try:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+        except Exception:
+            pass
 
 
 def find_dataset_root(extract_dir):

@@ -78,54 +78,142 @@
 
     <div class="card mt-4" id="landgig-convert">
         <div class="card-header bg-light">
-            <h5 class="mb-0">Convert Survey to PRISM Dataset</h5>
+            <h5 class="mb-0">Prism Converter</h5>
         </div>
         <div class="card-body">
-            <p class="text-muted">Upload a wide-format survey file (.xlsx) or a LimeSurvey response archive (.lsa) and download a PRISM/BIDS-style survey dataset (ZIP).</p>
+            <p class="text-muted">Convert Survey, Biometrics, and Physio inputs into PRISM/BIDS-style outputs.</p>
 
-            <div class="row g-3 align-items-end">
-                <div class="col-md-8">
-                    <label for="convertLibraryPath" class="form-label">Survey Library Folder</label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="convertLibraryPath" value="{{ default_survey_library_path | default('survey_library') }}">
-                        <button class="btn btn-outline-secondary" type="button" id="convertBrowseLibraryBtn" title="Browse Folder">
-                            <i class="fas fa-folder-open"></i>
-                        </button>
+            <div class="card mb-4 border-info">
+                <div class="card-header bg-info-subtle">
+                    <h6 class="mb-0 text-info">Survey</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-2">Upload a wide-format survey file (.xlsx) or a LimeSurvey response archive (.lsa) and download a PRISM/BIDS-style survey dataset (ZIP).</p>
+
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-8">
+                            <label for="convertLibraryPath" class="form-label">Survey Library Folder</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="convertLibraryPath" value="{{ default_survey_library_path | default('survey_library') }}">
+                                <button class="btn btn-outline-secondary" type="button" id="convertBrowseLibraryBtn" title="Browse Folder">
+                                    <i class="fas fa-folder-open"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">Folder containing <code>survey-*.json</code> templates.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="convertExcelFile" class="form-label">Survey File (.xlsx or .lsa)</label>
+                            <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="convertAliasFile" class="form-label">Alias Mapping (optional)</label>
+                            <input class="form-control" type="file" id="convertAliasFile" accept=".tsv,.txt">
+                            <div class="form-text">Each line: <code>&lt;canonical_id&gt; &lt;alias1&gt; &lt;alias2&gt; ...</code></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="convertDatasetName" class="form-label">Dataset Name (optional)</label>
+                            <input type="text" class="form-control" id="convertDatasetName" placeholder="PRISM Survey Dataset">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="convertLanguage" class="form-label">Language</label>
+                            <select class="form-select" id="convertLanguage">
+                                <option value="auto" selected>Auto (template default)</option>
+                            </select>
+                            <div class="form-text">Used to generate schema-valid survey sidecars (single-language).</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="convertUnknown" class="form-label">Unmapped Columns</label>
+                            <select class="form-select" id="convertUnknown">
+                                <option value="warn" selected>Warn</option>
+                                <option value="ignore">Ignore</option>
+                                <option value="error">Error</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-success w-100" type="button" id="convertBtn" disabled>
+                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert & Download ZIP
+                            </button>
+                        </div>
                     </div>
-                    <div class="form-text">Folder containing <code>survey-*.json</code> templates.</div>
-                </div>
-                <div class="col-md-4">
-                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx or .lsa)</label>
-                    <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa">
-                </div>
-                <div class="col-md-4">
-                    <label for="convertDatasetName" class="form-label">Dataset Name (optional)</label>
-                    <input type="text" class="form-control" id="convertDatasetName" placeholder="PRISM Survey Dataset">
-                </div>
-                <div class="col-md-4">
-                    <label for="convertLanguage" class="form-label">Language</label>
-                    <select class="form-select" id="convertLanguage">
-                        <option value="auto" selected>Auto (template default)</option>
-                    </select>
-                    <div class="form-text">Used to generate schema-valid survey sidecars (single-language).</div>
-                </div>
-                <div class="col-md-4">
-                    <label for="convertUnknown" class="form-label">Unmapped Columns</label>
-                    <select class="form-select" id="convertUnknown">
-                        <option value="warn" selected>Warn</option>
-                        <option value="ignore">Ignore</option>
-                        <option value="error">Error</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <button class="btn btn-success w-100" type="button" id="convertBtn" disabled>
-                        <i class="fas fa-wand-magic-sparkles me-2"></i>Convert & Download ZIP
-                    </button>
+
+                    <div id="convertError" class="alert alert-danger d-none mt-3"></div>
+                    <div id="convertInfo" class="alert alert-info d-none mt-3"></div>
                 </div>
             </div>
 
-            <div id="convertError" class="alert alert-danger d-none mt-3"></div>
-            <div id="convertInfo" class="alert alert-info d-none mt-3"></div>
+            <div class="card mb-4 border-primary">
+                <div class="card-header bg-primary-subtle">
+                    <h6 class="mb-0 text-primary">Biometrics</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-2">Upload a biometrics table (.xlsx or .csv) and download a PRISM/BIDS-style biometrics dataset (ZIP). Choose the biometrics library folder.</p>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-8">
+                            <label for="biometricsLibraryPath" class="form-label">Biometrics Library Folder</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="biometricsLibraryPath" value="{{ default_biometrics_library_path | default('library/biometrics') }}">
+                                <button class="btn btn-outline-secondary" type="button" id="biometricsBrowseLibraryBtn" title="Browse Folder">
+                                    <i class="fas fa-folder-open"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">Folder containing <code>biometrics-*.json</code> templates.</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="biometricsDataFile" class="form-label">Biometrics File (.xlsx or .csv)</label>
+                            <input class="form-control" type="file" id="biometricsDataFile" accept=".xlsx,.csv">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="biometricsDatasetName" class="form-label">Dataset Name (optional)</label>
+                            <input type="text" class="form-control" id="biometricsDatasetName" placeholder="PRISM Biometrics Dataset">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="biometricsUnknown" class="form-label">Unmapped Columns</label>
+                            <select class="form-select" id="biometricsUnknown">
+                                <option value="warn" selected>Warn</option>
+                                <option value="ignore">Ignore</option>
+                                <option value="error">Error</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-success w-100" type="button" id="biometricsConvertBtn" disabled>
+                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert & Download ZIP
+                            </button>
+                        </div>
+                    </div>
+                    <div id="biometricsError" class="alert alert-danger d-none mt-3"></div>
+                    <div id="biometricsInfo" class="alert alert-info d-none mt-3"></div>
+                </div>
+            </div>
+
+            <div class="card border-success">
+                <div class="card-header bg-success-subtle">
+                    <h6 class="mb-0 text-success">Physio</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-2">Upload a Varioport file (.raw or .vpd) and download EDF+ (.edf) with JSON sidecar (ZIP).</p>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="physioRawFile" class="form-label">Varioport File (.raw or .vpd)</label>
+                            <input class="form-control" type="file" id="physioRawFile" accept=".raw,.vpd">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="physioTask" class="form-label">Task Name</label>
+                            <input type="text" class="form-control" id="physioTask" value="rest">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="physioSamplingRate" class="form-label">Sampling Rate Override (optional)</label>
+                            <input type="number" class="form-control" id="physioSamplingRate" placeholder="e.g. 256" step="any">
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-success w-100" type="button" id="physioConvertBtn" disabled>
+                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert & Download ZIP
+                            </button>
+                        </div>
+                    </div>
+                    <div id="physioError" class="alert alert-danger d-none mt-3"></div>
+                    <div id="physioInfo" class="alert alert-info d-none mt-3"></div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -143,9 +231,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateSurveyPageHeader() {
         const isConvert = window.location.hash === '#landgig-convert';
         if (isConvert) {
-            if (pageTitleEl) pageTitleEl.textContent = 'Survey Convert';
-            if (pageSubtitleEl) pageSubtitleEl.textContent = 'Convert Excel exports or LimeSurvey archives to a PRISM dataset.';
-            document.title = 'Prism-Validator - Survey Convert';
+            if (pageTitleEl) pageTitleEl.textContent = 'Prism Converter';
+            if (pageSubtitleEl) pageSubtitleEl.textContent = 'Convert Survey, Biometrics, and Physio inputs to PRISM/BIDS-style outputs.';
+            document.title = 'Prism-Validator - Prism Converter';
             if (exportCardEl) exportCardEl.classList.add('d-none');
         } else {
             if (pageTitleEl) pageTitleEl.textContent = 'Survey Export';
@@ -174,12 +262,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const convertLibraryPathInput = document.getElementById('convertLibraryPath');
     const convertBrowseLibraryBtn = document.getElementById('convertBrowseLibraryBtn');
     const convertExcelFile = document.getElementById('convertExcelFile');
+    const convertAliasFile = document.getElementById('convertAliasFile');
     const convertBtn = document.getElementById('convertBtn');
     const convertDatasetName = document.getElementById('convertDatasetName');
     const convertUnknown = document.getElementById('convertUnknown');
     const convertLanguage = document.getElementById('convertLanguage');
     const convertError = document.getElementById('convertError');
     const convertInfo = document.getElementById('convertInfo');
+
+    // --- Biometrics Convert ---
+    const biometricsLibraryPathInput = document.getElementById('biometricsLibraryPath');
+    const biometricsBrowseLibraryBtn = document.getElementById('biometricsBrowseLibraryBtn');
+    const biometricsDataFile = document.getElementById('biometricsDataFile');
+    const biometricsDatasetName = document.getElementById('biometricsDatasetName');
+    const biometricsUnknown = document.getElementById('biometricsUnknown');
+    const biometricsConvertBtn = document.getElementById('biometricsConvertBtn');
+    const biometricsError = document.getElementById('biometricsError');
+    const biometricsInfo = document.getElementById('biometricsInfo');
+
+    // --- Physio Convert ---
+    const physioRawFile = document.getElementById('physioRawFile');
+    const physioTask = document.getElementById('physioTask');
+    const physioSamplingRate = document.getElementById('physioSamplingRate');
+    const physioConvertBtn = document.getElementById('physioConvertBtn');
+    const physioError = document.getElementById('physioError');
+    const physioInfo = document.getElementById('physioInfo');
 
     loadLibraryBtn.addEventListener('click', function() {
         const path = libraryPathInput.value.trim();
@@ -341,6 +448,18 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     });
 
+    if (biometricsBrowseLibraryBtn) {
+        biometricsBrowseLibraryBtn.addEventListener('click', function() {
+            fetch('/api/browse-folder')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.path && biometricsLibraryPathInput) {
+                        biometricsLibraryPathInput.value = data.path;
+                    }
+                });
+        });
+    }
+
     function refreshConvertLanguages() {
         const libraryPath = convertLibraryPathInput.value.trim();
         const url = `/api/survey-languages?library_path=${encodeURIComponent(libraryPath)}`;
@@ -406,6 +525,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         // Backend accepts both field names; keep 'excel' for backwards compatibility.
         formData.append('excel', file);
+
+        const alias = convertAliasFile && convertAliasFile.files && convertAliasFile.files[0];
+        if (alias) {
+            formData.append('alias', alias);
+        }
+
         formData.append('library_path', convertLibraryPathInput.value.trim());
         formData.append('dataset_name', convertDatasetName.value.trim());
         formData.append('unknown', convertUnknown.value);
@@ -462,6 +587,135 @@ document.addEventListener('DOMContentLoaded', function() {
             updateConvertBtn();
         });
     });
+
+    function updateBiometricsBtn() {
+        const hasFile = biometricsDataFile && biometricsDataFile.files && biometricsDataFile.files.length === 1;
+        if (biometricsConvertBtn) biometricsConvertBtn.disabled = !hasFile;
+    }
+
+    if (biometricsDataFile) {
+        biometricsDataFile.addEventListener('change', updateBiometricsBtn);
+        updateBiometricsBtn();
+    }
+
+    if (biometricsConvertBtn) {
+        biometricsConvertBtn.addEventListener('click', function() {
+            biometricsError.classList.add('d-none');
+            biometricsInfo.classList.add('d-none');
+            biometricsError.textContent = '';
+            biometricsInfo.textContent = '';
+
+            const file = biometricsDataFile.files && biometricsDataFile.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('data', file);
+            formData.append('library_path', biometricsLibraryPathInput.value.trim());
+            formData.append('dataset_name', biometricsDatasetName.value.trim());
+            formData.append('unknown', biometricsUnknown.value);
+
+            biometricsConvertBtn.disabled = true;
+            biometricsInfo.textContent = 'Converting... this may take a moment.';
+            biometricsInfo.classList.remove('d-none');
+
+            fetch('/api/biometrics-convert', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const data = await response.json().catch(() => null);
+                    const msg = data && data.error ? data.error : 'Conversion failed';
+                    throw new Error(msg);
+                }
+                const blob = await response.blob();
+                return blob;
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'prism_biometrics_dataset.zip';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                biometricsInfo.textContent = 'Done. Your ZIP download should start automatically.';
+                biometricsInfo.classList.remove('d-none');
+            })
+            .catch(err => {
+                biometricsError.textContent = err.message;
+                biometricsError.classList.remove('d-none');
+            })
+            .finally(() => {
+                updateBiometricsBtn();
+            });
+        });
+    }
+
+    function updatePhysioBtn() {
+        const hasFile = physioRawFile && physioRawFile.files && physioRawFile.files.length === 1;
+        if (physioConvertBtn) physioConvertBtn.disabled = !hasFile;
+    }
+
+    if (physioRawFile) {
+        physioRawFile.addEventListener('change', updatePhysioBtn);
+        updatePhysioBtn();
+    }
+
+    if (physioConvertBtn) {
+        physioConvertBtn.addEventListener('click', function() {
+            physioError.classList.add('d-none');
+            physioInfo.classList.add('d-none');
+            physioError.textContent = '';
+            physioInfo.textContent = '';
+
+            const file = physioRawFile.files && physioRawFile.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('raw', file);
+            formData.append('task', physioTask ? physioTask.value.trim() : 'rest');
+            if (physioSamplingRate && physioSamplingRate.value) {
+                formData.append('sampling_rate', physioSamplingRate.value);
+            }
+
+            physioConvertBtn.disabled = true;
+            physioInfo.textContent = 'Converting... this may take a moment.';
+            physioInfo.classList.remove('d-none');
+
+            fetch('/api/physio-convert', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const data = await response.json().catch(() => null);
+                    const msg = data && data.error ? data.error : 'Conversion failed';
+                    throw new Error(msg);
+                }
+                const blob = await response.blob();
+                return blob;
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'varioport_edfplus.zip';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                physioInfo.textContent = 'Done. Your ZIP download should start automatically.';
+                physioInfo.classList.remove('d-none');
+            })
+            .catch(err => {
+                physioError.textContent = err.message;
+                physioError.classList.remove('d-none');
+            })
+            .finally(() => {
+                updatePhysioBtn();
+            });
+        });
+    }
 
     // Initial populate
     refreshConvertLanguages();

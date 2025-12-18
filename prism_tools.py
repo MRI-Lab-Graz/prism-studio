@@ -690,6 +690,7 @@ def cmd_survey_convert(args):
             force=bool(args.force),
             name=args.name,
             authors=args.authors,
+            alias_file=getattr(args, "alias", None),
         )
     except Exception as e:
         print(f"Error: {e}")
@@ -1188,12 +1189,12 @@ def main():
     # Subcommand: survey convert
     parser_survey_convert = survey_subparsers.add_parser(
         "convert",
-        help="Convert a wide survey data file (.xlsx) into a PRISM/BIDS survey dataset",
+        help="Convert a wide survey data file (.xlsx or .lsa) into a PRISM/BIDS survey dataset",
     )
     parser_survey_convert.add_argument(
         "--input",
         required=True,
-        help="Path to the survey data file (currently: .xlsx)",
+        help="Path to the survey data file (.xlsx or LimeSurvey .lsa)",
     )
     parser_survey_convert.add_argument(
         "--library",
@@ -1206,7 +1207,7 @@ def main():
     parser_survey_convert.add_argument(
         "--lang",
         default="de",
-        help="Language for templates when using i18n libraries (default: de)",
+        help="Language for templates when using i18n libraries (default: de; use 'auto' to infer for .lsa)",
     )
     parser_survey_convert.add_argument(
         "--output",
@@ -1257,6 +1258,16 @@ def main():
         nargs="+",
         default=None,
         help="Authors written to dataset_description.json (if created)",
+    )
+
+    parser_survey_convert.add_argument(
+        "--alias",
+        dest="alias",
+        default=None,
+        help=(
+            "Optional TSV/whitespace alias file: each line is '<canonical_id> <alias1> <alias2> ...'. "
+            "Used to map changing item IDs onto stable canonical IDs before template matching."
+        ),
     )
 
     # Command: biometrics

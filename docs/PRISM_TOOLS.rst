@@ -90,7 +90,7 @@ Convert a “wide” survey export (one row per participant and one column per i
 
 The converter:
 
-- Reads a tabular input file (currently ``.xlsx``)
+- Reads a tabular input file (``.xlsx`` or LimeSurvey ``.lsa``)
 - Matches column headers against item IDs in your survey templates (``survey-*.json``)
 - Writes a dataset with ``participants.tsv`` and per-subject TSVs under ``sub-*/ses-*/survey/``
 - Copies inherited sidecars to ``surveys/survey-<task>_beh.json`` for BIDS inheritance
@@ -115,6 +115,7 @@ Useful options
 - ``--dry-run``: print a mapping report but do not write files
 - ``--unknown {error,warn,ignore}``: control how unmapped columns are handled
 - ``--sheet``: choose the Excel sheet by index/name
+- ``--alias``: optional TSV/whitespace mapping file to map changing item IDs onto stable canonical IDs
 
 After conversion, validate the output with:
 

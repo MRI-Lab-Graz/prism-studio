@@ -16,6 +16,8 @@ import json
 import zipfile
 import xml.etree.ElementTree as ET
 from copy import deepcopy
+import re
+from typing import Iterable
 
 
 _NON_ITEM_TOPLEVEL_KEYS = {
@@ -152,6 +154,7 @@ def convert_survey_xlsx_to_prism_dataset(
     name: str | None = None,
     authors: list[str] | None = None,
     language: str | None = None,
+    alias_file: str | Path | None = None,
 ) -> SurveyConvertResult:
     """Convert a wide survey Excel table into a PRISM dataset.
 
@@ -185,6 +188,7 @@ def convert_survey_xlsx_to_prism_dataset(
         name=name,
         authors=authors,
         language=language,
+        alias_file=alias_file,
     )
 
 
@@ -202,6 +206,7 @@ def convert_survey_lsa_to_prism_dataset(
     name: str | None = None,
     authors: list[str] | None = None,
     language: str | None = None,
+    alias_file: str | Path | None = None,
 ) -> SurveyConvertResult:
     """Convert a LimeSurvey response archive (.lsa) into a PRISM dataset.
 
@@ -235,6 +240,7 @@ def convert_survey_lsa_to_prism_dataset(
         authors=authors,
         language=effective_language,
         technical_overrides=inferred_tech,
+        alias_file=alias_file,
     )
 
 
@@ -258,6 +264,35 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
         return df.rename(columns={c: str(c).strip() for c in df.columns})
 
     if kind == "lsa":
+        def _normalize_lsa_columns(cols: list[str]) -> list[str]:
+            """Normalize LimeSurvey export column names.
+
+            LimeSurvey often uses SGQA-like identifiers in exports.
+            In our test dataset we see names like:
+              _569818X43541X590135ADS01
+            where the trailing part is the question code used in templates.
+            We strip the leading '_<digits>X<digits>X<digits>' prefix when a
+            non-empty suffix exists.
+            """
+
+            pattern = re.compile(r"^_\d+X\d+X\d+(.*)$")
+            used: set[str] = set()
+            out_cols: list[str] = []
+            for c in cols:
+                s = str(c).strip()
+                m = pattern.match(s)
+                candidate = s
+                if m:
+                    suffix = (m.group(1) or "").strip()
+                    if suffix:
+                        candidate = suffix
+                # avoid collisions
+                if candidate in used:
+                    candidate = s
+                used.add(candidate)
+                out_cols.append(candidate)
+            return out_cols
+
         def _find_responses_member(zf: zipfile.ZipFile) -> str:
             matches = [name for name in zf.namelist() if name.endswith("_responses.lsr")]
             if not matches:
@@ -296,7 +331,9 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
         if df is None or df.empty:
             raise ValueError("No response rows found inside the .lsa archive")
 
-        return df.rename(columns={c: str(c).strip() for c in df.columns})
+        df = df.rename(columns={c: str(c).strip() for c in df.columns})
+        df.columns = _normalize_lsa_columns([str(c) for c in df.columns])
+        return df
 
     raise ValueError(f"Unsupported table kind: {kind}")
 
@@ -316,6 +353,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     authors: list[str] | None,
     language: str | None,
     technical_overrides: dict | None = None,
+    alias_file: str | Path | None = None,
 ) -> SurveyConvertResult:
     if unknown not in {"error", "warn", "ignore"}:
         raise ValueError("unknown must be one of: error, warn, ignore")
@@ -338,6 +376,17 @@ def _convert_survey_dataframe_to_prism_dataset(
             "pandas is required for survey conversion. Ensure dependencies are installed via setup.sh"
         ) from e
 
+    alias_map: dict[str, str] | None = None
+    canonical_aliases: dict[str, list[str]] | None = None
+    if alias_file:
+        alias_path = Path(alias_file).resolve()
+        if not alias_path.exists() or not alias_path.is_file():
+            raise ValueError(f"Alias file not found: {alias_path}")
+        rows = _read_alias_rows(alias_path)
+        if rows:
+            alias_map = _build_alias_map(rows)
+            canonical_aliases = _build_canonical_aliases(rows)
+
     # --- Load survey templates ---
     templates: dict[str, dict] = {}
     item_to_task: dict[str, str] = {}
@@ -356,6 +405,9 @@ def _convert_survey_dataframe_to_prism_dataset(
         if not task:
             task = task_from_name
         task_norm = task.lower()
+        if canonical_aliases:
+            sidecar = _canonicalize_template_items(sidecar=sidecar, canonical_aliases=canonical_aliases)
+
         templates[task_norm] = {"path": json_path, "json": sidecar, "task": task_norm}
 
         for k in sidecar.keys():
@@ -417,6 +469,11 @@ def _convert_survey_dataframe_to_prism_dataset(
         resolved_session_col = session_column
     else:
         resolved_session_col = _find_col({"session", "ses", "visit", "timepoint"})
+
+    # --- Optional alias mapping (canonical_id + aliases) ---
+    # Apply after ID/session detection to avoid surprises.
+    if alias_map:
+        df = _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
 
     def _normalize_sub_id(val) -> str:
         s = sanitize_id(str(val).strip())
@@ -660,6 +717,165 @@ def _localize_survey_template(template: dict, *, language: str | None) -> dict:
 
         out[key] = item
 
+    return out
+
+
+def _read_alias_rows(path: Path) -> list[list[str]]:
+    rows: list[list[str]] = []
+    with open(path, "r", encoding="utf-8") as f:
+        for raw in f:
+            line = raw.strip()
+            if not line:
+                continue
+            if line.startswith("#"):
+                continue
+            parts = [p.strip() for p in (line.split("\t") if "\t" in line else line.split())]
+            parts = [p for p in parts if p]
+            if len(parts) < 2:
+                continue
+            rows.append(parts)
+    # allow header row
+    if rows:
+        first = [p.lower() for p in rows[0]]
+        if first[0] in {"canonical", "canonical_id", "canonicalid", "id"}:
+            rows = rows[1:]
+    return rows
+
+
+def _build_alias_map(rows: Iterable[list[str]]) -> dict[str, str]:
+    """Return mapping alias -> canonical (canonical maps to itself)."""
+    out: dict[str, str] = {}
+    for parts in rows:
+        canonical = str(parts[0]).strip()
+        if not canonical:
+            continue
+        # canonical maps to itself
+        out.setdefault(canonical, canonical)
+        for alias in parts[1:]:
+            a = str(alias).strip()
+            if not a:
+                continue
+            if a in out and out[a] != canonical:
+                raise ValueError(f"Alias '{a}' maps to multiple canonical IDs: {out[a]} vs {canonical}")
+            out[a] = canonical
+    return out
+
+
+def _build_canonical_aliases(rows: Iterable[list[str]]) -> dict[str, list[str]]:
+    out: dict[str, list[str]] = {}
+    for parts in rows:
+        canonical = str(parts[0]).strip()
+        if not canonical:
+            continue
+        aliases = [str(p).strip() for p in parts[1:] if str(p).strip()]
+        if not aliases:
+            continue
+        out.setdefault(canonical, [])
+        for a in aliases:
+            if a not in out[canonical]:
+                out[canonical].append(a)
+    return out
+
+
+def _apply_alias_file_to_dataframe(*, df, alias_file: str | Path) -> "object":
+    """Apply alias mapping to dataframe columns.
+
+    Alias file format: TSV/whitespace; each line is:
+      <canonical_id> <alias1> <alias2> ...
+    """
+
+    try:
+        import pandas as pd
+    except Exception as e:  # pragma: no cover
+        raise RuntimeError(
+            "pandas is required for survey conversion. Ensure dependencies are installed via setup.sh"
+        ) from e
+
+    path = Path(alias_file).resolve()
+    if not path.exists() or not path.is_file():
+        raise ValueError(f"Alias file not found: {path}")
+
+    rows = _read_alias_rows(path)
+    if not rows:
+        return df
+    alias_map = _build_alias_map(rows)
+
+    return _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
+
+
+def _apply_alias_map_to_dataframe(*, df, alias_map: dict[str, str]) -> "object":
+    """Apply an alias->canonical mapping to dataframe columns."""
+
+    # Determine which existing columns would map to which canonical ID.
+    canonical_to_cols: dict[str, list[str]] = {}
+    for c in list(df.columns):
+        canonical = alias_map.get(str(c), str(c))
+        if canonical != str(c):
+            canonical_to_cols.setdefault(canonical, []).append(str(c))
+
+    if not canonical_to_cols:
+        return df
+
+    df = df.copy()
+
+    def _as_na(series):
+        # Treat empty/whitespace strings as missing for coalescing.
+        if series.dtype == object:
+            s = series.astype(str)
+            s = s.map(lambda v: v.strip() if isinstance(v, str) else v)
+            s = s.replace({"": pd.NA, "nan": pd.NA, "None": pd.NA})
+            return s
+        return series
+
+    for canonical, cols in canonical_to_cols.items():
+        cols_present = [c for c in cols if c in df.columns]
+        if not cols_present:
+            continue
+
+        # Also include canonical itself if present (and coalesce into it).
+        if canonical in df.columns and canonical not in cols_present:
+            cols_present = [canonical] + cols_present
+
+        if len(cols_present) == 1:
+            src = cols_present[0]
+            if src != canonical:
+                # Only rename if it doesn't collide.
+                if canonical not in df.columns:
+                    df = df.rename(columns={src: canonical})
+            continue
+
+        # Coalesce multiple columns into canonical.
+        combined = _as_na(df[cols_present[0]])
+        for c in cols_present[1:]:
+            combined = combined.combine_first(_as_na(df[c]))
+
+        df[canonical] = combined
+        for c in cols_present:
+            if c != canonical and c in df.columns:
+                df = df.drop(columns=[c])
+
+    return df
+
+
+def _canonicalize_template_items(*, sidecar: dict, canonical_aliases: dict[str, list[str]]) -> dict:
+    """Remove/merge alias item IDs inside a survey template (in-memory).
+
+    If a template contains both canonical and alias item IDs, keep only the canonical key.
+    If it contains only the alias key, move it to the canonical key.
+    """
+
+    out = dict(sidecar)
+    for canonical, aliases in (canonical_aliases or {}).items():
+        for alias in aliases:
+            if alias not in out:
+                continue
+            if canonical not in out:
+                out[canonical] = out[alias]
+            # Always drop the alias key to avoid duplicate columns.
+            try:
+                del out[alias]
+            except Exception:
+                pass
     return out
 
 
