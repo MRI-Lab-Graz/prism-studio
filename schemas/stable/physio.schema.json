@@ -1,0 +1,200 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism-validator.org/schemas/physio/v1.0.0",
+  "version": "1.0.0",
+  "title": "Physiological Data Metadata",
+  "description": "Schema for physiological recordings (ECG, EDA, respiration, PPG, EMG) commonly used in psychological research",
+  "type": "object",
+  "properties": {
+    "Technical": {
+      "type": "object",
+      "description": "Technical recording properties",
+      "properties": {
+        "SamplingFrequency": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Sampling frequency in Hz"
+        },
+        "StartTime": {
+          "type": "number",
+          "description": "Start time of recording relative to first trigger/event (in seconds)"
+        },
+        "Columns": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Names of columns in the TSV file"
+        },
+        "FileFormat": {
+          "type": "string",
+          "enum": ["tsv", "tsv.gz", "edf", "bdf"],
+          "description": "File format of the physiological data"
+        },
+        "RecordingDevice": {
+          "type": "string",
+          "description": "Name/model of the recording device (e.g., Biopac MP160, Varioport)"
+        },
+        "RecordingSoftware": {
+          "type": "string",
+          "description": "Software used for recording (e.g., AcqKnowledge, Kubios)"
+        },
+        "RecordingSoftwareVersion": {
+          "type": "string",
+          "description": "Version of the recording software"
+        }
+      },
+      "required": ["SamplingFrequency", "Columns"]
+    },
+    "Channels": {
+      "type": "object",
+      "description": "Per-channel metadata",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "Description": {
+            "type": "string",
+            "description": "Description of what this channel measures"
+          },
+          "Type": {
+            "type": "string",
+            "enum": ["ECG", "EDA", "GSR", "PPG", "RESP", "EMG", "TEMP", "BP", "SpO2", "TRIGGER", "OTHER"],
+            "description": "Type of physiological signal"
+          },
+          "Units": {
+            "type": "string",
+            "description": "Physical units (e.g., mV, µS, BPM, °C)"
+          },
+          "Gain": {
+            "type": "number",
+            "description": "Amplifier gain applied to the signal"
+          },
+          "HighCutoff": {
+            "type": "number",
+            "description": "High-pass filter cutoff frequency in Hz"
+          },
+          "LowCutoff": {
+            "type": "number",
+            "description": "Low-pass filter cutoff frequency in Hz"
+          },
+          "NotchFilter": {
+            "type": "number",
+            "description": "Notch filter frequency in Hz (e.g., 50 or 60 for line noise)"
+          },
+          "Placement": {
+            "type": "string",
+            "description": "Electrode/sensor placement (e.g., Lead II, left index finger)"
+          }
+        },
+        "required": ["Type", "Units"]
+      }
+    },
+    "Study": {
+      "type": "object",
+      "description": "Study-specific parameters",
+      "properties": {
+        "TaskName": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]+$",
+          "description": "Short task identifier (e.g., rest, stress, stroop)"
+        },
+        "TaskDescription": {
+          "type": "string",
+          "description": "Description of the task/condition during recording"
+        },
+        "Instructions": {
+          "type": "string",
+          "description": "Instructions given to the participant"
+        },
+        "InstitutionName": {
+          "type": "string",
+          "description": "Name of the institution where data was collected"
+        }
+      },
+      "required": ["TaskName"]
+    },
+    "Acquisition": {
+      "type": "object",
+      "description": "Acquisition parameters",
+      "properties": {
+        "AcquisitionDuration": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Total duration of the recording in seconds"
+        },
+        "EnvironmentConditions": {
+          "type": "string",
+          "description": "Environmental conditions (e.g., temperature-controlled room, 22°C)"
+        },
+        "ParticipantPosition": {
+          "type": "string",
+          "enum": ["supine", "seated", "standing", "prone", "other"],
+          "description": "Position of the participant during recording"
+        },
+        "RestingState": {
+          "type": "boolean",
+          "description": "Whether this is a resting-state recording"
+        },
+        "EyesOpen": {
+          "type": "boolean",
+          "description": "Whether participant had eyes open during recording"
+        },
+        "CaffeineAbstinence": {
+          "type": "number",
+          "description": "Hours of caffeine abstinence before recording"
+        },
+        "AlcoholAbstinence": {
+          "type": "number",
+          "description": "Hours of alcohol abstinence before recording"
+        }
+      }
+    },
+    "Processing": {
+      "type": "object",
+      "description": "Processing/analysis parameters (if data is processed)",
+      "properties": {
+        "ProcessingLevel": {
+          "type": "string",
+          "enum": ["raw", "filtered", "artifact-corrected", "derived"],
+          "description": "Level of processing applied to the data"
+        },
+        "ProcessingSoftware": {
+          "type": "string",
+          "description": "Software used for processing (e.g., Kubios HRV, NeuroKit2)"
+        },
+        "ProcessingSoftwareVersion": {
+          "type": "string",
+          "description": "Version of the processing software"
+        },
+        "ArtifactCorrection": {
+          "type": "string",
+          "description": "Method used for artifact correction"
+        },
+        "FilteringApplied": {
+          "type": "string",
+          "description": "Description of filtering applied"
+        }
+      }
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "Administrative metadata",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Version of this schema"
+        },
+        "CreationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date this metadata file was created"
+        },
+        "Creator": {
+          "type": "string",
+          "description": "Person or system that created this metadata"
+        }
+      },
+      "required": ["SchemaVersion", "CreationDate"]
+    }
+  },
+  "required": ["Technical", "Study", "Metadata"]
+}

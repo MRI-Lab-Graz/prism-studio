@@ -21,7 +21,8 @@ MODALITY_PATTERNS = {
     "survey": r".+\.tsv$",
     "biometrics": r".+\.tsv$",
     "events": r".+_events\.tsv$",
-    "physio": r".+_ecg\.edf$",
+    "physio": r".+_physio\.(tsv|tsv\.gz|edf)$",
+    "eyetracking": r".+_(eyetrack|eye|gaze)\.(tsv|tsv\.gz|edf|asc)$",
     # MRI submodalities
     "anat": r".+_(T1w|T2w|T2star|FLAIR|PD|PDw|T1map|T2map)\.nii(\.gz)?$",
     "func": r".+(_bold\.nii(\.gz)?|_sbref\.nii(\.gz)?|_(events|physio|stim)\.tsv(\.gz)?)$",

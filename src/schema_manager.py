@@ -92,6 +92,8 @@ def load_all_schemas(schema_dir="schemas", version=None):
         "survey",
         "biometrics",
         "events",
+        "physio",
+        "eyetracking",
         "dataset_description",
     ]
 

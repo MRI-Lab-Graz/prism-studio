@@ -47,6 +47,25 @@ except Exception as import_error:
     core_validate_dataset = None
     print(f"⚠️  Could not import core validator: {import_error}")
 
+# Progress tracking for validation jobs
+_validation_progress = {}  # job_id -> {progress, message, status}
+
+def update_progress(job_id: str, progress: int, message: str):
+    """Update progress for a validation job."""
+    _validation_progress[job_id] = {
+        "progress": progress,
+        "message": message,
+        "status": "running" if progress < 100 else "complete"
+    }
+
+def get_progress(job_id: str) -> dict:
+    """Get progress for a validation job."""
+    return _validation_progress.get(job_id, {"progress": 0, "message": "Starting...", "status": "pending"})
+
+def clear_progress(job_id: str):
+    """Clear progress for a completed job."""
+    _validation_progress.pop(job_id, None)
+
 try:
     from limesurvey_exporter import generate_lss
 except Exception as import_error:
@@ -904,6 +923,13 @@ def index():
     return render_template("home.html")
 
 
+@app.route("/api/progress/<job_id>")
+def get_validation_progress(job_id):
+    """Get progress for a validation job (polled by UI)."""
+    progress_data = get_progress(job_id)
+    return jsonify(progress_data)
+
+
 @app.route("/validate")
 def validate_dataset():
     """Dataset validation page with upload form"""
@@ -993,6 +1019,14 @@ def upload_dataset():
         # Get BIDS options
         run_bids = request.form.get("run_bids") == "true"
         show_bids_warnings = request.form.get("bids_warnings") == "true"
+        
+        # Generate a job ID for progress tracking
+        import uuid
+        job_id = request.form.get("job_id", str(uuid.uuid4()))
+        
+        # Create progress callback
+        def progress_callback(progress: int, message: str):
+            update_progress(job_id, progress, message)
 
         # Validate the dataset using core validator when available
         if callable(core_validate_dataset):
@@ -1000,7 +1034,8 @@ def upload_dataset():
                 dataset_path, 
                 verbose=True, 
                 schema_version=schema_version,
-                run_bids=run_bids
+                run_bids=run_bids,
+                progress_callback=progress_callback
             )
         else:
             issues, dataset_stats = run_main_validator(
@@ -1009,6 +1044,9 @@ def upload_dataset():
                 schema_version=schema_version,
                 run_bids=run_bids
             )
+        
+        # Mark progress as complete
+        update_progress(job_id, 100, "Validation complete")
 
         # Filter BIDS warnings if requested
         if not show_bids_warnings:
@@ -1022,6 +1060,7 @@ def upload_dataset():
         results["timestamp"] = datetime.now().isoformat()
         results["upload_type"] = "structure_only"
         results["schema_version"] = schema_version
+        results["job_id"] = job_id
 
         # Check if manifest exists and add details
         manifest_path = os.path.join(dataset_path, ".upload_manifest.json")
@@ -1412,6 +1451,13 @@ def validate_folder():
         # Get BIDS options
         run_bids = request.form.get("run_bids") == "true"
         show_bids_warnings = request.form.get("bids_warnings") == "true"
+        
+        # Generate job ID for progress tracking
+        import uuid
+        job_id = request.form.get("job_id", str(uuid.uuid4()))
+        
+        def progress_callback(progress: int, message: str):
+            update_progress(job_id, progress, message)
 
         # Use the core validator when available for direct integration
         if callable(core_validate_dataset):
@@ -1419,7 +1465,8 @@ def validate_folder():
                 folder_path, 
                 verbose=True, 
                 schema_version=schema_version,
-                run_bids=run_bids
+                run_bids=run_bids,
+                progress_callback=progress_callback
             )
         else:
             issues, stats = run_main_validator(
@@ -1428,6 +1475,9 @@ def validate_folder():
                 schema_version=schema_version,
                 run_bids=run_bids
             )
+        
+        # Mark progress as complete
+        update_progress(job_id, 100, "Validation complete")
 
         # Filter BIDS warnings if requested
         if not show_bids_warnings:

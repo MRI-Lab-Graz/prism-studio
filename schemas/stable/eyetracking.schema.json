@@ -1,0 +1,259 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism-validator.org/schemas/eyetracking/v1.0.0",
+  "version": "1.0.0",
+  "title": "Eye-Tracking Data Metadata",
+  "description": "Schema for eye-tracking recordings used in psychological and cognitive research",
+  "type": "object",
+  "properties": {
+    "Technical": {
+      "type": "object",
+      "description": "Technical recording properties",
+      "properties": {
+        "SamplingFrequency": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Sampling frequency in Hz"
+        },
+        "Manufacturer": {
+          "type": "string",
+          "description": "Eye tracker manufacturer (e.g., SR Research, Tobii, SMI)"
+        },
+        "ManufacturersModelName": {
+          "type": "string",
+          "description": "Model name (e.g., EyeLink 1000 Plus, Tobii Pro Spectrum)"
+        },
+        "SoftwareVersion": {
+          "type": "string",
+          "description": "Version of the eye tracking software"
+        },
+        "FileFormat": {
+          "type": "string",
+          "enum": ["tsv", "tsv.gz", "edf", "asc", "csv"],
+          "description": "File format of the eye tracking data"
+        },
+        "RecordedEye": {
+          "type": "string",
+          "enum": ["left", "right", "both"],
+          "description": "Which eye(s) were recorded"
+        },
+        "TrackingMode": {
+          "type": "string",
+          "enum": ["pupil-cr", "pupil-only", "cr-only"],
+          "description": "Tracking mode used"
+        },
+        "PupilFitMethod": {
+          "type": "string",
+          "enum": ["centroid", "ellipse"],
+          "description": "Method used for pupil fitting"
+        },
+        "CalibrationPositions": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of calibration points used (e.g., 5, 9, 13)"
+        },
+        "CalibrationAccuracy": {
+          "type": "number",
+          "description": "Average calibration accuracy in degrees of visual angle"
+        },
+        "ValidationAccuracy": {
+          "type": "number",
+          "description": "Average validation accuracy in degrees of visual angle"
+        }
+      },
+      "required": ["SamplingFrequency", "Manufacturer", "RecordedEye"]
+    },
+    "Screen": {
+      "type": "object",
+      "description": "Display/screen parameters",
+      "properties": {
+        "ScreenResolution": {
+          "type": "array",
+          "items": {"type": "integer"},
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Screen resolution [width, height] in pixels"
+        },
+        "ScreenSize": {
+          "type": "array",
+          "items": {"type": "number"},
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Physical screen size [width, height] in cm"
+        },
+        "ScreenDistance": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Distance from participant's eyes to screen in cm"
+        },
+        "ScreenRefreshRate": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Screen refresh rate in Hz"
+        }
+      },
+      "required": ["ScreenResolution", "ScreenDistance"]
+    },
+    "Columns": {
+      "type": "object",
+      "description": "Column definitions for the data file",
+      "properties": {
+        "timestamp": {
+          "type": "object",
+          "properties": {
+            "Description": {"type": "string"},
+            "Units": {"type": "string"}
+          }
+        },
+        "x_position": {
+          "type": "object",
+          "properties": {
+            "Description": {"type": "string"},
+            "Units": {"type": "string", "enum": ["pixels", "degrees", "normalized"]}
+          }
+        },
+        "y_position": {
+          "type": "object",
+          "properties": {
+            "Description": {"type": "string"},
+            "Units": {"type": "string", "enum": ["pixels", "degrees", "normalized"]}
+          }
+        },
+        "pupil_size": {
+          "type": "object",
+          "properties": {
+            "Description": {"type": "string"},
+            "Units": {"type": "string", "enum": ["arbitrary", "mm", "mm^2", "pixels"]}
+          }
+        }
+      }
+    },
+    "EventDetection": {
+      "type": "object",
+      "description": "Event detection parameters",
+      "properties": {
+        "FixationDetectionAlgorithm": {
+          "type": "string",
+          "description": "Algorithm used for fixation detection (e.g., I-VT, I-DT)"
+        },
+        "FixationVelocityThreshold": {
+          "type": "number",
+          "description": "Velocity threshold for fixation detection in deg/s"
+        },
+        "FixationMinDuration": {
+          "type": "number",
+          "description": "Minimum fixation duration in ms"
+        },
+        "SaccadeVelocityThreshold": {
+          "type": "number",
+          "description": "Velocity threshold for saccade detection in deg/s"
+        },
+        "SaccadeAccelerationThreshold": {
+          "type": "number",
+          "description": "Acceleration threshold for saccade detection in deg/s²"
+        },
+        "BlinkDetection": {
+          "type": "boolean",
+          "description": "Whether blinks were detected"
+        }
+      }
+    },
+    "Study": {
+      "type": "object",
+      "description": "Study-specific parameters",
+      "properties": {
+        "TaskName": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9]+$",
+          "description": "Short task identifier (e.g., reading, visualsearch, antisaccade)"
+        },
+        "TaskDescription": {
+          "type": "string",
+          "description": "Description of the experimental task"
+        },
+        "StimulusPresentation": {
+          "type": "string",
+          "description": "Software used for stimulus presentation (e.g., PsychoPy, E-Prime)"
+        },
+        "StimulusPresentationVersion": {
+          "type": "string",
+          "description": "Version of the stimulus presentation software"
+        },
+        "AreasOfInterest": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "List of defined areas of interest"
+        }
+      },
+      "required": ["TaskName"]
+    },
+    "Participant": {
+      "type": "object",
+      "description": "Participant-related information for the recording",
+      "properties": {
+        "VisionCorrection": {
+          "type": "string",
+          "enum": ["none", "glasses", "contacts", "corrected-to-normal"],
+          "description": "Type of vision correction worn during recording"
+        },
+        "DominantEye": {
+          "type": "string",
+          "enum": ["left", "right", "unknown"],
+          "description": "Participant's dominant eye"
+        },
+        "HeadStabilization": {
+          "type": "string",
+          "enum": ["chinrest", "bitebar", "none", "remote"],
+          "description": "Method used to stabilize head position"
+        }
+      }
+    },
+    "Processing": {
+      "type": "object",
+      "description": "Processing/analysis parameters (if data is processed)",
+      "properties": {
+        "ProcessingLevel": {
+          "type": "string",
+          "enum": ["raw", "filtered", "parsed", "analyzed"],
+          "description": "Level of processing applied"
+        },
+        "InterpolationMethod": {
+          "type": "string",
+          "description": "Method used for interpolating missing data"
+        },
+        "FilteringApplied": {
+          "type": "string",
+          "description": "Description of any filtering applied"
+        },
+        "DataLossPercentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Percentage of data lost due to blinks, track loss, etc."
+        }
+      }
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "Administrative metadata",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Version of this schema"
+        },
+        "CreationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date this metadata file was created"
+        },
+        "Creator": {
+          "type": "string",
+          "description": "Person or system that created this metadata"
+        }
+      },
+      "required": ["SchemaVersion", "CreationDate"]
+    }
+  },
+  "required": ["Technical", "Screen", "Study", "Metadata"]
+}
