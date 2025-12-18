@@ -8,6 +8,7 @@ import os
 import sys
 import subprocess
 import json
+from typing import Callable, Optional, Any
 
 from jsonschema import validate, ValidationError
 
@@ -24,7 +25,18 @@ if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
 
-def validate_dataset(root_dir, verbose=False, schema_version=None, run_bids=False):
+# Type alias for progress callback
+# callback(current: int, total: int, message: str, file_path: Optional[str])
+ProgressCallback = Callable[[int, int, str, Optional[str]], None]
+
+
+def validate_dataset(
+    root_dir,
+    verbose=False,
+    schema_version=None,
+    run_bids=False,
+    progress_callback: Optional[ProgressCallback] = None,
+):
     """Main dataset validation function (refactored from prism-validator.py)
 
     Args:
@@ -32,11 +44,20 @@ def validate_dataset(root_dir, verbose=False, schema_version=None, run_bids=Fals
         verbose: Enable verbose output
         schema_version: Schema version to use (e.g., 'stable', 'v0.1', '0.1')
         run_bids: Whether to run the standard BIDS validator
+        progress_callback: Optional callback for progress updates.
+                           Called as callback(current, total, message, file_path)
 
     Returns: (issues, stats)
     """
     issues = []
     stats = DatasetStats()
+
+    def report_progress(current: int, total: int, message: str, file_path: str = None):
+        """Report progress if callback is provided"""
+        if progress_callback:
+            progress_callback(current, total, message, file_path)
+
+    report_progress(0, 100, "Loading schemas...")
 
     # Load schemas with specified version
     schema_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "schemas")
@@ -49,6 +70,8 @@ def validate_dataset(root_dir, verbose=False, schema_version=None, run_bids=Fals
 
     # Initialize validator
     validator = DatasetValidator(schemas)
+
+    report_progress(5, 100, "Checking dataset description...")
 
     # Check for dataset description
     dataset_desc_path = os.path.join(root_dir, "dataset_description.json")
@@ -75,6 +98,8 @@ def validate_dataset(root_dir, verbose=False, schema_version=None, run_bids=Fals
         except Exception as e:
             issues.append(("ERROR", f"Error processing {dataset_desc_path}: {e}"))
 
+    report_progress(10, 100, "Checking BIDS compatibility...")
+
     # Check and update .bidsignore for BIDS-App compatibility
     try:
         added_rules = check_and_update_bidsignore(
@@ -88,6 +113,8 @@ def validate_dataset(root_dir, verbose=False, schema_version=None, run_bids=Fals
         if verbose:
             print(f"⚠️  Failed to update .bidsignore: {e}")
 
+    report_progress(15, 100, "Scanning subjects...")
+
     # Walk through subject directories
     all_items = os.listdir(root_dir)
     filtered_items = filter_system_files(all_items)
@@ -96,13 +123,26 @@ def validate_dataset(root_dir, verbose=False, schema_version=None, run_bids=Fals
         ignored_count = len(all_items) - len(filtered_items)
         print(f"🗑️  Ignored {ignored_count} system files (.DS_Store, Thumbs.db, etc.)")
 
-    for item in filtered_items:
-        item_path = os.path.join(root_dir, item)
-        if os.path.isdir(item_path) and item.startswith("sub-"):
-            subject_issues = _validate_subject(
-                item_path, item, validator, stats, root_dir
-            )
-            issues.extend(subject_issues)
+    # Find all subject directories
+    subject_dirs = [
+        (item, os.path.join(root_dir, item))
+        for item in filtered_items
+        if os.path.isdir(os.path.join(root_dir, item)) and item.startswith("sub-")
+    ]
+    
+    total_subjects = len(subject_dirs)
+    
+    for idx, (item, item_path) in enumerate(subject_dirs):
+        # Progress from 20% to 90% during subject validation
+        progress_pct = 20 + int((idx / max(total_subjects, 1)) * 70)
+        report_progress(progress_pct, 100, f"Validating {item}...", item_path)
+        
+        subject_issues = _validate_subject(
+            item_path, item, validator, stats, root_dir
+        )
+        issues.extend(subject_issues)
+
+    report_progress(90, 100, "Checking consistency...")
 
     # Check cross-subject consistency
     consistency_warnings = stats.check_consistency()
@@ -121,9 +161,11 @@ def validate_dataset(root_dir, verbose=False, schema_version=None, run_bids=Fals
 
     # Run standard BIDS validator if requested
     if run_bids:
+        report_progress(92, 100, "Running BIDS validator...")
         bids_issues = _run_bids_validator(root_dir, verbose)
         issues.extend(bids_issues)
 
+    report_progress(100, 100, "Validation complete")
     return issues, stats
 
 

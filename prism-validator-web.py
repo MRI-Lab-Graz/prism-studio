@@ -370,6 +370,19 @@ except ImportError as e:
 except Exception as e:
     print(f"⚠️  Error registering JSON Editor blueprint: {e}")
 
+# Register REST API blueprint
+try:
+    from src.api import create_api_blueprint
+
+    schema_dir = str(BASE_DIR / "schemas")
+    api_bp = create_api_blueprint(schema_dir=schema_dir)
+    app.register_blueprint(api_bp)
+    print("✓ REST API registered at /api/v1")
+except ImportError as e:
+    print(f"ℹ️  REST API not available: {e}")
+except Exception as e:
+    print(f"⚠️  Error registering REST API blueprint: {e}")
+
 # File extensions to process (metadata and small data files only)
 # We skip large neuroimaging data files - we only validate their JSON sidecars
 METADATA_EXTENSIONS = {

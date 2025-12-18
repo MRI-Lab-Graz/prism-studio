@@ -7,6 +7,7 @@ A modular, BIDS-inspired validation tool for psychological research datasets.
 
 import os
 import sys
+import json
 import argparse
 
 # Check if running inside the venv (skip for frozen/packaged apps)
@@ -35,6 +36,8 @@ try:
     from reporting import print_dataset_summary, print_validation_results
     from bids_integration import check_and_update_bidsignore
     from runner import validate_dataset
+    from issues import tuple_to_issue, issues_to_dict, summarize_issues
+    from config import load_config, merge_cli_args, find_config_file
 except ImportError as e:
     print(f"❌ Import error: {e}")
     print("Make sure you're running from the project root directory")
@@ -85,6 +88,16 @@ Examples:
         action="store_true",
         help="Show warnings from the BIDS validator (default: hidden)",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output results as JSON (useful for CI/CD pipelines)",
+    )
+    parser.add_argument(
+        "--json-pretty",
+        action="store_true",
+        help="Output results as formatted JSON",
+    )
     parser.add_argument("--version", action="version", version="Prism-Validator 1.3.0")
 
     args = parser.parse_args()
@@ -116,26 +129,65 @@ Examples:
         print(f"❌ Dataset directory not found: {args.dataset}")
         sys.exit(1)
 
-    # Run validation with schema version
-    schema_version = args.schema_version or "stable"
-    print(f"🔍 Validating dataset: {args.dataset}")
-    if args.schema_version:
-        print(f"📋 Using schema version: {schema_version}")
+    # Load config file from dataset (if exists)
+    config = load_config(args.dataset)
+    config = merge_cli_args(config, args)
+    
+    # Check if config file was found
+    config_path = find_config_file(args.dataset)
+    json_output = args.json or args.json_pretty
+    
+    if config_path and not json_output:
+        print(f"📄 Using config: {os.path.basename(config_path)}")
+
+    # Use config values (CLI args already merged and take precedence)
+    schema_version = config.schema_version
+    run_bids = config.run_bids
+    
+    if not json_output:
+        print(f"🔍 Validating dataset: {args.dataset}")
+        if schema_version != "stable":
+            print(f"📋 Using schema version: {schema_version}")
 
     try:
         issues, stats = validate_dataset(
             args.dataset,
-            verbose=args.verbose,
+            verbose=args.verbose and not json_output,
             schema_version=schema_version,
-            run_bids=args.bids,
+            run_bids=run_bids,
         )
 
-        # Print results
-        print_dataset_summary(args.dataset, stats)
-        print_validation_results(issues, show_bids_warnings=args.bids_warnings)
+        # Convert legacy tuples to Issue objects for structured output
+        structured_issues = [
+            tuple_to_issue(issue) if isinstance(issue, tuple) else issue
+            for issue in issues
+        ]
+
+        # JSON output mode
+        if json_output:
+            result = {
+                "dataset": os.path.abspath(args.dataset),
+                "schema_version": schema_version,
+                "valid": all(i.severity.value != "ERROR" for i in structured_issues),
+                "summary": summarize_issues(structured_issues),
+                "issues": issues_to_dict(structured_issues),
+                "statistics": {
+                    "total_files": stats.total_files,
+                    "subjects": list(stats.subjects),
+                    "sessions": list(stats.sessions),
+                    "tasks": list(stats.tasks),
+                    "modalities": dict(stats.modalities),
+                },
+            }
+            indent = 2 if args.json_pretty else None
+            print(json.dumps(result, indent=indent))
+        else:
+            # Standard human-readable output
+            print_dataset_summary(args.dataset, stats)
+            print_validation_results(issues, show_bids_warnings=args.bids_warnings)
 
         # Exit with appropriate code
-        error_count = sum(1 for level, _ in issues if level == "ERROR")
+        error_count = sum(1 for i in structured_issues if i.severity.value == "ERROR")
         sys.exit(1 if error_count > 0 else 0)
 
     except Exception as e:
