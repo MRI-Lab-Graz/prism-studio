@@ -81,34 +81,22 @@
             <h5 class="mb-0">Prism Converter</h5>
         </div>
         <div class="card-body">
-            <p class="text-muted">Convert Survey, Biometrics, and Physio inputs into PRISM/BIDS-style outputs.</p>
+            <p class="text-muted">Convert your raw data files into standardized research datasets that can be validated and shared.</p>
 
             <div class="card mb-4 border-info">
                 <div class="card-header bg-info-subtle">
                     <h6 class="mb-0 text-info">Survey</h6>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted mb-2">Upload a wide-format survey file (.xlsx) or a LimeSurvey response archive (.lsa) and download a PRISM/BIDS-style survey dataset (ZIP).</p>
+                    <p class="text-muted mb-2">Upload your survey responses (Excel export or LimeSurvey archive) and get a properly structured dataset ready for analysis.</p>
 
                     <div class="row g-3 align-items-end">
-                        <div class="col-md-8">
-                            <label for="convertLibraryPath" class="form-label">Survey Library Folder</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="convertLibraryPath" value="{{ default_survey_library_path | default('survey_library') }}">
-                                <button class="btn btn-outline-secondary" type="button" id="convertBrowseLibraryBtn" title="Browse Folder">
-                                    <i class="fas fa-folder-open"></i>
-                                </button>
-                            </div>
-                            <div class="form-text">Folder containing <code>survey-*.json</code> templates.</div>
+                        <div class="col-12">
+                            <div class="form-text">Templates are selected automatically (recommended).</div>
                         </div>
                         <div class="col-md-4">
                             <label for="convertExcelFile" class="form-label">Survey File (.xlsx or .lsa)</label>
                             <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa">
-                        </div>
-                        <div class="col-md-4">
-                            <label for="convertAliasFile" class="form-label">Alias Mapping (optional)</label>
-                            <input class="form-control" type="file" id="convertAliasFile" accept=".tsv,.txt">
-                            <div class="form-text">Each line: <code>&lt;canonical_id&gt; &lt;alias1&gt; &lt;alias2&gt; ...</code></div>
                         </div>
                         <div class="col-md-4">
                             <label for="convertDatasetName" class="form-label">Dataset Name (optional)</label>
@@ -119,20 +107,37 @@
                             <select class="form-select" id="convertLanguage">
                                 <option value="auto" selected>Auto (template default)</option>
                             </select>
-                            <div class="form-text">Used to generate schema-valid survey sidecars (single-language).</div>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="convertUnknown" class="form-label">Unmapped Columns</label>
-                            <select class="form-select" id="convertUnknown">
-                                <option value="warn" selected>Warn</option>
-                                <option value="ignore">Ignore</option>
-                                <option value="error">Error</option>
-                            </select>
+                            <div class="form-text">Select the language of your questionnaire items.</div>
                         </div>
                         <div class="col-md-4">
                             <button class="btn btn-success w-100" type="button" id="convertBtn" disabled>
                                 <i class="fas fa-wand-magic-sparkles me-2"></i>Convert & Download ZIP
                             </button>
+                        </div>
+
+                        <div class="col-12">
+                            <a class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" href="#surveyAdvancedOptions" role="button" aria-expanded="false" aria-controls="surveyAdvancedOptions">
+                                Advanced options
+                            </a>
+                        </div>
+
+                        <div class="col-12 collapse" id="surveyAdvancedOptions">
+                            <div class="row g-3 align-items-end mt-1">
+                                <div class="col-md-6">
+                                    <label for="convertAliasFile" class="form-label">ID Mapping File (optional)</label>
+                                    <input class="form-control" type="file" id="convertAliasFile" accept=".tsv,.txt">
+                                    <div class="form-text">Only needed if item IDs changed over time. Ask your supervisor if unsure.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="convertUnknown" class="form-label">Unknown Items</label>
+                                    <select class="form-select" id="convertUnknown">
+                                        <option value="warn" selected>Show warnings</option>
+                                        <option value="ignore">Skip silently</option>
+                                        <option value="error">Stop on unknown</option>
+                                    </select>
+                                    <div class="form-text">Controls what happens if the file contains columns the templates don’t recognize.</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -146,17 +151,10 @@
                     <h6 class="mb-0 text-primary">Biometrics</h6>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted mb-2">Upload a biometrics table (.xlsx or .csv) and download a PRISM/BIDS-style biometrics dataset (ZIP). Choose the biometrics library folder.</p>
+                    <p class="text-muted mb-2">Upload your physical measurements (e.g., grip strength, balance tests) as Excel or CSV and get a structured dataset.</p>
                     <div class="row g-3 align-items-end">
-                        <div class="col-md-8">
-                            <label for="biometricsLibraryPath" class="form-label">Biometrics Library Folder</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="biometricsLibraryPath" value="{{ default_biometrics_library_path | default('library/biometrics') }}">
-                                <button class="btn btn-outline-secondary" type="button" id="biometricsBrowseLibraryBtn" title="Browse Folder">
-                                    <i class="fas fa-folder-open"></i>
-                                </button>
-                            </div>
-                            <div class="form-text">Folder containing <code>biometrics-*.json</code> templates.</div>
+                        <div class="col-12">
+                            <div class="form-text">Templates are selected automatically (recommended).</div>
                         </div>
                         <div class="col-md-4">
                             <label for="biometricsDataFile" class="form-label">Biometrics File (.xlsx or .csv)</label>
@@ -167,17 +165,29 @@
                             <input type="text" class="form-control" id="biometricsDatasetName" placeholder="PRISM Biometrics Dataset">
                         </div>
                         <div class="col-md-4">
-                            <label for="biometricsUnknown" class="form-label">Unmapped Columns</label>
-                            <select class="form-select" id="biometricsUnknown">
-                                <option value="warn" selected>Warn</option>
-                                <option value="ignore">Ignore</option>
-                                <option value="error">Error</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
                             <button class="btn btn-success w-100" type="button" id="biometricsConvertBtn" disabled>
                                 <i class="fas fa-wand-magic-sparkles me-2"></i>Convert & Download ZIP
                             </button>
+                        </div>
+
+                        <div class="col-12">
+                            <a class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" href="#biometricsAdvancedOptions" role="button" aria-expanded="false" aria-controls="biometricsAdvancedOptions">
+                                Advanced options
+                            </a>
+                        </div>
+
+                        <div class="col-12 collapse" id="biometricsAdvancedOptions">
+                            <div class="row g-3 align-items-end mt-1">
+                                <div class="col-md-6">
+                                    <label for="biometricsUnknown" class="form-label">Unknown Items</label>
+                                    <select class="form-select" id="biometricsUnknown">
+                                        <option value="warn" selected>Show warnings</option>
+                                        <option value="ignore">Skip silently</option>
+                                        <option value="error">Stop on unknown</option>
+                                    </select>
+                                    <div class="form-text">Controls what happens if the file contains columns the templates don’t recognize.</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div id="biometricsError" class="alert alert-danger d-none mt-3"></div>
@@ -190,10 +200,10 @@
                     <h6 class="mb-0 text-success">Physio</h6>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted mb-2">Upload a Varioport file (.raw or .vpd) and download EDF+ (.edf) with JSON sidecar (ZIP).</p>
+                    <p class="text-muted mb-2">Upload physiological recordings from Varioport devices (ECG, respiration, etc.) and convert to standard EDF+ format.</p>
                     <div class="row g-3 align-items-end">
                         <div class="col-md-4">
-                            <label for="physioRawFile" class="form-label">Varioport File (.raw or .vpd)</label>
+                            <label for="physioRawFile" class="form-label">Varioport Recording (.raw or .vpd)</label>
                             <input class="form-control" type="file" id="physioRawFile" accept=".raw,.vpd">
                         </div>
                         <div class="col-md-4">
@@ -437,16 +447,18 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     });
 
-    convertBrowseLibraryBtn.addEventListener('click', function() {
-        fetch('/api/browse-folder')
-            .then(r => r.json())
-            .then(data => {
-                if (data.path) {
-                    convertLibraryPathInput.value = data.path;
-                    refreshConvertLanguages();
-                }
-            });
-    });
+    if (convertBrowseLibraryBtn && convertLibraryPathInput) {
+        convertBrowseLibraryBtn.addEventListener('click', function() {
+            fetch('/api/browse-folder')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.path) {
+                        convertLibraryPathInput.value = data.path;
+                        refreshConvertLanguages();
+                    }
+                });
+        });
+    }
 
     if (biometricsBrowseLibraryBtn) {
         biometricsBrowseLibraryBtn.addEventListener('click', function() {
@@ -461,8 +473,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function refreshConvertLanguages() {
-        const libraryPath = convertLibraryPathInput.value.trim();
-        const url = `/api/survey-languages?library_path=${encodeURIComponent(libraryPath)}`;
+        const libraryPath = convertLibraryPathInput ? convertLibraryPathInput.value.trim() : '';
+        const url = libraryPath
+            ? `/api/survey-languages?library_path=${encodeURIComponent(libraryPath)}`
+            : `/api/survey-languages`;
         fetch(url)
             .then(r => r.json())
             .then(data => {
@@ -531,7 +545,9 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('alias', alias);
         }
 
-        formData.append('library_path', convertLibraryPathInput.value.trim());
+        if (convertLibraryPathInput && convertLibraryPathInput.value.trim()) {
+            formData.append('library_path', convertLibraryPathInput.value.trim());
+        }
         formData.append('dataset_name', convertDatasetName.value.trim());
         formData.append('unknown', convertUnknown.value);
         formData.append('language', convertLanguage ? convertLanguage.value : 'auto');
@@ -610,7 +626,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const formData = new FormData();
             formData.append('data', file);
-            formData.append('library_path', biometricsLibraryPathInput.value.trim());
+            if (biometricsLibraryPathInput && biometricsLibraryPathInput.value.trim()) {
+                formData.append('library_path', biometricsLibraryPathInput.value.trim());
+            }
             formData.append('dataset_name', biometricsDatasetName.value.trim());
             formData.append('unknown', biometricsUnknown.value);
 

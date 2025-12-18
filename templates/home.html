@@ -29,7 +29,7 @@
                         <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
                         <h5 class="card-title mb-3">Dataset Validation</h5>
                         <p class="card-text text-muted mb-4">
-                            Validate your psychological dataset structure, metadata completeness, and naming conventions against BIDS standards.
+                            Check that your dataset is complete, correctly organized, and ready for analysis or sharing.
                         </p>
                         <a href="{{ url_for('validate_dataset') }}" class="btn btn-success">
                             <i class="fas fa-arrow-right me-2"></i>Validate Dataset
@@ -45,7 +45,7 @@
                         <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
                         <h5 class="card-title mb-3">Derivatives</h5>
                         <p class="card-text text-muted mb-4">
-                            Generate survey derivatives (subscales, reverse coding) inside a PRISM-valid dataset.
+                            Calculate scores, subscales, and reverse-coded items from your survey responses.
                         </p>
                         <a href="{{ url_for('derivatives') }}" class="btn btn-primary">
                             <i class="fas fa-arrow-right me-2"></i>Derivatives
@@ -61,7 +61,7 @@
                         <i class="fas fa-poll-h fa-3x text-info mb-3"></i>
                         <h5 class="card-title mb-3">Survey Generator</h5>
                         <p class="card-text text-muted mb-4">
-                            Create and manage JSON sidecar templates for survey data (TSV files).
+                            Build questionnaire templates and export them for use in LimeSurvey.
                         </p>
                         <a href="{{ url_for('survey_generator') }}" class="btn btn-info text-white">
                             <i class="fas fa-arrow-right me-2"></i>Create Survey
@@ -77,7 +77,7 @@
                         <i class="fas fa-file-excel fa-3x text-success mb-3"></i>
                         <h5 class="card-title mb-3">Prism Converter</h5>
                         <p class="card-text text-muted mb-4">
-                            Convert Survey, Biometrics, and Physio inputs into PRISM/BIDS-style outputs.
+                            Transform your survey, biometrics, or physio data into clean, standardized datasets.
                         </p>
                         <a href="{{ url_for('survey_generator') }}#landgig-convert" class="btn btn-success">
                             <i class="fas fa-arrow-right me-2"></i>Open Converter
@@ -103,7 +103,7 @@
                                 DataLad-Style Upload
                             </h6>
                             <p class="text-muted small mb-0">
-                                Upload only metadata and structure without large data files. Placeholders are created for validation.
+                                Upload only small files for structure validation — no need to transfer large data files.
                             </p>
                         </div>
                     </div>
@@ -115,7 +115,7 @@
                                 NeuroBagel Integration
                             </h6>
                             <p class="text-muted small mb-0">
-                                Annotate participants with standardized NeuroBagel vocabularies (SNOMED-CT, PATO, etc.).
+                                Tag participants with standardized diagnoses and demographic categories.
                             </p>
                         </div>
                     </div>
@@ -127,7 +127,7 @@
                                 Metadata Editing
                             </h6>
                             <p class="text-muted small mb-0">
-                                Edit JSON metadata files with schema-driven validation and real-time feedback.
+                                Edit dataset information directly in the browser with helpful prompts and error checking.
                             </p>
                         </div>
                     </div>
@@ -139,7 +139,7 @@
                                 BIDS Compliance
                             </h6>
                             <p class="text-muted small mb-0">
-                                Comprehensive validation against BIDS standards and schema requirements.
+                                Ensures your data follows international standards (BIDS) used by neuroimaging researchers.
                             </p>
                         </div>
                     </div>
