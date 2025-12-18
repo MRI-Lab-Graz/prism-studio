@@ -32,6 +32,7 @@ from scripts.limesurvey_to_prism import convert_lsa_to_prism, batch_convert_lsa
 # We need to import from scripts.excel_to_library
 from scripts.excel_to_library import process_excel
 from scripts.excel_to_biometrics_library import process_excel_biometrics
+from src.library_i18n import compile_survey_template, migrate_survey_template_to_i18n
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -590,10 +591,95 @@ def cmd_survey_convert(args):
         print(f"Error: Could not import survey conversion module: {e}")
         sys.exit(1)
 
+    import tempfile
+
+    def _has_survey_templates(dir_path: Path) -> bool:
+        try:
+            return any(dir_path.glob("survey-*.json"))
+        except Exception:
+            return False
+
+    def _library_needs_i18n_compile(dir_path: Path) -> bool:
+        """Return True if templates in dir_path appear to contain language maps."""
+        try:
+            files = sorted(dir_path.glob("survey-*.json"))
+        except Exception:
+            return False
+        for p in files[:3]:
+            try:
+                data = _read_json(p)
+            except Exception:
+                continue
+            if isinstance(data, dict) and "I18n" in data:
+                return True
+            reserved = {"Technical", "Study", "Metadata", "I18n"}
+            for item_id, item_def in (data or {}).items():
+                if item_id in reserved or not isinstance(item_def, dict):
+                    continue
+                d = item_def.get("Description")
+                if isinstance(d, dict):
+                    return True
+                levels = item_def.get("Levels")
+                if isinstance(levels, dict) and any(isinstance(v, dict) for v in levels.values()):
+                    return True
+        return False
+
+    def _compile_i18n_library(src_dir: Path, lang: str) -> tuple[Path, tempfile.TemporaryDirectory]:
+        tmp = tempfile.TemporaryDirectory(prefix=f"prism_survey_library_{lang}_")
+        out_dir = Path(tmp.name)
+        _ensure_dir(out_dir)
+        fallback_langs = [l for l in ["de", "en"] if l != lang]
+
+        for p in sorted(src_dir.glob("survey-*.json")):
+            compiled = compile_survey_template(_read_json(p), lang=lang, fallback_langs=fallback_langs)
+            _write_json(out_dir / p.name, compiled)
+
+        return out_dir, tmp
+
+    lang = str(getattr(args, "lang", "de") or "de").strip().lower()
+    if not lang:
+        lang = "de"
+
+    library_tmp: tempfile.TemporaryDirectory | None = None
+    library_label: str | None = None
+
+    # If --library is explicitly provided, respect it, but auto-compile if it looks like i18n.
+    if hasattr(args, "library") and args.library:
+        candidate = Path(args.library)
+        if _library_needs_i18n_compile(candidate):
+            lib_dir, library_tmp = _compile_i18n_library(candidate, lang=lang)
+            library_label = f"{candidate.resolve()} (i18n compiled to {lang})"
+        else:
+            lib_dir = candidate
+            library_label = str(candidate.resolve())
+    else:
+        # Auto-pick best available library:
+        # 1) precompiled per-language library (library/survey_de, library/survey_en)
+        # 2) i18n source library compiled on the fly (library/survey_i18n)
+        # 3) legacy single-language library (library/survey)
+        compiled_candidate = project_root / f"library/survey_{lang}"
+        i18n_candidate = project_root / "library/survey_i18n"
+        legacy_candidate = project_root / "library/survey"
+
+        if compiled_candidate.exists() and _has_survey_templates(compiled_candidate):
+            lib_dir = compiled_candidate
+            library_label = str(compiled_candidate.resolve())
+        elif i18n_candidate.exists() and _has_survey_templates(i18n_candidate):
+            lib_dir, library_tmp = _compile_i18n_library(i18n_candidate, lang=lang)
+            library_label = f"{i18n_candidate.resolve()} (i18n compiled to {lang})"
+        elif legacy_candidate.exists() and _has_survey_templates(legacy_candidate):
+            lib_dir = legacy_candidate
+            library_label = str(legacy_candidate.resolve())
+        else:
+            print("Error: Could not find a survey template library.")
+            print("       Looked for: library/survey_<lang>, library/survey_i18n, library/survey")
+            print("       Or provide --library /path/to/library")
+            sys.exit(1)
+
     try:
         result = convert_survey_xlsx_to_prism_dataset(
             input_path=args.input,
-            library_dir=args.library,
+            library_dir=str(lib_dir),
             output_root=args.output,
             survey=args.survey,
             id_column=args.id_column,
@@ -613,7 +699,7 @@ def cmd_survey_convert(args):
     print("Survey convert mapping report")
     print("-----------------------------")
     print(f"Input:   {Path(args.input).resolve()}")
-    print(f"Library: {Path(args.library).resolve()}")
+    print(f"Library: {library_label or str(lib_dir.resolve())}")
     print(f"Output:  {Path(args.output).resolve()}")
     print(f"ID col:  {result.id_column}")
     if result.session_column:
@@ -986,6 +1072,81 @@ def cmd_survey_import_limesurvey_batch(args):
         print(f"Error importing LimeSurvey: {e}")
         sys.exit(1)
 
+
+def cmd_survey_i18n_migrate(args):
+    """Create i18n-capable source files from single-language survey templates.
+
+    This does NOT translate content; it wraps existing strings into the detected language
+    and creates empty-string placeholders for other languages.
+    """
+
+    src_dir = Path(args.src).resolve()
+    dst_dir = _ensure_dir(Path(args.dst).resolve())
+    languages = [p.strip() for p in str(args.languages).replace(";", ",").split(",")]
+    languages = [p for p in languages if p]
+    if not languages:
+        languages = ["de", "en"]
+
+    if not src_dir.exists() or not src_dir.is_dir():
+        print(f"Error: --src is not a directory: {src_dir}")
+        sys.exit(1)
+
+    files = sorted(src_dir.glob("survey-*.json"))
+    if not files:
+        print(f"Error: No survey-*.json files found in: {src_dir}")
+        sys.exit(1)
+
+    written = 0
+    for p in files:
+        try:
+            data = _read_json(p)
+        except Exception as e:
+            print(f"Warning: Skipping unreadable JSON {p.name}: {e}")
+            continue
+
+        migrated = migrate_survey_template_to_i18n(data, languages=languages)
+        out_path = dst_dir / p.name
+        _write_json(out_path, migrated)
+        written += 1
+
+    print(f"✅ Migrated {written} template(s) into i18n source format")
+    print(f"   Output: {dst_dir}")
+
+
+def cmd_survey_i18n_build(args):
+    """Compile i18n-capable survey templates into PRISM schema-compatible templates."""
+
+    src_dir = Path(args.src).resolve()
+    out_dir = _ensure_dir(Path(args.out).resolve())
+    lang = str(args.lang).strip()
+    fallback = str(args.fallback).strip() if getattr(args, "fallback", None) else ""
+    fallback_langs = [fallback] if fallback else []
+
+    if not src_dir.exists() or not src_dir.is_dir():
+        print(f"Error: --src is not a directory: {src_dir}")
+        sys.exit(1)
+
+    files = sorted(src_dir.glob("survey-*.json"))
+    if not files:
+        print(f"Error: No survey-*.json files found in: {src_dir}")
+        sys.exit(1)
+
+    written = 0
+    for p in files:
+        try:
+            data = _read_json(p)
+        except Exception as e:
+            print(f"Warning: Skipping unreadable JSON {p.name}: {e}")
+            continue
+
+        compiled = compile_survey_template(data, lang=lang, fallback_langs=fallback_langs)
+        out_path = out_dir / p.name
+        _write_json(out_path, compiled)
+        written += 1
+
+    print(f"✅ Built {written} template(s) for lang='{lang}'")
+    print(f"   Output: {out_dir}")
+
 def main():
     parser = argparse.ArgumentParser(description="Prism Tools: Utilities for PRISM/BIDS datasets")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -1036,8 +1197,16 @@ def main():
     )
     parser_survey_convert.add_argument(
         "--library",
-        default="library/survey",
-        help="Path to survey template library folder (contains survey-*.json)",
+        default=argparse.SUPPRESS,
+        help=(
+            "Path to survey template library folder (contains survey-*.json). "
+            "If omitted, auto-selects library/survey_<lang>, then library/survey_i18n (compiled), then library/survey."
+        ),
+    )
+    parser_survey_convert.add_argument(
+        "--lang",
+        default="de",
+        help="Language for templates when using i18n libraries (default: de)",
     )
     parser_survey_convert.add_argument(
         "--output",
@@ -1271,6 +1440,53 @@ def main():
         help="Path to TSV/CSV file mapping LimeSurvey IDs to BIDS participant IDs (cols: limesurvey_id, participant_id)",
     )
 
+    # Subcommand: survey i18n-migrate
+    parser_survey_i18n_migrate = survey_subparsers.add_parser(
+        "i18n-migrate",
+        help="Create i18n-capable source templates from single-language survey-*.json templates (no translation)",
+    )
+    parser_survey_i18n_migrate.add_argument(
+        "--src",
+        default="library/survey",
+        help="Source folder containing single-language survey-*.json (default: library/survey)",
+    )
+    parser_survey_i18n_migrate.add_argument(
+        "--dst",
+        default="library/survey_i18n",
+        help="Destination folder for i18n source templates (default: library/survey_i18n)",
+    )
+    parser_survey_i18n_migrate.add_argument(
+        "--languages",
+        default="de,en",
+        help="Comma-separated language codes to include (default: de,en)",
+    )
+
+    # Subcommand: survey i18n-build
+    parser_survey_i18n_build = survey_subparsers.add_parser(
+        "i18n-build",
+        help="Compile i18n survey templates into PRISM schema-compatible survey-*.json for one language",
+    )
+    parser_survey_i18n_build.add_argument(
+        "--src",
+        default="library/survey_i18n",
+        help="Source folder containing i18n survey-*.json (default: library/survey_i18n)",
+    )
+    parser_survey_i18n_build.add_argument(
+        "--out",
+        required=True,
+        help="Output folder to write compiled survey-*.json",
+    )
+    parser_survey_i18n_build.add_argument(
+        "--lang",
+        required=True,
+        help="Target language code to compile (e.g., de, en)",
+    )
+    parser_survey_i18n_build.add_argument(
+        "--fallback",
+        default="de",
+        help="Fallback language if a translation is missing (default: de)",
+    )
+
     args = parser.parse_args()
     
     if args.command == "convert" and args.modality == "physio":
@@ -1288,6 +1504,10 @@ def main():
             cmd_survey_import_limesurvey(args)
         elif args.action == "import-limesurvey-batch":
             cmd_survey_import_limesurvey_batch(args)
+        elif args.action == "i18n-migrate":
+            cmd_survey_i18n_migrate(args)
+        elif args.action == "i18n-build":
+            cmd_survey_i18n_build(args)
         else:
             parser_survey.print_help()
     elif args.command == "biometrics":
