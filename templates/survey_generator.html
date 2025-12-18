@@ -1,17 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Prism-Validator - Survey Export{% endblock %}
+{% block title %}Prism-Validator - Survey{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="row mb-4">
         <div class="col-12">
-            <h2><i class="fas fa-file-export text-primary me-2"></i>Survey Export</h2>
-            <p class="text-muted">Select questionnaires from the library and export them to LimeSurvey (.lss).</p>
+            <h2><i class="fas fa-file-export text-primary me-2"></i><span id="surveyPageTitle">Survey Export</span></h2>
+            <p class="text-muted" id="surveyPageSubtitle">Select questionnaires from the library and export them to LimeSurvey (.lss).</p>
         </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="surveyExportCard">
         <div class="card-header bg-light">
             <h5 class="mb-0">Survey Library</h5>
         </div>
@@ -78,7 +78,7 @@
 
     <div class="card mt-4" id="landgig-convert">
         <div class="card-header bg-light">
-            <h5 class="mb-0">Landgig (Part 4): Convert Excel to PRISM Dataset</h5>
+            <h5 class="mb-0">Convert Excel to PRISM Dataset</h5>
         </div>
         <div class="card-body">
             <p class="text-muted">Upload a wide-format survey Excel file (.xlsx) and download a PRISM/BIDS-style survey dataset (ZIP).</p>
@@ -128,6 +128,29 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Page title switching (Export vs Convert) ---
+    const pageTitleEl = document.getElementById('surveyPageTitle');
+    const pageSubtitleEl = document.getElementById('surveyPageSubtitle');
+    const exportCardEl = document.getElementById('surveyExportCard');
+
+    function updateSurveyPageHeader() {
+        const isConvert = window.location.hash === '#landgig-convert';
+        if (isConvert) {
+            if (pageTitleEl) pageTitleEl.textContent = 'Survey Convert';
+            if (pageSubtitleEl) pageSubtitleEl.textContent = 'Convert Excel exports to a PRISM dataset.';
+            document.title = 'Prism-Validator - Survey Convert';
+            if (exportCardEl) exportCardEl.classList.add('d-none');
+        } else {
+            if (pageTitleEl) pageTitleEl.textContent = 'Survey Export';
+            if (pageSubtitleEl) pageSubtitleEl.textContent = 'Select questionnaires from the library and export them to LimeSurvey (.lss).';
+            document.title = 'Prism-Validator - Survey Export';
+            if (exportCardEl) exportCardEl.classList.remove('d-none');
+        }
+    }
+
+    updateSurveyPageHeader();
+    window.addEventListener('hashchange', updateSurveyPageHeader);
+
     // --- Library & Export Logic ---
     const libraryPathInput = document.getElementById('libraryPath');
     const loadLibraryBtn = document.getElementById('loadLibraryBtn');
