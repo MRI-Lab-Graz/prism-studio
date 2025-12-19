@@ -9,7 +9,7 @@ GUI can call the same logic without invoking subprocesses or relying on `sys.exi
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import csv
 import json
@@ -19,6 +19,8 @@ from copy import deepcopy
 import re
 from typing import Iterable
 
+
+_MISSING_TOKEN = "na"
 
 _NON_ITEM_TOPLEVEL_KEYS = {
     "Technical",
@@ -37,6 +39,9 @@ class SurveyConvertResult:
     missing_items_by_task: dict[str, int]
     id_column: str
     session_column: str | None
+    missing_cells_by_subject: dict[str, int] = field(default_factory=dict)
+    missing_value_token: str = _MISSING_TOKEN
+    conversion_warnings: list[str] = field(default_factory=list)
 
 
 def sanitize_id(id_str: str) -> str:
@@ -254,36 +259,44 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
             "pandas is required for survey conversion. Ensure dependencies are installed via setup.sh"
         ) from e
 
+    EmptyDataError = getattr(pd.errors, "EmptyDataError", ValueError)
+
     if kind == "xlsx":
         try:
             df = pd.read_excel(input_path, sheet_name=sheet)
+        except EmptyDataError:
+            raise ValueError("Input Excel is empty (no content in file).")
         except Exception as e:
             raise ValueError(f"Failed to read Excel: {e}") from e
 
         if df is None or df.empty:
-            raise ValueError("Input table is empty.")
+            raise ValueError("Input Excel is empty (no content in file).")
 
         return df.rename(columns={c: str(c).strip() for c in df.columns})
 
     if kind == "csv":
         try:
             df = pd.read_csv(input_path)
+        except EmptyDataError:
+            raise ValueError("Input CSV is empty (no content in file).")
         except Exception as e:
             raise ValueError(f"Failed to read CSV: {e}") from e
 
         if df is None or df.empty:
-            raise ValueError("Input CSV is empty.")
+            raise ValueError("Input CSV is empty (no content in file).")
 
         return df.rename(columns={c: str(c).strip() for c in df.columns})
 
     if kind == "tsv":
         try:
             df = pd.read_csv(input_path, sep="\t")
+        except EmptyDataError:
+            raise ValueError("Input TSV is empty (no content in file).")
         except Exception as e:
             raise ValueError(f"Failed to read TSV: {e}") from e
 
         if df is None or df.empty:
-            raise ValueError("Input TSV is empty.")
+            raise ValueError("Input TSV is empty (no content in file).")
 
         # Check if file was parsed correctly (wrong delimiter detection)
         if len(df.columns) == 1:
@@ -532,6 +545,25 @@ def _convert_survey_dataframe_to_prism_dataset(
             return s
         return f"ses-{s}"
 
+    def _is_missing_value(val) -> bool:
+        if pd.isna(val):
+            return True
+        if isinstance(val, str) and val.strip() == "":
+            return True
+        return False
+
+    # Detect duplicate IDs after normalization (to avoid silent merges)
+    normalized_ids = df[resolved_id_col].astype(str).map(_normalize_sub_id)
+    dup_mask = normalized_ids.duplicated(keep=False)
+    if dup_mask.any():
+        dup_ids = sorted(set(normalized_ids[dup_mask]))
+        preview = ", ".join(dup_ids[:5])
+        suffix = "" if len(dup_ids) <= 5 else " ..."
+        raise ValueError(
+            f"Duplicate participant_id values after normalization: {preview}{suffix}. "
+            "Please resolve duplicates before conversion."
+        )
+
     # --- Determine which columns map to which surveys ---
     cols = [c for c in df.columns if c not in {resolved_id_col} and c != resolved_session_col]
     col_to_task: dict[str, str] = {}
@@ -541,6 +573,8 @@ def _convert_survey_dataframe_to_prism_dataset(
             col_to_task[c] = item_to_task[c]
         else:
             unknown_cols.append(c)
+
+    conversion_warnings: list[str] = []
 
     tasks_with_data = set(col_to_task.values())
     if selected_tasks is not None:
@@ -558,8 +592,13 @@ def _convert_survey_dataframe_to_prism_dataset(
         missing = [k for k in expected if k not in present]
         missing_items_by_task[task] = len(missing)
 
-    if unknown_cols and unknown == "error":
-        raise ValueError("Unmapped columns: " + ", ".join(unknown_cols))
+    if unknown_cols:
+        if unknown == "error":
+            raise ValueError("Unmapped columns: " + ", ".join(unknown_cols))
+        if unknown == "warn":
+            shown = ", ".join(unknown_cols[:10])
+            more = "" if len(unknown_cols) <= 10 else f" (+{len(unknown_cols)-10} more)"
+            conversion_warnings.append(f"Unmapped columns (not in any survey template): {shown}{more}")
 
     if dry_run:
         return SurveyConvertResult(
@@ -568,6 +607,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             missing_items_by_task=missing_items_by_task,
             id_column=resolved_id_col,
             session_column=resolved_session_col,
+            conversion_warnings=conversion_warnings,
         )
 
     # --- Write output dataset ---
@@ -595,7 +635,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     if extra_part_cols:
         df_extra = df[[resolved_id_col] + extra_part_cols].copy()
         for c in extra_part_cols:
-            df_extra[c] = df_extra[c].apply(lambda v: "n/a" if pd.isna(v) else v)
+            df_extra[c] = df_extra[c].apply(lambda v: _MISSING_TOKEN if _is_missing_value(v) else v)
         df_extra[resolved_id_col] = df_extra[resolved_id_col].astype(str).map(_normalize_sub_id)
         df_extra = df_extra.groupby(resolved_id_col, dropna=False)[extra_part_cols].first().reset_index()
         df_extra = df_extra.rename(columns={resolved_id_col: "participant_id"})
@@ -618,13 +658,14 @@ def _convert_survey_dataframe_to_prism_dataset(
         sidecar_path = output_root / f"survey-{task}_beh.json"
         if not sidecar_path.exists() or force:
             localized = _localize_survey_template(templates[task]["json"], language=language)
+            localized = _inject_missing_token(localized, token=_MISSING_TOKEN)
             if technical_overrides:
                 localized = _apply_technical_overrides(localized, technical_overrides)
             _write_json(sidecar_path, localized)
 
     def _normalize_item_value(val) -> str:
-        if pd.isna(val):
-            return "n/a"
+        if _is_missing_value(val):
+            return _MISSING_TOKEN
         if isinstance(val, bool):
             return str(val)
         if isinstance(val, int):
@@ -637,29 +678,22 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     def _validate_item_value(item_id: str, val, schema: dict, sub_id: str, task: str):
         """Validate that a value matches the allowed levels in the schema."""
-        if pd.isna(val):
-            return  # n/a is always valid
-        
-        # Check for empty string (which pandas doesn't consider NaN)
-        if isinstance(val, str) and val.strip() == "":
-            raise ValueError(
-                f"Empty value for question '{item_id}' in {sub_id} task '{task}'. "
-                f"Use 'n/a' or 'NA' for missing data."
-            )
-        
+        if _is_missing_value(val):
+            return  # Missing values are normalized later
+
         item_schema = schema.get(item_id)
         if not item_schema or not isinstance(item_schema, dict):
             return  # No schema to validate against
-        
+
         levels = item_schema.get("Levels")
         if not levels or not isinstance(levels, dict):
             return  # No levels defined, accept any value
-        
+
         # Convert value to string for comparison
         val_str = _normalize_item_value(val)
-        if val_str == "n/a":
-            return  # n/a is always valid
-        
+        if val_str == _MISSING_TOKEN:
+            return  # Missing token is always allowed
+
         # Check if value is in allowed levels
         allowed_keys = set(str(k) for k in levels.keys())
         if val_str not in allowed_keys:
@@ -675,6 +709,8 @@ def _convert_survey_dataframe_to_prism_dataset(
                 raise ValueError(
                     f"Invalid value '{val}' for question '{item_id}' in {sub_id} task '{task}'."
                 )
+
+    missing_cells_by_subject: dict[str, int] = {}
 
     # per-subject TSVs
     for _, row in df.iterrows():
@@ -698,9 +734,13 @@ def _convert_survey_dataframe_to_prism_dataset(
                 if item_id in df.columns:
                     # Validate value before normalizing
                     _validate_item_value(item_id, row[item_id], schema, sub_id, task)
-                    out[item_id] = _normalize_item_value(row[item_id])
+                    normalized = _normalize_item_value(row[item_id])
+                    if normalized == _MISSING_TOKEN:
+                        missing_cells_by_subject[sub_id] = missing_cells_by_subject.get(sub_id, 0) + 1
+                    out[item_id] = normalized
                 else:
-                    out[item_id] = "n/a"
+                    out[item_id] = _MISSING_TOKEN
+                    missing_cells_by_subject[sub_id] = missing_cells_by_subject.get(sub_id, 0) + 1
 
             # stable column order
             with open(modality_dir / f"{sub_id}_{ses_id}_task-{task}_beh.tsv", "w", encoding="utf-8", newline="") as f:
@@ -714,6 +754,9 @@ def _convert_survey_dataframe_to_prism_dataset(
         missing_items_by_task=missing_items_by_task,
         id_column=resolved_id_col,
         session_column=resolved_session_col,
+        missing_cells_by_subject=missing_cells_by_subject,
+        missing_value_token=_MISSING_TOKEN,
+        conversion_warnings=conversion_warnings,
     )
 
 
@@ -798,6 +841,30 @@ def _localize_survey_template(template: dict, *, language: str | None) -> dict:
             item["Levels"] = new_levels
 
         out[key] = item
+
+    return out
+
+
+def _inject_missing_token(sidecar: dict, *, token: str) -> dict:
+    """Ensure every item Levels includes the missing-value token."""
+    if not isinstance(sidecar, dict):
+        return sidecar
+
+    for key, item in sidecar.items():
+        if key in _NON_ITEM_TOPLEVEL_KEYS:
+            continue
+        if not isinstance(item, dict):
+            continue
+
+        levels = item.get("Levels")
+        if isinstance(levels, dict):
+            if token not in levels:
+                levels[token] = "Missing/Not provided"
+                item["Levels"] = levels
+        else:
+            item["Levels"] = {token: "Missing/Not provided"}
+
+    return sidecar
 
     return out
 

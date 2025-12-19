@@ -1299,7 +1299,18 @@ def api_survey_convert_validate():
     if not convert_survey_xlsx_to_prism_dataset and not convert_survey_lsa_to_prism_dataset:
         return jsonify({"error": "Survey conversion module not available"}), 500
 
+    def _sanitize_jsonable(obj):
+        """Recursively convert sets and other non-JSONables to safe types."""
+        if isinstance(obj, set):
+            return sorted(obj)
+        if isinstance(obj, dict):
+            return {k: _sanitize_jsonable(v) for k, v in obj.items()}
+        if isinstance(obj, (list, tuple)):
+            return [_sanitize_jsonable(v) for v in obj]
+        return obj
+
     log_messages = []
+    conversion_warnings: list[str] = []
     
     def add_log(message, msg_type="info"):
         log_messages.append({"message": message, "type": msg_type})
@@ -1375,11 +1386,13 @@ def api_survey_convert_validate():
 
         add_log("Starting data conversion...", "info")
 
+        convert_result = None
+
         # Run conversion
         if suffix in {".xlsx", ".csv", ".tsv"}:
             if not convert_survey_xlsx_to_prism_dataset:
                 return jsonify({"error": "Tabular data conversion not available", "log": log_messages}), 500
-            convert_survey_xlsx_to_prism_dataset(
+            convert_result = convert_survey_xlsx_to_prism_dataset(
                 input_path=input_path,
                 library_dir=str(effective_survey_dir),
                 output_root=output_root,
@@ -1398,7 +1411,7 @@ def api_survey_convert_validate():
         elif suffix == ".lsa":
             if not convert_survey_lsa_to_prism_dataset:
                 return jsonify({"error": "LimeSurvey conversion not available", "log": log_messages}), 500
-            convert_survey_lsa_to_prism_dataset(
+            convert_result = convert_survey_lsa_to_prism_dataset(
                 input_path=input_path,
                 library_dir=str(effective_survey_dir),
                 output_root=output_root,
@@ -1413,8 +1426,37 @@ def api_survey_convert_validate():
                 language=language,
                 alias_file=alias_path,
             )
-
         add_log("Conversion completed", "success")
+
+        missing_summary = {}
+        if convert_result and getattr(convert_result, "missing_cells_by_subject", None):
+            missing_counts = {sid: cnt for sid, cnt in convert_result.missing_cells_by_subject.items() if cnt > 0}
+            if missing_counts:
+                token = getattr(convert_result, "missing_value_token", "na")
+                total_missing = sum(missing_counts.values())
+                subjects_with_missing = len(missing_counts)
+                top_subjects = ", ".join([f"{sid} ({cnt})" for sid, cnt in sorted(missing_counts.items(), key=lambda kv: kv[1], reverse=True)[:5]])
+                warn_msg = (
+                    f"Missing responses normalized to '{token}': "
+                    f"{subjects_with_missing} subjects, {total_missing} cells."
+                )
+                if top_subjects:
+                    warn_msg += f" Top subjects: {top_subjects}."
+
+                conversion_warnings.append(warn_msg)
+                add_log(warn_msg, "warning")
+                missing_summary = {
+                    "missing_cells": total_missing,
+                    "subjects_with_missing": subjects_with_missing,
+                    "missing_token": token,
+                    "missing_subjects_top": top_subjects,
+                }
+
+        # Warn about unmapped columns when unknown != ignore
+        if convert_result and getattr(convert_result, "conversion_warnings", None):
+            for msg in convert_result.conversion_warnings:
+                conversion_warnings.append(msg)
+                add_log(msg, "warning")
 
         # Count created files
         created_files = list(output_root.rglob("*"))
@@ -1431,6 +1473,9 @@ def api_survey_convert_validate():
                 "files_created": file_count,
             }
         }
+
+        if missing_summary:
+            validation_result["summary"].update(missing_summary)
 
         try:
             # Use the same validation function as the main validator
@@ -1477,6 +1522,10 @@ def api_survey_convert_validate():
             add_log(f"Validation error: {str(val_err)}", "warning")
             validation_result["warnings"].append(f"Could not run full validation: {str(val_err)}")
 
+        # Propagate conversion-time warnings
+        if conversion_warnings:
+            validation_result["warnings"].extend(conversion_warnings)
+
         # Create ZIP file
         add_log("Creating ZIP archive...", "info")
         mem = io.BytesIO()
@@ -1492,20 +1541,23 @@ def api_survey_convert_validate():
 
         add_log("Dataset package ready", "success")
 
-        return jsonify({
+        response_payload = {
             "success": True,
             "log": log_messages,
             "validation": validation_result,
             "zip_base64": zip_base64,
-        })
+        }
+
+        return jsonify(_sanitize_jsonable(response_payload))
 
     except Exception as e:
         add_log(f"Conversion failed: {str(e)}", "error")
-        return jsonify({
+        response_payload = {
             "error": str(e),
             "log": log_messages,
             "validation": {"errors": [str(e)], "warnings": [], "summary": {}}
-        }), 500
+        }
+        return jsonify(_sanitize_jsonable(response_payload)), 500
     finally:
         try:
             shutil.rmtree(tmp_dir, ignore_errors=True)

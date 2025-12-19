@@ -712,7 +712,16 @@ def cmd_survey_convert(args):
         missing = result.missing_items_by_task.get(task, 0)
         print(f"\nSurvey: {task}")
         if missing:
-            print(f"  - missing items:   {missing} (will be written as 'n/a')")
+            print(f"  - missing items:   {missing} (will be written as '{result.missing_value_token}')")
+
+    if result.missing_cells_by_subject:
+        total_missing = sum(result.missing_cells_by_subject.values())
+        missing_subjects = sorted(result.missing_cells_by_subject.items(), key=lambda kv: kv[1], reverse=True)
+        worst = ", ".join([f"{sid} ({cnt})" for sid, cnt in missing_subjects[:5]])
+        print(
+            f"\nWARNING: Normalized {total_missing} missing cells to '{result.missing_value_token}' "
+            f"across {len(result.missing_cells_by_subject)} subjects. Top: {worst}"
+        )
 
     if result.unknown_columns and args.unknown != "ignore":
         msg = "WARNING" if args.unknown == "warn" else "ERROR"
