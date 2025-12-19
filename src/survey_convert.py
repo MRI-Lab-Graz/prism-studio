@@ -635,6 +635,40 @@ def _convert_survey_dataframe_to_prism_dataset(
             return str(val)
         return str(val)
 
+    def _validate_item_value(item_id: str, val, schema: dict, sub_id: str, task: str):
+        """Validate that a value matches the allowed levels in the schema."""
+        if pd.isna(val):
+            return  # n/a is always valid
+        
+        item_schema = schema.get(item_id)
+        if not item_schema or not isinstance(item_schema, dict):
+            return  # No schema to validate against
+        
+        levels = item_schema.get("Levels")
+        if not levels or not isinstance(levels, dict):
+            return  # No levels defined, accept any value
+        
+        # Convert value to string for comparison
+        val_str = _normalize_item_value(val)
+        if val_str == "n/a":
+            return  # n/a is always valid
+        
+        # Check if value is in allowed levels
+        allowed_keys = set(str(k) for k in levels.keys())
+        if val_str not in allowed_keys:
+            # Try to give helpful error message
+            if allowed_keys:
+                levels_list = sorted(allowed_keys, key=lambda x: (len(x), x))
+                allowed_str = ", ".join(levels_list)
+                raise ValueError(
+                    f"Invalid value '{val}' for question '{item_id}' in {sub_id} task '{task}'. "
+                    f"Expected one of: {allowed_str}"
+                )
+            else:
+                raise ValueError(
+                    f"Invalid value '{val}' for question '{item_id}' in {sub_id} task '{task}'."
+                )
+
     # per-subject TSVs
     for _, row in df.iterrows():
         sub_id = _normalize_sub_id(row[resolved_id_col])
@@ -655,6 +689,8 @@ def _convert_survey_dataframe_to_prism_dataset(
             out: dict[str, str] = {}
             for item_id in expected:
                 if item_id in df.columns:
+                    # Validate value before normalizing
+                    _validate_item_value(item_id, row[item_id], schema, sub_id, task)
                     out[item_id] = _normalize_item_value(row[item_id])
                 else:
                     out[item_id] = "n/a"
