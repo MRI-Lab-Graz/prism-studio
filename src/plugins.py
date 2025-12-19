@@ -1,5 +1,5 @@
 """
-Plugin system for prism-validator.
+Plugin system for prism.
 
 Allows users to add custom validators via:
 1. .prismrc.json: plugins array with paths to plugin modules
@@ -296,7 +296,7 @@ def create_context(
 # =============================================================================
 
 PLUGIN_TEMPLATE = '''"""
-Custom validator plugin for prism-validator.
+Custom validator plugin for prism.
 
 This plugin is automatically loaded from the validators/ directory.
 """

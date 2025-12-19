@@ -142,7 +142,7 @@ Then:
 
 ### What the `.exe` Contains
 
-- **Entry point**: `prism-validator-web.py` (Flask web interface)
+- **Entry point**: `prism-studio.py` (Flask web interface)
 - **Bundled data**: 
   - `templates/` - HTML templates
   - `static/` - CSS, JS, images

@@ -6,8 +6,8 @@
   "Authors": [
     "Demo Author"
   ],
-  "Acknowledgements": "This is synthetic demo data for Prism-Validator testing.",
-  "HowToAcknowledge": "This demo data was created for Prism-Validator testing purposes.",
+  "Acknowledgements": "This is synthetic demo data for PRISM testing.",
+  "HowToAcknowledge": "This demo data was created for PRISM testing purposes.",
   "Funding": [
     {
       "agency": "Demo Funding Agency",
@@ -15,7 +15,7 @@
     }
   ],
   "ReferencesAndLinks": [
-    "https://github.com/prism-validator"
+    "https://github.com/prism"
   ],
   "DatasetDOI": "10.0000/demo.dataset"
 }

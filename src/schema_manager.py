@@ -1,5 +1,5 @@
 """
-Schema management for prism-validator
+Schema management for prism
 """
 
 import os

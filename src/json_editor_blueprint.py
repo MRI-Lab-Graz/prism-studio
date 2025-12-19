@@ -1,7 +1,7 @@
 """
 Flask Blueprint Adapter for JSON Editor
 Converts the standalone JSON Editor app into a reusable Flask blueprint
-that can be integrated into the main prism-validator web interface.
+that can be integrated into the main prism web interface.
 """
 
 from flask import Blueprint, render_template, request, jsonify

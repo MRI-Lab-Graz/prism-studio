@@ -1,7 +1,7 @@
 Prism Tools (CLI)
 =================
 
-Prism-Validator includes a command-line utility `prism_tools.py` for advanced data conversion tasks, particularly for physiological data ingestion.
+PRISM includes a command-line utility `prism_tools.py` for advanced data conversion tasks, particularly for physiological data ingestion.
 
 Requirements
 ------------
@@ -121,7 +121,7 @@ After conversion, validate the output with:
 
 .. code-block:: bash
 
-  python prism-validator.py my_survey_dataset
+  python prism.py my_survey_dataset
 
 Import from Excel
 ~~~~~~~~~~~~~~~~~
@@ -164,7 +164,7 @@ Checks the survey library for duplicate variable names across different instrume
 Bilingual Survey Templates (i18n)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Prism-Validator supports bilingual survey templates that contain both German and English in a single JSON file. At "compile time," you select the language to produce a clean, single-language output.
+PRISM supports bilingual survey templates that contain both German and English in a single JSON file. At "compile time," you select the language to produce a clean, single-language output.
 
 **Template Format:**
 

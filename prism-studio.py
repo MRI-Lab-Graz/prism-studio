@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Web interface for prism-validator
+Web interface for prism
 A simple Flask web app that provides a user-friendly interface for dataset validation
 
 This module has been refactored to use modular components from src/web/:
@@ -206,7 +206,7 @@ else:
 
 # Secret key for session management
 # In production, set PRISM_SECRET_KEY environment variable
-app.secret_key = os.environ.get("PRISM_SECRET_KEY", "prism-validator-dev-key-change-in-production")
+app.secret_key = os.environ.get("PRISM_SECRET_KEY", "prism-dev-key-change-in-production")
 app.config["MAX_CONTENT_LENGTH"] = (
     1024 * 1024 * 1024
 )  # 1GB max file size (metadata only)
@@ -1219,7 +1219,7 @@ def api_survey_convert():
                 dry_run=False,
                 force=True,
                 name=dataset_name,
-                authors=["prism-validator-web"],
+                authors=["prism-studio"],
                 language=language,
                 alias_file=alias_path,
             )
@@ -1237,7 +1237,7 @@ def api_survey_convert():
                 dry_run=False,
                 force=True,
                 name=dataset_name,
-                authors=["prism-validator-web"],
+                authors=["prism-studio"],
                 language=language,
                 alias_file=alias_path,
             )
@@ -1369,7 +1369,7 @@ def api_survey_convert_validate():
                 dry_run=False,
                 force=True,
                 name=dataset_name,
-                authors=["prism-validator-web"],
+                authors=["prism-studio"],
                 language=language,
                 alias_file=alias_path,
             )
@@ -1387,7 +1387,7 @@ def api_survey_convert_validate():
                 dry_run=False,
                 force=True,
                 name=dataset_name,
-                authors=["prism-validator-web"],
+                authors=["prism-studio"],
                 language=language,
                 alias_file=alias_path,
             )
@@ -1562,7 +1562,7 @@ def api_biometrics_convert():
             unknown=unknown,
             force=True,
             name=dataset_name,
-            authors=["prism-validator-web"],
+            authors=["prism-studio"],
         )
 
         mem = io.BytesIO()
@@ -1885,7 +1885,7 @@ def main():
     """Run the web application"""
     import argparse
 
-    parser = argparse.ArgumentParser(description="Prism-Validator Web Interface")
+    parser = argparse.ArgumentParser(description="PRISM Studio")
     parser.add_argument(
         "--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)"
     )
@@ -1921,7 +1921,7 @@ def main():
     display_host = "localhost" if host == "127.0.0.1" else host
     url = f"http://{display_host}:{port}"
 
-    print("🌐 Starting Prism-Validator Web Interface")
+    print("🌐 Starting PRISM Studio")
     print(f"🔗 URL: {url}")
     if args.public:
         print("⚠️  Warning: Running in public mode - accessible from other computers")

@@ -10,5 +10,5 @@ it's imporatnt that bids apps still work on prism datasets
 
 Always activate .venv in your terminal before running any scripts.
 missing packages should be installed via the setup script NOT manually
-prism-validator.py is the main script
-Webinterface is BASED on prism-validator.py - not a separate tool!
+prism.py is the main script
+Webinterface is BASED on prism.py - not a separate tool!

@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism-validator.org/schemas/dataset_description.schema.json",
+  "$id": "https://prism.org/schemas/dataset_description.schema.json",
   "version": "1.0.0",
   "title": "FAIR-compliant Dataset Description Schema",
   "description": "Schema for BIDS dataset_description.json with FAIR principles integration",

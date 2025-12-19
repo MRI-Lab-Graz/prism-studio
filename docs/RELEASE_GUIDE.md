@@ -10,7 +10,7 @@
 ## Step 1: Commit All Changes
 
 ```bash
-cd /Users/karl/work/github/prism-validator
+cd /Users/karl/work/github/prism
 
 # Add all new files
 git add schemas/stable/
@@ -22,7 +22,7 @@ git add RELEASE_NOTES_v1.0.0.md
 
 # Add modified files
 git add README.md
-git add prism-validator.py
+git add prism.py
 git add src/schema_manager.py
 git add src/runner.py
 git add web_interface.py
@@ -70,7 +70,7 @@ git push origin v1.0.0
 ### Option A: Using GitHub Web Interface (Recommended)
 
 1. **Navigate to your repository**
-   - Go to: https://github.com/MRI-Lab-Graz/prism-validator
+   - Go to: https://github.com/MRI-Lab-Graz/prism
 
 2. **Click on "Releases"**
    - Located in the right sidebar or under "Code" tab
@@ -86,9 +86,9 @@ git push origin v1.0.0
    **Description:** (Copy from RELEASE_NOTES_v1.0.0.md or use this):
 
    ```markdown
-   # Prism-Validator v1.0.0 - First Major Release 🎉
+   # PRISM v1.0.0 - First Major Release 🎉
 
-   We're excited to announce the first major release of **Prism-Validator**!
+   We're excited to announce the first major release of **PRISM**!
 
    ## 🌟 Highlights
 
@@ -107,8 +107,8 @@ git push origin v1.0.0
    ## 📦 Quick Start
 
    ```bash
-   git clone https://github.com/MRI-Lab-Graz/prism-validator.git
-   cd prism-validator
+   git clone https://github.com/MRI-Lab-Graz/prism.git
+   cd prism
    ./setup.sh
    python launch_web.py
    ```
@@ -157,7 +157,7 @@ gh release create v1.0.0 \
 ## Step 4: Verify Release
 
 1. **Check release page:**
-   - https://github.com/MRI-Lab-Graz/prism-validator/releases/tag/v1.0.0
+   - https://github.com/MRI-Lab-Graz/prism/releases/tag/v1.0.0
 
 2. **Verify:**
    - [ ] Release shows correct version (v1.0.0)
@@ -170,7 +170,7 @@ gh release create v1.0.0 \
 3. **Test download:**
    ```bash
    # Test that release can be downloaded
-   curl -L https://github.com/MRI-Lab-Graz/prism-validator/archive/refs/tags/v1.0.0.tar.gz -o test.tar.gz
+   curl -L https://github.com/MRI-Lab-Graz/prism/archive/refs/tags/v1.0.0.tar.gz -o test.tar.gz
    tar -tzf test.tar.gz | head
    rm test.tar.gz
    ```
@@ -203,9 +203,9 @@ grep -r "beta" docs/
 3. **Create announcement template:**
 
    ```markdown
-   🎉 Prism-Validator v1.0.0 Released!
+   🎉 PRISM v1.0.0 Released!
 
-   We're excited to announce the first major release of Prism-Validator,
+   We're excited to announce the first major release of PRISM,
    a BIDS-inspired validation tool for psychological research datasets.
 
    New features:
@@ -213,8 +213,8 @@ grep -r "beta" docs/
    - Enhanced web interface
    - Comprehensive documentation
 
-   Download: https://github.com/MRI-Lab-Graz/prism-validator/releases/tag/v1.0.0
-   Docs: https://github.com/MRI-Lab-Graz/prism-validator/tree/main/docs
+   Download: https://github.com/MRI-Lab-Graz/prism/releases/tag/v1.0.0
+   Docs: https://github.com/MRI-Lab-Graz/prism/tree/main/docs
 
    #OpenScience #ResearchTools #DataValidation
    ```
@@ -261,7 +261,7 @@ git push origin --delete v1.0.0
 
 ```bash
 # Complete release workflow
-cd /Users/karl/work/github/prism-validator
+cd /Users/karl/work/github/prism
 
 # 1. Commit everything
 git add .

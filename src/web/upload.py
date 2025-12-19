@@ -1,5 +1,5 @@
 """
-Upload processing for prism-validator web interface.
+Upload processing for prism web interface.
 Handles folder uploads, ZIP extraction, and placeholder creation.
 """
 

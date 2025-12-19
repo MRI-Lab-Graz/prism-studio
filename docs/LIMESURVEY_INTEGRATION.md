@@ -1,6 +1,6 @@
 # LimeSurvey Integration Guide
 
-This guide explains how to prepare and convert LimeSurvey questionnaires for use with the Prism-Validator pipeline.
+This guide explains how to prepare and convert LimeSurvey questionnaires for use with the PRISM pipeline.
 
 ## Overview
 
@@ -64,7 +64,7 @@ This script will:
     *   Example: `sub-001_task-mysurvey_beh.tsv`
 2.  **Place JSON Sidecar**: Place the generated JSON file alongside the data file (or in the root directory if it applies to all subjects).
     *   `task-mysurvey_beh.json`
-3.  **Validate**: Run the Prism-Validator to ensure everything is correct.
+3.  **Validate**: Run the PRISM to ensure everything is correct.
 
 ## 5. Reverse Engineering: JSON to LimeSurvey
 

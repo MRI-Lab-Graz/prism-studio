@@ -1,6 +1,6 @@
 # Events (Super-BIDS)
 
-The `events` modality in Prism-Validator enforces a "Super-BIDS" standard. While standard BIDS allows for minimal event files, Prism-Validator requires detailed provenance about the stimulus presentation software to ensure reproducibility.
+The `events` modality in PRISM enforces a "Super-BIDS" standard. While standard BIDS allows for minimal event files, PRISM requires detailed provenance about the stimulus presentation software to ensure reproducibility.
 
 ## File Name Structure
 
@@ -10,11 +10,11 @@ Event files MUST follow the standard BIDS naming convention:
 
 ## Sidecar JSON (`*_events.json`)
 
-Prism-Validator enforces strict requirements on the JSON sidecar associated with the events file.
+PRISM enforces strict requirements on the JSON sidecar associated with the events file.
 
 ### `StimulusPresentation` Object
 
-This object is **MANDATORY** in Prism-Validator (though optional in standard BIDS). It describes the software and hardware used to present stimuli.
+This object is **MANDATORY** in PRISM (though optional in standard BIDS). It describes the software and hardware used to present stimuli.
 
 | Key | Requirement | Type | Description |
 | --- | --- | --- | --- |

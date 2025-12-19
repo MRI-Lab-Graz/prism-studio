@@ -673,7 +673,7 @@ class PrismValidatorGUI:
                 output_root=target,
                 force=force,
                 name=dataset_name,
-                authors=["prism-validator-gui"],
+                authors=["prism-gui"],
             )
             self.root.after(0, lambda: messagebox.showinfo("Success", f"PRISM dataset written to:\n{target}"))
         except Exception as e:

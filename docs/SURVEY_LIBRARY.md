@@ -107,7 +107,7 @@ The library operates on a **Draft & Publish** model, similar to Git, to prevent 
 
 ## Web Interface
 
-The Survey Library is fully integrated into the Prism-Validator web interface:
+The Survey Library is fully integrated into the PRISM web interface:
 
 1.  **Library Dashboard**: View all surveys, their status (Live/Draft), and perform actions (Checkout, Edit, Submit).
 2.  **Editor**: A user-friendly form-based editor for modifying survey content.

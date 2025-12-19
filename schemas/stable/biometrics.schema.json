@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism-validator.org/schemas/biometrics/v1.0.0",
+  "$id": "https://prism.org/schemas/biometrics/v1.0.0",
   "version": "1.0.0",
   "title": "Biometrics Metadata",
   "description": "Schema for biometric and physiological assessment data (e.g., VO2max, planks, balance)",

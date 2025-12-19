@@ -1,5 +1,5 @@
 """
-REST API for prism-validator.
+REST API for prism.
 
 Provides programmatic access to validation functionality for:
 - CI/CD pipelines
@@ -52,7 +52,7 @@ def create_api_blueprint(schema_dir: str = None):
         """Health check endpoint"""
         return jsonify({
             "status": "healthy",
-            "service": "prism-validator",
+            "service": "prism",
             "version": "1.3.0",
             "timestamp": datetime.utcnow().isoformat() + "Z",
         })

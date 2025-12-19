@@ -1,12 +1,12 @@
-.. Prism-Validator documentation master file
+.. PRISM documentation master file
 
-Prism-Validator Documentation
+PRISM Documentation
 =============================
 
 .. image:: https://img.shields.io/badge/BIDS-Extension-blue.svg
    :target: https://bids.neuroimaging.io/
 
-Prism-Validator is a hybrid dataset validation tool for psychological experiments. It validates standard BIDS datasets and additionally enforces PRISM extensions (e.g., stricter metadata requirements for certain files and support for non-BIDS modalities like surveys/biometrics/physio) while remaining compatible with BIDS tools/apps.
+PRISM is a hybrid dataset validation tool for psychological experiments. It validates standard BIDS datasets and additionally enforces PRISM extensions (e.g., stricter metadata requirements for certain files and support for non-BIDS modalities like surveys/biometrics/physio) while remaining compatible with BIDS tools/apps.
 
 **Key Features:**
 

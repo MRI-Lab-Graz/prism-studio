@@ -37,7 +37,7 @@ def validate_dataset(
     run_bids=False,
     progress_callback: Optional[ProgressCallback] = None,
 ):
-    """Main dataset validation function (refactored from prism-validator.py)
+    """Main dataset validation function (refactored from prism.py)
 
     Args:
         root_dir: Root directory of the dataset

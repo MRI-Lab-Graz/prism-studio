@@ -1,4 +1,4 @@
-# Prism-Validator: BIDS Extension & Validation Tool
+# PRISM - Psychological Research Information Standard for Metadata
 
 [![Documentation Status](https://readthedocs.org/projects/prism-validator/badge/?version=latest)](https://prism-validator.readthedocs.io/en/latest/?badge=latest)
 
@@ -7,14 +7,14 @@
 **👉 Run the Desktop GUI** (recommended):
 
 ```bash
-python prism-validator-gui.py
+python prism-gui.py
 ```
 
-**👉 Run the Web Interface**:
+**👉 Run the Web Interface (PRISM Studio)**:
 
 ```bash
 bash scripts/setup/setup.sh    # One-time setup (macOS/Linux)
-python prism-validator-web.py
+python prism-studio.py
 ```
 
 The web interface will open automatically at `http://localhost:5001`.
@@ -23,7 +23,7 @@ The web interface will open automatically at `http://localhost:5001`.
 
 ## Overview
 
-Prism-Validator is a **BIDS Extension** framework and validation tool designed to enrich standard BIDS datasets with psychological and physiological metadata.
+PRISM is a **BIDS Extension** framework and toolkit designed to enrich standard BIDS datasets with psychological and physiological metadata.
 
 **Core Philosophy: Extension, not Replacement**
 - **BIDS Core**: The main architecture remains standard BIDS. Files like `participants.tsv`, `dataset_description.json`, and standard modalities (`anat`, `func`, `eeg`) are preserved and validated according to BIDS standards.

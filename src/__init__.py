@@ -1,7 +1,7 @@
-# src package marker for prism-validator
+# src package marker for prism
 __all__ = []
 """
-Prism-Validator: BIDS-inspired validation tool for psychological research data
+PRISM: BIDS-inspired validation tool for psychological research data
 
 This package provides validation tools for multi-modal psychological/experimental datasets
 following BIDS principles with custom schemas for different stimulus modalities.

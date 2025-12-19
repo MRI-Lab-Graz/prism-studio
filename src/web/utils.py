@@ -1,5 +1,5 @@
 """
-Web interface utilities for prism-validator.
+Web interface utilities for prism.
 Common helper functions used across web routes.
 """
 
@@ -167,7 +167,7 @@ def get_error_description(error_code: str) -> str:
 
 def get_error_documentation_url(error_code: str) -> str:
     """Get documentation URL for an error code."""
-    base_url = "https://github.com/MRI-Lab-Graz/prism-validator/blob/main/docs/ERROR_CODES.md"
+    base_url = "https://github.com/MRI-Lab-Graz/prism/blob/main/docs/ERROR_CODES.md"
     
     # Map legacy codes to PRISM codes for URL
     code_mapping = {

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive demonstration of the prism-validator with schema versioning
+Comprehensive demonstration of the prism with schema versioning
 """
 
 import subprocess
@@ -31,52 +31,52 @@ def main():
     print("=" * 80)
 
     # Ensure we're in the right directory
-    if not os.path.exists("prism-validator.py"):
-        print("❌ Error: Please run from the prism-validator directory")
+    if not os.path.exists("prism.py"):
+        print("❌ Error: Please run from the prism directory")
         sys.exit(1)
 
     # Demo 1: List all schema versions
     run_command(
-        "python prism-validator.py --list-versions",
+        "python prism.py --list-versions",
         "DEMO 1: List Available Schema Versions",
     )
 
     # Demo 2: Schema info with version details
     run_command(
-        "python prism-validator.py --schema-info image",
+        "python prism.py --schema-info image",
         "DEMO 2: Detailed Schema Information (Image Schema)",
     )
 
     # Demo 3: Version compatibility checking
     run_command(
-        "python prism-validator.py --check-compatibility 1.0.0 1.0.0",
+        "python prism.py --check-compatibility 1.0.0 1.0.0",
         "DEMO 3A: Version Compatibility - Exact Match (Should Pass)",
     )
 
     run_command(
-        "python prism-validator.py --check-compatibility 1.0.1 1.0.0",
+        "python prism.py --check-compatibility 1.0.1 1.0.0",
         "DEMO 3B: Version Compatibility - Patch Update (Should Pass)",
     )
 
     run_command(
-        "python prism-validator.py --check-compatibility 1.1.0 1.0.0",
+        "python prism.py --check-compatibility 1.1.0 1.0.0",
         "DEMO 3C: Version Compatibility - Minor Update (Should Fail)",
     )
 
     run_command(
-        "python prism-validator.py --check-compatibility 2.0.0 1.0.0",
+        "python prism.py --check-compatibility 2.0.0 1.0.0",
         "DEMO 3D: Version Compatibility - Major Update (Should Fail)",
     )
 
     # Demo 4: Full validation with schema versioning
     run_command(
-        "python prism-validator.py consistent_test_dataset/ -v",
+        "python prism.py consistent_test_dataset/ -v",
         "DEMO 4: Full Dataset Validation with Schema Versioning",
     )
 
     # Demo 5: Validate valid test dataset
     run_command(
-        "python prism-validator.py valid_test_dataset/",
+        "python prism.py valid_test_dataset/",
         "DEMO 5: Validation of Valid Test Dataset",
     )
 

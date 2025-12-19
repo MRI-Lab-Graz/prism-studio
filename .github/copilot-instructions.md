@@ -1,7 +1,7 @@
-# Prism-Validator AI Instructions
+# PRISM AI Instructions
 
 ## Project Overview
-Prism-Validator is a hybrid dataset validation tool for psychological experiments. It enforces a "PRISM" structure (BIDS-inspired, with additional metadata requirements) while remaining compatible with standard BIDS tools/apps. It consists of a core Python validation library and a Flask-based web interface.
+PRISM is a hybrid dataset validation tool for psychological experiments. It enforces a "PRISM" structure (BIDS-inspired, with additional metadata requirements) while remaining compatible with standard BIDS tools/apps. It consists of a core Python validation library and a Flask-based web interface.
 
 ## Architecture & Components
 - **Core Logic (`src/`)**:
@@ -10,7 +10,7 @@ Prism-Validator is a hybrid dataset validation tool for psychological experiment
   - `runner.py`: Main entry point `validate_dataset()` used by both CLI and Web UI.
   - `bids_integration.py`: Manages `.bidsignore` to ensure compatibility with BIDS apps (fMRIPrep).
 - **Web Interface**:
-  - `prism-validator-web.py`: Flask application. Handles uploads, session management, and invokes `runner.py`.
+  - `prism-studio.py`: Flask application. Handles uploads, session management, and invokes `runner.py`.
   - `templates/`: Jinja2 HTML templates. `index.html` is the SPA-like main page.
 - **Schemas (`schemas/`)**:
   - JSON Schema definitions for modalities: `image`, `movie`, `audio`, `eyetracking`, `survey`, `physiological`.
@@ -39,14 +39,14 @@ Prism-Validator is a hybrid dataset validation tool for psychological experiment
   - Uses `participants.tsv` to auto-populate categorical levels.
 
 ## Developer Workflows
-- **Running Web UI**: `python prism-validator-web.py` (runs on port 5001).
-- **CLI Usage**: `python prism-validator.py /path/to/dataset`.
+- **Running Web UI**: `python prism-studio.py` (runs on port 5001).
+- **CLI Usage**: `python prism.py /path/to/dataset`.
 - **Schema Updates**:
   - When renaming/adding modalities, update:
     1. `schemas/` filenames.
     2. `src/schema_manager.py` (`modalities` list).
     3. `src/validator.py` (`MODALITY_PATTERNS`).
-    4. `prism-validator-web.py` (`restricted_names`).
+    4. `prism-studio.py` (`restricted_names`).
     5. `templates/index.html` (UI list).
 
 ## Key Conventions

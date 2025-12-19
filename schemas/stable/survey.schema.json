@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism-validator.org/schemas/survey/v1.0.0",
+  "$id": "https://prism.org/schemas/survey/v1.0.0",
   "version": "1.0.0",
   "title": "Survey Data Metadata",
   "description": "Schema for questionnaire and survey data",

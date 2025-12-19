@@ -1,5 +1,5 @@
 """
-Configuration file support for prism-validator.
+Configuration file support for prism.
 
 Supports per-project configuration via:
 - .prismrc.json (hidden file)
@@ -44,7 +44,7 @@ DEFAULT_IGNORE_PATTERNS = [
 
 @dataclass
 class PrismConfig:
-    """Configuration for prism-validator"""
+    """Configuration for prism"""
     
     # Schema settings
     schema_version: str = "stable"

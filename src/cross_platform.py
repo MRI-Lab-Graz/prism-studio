@@ -1,5 +1,5 @@
 """
-Cross-platform compatibility utilities for prism-validator
+Cross-platform compatibility utilities for prism
 """
 
 import os

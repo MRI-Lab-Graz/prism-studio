@@ -564,7 +564,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             "Name": name or "PRISM Survey Dataset",
             "BIDSVersion": "1.8.0",
             "DatasetType": "raw",
-            "Authors": authors or ["prism-validator"],
+            "Authors": authors or ["prism"],
         }
         _write_json(ds_desc, dataset_description)
 

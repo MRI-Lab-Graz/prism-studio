@@ -11,7 +11,7 @@ import glob
 # Enforce running from the repo-local virtual environment (skip for frozen/packaged apps)
 venv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".venv")
 if not getattr(sys, "frozen", False) and not sys.prefix.startswith(venv_path):
-    print("❌ Error: You are not running inside the prism-validator virtual environment!")
+    print("❌ Error: You are not running inside the prism virtual environment!")
     print("   Please activate the venv first:")
     if os.name == "nt":
         print(f"     {venv_path}\\Scripts\\activate")

@@ -1,7 +1,7 @@
-# Web interface modules for prism-validator
+# Web interface modules for prism
 """
 This package contains modular Flask blueprints and utilities
-for the prism-validator web interface.
+for the prism web interface.
 """
 
 from .utils import (

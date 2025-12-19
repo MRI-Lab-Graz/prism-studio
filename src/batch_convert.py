@@ -452,7 +452,7 @@ def create_dataset_description(
         "Description": description,
         "GeneratedBy": [
             {
-                "Name": "prism-validator batch converter",
+                "Name": "prism batch converter",
                 "Version": "1.0.0",
             }
         ],

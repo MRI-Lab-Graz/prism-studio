@@ -117,7 +117,7 @@ Acceptance criteria:
 - Copy `library/survey/survey-<name>.json` into `surveys/survey-<task>_beh.json`.
 
 Acceptance criteria:
-- Output validates with `python prism-validator.py <dataset>`.
+- Output validates with `python prism.py <dataset>`.
 
 ### Milestone 3 — Excel input
 - Add `.xlsx` reading.
@@ -142,7 +142,7 @@ Acceptance criteria:
 - Multiple rows per subject are routed into the correct `ses-*` folders (and/or `run-*` files).
 
 ### Milestone 6 — Web UI integration (later)
-Because the web interface is based on `prism-validator.py` logic, keep conversion as a core utility that the web UI can call.
+Because the web interface is based on `prism.py` logic, keep conversion as a core utility that the web UI can call.
 
 ## New feature stream: Derivatives (survey scoring)
 Once a PRISM dataset is already valid, we also want to generate **derivatives** for one or more surveys, e.g.:

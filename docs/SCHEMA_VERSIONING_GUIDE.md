@@ -2,7 +2,7 @@
 
 ## Overview
 
-Prism-Validator now supports schema versioning, similar to Docker image tagging. This allows you to validate datasets against different versions of the validation schemas.
+PRISM now supports schema versioning, similar to Docker image tagging. This allows you to validate datasets against different versions of the validation schemas.
 
 ## Available Versions
 
@@ -19,18 +19,18 @@ To specify a schema version when validating a dataset:
 
 ```bash
 # Use stable version (default)
-python prism-validator.py /path/to/dataset
+python prism.py /path/to/dataset
 
 # Use specific version
-python prism-validator.py /path/to/dataset --schema-version 0.1
-python prism-validator.py /path/to/dataset --schema-version v0.1
-python prism-validator.py /path/to/dataset --schema-version stable
+python prism.py /path/to/dataset --schema-version 0.1
+python prism.py /path/to/dataset --schema-version v0.1
+python prism.py /path/to/dataset --schema-version stable
 ```
 
 List available schema versions:
 
 ```bash
-python prism-validator.py --list-versions
+python prism.py --list-versions
 ```
 
 ### Web Interface

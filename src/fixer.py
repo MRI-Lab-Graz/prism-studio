@@ -1,5 +1,5 @@
 """
-Auto-fix functionality for prism-validator.
+Auto-fix functionality for prism.
 
 Provides automatic repair of common issues:
 - Missing .bidsignore entries for PRISM modalities
@@ -229,7 +229,7 @@ class DatasetFixer:
                     break
         
         if folders_present:
-            content = "\n# PRISM modalities (added by prism-validator --fix)\n"
+            content = "\n# PRISM modalities (added by prism --fix)\n"
             content += "\n".join(folders_present) + "\n"
             
             if os.path.exists(bidsignore_path):
@@ -241,7 +241,7 @@ class DatasetFixer:
                     details={"append": content}
                 ))
             else:
-                header = "# .bidsignore created by prism-validator\n"
+                header = "# .bidsignore created by prism\n"
                 header += "# Ignores PRISM-specific folders for BIDS-App compatibility\n\n"
                 self.fixes.append(FixAction(
                     issue_code="PRISM501",

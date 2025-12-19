@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate a hybrid BIDS/PRISM demo dataset for prism-validator testing.
+Generate a hybrid BIDS/PRISM demo dataset for prism testing.
 """
 
 import os
@@ -52,11 +52,11 @@ def main():
         "BIDSVersion": "1.6.0",
         "DatasetType": "raw",
         "License": "CC0",
-        "Authors": ["Prism-Validator Team", "Another Author"],
+        "Authors": ["PRISM Team", "Another Author"],
         "Acknowledgements": "Created for testing purposes",
         "HowToAcknowledge": "Please cite this dataset",
         "Funding": ["Grant 123"],
-        "ReferencesAndLinks": ["https://github.com/MRI-Lab-Graz/prism-validator"],
+        "ReferencesAndLinks": ["https://github.com/MRI-Lab-Graz/prism"],
         "DatasetDOI": "10.0.0.0/prism-demo",
     }
     create_json(os.path.join(ROOT_DIR, "dataset_description.json"), dataset_description)

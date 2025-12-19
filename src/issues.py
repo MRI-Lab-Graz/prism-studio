@@ -1,5 +1,5 @@
 """
-Structured issue/error handling for prism-validator.
+Structured issue/error handling for prism.
 
 This module provides:
 - Issue dataclass for structured error reporting

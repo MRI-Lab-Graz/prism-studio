@@ -157,9 +157,9 @@ def create_demo_metadata():
         "Name": "Comprehensive Psychology Demo Dataset",
         "BIDSVersion": "1.6.0",
         "DatasetType": "raw",
-        "Authors": ["Prism-Validator Team"],
+        "Authors": ["PRISM Team"],
         "License": "CC0",
-        "Acknowledgements": "Demo dataset for prism-validator showcase",
+        "Acknowledgements": "Demo dataset for prism showcase",
     }
 
     os.makedirs(base_dir, exist_ok=True)
@@ -184,7 +184,7 @@ def create_demo_metadata():
         "Categories": {"StudyDomain": "cognitive"},
         "Metadata": {
             "SchemaVersion": "1.0.0",
-            "Creator": "Prism-Validator Demo Team",
+            "Creator": "PRISM Demo Team",
             "CreationDate": "2024-09-11",
             "Institution": "University of Graz Psychology Institute",
         },

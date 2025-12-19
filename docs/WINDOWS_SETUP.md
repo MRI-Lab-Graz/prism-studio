@@ -1,6 +1,6 @@
 # Windows Installation and Usage Guide
 
-This guide covers Windows-specific setup and usage for the prism-validator.
+This guide covers Windows-specific setup and usage for the prism.
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ Install [Git for Windows](https://git-scm.com/download/win) if you want to clone
 
 ### Method 1: Automatic Setup (Recommended)
 1. Open Command Prompt or PowerShell
-2. Navigate to the prism-validator directory
+2. Navigate to the prism directory
 3. Run the setup script:
    ```bat
    scripts\setup-windows.bat
@@ -50,7 +50,7 @@ Always activate the virtual environment before using the validator:
 
 ### Basic Validation
 ```bat
-python prism-validator.py "C:\path\to\your\dataset"
+python prism.py "C:\path\to\your\dataset"
 ```
 
 ### Windows-Specific Path Handling
@@ -61,13 +61,13 @@ python prism-validator.py "C:\path\to\your\dataset"
 ### Example Commands
 ```bat
 # Validate a local dataset
-python prism-validator.py "C:\Users\username\Documents\my_dataset"
+python prism.py "C:\Users\username\Documents\my_dataset"
 
 # Validate with verbose output
-python prism-validator.py --verbose "D:\research\experiment_data"
+python prism.py --verbose "D:\research\experiment_data"
 
 # Show help
-python prism-validator.py --help
+python prism.py --help
 
 # Run tests
 python -m pytest tests\
@@ -200,7 +200,7 @@ To create a standalone Windows executable:
 pip install pyinstaller
 
 # Create executable
-pyinstaller --onefile prism-validator.py
+pyinstaller --onefile prism.py
 ```
 
 ## Getting Help

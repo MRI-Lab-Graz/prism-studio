@@ -1,5 +1,5 @@
 """
-Validation module for prism-validator web interface.
+Validation module for prism web interface.
 Provides unified validation function and progress tracking.
 """
 
@@ -144,7 +144,7 @@ def _run_validator_subprocess(
     
     try:
         # Build command
-        cmd = [sys.executable, "prism-validator.py", dataset_path]
+        cmd = [sys.executable, "prism.py", dataset_path]
         if verbose:
             cmd.append("--verbose")
         if schema_version:
@@ -170,7 +170,7 @@ def _run_validator_subprocess(
             return issues, stats
 
     except FileNotFoundError:
-        error_msg = "prism-validator.py script not found"
+        error_msg = "prism.py script not found"
         print(f"❌ {error_msg}")
         stats = SimpleStats()
         issues = [("ERROR", error_msg, dataset_path)]

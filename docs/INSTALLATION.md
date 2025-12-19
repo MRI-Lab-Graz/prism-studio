@@ -1,6 +1,6 @@
 # Installation
 
-Prism-Validator is designed to be easy to install on Windows, macOS, and Linux.
+PRISM is designed to be easy to install on Windows, macOS, and Linux.
 
 ## Prerequisites
 
@@ -15,8 +15,8 @@ Prism-Validator is designed to be easy to install on Windows, macOS, and Linux.
 Open your terminal and run:
 
 ```bash
-git clone https://github.com/MRI-Lab-Graz/prism-validator.git
-cd prism-validator
+git clone https://github.com/MRI-Lab-Graz/prism.git
+cd prism
 bash scripts/setup/setup.sh
 ```
 
@@ -25,8 +25,8 @@ bash scripts/setup/setup.sh
 Open Command Prompt or PowerShell and run:
 
 ```bat
-git clone https://github.com/MRI-Lab-Graz/prism-validator.git
-cd prism-validator
+git clone https://github.com/MRI-Lab-Graz/prism.git
+cd prism
 scripts\setup\setup-windows.bat
 ```
 
@@ -35,7 +35,7 @@ This will:
 2.  Install all necessary dependencies.
 3.  Prepare the application for use.
 
-Note: The CLI tools (`prism-validator.py`, `prism_tools.py`) intentionally enforce running from the repository-local virtual environment at `./.venv`.
+Note: The CLI tools (`prism.py`, `prism_tools.py`) intentionally enforce running from the repository-local virtual environment at `./.venv`.
 
 ## Manual Installation
 
@@ -43,8 +43,8 @@ If you prefer to set it up manually:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/MRI-Lab-Graz/prism-validator.git
-cd prism-validator
+git clone https://github.com/MRI-Lab-Graz/prism.git
+cd prism
 
 # 2. Create a virtual environment
 python -m venv .venv
@@ -66,11 +66,11 @@ To check if everything is installed correctly, try running the help command:
 ```bash
 # macOS/Linux
 source .venv/bin/activate
-python prism-validator.py --help
+python prism.py --help
 
 # Windows
 .venv\Scripts\activate
-python prism-validator.py --help
+python prism.py --help
 ```
 
 If you see the help message, you are ready to go!

@@ -1,5 +1,5 @@
 """
-Core validation logic for prism-validator
+Core validation logic for prism
 """
 
 import os

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-FAIR Data Export Module for Prism-Validator
+FAIR Data Export Module for PRISM
 Implements Dublin Core and DataCite metadata export for FAIR compliance
 """
 

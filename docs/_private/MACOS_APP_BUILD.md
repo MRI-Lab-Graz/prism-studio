@@ -1,6 +1,6 @@
 # macOS App Build (Private Notes)
 
-This document describes how to build a local macOS `.app` bundle for Prism-Validator.
+This document describes how to build a local macOS `.app` bundle for PRISM.
 
 It is intentionally **not included** in the official ReadTheDocs documentation stream:
 - It lives under `docs/_private/`.
@@ -13,7 +13,7 @@ If you want it to show up on ReadTheDocs later, add it to a `toctree` explicitly
 ## What you get
 
 - Output: `dist/PrismValidator.app`
-- Entry point: `prism-validator-gui.py` (desktop GUI)
+- Entry point: `prism-gui.py` (desktop GUI)
 - Build tool: PyInstaller (installed via `requirements-build.txt`)
 
 ---
@@ -67,7 +67,7 @@ open dist/PrismValidator.app
 
 - `scripts/build/build_macos_app.sh`
   - verifies `./.venv` exists and is active
-  - calls `python scripts/build/build_app.py --entry prism-validator-gui.py --mode onedir`
+  - calls `python scripts/build/build_app.py --entry prism-gui.py --mode onedir`
 
 - `scripts/build/build_app.py`
   - bundles required runtime folders into the app:
@@ -82,7 +82,7 @@ open dist/PrismValidator.app
 
 ## Common troubleshooting
 
-### “You are not running inside the prism-validator virtual environment!”
+### “You are not running inside the prism virtual environment!”
 
 Activate the venv first:
 
@@ -106,7 +106,7 @@ If it fails, the app should still build.
 You can skip icon generation:
 
 ```bash
-python scripts/build/build_app.py --entry prism-validator-gui.py --name PrismValidator --mode onedir --no-icon
+python scripts/build/build_app.py --entry prism-gui.py --name PrismValidator --mode onedir --no-icon
 ```
 
 ### Gatekeeper / “app is damaged” / prohibited sign
@@ -128,7 +128,7 @@ If you want a packaged app that starts the Flask web interface:
 
 ```bash
 source .venv/bin/activate
-python scripts/build/build_app.py --entry prism-validator-web.py --name PrismValidatorWeb --mode onefile --clean-output
+python scripts/build/build_app.py --entry prism-studio.py --name PrismValidatorWeb --mode onefile --clean-output
 ```
 
 Note: packaging the web server as a GUI app may require additional UX decisions (how to show logs/port, auto-opening the browser, etc.).

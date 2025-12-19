@@ -1,6 +1,6 @@
 # Windows Compatibility Summary
 
-This document summarizes the Windows compatibility improvements made to the prism-validator.
+This document summarizes the Windows compatibility improvements made to the prism.
 
 ## ✅ Completed Windows Compatibility Features
 
@@ -23,7 +23,7 @@ This document summarizes the Windows compatibility improvements made to the pris
 - **Dependency Installation**: Automatic `requirements.txt` installation
 - **Compatibility Testing**: Built-in Windows compatibility test
 - **User-Friendly Output**: Clear success/error messages with emojis
-- **Activation Script**: Generated `activate-prism-validator.bat` for easy reuse
+- **Activation Script**: Generated `activate-prism.bat` for easy reuse
 
 ### 4. Core Module Integration
 - **Updated `src/validator.py`**: Now uses cross-platform utilities for all file operations

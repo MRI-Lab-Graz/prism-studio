@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Simple setup script for prism-validator using standard Python tools
+# Simple setup script for prism using standard Python tools
 # Fallback for systems without 'uv'
 #
 
@@ -22,7 +22,7 @@ echo_success() {
 }
 
 # --- Main Script ---
-echo_info "Starting project setup for prism-validator (standard Python)..."
+echo_info "Starting project setup for prism (standard Python)..."
 
 # 1. Check for Python
 if ! command -v python3 &> /dev/null; then
@@ -64,10 +64,10 @@ if [ $? -ne 0 ]; then
 fi
 
 # Install the project in development mode (editable install)
-echo_info "Installing prism-validator in development mode..."
+echo_info "Installing prism in development mode..."
 pip install -e .
 if [ $? -ne 0 ]; then
-    echo_error "Failed to install prism-validator package. Check if setup.py exists."
+    echo_error "Failed to install prism package. Check if setup.py exists."
     # Continue anyway as this is optional for direct script usage
 fi
 
@@ -91,7 +91,7 @@ echo "To activate the virtual environment, run:"
 echo "source $VENV_DIR/bin/activate"
 echo ""
 echo "To run the validator:"
-echo "python3 prism-validator-streamlined.py /path/to/dataset"
+echo "python3 prism-streamlined.py /path/to/dataset"
 echo "or"
-echo "python3 prism-validator.py /path/to/dataset"
+echo "python3 prism.py /path/to/dataset"
 echo "--------------------------------------------------"

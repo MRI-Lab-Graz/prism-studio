@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive demonstration of prism-validator features
+Comprehensive demonstration of prism features
 """
 
 import os
@@ -30,7 +30,7 @@ def run_validator_demo():
 
         try:
             result = subprocess.run(
-                [sys.executable, "prism-validator.py", dataset_path],
+                [sys.executable, "prism.py", dataset_path],
                 capture_output=True,
                 text=True,
                 cwd=os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")),
@@ -49,7 +49,7 @@ def run_validator_demo():
 
 
 def main():
-    print("This script demonstrates the prism-validator on three different datasets:")
+    print("This script demonstrates the prism on three different datasets:")
     print("1. A consistent dataset (should pass)")
     print("2. A valid dataset with warnings (should pass with warnings)")
     print()

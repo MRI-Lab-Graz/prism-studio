@@ -1,5 +1,5 @@
 [tool.black]
 line-length = 88
 exclude = '''
-/(\.venv|venv|build|dist|\.git|\.eggs|archive|prism_validator\.egg-info|prism-validator\.egg-info|docs/_build)/
+/(\.venv|venv|build|dist|\.git|\.eggs|archive|prism\.egg-info|prism-validator\.egg-info|docs/_build)/
 '''

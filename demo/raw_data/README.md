@@ -18,9 +18,9 @@ Synthetic fitness assessment data.
 
 ## Usage with Web Interface
 
-These TSV files can be directly uploaded to the Prism-Validator web interface:
+These TSV files can be directly uploaded to the PRISM web interface:
 
-1. Start the web interface: `python prism-validator-web.py`
+1. Start the web interface: `python prism-studio.py`
 2. Go to **Survey Generator** → **Survey Conversion**
 3. Select a library path (use `demo/templates/survey`)
 4. Upload `survey_wellbeing_data.tsv`

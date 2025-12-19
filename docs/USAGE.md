@@ -1,6 +1,6 @@
 # Usage Guide
 
-Prism-Validator offers two ways to validate your data: a user-friendly **Web Interface** and a powerful **Command Line Interface (CLI)**.
+PRISM offers two ways to validate your data: a user-friendly **Web Interface** and a powerful **Command Line Interface (CLI)**.
 
 ## 🖥️ Web Interface (Recommended)
 
@@ -9,19 +9,19 @@ The web interface is the easiest way to validate your data. It provides a visual
 ### Starting the Web Interface
 
 1.  **Open your terminal/command prompt.**
-2.  **Navigate to the prism-validator folder.**
+2.  **Navigate to the prism folder.**
 3.  **Run the start command:**
 
     **macOS / Linux:**
     ```bash
     source .venv/bin/activate
-    python prism-validator-web.py
+    python prism-studio.py
     ```
 
     **Windows:**
     ```bat
     .venv\Scripts\activate
-    python prism-validator-web.py
+    python prism-studio.py
     ```
 
 4.  **Open your browser** and go to `http://127.0.0.1:5001`.
@@ -54,28 +54,28 @@ For advanced users or batch processing, the CLI allows you to run validations di
 ### Basic Usage
 
 ```bash
-python prism-validator.py /path/to/your/dataset
+python prism.py /path/to/your/dataset
 ```
 
 ### Options
 
 | Flag | Description | Example |
 |------|-------------|---------|
-| `--schema-version` | Specify which schema version to use (default: `stable`). | `python prism-validator.py /data --schema-version v0.1` |
-| `-v`, `--verbose` | Show detailed progress and file scanning info. | `python prism-validator.py /data -v` |
-| `--json` | Output results as JSON (compact). | `python prism-validator.py /data --json` |
-| `--json-pretty` | Output results as formatted JSON. | `python prism-validator.py /data --json-pretty` |
-| `--format` | Output format: json, sarif, junit, markdown, csv. | `python prism-validator.py /data --format sarif` |
-| `-o`, `--output` | Write output to file instead of stdout. | `python prism-validator.py /data --format junit -o report.xml` |
-| `--fix` | Automatically fix common issues. | `python prism-validator.py /data --fix` |
-| `--dry-run` | Preview what --fix would do without making changes. | `python prism-validator.py /data --dry-run` |
-| `--list-fixes` | List all auto-fixable issue types. | `python prism-validator.py --list-fixes` |
-| `--init-plugin` | Generate a plugin template in validators/. | `python prism-validator.py /data --init-plugin custom` |
-| `--list-plugins` | List loaded plugins for the dataset. | `python prism-validator.py /data --list-plugins` |
-| `--no-plugins` | Disable plugin loading. | `python prism-validator.py /data --no-plugins` |
-| `--bids` | Run the standard BIDS validator in addition to PRISM validation. | `python prism-validator.py /data --bids` |
-| `--bids-warnings` | Show warnings from the BIDS validator (default: hidden). | `python prism-validator.py /data --bids --bids-warnings` |
-| `--list-versions` | Show all available schema versions. | `python prism-validator.py --list-versions` |
+| `--schema-version` | Specify which schema version to use (default: `stable`). | `python prism.py /data --schema-version v0.1` |
+| `-v`, `--verbose` | Show detailed progress and file scanning info. | `python prism.py /data -v` |
+| `--json` | Output results as JSON (compact). | `python prism.py /data --json` |
+| `--json-pretty` | Output results as formatted JSON. | `python prism.py /data --json-pretty` |
+| `--format` | Output format: json, sarif, junit, markdown, csv. | `python prism.py /data --format sarif` |
+| `-o`, `--output` | Write output to file instead of stdout. | `python prism.py /data --format junit -o report.xml` |
+| `--fix` | Automatically fix common issues. | `python prism.py /data --fix` |
+| `--dry-run` | Preview what --fix would do without making changes. | `python prism.py /data --dry-run` |
+| `--list-fixes` | List all auto-fixable issue types. | `python prism.py --list-fixes` |
+| `--init-plugin` | Generate a plugin template in validators/. | `python prism.py /data --init-plugin custom` |
+| `--list-plugins` | List loaded plugins for the dataset. | `python prism.py /data --list-plugins` |
+| `--no-plugins` | Disable plugin loading. | `python prism.py /data --no-plugins` |
+| `--bids` | Run the standard BIDS validator in addition to PRISM validation. | `python prism.py /data --bids` |
+| `--bids-warnings` | Show warnings from the BIDS validator (default: hidden). | `python prism.py /data --bids --bids-warnings` |
+| `--list-versions` | Show all available schema versions. | `python prism.py --list-versions` |
 
 ### Example Output
 
@@ -100,12 +100,12 @@ python prism-validator.py /path/to/your/dataset
 
 ## 🔧 Auto-Fix Mode
 
-Prism-Validator can automatically fix common issues in your dataset.
+PRISM can automatically fix common issues in your dataset.
 
 ### Preview Fixes (Dry Run)
 
 ```bash
-python prism-validator.py /path/to/dataset --dry-run
+python prism.py /path/to/dataset --dry-run
 ```
 
 Output:
@@ -126,13 +126,13 @@ Output:
 ### Apply Fixes
 
 ```bash
-python prism-validator.py /path/to/dataset --fix
+python prism.py /path/to/dataset --fix
 ```
 
 ### List Fixable Issues
 
 ```bash
-python prism-validator.py --list-fixes
+python prism.py --list-fixes
 ```
 
 ---
@@ -143,16 +143,16 @@ python prism-validator.py --list-fixes
 
 ```bash
 # Compact JSON
-python prism-validator.py /data --json
+python prism.py /data --json
 
 # Pretty-printed JSON
-python prism-validator.py /data --json-pretty
+python prism.py /data --json-pretty
 ```
 
 ### SARIF (GitHub/GitLab Code Scanning)
 
 ```bash
-python prism-validator.py /data --format sarif -o report.sarif
+python prism.py /data --format sarif -o report.sarif
 ```
 
 Upload to GitHub Actions or GitLab SAST for inline annotations.
@@ -160,7 +160,7 @@ Upload to GitHub Actions or GitLab SAST for inline annotations.
 ### JUnit XML (CI Test Results)
 
 ```bash
-python prism-validator.py /data --format junit -o junit-results.xml
+python prism.py /data --format junit -o junit-results.xml
 ```
 
 Compatible with Jenkins, GitLab CI, GitHub Actions test reporting.
@@ -168,7 +168,7 @@ Compatible with Jenkins, GitLab CI, GitHub Actions test reporting.
 ### Markdown Report
 
 ```bash
-python prism-validator.py /data --format markdown -o report.md
+python prism.py /data --format markdown -o report.md
 ```
 
 Generates a human-readable report with validation badge.
@@ -176,7 +176,7 @@ Generates a human-readable report with validation badge.
 ### CSV Export
 
 ```bash
-python prism-validator.py /data --format csv -o issues.csv
+python prism.py /data --format csv -o issues.csv
 ```
 
 Simple spreadsheet-compatible export of all issues.
@@ -190,7 +190,7 @@ Extend validation with custom checks by creating plugins.
 ### Create a Plugin
 
 ```bash
-python prism-validator.py /path/to/dataset --init-plugin my_custom_checks
+python prism.py /path/to/dataset --init-plugin my_custom_checks
 ```
 
 This creates `<dataset>/validators/my_custom_checks.py` with a template.
@@ -220,13 +220,13 @@ def validate(dataset_path: str, context: dict) -> list:
 ### List Loaded Plugins
 
 ```bash
-python prism-validator.py /path/to/dataset --list-plugins
+python prism.py /path/to/dataset --list-plugins
 ```
 
 ### Disable Plugins
 
 ```bash
-python prism-validator.py /path/to/dataset --no-plugins
+python prism.py /path/to/dataset --no-plugins
 ```
 
 ---
@@ -259,7 +259,7 @@ CLI arguments override config file settings.
 
 ## 🌐 REST API
 
-Prism-Validator includes a REST API for programmatic access.
+PRISM includes a REST API for programmatic access.
 
 ### Endpoints
 

@@ -200,7 +200,7 @@ def convert_biometrics_table_to_prism_dataset(
         "Name": name or "PRISM Biometrics Dataset",
         "BIDSVersion": "1.8.0",
         "DatasetType": "raw",
-        "Authors": authors or ["prism-validator-web"],
+        "Authors": authors or ["prism-studio"],
     }
     _write_json(output_root / "dataset_description.json", dataset_description)
 

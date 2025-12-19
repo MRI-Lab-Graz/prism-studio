@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Prism-Validator: Streamlined main entry point
+PRISM: Streamlined main entry point
 
 A modular, BIDS-inspired validation tool for psychological research datasets.
 """
@@ -14,7 +14,7 @@ import argparse
 venv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".venv")
 if not getattr(sys, "frozen", False) and not sys.prefix.startswith(venv_path):
     print(
-        "❌ Error: You are not running inside the prism-validator virtual environment!"
+        "❌ Error: You are not running inside the prism virtual environment!"
     )
     print("   Please activate the venv first:")
     if os.name == "nt":  # Windows
@@ -50,7 +50,7 @@ except ImportError as e:
 def main():
     """Main CLI entry point"""
     parser = argparse.ArgumentParser(
-        description="Prism-Validator: BIDS-inspired validation for psychological research data",
+        description="PRISM: BIDS-inspired validation for psychological research data",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -144,7 +144,7 @@ Examples:
         action="store_true",
         help="Disable plugin loading",
     )
-    parser.add_argument("--version", action="version", version="Prism-Validator 1.3.0")
+    parser.add_argument("--version", action="version", version="PRISM 1.3.0")
 
     args = parser.parse_args()
 
@@ -173,7 +173,7 @@ Examples:
     if args.schema_info:
         # Import and show schema info (simplified for this streamlined version)
         print(f"Schema information for modality: {args.schema_info}")
-        print("(Use the full prism-validator.py for detailed schema inspection)")
+        print("(Use the full prism.py for detailed schema inspection)")
         return
 
     # Validate required arguments for operations that need dataset path

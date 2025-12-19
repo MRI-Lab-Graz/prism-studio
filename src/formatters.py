@@ -1,5 +1,5 @@
 """
-Output formatters for prism-validator.
+Output formatters for prism.
 
 Supports multiple output formats:
 - text: Human-readable terminal output (default)
@@ -57,7 +57,7 @@ def to_sarif(
                 "shortDescription": {
                     "text": issue.message.split("\n")[0][:200]  # First line, max 200 chars
                 },
-                "helpUri": f"https://prism-validator.readthedocs.io/en/latest/errors/#{issue.code}",
+                "helpUri": f"https://prism.readthedocs.io/en/latest/errors/#{issue.code}",
                 "properties": {
                     "category": _get_issue_category(issue.code),
                 }
@@ -106,9 +106,9 @@ def to_sarif(
         "runs": [{
             "tool": {
                 "driver": {
-                    "name": "prism-validator",
+                    "name": "prism",
                     "version": "1.3.0",
-                    "informationUri": "https://prism-validator.readthedocs.io",
+                    "informationUri": "https://prism.readthedocs.io",
                     "rules": list(rules.values())
                 }
             },
@@ -177,7 +177,7 @@ def to_junit_xml(
     """
     # Create root element
     testsuites = ET.Element("testsuites")
-    testsuites.set("name", "prism-validator")
+    testsuites.set("name", "prism")
     testsuites.set("tests", str(len(issues) + 1))  # +1 for the overall test
     
     error_count = sum(1 for i in issues if i.severity == Severity.ERROR)
@@ -214,7 +214,7 @@ def to_junit_xml(
     # Add overall validation test case
     overall_test = ET.SubElement(testsuite, "testcase")
     overall_test.set("name", "Dataset Validation")
-    overall_test.set("classname", "prism-validator")
+    overall_test.set("classname", "prism")
     overall_test.set("time", "0")
     
     if error_count > 0:
@@ -226,7 +226,7 @@ def to_junit_xml(
     for issue in issues:
         testcase = ET.SubElement(testsuite, "testcase")
         testcase.set("name", f"[{issue.code}] {issue.message[:100]}")
-        testcase.set("classname", f"prism-validator.{_get_issue_category(issue.code)}")
+        testcase.set("classname", f"prism.{_get_issue_category(issue.code)}")
         testcase.set("time", "0")
         
         if issue.severity == Severity.ERROR:

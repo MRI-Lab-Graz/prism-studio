@@ -1,6 +1,6 @@
 # Survey Data Import Workflow
 
-Prism-Validator provides a robust, study-agnostic workflow for converting external survey data (CSV/Excel) into a BIDS/PRISM compliant structure. This workflow ensures that your metadata ("Golden Master" Library) is consistent and that your data extraction is reproducible.
+PRISM provides a robust, study-agnostic workflow for converting external survey data (CSV/Excel) into a BIDS/PRISM compliant structure. This workflow ensures that your metadata ("Golden Master" Library) is consistent and that your data extraction is reproducible.
 
 ## Workflow Overview
 

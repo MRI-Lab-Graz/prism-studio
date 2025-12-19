@@ -1,5 +1,5 @@
 """
-BIDS integration utilities for prism-validator.
+BIDS integration utilities for prism.
 Handles compatibility with standard BIDS tools and apps.
 """
 
@@ -42,7 +42,7 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
 
     Args:
         dataset_root (str): Path to dataset root
-        supported_modalities (list): List of modality names supported by prism-validator
+        supported_modalities (list): List of modality names supported by prism
 
     Returns:
         list: List of rules added to .bidsignore
@@ -95,7 +95,7 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
             with open(bidsignore_path, mode) as f:
                 # Add header if creating new
                 if mode == "w":
-                    f.write("# .bidsignore created by prism-validator\n")
+                    f.write("# .bidsignore created by prism\n")
                     f.write(
                         "# Ignores custom modalities to ensure BIDS-App compatibility\n"
                     )
@@ -103,7 +103,7 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
                     f.write("\n")
 
                 if mode == "a":
-                    f.write("\n# Added by prism-validator\n")
+                    f.write("\n# Added by prism\n")
 
                 for rule in sorted(rules_to_add):
                     f.write(f"{rule}\n")

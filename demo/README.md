@@ -1,6 +1,6 @@
-# Prism-Validator Demo Data
+# PRISM Demo Data
 
-This folder contains **synthetic demo data** for testing and learning Prism-Validator workflows. All data is fictional and safe to share.
+This folder contains **synthetic demo data** for testing and learning PRISM workflows. All data is fictional and safe to share.
 
 ## Folder Structure
 
@@ -87,10 +87,10 @@ The `derivatives/` folder contains JSON recipes for computing scores:
 source .venv/bin/activate
 
 # Validate the well-organized PRISM dataset
-python prism-validator.py demo/prism_structure_example/
+python prism.py demo/prism_structure_example/
 
 # Try to validate the flat structure (will show errors!)
-python prism-validator.py demo/flat_structure_example/
+python prism.py demo/flat_structure_example/
 ```
 
 ### Using Templates
@@ -110,7 +110,7 @@ python prism_tools.py derivatives-surveys /path/to/dataset \
 ```
 
 ### Web Interface
-1. Start the web interface: `python prism-validator-web.py`
+1. Start the web interface: `python prism-studio.py`
 2. Upload the `prism_structure_example/` folder to see successful validation
 3. Try uploading `flat_structure_example/` to see common issues
 
@@ -138,7 +138,7 @@ python prism_tools.py derivatives-surveys /path/to/dataset \
 ### 5. PRISM Structure Example (`prism_structure_example/`)
 - Shows proper PRISM/BIDS-compatible organization
 - Includes JSON sidecars and correctly named files
-- Validates successfully with Prism-Validator
+- Validates successfully with PRISM
 
 ## Note
 

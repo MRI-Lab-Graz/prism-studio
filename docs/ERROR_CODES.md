@@ -1,6 +1,6 @@
 # Error Codes Reference
 
-This document describes all validation error codes used by Prism-Validator and how to fix them.
+This document describes all validation error codes used by PRISM and how to fix them.
 
 ## PRISM Error Code System
 
@@ -234,13 +234,13 @@ Many issues can be automatically fixed using `--fix`:
 
 ```bash
 # Preview fixes without applying
-python prism-validator.py /path/to/dataset --dry-run
+python prism.py /path/to/dataset --dry-run
 
 # Apply fixes
-python prism-validator.py /path/to/dataset --fix
+python prism.py /path/to/dataset --fix
 
 # List all fixable issues
-python prism-validator.py --list-fixes
+python prism.py --list-fixes
 ```
 
 **Auto-fixable issues:**
@@ -256,5 +256,5 @@ If you're still stuck after reading this documentation:
 
 1. Check [USAGE.md](USAGE.md) for general guidance
 2. Review example datasets in `docs/examples/`
-3. Open an issue on [GitHub](https://github.com/MRI-Lab-Graz/prism-validator/issues)
+3. Open an issue on [GitHub](https://github.com/MRI-Lab-Graz/prism/issues)
 4. Consult the [BIDS Specification](https://bids-specification.readthedocs.io/)

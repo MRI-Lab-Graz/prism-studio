@@ -6,7 +6,7 @@ Usage:
     python limesurvey_to_prism.py <limesurvey_structure.lss> [output_filename.json]
 
 This script parses a LimeSurvey XML export and generates a JSON sidecar
-compatible with the Prism-Validator survey schema.
+compatible with the PRISM survey schema.
 """
 
 import sys
