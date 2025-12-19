@@ -12,6 +12,7 @@ This module has been refactored to use modular components from src/web/:
 import os
 import sys
 import json
+import re
 import tempfile
 import shutil
 import webbrowser
@@ -187,7 +188,9 @@ if getattr(sys, 'frozen', False):
 else:
     app = Flask(__name__)
 
-app.secret_key = "prism-validator-secret-key"  # Change this in production
+# Secret key for session management
+# In production, set PRISM_SECRET_KEY environment variable
+app.secret_key = os.environ.get("PRISM_SECRET_KEY", "prism-validator-dev-key-change-in-production")
 app.config["MAX_CONTENT_LENGTH"] = (
     1024 * 1024 * 1024
 )  # 1GB max file size (metadata only)
@@ -1714,8 +1717,7 @@ def main():
             serve(app, host=host, port=port)
         except ImportError:
             print("⚠️  Waitress not installed, falling back to Flask development server")
-            app.run(host=host, port=port)
-            app.run(host=host, port=args.port, debug=False)
+            app.run(host=host, port=port, debug=False)
 
 
 @app.route("/survey-generator")
