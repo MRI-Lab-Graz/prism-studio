@@ -25,11 +25,11 @@ PRISM is a hybrid dataset validation tool for psychological experiments. It vali
    QUICK_START
    INSTALLATION
    USAGE
+   DEMO_DATA
    PRISM_TOOLS
    SURVEY_DATA_IMPORT
    SURVEY_LIBRARY
    WINDOWS_SETUP
-   examples/README
 
 .. toctree::
    :maxdepth: 2
