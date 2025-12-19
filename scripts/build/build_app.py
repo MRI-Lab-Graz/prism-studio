@@ -89,8 +89,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Build Prism Validator using PyInstaller")
     parser.add_argument(
         "--entry",
-        default="prism-validator-web.py",
-        help="Entry script to package (default: prism-validator-web.py)",
+        default="prism-studio.py",
+        help="Entry script to package (default: prism-studio.py)",
     )
     parser.add_argument(
         "--name",
