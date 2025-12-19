@@ -1521,11 +1521,19 @@ def api_survey_languages():
         else:
             library_path = str(fallback)
 
-    langs, default, template_count, i18n_count = _list_survey_template_languages(library_path)
+    # Support both root/survey/ structure and direct survey folder
+    library_root = Path(library_path)
+    survey_dir = library_root / "survey"
+    if survey_dir.is_dir():
+        effective_survey_dir = str(survey_dir)
+    else:
+        effective_survey_dir = library_path
+
+    langs, default, template_count, i18n_count = _list_survey_template_languages(effective_survey_dir)
     return jsonify({
         "languages": langs, 
         "default": default, 
-        "library_path": library_path,
+        "library_path": effective_survey_dir,
         "template_count": template_count,
         "i18n_count": i18n_count
     })
