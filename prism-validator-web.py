@@ -113,6 +113,14 @@ except Exception as import_error:
     convert_varioport = None
     print(f"⚠️  Could not import convert_varioport: {import_error}")
 
+try:
+    from batch_convert import batch_convert_folder, create_dataset_description, parse_bids_filename
+except Exception as import_error:
+    batch_convert_folder = None
+    create_dataset_description = None
+    parse_bids_filename = None
+    print(f"⚠️  Could not import batch_convert: {import_error}")
+
 
 def _list_survey_template_languages(library_path: str) -> tuple[list[str], str | None]:
     """Return (languages, default_language) from survey templates in a folder."""
@@ -1395,6 +1403,212 @@ def api_physio_convert():
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    finally:
+        try:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+        except Exception:
+            pass
+
+
+# Batch conversion job tracking
+_batch_convert_jobs = {}  # job_id -> {"logs": [], "status": "running"|"complete"|"error", "result_path": str|None}
+
+
+def _get_batch_job(job_id: str) -> dict:
+    """Get batch conversion job data."""
+    return _batch_convert_jobs.get(job_id, {"logs": [], "status": "unknown"})
+
+
+def _update_batch_job(job_id: str, **kwargs):
+    """Update batch conversion job data."""
+    if job_id not in _batch_convert_jobs:
+        _batch_convert_jobs[job_id] = {"logs": [], "status": "pending", "result_path": None}
+    _batch_convert_jobs[job_id].update(kwargs)
+
+
+def _add_batch_log(job_id: str, message: str, level: str = "info"):
+    """Add a log message to a batch conversion job."""
+    if job_id not in _batch_convert_jobs:
+        _batch_convert_jobs[job_id] = {"logs": [], "status": "running", "result_path": None}
+    _batch_convert_jobs[job_id]["logs"].append({"message": message, "level": level})
+
+
+@app.route("/api/batch-convert", methods=["POST"])
+def api_batch_convert():
+    """Batch convert physio/eyetracking files from a flat folder structure.
+    
+    Expects files uploaded with naming pattern: sub-XXX_ses-YYY_task-ZZZ.<ext>
+    Supported extensions: .raw, .vpd (physio), .edf (eyetracking)
+    
+    Returns a JSON with logs and download URL, or ZIP file directly based on 'format' param.
+    """
+    if not batch_convert_folder:
+        return jsonify({"error": "Batch conversion not available"}), 500
+
+    # Generate job ID
+    import uuid
+    job_id = str(uuid.uuid4())[:8]
+    logs = []
+    
+    def log_callback(message: str, level: str = "info"):
+        logs.append({"message": message, "level": level})
+
+    # Get form parameters
+    dataset_name = (request.form.get("dataset_name") or "Converted Dataset").strip()
+    modality_filter = request.form.get("modality", "all")
+    sampling_rate_str = request.form.get("sampling_rate", "").strip()
+    return_format = request.form.get("format", "zip")  # "zip" or "json"
+    
+    try:
+        sampling_rate = float(sampling_rate_str) if sampling_rate_str else None
+    except ValueError:
+        return jsonify({"error": "sampling_rate must be a number", "logs": logs}), 400
+    
+    if modality_filter not in ("all", "physio", "eyetracking"):
+        modality_filter = "all"
+    
+    log_callback(f"🚀 Starting batch conversion job {job_id}", "info")
+    log_callback(f"   Dataset name: {dataset_name}", "info")
+    log_callback(f"   Modality filter: {modality_filter}", "info")
+    if sampling_rate:
+        log_callback(f"   Physio sampling rate: {sampling_rate} Hz", "info")
+    
+    # Get uploaded files
+    files = request.files.getlist("files[]")
+    if not files:
+        files = request.files.getlist("files")
+    if not files:
+        return jsonify({"error": "No files uploaded", "logs": logs}), 400
+    
+    log_callback(f"📦 Received {len(files)} files", "info")
+    
+    # Validate file names before processing
+    valid_extensions = {".raw", ".vpd", ".edf"}
+    validated_files = []
+    validation_errors = []
+    
+    for f in files:
+        if not f or not f.filename:
+            continue
+        filename = secure_filename(f.filename)
+        ext = Path(filename).suffix.lower()
+        
+        if ext not in valid_extensions:
+            msg = f"{f.filename}: unsupported extension (use .raw, .vpd, or .edf)"
+            validation_errors.append(msg)
+            log_callback(f"⚠️  {msg}", "warning")
+            continue
+        
+        # Check naming pattern
+        parsed = parse_bids_filename(filename)
+        if not parsed:
+            msg = f"{f.filename}: invalid naming pattern (expected sub-XXX_ses-YYY_task-ZZZ.ext)"
+            validation_errors.append(msg)
+            log_callback(f"⚠️  {msg}", "warning")
+            continue
+        
+        validated_files.append((f, filename, parsed))
+        log_callback(f"✓ Validated: {filename}", "info")
+    
+    if not validated_files:
+        error_msg = "No valid files to convert."
+        if validation_errors:
+            error_msg += f" {len(validation_errors)} files had issues."
+        log_callback(f"❌ {error_msg}", "error")
+        return jsonify({"error": error_msg, "logs": logs}), 400
+    
+    log_callback(f"", "info")
+    log_callback(f"📋 {len(validated_files)} files ready for conversion", "info")
+    
+    # Create temp directories
+    tmp_dir = tempfile.mkdtemp(prefix="prism_batch_convert_")
+    try:
+        tmp_path = Path(tmp_dir)
+        input_dir = tmp_path / "input"
+        output_dir = tmp_path / "output"
+        input_dir.mkdir()
+        output_dir.mkdir()
+        
+        # Save uploaded files to input directory
+        log_callback(f"💾 Saving files to temporary directory...", "info")
+        for f, filename, _ in validated_files:
+            input_path = input_dir / filename
+            f.save(str(input_path))
+        
+        log_callback(f"", "info")
+        
+        # Run batch conversion with logging
+        result = batch_convert_folder(
+            input_dir,
+            output_dir,
+            physio_sampling_rate=sampling_rate,
+            modality_filter=modality_filter,
+            log_callback=log_callback,
+        )
+        
+        # Create dataset_description.json
+        create_dataset_description(output_dir, name=dataset_name)
+        log_callback(f"📄 Created dataset_description.json", "info")
+        
+        # Build response info
+        response_info = {
+            "job_id": job_id,
+            "success_count": result.success_count,
+            "error_count": result.error_count,
+            "skipped_count": len(result.skipped),
+            "logs": logs,
+            "converted": [],
+        }
+        
+        for conv in result.converted:
+            conv_info = {
+                "source": conv.source_path.name,
+                "modality": conv.modality,
+                "subject": conv.subject,
+                "session": conv.session,
+                "task": conv.task,
+                "success": conv.success,
+            }
+            if conv.error:
+                conv_info["error"] = conv.error
+            response_info["converted"].append(conv_info)
+        
+        # Create ZIP of output
+        log_callback(f"📦 Creating ZIP archive...", "info")
+        mem = io.BytesIO()
+        with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for file_path in output_dir.rglob("*"):
+                if file_path.is_file():
+                    arcname = file_path.relative_to(output_dir)
+                    zf.write(file_path, arcname)
+        mem.seek(0)
+        
+        log_callback(f"✅ Conversion complete!", "success")
+        
+        # Return based on format
+        if return_format == "json":
+            # Return JSON with logs (for polling/preview mode)
+            response_info["status"] = "complete"
+            return jsonify(response_info)
+        
+        # Default: Return ZIP file directly with logs in headers
+        # (Client can display these before download completes)
+        safe_name = re.sub(r"[^a-zA-Z0-9_-]", "_", dataset_name)[:50]
+        response = send_file(
+            mem,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name=f"{safe_name}_prism.zip",
+        )
+        # Add summary info as custom headers (limited, but useful)
+        response.headers['X-Prism-Success-Count'] = str(result.success_count)
+        response.headers['X-Prism-Error-Count'] = str(result.error_count)
+        response.headers['X-Prism-Skipped-Count'] = str(len(result.skipped))
+        return response
+        
+    except Exception as e:
+        log_callback(f"❌ Error: {str(e)}", "error")
+        return jsonify({"error": str(e), "logs": logs}), 500
     finally:
         try:
             shutil.rmtree(tmp_dir, ignore_errors=True)

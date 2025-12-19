@@ -34,6 +34,11 @@ jobs:
         pip install -r requirements.txt
         pip install -r requirements-build.txt
 
+    - name: Create survey_library directory
+      run: |
+        mkdir -p survey_library || mkdir survey_library
+      shell: bash
+
     - name: Build with PyInstaller
       run: |
         python scripts/build/build_app.py
@@ -44,13 +49,42 @@ jobs:
         cd dist
         zip -r ../${{ matrix.asset_name }} PrismValidator.app
 
-    - name: Move Windows Exe
+    - name: Copy Windows Exe
       if: runner.os == 'Windows'
       run: |
-        move dist\PrismValidator\PrismValidator.exe ${{ matrix.asset_name }}
+        copy dist\PrismValidator.exe ${{ matrix.asset_name }}
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact_name }}
         path: ${{ matrix.asset_name }}
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Download Windows Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: PrismValidator-Windows
+        
+    - name: Download macOS Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: PrismValidator-macOS
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        draft: false
+        prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+        generate_release_notes: true
+        files: |
+          PrismValidator.exe
+          PrismValidator.app.zip
