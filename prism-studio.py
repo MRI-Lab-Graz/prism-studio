@@ -1165,10 +1165,19 @@ def api_survey_convert():
         return jsonify({"error": f"Library path is not a directory: {library_path}"}), 400
     
     # Check if the library has any survey templates
+    # Support both root/survey/ structure and direct survey folder
     library_root = Path(library_path)
-    survey_templates = list(library_root.glob("survey-*.json"))
+    survey_dir = library_root / "survey"
+    if survey_dir.is_dir():
+        # User selected the root library folder, use survey/ subfolder
+        effective_survey_dir = survey_dir
+    else:
+        # User selected the survey folder directly (backwards compatibility)
+        effective_survey_dir = library_root
+    
+    survey_templates = list(effective_survey_dir.glob("survey-*.json"))
     if not survey_templates:
-        return jsonify({"error": f"No survey templates (survey-*.json) found in: {library_path}"}), 400
+        return jsonify({"error": f"No survey templates (survey-*.json) found in: {effective_survey_dir}. Expected either {library_path}/survey/ or survey-*.json files directly."}), 400
 
     survey_filter = (request.form.get("survey") or "").strip() or None
     id_column = (request.form.get("id_column") or "").strip() or None
@@ -1209,7 +1218,7 @@ def api_survey_convert():
                 return jsonify({"error": "Tabular data conversion is not available in this build"}), 500
             convert_survey_xlsx_to_prism_dataset(
                 input_path=input_path,
-                library_dir=library_path,
+                library_dir=str(effective_survey_dir),
                 output_root=output_root,
                 survey=survey_filter,
                 id_column=id_column,
@@ -1228,7 +1237,7 @@ def api_survey_convert():
                 return jsonify({"error": "LimeSurvey (.lsa) conversion is not available in this build"}), 500
             convert_survey_lsa_to_prism_dataset(
                 input_path=input_path,
-                library_dir=library_path,
+                library_dir=str(effective_survey_dir),
                 output_root=output_root,
                 survey=survey_filter,
                 id_column=id_column,
@@ -1315,12 +1324,25 @@ def api_survey_convert_validate():
     if not os.path.exists(library_path) or not os.path.isdir(library_path):
         return jsonify({"error": f"Library path is not a directory: {library_path}", "log": log_messages}), 400
     
+    # Support both root/survey/ structure and direct survey folder
     library_root = Path(library_path)
-    survey_templates = list(library_root.glob("survey-*.json"))
+    survey_dir = library_root / "survey"
+    if survey_dir.is_dir():
+        effective_survey_dir = survey_dir
+        add_log(f"Using survey subfolder: {survey_dir}", "info")
+    else:
+        effective_survey_dir = library_root
+    
+    survey_templates = list(effective_survey_dir.glob("survey-*.json"))
     if not survey_templates:
-        return jsonify({"error": f"No survey templates found in: {library_path}", "log": log_messages}), 400
+        return jsonify({"error": f"No survey templates found in: {effective_survey_dir}", "log": log_messages}), 400
 
     add_log(f"Found {len(survey_templates)} survey template(s) in library", "info")
+    
+    # Check for participants.json template
+    participants_template = library_root / "participants.json"
+    if participants_template.exists():
+        add_log("Found participants.json template", "info")
 
     alias_filename = None
     if alias_upload and getattr(alias_upload, "filename", ""):
@@ -1359,7 +1381,7 @@ def api_survey_convert_validate():
                 return jsonify({"error": "Tabular data conversion not available", "log": log_messages}), 500
             convert_survey_xlsx_to_prism_dataset(
                 input_path=input_path,
-                library_dir=library_path,
+                library_dir=str(effective_survey_dir),
                 output_root=output_root,
                 survey=survey_filter,
                 id_column=id_column,
@@ -1378,7 +1400,7 @@ def api_survey_convert_validate():
                 return jsonify({"error": "LimeSurvey conversion not available", "log": log_messages}), 500
             convert_survey_lsa_to_prism_dataset(
                 input_path=input_path,
-                library_dir=library_path,
+                library_dir=str(effective_survey_dir),
                 output_root=output_root,
                 survey=survey_filter,
                 id_column=id_column,
@@ -1532,11 +1554,17 @@ def api_biometrics_convert():
     if not os.path.exists(library_path) or not os.path.isdir(library_path):
         return jsonify({"error": f"Library path is not a directory: {library_path}"}), 400
     
-    # Check if the library has any biometrics templates
+    # Support both root/biometrics/ structure and direct biometrics folder
     library_root = Path(library_path)
-    biometrics_templates = list(library_root.glob("biometrics-*.json"))
+    biometrics_dir = library_root / "biometrics"
+    if biometrics_dir.is_dir():
+        effective_biometrics_dir = biometrics_dir
+    else:
+        effective_biometrics_dir = library_root
+    
+    biometrics_templates = list(effective_biometrics_dir.glob("biometrics-*.json"))
     if not biometrics_templates:
-        return jsonify({"error": f"No biometrics templates (biometrics-*.json) found in: {library_path}"}), 400
+        return jsonify({"error": f"No biometrics templates (biometrics-*.json) found in: {effective_biometrics_dir}. Expected either {library_path}/biometrics/ or biometrics-*.json files directly."}), 400
 
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
@@ -1554,7 +1582,7 @@ def api_biometrics_convert():
 
         convert_biometrics_table_to_prism_dataset(
             input_path=input_path,
-            library_dir=library_path,
+            library_dir=str(effective_biometrics_dir),
             output_root=output_root,
             id_column=id_column,
             session_column=session_column,
