@@ -1,0 +1,4 @@
+participant_id	session	age	sex	education	WB01	WB02	WB03	WB04	WB05
+sub-001	ses-01	28	f	4	4	5		4	5
+sub-002			m	5	3	4	3	3	4
+sub-003	ses-02	22		3			1	5	5

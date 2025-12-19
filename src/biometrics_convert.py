@@ -82,6 +82,8 @@ def _read_table_as_dataframe(*, input_path: Path, sheet: str | int | None = None
     suffix = input_path.suffix.lower()
     if suffix == ".csv":
         return pd.read_csv(input_path)
+    if suffix == ".tsv":
+        return pd.read_csv(input_path, sep="\t")
     if suffix == ".xlsx":
         sheet_name: str | int | None = sheet
         if sheet_name is None:
@@ -90,7 +92,7 @@ def _read_table_as_dataframe(*, input_path: Path, sheet: str | int | None = None
             sheet_name = int(sheet_name)
         return pd.read_excel(input_path, sheet_name=sheet_name)
 
-    raise ValueError("Only .csv and .xlsx files are supported for biometrics conversion")
+    raise ValueError("Supported formats: .csv, .xlsx, .tsv")
 
 
 def _load_biometrics_library(library_dir: Path) -> tuple[dict[str, list[str]], dict[str, dict[str, Any]]]:
@@ -148,8 +150,8 @@ def convert_biometrics_table_to_prism_dataset(
     library_dir = Path(library_dir).resolve()
     output_root = Path(output_root).resolve()
 
-    if input_path.suffix.lower() not in {".csv", ".xlsx"}:
-        raise ValueError("Biometrics input must be a .csv or .xlsx file")
+    if input_path.suffix.lower() not in {".csv", ".xlsx", ".tsv"}:
+        raise ValueError("Biometrics input must be a .csv, .xlsx, or .tsv file")
 
     if not library_dir.exists() or not library_dir.is_dir():
         raise ValueError(f"Biometrics library path is not a directory: {library_dir}")

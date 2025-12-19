@@ -1,0 +1,10 @@
+# Ignore PRISM-specific files that are not part of BIDS standard
+# This ensures compatibility with BIDS apps like fMRIPrep
+
+# Added by prism-validator
+*_report_*.txt
+biometrics/
+events/
+eyetracking/
+physio/
+survey/

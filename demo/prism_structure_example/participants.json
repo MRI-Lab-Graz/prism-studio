@@ -1,0 +1,24 @@
+{
+  "participant_id": {
+    "Description": "Unique participant identifier"
+  },
+  "age": {
+    "Description": "Age of participant in years",
+    "Units": "years"
+  },
+  "sex": {
+    "Description": "Biological sex",
+    "Levels": {
+      "M": "Male",
+      "F": "Female"
+    }
+  },
+  "handedness": {
+    "Description": "Dominant hand",
+    "Levels": {
+      "R": "Right-handed",
+      "L": "Left-handed",
+      "A": "Ambidextrous"
+    }
+  }
+}

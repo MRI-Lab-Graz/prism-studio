@@ -226,8 +226,8 @@
 
                             <div class="row g-3 align-items-end">
                                 <div class="col-md-4">
-                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx or .lsa)</label>
-                                    <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa">
+                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa)</label>
+                                    <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv">
                                 </div>
                                 <div class="col-md-4">
                                     <label for="convertDatasetName" class="form-label">Dataset Name (optional)</label>
@@ -272,6 +272,51 @@
 
                             <div id="convertError" class="alert alert-danger d-none mt-3"></div>
                             <div id="convertInfo" class="alert alert-info d-none mt-3"></div>
+
+                            <!-- Conversion Log Output -->
+                            <div id="conversionLogContainer" class="d-none mt-3">
+                                <div class="card border-secondary">
+                                    <div class="card-header bg-dark text-white py-2 d-flex justify-content-between align-items-center">
+                                        <span><i class="fas fa-terminal me-2"></i>Conversion Log</span>
+                                        <button type="button" class="btn btn-sm btn-outline-light" id="toggleLogBtn" title="Toggle log">
+                                            <i class="fas fa-chevron-down"></i>
+                                        </button>
+                                    </div>
+                                    <div class="card-body p-0" id="conversionLogBody">
+                                        <pre id="conversionLog" class="m-0 p-3 bg-dark text-light" style="max-height: 300px; overflow-y: auto; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; white-space: pre-wrap;"></pre>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Validation Results -->
+                            <div id="validationResultsContainer" class="d-none mt-3">
+                                <div class="card" id="validationResultsCard">
+                                    <div class="card-header py-2 d-flex justify-content-between align-items-center" id="validationResultsHeader">
+                                        <span><i class="fas fa-clipboard-check me-2"></i>Validation Results</span>
+                                        <span id="validationBadge" class="badge"></span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="validationSummary" class="mb-3"></div>
+                                        <div id="validationDetails"></div>
+                                        <div id="downloadSection" class="d-none mt-3 text-center">
+                                            <button class="btn btn-success btn-lg" id="downloadZipBtn">
+                                                <i class="fas fa-download me-2"></i>Download Validated Dataset
+                                            </button>
+                                            <p class="text-muted small mt-2">
+                                                <i class="fas fa-check-circle me-1"></i>Dataset passed validation
+                                            </p>
+                                        </div>
+                                        <div id="downloadWarningSection" class="d-none mt-3 text-center">
+                                            <button class="btn btn-warning btn-lg" id="downloadZipWarningBtn">
+                                                <i class="fas fa-download me-2"></i>Download Dataset (with warnings)
+                                            </button>
+                                            <p class="text-muted small mt-2">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Dataset has warnings but can still be used
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -306,8 +351,8 @@
 
                             <div class="row g-3 align-items-end">
                                 <div class="col-md-4">
-                                    <label for="biometricsDataFile" class="form-label">Biometrics File (.xlsx or .csv)</label>
-                                    <input class="form-control" type="file" id="biometricsDataFile" accept=".xlsx,.csv">
+                                    <label for="biometricsDataFile" class="form-label">Biometrics File (.xlsx, .csv, .tsv)</label>
+                                    <input class="form-control" type="file" id="biometricsDataFile" accept=".xlsx,.csv,.tsv">
                                 </div>
                                 <div class="col-md-4">
                                     <label for="biometricsDatasetName" class="form-label">Dataset Name (optional)</label>
@@ -917,11 +962,173 @@ document.addEventListener('DOMContentLoaded', function() {
     convertExcelFile.addEventListener('change', updateConvertBtn);
     updateConvertBtn();
 
+    // Terminal log elements
+    const conversionLogContainer = document.getElementById('conversionLogContainer');
+    const conversionLog = document.getElementById('conversionLog');
+    const conversionLogBody = document.getElementById('conversionLogBody');
+    const toggleLogBtn = document.getElementById('toggleLogBtn');
+    const validationResultsContainer = document.getElementById('validationResultsContainer');
+    const validationResultsCard = document.getElementById('validationResultsCard');
+    const validationResultsHeader = document.getElementById('validationResultsHeader');
+    const validationBadge = document.getElementById('validationBadge');
+    const validationSummary = document.getElementById('validationSummary');
+    const validationDetails = document.getElementById('validationDetails');
+    const downloadSection = document.getElementById('downloadSection');
+    const downloadWarningSection = document.getElementById('downloadWarningSection');
+    const downloadZipBtn = document.getElementById('downloadZipBtn');
+    const downloadZipWarningBtn = document.getElementById('downloadZipWarningBtn');
+
+    let currentZipBlob = null;
+
+    // Toggle log visibility
+    if (toggleLogBtn) {
+        toggleLogBtn.addEventListener('click', function() {
+            conversionLogBody.classList.toggle('d-none');
+            const icon = toggleLogBtn.querySelector('i');
+            if (conversionLogBody.classList.contains('d-none')) {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-right');
+            } else {
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-down');
+            }
+        });
+    }
+
+    function appendLog(message, type = 'info') {
+        const colors = {
+            'info': '#17a2b8',
+            'success': '#28a745',
+            'warning': '#ffc107',
+            'error': '#dc3545',
+            'step': '#6c757d'
+        };
+        const timestamp = new Date().toLocaleTimeString();
+        const color = colors[type] || colors.info;
+        conversionLog.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+        conversionLog.scrollTop = conversionLog.scrollHeight;
+    }
+
+    function resetConversionUI() {
+        conversionLogContainer.classList.add('d-none');
+        validationResultsContainer.classList.add('d-none');
+        downloadSection.classList.add('d-none');
+        downloadWarningSection.classList.add('d-none');
+        conversionLog.innerHTML = '';
+        validationSummary.innerHTML = '';
+        validationDetails.innerHTML = '';
+        currentZipBlob = null;
+    }
+
+    function displayValidationResults(validation) {
+        validationResultsContainer.classList.remove('d-none');
+        
+        const errors = validation.errors || [];
+        const warnings = validation.warnings || [];
+        const isValid = errors.length === 0;
+        
+        // Update card styling based on result
+        validationResultsCard.classList.remove('border-success', 'border-warning', 'border-danger');
+        validationResultsHeader.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'text-white', 'text-dark');
+        
+        if (isValid && warnings.length === 0) {
+            validationResultsCard.classList.add('border-success');
+            validationResultsHeader.classList.add('bg-success', 'text-white');
+            validationBadge.className = 'badge bg-light text-success';
+            validationBadge.textContent = '✓ Valid';
+        } else if (isValid) {
+            validationResultsCard.classList.add('border-warning');
+            validationResultsHeader.classList.add('bg-warning', 'text-dark');
+            validationBadge.className = 'badge bg-light text-warning';
+            validationBadge.textContent = `⚠ ${warnings.length} Warning(s)`;
+        } else {
+            validationResultsCard.classList.add('border-danger');
+            validationResultsHeader.classList.add('bg-danger', 'text-white');
+            validationBadge.className = 'badge bg-light text-danger';
+            validationBadge.textContent = `✗ ${errors.length} Error(s)`;
+        }
+        
+        // Summary
+        const summary = validation.summary || {};
+        validationSummary.innerHTML = `
+            <div class="row text-center">
+                <div class="col-4">
+                    <div class="h4 mb-0 ${errors.length > 0 ? 'text-danger' : 'text-success'}">${errors.length}</div>
+                    <small class="text-muted">Errors</small>
+                </div>
+                <div class="col-4">
+                    <div class="h4 mb-0 ${warnings.length > 0 ? 'text-warning' : 'text-success'}">${warnings.length}</div>
+                    <small class="text-muted">Warnings</small>
+                </div>
+                <div class="col-4">
+                    <div class="h4 mb-0 text-info">${summary.files_created || 'n/a'}</div>
+                    <small class="text-muted">Files</small>
+                </div>
+            </div>
+        `;
+        
+        // Details
+        let detailsHtml = '';
+        if (errors.length > 0) {
+            detailsHtml += '<h6 class="text-danger mt-3"><i class="fas fa-times-circle me-1"></i>Errors</h6><ul class="list-unstyled">';
+            errors.forEach(e => {
+                detailsHtml += `<li class="text-danger small"><i class="fas fa-times me-1"></i>${escapeHtml(e)}</li>`;
+            });
+            detailsHtml += '</ul>';
+        }
+        if (warnings.length > 0) {
+            detailsHtml += '<h6 class="text-warning mt-3"><i class="fas fa-exclamation-triangle me-1"></i>Warnings</h6><ul class="list-unstyled">';
+            warnings.forEach(w => {
+                detailsHtml += `<li class="text-warning small"><i class="fas fa-exclamation me-1"></i>${escapeHtml(w)}</li>`;
+            });
+            detailsHtml += '</ul>';
+        }
+        validationDetails.innerHTML = detailsHtml;
+        
+        // Show appropriate download button
+        if (isValid && warnings.length === 0) {
+            downloadSection.classList.remove('d-none');
+            downloadWarningSection.classList.add('d-none');
+        } else if (isValid) {
+            downloadSection.classList.add('d-none');
+            downloadWarningSection.classList.remove('d-none');
+        } else {
+            downloadSection.classList.add('d-none');
+            downloadWarningSection.classList.add('d-none');
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function downloadCurrentZip() {
+        if (!currentZipBlob) return;
+        const url = window.URL.createObjectURL(currentZipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'prism_survey_dataset.zip';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    }
+
+    if (downloadZipBtn) {
+        downloadZipBtn.addEventListener('click', downloadCurrentZip);
+    }
+    if (downloadZipWarningBtn) {
+        downloadZipWarningBtn.addEventListener('click', downloadCurrentZip);
+    }
+
     convertBtn.addEventListener('click', function() {
         convertError.classList.add('d-none');
         convertInfo.classList.add('d-none');
         convertError.textContent = '';
         convertInfo.textContent = '';
+        resetConversionUI();
 
         const libraryPath = convertLibraryPathInput ? convertLibraryPathInput.value.trim() : '';
         if (!libraryPath) {
@@ -935,66 +1142,99 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Show log container
+        conversionLogContainer.classList.remove('d-none');
+        conversionLogBody.classList.remove('d-none');
+        const icon = toggleLogBtn.querySelector('i');
+        icon.classList.remove('fa-chevron-right');
+        icon.classList.add('fa-chevron-down');
+
+        appendLog(`Starting conversion of: ${file.name}`, 'info');
+        appendLog(`Using library: ${libraryPath}`, 'step');
+
         const formData = new FormData();
-        // Backend accepts both field names; keep 'excel' for backwards compatibility.
         formData.append('excel', file);
 
         const alias = convertAliasFile && convertAliasFile.files && convertAliasFile.files[0];
         if (alias) {
             formData.append('alias', alias);
+            appendLog(`Using alias file: ${alias.name}`, 'step');
         }
 
-        if (convertLibraryPathInput && convertLibraryPathInput.value.trim()) {
-            formData.append('library_path', convertLibraryPathInput.value.trim());
-        }
+        formData.append('library_path', libraryPath);
         formData.append('dataset_name', convertDatasetName.value.trim());
         formData.append('unknown', convertUnknown.value);
         formData.append('language', convertLanguage ? convertLanguage.value : 'auto');
+        formData.append('validate', 'true');  // Request validation
 
         convertBtn.disabled = true;
-        convertInfo.textContent = 'Converting... this may take a moment.';
-        convertInfo.classList.remove('d-none');
+        appendLog('Uploading file and starting conversion...', 'info');
 
-        fetch('/api/survey-convert', {
+        fetch('/api/survey-convert-validate', {
             method: 'POST',
             body: formData,
         })
         .then(async response => {
-            if (!response.ok) {
-                const data = await response.json().catch(() => null);
-                const msg = data && data.error ? data.error : 'Conversion failed';
-                throw new Error(msg);
+            const contentType = response.headers.get('content-type') || '';
+            
+            if (contentType.includes('application/json')) {
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Conversion failed');
+                }
+                return data;
+            } else {
+                // Fallback: direct ZIP download (old API)
+                if (!response.ok) {
+                    throw new Error('Conversion failed');
+                }
+                const blob = await response.blob();
+                return { blob, validation: null };
             }
-
-            const detected = {
-                language: response.headers.get('X-Prism-Detected-Language'),
-                platform: response.headers.get('X-Prism-Detected-SoftwarePlatform'),
-                version: response.headers.get('X-Prism-Detected-SoftwareVersion'),
-            };
-
-            const blob = await response.blob();
-            return { blob, detected };
         })
-        .then(({ blob, detected }) => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'prism_survey_dataset.zip';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-
-            const parts = [];
-            if (detected && detected.language) parts.push(`language=${detected.language}`);
-            if (detected && detected.platform) {
-                if (detected.version) parts.push(`${detected.platform} ${detected.version}`);
-                else parts.push(`${detected.platform}`);
+        .then(data => {
+            if (data.log && Array.isArray(data.log)) {
+                data.log.forEach(entry => {
+                    appendLog(entry.message, entry.type || 'info');
+                });
             }
-            const detectedMsg = parts.length ? ` Detected: ${parts.join(', ')}.` : '';
-            convertInfo.textContent = 'Done. Your ZIP download should start automatically.' + detectedMsg;
+
+            if (data.validation) {
+                const v = data.validation;
+                const errorCount = (v.errors || []).length;
+                const warningCount = (v.warnings || []).length;
+                
+                if (errorCount === 0 && warningCount === 0) {
+                    appendLog('✓ Validation passed - dataset is valid!', 'success');
+                } else if (errorCount === 0) {
+                    appendLog(`⚠ Validation passed with ${warningCount} warning(s)`, 'warning');
+                } else {
+                    appendLog(`✗ Validation failed with ${errorCount} error(s)`, 'error');
+                }
+                
+                displayValidationResults(data.validation);
+            }
+
+            if (data.zip_base64) {
+                // Decode base64 ZIP
+                const byteCharacters = atob(data.zip_base64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                currentZipBlob = new Blob([byteArray], { type: 'application/zip' });
+                appendLog('Dataset ready for download', 'success');
+            } else if (data.blob) {
+                currentZipBlob = data.blob;
+                appendLog('Dataset ready for download', 'success');
+            }
+
+            convertInfo.textContent = 'Conversion complete. See results below.';
             convertInfo.classList.remove('d-none');
         })
         .catch(err => {
+            appendLog(`Error: ${err.message}`, 'error');
             convertError.textContent = err.message;
             convertError.classList.remove('d-none');
         })

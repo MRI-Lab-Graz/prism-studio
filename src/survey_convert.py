@@ -170,10 +170,12 @@ def convert_survey_xlsx_to_prism_dataset(
     if isinstance(sheet_arg, str) and sheet_arg.isdigit():
         sheet_arg = int(sheet_arg)
 
-    if input_path.suffix.lower() not in {".xlsx"}:
-        raise ValueError("Currently only .xlsx input is supported.")
+    suffix = input_path.suffix.lower()
+    if suffix not in {".xlsx", ".csv", ".tsv"}:
+        raise ValueError("Supported formats: .xlsx, .csv, .tsv")
 
-    df = _read_table_as_dataframe(input_path=input_path, kind="xlsx", sheet=sheet_arg)
+    kind = "xlsx" if suffix == ".xlsx" else ("csv" if suffix == ".csv" else "tsv")
+    df = _read_table_as_dataframe(input_path=input_path, kind=kind, sheet=sheet_arg)
 
     return _convert_survey_dataframe_to_prism_dataset(
         df=df,
@@ -260,6 +262,28 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
 
         if df is None or df.empty:
             raise ValueError("Input table is empty.")
+
+        return df.rename(columns={c: str(c).strip() for c in df.columns})
+
+    if kind == "csv":
+        try:
+            df = pd.read_csv(input_path)
+        except Exception as e:
+            raise ValueError(f"Failed to read CSV: {e}") from e
+
+        if df is None or df.empty:
+            raise ValueError("Input CSV is empty.")
+
+        return df.rename(columns={c: str(c).strip() for c in df.columns})
+
+    if kind == "tsv":
+        try:
+            df = pd.read_csv(input_path, sep="\t")
+        except Exception as e:
+            raise ValueError(f"Failed to read TSV: {e}") from e
+
+        if df is None or df.empty:
+            raise ValueError("Input TSV is empty.")
 
         return df.rename(columns={c: str(c).strip() for c in df.columns})
 

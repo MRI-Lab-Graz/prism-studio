@@ -1,0 +1,11 @@
+participant_id	session	age	sex	education	handedness	WB01	WB02	WB03	WB04	WB05	completion_date
+DEMO001	baseline	28	f	4	r	4	4	2	3	4	2025-01-15
+DEMO002	baseline	34	m	5	r	3	3	3	3	3	2025-01-16
+DEMO003	baseline	22	f	3	r	5	5	1	5	5	2025-01-17
+DEMO004	baseline	45	m	6	l	2	2	4	2	2	2025-01-18
+DEMO005	baseline	31	f	4	r	4	3	2	4	3	2025-01-19
+DEMO006	baseline	27	o	5	r	3	4	3	3	4	2025-01-20
+DEMO007	baseline	52	m	4	r	4	4	2	4	4	2025-01-21
+DEMO008	baseline	19	f	2	r	2	3	4	2	3	2025-01-22
+DEMO009	baseline	38	m	5	l	5	4	1	5	4	2025-01-23
+DEMO010	baseline	41	f	6	r	3	3	3	3	3	2025-01-24

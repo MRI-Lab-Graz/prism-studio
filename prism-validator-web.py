@@ -1147,8 +1147,8 @@ def api_survey_convert():
 
     filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
-    if suffix not in {".xlsx", ".lsa"}:
-        return jsonify({"error": "Only .xlsx and .lsa files are supported"}), 400
+    if suffix not in {".xlsx", ".lsa", ".csv", ".tsv"}:
+        return jsonify({"error": "Supported formats: .xlsx, .lsa, .csv, .tsv"}), 400
 
     alias_filename = None
     alias_suffix = None
@@ -1204,9 +1204,9 @@ def api_survey_convert():
             except Exception:
                 pass
 
-        if suffix == ".xlsx":
+        if suffix in {".xlsx", ".csv", ".tsv"}:
             if not convert_survey_xlsx_to_prism_dataset:
-                return jsonify({"error": "Excel conversion is not available in this build"}), 500
+                return jsonify({"error": "Tabular data conversion is not available in this build"}), 500
             convert_survey_xlsx_to_prism_dataset(
                 input_path=input_path,
                 library_dir=library_path,
@@ -1223,7 +1223,7 @@ def api_survey_convert():
                 language=language,
                 alias_file=alias_path,
             )
-        else:
+        elif suffix == ".lsa":
             if not convert_survey_lsa_to_prism_dataset:
                 return jsonify({"error": "LimeSurvey (.lsa) conversion is not available in this build"}), 500
             convert_survey_lsa_to_prism_dataset(
@@ -1276,6 +1276,217 @@ def api_survey_convert():
             pass
 
 
+@app.route("/api/survey-convert-validate", methods=["POST"])
+def api_survey_convert_validate():
+    """Convert survey data and validate the result before allowing download.
+    
+    Returns JSON with:
+    - log: Array of log messages with type (info, success, warning, error)
+    - validation: Object with errors, warnings, and summary
+    - zip_base64: Base64-encoded ZIP file (only if conversion succeeded)
+    """
+    import base64
+    
+    if not convert_survey_xlsx_to_prism_dataset and not convert_survey_lsa_to_prism_dataset:
+        return jsonify({"error": "Survey conversion module not available"}), 500
+
+    log_messages = []
+    
+    def add_log(message, msg_type="info"):
+        log_messages.append({"message": message, "type": msg_type})
+
+    uploaded_file = request.files.get("excel") or request.files.get("file")
+    alias_upload = request.files.get("alias") or request.files.get("alias_file")
+    library_path = (request.form.get("library_path") or "").strip()
+
+    if not uploaded_file or not getattr(uploaded_file, "filename", ""):
+        return jsonify({"error": "Missing input file", "log": log_messages}), 400
+
+    filename = secure_filename(uploaded_file.filename)
+    suffix = Path(filename).suffix.lower()
+    if suffix not in {".xlsx", ".lsa", ".csv", ".tsv"}:
+        return jsonify({"error": "Supported formats: .xlsx, .lsa, .csv, .tsv", "log": log_messages}), 400
+
+    add_log(f"Processing file: {filename}", "info")
+
+    if not library_path:
+        return jsonify({"error": "Survey template library path is required.", "log": log_messages}), 400
+
+    if not os.path.exists(library_path) or not os.path.isdir(library_path):
+        return jsonify({"error": f"Library path is not a directory: {library_path}", "log": log_messages}), 400
+    
+    library_root = Path(library_path)
+    survey_templates = list(library_root.glob("survey-*.json"))
+    if not survey_templates:
+        return jsonify({"error": f"No survey templates found in: {library_path}", "log": log_messages}), 400
+
+    add_log(f"Found {len(survey_templates)} survey template(s) in library", "info")
+
+    alias_filename = None
+    if alias_upload and getattr(alias_upload, "filename", ""):
+        alias_filename = secure_filename(alias_upload.filename)
+        alias_suffix = Path(alias_filename).suffix.lower()
+        if alias_suffix and alias_suffix not in {".tsv", ".txt"}:
+            return jsonify({"error": "Alias file must be a .tsv or .txt mapping file", "log": log_messages}), 400
+
+    survey_filter = (request.form.get("survey") or "").strip() or None
+    id_column = (request.form.get("id_column") or "").strip() or None
+    session_column = (request.form.get("session_column") or "").strip() or None
+    sheet = (request.form.get("sheet") or "0").strip() or 0
+    unknown = (request.form.get("unknown") or "warn").strip() or "warn"
+    dataset_name = (request.form.get("dataset_name") or "").strip() or None
+    language = (request.form.get("language") or "").strip() or None
+
+    tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_validate_")
+    try:
+        tmp_dir_path = Path(tmp_dir)
+        input_path = tmp_dir_path / filename
+        uploaded_file.save(str(input_path))
+
+        alias_path = None
+        if alias_filename:
+            alias_path = tmp_dir_path / alias_filename
+            alias_upload.save(str(alias_path))
+            add_log(f"Using alias mapping file: {alias_filename}", "step")
+
+        output_root = tmp_dir_path / "prism_dataset"
+
+        add_log("Starting data conversion...", "info")
+
+        # Run conversion
+        if suffix in {".xlsx", ".csv", ".tsv"}:
+            if not convert_survey_xlsx_to_prism_dataset:
+                return jsonify({"error": "Tabular data conversion not available", "log": log_messages}), 500
+            convert_survey_xlsx_to_prism_dataset(
+                input_path=input_path,
+                library_dir=library_path,
+                output_root=output_root,
+                survey=survey_filter,
+                id_column=id_column,
+                session_column=session_column,
+                sheet=sheet,
+                unknown=unknown,
+                dry_run=False,
+                force=True,
+                name=dataset_name,
+                authors=["prism-validator-web"],
+                language=language,
+                alias_file=alias_path,
+            )
+        elif suffix == ".lsa":
+            if not convert_survey_lsa_to_prism_dataset:
+                return jsonify({"error": "LimeSurvey conversion not available", "log": log_messages}), 500
+            convert_survey_lsa_to_prism_dataset(
+                input_path=input_path,
+                library_dir=library_path,
+                output_root=output_root,
+                survey=survey_filter,
+                id_column=id_column,
+                session_column=session_column,
+                unknown=unknown,
+                dry_run=False,
+                force=True,
+                name=dataset_name,
+                authors=["prism-validator-web"],
+                language=language,
+                alias_file=alias_path,
+            )
+
+        add_log("Conversion completed", "success")
+
+        # Count created files
+        created_files = list(output_root.rglob("*"))
+        file_count = len([f for f in created_files if f.is_file()])
+        add_log(f"Created {file_count} files in dataset", "info")
+
+        # Run validation on the converted dataset
+        add_log("Running validation on converted dataset...", "info")
+        
+        validation_result = {
+            "errors": [],
+            "warnings": [],
+            "summary": {
+                "files_created": file_count,
+            }
+        }
+
+        try:
+            # Use the same validation function as the main validator
+            # run_validation returns a tuple: (messages_list, stats_object)
+            result = run_validation(str(output_root), schema_version="stable")
+            
+            if result and isinstance(result, tuple) and len(result) >= 1:
+                messages = result[0] if result[0] else []
+                stats = result[1] if len(result) > 1 else None
+                
+                # Parse messages: each is a tuple like ('ERROR', 'message', 'path')
+                for msg in messages:
+                    if isinstance(msg, tuple) and len(msg) >= 2:
+                        level = msg[0].upper() if msg[0] else "INFO"
+                        text = msg[1] if len(msg) > 1 else str(msg)
+                        path = msg[2] if len(msg) > 2 else ""
+                        
+                        # Format the message nicely
+                        full_msg = text
+                        if path:
+                            # Just show filename, not full temp path
+                            path_name = Path(path).name if "/" in str(path) else path
+                            if path_name and path_name != text:
+                                full_msg = f"{text}"
+                        
+                        if level == "ERROR":
+                            validation_result["errors"].append(full_msg)
+                        elif level == "WARNING":
+                            validation_result["warnings"].append(full_msg)
+                    elif isinstance(msg, str):
+                        validation_result["warnings"].append(msg)
+                
+                # Get stats if available
+                if stats and hasattr(stats, "__dict__"):
+                    for key, value in vars(stats).items():
+                        if not key.startswith("_"):
+                            validation_result["summary"][key] = value
+                    
+        except Exception as val_err:
+            add_log(f"Validation error: {str(val_err)}", "warning")
+            validation_result["warnings"].append(f"Could not run full validation: {str(val_err)}")
+
+        # Create ZIP file
+        add_log("Creating ZIP archive...", "info")
+        mem = io.BytesIO()
+        with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for p in output_root.rglob("*"):
+                if p.is_file():
+                    arcname = p.relative_to(output_root)
+                    zf.write(p, arcname.as_posix())
+        mem.seek(0)
+        
+        # Encode ZIP as base64 for JSON response
+        zip_base64 = base64.b64encode(mem.read()).decode('utf-8')
+
+        add_log("Dataset package ready", "success")
+
+        return jsonify({
+            "success": True,
+            "log": log_messages,
+            "validation": validation_result,
+            "zip_base64": zip_base64,
+        })
+
+    except Exception as e:
+        add_log(f"Conversion failed: {str(e)}", "error")
+        return jsonify({
+            "error": str(e),
+            "log": log_messages,
+            "validation": {"errors": [str(e)], "warnings": [], "summary": {}}
+        }), 500
+    finally:
+        try:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+        except Exception:
+            pass
+
+
 @app.route("/api/survey-languages", methods=["GET"])
 def api_survey_languages():
     """List available languages for the selected survey template library folder."""
@@ -1312,8 +1523,8 @@ def api_biometrics_convert():
 
     filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
-    if suffix not in {".csv", ".xlsx"}:
-        return jsonify({"error": "Only .csv and .xlsx files are supported"}), 400
+    if suffix not in {".csv", ".xlsx", ".tsv"}:
+        return jsonify({"error": "Supported formats: .csv, .xlsx, .tsv"}), 400
 
     if not library_path:
         return jsonify({"error": "Biometrics template library path is required. Due to copyright restrictions, templates cannot be distributed with the application."}), 400

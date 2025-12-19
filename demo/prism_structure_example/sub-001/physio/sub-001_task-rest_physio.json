@@ -1,0 +1,44 @@
+{
+  "Technical": {
+    "SamplingFrequency": 250,
+    "StartTime": 0,
+    "Columns": ["time", "ecg", "eda", "resp"],
+    "FileFormat": "tsv",
+    "RecordingDevice": "Biopac MP160",
+    "RecordingSoftware": "AcqKnowledge",
+    "RecordingSoftwareVersion": "5.0"
+  },
+  "Channels": {
+    "ecg": {
+      "Description": "Electrocardiogram signal from Lead II configuration",
+      "Type": "ECG",
+      "Units": "mV",
+      "Gain": 1000,
+      "HighCutoff": 0.05,
+      "LowCutoff": 150,
+      "NotchFilter": 50,
+      "Placement": "Lead II"
+    },
+    "eda": {
+      "Description": "Electrodermal activity (skin conductance)",
+      "Type": "EDA",
+      "Units": "µS",
+      "Placement": "Left index and middle finger"
+    },
+    "resp": {
+      "Description": "Respiration signal from chest belt",
+      "Type": "RESP",
+      "Units": "arbitrary",
+      "Placement": "Chest belt"
+    }
+  },
+  "Study": {
+    "TaskName": "rest",
+    "TaskDescription": "5-minute eyes-closed resting state recording"
+  },
+  "Metadata": {
+    "SchemaVersion": "1.0.0",
+    "CreationDate": "2025-12-19",
+    "Creator": "Prism Demo Generator"
+  }
+}
