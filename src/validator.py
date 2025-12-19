@@ -22,8 +22,8 @@ MODALITY_PATTERNS = {
     "survey": r".+_survey\.(tsv|json)$",
     "biometrics": r".+_biometrics\.(tsv|json)$",
     "events": r".+_events\.tsv$",
-    "physio": r".+_physio\.(tsv|tsv\.gz|edf)$",
-    "eyetracking": r".+_(eyetrack|eye|gaze)\.(tsv|tsv\.gz|edf|asc)$",
+    "physio": r".+_physio\.(tsv|tsv\.gz|json|edf)$",
+    "eyetracking": r".+_(eyetrack|eye|gaze)\.(tsv|tsv\.gz|json|edf|asc)$",
     # MRI submodalities
     "anat": r".+_(T1w|T2w|T2star|FLAIR|PD|PDw|T1map|T2map)\.nii(\.gz)?$",
     "func": r".+(_bold\.nii(\.gz)?|_sbref\.nii(\.gz)?|_(events|physio|stim)\.tsv(\.gz)?)$",
@@ -38,7 +38,7 @@ BIDS_REGEX = re.compile(
     r"(_(task|survey|biometrics)-[a-zA-Z0-9]+)?"  # task/survey/biometrics label
     r"(_run-[0-9]+)?"  # optional run
     r"(_desc-[a-zA-Z0-9]+)?"  # optional desc
-    r"(_(survey|biometrics))?$"  # PRISM-required modality suffixes
+    r"(_(survey|biometrics|physio|eyetrack|events))?$"  # PRISM modality suffixes
 )
 
 MRI_SUFFIX_REGEX = re.compile(

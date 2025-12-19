@@ -58,8 +58,6 @@ fair_dataset_description.json
 # Templates (can be regenerated)
 *_template.json
 example_*_metadata.json
-*test*
-test*
 
 # PyInstaller / Build artifacts
 build/

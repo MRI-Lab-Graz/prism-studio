@@ -1,0 +1,7 @@
+{
+  "Name": "Consistent Test Dataset",
+  "BIDSVersion": "1.9.0",
+  "DatasetType": "raw",
+  "Authors": ["Test Creator"],
+  "Description": "A test dataset for prism-validator demonstration"
+}

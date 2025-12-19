@@ -5,9 +5,31 @@ All notable changes to the PRISM project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.5.0] - 2025-12-19
 
 ### Added
+
+#### Survey Data Processing (PRISM Studio)
+- **Survey import wizard** with TSV/CSV/Excel support
+- **Library-based conversion** using template JSON schemas
+- **Automatic participant detection** from data columns
+- **Value validation** against library definitions (min/max/levels)
+- **Missing value handling** with configurable strategies
+- **Detailed import logs** with row-by-row feedback
+
+#### Derivatives System
+- **Survey scoring recipes** in JSON format (`derivatives/surveys/*.json`)
+- **Reverse coding** support for inverted items
+- **Subscale computation** (sum, mean methods)
+- **Multi-format export**: CSV, Excel (with Codebook sheet), SPSS (.sav), R/Feather
+- **Rich metadata in exports**: Variable labels, value labels, score details
+- **Codebook generation**: JSON and TSV codebooks with full documentation
+- **Participant variables merge**: Age, sex, education included in derivatives
+
+#### PRISM Naming Conventions
+- **Strict suffix validation** for survey (`_survey`) and biometrics (`_biometrics`)
+- **Physio and eyetrack suffixes** added to BIDS regex
+- **Task-based sidecar naming** (`task-<name>_survey.json`)
 
 #### Structured Issue System
 - **PRISM error codes** (PRISM001-PRISM9xx) with severity levels and categories
@@ -58,22 +80,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Per-dataset configuration
 
 #### Testing
-- **30 pytest unit tests** covering core functionality
+- **pytest unit tests** covering core functionality
 - Test coverage for issues, validators, config, formatters
+- Demo folder used for integration testing
 
 #### Web Interface Enhancements
+- **Derivatives page** with terminal output log
 - **Progress tracking** with percentage and current file
+- **Navbar links** to Derivatives and ReadTheDocs
 - Server-Sent Events for real-time updates
 - API blueprint integration
 
 ### Changed
+- Renamed entry script to `prism-studio.py`
 - CLI now uses structured error codes instead of free-form messages
 - Validation results include severity levels (error, warning, info)
 - Improved error messages with fix hints
 
-### Technical Details
-- New dependencies: None (pure Python implementation)
-- Backwards compatible with v1.0.0
+### Fixed
+- Fixed `.gitignore` to properly track test files
+- Fixed modality patterns to include JSON sidecars for physio/eyetrack
+- Fixed BIDS regex to accept physio, eyetrack, events suffixes
 
 ---
 
