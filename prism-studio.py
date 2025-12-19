@@ -1467,7 +1467,11 @@ def api_survey_convert_validate():
                 if stats and hasattr(stats, "__dict__"):
                     for key, value in vars(stats).items():
                         if not key.startswith("_"):
-                            validation_result["summary"][key] = value
+                            # Convert sets to sorted lists for JSON serialization
+                            if isinstance(value, set):
+                                validation_result["summary"][key] = sorted(value)
+                            else:
+                                validation_result["summary"][key] = value
                     
         except Exception as val_err:
             add_log(f"Validation error: {str(val_err)}", "warning")
