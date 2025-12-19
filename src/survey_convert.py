@@ -285,6 +285,21 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
         if df is None or df.empty:
             raise ValueError("Input TSV is empty.")
 
+        # Check if file was parsed correctly (wrong delimiter detection)
+        if len(df.columns) == 1:
+            col_name = str(df.columns[0])
+            # If the single column name contains semicolons or commas, likely wrong delimiter
+            if ";" in col_name:
+                raise ValueError(
+                    f"TSV file appears to use semicolons (;) as delimiter instead of tabs. "
+                    f"Please convert to tab-separated format or save as CSV."
+                )
+            elif "," in col_name:
+                raise ValueError(
+                    f"TSV file appears to use commas as delimiter instead of tabs. "
+                    f"Please save as .csv file or convert to tab-separated format."
+                )
+
         return df.rename(columns={c: str(c).strip() for c in df.columns})
 
     if kind == "lsa":
