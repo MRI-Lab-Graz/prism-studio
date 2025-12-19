@@ -123,20 +123,32 @@ except Exception as import_error:
     print(f"⚠️  Could not import batch_convert: {import_error}")
 
 
-def _list_survey_template_languages(library_path: str) -> tuple[list[str], str | None]:
-    """Return (languages, default_language) from survey templates in a folder."""
+def _list_survey_template_languages(library_path: str) -> tuple[list[str], str | None, int, int]:
+    """Return (languages, default_language, template_count, i18n_count) from survey templates in a folder.
+    
+    Args:
+        library_path: Path to the survey template library folder
+        
+    Returns:
+        Tuple of (sorted language list, default language, total template count, templates with I18n count)
+    """
     langs: set[str] = set()
     defaults: set[str] = set()
+    template_count = 0
+    i18n_count = 0
 
     try:
         root = Path(library_path).resolve()
     except Exception:
-        return [], None
+        return [], None, 0, 0
 
     if not root.exists() or not root.is_dir():
-        return [], None
+        return [], None, 0, 0
 
     for p in sorted(root.glob("survey-*.json")):
+        template_count += 1
+        has_i18n = False
+        
         try:
             with open(p, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -146,7 +158,8 @@ def _list_survey_template_languages(library_path: str) -> tuple[list[str], str |
         i18n = data.get("I18n")
         if isinstance(i18n, dict):
             i18n_langs = i18n.get("Languages")
-            if isinstance(i18n_langs, list):
+            if isinstance(i18n_langs, list) and len(i18n_langs) > 0:
+                has_i18n = True
                 for v in i18n_langs:
                     if isinstance(v, str) and v.strip():
                         langs.add(v.strip())
@@ -159,11 +172,14 @@ def _list_survey_template_languages(library_path: str) -> tuple[list[str], str |
             tl = tech.get("Language")
             if isinstance(tl, str) and tl.strip():
                 langs.add(tl.strip())
+        
+        if has_i18n:
+            i18n_count += 1
 
     default = None
     if len(defaults) == 1:
         default = next(iter(defaults))
-    return sorted(langs), default
+    return sorted(langs), default, template_count, i18n_count
 
 try:
     from derivatives_surveys import compute_survey_derivatives
@@ -1143,16 +1159,16 @@ def api_survey_convert():
             return jsonify({"error": "Alias file must be a .tsv or .txt mapping file"}), 400
 
     if not library_path:
-        # Prefer shipped survey templates if available.
-        preferred = (BASE_DIR / "library" / "survey_i18n").resolve()
-        fallback = (BASE_DIR / "survey_library").resolve()
-        if preferred.exists() and any(preferred.glob("survey-*.json")):
-            library_path = str(preferred)
-        else:
-            library_path = str(fallback)
+        return jsonify({"error": "Survey template library path is required. Due to copyright restrictions, templates cannot be distributed with the application."}), 400
 
     if not os.path.exists(library_path) or not os.path.isdir(library_path):
         return jsonify({"error": f"Library path is not a directory: {library_path}"}), 400
+    
+    # Check if the library has any survey templates
+    library_root = Path(library_path)
+    survey_templates = list(library_root.glob("survey-*.json"))
+    if not survey_templates:
+        return jsonify({"error": f"No survey templates (survey-*.json) found in: {library_path}"}), 400
 
     survey_filter = (request.form.get("survey") or "").strip() or None
     id_column = (request.form.get("id_column") or "").strip() or None
@@ -1272,8 +1288,14 @@ def api_survey_languages():
         else:
             library_path = str(fallback)
 
-    langs, default = _list_survey_template_languages(library_path)
-    return jsonify({"languages": langs, "default": default, "library_path": library_path})
+    langs, default, template_count, i18n_count = _list_survey_template_languages(library_path)
+    return jsonify({
+        "languages": langs, 
+        "default": default, 
+        "library_path": library_path,
+        "template_count": template_count,
+        "i18n_count": i18n_count
+    })
 
 
 @app.route("/api/biometrics-convert", methods=["POST"])
@@ -1294,12 +1316,16 @@ def api_biometrics_convert():
         return jsonify({"error": "Only .csv and .xlsx files are supported"}), 400
 
     if not library_path:
-        preferred = (BASE_DIR / "library" / "biometrics").resolve()
-        fallback = (BASE_DIR / "library").resolve() / "biometrics"
-        library_path = str(preferred if preferred.exists() else fallback)
+        return jsonify({"error": "Biometrics template library path is required. Due to copyright restrictions, templates cannot be distributed with the application."}), 400
 
     if not os.path.exists(library_path) or not os.path.isdir(library_path):
         return jsonify({"error": f"Library path is not a directory: {library_path}"}), 400
+    
+    # Check if the library has any biometrics templates
+    library_root = Path(library_path)
+    biometrics_templates = list(library_root.glob("biometrics-*.json"))
+    if not biometrics_templates:
+        return jsonify({"error": f"No biometrics templates (biometrics-*.json) found in: {library_path}"}), 400
 
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None

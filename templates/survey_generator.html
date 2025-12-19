@@ -204,6 +204,26 @@
                                 </div>
                             </div>
 
+                            <!-- Template Library Path -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-12">
+                                    <label for="convertLibraryPath" class="form-label">Survey Template Library <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="convertLibraryPath" placeholder="/path/to/survey/templates" value="">
+                                        <button class="btn btn-outline-secondary" type="button" id="convertBrowseLibraryBtn" title="Browse Folder">
+                                            <i class="fas fa-folder-open"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Folder containing survey-*.json templates (required due to copyright restrictions)</div>
+                                </div>
+                            </div>
+
+                            <!-- I18n Warning -->
+                            <div id="surveyI18nWarning" class="alert alert-warning d-none mb-3">
+                                <i class="fas fa-language me-2"></i>
+                                <strong>Multilanguage Notice:</strong> <span id="surveyI18nMessage">Some templates do not have multilanguage (I18n) configuration.</span>
+                            </div>
+
                             <div class="row g-3 align-items-end">
                                 <div class="col-md-4">
                                     <label for="convertExcelFile" class="form-label">Survey File (.xlsx or .lsa)</label>
@@ -267,6 +287,20 @@
                                 <div>
                                     <h5 class="mb-1">Biometrics Data Conversion</h5>
                                     <p class="text-muted mb-0">Convert physical measurements like grip strength, balance tests</p>
+                                </div>
+                            </div>
+
+                            <!-- Template Library Path -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-12">
+                                    <label for="biometricsLibraryPath" class="form-label">Biometrics Template Library <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="biometricsLibraryPath" placeholder="/path/to/biometrics/templates" value="">
+                                        <button class="btn btn-outline-secondary" type="button" id="biometricsBrowseLibraryBtn" title="Browse Folder">
+                                            <i class="fas fa-folder-open"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Folder containing biometrics-*.json templates (required due to copyright restrictions)</div>
                                 </div>
                             </div>
 
@@ -798,9 +832,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function refreshConvertLanguages() {
         const libraryPath = convertLibraryPathInput ? convertLibraryPathInput.value.trim() : '';
-        const url = libraryPath
-            ? `/api/survey-languages?library_path=${encodeURIComponent(libraryPath)}`
-            : `/api/survey-languages`;
+        const surveyI18nWarning = document.getElementById('surveyI18nWarning');
+        const surveyI18nMessage = document.getElementById('surveyI18nMessage');
+        
+        if (!libraryPath) {
+            // Hide warning and reset languages if no path
+            if (surveyI18nWarning) surveyI18nWarning.classList.add('d-none');
+            return;
+        }
+        
+        const url = `/api/survey-languages?library_path=${encodeURIComponent(libraryPath)}`;
         fetch(url)
             .then(r => r.json())
             .then(data => {
@@ -830,20 +871,47 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     convertLanguage.value = 'auto';
                 }
+                
+                // Show I18n warning if templates don't have multilanguage support
+                if (surveyI18nWarning && surveyI18nMessage) {
+                    const hasI18n = langs.length > 0;
+                    const templateCount = data.template_count || 0;
+                    const i18nCount = data.i18n_count || 0;
+                    
+                    if (!hasI18n || (templateCount > 0 && i18nCount < templateCount)) {
+                        const missing = templateCount - i18nCount;
+                        if (!hasI18n) {
+                            surveyI18nMessage.textContent = 'No templates with multilanguage (I18n) configuration found. Consider adding I18n block with Languages array to your templates.';
+                        } else if (missing > 0) {
+                            surveyI18nMessage.textContent = `${missing} of ${templateCount} templates lack multilanguage (I18n) configuration. Available languages: ${langs.join(', ')}`;
+                        }
+                        surveyI18nWarning.classList.remove('d-none');
+                    } else {
+                        surveyI18nWarning.classList.add('d-none');
+                    }
+                }
             })
             .catch(() => {
                 // If this fails, keep the dropdown as-is (Auto only)
+                if (surveyI18nWarning) surveyI18nWarning.classList.add('d-none');
             });
     }
 
     if (convertLibraryPathInput) {
-        convertLibraryPathInput.addEventListener('change', refreshConvertLanguages);
-        convertLibraryPathInput.addEventListener('blur', refreshConvertLanguages);
+        convertLibraryPathInput.addEventListener('change', function() {
+            refreshConvertLanguages();
+            updateConvertBtn();
+        });
+        convertLibraryPathInput.addEventListener('blur', function() {
+            refreshConvertLanguages();
+            updateConvertBtn();
+        });
     }
 
     function updateConvertBtn() {
         const hasFile = convertExcelFile.files && convertExcelFile.files.length === 1;
-        convertBtn.disabled = !hasFile;
+        const hasLibraryPath = convertLibraryPathInput && convertLibraryPathInput.value.trim() !== '';
+        convertBtn.disabled = !(hasFile && hasLibraryPath);
     }
 
     convertExcelFile.addEventListener('change', updateConvertBtn);
@@ -854,6 +922,13 @@ document.addEventListener('DOMContentLoaded', function() {
         convertInfo.classList.add('d-none');
         convertError.textContent = '';
         convertInfo.textContent = '';
+
+        const libraryPath = convertLibraryPathInput ? convertLibraryPathInput.value.trim() : '';
+        if (!libraryPath) {
+            convertError.textContent = 'Please select a survey template library folder first.';
+            convertError.classList.remove('d-none');
+            return;
+        }
 
         const file = convertExcelFile.files && convertExcelFile.files[0];
         if (!file) {
@@ -930,12 +1005,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateBiometricsBtn() {
         const hasFile = biometricsDataFile && biometricsDataFile.files && biometricsDataFile.files.length === 1;
-        if (biometricsConvertBtn) biometricsConvertBtn.disabled = !hasFile;
+        const hasLibraryPath = biometricsLibraryPathInput && biometricsLibraryPathInput.value.trim() !== '';
+        if (biometricsConvertBtn) biometricsConvertBtn.disabled = !(hasFile && hasLibraryPath);
     }
 
     if (biometricsDataFile) {
         biometricsDataFile.addEventListener('change', updateBiometricsBtn);
         updateBiometricsBtn();
+    }
+
+    if (biometricsLibraryPathInput) {
+        biometricsLibraryPathInput.addEventListener('change', updateBiometricsBtn);
+        biometricsLibraryPathInput.addEventListener('blur', updateBiometricsBtn);
     }
 
     if (biometricsConvertBtn) {
@@ -945,14 +1026,19 @@ document.addEventListener('DOMContentLoaded', function() {
             biometricsError.textContent = '';
             biometricsInfo.textContent = '';
 
+            const libraryPath = biometricsLibraryPathInput ? biometricsLibraryPathInput.value.trim() : '';
+            if (!libraryPath) {
+                biometricsError.textContent = 'Please select a biometrics template library folder first.';
+                biometricsError.classList.remove('d-none');
+                return;
+            }
+
             const file = biometricsDataFile.files && biometricsDataFile.files[0];
             if (!file) return;
 
             const formData = new FormData();
             formData.append('data', file);
-            if (biometricsLibraryPathInput && biometricsLibraryPathInput.value.trim()) {
-                formData.append('library_path', biometricsLibraryPathInput.value.trim());
-            }
+            formData.append('library_path', libraryPath);
             formData.append('dataset_name', biometricsDatasetName.value.trim());
             formData.append('unknown', biometricsUnknown.value);
 
