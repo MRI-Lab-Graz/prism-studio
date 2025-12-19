@@ -62,6 +62,17 @@
 
       <div id="derivError" class="alert alert-danger d-none mt-3"></div>
       <div id="derivInfo" class="alert alert-info d-none mt-3"></div>
+
+      <!-- Terminal Output -->
+      <div id="derivTerminalContainer" class="mt-4 d-none">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <label class="form-label mb-0"><i class="fas fa-terminal me-1"></i> Output Log</label>
+          <button class="btn btn-sm btn-outline-secondary" type="button" id="derivClearLog">
+            <i class="fas fa-trash-alt me-1"></i>Clear
+          </button>
+        </div>
+        <pre id="derivTerminal" class="bg-dark text-light p-3 rounded" style="max-height: 400px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></pre>
+      </div>
     </div>
   </div>
 </div>
@@ -77,6 +88,30 @@ document.addEventListener('DOMContentLoaded', function() {
   const derivRunBtn = document.getElementById('derivRunBtn');
   const derivError = document.getElementById('derivError');
   const derivInfo = document.getElementById('derivInfo');
+  const derivTerminalContainer = document.getElementById('derivTerminalContainer');
+  const derivTerminal = document.getElementById('derivTerminal');
+  const derivClearLog = document.getElementById('derivClearLog');
+
+  function logToTerminal(msg, type = 'info') {
+    const timestamp = new Date().toLocaleTimeString();
+    let prefix = '';
+    let color = 'text-light';
+    if (type === 'error') { prefix = '❌ '; color = 'text-danger'; }
+    else if (type === 'success') { prefix = '✅ '; color = 'text-success'; }
+    else if (type === 'warning') { prefix = '⚠️ '; color = 'text-warning'; }
+    else { prefix = '→ '; }
+    const line = document.createElement('span');
+    line.className = color;
+    line.textContent = `[${timestamp}] ${prefix}${msg}\n`;
+    derivTerminal.appendChild(line);
+    derivTerminal.scrollTop = derivTerminal.scrollHeight;
+    derivTerminalContainer.classList.remove('d-none');
+  }
+
+  derivClearLog.addEventListener('click', function() {
+    derivTerminal.innerHTML = '';
+    derivTerminalContainer.classList.add('d-none');
+  });
 
   derivBrowseBtn.addEventListener('click', function() {
     fetch('/api/browse-folder')
@@ -96,6 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!datasetPath) {
       derivError.textContent = 'Please choose a dataset folder.';
       derivError.classList.remove('d-none');
+      logToTerminal('No dataset folder specified', 'error');
       return;
     }
 
@@ -107,6 +143,9 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     derivRunBtn.disabled = true;
+    logToTerminal(`Running derivatives on: ${datasetPath}`);
+    logToTerminal(`Modality: ${payload.modality}, Format: ${payload.format}`);
+    if (payload.survey) logToTerminal(`Recipe filter: ${payload.survey}`);
     derivInfo.textContent = 'Running derivatives... this may take a moment.';
     derivInfo.classList.remove('d-none');
 
@@ -124,12 +163,23 @@ document.addEventListener('DOMContentLoaded', function() {
         return data;
       })
       .then(data => {
-        derivInfo.textContent = data && data.message ? data.message : 'Done.';
+        const msg = data && data.message ? data.message : 'Done.';
+        derivInfo.textContent = msg;
         derivInfo.classList.remove('d-none');
+        logToTerminal(msg, 'success');
+        if (data && data.out_format) {
+          logToTerminal(`Output format used: ${data.out_format}`);
+        }
+        if (data && data.details) {
+          logToTerminal(`Processed: ${data.details.processed_files || 0} files`);
+          logToTerminal(`Written: ${data.details.written_files || 0} output files`);
+          if (data.details.out_root) logToTerminal(`Output: ${data.details.out_root}`);
+        }
       })
       .catch(err => {
         derivError.textContent = err.message;
         derivError.classList.remove('d-none');
+        logToTerminal(err.message, 'error');
       })
       .finally(() => {
         derivRunBtn.disabled = false;

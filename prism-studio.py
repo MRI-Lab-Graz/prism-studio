@@ -2172,6 +2172,8 @@ def api_derivatives_surveys():
     msg = f"✅ Survey derivatives complete: wrote {result.written_files} file(s)"
     if result.flat_out_path:
         msg = f"✅ Survey derivatives complete: wrote {result.flat_out_path}"
+    if result.fallback_note:
+        msg += f" (note: {result.fallback_note})"
     return jsonify(
         {
             "ok": True,

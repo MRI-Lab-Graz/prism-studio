@@ -167,7 +167,7 @@ def get_error_description(error_code: str) -> str:
 
 def get_error_documentation_url(error_code: str) -> str:
     """Get documentation URL for an error code."""
-    base_url = "https://github.com/MRI-Lab-Graz/prism/blob/main/docs/ERROR_CODES.md"
+    base_url = "https://prism-validator.readthedocs.io/en/latest/ERROR_CODES.html"
     
     # Map legacy codes to PRISM codes for URL
     code_mapping = {

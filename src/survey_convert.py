@@ -80,12 +80,28 @@ def _write_json(path: Path, obj: dict) -> None:
 def _load_participants_template(library_dir: Path) -> dict | None:
     """Load a participant template from the survey library, if present.
 
-    The repo currently ships `survey-participant.json` (singular). Some users may
-    refer to `survey-participants.json` (plural), so we accept both.
+    We prioritize a library-level `participants.json` (sibling of the survey/
+    folder) and fall back to legacy names `survey-participants.json` and
+    `survey-participant.json` placed alongside the survey templates.
     """
 
-    for name in ("survey-participants.json", "survey-participant.json"):
-        p = library_dir / name
+    candidates: list[Path] = []
+    if library_dir.name == "survey":
+        candidates.append(library_dir.parent / "participants.json")
+
+    candidates.extend(
+        [
+            library_dir / "participants.json",
+            library_dir / "survey-participants.json",
+            library_dir / "survey-participant.json",
+        ]
+    )
+
+    seen: set[Path] = set()
+    for p in candidates:
+        if p in seen:
+            continue
+        seen.add(p)
         if p.exists() and p.is_file():
             try:
                 return _read_json(p)
@@ -99,9 +115,20 @@ def _is_participant_template(path: Path) -> bool:
     return stem in {"survey-participant", "survey-participants"}
 
 
+def _normalize_participant_template_dict(template: dict | None) -> dict | None:
+    """Extract column definitions from a participant template structure."""
+
+    if not isinstance(template, dict):
+        return None
+    if "Columns" in template and isinstance(template.get("Columns"), dict):
+        return template.get("Columns")
+    return template
+
+
 def _participants_json_from_template(*, columns: list[str], template: dict | None) -> dict:
     """Create a BIDS-style participants.json for the given TSV columns."""
 
+    template = _normalize_participant_template_dict(template)
     out: dict[str, dict] = {}
 
     def _template_meta(col: str) -> dict:
@@ -439,6 +466,13 @@ def _convert_survey_dataframe_to_prism_dataset(
             alias_map = _build_alias_map(rows)
             canonical_aliases = _build_canonical_aliases(rows)
 
+    participant_template = _normalize_participant_template_dict(_load_participants_template(library_dir))
+    participant_columns_lower: set[str] = set()
+    if participant_template:
+        participant_columns_lower = {
+            str(k).strip().lower() for k in participant_template.keys() if isinstance(k, str)
+        }
+
     # --- Load survey templates ---
     templates: dict[str, dict] = {}
     item_to_task: dict[str, str] = {}
@@ -565,12 +599,35 @@ def _convert_survey_dataframe_to_prism_dataset(
         )
 
     # --- Determine which columns map to which surveys ---
+    lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
+
+    # Detect participant-related columns first so they are not treated as unmapped survey items.
+    participant_fallbacks = {
+        "age",
+        "sex",
+        "gender",
+        "education",
+        "handedness",
+        "completion_date",
+    }
+
+    participant_columns_present = {
+        lower_to_col[c]
+        for c in (participant_columns_lower | participant_fallbacks)
+        if c in lower_to_col
+    }
+
     cols = [c for c in df.columns if c not in {resolved_id_col} and c != resolved_session_col]
     col_to_task: dict[str, str] = {}
     unknown_cols: list[str] = []
     for c in cols:
+        col_lower = str(c).strip().lower()
         if c in item_to_task:
             col_to_task[c] = item_to_task[c]
+        elif c in participant_columns_present or col_lower in participant_columns_present:
+            continue
+        elif col_lower in participant_columns_lower:
+            continue
         else:
             unknown_cols.append(c)
 
@@ -625,12 +682,20 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     # participants.tsv
     df_part = pd.DataFrame({"participant_id": df[resolved_id_col].astype(str).map(_normalize_sub_id)})
-    lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
     extra_part_cols: list[str] = []
+
+    for col in participant_columns_present:
+        if col not in {resolved_id_col, resolved_session_col}:
+            extra_part_cols.append(col)
+
     for candidate in ["age", "sex", "gender"]:
         col = lower_to_col.get(candidate)
         if col and col not in {resolved_id_col, resolved_session_col}:
             extra_part_cols.append(col)
+
+    if extra_part_cols:
+        # Preserve original order while removing duplicates
+        extra_part_cols = list(dict.fromkeys(extra_part_cols))
 
     if extra_part_cols:
         df_extra = df[[resolved_id_col] + extra_part_cols].copy()
@@ -646,7 +711,6 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     # participants.json (column metadata)
     participants_json_path = output_root / "participants.json"
-    participant_template = _load_participants_template(library_dir)
     participants_json = _participants_json_from_template(
         columns=[str(c) for c in df_part.columns],
         template=participant_template,
@@ -655,7 +719,8 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     # inherited sidecars at dataset root (inheritance principle)
     for task in sorted(tasks_with_data):
-        sidecar_path = output_root / f"survey-{task}_beh.json"
+        # Write survey sidecar: task-<name>_survey.json (BIDS-aligned: entity != suffix)
+        sidecar_path = output_root / f"task-{task}_survey.json"
         if not sidecar_path.exists() or force:
             localized = _localize_survey_template(templates[task]["json"], language=language)
             localized = _inject_missing_token(localized, token=_MISSING_TOKEN)
@@ -743,7 +808,7 @@ def _convert_survey_dataframe_to_prism_dataset(
                     missing_cells_by_subject[sub_id] = missing_cells_by_subject.get(sub_id, 0) + 1
 
             # stable column order
-            with open(modality_dir / f"{sub_id}_{ses_id}_task-{task}_beh.tsv", "w", encoding="utf-8", newline="") as f:
+            with open(modality_dir / f"{sub_id}_{ses_id}_task-{task}_survey.tsv", "w", encoding="utf-8", newline="") as f:
                 writer = csv.DictWriter(f, fieldnames=expected, delimiter="\t", lineterminator="\n")
                 writer.writeheader()
                 writer.writerow(out)

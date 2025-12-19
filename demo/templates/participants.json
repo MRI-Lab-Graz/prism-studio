@@ -1,140 +1,41 @@
 {
-  "Technical": {
-    "Version": "1.0",
-    "Format": "TSV"
+  "participant_id": {
+    "Description": "Unique participant identifier (BIDS sub- label)"
   },
-  "Study": {
-    "OriginalName": {
-      "de": "Teilnehmer-Metadaten",
-      "en": "Participant Metadata"
-    },
-    "ShortName": "participants",
-    "Description": {
-      "de": "Demografische Basisdaten der Studienteilnehmer",
-      "en": "Basic demographic data of study participants"
+  "age": {
+    "Description": "Age of participant in years at the time of data collection",
+    "Units": "years",
+    "MinValue": 18,
+    "MaxValue": 100
+  },
+  "sex": {
+    "Description": "Biological sex of the participant",
+    "Levels": {
+      "m": "male",
+      "f": "female",
+      "o": "other / diverse"
     }
   },
-  "Metadata": {
-    "Author": "PRISM Demo",
-    "License": "CC-BY-4.0"
-  },
-  "I18n": {
-    "Languages": ["de", "en"],
-    "DefaultLanguage": "en"
-  },
-  "Columns": {
-    "participant_id": {
-      "LongName": {
-        "de": "Teilnehmer-ID",
-        "en": "Participant ID"
-      },
-      "Description": {
-        "de": "Eindeutige Kennung des Teilnehmers (BIDS-Format: sub-XXX)",
-        "en": "Unique participant identifier (BIDS format: sub-XXX)"
-      },
-      "Type": "string",
-      "Required": true
-    },
-    "age": {
-      "LongName": {
-        "de": "Alter",
-        "en": "Age"
-      },
-      "Description": {
-        "de": "Alter des Teilnehmers in Jahren zum Zeitpunkt der Datenerhebung",
-        "en": "Age of participant in years at the time of data collection"
-      },
-      "Type": "integer",
-      "Units": "years",
-      "MinValue": 18,
-      "MaxValue": 100
-    },
-    "sex": {
-      "LongName": {
-        "de": "Geschlecht",
-        "en": "Sex"
-      },
-      "Description": {
-        "de": "Biologisches Geschlecht des Teilnehmers",
-        "en": "Biological sex of the participant"
-      },
-      "Type": "categorical",
-      "Levels": {
-        "m": {
-          "de": "männlich",
-          "en": "male"
-        },
-        "f": {
-          "de": "weiblich",
-          "en": "female"
-        },
-        "o": {
-          "de": "andere/divers",
-          "en": "other/diverse"
-        }
-      }
-    },
-    "education": {
-      "LongName": {
-        "de": "Bildungsabschluss",
-        "en": "Education Level"
-      },
-      "Description": {
-        "de": "Höchster erreichter Bildungsabschluss",
-        "en": "Highest level of education completed"
-      },
-      "Type": "categorical",
-      "Levels": {
-        "1": {
-          "de": "Hauptschulabschluss / kein Abschluss",
-          "en": "Secondary school / no degree"
-        },
-        "2": {
-          "de": "Mittlere Reife / Realschulabschluss",
-          "en": "High school diploma"
-        },
-        "3": {
-          "de": "Abitur / Fachabitur",
-          "en": "College preparatory / A-levels"
-        },
-        "4": {
-          "de": "Bachelor / Berufsausbildung",
-          "en": "Bachelor's degree / vocational training"
-        },
-        "5": {
-          "de": "Master / Diplom",
-          "en": "Master's degree"
-        },
-        "6": {
-          "de": "Promotion / Doktorgrad",
-          "en": "Doctorate / PhD"
-        }
-      }
-    },
-    "handedness": {
-      "LongName": {
-        "de": "Händigkeit",
-        "en": "Handedness"
-      },
-      "Description": {
-        "de": "Dominante Hand des Teilnehmers",
-        "en": "Dominant hand of the participant"
-      },
-      "Type": "categorical",
-      "Levels": {
-        "r": {
-          "de": "rechtshändig",
-          "en": "right-handed"
-        },
-        "l": {
-          "de": "linkshändig",
-          "en": "left-handed"
-        },
-        "a": {
-          "de": "beidhändig",
-          "en": "ambidextrous"
-        }
-      }
+  "education": {
+    "Description": "Highest level of education completed",
+    "Levels": {
+      "1": "Secondary school / no degree",
+      "2": "High school diploma",
+      "3": "College preparatory / A-levels",
+      "4": "Bachelor's degree / vocational training",
+      "5": "Master's degree",
+      "6": "Doctorate / PhD"
     }
+  },
+  "handedness": {
+    "Description": "Dominant hand of the participant",
+    "Levels": {
+      "r": "right-handed",
+      "l": "left-handed",
+      "a": "ambidextrous"
+    }
+  },
+  "completion_date": {
+    "Description": "Date when the survey was completed (YYYY-MM-DD)"
   }
 }

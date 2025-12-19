@@ -18,8 +18,9 @@ from cross_platform import (
 
 # Modality patterns
 MODALITY_PATTERNS = {
-    "survey": r".+\.tsv$",
-    "biometrics": r".+\.tsv$",
+    # PRISM survey/biometrics must carry explicit suffixes
+    "survey": r".+_survey\.(tsv|json)$",
+    "biometrics": r".+_biometrics\.(tsv|json)$",
     "events": r".+_events\.tsv$",
     "physio": r".+_physio\.(tsv|tsv\.gz|edf)$",
     "eyetracking": r".+_(eyetrack|eye|gaze)\.(tsv|tsv\.gz|edf|asc)$",
@@ -32,10 +33,12 @@ MODALITY_PATTERNS = {
 
 # BIDS naming patterns
 BIDS_REGEX = re.compile(
-    r"^sub-[a-zA-Z0-9]+"
-    r"(_ses-[a-zA-Z0-9]+)?"
-    r"(_(task|survey|biometrics)-[a-zA-Z0-9]+)?"
-    r"(_run-[0-9]+)?"
+    r"^sub-[a-zA-Z0-9]+"  # subject
+    r"(_ses-[a-zA-Z0-9]+)?"  # optional session
+    r"(_(task|survey|biometrics)-[a-zA-Z0-9]+)?"  # task/survey/biometrics label
+    r"(_run-[0-9]+)?"  # optional run
+    r"(_desc-[a-zA-Z0-9]+)?"  # optional desc
+    r"(_(survey|biometrics))?$"  # PRISM-required modality suffixes
 )
 
 MRI_SUFFIX_REGEX = re.compile(
@@ -437,14 +440,23 @@ class DatasetValidator:
         if not BIDS_REGEX.match(base):
             issues.append(("ERROR", f"Invalid BIDS filename format: {filename}"))
 
-        # Check modality pattern
-        if not is_sidecar and not pattern.match(filename):
-            issues.append(
-                (
-                    "WARNING",
-                    f"Filename doesn't match expected pattern for {modality}: {filename}",
+        # Check modality pattern (strict for survey/biometrics)
+        if modality in {"survey", "biometrics"}:
+            if not pattern.match(filename):
+                issues.append(
+                    (
+                        "ERROR",
+                        f"Filename doesn't match expected pattern for {modality}: {filename}",
+                    )
                 )
-            )
+        else:
+            if not is_sidecar and not pattern.match(filename):
+                issues.append(
+                    (
+                        "WARNING",
+                        f"Filename doesn't match expected pattern for {modality}: {filename}",
+                    )
+                )
 
         # Check MRI-specific patterns
         if modality in ("anat", "func", "fmap", "dwi"):

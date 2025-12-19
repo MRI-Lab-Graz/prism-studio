@@ -29,6 +29,7 @@ class SurveyDerivativesResult:
 	out_format: str
 	out_root: Path
 	flat_out_path: Path | None
+	fallback_note: str | None = None
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -64,6 +65,172 @@ def _write_tsv_rows(path: Path, header: list[str], rows: list[dict[str, str]]) -
 			writer.writerow({k: r.get(k, "") for k in header})
 
 
+def _build_variable_metadata(
+	columns: list[str],
+	participants_meta: dict,
+	recipe: dict,
+) -> tuple[dict[str, str], dict[str, dict], dict[str, dict]]:
+	"""Build variable labels and value labels from metadata sources.
+	
+	Returns:
+		- variable_labels: {column_name: description}
+		- value_labels: {column_name: {code: label}}
+		- score_details: {column_name: {method, range, items, note, ...}}
+	"""
+	variable_labels: dict[str, str] = {}
+	value_labels: dict[str, dict] = {}
+	score_details: dict[str, dict] = {}
+	
+	# Standard columns
+	variable_labels["participant_id"] = "Participant identifier"
+	variable_labels["session"] = "Session identifier"
+	
+	# From participants.json
+	for col in columns:
+		if col in participants_meta:
+			col_meta = participants_meta[col]
+			if isinstance(col_meta, dict):
+				# Description/variable label
+				desc = col_meta.get("Description") or col_meta.get("description") or ""
+				if desc:
+					variable_labels[col] = desc
+				# Levels/value labels
+				levels = col_meta.get("Levels") or col_meta.get("levels") or {}
+				if levels and isinstance(levels, dict):
+					# Convert to {code: label} format
+					value_labels[col] = {str(k): str(v) for k, v in levels.items()}
+	
+	# From recipe Scores - extract full details
+	scores = recipe.get("Scores") or []
+	for score in scores:
+		name = score.get("Name")
+		if name and name in columns:
+			desc = score.get("Description") or ""
+			if desc:
+				variable_labels[name] = desc
+			# Add interpretation as value labels if present
+			interp = score.get("Interpretation")
+			if interp and isinstance(interp, dict):
+				value_labels[name] = {str(k): str(v) for k, v in interp.items()}
+			
+			# Build detailed score info
+			details = {}
+			if score.get("Method"):
+				details["method"] = score["Method"]
+			if score.get("Items"):
+				details["items"] = score["Items"]
+			if score.get("Range"):
+				details["range"] = score["Range"]
+			if score.get("Note"):
+				details["note"] = score["Note"]
+			if score.get("Missing"):
+				details["missing_handling"] = score["Missing"]
+			if details:
+				score_details[name] = details
+	
+	return variable_labels, value_labels, score_details
+
+
+def _build_survey_metadata(recipe: dict) -> dict:
+	"""Extract survey-level metadata from recipe for inclusion in codebook."""
+	meta = {}
+	
+	# Recipe version and kind
+	if recipe.get("RecipeVersion"):
+		meta["recipe_version"] = recipe["RecipeVersion"]
+	if recipe.get("Kind"):
+		meta["kind"] = recipe["Kind"]
+	
+	# Survey info block
+	survey_info = recipe.get("Survey") or {}
+	if survey_info.get("Name"):
+		meta["survey_name"] = survey_info["Name"]
+	if survey_info.get("TaskName"):
+		meta["task_name"] = survey_info["TaskName"]
+	if survey_info.get("Description"):
+		meta["survey_description"] = survey_info["Description"]
+	if survey_info.get("Version"):
+		meta["survey_version"] = survey_info["Version"]
+	if survey_info.get("Citation"):
+		meta["citation"] = survey_info["Citation"]
+	if survey_info.get("URL"):
+		meta["url"] = survey_info["URL"]
+	
+	# Transforms info (e.g., which items were reverse-coded)
+	transforms = recipe.get("Transforms") or {}
+	if transforms.get("Invert"):
+		invert = transforms["Invert"]
+		inverted_items = invert.get("Items") or []
+		if inverted_items:
+			meta["reverse_coded_items"] = inverted_items
+			scale = invert.get("Scale") or {}
+			if scale:
+				meta["reverse_code_scale"] = scale
+	
+	return meta
+
+
+def _write_codebook_json(path: Path, variable_labels: dict, value_labels: dict, 
+						 score_details: dict = None, survey_meta: dict = None) -> None:
+	"""Write a companion codebook JSON file with all metadata."""
+	codebook = {
+		"_description": "Codebook for derivative output - variable and value labels",
+	}
+	
+	# Include survey-level metadata
+	if survey_meta:
+		codebook["survey"] = survey_meta
+	
+	codebook["variables"] = {}
+	all_vars = set(variable_labels.keys()) | set(value_labels.keys()) | set(score_details.keys() if score_details else [])
+	for var in sorted(all_vars):
+		entry = {}
+		if var in variable_labels:
+			entry["label"] = variable_labels[var]
+		if var in value_labels:
+			entry["values"] = value_labels[var]
+		if score_details and var in score_details:
+			entry["score_info"] = score_details[var]
+		if entry:
+			codebook["variables"][var] = entry
+	_write_json(path, codebook)
+
+
+def _write_codebook_tsv(path: Path, variable_labels: dict, value_labels: dict,
+					   score_details: dict = None) -> None:
+	"""Write a companion codebook TSV file with all metadata."""
+	rows = []
+	all_vars = set(variable_labels.keys()) | set(value_labels.keys()) | set(score_details.keys() if score_details else [])
+	for var in sorted(all_vars):
+		label = variable_labels.get(var, "")
+		values = value_labels.get(var, {})
+		if values:
+			values_str = "; ".join(f"{k}={v}" for k, v in sorted(values.items(), key=lambda x: str(x[0])))
+		else:
+			values_str = ""
+		# Add score details as extra info
+		details_str = ""
+		if score_details and var in score_details:
+			d = score_details[var]
+			parts = []
+			if d.get("method"):
+				parts.append(f"method={d['method']}")
+			if d.get("items"):
+				parts.append(f"items={'+'.join(d['items'])}")
+			if d.get("range"):
+				r = d["range"]
+				parts.append(f"range={r.get('min','?')}-{r.get('max','?')}")
+			details_str = "; ".join(parts)
+		rows.append({"variable": var, "label": label, "values": values_str, "score_details": details_str})
+	
+	_ensure_dir(path.parent)
+	with open(path, "w", encoding="utf-8", newline="") as f:
+		writer = csv.DictWriter(f, fieldnames=["variable", "label", "values", "score_details"], delimiter="\t", lineterminator="\n")
+		writer.writeheader()
+		for r in rows:
+			writer.writerow(r)
+
+
 def _normalize_survey_key(raw: str) -> str:
 	s = str(raw or "").strip().lower()
 	if not s:
@@ -77,14 +244,23 @@ def _normalize_survey_key(raw: str) -> str:
 def _extract_task_from_survey_filename(path: Path) -> str | None:
 	stem = path.stem
 	# Examples:
-	# sub-001_ses-1_task-ads_beh.tsv
-	# sub-001_ses-1_survey-ads_beh.tsv
+	# sub-001_ses-1_task-ads_survey.tsv
+	# sub-001_ses-1_survey-ads_survey.tsv
+	# (legacy) sub-001_ses-1_task-ads_beh.tsv
+	# (legacy) sub-001_ses-1_survey-ads_beh.tsv
 	for token in stem.split("_"):
 		if token.startswith("task-"):
 			return _normalize_survey_key(token)
 		if token.startswith("survey-"):
 			return _normalize_survey_key(token)
 	return None
+
+
+def _strip_suffix(stem: str) -> tuple[str, str | None]:
+	for suffix in ("_survey", "_beh"):
+		if stem.endswith(suffix):
+			return stem[: -len(suffix)], suffix
+	return stem, None
 
 
 def _infer_sub_ses_from_path(path: Path) -> tuple[str | None, str | None]:
@@ -290,11 +466,34 @@ def compute_survey_derivatives(
 	if not tsv_files:
 		raise ValueError(f"No survey TSV files found under: {prism_root}")
 
+	# Load participants.tsv if available (for merging demographic data)
+	participants_df = None
+	participants_meta = {}  # Column metadata from participants.json
+	participants_tsv = prism_root / "participants.tsv"
+	participants_json = prism_root / "participants.json"
+	if participants_tsv.is_file():
+		try:
+			import pandas as pd
+			participants_df = pd.read_csv(participants_tsv, sep="\t", dtype=str)
+			# Ensure participant_id column exists
+			if "participant_id" not in participants_df.columns:
+				participants_df = None
+		except Exception:
+			participants_df = None
+	
+	# Load participants.json for metadata (variable labels, value labels)
+	if participants_json.is_file():
+		try:
+			participants_meta = _read_json(participants_json)
+		except Exception:
+			participants_meta = {}
+
 	out_root = prism_root / "derivatives" / "surveys"
 	processed_files = 0
 	written_files = 0
 
 	flat_out_path: Path | None = None
+	fallback_note: str | None = None
 
 	# If modality=survey we will write one flat file per survey (recipe)
 	for recipe_id, rec in sorted(recipes.items()):
@@ -348,33 +547,124 @@ def compute_survey_derivatives(
 			cols = [c for c in (['participant_id', 'session'] + [c for c in out_header]) if c in df.columns]
 			df = df.loc[:, cols]
 
+			# Merge participant variables (age, sex, etc.) if available
+			if participants_df is not None:
+				# Get participant columns except participant_id (already in df)
+				participant_cols = [c for c in participants_df.columns if c != "participant_id"]
+				if participant_cols:
+					df = df.merge(
+						participants_df[["participant_id"] + participant_cols],
+						on="participant_id",
+						how="left"
+					)
+					# Reorder: participant_id, participant vars, session, scores
+					final_cols = ["participant_id"] + participant_cols + ["session"] + [c for c in out_header if c in df.columns]
+					df = df.loc[:, [c for c in final_cols if c in df.columns]]
+
 			out_fname = None
+			final_format = out_format
+			
+			# Build metadata for all export formats
+			var_labels, val_labels, score_details = _build_variable_metadata(
+				list(df.columns),
+				participants_meta,
+				recipe,
+			)
+			survey_meta = _build_survey_metadata(recipe)
+			
 			if out_format == 'csv':
 				out_fname = out_root / f"{recipe_id}.csv"
 				df.to_csv(out_fname, index=False)
+				# Write companion codebook files
+				_write_codebook_json(out_root / f"{recipe_id}_codebook.json", var_labels, val_labels, score_details, survey_meta)
+				_write_codebook_tsv(out_root / f"{recipe_id}_codebook.tsv", var_labels, val_labels, score_details)
 			elif out_format == 'xlsx':
 				out_fname = out_root / f"{recipe_id}.xlsx"
-				df.to_excel(out_fname, index=False)
+				# Write data + codebook sheet
+				try:
+					with pd.ExcelWriter(out_fname, engine='openpyxl') as writer:
+						df.to_excel(writer, sheet_name='Data', index=False)
+						# Build codebook dataframe with full metadata
+						codebook_rows = []
+						for var in df.columns:
+							label = var_labels.get(var, "")
+							values = val_labels.get(var, {})
+							values_str = "; ".join(f"{k}={v}" for k, v in sorted(values.items(), key=lambda x: str(x[0]))) if values else ""
+							# Include score details
+							details_str = ""
+							if var in score_details:
+								d = score_details[var]
+								parts = []
+								if d.get("method"):
+									parts.append(f"method={d['method']}")
+								if d.get("items"):
+									parts.append(f"items={'+'.join(d['items'])}")
+								if d.get("range"):
+									r = d["range"]
+									parts.append(f"range={r.get('min','?')}-{r.get('max','?')}")
+								details_str = "; ".join(parts)
+							codebook_rows.append({"variable": var, "label": label, "values": values_str, "score_details": details_str})
+						codebook_df = pd.DataFrame(codebook_rows)
+						codebook_df.to_excel(writer, sheet_name='Codebook', index=False)
+						# Add survey info sheet
+						if survey_meta:
+							survey_rows = [{"property": k, "value": str(v)} for k, v in survey_meta.items()]
+							survey_df = pd.DataFrame(survey_rows)
+							survey_df.to_excel(writer, sheet_name='Survey Info', index=False)
+				except Exception:
+					# Fallback: just write data without codebook sheet
+					df.to_excel(out_fname, index=False)
 			elif out_format == 'sav':
 				out_fname = out_root / f"{recipe_id}.sav"
 				try:
 					import pyreadstat
 
-					# pyreadstat expects pandas DataFrame
-					pyreadstat.write_sav(df, str(out_fname))
+					# Convert value_labels to pyreadstat format: {col: {numeric_code: label}}
+					# pyreadstat expects numeric keys for value labels
+					sav_value_labels = {}
+					for col, vals in val_labels.items():
+						if col in df.columns:
+							try:
+								# Try to convert keys to float for numeric columns
+								sav_value_labels[col] = {float(k): v for k, v in vals.items()}
+							except (ValueError, TypeError):
+								# Keep as string if not numeric
+								sav_value_labels[col] = vals
+
+					pyreadstat.write_sav(
+						df, 
+						str(out_fname),
+						column_labels=var_labels if var_labels else None,
+						variable_value_labels=sav_value_labels if sav_value_labels else None,
+					)
+					# SPSS doesn't store survey-level metadata, write companion codebook
+					_write_codebook_json(out_root / f"{recipe_id}_codebook.json", var_labels, val_labels, score_details, survey_meta)
 				except Exception:
 					# Fallback to CSV if pyreadstat not available
 					out_fname = out_root / f"{recipe_id}.csv"
 					df.to_csv(out_fname, index=False)
+					_write_codebook_json(out_root / f"{recipe_id}_codebook.json", var_labels, val_labels, score_details, survey_meta)
+					_write_codebook_tsv(out_root / f"{recipe_id}_codebook.tsv", var_labels, val_labels, score_details)
+					final_format = 'csv'
+					if fallback_note is None:
+						fallback_note = "pyreadstat not available; wrote CSV instead of SAV"
 			elif out_format == 'r':
 				# Try to write a feather file (widely readable by R via arrow)
 				out_fname = out_root / f"{recipe_id}.feather"
 				try:
 					df.to_feather(out_fname)
+					# Feather doesn't support metadata, write companion codebook
+					_write_codebook_json(out_root / f"{recipe_id}_codebook.json", var_labels, val_labels, score_details, survey_meta)
+					_write_codebook_tsv(out_root / f"{recipe_id}_codebook.tsv", var_labels, val_labels, score_details)
 				except Exception:
 					# Fallback to CSV
 					out_fname = out_root / f"{recipe_id}.csv"
 					df.to_csv(out_fname, index=False)
+					_write_codebook_json(out_root / f"{recipe_id}_codebook.json", var_labels, val_labels, score_details, survey_meta)
+					_write_codebook_tsv(out_root / f"{recipe_id}_codebook.tsv", var_labels, val_labels, score_details)
+					final_format = 'csv'
+					if fallback_note is None:
+						fallback_note = "pyarrow/feather not available; wrote CSV instead of R/feather"
 
 			if out_fname and out_fname.exists():
 				written_files += 1
@@ -415,10 +705,9 @@ def compute_survey_derivatives(
 				else:
 					out_dir = out_root / recipe_id / sub_id / ses_id / "survey"
 					stem = in_path.stem
-					if stem.endswith("_beh"):
-						new_stem = stem[:-4] + "_desc-scores_beh"
-					else:
-						new_stem = stem + "_desc-scores"
+					base_stem, _in_suffix = _strip_suffix(stem)
+					# Write derivatives with the new _survey suffix; legacy _beh inputs are upgraded.
+					new_stem = f"{base_stem}_desc-scores_survey"
 					out_path = out_dir / f"{new_stem}.tsv"
 					_write_tsv_rows(out_path, out_header, out_rows)
 					written_files += 1
@@ -444,7 +733,8 @@ def compute_survey_derivatives(
 	return SurveyDerivativesResult(
 		processed_files=processed_files,
 		written_files=written_files,
-		out_format=out_format,
+		out_format=final_format,
 		out_root=out_root,
 		flat_out_path=flat_out_path,
+		fallback_note=fallback_note,
 	)
