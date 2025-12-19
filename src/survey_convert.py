@@ -640,6 +640,13 @@ def _convert_survey_dataframe_to_prism_dataset(
         if pd.isna(val):
             return  # n/a is always valid
         
+        # Check for empty string (which pandas doesn't consider NaN)
+        if isinstance(val, str) and val.strip() == "":
+            raise ValueError(
+                f"Empty value for question '{item_id}' in {sub_id} task '{task}'. "
+                f"Use 'n/a' or 'NA' for missing data."
+            )
+        
         item_schema = schema.get(item_id)
         if not item_schema or not isinstance(item_schema, dict):
             return  # No schema to validate against
