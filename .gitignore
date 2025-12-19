@@ -60,7 +60,7 @@ fair_dataset_description.json
 example_*_metadata.json
 
 # PyInstaller / Build artifacts
-build/
+/build/
 dist/
 *.spec
 PrismValidator.iconset/

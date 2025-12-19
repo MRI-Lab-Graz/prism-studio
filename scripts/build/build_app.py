@@ -24,11 +24,11 @@ def _generate_icon(name: str) -> str | None:
     """
     source_png = Path("static/img/MRI_Lab_Logo.png")
     if not source_png.exists():
-        print(f"⚠️ Icon source not found: {source_png}")
+        print(f"[WARN] Icon source not found: {source_png}")
         return None
 
     if sys.platform == "darwin":
-        print("🎨 Generating macOS icon (.icns)...")
+        print("[ICON] Generating macOS icon (.icns)...")
         iconset_dir = Path(f"{name}.iconset")
         try:
             _maybe_rm_tree(iconset_dir)
@@ -69,17 +69,17 @@ def _generate_icon(name: str) -> str | None:
             subprocess.run(["iconutil", "-c", "icns", str(iconset_dir)], check=True)
             _maybe_rm_tree(iconset_dir)
             if icns_path.exists():
-                print(f"✅ Generated {icns_path}")
+                print(f"[OK] Generated {icns_path}")
                 return str(icns_path)
         except Exception as e:
-            print(f"⚠️ Failed to generate icon: {e}")
+            print(f"[WARN] Failed to generate icon: {e}")
         finally:
             _maybe_rm_tree(iconset_dir)
 
         return None
 
     if sys.platform == "win32":
-        print("🎨 Using PNG icon for Windows...")
+        print("[ICON] Using PNG icon for Windows...")
         return str(source_png)
 
     return None
@@ -151,7 +151,7 @@ def main() -> int:
     ]
     if (project_root / "survey_library").exists():
         datas.append(f"survey_library{sep}survey_library")
-        print("✓ Including survey_library")
+        print("[OK] Including survey_library")
 
     pyinstaller_args = [
         args.entry,
@@ -185,11 +185,11 @@ def main() -> int:
     # --- Post-Build Platform-Specific Fixes ---
     if sys.platform == "darwin":
         app_path = str(project_root / "dist" / f"{args.name}.app")
-        print("🔧 Applying macOS post-build fixes...")
+        print("[BUILD] Applying macOS post-build fixes...")
 
         # 1) Update Info.plist with LSMinimumSystemVersion
         try:
-            print("📝 Updating Info.plist...")
+            print("[PLIST] Updating Info.plist...")
             plist_path = os.path.join(app_path, "Contents", "Info.plist")
             subprocess.run(
                 [
@@ -203,31 +203,31 @@ def main() -> int:
                 check=True,
             )
         except Exception as e:
-            print(f"⚠️ Updating Info.plist failed: {e}")
+            print(f"[WARN] Updating Info.plist failed: {e}")
 
         if not args.no_sign:
             # 2) Force ad-hoc code signing
             try:
-                print("🔏 Signing app bundle...")
+                print("[SIGN] Signing app bundle...")
                 subprocess.run(["codesign", "--force", "--deep", "--sign", "-", app_path], check=True)
             except Exception as e:
-                print(f"⚠️ Signing failed: {e}")
+                print(f"[WARN] Signing failed: {e}")
 
             # 3) Remove quarantine attribute (helps avoid 'App is damaged' in some cases)
             try:
-                print("🛡️ Removing quarantine attribute...")
+                print("[XATTR] Removing quarantine attribute...")
                 subprocess.run(["xattr", "-cr", app_path], check=True)
             except Exception as e:
-                print(f"⚠️ Removing quarantine failed: {e}")
+                print(f"[WARN] Removing quarantine failed: {e}")
 
-        print(f"\n✅ Build complete! Check dist/{args.name}.app")
+        print(f"\n[OK] Build complete! Check dist/{args.name}.app")
         print(f"   To run: open dist/{args.name}.app")
 
     elif sys.platform == "win32":
-        print(f"\n✅ Build complete! Check dist\\{args.name}\\")
+        print(f"\n[OK] Build complete! Check dist\\{args.name}\\")
         print(f"   To run: dist\\{args.name}\\{args.name}.exe")
     else:
-        print(f"\n✅ Build complete! Check dist/{args.name}/")
+        print(f"\n[OK] Build complete! Check dist/{args.name}/")
 
     return 0
 
