@@ -1037,8 +1037,8 @@ def show_results(result_id):
             dataset_stats = {
                 "total_subjects": len(getattr(stats_obj, "subjects", [])),
                 "total_sessions": len(unique_sessions),
-                "modalities": getattr(stats_obj, "modalities", {}),
-                "tasks": sorted(getattr(stats_obj, "tasks", [])),
+                "modalities": sorted(getattr(stats_obj, "modalities", set()) or set()),
+                "tasks": sorted(getattr(stats_obj, "tasks", set()) or set()),
                 "total_files": getattr(stats_obj, "total_files", 0),
                 "sidecar_files": getattr(stats_obj, "sidecar_files", 0),
             }
