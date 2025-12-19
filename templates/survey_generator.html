@@ -218,6 +218,12 @@
                                 </div>
                             </div>
 
+                            <!-- Structure Warning (missing folders/files) -->
+                            <div id="surveyStructureWarning" class="alert alert-danger d-none mb-3">
+                                <i class="fas fa-folder-minus me-2"></i>
+                                <strong>Missing Structure:</strong> <span id="surveyStructureMessage">The selected folder is missing required items.</span>
+                            </div>
+
                             <!-- I18n Warning -->
                             <div id="surveyI18nWarning" class="alert alert-warning d-none mb-3">
                                 <i class="fas fa-language me-2"></i>
@@ -347,6 +353,12 @@
                                     </div>
                                     <div class="form-text">Root library folder containing <code>survey/</code>, <code>biometrics/</code>, and <code>participants.json</code></div>
                                 </div>
+                            </div>
+
+                            <!-- Structure Warning (missing folders/files) -->
+                            <div id="biometricsStructureWarning" class="alert alert-danger d-none mb-3">
+                                <i class="fas fa-folder-minus me-2"></i>
+                                <strong>Missing Structure:</strong> <span id="biometricsStructureMessage">The selected folder is missing required items.</span>
                             </div>
 
                             <div class="row g-3 align-items-end">
@@ -879,10 +891,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const libraryPath = convertLibraryPathInput ? convertLibraryPathInput.value.trim() : '';
         const surveyI18nWarning = document.getElementById('surveyI18nWarning');
         const surveyI18nMessage = document.getElementById('surveyI18nMessage');
+        const surveyStructureWarning = document.getElementById('surveyStructureWarning');
+        const surveyStructureMessage = document.getElementById('surveyStructureMessage');
         
         if (!libraryPath) {
-            // Hide warning and reset languages if no path
+            // Hide warnings and reset languages if no path
             if (surveyI18nWarning) surveyI18nWarning.classList.add('d-none');
+            if (surveyStructureWarning) surveyStructureWarning.classList.add('d-none');
             return;
         }
         
@@ -917,6 +932,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     convertLanguage.value = 'auto';
                 }
                 
+                // Show structure warning if missing folders/files
+                if (surveyStructureWarning && surveyStructureMessage && data.structure) {
+                    const missing = data.structure.missing_items || [];
+                    if (missing.length > 0) {
+                        surveyStructureMessage.textContent = `The selected folder is missing: ${missing.join(', ')}. Expected library structure: survey/, biometrics/, participants.json`;
+                        surveyStructureWarning.classList.remove('d-none');
+                    } else {
+                        surveyStructureWarning.classList.add('d-none');
+                    }
+                } else if (surveyStructureWarning) {
+                    surveyStructureWarning.classList.add('d-none');
+                }
+                
                 // Show I18n warning if templates don't have multilanguage support
                 if (surveyI18nWarning && surveyI18nMessage) {
                     const hasI18n = langs.length > 0;
@@ -939,6 +967,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(() => {
                 // If this fails, keep the dropdown as-is (Auto only)
                 if (surveyI18nWarning) surveyI18nWarning.classList.add('d-none');
+                if (surveyStructureWarning) surveyStructureWarning.classList.add('d-none');
             });
     }
 
@@ -1249,14 +1278,51 @@ document.addEventListener('DOMContentLoaded', function() {
         if (biometricsConvertBtn) biometricsConvertBtn.disabled = !(hasFile && hasLibraryPath);
     }
 
+    function checkBiometricsLibraryStructure() {
+        const libraryPath = biometricsLibraryPathInput ? biometricsLibraryPathInput.value.trim() : '';
+        const structureWarning = document.getElementById('biometricsStructureWarning');
+        const structureMessage = document.getElementById('biometricsStructureMessage');
+        
+        if (!libraryPath) {
+            if (structureWarning) structureWarning.classList.add('d-none');
+            return;
+        }
+        
+        const url = `/api/biometrics-check-library?library_path=${encodeURIComponent(libraryPath)}`;
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                if (structureWarning && structureMessage && data.structure) {
+                    const missing = data.structure.missing_items || [];
+                    if (missing.length > 0) {
+                        structureMessage.textContent = `The selected folder is missing: ${missing.join(', ')}. Expected library structure: survey/, biometrics/, participants.json`;
+                        structureWarning.classList.remove('d-none');
+                    } else {
+                        structureWarning.classList.add('d-none');
+                    }
+                } else if (structureWarning) {
+                    structureWarning.classList.add('d-none');
+                }
+            })
+            .catch(() => {
+                if (structureWarning) structureWarning.classList.add('d-none');
+            });
+    }
+
     if (biometricsDataFile) {
         biometricsDataFile.addEventListener('change', updateBiometricsBtn);
         updateBiometricsBtn();
     }
 
     if (biometricsLibraryPathInput) {
-        biometricsLibraryPathInput.addEventListener('change', updateBiometricsBtn);
-        biometricsLibraryPathInput.addEventListener('blur', updateBiometricsBtn);
+        biometricsLibraryPathInput.addEventListener('change', function() {
+            checkBiometricsLibraryStructure();
+            updateBiometricsBtn();
+        });
+        biometricsLibraryPathInput.addEventListener('blur', function() {
+            checkBiometricsLibraryStructure();
+            updateBiometricsBtn();
+        });
     }
 
     if (biometricsConvertBtn) {

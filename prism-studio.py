@@ -1521,9 +1521,31 @@ def api_survey_languages():
         else:
             library_path = str(fallback)
 
-    # Support both root/survey/ structure and direct survey folder
+    # Check structure of library root
     library_root = Path(library_path)
+    structure_info = {
+        "has_survey_folder": False,
+        "has_biometrics_folder": False,
+        "has_participants_json": False,
+        "missing_items": []
+    }
+    
+    # Check for expected items
     survey_dir = library_root / "survey"
+    biometrics_dir = library_root / "biometrics"
+    participants_json = library_root / "participants.json"
+    
+    structure_info["has_survey_folder"] = survey_dir.is_dir()
+    structure_info["has_biometrics_folder"] = biometrics_dir.is_dir()
+    structure_info["has_participants_json"] = participants_json.is_file()
+    
+    # Build missing items list for survey conversion
+    if not structure_info["has_survey_folder"]:
+        structure_info["missing_items"].append("survey/")
+    if not structure_info["has_participants_json"]:
+        structure_info["missing_items"].append("participants.json")
+    
+    # Determine effective survey directory
     if survey_dir.is_dir():
         effective_survey_dir = str(survey_dir)
     else:
@@ -1535,8 +1557,49 @@ def api_survey_languages():
         "default": default, 
         "library_path": effective_survey_dir,
         "template_count": template_count,
-        "i18n_count": i18n_count
+        "i18n_count": i18n_count,
+        "structure": structure_info
     })
+
+
+@app.route("/api/biometrics-check-library", methods=["GET"])
+def api_biometrics_check_library():
+    """Check the structure of a biometrics template library folder."""
+    library_path = (request.args.get("library_path") or "").strip()
+    
+    if not library_path:
+        return jsonify({"error": "No library path provided"}), 400
+
+    # Check structure of library root
+    library_root = Path(library_path)
+    structure_info = {
+        "has_survey_folder": False,
+        "has_biometrics_folder": False,
+        "has_participants_json": False,
+        "missing_items": [],
+        "template_count": 0
+    }
+    
+    # Check for expected items
+    survey_dir = library_root / "survey"
+    biometrics_dir = library_root / "biometrics"
+    participants_json = library_root / "participants.json"
+    
+    structure_info["has_survey_folder"] = survey_dir.is_dir()
+    structure_info["has_biometrics_folder"] = biometrics_dir.is_dir()
+    structure_info["has_participants_json"] = participants_json.is_file()
+    
+    # Build missing items list for biometrics conversion
+    if not structure_info["has_biometrics_folder"]:
+        structure_info["missing_items"].append("biometrics/")
+    if not structure_info["has_participants_json"]:
+        structure_info["missing_items"].append("participants.json")
+    
+    # Count templates in biometrics folder
+    if biometrics_dir.is_dir():
+        structure_info["template_count"] = len(list(biometrics_dir.glob("biometrics-*.json")))
+    
+    return jsonify({"structure": structure_info})
 
 
 @app.route("/api/biometrics-convert", methods=["POST"])
