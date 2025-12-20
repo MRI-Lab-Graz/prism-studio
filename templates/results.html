@@ -69,13 +69,13 @@
                 {% endif %}
             </div>
             <div>
-                <a href="{{ url_for('download_report', result_id=result_id) }}" class="btn btn-outline-primary me-2">
+                <a href="{{ url_for('validation.download_report', result_id=result_id) }}" class="btn btn-outline-primary me-2">
                     <i class="fas fa-download me-2"></i>Download Report
                 </a>
-                <a href="{{ url_for('cleanup', result_id=result_id) }}" class="btn btn-outline-secondary me-2">
+                <a href="{{ url_for('validation.cleanup', result_id=result_id) }}" class="btn btn-outline-secondary me-2">
                     <i class="fas fa-trash me-2"></i>Cleanup
                 </a>
-                <a href="{{ url_for('validate_dataset') }}" class="btn btn-primary">
+                <a href="{{ url_for('validation.validate_dataset') }}" class="btn btn-primary">
                     <i class="fas fa-plus me-2"></i>Validate Another
                 </a>
             </div>
@@ -409,10 +409,10 @@
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <a href="{{ url_for('download_report', result_id=result_id) }}" class="btn btn-outline-primary text-start">
+                    <a href="{{ url_for('validation.download_report', result_id=result_id) }}" class="btn btn-outline-primary text-start">
                         <i class="fas fa-download me-2"></i>Download JSON Report
                     </a>
-                    <a href="{{ url_for('validate_dataset') }}" class="btn btn-primary text-start">
+                    <a href="{{ url_for('validation.validate_dataset') }}" class="btn btn-primary text-start">
                         <i class="fas fa-plus me-2"></i>Validate Another
                     </a>
                 </div>

@@ -108,16 +108,16 @@
                     <a class="nav-link" href="{{ url_for('specifications') }}">
                         <i class="fas fa-book me-1"></i>Specifications
                     </a>
-                    <a class="nav-link" href="{{ url_for('validate_dataset') }}">
+                    <a class="nav-link" href="{{ url_for('validation.validate_dataset') }}">
                         <i class="fas fa-check-circle me-1 text-success"></i>Validator
                     </a>
-                    <a class="nav-link" href="{{ url_for('derivatives') }}">
+                    <a class="nav-link" href="{{ url_for('tools.derivatives') }}">
                         <i class="fas fa-calculator me-1 text-primary"></i>Data Processing
                     </a>
-                    <a class="nav-link" href="{{ url_for('survey_generator') }}">
+                    <a class="nav-link" href="{{ url_for('tools.survey_generator') }}">
                         <i class="fas fa-poll-h me-1 text-info"></i>Survey Gen
                     </a>
-                    <a class="nav-link" href="{{ url_for('converter') }}">
+                    <a class="nav-link" href="{{ url_for('tools.converter') }}">
                         <i class="fas fa-file-arrow-up me-1 text-warning"></i>Converter
                     </a>
                     <a class="nav-link" href="https://prism-validator.readthedocs.io/en/latest/" target="_blank" rel="noopener">

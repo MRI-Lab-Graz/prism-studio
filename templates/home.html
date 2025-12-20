@@ -61,7 +61,7 @@
                             <p class="card-text text-muted mb-4">
                                 Check that your dataset is complete, correctly organized, and ready for analysis or sharing.
                             </p>
-                            <a href="{{ url_for('validate_dataset') }}" class="btn btn-success">
+                            <a href="{{ url_for('validation.validate_dataset') }}" class="btn btn-success">
                                 <i class="fas fa-arrow-right me-2"></i>Open Validator
                             </a>
                         </div>
@@ -77,7 +77,7 @@
                             <p class="card-text text-muted mb-4">
                                 Build questionnaire templates and export them for use in LimeSurvey.
                             </p>
-                            <a href="{{ url_for('survey_generator') }}" class="btn btn-info text-white">
+                            <a href="{{ url_for('tools.survey_generator') }}" class="btn btn-info text-white">
                                 <i class="fas fa-arrow-right me-2"></i>Open Generator
                             </a>
                         </div>
@@ -93,7 +93,7 @@
                             <p class="card-text text-muted mb-4">
                                 Transform your survey, biometrics, or physio data into clean, standardized PRISM datasets.
                             </p>
-                            <a href="{{ url_for('converter') }}" class="btn btn-warning text-white">
+                            <a href="{{ url_for('tools.converter') }}" class="btn btn-warning text-white">
                                 <i class="fas fa-arrow-right me-2"></i>Open Converter
                             </a>
                         </div>
@@ -109,7 +109,7 @@
                             <p class="card-text text-muted mb-4">
                                 Take a PRISM dataset and generate analysis-ready outputs like scores and subscales.
                             </p>
-                            <a href="{{ url_for('derivatives') }}" class="btn btn-primary">
+                            <a href="{{ url_for('tools.derivatives') }}" class="btn btn-primary">
                                 <i class="fas fa-arrow-right me-2"></i>Open Processing
                             </a>
                         </div>
