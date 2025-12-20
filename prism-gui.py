@@ -18,7 +18,7 @@ from pathlib import Path
 # Ensure we can import core validator logic from src
 if getattr(sys, "frozen", False):
     # Running in a PyInstaller bundle
-    BASE_DIR = Path(sys._MEIPASS)
+    BASE_DIR = Path(sys._MEIPASS)  # type: ignore
 else:
     # Running in a normal Python environment
     BASE_DIR = Path(__file__).resolve().parent
@@ -660,7 +660,7 @@ class PrismValidatorGUI:
         format_combo = ttk.Combobox(
             frame,
             textvariable=self.deriv_format_var,
-            values=("csv", "xlsx", "sav", "r"),
+            values=("csv", "xlsx", "save", "r"),
             state="readonly",
         )
         format_combo.grid(row=2, column=1, sticky="w", padx=10)
@@ -983,7 +983,9 @@ class PrismValidatorGUI:
                 ),
             )
         except Exception as e:
-            self.root.after(0, lambda: messagebox.showerror("Conversion Error", str(e)))
+            self.root.after(
+                0, lambda e=e: messagebox.showerror("Conversion Error", str(e))
+            )
         finally:
             self.root.after(0, lambda: self.convert_btn.config(state="normal"))
 
@@ -1053,7 +1055,7 @@ class PrismValidatorGUI:
             self.root.after(0, lambda: self._deriv_finished(msg))
         except Exception as e:
             self.root.after(
-                0, lambda: messagebox.showerror("Derivatives Error", str(e))
+                0, lambda e=e: messagebox.showerror("Derivatives Error", str(e))
             )
             self.root.after(0, lambda: self.deriv_status.config(text="Error"))
         finally:

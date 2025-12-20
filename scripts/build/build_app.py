@@ -86,7 +86,9 @@ def _generate_icon(name: str) -> str | None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Build Prism Validator using PyInstaller")
+    parser = argparse.ArgumentParser(
+        description="Build Prism Validator using PyInstaller"
+    )
     parser.add_argument(
         "--entry",
         default="prism-studio.py",
@@ -171,7 +173,9 @@ def main() -> int:
         pyinstaller_args.append("--onedir")
 
     if sys.platform == "darwin":
-        pyinstaller_args.append("--osx-bundle-identifier=at.ac.uni-graz.mri.prism-validator")
+        pyinstaller_args.append(
+            "--osx-bundle-identifier=at.ac.uni-graz.mri.prism-validator"
+        )
 
     if icon_file:
         pyinstaller_args.append(f"--icon={icon_file}")
@@ -209,7 +213,10 @@ def main() -> int:
             # 2) Force ad-hoc code signing
             try:
                 print("[SIGN] Signing app bundle...")
-                subprocess.run(["codesign", "--force", "--deep", "--sign", "-", app_path], check=True)
+                subprocess.run(
+                    ["codesign", "--force", "--deep", "--sign", "-", app_path],
+                    check=True,
+                )
             except Exception as e:
                 print(f"[WARN] Signing failed: {e}")
 

@@ -20,6 +20,7 @@ from datetime import datetime
 from pathlib import Path
 import csv
 import json
+from typing import Any, Dict, List, Optional
 
 
 @dataclass(frozen=True)
@@ -176,11 +177,11 @@ def _write_codebook_json(
     path: Path,
     variable_labels: dict,
     value_labels: dict,
-    score_details: dict = None,
-    survey_meta: dict = None,
+    score_details: Optional[dict] = None,
+    survey_meta: Optional[dict] = None,
 ) -> None:
     """Write a companion codebook JSON file with all metadata."""
-    codebook = {
+    codebook: Dict[str, Any] = {
         "_description": "Codebook for derivative output - variable and value labels",
     }
 
@@ -208,7 +209,10 @@ def _write_codebook_json(
 
 
 def _write_codebook_tsv(
-    path: Path, variable_labels: dict, value_labels: dict, score_details: dict = None
+    path: Path,
+    variable_labels: dict,
+    value_labels: dict,
+    score_details: Optional[dict] = None,
 ) -> None:
     """Write a companion codebook TSV file with all metadata."""
     rows = []
@@ -237,7 +241,7 @@ def _write_codebook_tsv(
                 parts.append(f"items={'+'.join(d['items'])}")
             if d.get("range"):
                 r = d["range"]
-                parts.append(f"range={r.get('min','?')}-{r.get('max','?')}")
+                parts.append(f"range={r.get('min', '?')}-{r.get('max', '?')}")
             details_str = "; ".join(parts)
         rows.append(
             {
@@ -453,16 +457,16 @@ def compute_survey_derivatives(
     modality = str(modality or "survey").strip().lower()
     out_format = str(out_format or "csv").strip().lower()
 
-    # For survey modality we expect file formats (csv, xlsx, sav, r).
+    # For survey modality we expect file formats (csv, xlsx, save, r).
     if modality == "survey":
-        if out_format not in {"csv", "xlsx", "sav", "r"}:
+        if out_format not in {"csv", "xlsx", "save", "r"}:
             raise ValueError(
-                "For modality=survey --format must be one of: csv, xlsx, sav, r"
+                "For modality=survey --format must be one of: csv, xlsx, save, r"
             )
     else:
         # keep legacy behaviour for other modalities
-        if out_format not in {"prism", "flat", "csv", "xlsx", "sav", "r"}:
-            raise ValueError("--format must be one of: prism, flat, csv, xlsx, sav, r")
+        if out_format not in {"prism", "flat", "csv", "xlsx", "save", "r"}:
+            raise ValueError("--format must be one of: prism, flat, csv, xlsx, save, r")
 
     recipes_dir = (repo_root / "derivatives" / "surveys").resolve()
     if not recipes_dir.exists() or not recipes_dir.is_dir():
@@ -535,12 +539,6 @@ def compute_survey_derivatives(
     flat_rows: list[dict] = []
     flat_key_to_idx: dict[tuple, int] = {}
 
-    flat_rows: list[dict] = []
-    flat_key_to_idx: dict[tuple, int] = {}
-
-    flat_rows: list[dict] = []
-    flat_key_to_idx: dict[tuple, int] = {}
-
     processed_files = 0
     written_files = 0
 
@@ -565,7 +563,7 @@ def compute_survey_derivatives(
 
         if modality == "survey":
             # Accumulate scores across all matching participant TSVs for this survey
-            rows_accum: list[dict[str, object]] = []
+            rows_accum: List[Dict[str, Any]] = []
             for in_path in matching:
                 processed_files += 1
                 sub_id, ses_id = _infer_sub_ses_from_path(in_path)
@@ -693,7 +691,7 @@ def compute_survey_derivatives(
                                 if d.get("range"):
                                     r = d["range"]
                                     parts.append(
-                                        f"range={r.get('min','?')}-{r.get('max','?')}"
+                                        f"range={r.get('min', '?')}-{r.get('max', '?')}"
                                     )
                                 details_str = "; ".join(parts)
                             codebook_rows.append(
@@ -719,8 +717,8 @@ def compute_survey_derivatives(
                 except Exception:
                     # Fallback: just write data without codebook sheet
                     df.to_excel(out_fname, index=False)
-            elif out_format == "sav":
-                out_fname = out_root / f"{recipe_id}.sav"
+            elif out_format == "save":
+                out_fname = out_root / f"{recipe_id}.save"
                 try:
                     import pyreadstat
 
@@ -774,7 +772,7 @@ def compute_survey_derivatives(
                     final_format = "csv"
                     if fallback_note is None:
                         fallback_note = (
-                            "pyreadstat not available; wrote CSV instead of SAV"
+                            "pyreadstat not available; wrote CSV instead of SAVE"
                         )
             elif out_format == "r":
                 # Try to write a feather file (widely readable by R via arrow)

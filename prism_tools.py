@@ -6,7 +6,6 @@ import shutil
 import json
 import csv
 from pathlib import Path
-import glob
 
 # Enforce running from the repo-local virtual environment (skip for frozen/packaged apps)
 venv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".venv")

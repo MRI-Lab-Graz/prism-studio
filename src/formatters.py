@@ -11,7 +11,7 @@ Supports multiple output formats:
 import json
 import os
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Callable
 from defusedxml import ElementTree as ET
 from defusedxml import minidom
 
@@ -303,7 +303,7 @@ def to_markdown(
     # Summary
     lines.append("## Summary")
     lines.append("")
-    lines.append(f"| Metric | Value |")
+    lines.append("| Metric | Value |")
     lines.append("|--------|-------|")
     lines.append(f"| Status | {'✅ Valid' if is_valid else '❌ Invalid'} |")
     lines.append(f"| Errors | {summary['errors']} |")
@@ -394,7 +394,7 @@ def to_csv(issues: List[Issue]) -> str:
 # FORMAT REGISTRY
 # =============================================================================
 
-FORMATTERS = {
+FORMATTERS: Dict[str, Callable[..., str]] = {
     "json": lambda issues, path, stats: json.dumps(
         {
             "issues": [i.to_dict() for i in issues],

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Any
+from typing import Any, List
 
 
 def _detect_language_from_texts(texts: list[str]) -> str:
@@ -154,9 +154,11 @@ def migrate_survey_template_to_i18n(source: dict, languages: list[str]) -> dict:
         languages = ["de", "en"]
 
     # Detect language from content (more reliable than Technical.Language in legacy files).
-    texts: list[str] = []
-    tech = source.get("Technical") if isinstance(source.get("Technical"), dict) else {}
-    study = source.get("Study") if isinstance(source.get("Study"), dict) else {}
+    texts: List[str] = []
+    tech_raw = source.get("Technical")
+    tech = tech_raw if isinstance(tech_raw, dict) else {}
+    study_raw = source.get("Study")
+    study = study_raw if isinstance(study_raw, dict) else {}
     for k in ["OriginalName", "Description"]:
         v = study.get(k)
         if isinstance(v, str):

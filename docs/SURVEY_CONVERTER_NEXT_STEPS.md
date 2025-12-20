@@ -17,7 +17,7 @@ Create a **PRISM survey converter** that takes a “wide” data export (Excel /
 ## Inputs (what we should support)
 - **CSV**: straightforward (`scripts/csv_to_prism.py` already exists and can be the starting point).
 - **Excel** (`.xlsx`): common for study exports and data dictionaries.
-- **SPSS** (`.sav`): common for psychology studies.
+- **SPSS** (`.save`): common for psychology studies.
 
 Implementation-wise, treat everything as a table (`rows = participants`, `columns = variables`).
 
@@ -127,7 +127,7 @@ Acceptance criteria:
 - Same mapping + output as CSV for the same data.
 
 ### Milestone 4 — SPSS input
-- Add `.sav` reading.
+- Add `.save` reading.
 - Ensure value labels (if present) do not replace the raw coded values unless explicitly requested.
 
 Acceptance criteria:

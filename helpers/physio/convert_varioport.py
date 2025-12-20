@@ -2,9 +2,7 @@ import struct
 import json
 import argparse
 import numpy as np
-import pandas as pd
 import pyedflib
-import math
 
 
 def read_varioport_header(f, override_base_freq=None):

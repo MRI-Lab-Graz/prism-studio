@@ -335,13 +335,13 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
             # If the single column name contains semicolons or commas, likely wrong delimiter
             if ";" in col_name:
                 raise ValueError(
-                    f"TSV file appears to use semicolons (;) as delimiter instead of tabs. "
-                    f"Please convert to tab-separated format or save as CSV."
+                    "TSV file appears to use semicolons (;) as delimiter instead of tabs. "
+                    "Please convert to tab-separated format or save as CSV."
                 )
             elif "," in col_name:
                 raise ValueError(
-                    f"TSV file appears to use commas as delimiter instead of tabs. "
-                    f"Please save as .csv file or convert to tab-separated format."
+                    "TSV file appears to use commas as delimiter instead of tabs. "
+                    "Please save as .csv file or convert to tab-separated format."
                 )
 
         return df.rename(columns={c: str(c).strip() for c in df.columns})
@@ -696,7 +696,9 @@ def _convert_survey_dataframe_to_prism_dataset(
             raise ValueError("Unmapped columns: " + ", ".join(unknown_cols))
         if unknown == "warn":
             shown = ", ".join(unknown_cols[:10])
-            more = "" if len(unknown_cols) <= 10 else f" (+{len(unknown_cols)-10} more)"
+            more = (
+                "" if len(unknown_cols) <= 10 else f" (+{len(unknown_cols) - 10} more)"
+            )
             conversion_warnings.append(
                 f"Unmapped columns (not in any survey template): {shown}{more}"
             )
@@ -735,9 +737,12 @@ def _convert_survey_dataframe_to_prism_dataset(
             extra_part_cols.append(col)
 
     for candidate in ["age", "sex", "gender"]:
-        col = lower_to_col.get(candidate)
-        if col and col not in {resolved_id_col, resolved_session_col}:
-            extra_part_cols.append(col)
+        candidate_col = lower_to_col.get(candidate)
+        if candidate_col and candidate_col not in {
+            resolved_id_col,
+            resolved_session_col,
+        }:
+            extra_part_cols.append(candidate_col)
 
     if extra_part_cols:
         # Preserve original order while removing duplicates
@@ -1002,8 +1007,6 @@ def _inject_missing_token(sidecar: dict, *, token: str) -> dict:
 
     return sidecar
 
-    return out
-
 
 def _read_alias_rows(path: Path) -> list[list[str]]:
     rows: list[list[str]] = []
@@ -1074,7 +1077,7 @@ def _apply_alias_file_to_dataframe(*, df, alias_file: str | Path) -> "object":
     """
 
     try:
-        import pandas as pd
+        pass
     except Exception as e:  # pragma: no cover
         raise RuntimeError(
             "pandas is required for survey conversion. Ensure dependencies are installed via setup.sh"
@@ -1093,8 +1096,6 @@ def _apply_alias_file_to_dataframe(*, df, alias_file: str | Path) -> "object":
 
 
 def _apply_alias_map_to_dataframe(*, df, alias_map: dict[str, str]) -> "object":
-    import pandas as pd
-    import pandas as pd
     import pandas as pd
 
     """Apply an alias->canonical mapping to dataframe columns."""

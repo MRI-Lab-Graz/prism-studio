@@ -7,7 +7,6 @@ import sys
 import os
 import re
 import subprocess
-from pathlib import Path
 from typing import Optional, Callable, Tuple, Any, List
 
 # Progress tracking for validation jobs

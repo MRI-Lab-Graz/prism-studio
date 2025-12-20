@@ -15,6 +15,7 @@ API Endpoints:
 import os
 import sys
 from datetime import datetime
+from typing import Optional
 from flask import Blueprint, request, jsonify
 
 # Ensure src is in path
@@ -32,7 +33,7 @@ except ImportError as e:
     get_available_schema_versions = None
 
 
-def create_api_blueprint(schema_dir: str = None):
+def create_api_blueprint(schema_dir: Optional[str] = None):
     """
     Create the API blueprint.
 

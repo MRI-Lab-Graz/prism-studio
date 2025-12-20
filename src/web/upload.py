@@ -6,9 +6,8 @@ Handles folder uploads, ZIP extraction, and placeholder creation.
 import os
 import json
 import zipfile
-from pathlib import Path
 from datetime import datetime
-from typing import List, Optional, Tuple, Set
+from typing import List, Optional, Tuple, Set, Dict, Any
 
 from .utils import is_system_file
 
@@ -242,7 +241,7 @@ def process_folder_upload(
 
     processed_count = 0
     skipped_count = 0
-    manifest = {
+    manifest: Dict[str, Any] = {
         "uploaded_files": [],
         "placeholder_files": [],
         "upload_type": "structure_only",

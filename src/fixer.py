@@ -16,12 +16,9 @@ Usage:
 
 import os
 import json
-import re
 from datetime import date
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
-
-from issues import Issue, Severity, create_issue
 
 
 @dataclass

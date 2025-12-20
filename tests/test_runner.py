@@ -22,9 +22,9 @@ class TestValidateDataset:
 
     def test_validate_demo_dataset(self):
         """Test validation of the demo PRISM dataset"""
-        assert (
-            DEMO_PRISM_DATASET.exists()
-        ), f"Demo dataset not found at {DEMO_PRISM_DATASET}"
+        assert DEMO_PRISM_DATASET.exists(), (
+            f"Demo dataset not found at {DEMO_PRISM_DATASET}"
+        )
 
         issues, stats = validate_dataset(str(DEMO_PRISM_DATASET), verbose=False)
 

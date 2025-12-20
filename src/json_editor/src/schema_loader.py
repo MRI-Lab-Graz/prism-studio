@@ -38,8 +38,8 @@ class BIDSSchemaLoader:
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.schema_file = self.cache_dir / "schema.json"
-        self.schema = None
-        self.schema_version = None
+        self.schema: Optional[Dict[str, Any]] = None
+        self.schema_version: Optional[str] = None
 
     def load_schema(self, force_reload: bool = False) -> Optional[Dict[str, Any]]:
         """

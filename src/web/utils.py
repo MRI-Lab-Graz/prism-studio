@@ -5,7 +5,7 @@ Common helper functions used across web routes.
 
 import os
 import re
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 
 # System files to filter out
@@ -33,7 +33,9 @@ def is_system_file(filename: str) -> bool:
     return False
 
 
-def strip_temp_path(file_path: str, dataset_path: str = None) -> Optional[str]:
+def strip_temp_path(
+    file_path: str, dataset_path: Optional[str] = None
+) -> Optional[str]:
     """Strip temporary folder path prefix and keep only relative path from dataset root."""
     if not file_path:
         return None
@@ -82,7 +84,9 @@ def strip_temp_path_from_message(msg: str) -> str:
     return msg
 
 
-def extract_path_from_message(msg: str, dataset_path: str = None) -> Optional[str]:
+def extract_path_from_message(
+    msg: str, dataset_path: Optional[str] = None
+) -> Optional[str]:
     """Try to heuristically extract a file path or filename from a validator message."""
     if not msg:
         return None
@@ -225,8 +229,8 @@ def format_validation_results(
         Formatted results dictionary for web display
     """
     # Group issues by error code and type
-    error_groups = {}
-    warning_groups = {}
+    error_groups: Dict[str, Dict[str, Any]] = {}
+    warning_groups: Dict[str, Dict[str, Any]] = {}
 
     valid_files = []
     invalid_files = []

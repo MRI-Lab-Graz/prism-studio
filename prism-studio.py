@@ -17,8 +17,10 @@ import tempfile
 import shutil
 import webbrowser
 import threading
+import socket
 from pathlib import Path
 from datetime import datetime
+from typing import Optional, Callable, Any, Dict
 from flask import (
     Flask,
     render_template,
@@ -38,7 +40,7 @@ from functools import lru_cache
 # Ensure we can import core validator logic from src
 if getattr(sys, "frozen", False):
     # Running in a PyInstaller bundle
-    BASE_DIR = Path(sys._MEIPASS)
+    BASE_DIR = Path(sys._MEIPASS)  # type: ignore
 else:
     # Running in a normal Python environment
     BASE_DIR = Path(__file__).resolve().parent
@@ -112,7 +114,7 @@ except Exception as import_error:
 try:
     from helpers.physio.convert_varioport import convert_varioport
 except Exception as import_error:
-    convert_varioport = None
+    convert_varioport: Optional[Callable] = None  # type: ignore
     print(f"⚠️  Could not import convert_varioport: {import_error}")
 
 try:
@@ -207,8 +209,8 @@ def simple_is_system_file(filename):
 
 
 if getattr(sys, "frozen", False):
-    template_folder = os.path.join(sys._MEIPASS, "templates")
-    static_folder = os.path.join(sys._MEIPASS, "static")
+    template_folder = os.path.join(sys._MEIPASS, "templates")  # type: ignore
+    static_folder = os.path.join(sys._MEIPASS, "static")  # type: ignore
     app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
 else:
     app = Flask(__name__)
@@ -441,7 +443,7 @@ def neurobagel_participants():
 
 
 # Global storage for validation results
-validation_results = {}
+validation_results: Dict[str, Any] = {}
 
 
 @app.route("/")
@@ -1898,7 +1900,7 @@ def api_biometrics_convert():
 @app.route("/api/physio-convert", methods=["POST"])
 def api_physio_convert():
     """Convert an uploaded Varioport file (.raw/.vpd) into EDF+ (.edf) + sidecar (.json) and return as ZIP."""
-    if not convert_varioport:
+    if convert_varioport is None:
         return jsonify({"error": "Physio conversion (Varioport) not available"}), 500
 
     uploaded_file = request.files.get("raw") or request.files.get("file")
@@ -1961,9 +1963,9 @@ def api_physio_convert():
 
 
 # Batch conversion job tracking
-_batch_convert_jobs = (
-    {}
-)  # job_id -> {"logs": [], "status": "running"|"complete"|"error", "result_path": str|None}
+_batch_convert_jobs: Dict[
+    str, Any
+] = {}  # job_id -> {"logs": [], "status": "running"|"complete"|"error", "result_path": str|None}
 
 
 def _get_batch_job(job_id: str) -> dict:
@@ -2078,7 +2080,7 @@ def api_batch_convert():
         log_callback(f"❌ {error_msg}", "error")
         return jsonify({"error": error_msg, "logs": logs}), 400
 
-    log_callback(f"", "info")
+    log_callback("", "info")
     log_callback(f"📋 {len(validated_files)} files ready for conversion", "info")
 
     # Create temp directories
@@ -2091,12 +2093,12 @@ def api_batch_convert():
         output_dir.mkdir()
 
         # Save uploaded files to input directory
-        log_callback(f"💾 Saving files to temporary directory...", "info")
+        log_callback("💾 Saving files to temporary directory...", "info")
         for f, filename, _ in validated_files:
             input_path = input_dir / filename
             f.save(str(input_path))
 
-        log_callback(f"", "info")
+        log_callback("", "info")
 
         # Run batch conversion with logging
         result = batch_convert_folder(
@@ -2109,7 +2111,7 @@ def api_batch_convert():
 
         # Create dataset_description.json
         create_dataset_description(output_dir, name=dataset_name)
-        log_callback(f"📄 Created dataset_description.json", "info")
+        log_callback("📄 Created dataset_description.json", "info")
 
         # Build response info
         response_info = {
@@ -2135,7 +2137,7 @@ def api_batch_convert():
             response_info["converted"].append(conv_info)
 
         # Create ZIP of output
-        log_callback(f"📦 Creating ZIP archive...", "info")
+        log_callback("📦 Creating ZIP archive...", "info")
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for file_path in output_dir.rglob("*"):
@@ -2144,7 +2146,7 @@ def api_batch_convert():
                     zf.write(file_path, arcname)
         mem.seek(0)
 
-        log_callback(f"✅ Conversion complete!", "success")
+        log_callback("✅ Conversion complete!", "success")
 
         # Return based on format
         if return_format == "json":
@@ -2177,24 +2179,7 @@ def api_batch_convert():
             pass
 
 
-def find_dataset_root(extract_dir):
-    """Find the actual dataset root directory after extraction"""
-    # Look for dataset_description.json or typical BIDS structure
-    for root, dirs, files in os.walk(extract_dir):
-        if "dataset_description.json" in files:
-            return root
-        # Look for subject directories
-        if any(d.startswith("sub-") for d in dirs):
-            return root
-
-    # If no clear dataset structure, return the extraction directory
-    return extract_dir
-
-
 def find_free_port(start_port):
-    """Find a free port starting from start_port"""
-    import socket
-
     port = start_port
     while port < 65535:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -2269,7 +2254,7 @@ def main():
         browser_thread.start()
 
     if args.debug:
-        app.run(host=host, port=port, debug=True)
+        app.run(host=host, port=port, debug=False)
     else:
         try:
             from waitress import serve

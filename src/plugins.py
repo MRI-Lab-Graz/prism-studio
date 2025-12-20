@@ -171,7 +171,7 @@ class PluginManager:
                 version=version,
             )
 
-        except Exception as e:
+        except Exception:
             # Silently fail for individual plugins
             return None
 
@@ -190,11 +190,15 @@ class PluginManager:
         Returns:
             List of issues from plugin
         """
-        if not plugin.enabled or not plugin.has_validate:
+        if not plugin.enabled:
+            return []
+
+        func = plugin.validate_func
+        if not func:
             return []
 
         try:
-            result = plugin.validate_func(context.dataset_path, context.__dict__)
+            result = func(context.dataset_path, context.__dict__)
 
             # Ensure result is a list
             if result is None:
@@ -278,7 +282,7 @@ def create_context(
     dataset_path: str,
     stats: Any,
     schema_version: str = "stable",
-    config: Dict[str, Any] = None,
+    config: Optional[Dict[str, Any]] = None,
     verbose: bool = False,
 ) -> PluginContext:
     """

@@ -8,7 +8,7 @@ import os
 import sys
 import subprocess
 import json
-from typing import Callable, Optional, Any
+from typing import Callable, Optional
 
 from jsonschema import validate, ValidationError
 
@@ -52,7 +52,9 @@ def validate_dataset(
     issues = []
     stats = DatasetStats()
 
-    def report_progress(current: int, total: int, message: str, file_path: str = None):
+    def report_progress(
+        current: int, total: int, message: str, file_path: Optional[str] = None
+    ):
         """Report progress if callback is provided"""
         if progress_callback:
             progress_callback(current, total, message, file_path)

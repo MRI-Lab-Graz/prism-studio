@@ -1,4 +1,3 @@
-import os
 import sys
 import pandas as pd
 from pathlib import Path
@@ -101,7 +100,7 @@ def main():
             pass
 
     print("-" * 50)
-    print(f"Batch conversion complete.")
+    print("Batch conversion complete.")
     print(f"Processed: {processed_count}")
     print(f"Errors: {error_count}")
 

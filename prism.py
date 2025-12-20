@@ -202,7 +202,7 @@ Examples:
             description=f"Custom validator: {plugin_name}",
         )
         print(f"✅ Created plugin template: {plugin_path}")
-        print(f"   Edit the validate() function to add your checks.")
+        print("   Edit the validate() function to add your checks.")
         return
 
     # Handle list plugins request

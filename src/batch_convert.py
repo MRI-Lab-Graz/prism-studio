@@ -21,7 +21,7 @@ import re
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Callable
 
 # Pattern for BIDS-like filenames: sub-XXX_ses-YYY_task-ZZZ[_extra].<ext>
 BIDS_FILENAME_PATTERN = re.compile(
@@ -341,7 +341,7 @@ def batch_convert_folder(
     *,
     physio_sampling_rate: float | None = None,
     modality_filter: Literal["all", "physio", "eyetracking"] = "all",
-    log_callback: callable | None = None,
+    log_callback: Callable | None = None,
 ) -> BatchConvertResult:
     """Batch convert all supported files from a flat folder structure.
 
@@ -446,8 +446,8 @@ def batch_convert_folder(
             )
 
     # Summary
-    log(f"", "info")
-    log(f"📊 Conversion complete:", "info")
+    log("", "info")
+    log("📊 Conversion complete:", "info")
     log(f"   ✅ Successful: {result.success_count}", "success")
     if result.error_count > 0:
         log(f"   ❌ Errors: {result.error_count}", "error")

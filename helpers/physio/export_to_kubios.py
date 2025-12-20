@@ -2,7 +2,6 @@ import argparse
 import pandas as pd
 import json
 import os
-import gzip
 import numpy as np
 
 

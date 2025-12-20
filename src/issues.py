@@ -7,7 +7,7 @@ This module provides:
 - Utility functions for creating issues
 """
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List, Dict, Any
 
@@ -349,24 +349,27 @@ def summarize_issues(issues: List[Issue]) -> Dict[str, Any]:
     Returns:
         Dict with counts, by_severity, and by_code breakdowns
     """
-    summary = {
-        "total": len(issues),
-        "errors": 0,
-        "warnings": 0,
-        "info": 0,
-        "by_code": {},
-    }
+    errors = 0
+    warnings = 0
+    info = 0
+    by_code: Dict[str, int] = {}
 
     for issue in issues:
         if issue.severity == Severity.ERROR:
-            summary["errors"] += 1
+            errors += 1
         elif issue.severity == Severity.WARNING:
-            summary["warnings"] += 1
+            warnings += 1
         else:
-            summary["info"] += 1
+            info += 1
 
-        if issue.code not in summary["by_code"]:
-            summary["by_code"][issue.code] = 0
-        summary["by_code"][issue.code] += 1
+        if issue.code not in by_code:
+            by_code[issue.code] = 0
+        by_code[issue.code] += 1
 
-    return summary
+    return {
+        "total": len(issues),
+        "errors": errors,
+        "warnings": warnings,
+        "info": info,
+        "by_code": by_code,
+    }

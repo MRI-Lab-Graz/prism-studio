@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Survey scoring recipes** in JSON format (`derivatives/surveys/*.json`)
 - **Reverse coding** support for inverted items
 - **Subscale computation** (sum, mean methods)
-- **Multi-format export**: CSV, Excel (with Codebook sheet), SPSS (.sav), R/Feather
+- **Multi-format export**: CSV, Excel (with Codebook sheet), SPSS (.save), R/Feather
 - **Rich metadata in exports**: Variable labels, value labels, score details
 - **Codebook generation**: JSON and TSV codebooks with full documentation
 - **Participant variables merge**: Age, sex, education included in derivatives

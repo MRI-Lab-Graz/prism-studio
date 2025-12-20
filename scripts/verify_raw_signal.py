@@ -1,10 +1,7 @@
 import sys
-import os
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import subprocess
-import json
 
 
 def verify_raw_signal(vpd_path):
@@ -35,15 +32,15 @@ def verify_raw_signal(vpd_path):
         # Find non-zero markers
         marker_indices = np.where(marker_data > 0)[0]
         if len(marker_indices) > 0:
-            print(f"\nMarker Analysis:")
+            print("\nMarker Analysis:")
             print(f"  Found {len(marker_indices)} marker events.")
             print(f"  First marker at sample: {marker_indices[0]}")
             print(f"  Last marker at sample:  {marker_indices[-1]}")
             duration_samples = marker_indices[-1] - marker_indices[0]
             print(f"  Marker span: {duration_samples} samples")
-            print(f"  Span at 75 Hz:  {duration_samples/75.0/60:.2f} minutes")
-            print(f"  Span at 256 Hz: {duration_samples/256.0/60:.2f} minutes")
-            print(f"  Span at 512 Hz: {duration_samples/512.0/60:.2f} minutes")
+            print(f"  Span at 75 Hz:  {duration_samples / 75.0 / 60:.2f} minutes")
+            print(f"  Span at 256 Hz: {duration_samples / 256.0 / 60:.2f} minutes")
+            print(f"  Span at 512 Hz: {duration_samples / 512.0 / 60:.2f} minutes")
         else:
             print("\nMarker Analysis: No markers found.")
 
@@ -72,7 +69,7 @@ def verify_raw_signal(vpd_path):
         end = min(len(ecg), center + win)
         snippet = ecg[start:end]
 
-        print(f"\nPeak {i+1} (Center: {center}):")
+        print(f"\nPeak {i + 1} (Center: {center}):")
         print(f"Values: {snippet.tolist()}")
 
         # Measure width at half max (relative to local baseline)
@@ -84,9 +81,9 @@ def verify_raw_signal(vpd_path):
         if len(above_half) > 0:
             width_samples = above_half[-1] - above_half[0] + 1
             print(f"  FWHM Width: {width_samples} samples")
-            print(f"  If 75 Hz:  {width_samples/75.0*1000:.1f} ms")
-            print(f"  If 256 Hz: {width_samples/256.0*1000:.1f} ms")
-            print(f"  If 512 Hz: {width_samples/512.0*1000:.1f} ms")
+            print(f"  If 75 Hz:  {width_samples / 75.0 * 1000:.1f} ms")
+            print(f"  If 256 Hz: {width_samples / 256.0 * 1000:.1f} ms")
+            print(f"  If 512 Hz: {width_samples / 512.0 * 1000:.1f} ms")
 
 
 if __name__ == "__main__":

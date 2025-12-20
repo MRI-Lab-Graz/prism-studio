@@ -28,6 +28,7 @@ import json
 import re
 import sys
 import os
+from typing import Dict, Any
 
 import pandas as pd
 
@@ -391,8 +392,8 @@ def process_excel_biometrics(
             return None
         return row[idx]
 
-    biometrics = {}
-    group_meta = {}
+    biometrics: Dict[str, Dict[str, Any]] = {}
+    group_meta: Dict[str, Dict[str, Any]] = {}
 
     for _, row in data_rows.iterrows():
         var_name = _clean_key(get_val(row, id_idx))
