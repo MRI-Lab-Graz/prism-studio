@@ -28,14 +28,15 @@ BIDS_FILENAME_PATTERN = re.compile(
     r"^(?P<sub>sub-[a-zA-Z0-9]+)"
     r"(?:_(?P<ses>ses-[a-zA-Z0-9]+))?"
     r"_(?P<task>task-[a-zA-Z0-9]+)"
-    r"(?P<extra>(?:_[a-zA-Z0-9]+-[a-zA-Z0-9]+)*)"
-    r"\.(?P<ext>raw|vpd|edf)$",
+    r"(?P<extra>(?:_[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)?)*)"
+    r"\.(?P<ext>[a-zA-Z0-9]+(?:\.gz)?)$",
     re.IGNORECASE,
 )
 
 # Modality detection by extension
-PHYSIO_EXTENSIONS = {".raw", ".vpd"}
+PHYSIO_EXTENSIONS = {".raw", ".vpd", ".edf"}
 EYETRACKING_EXTENSIONS = {".edf"}
+GENERIC_EXTENSIONS = {".tsv", ".csv", ".txt", ".json", ".nii", ".nii.gz", ".pdf", ".png", ".jpg", ".jpeg"}
 
 
 @dataclass
@@ -44,7 +45,7 @@ class ConvertedFile:
 
     source_path: Path
     output_files: list[Path]
-    modality: Literal["physio", "eyetracking"]
+    modality: str
     subject: str
     session: str | None
     task: str
@@ -92,7 +93,7 @@ def parse_bids_filename(filename: str) -> dict | None:
     }
 
 
-def detect_modality(ext: str) -> Literal["physio", "eyetracking"] | None:
+def detect_modality(ext: str) -> str | None:
     """Detect the modality based on file extension."""
     ext_lower = ext.lower() if not ext.startswith(".") else ext.lower()
     if not ext_lower.startswith("."):
@@ -102,6 +103,8 @@ def detect_modality(ext: str) -> Literal["physio", "eyetracking"] | None:
         return "physio"
     elif ext_lower in EYETRACKING_EXTENSIONS:
         return "eyetracking"
+    elif ext_lower in GENERIC_EXTENSIONS:
+        return "generic"
     return None
 
 
@@ -204,28 +207,43 @@ def convert_physio_file(
     output_files = []
 
     try:
-        # Try to use the Varioport converter
-        try:
-            from helpers.physio.convert_varioport import convert_varioport
+        # Try to use the Varioport converter for .raw/.vpd
+        if ext in (".raw", ".vpd"):
+            try:
+                from helpers.physio.convert_varioport import convert_varioport
 
-            out_edf = out_folder / f"{base_name}.edf"
-            out_json = out_folder / f"{base_name}.json"
+                out_edf = out_folder / f"{base_name}.edf"
+                out_json = out_folder / f"{base_name}.json"
 
-            convert_varioport(
-                str(source_path),
-                str(out_edf),
-                str(out_json),
-                task_name=task.replace("task-", ""),
-                base_freq=base_freq,
-            )
+                convert_varioport(
+                    str(source_path),
+                    str(out_edf),
+                    str(out_json),
+                    task_name=task.replace("task-", ""),
+                    base_freq=base_freq,
+                )
 
-            if out_edf.exists():
-                output_files.append(out_edf)
-            if out_json.exists():
-                output_files.append(out_json)
+                if out_edf.exists():
+                    output_files.append(out_edf)
+                if out_json.exists():
+                    output_files.append(out_json)
 
-        except ImportError:
-            # Fallback: just copy file and create minimal sidecar
+            except ImportError:
+                # Fallback: just copy file and create minimal sidecar
+                out_data = out_folder / f"{base_name}.{ext}"
+                out_json = out_folder / f"{base_name}.json"
+
+                shutil.copy2(source_path, out_data)
+                _create_physio_sidecar(
+                    source_path,
+                    out_json,
+                    task_name=task,
+                    sampling_rate=base_freq,
+                )
+
+                output_files.extend([out_data, out_json])
+        else:
+            # For .edf or other formats already in physio-compatible format
             out_data = out_folder / f"{base_name}.{ext}"
             out_json = out_folder / f"{base_name}.json"
 
@@ -236,7 +254,6 @@ def convert_physio_file(
                 task_name=task,
                 sampling_rate=base_freq,
             )
-
             output_files.extend([out_data, out_json])
 
         return ConvertedFile(
@@ -335,12 +352,112 @@ def convert_eyetracking_file(
         )
 
 
+def convert_generic_file(
+    source_path: Path,
+    output_dir: Path,
+    *,
+    parsed: dict,
+    target_modality: str = "extra",
+) -> ConvertedFile:
+    """Organize a generic file into PRISM structure by copying it.
+
+    Args:
+        source_path: Path to source file
+        output_dir: Path to output dataset root
+        parsed: Parsed BIDS components
+        target_modality: Modality folder name (e.g., 'survey', 'anat', 'func')
+    """
+    sub = parsed["sub"]
+    ses = parsed["ses"]
+    task = parsed["task"]
+    ext = parsed["ext"]
+    extra = parsed["extra"]
+
+    # Build output path: output_dir/sub-XXX/[ses-YYY/]modality/
+    if ses:
+        out_folder = output_dir / sub / ses / target_modality
+    else:
+        out_folder = output_dir / sub / target_modality
+    out_folder.mkdir(parents=True, exist_ok=True)
+
+    # Build BIDS filename
+    parts = [sub]
+    if ses:
+        parts.append(ses)
+    parts.append(task)
+    if extra:
+        parts.append(extra.lstrip("_"))
+    
+    # Add suffix based on modality if not already in extra
+    suffix_map = {
+        "survey": "survey",
+        "biometrics": "biometrics",
+        "physio": "physio",
+        "eyetracking": "eyetrack",
+        "anat": "T1w",
+        "func": "bold",
+    }
+    
+    suffix = suffix_map.get(target_modality, target_modality)
+    
+    # Check if suffix is already present in the parts
+    suffix_already_present = False
+    for p in parts:
+        if p == suffix or p.endswith(f"_{suffix}") or p.endswith(f"-{suffix}"):
+            suffix_already_present = True
+            break
+            
+    if not suffix_already_present:
+        parts.append(suffix)
+        
+    base_name = "_".join(parts)
+    out_data = out_folder / f"{base_name}.{ext}"
+
+    try:
+        shutil.copy2(source_path, out_data)
+        
+        # Create a minimal sidecar if it's a data file (not already a json)
+        output_files = [out_data]
+        if ext != "json":
+            out_json = out_folder / f"{base_name}.json"
+            sidecar = {
+                "Metadata": {
+                    "SourceFile": source_path.name,
+                    "OrganizedBy": "prism batch organizer",
+                }
+            }
+            with open(out_json, "w", encoding="utf-8") as f:
+                json.dump(sidecar, f, indent=2)
+            output_files.append(out_json)
+
+        return ConvertedFile(
+            source_path=source_path,
+            output_files=output_files,
+            modality=target_modality,
+            subject=sub,
+            session=ses,
+            task=task,
+            success=True,
+        )
+    except Exception as e:
+        return ConvertedFile(
+            source_path=source_path,
+            output_files=[],
+            modality=target_modality,
+            subject=sub,
+            session=ses,
+            task=task,
+            success=False,
+            error=str(e),
+        )
+
+
 def batch_convert_folder(
     source_folder: Path | str,
     output_folder: Path | str,
     *,
     physio_sampling_rate: float | None = None,
-    modality_filter: Literal["all", "physio", "eyetracking"] = "all",
+    modality_filter: str = "all",
     log_callback: Callable | None = None,
 ) -> BatchConvertResult:
     """Batch convert all supported files from a flat folder structure.
@@ -377,6 +494,12 @@ def batch_convert_folder(
         all_extensions.update(PHYSIO_EXTENSIONS)
     if modality_filter in ("all", "eyetracking"):
         all_extensions.update(EYETRACKING_EXTENSIONS)
+    if modality_filter not in ("all", "physio", "eyetracking"):
+        # If a specific modality is requested that isn't physio/eyetracking,
+        # we assume it's a generic copy operation
+        all_extensions.update(GENERIC_EXTENSIONS)
+        all_extensions.update(PHYSIO_EXTENSIONS)
+        all_extensions.update(EYETRACKING_EXTENSIONS)
 
     # Collect files first to get total count
     files_to_process = []
@@ -384,13 +507,22 @@ def batch_convert_folder(
         if not file_path.is_file():
             continue
         ext = file_path.suffix.lower()
-        if ext in all_extensions:
+        # Handle .nii.gz
+        if file_path.name.lower().endswith(".nii.gz"):
+            ext = ".nii.gz"
+            
+        if modality_filter == "all":
+            if ext in PHYSIO_EXTENSIONS or ext in EYETRACKING_EXTENSIONS or ext in GENERIC_EXTENSIONS:
+                files_to_process.append(file_path)
+        elif ext in all_extensions:
             files_to_process.append(file_path)
 
     log(f"📋 Found {len(files_to_process)} files to process", "info")
 
     for idx, file_path in enumerate(files_to_process, 1):
         ext = file_path.suffix.lower()
+        if file_path.name.lower().endswith(".nii.gz"):
+            ext = ".nii.gz"
 
         # Parse filename
         parsed = parse_bids_filename(file_path.name)
@@ -405,23 +537,38 @@ def batch_convert_folder(
 
         # Detect modality and convert
         modality = detect_modality(ext)
+        
+        # Override modality if filter is specific and not 'all'
+        if modality_filter not in ("all", "physio", "eyetracking"):
+            modality = "generic"
+            target_modality = modality_filter
+        else:
+            target_modality = modality
+
         log(
-            f"🔄 [{idx}/{len(files_to_process)}] Converting: {file_path.name} ({modality})",
+            f"🔄 [{idx}/{len(files_to_process)}] Processing: {file_path.name} ({target_modality})",
             "info",
         )
 
-        if modality == "physio":
+        if target_modality == "physio":
             converted = convert_physio_file(
                 file_path,
                 output_folder,
                 parsed=parsed,
                 base_freq=physio_sampling_rate,
             )
-        elif modality == "eyetracking":
+        elif target_modality == "eyetracking":
             converted = convert_eyetracking_file(
                 file_path,
                 output_folder,
                 parsed=parsed,
+            )
+        elif modality == "generic" or modality_filter not in ("all", "physio", "eyetracking"):
+            converted = convert_generic_file(
+                file_path,
+                output_folder,
+                parsed=parsed,
+                target_modality=target_modality if target_modality != "generic" else "extra",
             )
         else:
             msg = f"Unknown modality for extension: {ext}"

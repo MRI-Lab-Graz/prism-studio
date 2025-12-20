@@ -84,6 +84,139 @@
 
     <div class="card">
         <div class="card-body">
+            <!-- Global Renamer Helper -->
+            <div class="card border-warning mb-4 shadow-sm">
+                <div class="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#globalRenamerCollapse">
+                    <h5 class="mb-0 text-dark">
+                        <i class="fas fa-wand-magic-sparkles me-2 text-warning"></i>Renamer Helper <small class="text-muted ms-2 fw-normal">(Optional tool to fix filenames before conversion)</small>
+                    </h5>
+                    <button class="btn btn-sm btn-outline-warning border-0" type="button">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+                <div id="globalRenamerCollapse" class="collapse">
+                    <div class="card-body">
+                        <div class="alert alert-light border mb-4">
+                            <div class="d-flex">
+                                <i class="fas fa-info-circle me-3 text-info fa-2x"></i>
+                                <div>
+                                    <strong>Renamer by Example:</strong> Quickly rename your files to match the PRISM/BIDS format (<code>sub-XXX_ses-YYY_task-ZZZ</code>).
+                                    <br><small class="text-muted">Examples: <code>004-t2.edf</code> → <code>sub-004_ses-2_task-rest_physio.edf</code> or <code>survey_01.csv</code> → <code>sub-01_survey-phq9_survey.csv</code></small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label for="renamerFiles" class="form-label fw-bold">1. Select Files or Folder to Rename</label>
+                                <input class="form-control" type="file" id="renamerFiles" multiple webkitdirectory directory>
+                                <small class="text-muted">Upload files or an entire directory. We will pick one file as an example to define the rule.</small>
+                            </div>
+                            
+                            <div id="renamerExampleContainer" class="col-md-12 d-none">
+                                <div class="card border-warning shadow-sm">
+                                    <div class="card-header bg-warning bg-opacity-10 fw-bold">
+                                        <i class="fas fa-magic me-2 text-warning"></i>2. Define Renaming Rule by Example
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-5">
+                                                <label class="form-label small text-muted mb-1">Original Filename</label>
+                                                <div id="renamerOriginalExample" class="form-control bg-light font-monospace"></div>
+                                            </div>
+                                            <div class="col-md-1 text-center mt-3">
+                                                <i class="fas fa-arrow-right fa-lg text-muted"></i>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="row g-2">
+                                                    <div class="col-md-4">
+                                                        <label for="renamerModality" class="form-label small text-muted mb-1">Modality</label>
+                                                        <select class="form-select form-select-sm" id="renamerModality">
+                                                            <option value="physio" selected>Physio</option>
+                                                            <option value="biometrics">Biometrics</option>
+                                                            <option value="events">Events</option>
+                                                            <option value="survey">Survey</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <label for="renamerNewExample" class="form-label small text-muted mb-1">New PRISM Filename</label>
+                                                        <div class="text-muted mb-1" style="font-size: 0.75rem;">
+                                                            <i class="fas fa-info-circle me-1"></i> <span id="renamerExampleHint">Example: <code>sub-001_task-rest_physio.edf</code></span>
+                                                        </div>
+                                                        <input type="text" class="form-control font-monospace border-primary" id="renamerNewExample" placeholder="e.g. sub-001_task-rest_physio.edf">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle me-1"></i> 
+                                                Type how the filename above should look. We'll automatically apply this pattern to all other files.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hidden fields for the actual regex/replacement used by the backend -->
+                            <input type="hidden" id="renamerPattern">
+                            <input type="hidden" id="renamerReplacement">
+
+                            <div class="col-md-12">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body py-2">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-8">
+                                                <span class="small text-muted"><i class="fas fa-lightbulb me-1"></i> Tip: The tool detects numbers in your example and maps them to subject/session IDs.</span>
+                                            </div>
+                                            <div class="col-md-4 text-end">
+                                                <button class="btn btn-sm btn-outline-secondary" type="button" id="renamerResetBtn">
+                                                    <i class="fas fa-random me-1"></i>Pick Another Example
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-12">
+                                <button class="btn btn-warning text-white w-100 py-2 fw-bold" type="button" id="renamerDownloadBtn" disabled>
+                                    <i class="fas fa-file-zipper me-2"></i>Rename All & Download ZIP
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="renamerPreview" class="mt-4 d-none">
+                            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                                <h6 class="mb-0"><i class="fas fa-list-check me-2"></i>Renaming Preview</h6>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-secondary active" id="renamerFilterAll">All Files</button>
+                                    <button type="button" class="btn btn-outline-warning" id="renamerFilterUnmatched">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Only Unmatched
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="table-responsive" style="max-height: 300px;">
+                                <table class="table table-sm table-hover align-middle">
+                                    <thead class="table-light sticky-top">
+                                        <tr>
+                                            <th>Original Filename</th>
+                                            <th style="width: 40px;"><i class="fas fa-arrow-right text-muted"></i></th>
+                                            <th>New PRISM Filename</th>
+                                            <th class="text-center">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="renamerPreviewBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div id="renamerError" class="alert alert-danger d-none mt-3"></div>
+                        <div id="renamerInfo" class="alert alert-success d-none mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Ribbon Navigation -->
             <ul class="nav nav-pills nav-fill mb-4" id="converterTabs" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -112,6 +245,13 @@
                         <i class="fas fa-eye fa-lg mb-1 d-block"></i>
                         <span class="fw-bold">Eyetracking</span>
                         <small class="d-block text-muted" style="font-size: 0.7rem;">Gaze data</small>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="organize-tab" data-bs-toggle="pill" data-bs-target="#organize-panel" type="button" role="tab" aria-controls="organize-panel" aria-selected="false">
+                        <i class="fas fa-folder-tree fa-lg mb-1 d-block"></i>
+                        <span class="fw-bold">Organize</span>
+                        <small class="d-block text-muted" style="font-size: 0.7rem;">Batch organize files</small>
                     </button>
                 </li>
             </ul>
@@ -536,6 +676,76 @@
                     </div>
                 </div>
 
+                <!-- Organize Panel -->
+                <div class="tab-pane fade" id="organize-panel" role="tabpanel" aria-labelledby="organize-tab">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas fa-folder-tree fa-2x text-warning"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Batch File Organizer</h5>
+                                    <p class="text-muted mb-0">Organize pre-formatted files into a PRISM/BIDS structure without conversion</p>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-light border mb-4">
+                                <h6 class="fw-bold"><i class="fas fa-info-circle me-2 text-info"></i>How it works:</h6>
+                                <p class="small mb-2">This tool takes a flat list of files and organizes them into <code>sub-XXX/ses-YYY/modality/</code> folders.</p>
+                                <p class="small mb-0"><strong>Required naming:</strong> <code>sub-XXX_ses-YYY_task-ZZZ.ext</code> (Session is optional)</p>
+                            </div>
+
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-6">
+                                    <label for="organizeFiles" class="form-label">Select Files to Organize</label>
+                                    <input class="form-control" type="file" id="organizeFiles" multiple>
+                                    <div class="form-text">Supports .edf, .tsv, .nii.gz, .json, .png, etc.</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="organizeModality" class="form-label">Target Modality</label>
+                                    <select class="form-select" id="organizeModality">
+                                        <option value="physio" selected>Physio (ECG, EDA, etc.)</option>
+                                        <option value="eyetracking">Eyetracking</option>
+                                        <option value="survey">Survey (TSV/JSON)</option>
+                                        <option value="biometrics">Biometrics</option>
+                                        <option value="anat">Anatomy (T1w)</option>
+                                        <option value="func">Functional (BOLD)</option>
+                                        <option value="extra">Extra / Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="organizeDatasetName" class="form-label">Dataset Name</label>
+                                    <input type="text" class="form-control" id="organizeDatasetName" value="Organized Dataset">
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-warning text-white w-100" type="button" id="organizeBtn" disabled>
+                                        <i class="fas fa-folder-plus me-2"></i>Organize & Download
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="organizeError" class="alert alert-danger d-none mt-3"></div>
+                            <div id="organizeInfo" class="alert alert-info d-none mt-3"></div>
+                            <div id="organizeProgress" class="progress d-none mt-3" style="height: 25px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning text-dark" style="width: 100%">Organizing...</div>
+                            </div>
+
+                            <!-- Log Window -->
+                            <div id="organizeLogContainer" class="d-none mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label mb-0"><i class="fas fa-terminal me-2"></i>Organization Log</label>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="organizeLogClearBtn">
+                                        <i class="fas fa-trash-alt me-1"></i>Clear
+                                    </button>
+                                </div>
+                                <div id="organizeLog" class="bg-dark text-light p-3 rounded font-monospace" 
+                                     style="height: 200px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -607,6 +817,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const eyetrackingBatchLog = document.getElementById('eyetrackingBatchLog');
     const eyetrackingBatchLogClearBtn = document.getElementById('eyetrackingBatchLogClearBtn');
 
+    // --- Organize (Batch) ---
+    const organizeFiles = document.getElementById('organizeFiles');
+    const organizeDatasetName = document.getElementById('organizeDatasetName');
+    const organizeModality = document.getElementById('organizeModality');
+    const organizeBtn = document.getElementById('organizeBtn');
+    const organizeError = document.getElementById('organizeError');
+    const organizeInfo = document.getElementById('organizeInfo');
+    const organizeProgress = document.getElementById('organizeProgress');
+    const organizeLogContainer = document.getElementById('organizeLogContainer');
+    const organizeLog = document.getElementById('organizeLog');
+    const organizeLogClearBtn = document.getElementById('organizeLogClearBtn');
+
+    // --- Physio Renamer ---
+    const renamerFiles = document.getElementById('renamerFiles');
+    const renamerPattern = document.getElementById('renamerPattern');
+    const renamerReplacement = document.getElementById('renamerReplacement');
+    const renamerTask = document.getElementById('renamerTask');
+    const renamerDryRunBtn = document.getElementById('renamerDryRunBtn');
+    const renamerDownloadBtn = document.getElementById('renamerDownloadBtn');
+    const renamerResetBtn = document.getElementById('renamerResetBtn');
+    const renamerPreview = document.getElementById('renamerPreview');
+    const renamerPreviewBody = document.getElementById('renamerPreviewBody');
+    const renamerFilterAll = document.getElementById('renamerFilterAll');
+    const renamerFilterUnmatched = document.getElementById('renamerFilterUnmatched');
+    const renamerError = document.getElementById('renamerError');
+    const renamerInfo = document.getElementById('renamerInfo');
+
     if (convertBrowseLibraryBtn && convertLibraryPathInput) {
         convertBrowseLibraryBtn.addEventListener('click', function() {
             fetch('/api/browse-folder')
@@ -630,6 +867,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
         });
+    }
+
+    function downloadBase64Zip(base64Data, filename) {
+        const binaryString = window.atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], {type: 'application/zip'});
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
     }
 
     function refreshConvertLanguages() {
@@ -769,7 +1023,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function appendLog(message, type = 'info') {
+    function appendLog(message, type = 'info', logElement = null) {
         const colors = {
             'info': '#17a2b8',
             'success': '#28a745',
@@ -777,10 +1031,13 @@ document.addEventListener('DOMContentLoaded', function() {
             'error': '#dc3545',
             'step': '#6c757d'
         };
+        const targetLog = logElement || conversionLog;
+        if (!targetLog) return;
+
         const timestamp = new Date().toLocaleTimeString();
         const color = colors[type] || colors.info;
-        conversionLog.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
-        conversionLog.scrollTop = conversionLog.scrollHeight;
+        targetLog.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+        targetLog.scrollTop = targetLog.scrollHeight;
     }
 
     function resetConversionUI() {
@@ -1251,13 +1508,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Download the ZIP
-                if (result.download_url) {
-                    const a = document.createElement('a');
-                    a.href = result.download_url;
-                    a.download = '';
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
+                if (result.zip) {
+                    downloadBase64Zip(result.zip, `${datasetName}_prism.zip`);
                 }
 
                 physioBatchInfo.textContent = `Converted ${result.converted || 0} files. ${result.errors || 0} errors.`;
@@ -1390,13 +1642,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Download the ZIP
-                if (result.download_url) {
-                    const a = document.createElement('a');
-                    a.href = result.download_url;
-                    a.download = '';
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
+                if (result.zip) {
+                    downloadBase64Zip(result.zip, `${datasetName}_prism.zip`);
                 }
 
                 eyetrackingBatchInfo.textContent = `Converted ${result.converted || 0} files. ${result.errors || 0} errors.`;
@@ -1408,6 +1655,362 @@ document.addEventListener('DOMContentLoaded', function() {
                 eyetrackingBatchProgress.classList.add('d-none');
                 updateEyetrackingBatchBtn();
             }
+        });
+    }
+
+    // --- Organize Batch ---
+    function updateOrganizeBtn() {
+        const hasFiles = organizeFiles && organizeFiles.files && organizeFiles.files.length > 0;
+        if (organizeBtn) organizeBtn.disabled = !hasFiles;
+    }
+
+    if (organizeFiles) {
+        organizeFiles.addEventListener('change', updateOrganizeBtn);
+        updateOrganizeBtn();
+    }
+
+    if (organizeLogClearBtn) {
+        organizeLogClearBtn.addEventListener('click', () => {
+            if (organizeLog) organizeLog.textContent = '';
+        });
+    }
+
+    if (organizeBtn) {
+        organizeBtn.addEventListener('click', async function() {
+            organizeError.classList.add('d-none');
+            organizeInfo.classList.add('d-none');
+            organizeProgress.classList.remove('d-none');
+            organizeLogContainer.classList.remove('d-none');
+            organizeLog.textContent = '';
+            organizeBtn.disabled = true;
+
+            const files = Array.from(organizeFiles.files);
+            const datasetName = organizeDatasetName ? organizeDatasetName.value.trim() : 'Organized Dataset';
+            const modality = organizeModality ? organizeModality.value : 'anat';
+
+            const formData = new FormData();
+            files.forEach(f => formData.append('files', f));
+            formData.append('dataset_name', datasetName);
+            formData.append('modality', modality);
+
+            try {
+                const response = await fetch('/api/batch-convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const data = await response.json().catch(() => null);
+                    throw new Error(data && data.error ? data.error : 'Organization failed');
+                }
+
+                const result = await response.json();
+                
+                // Show log
+                if (result.log) {
+                    organizeLog.textContent = result.log;
+                }
+
+                // Download the ZIP
+                if (result.zip) {
+                    downloadBase64Zip(result.zip, `${datasetName}_prism.zip`);
+                }
+
+                organizeInfo.textContent = `Organized ${result.converted || 0} files. ${result.errors || 0} errors.`;
+                organizeInfo.classList.remove('d-none');
+            } catch (err) {
+                organizeError.textContent = err.message;
+                organizeError.classList.remove('d-none');
+            } finally {
+                organizeProgress.classList.add('d-none');
+                updateOrganizeBtn();
+            }
+        });
+    }
+
+    // --- Physio Renamer Logic ---
+    const renamerExampleContainer = document.getElementById('renamerExampleContainer');
+    const renamerOriginalExample = document.getElementById('renamerOriginalExample');
+    const renamerNewExample = document.getElementById('renamerNewExample');
+    const renamerModality = document.getElementById('renamerModality');
+    const renamerExampleHint = document.getElementById('renamerExampleHint');
+    let currentExampleFile = null;
+
+    const modalityHints = {
+        'physio': 'sub-001_task-rest_physio.edf',
+        'biometrics': 'sub-001_biometrics-height_biometrics.tsv',
+        'events': 'sub-001_task-rest_events.tsv',
+        'survey': 'sub-001_survey-phq9_survey.tsv'
+    };
+
+    if (renamerModality) {
+        renamerModality.addEventListener('change', () => {
+            const mod = renamerModality.value;
+            const hint = modalityHints[mod] || 'sub-001_task-rest_physio.edf';
+            if (renamerExampleHint) renamerExampleHint.innerHTML = `Example: <code>${hint}</code>`;
+            if (renamerNewExample) renamerNewExample.placeholder = `e.g. ${hint}`;
+            
+            // If we have an example file and the user hasn't typed much yet, maybe help them?
+            // But better to just let them type.
+            inferPattern();
+        });
+    }
+
+    function updateRenamerBtn() {
+        const hasFiles = renamerFiles && renamerFiles.files && renamerFiles.files.length > 0;
+        const hasNewName = renamerNewExample && renamerNewExample.value.trim().length > 0;
+        if (renamerDownloadBtn) renamerDownloadBtn.disabled = !hasFiles || !hasNewName;
+    }
+
+    function pickExampleFile() {
+        if (!renamerFiles || !renamerFiles.files || renamerFiles.files.length === 0) return;
+        const files = Array.from(renamerFiles.files);
+        currentExampleFile = files[Math.floor(Math.random() * files.length)];
+        if (renamerOriginalExample) renamerOriginalExample.textContent = currentExampleFile.name;
+        if (renamerExampleContainer) renamerExampleContainer.classList.remove('d-none');
+        if (renamerNewExample) {
+            renamerNewExample.value = '';
+            renamerNewExample.focus();
+        }
+        updateRenamerBtn();
+        if (renamerPreview) renamerPreview.classList.add('d-none');
+    }
+
+    if (renamerFiles) {
+        renamerFiles.addEventListener('change', () => {
+            pickExampleFile();
+            updateRenamerBtn();
+        });
+    }
+
+    if (renamerResetBtn) {
+        renamerResetBtn.addEventListener('click', pickExampleFile);
+    }
+
+    function inferPattern() {
+        if (!currentExampleFile || !renamerNewExample) return;
+        const oldName = currentExampleFile.name;
+        const newName = renamerNewExample.value.trim();
+        if (!newName) {
+            if (renamerPreview) renamerPreview.classList.add('d-none');
+            return;
+        }
+
+        // Find all digit sequences in oldName
+        const digitRegex = /\d+/g;
+        const matches = [];
+        let match;
+        while ((match = digitRegex.exec(oldName)) !== null) {
+            matches.push({ value: match[0], index: match.index });
+        }
+
+        // Create regex pattern from oldName by replacing digit sequences with (\d+)
+        // and escaping other characters
+        let finalPattern = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // We need to replace the escaped digits specifically
+        matches.forEach(m => {
+            finalPattern = finalPattern.replace(m.value, '(\\d+)');
+        });
+        
+        // Now create the replacement string
+        let replacement = newName;
+        // Sort matches by length descending to avoid partial matches (e.g. replacing '1' inside '014')
+        const sortedMatches = [...matches].sort((a, b) => b.value.length - a.value.length);
+
+        // Use a temporary placeholder to avoid recursive replacement
+        sortedMatches.forEach((m) => {
+            const groupIndex = matches.indexOf(m);
+            const r = new RegExp(m.value, 'g');
+            replacement = replacement.replace(r, `__GRP${groupIndex + 1}__`);
+        });
+        // Replace placeholders with Python-style backreferences (\1, \2, ...)
+        matches.forEach((m, i) => {
+            replacement = replacement.replace(`__GRP${i + 1}__`, `\\${i + 1}`);
+        });
+
+        if (renamerPattern) renamerPattern.value = finalPattern;
+        if (renamerReplacement) renamerReplacement.value = replacement;
+        
+        // Run dry run automatically
+        runRenamer(true);
+    }
+
+    if (renamerNewExample) {
+        renamerNewExample.addEventListener('input', () => {
+            inferPattern();
+            updateRenamerBtn();
+        });
+    }
+
+    function filterRenamerTable(showOnlyUnmatched) {
+        if (!renamerPreviewBody) return;
+        const rows = renamerPreviewBody.querySelectorAll('tr');
+        rows.forEach(row => {
+            const isMatch = row.getAttribute('data-match') === 'true';
+            if (showOnlyUnmatched) {
+                row.classList.toggle('d-none', isMatch);
+            } else {
+                row.classList.remove('d-none');
+            }
+        });
+        
+        if (renamerFilterAll) renamerFilterAll.classList.toggle('active', !showOnlyUnmatched);
+        if (renamerFilterUnmatched) renamerFilterUnmatched.classList.toggle('active', showOnlyUnmatched);
+    }
+
+    if (renamerFilterAll) {
+        renamerFilterAll.addEventListener('click', () => filterRenamerTable(false));
+    }
+    if (renamerFilterUnmatched) {
+        renamerFilterUnmatched.addEventListener('click', () => filterRenamerTable(true));
+    }
+
+    async function runRenamer(isDryRun) {
+        if (!renamerPattern || !renamerReplacement || !renamerPattern.value) return;
+        
+        renamerError.classList.add('d-none');
+        renamerInfo.classList.add('d-none');
+        
+        const formData = new FormData();
+        formData.append('pattern', renamerPattern.value);
+        formData.append('replacement', renamerReplacement.value);
+        formData.append('dry_run', isDryRun);
+        
+        const files = Array.from(renamerFiles.files);
+        if (files.length === 0 && !isDryRun) return;
+        
+        // For dry run, we only send filenames to be faster
+        if (isDryRun) {
+            files.forEach(f => formData.append('filenames', f.name));
+        } else {
+            files.forEach(f => formData.append('files', f));
+        }
+        
+        try {
+            const response = await fetch('/api/physio-rename', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                const data = await response.json().catch(() => null);
+                throw new Error(data && data.error ? data.error : 'Renaming failed');
+            }
+            
+            const result = await response.json();
+            
+            if (isDryRun) {
+                renamerPreviewBody.innerHTML = '';
+                let matchCount = 0;
+                const unmatchedFiles = [];
+                const selectedModality = renamerModality ? renamerModality.value : 'physio';
+
+                result.results.forEach(res => {
+                    const isMatch = res.old !== res.new;
+                    
+                    // Basic BIDS validation for the new name
+                    let isValidBids = true;
+                    let bidsError = '';
+                    
+                    if (isMatch) {
+                        if (!res.new.startsWith('sub-')) {
+                            isValidBids = false;
+                            bidsError = 'Missing sub- prefix';
+                        } else if (!res.new.includes('_')) {
+                            isValidBids = false;
+                            bidsError = 'Missing entities/suffix';
+                        } else {
+                            // Check suffix
+                            const stem = res.new.split('.')[0];
+                            const suffix = stem.split('_').pop();
+                            const expectedSuffixes = {
+                                'physio': 'physio',
+                                'biometrics': 'biometrics',
+                                'events': 'events',
+                                'survey': 'survey'
+                            };
+                            if (expectedSuffixes[selectedModality] && suffix !== expectedSuffixes[selectedModality]) {
+                                isValidBids = false;
+                                bidsError = `Expected _${expectedSuffixes[selectedModality]} suffix`;
+                            }
+                        }
+                    }
+
+                    if (isMatch && isValidBids) {
+                        matchCount++;
+                    } else if (!isMatch) {
+                        unmatchedFiles.push(res.old);
+                    }
+                    
+                    const tr = document.createElement('tr');
+                    tr.setAttribute('data-match', isMatch && isValidBids);
+                    tr.innerHTML = `
+                        <td class="font-monospace small">${res.old}</td>
+                        <td><i class="fas fa-arrow-right text-muted"></i></td>
+                        <td class="font-monospace small ${isMatch ? (isValidBids ? 'text-success' : 'text-danger') : 'text-muted'}">
+                            ${res.new}
+                            ${!isValidBids && isMatch ? `<br><small class="text-danger"><i class="fas fa-times-circle me-1"></i>${bidsError}</small>` : ''}
+                        </td>
+                        <td class="text-center">
+                            ${(isMatch && isValidBids) ? '<i class="fas fa-check-circle text-success"></i>' : 
+                              (!isMatch ? '<i class="fas fa-exclamation-triangle text-warning" title="No match found - file will not be renamed"></i>' : 
+                              '<i class="fas fa-times-circle text-danger" title="Invalid BIDS/PRISM format"></i>')}
+                        </td>
+                    `;
+                    renamerPreviewBody.appendChild(tr);
+                });
+                renamerPreview.classList.remove('d-none');
+
+                if (matchCount < result.results.length && result.results.length > 0) {
+                    const unmatchedCount = result.results.length - matchCount;
+                    renamerError.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-exclamation-triangle me-3 fa-2x"></i>
+                            <div>
+                                <strong>Warning: ${unmatchedCount} files are either unmatched or invalid.</strong><br>
+                                Only files with a green checkmark will be renamed correctly. Check the "New PRISM Filename" column for errors.
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="document.getElementById('renamerFilterUnmatched').click()">
+                                        <i class="fas fa-search me-1"></i>Show Incompatible Files
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    renamerError.classList.remove('d-none');
+                }
+                
+                // Reset filter to "All" on new dry run
+                filterRenamerTable(false);
+            } else {
+                if (result.zip) {
+                    downloadBase64Zip(result.zip, 'renamed_files.zip');
+                    renamerInfo.textContent = `Successfully renamed ${result.results.length} files. ZIP download started.`;
+                    renamerInfo.classList.remove('d-none');
+                }
+            }
+        } catch (err) {
+            if (!isDryRun) {
+                renamerError.textContent = err.message;
+                renamerError.classList.remove('d-none');
+            }
+        }
+    }
+
+    if (renamerDownloadBtn) {
+        renamerDownloadBtn.addEventListener('click', () => runRenamer(false));
+    }
+
+    // Toggle chevron icon for global renamer
+    const globalRenamerCollapse = document.getElementById('globalRenamerCollapse');
+    if (globalRenamerCollapse) {
+        globalRenamerCollapse.addEventListener('show.bs.collapse', function () {
+            const icon = document.querySelector('[data-bs-target="#globalRenamerCollapse"] i.fa-chevron-down');
+            if (icon) icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+        });
+        globalRenamerCollapse.addEventListener('hide.bs.collapse', function () {
+            const icon = document.querySelector('[data-bs-target="#globalRenamerCollapse"] i.fa-chevron-up');
+            if (icon) icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
         });
     }
 

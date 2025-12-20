@@ -554,12 +554,19 @@ def api_batch_convert():
     if not files:
         return jsonify({"error": "No files uploaded", "logs": logs}), 400
 
-    valid_extensions = {".raw", ".vpd", ".edf"}
+    # Accept a wider range of extensions for the batch organizer
+    valid_extensions = {".raw", ".vpd", ".edf", ".tsv", ".csv", ".txt", ".json", ".nii", ".nii.gz", ".pdf", ".png", ".jpg", ".jpeg"}
     validated_files = []
     for f in files:
         if not f or not f.filename: continue
         filename = secure_filename(f.filename)
-        ext = Path(filename).suffix.lower()
+        
+        # Handle .nii.gz
+        if filename.lower().endswith(".nii.gz"):
+            ext = ".nii.gz"
+        else:
+            ext = Path(filename).suffix.lower()
+            
         if ext in valid_extensions and parse_bids_filename(filename):
             validated_files.append((f, filename))
 
@@ -585,9 +592,6 @@ def api_batch_convert():
 
         create_dataset_description(output_dir, name=dataset_name)
 
-        if return_format == "json":
-            return jsonify({"job_id": job_id, "status": "complete", "logs": logs})
-
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for file_path in output_dir.rglob("*"):
@@ -595,12 +599,85 @@ def api_batch_convert():
                     zf.write(file_path, file_path.relative_to(output_dir))
         mem.seek(0)
 
-        safe_name = re.sub(r"[^a-zA-Z0-9_-]", "_", dataset_name)[:50]
-        return send_file(
-            mem, mimetype="application/zip", as_attachment=True,
-            download_name=f"{safe_name}_prism.zip"
-        )
+        import base64
+        zip_base64 = base64.b64encode(mem.read()).decode('utf-8')
+        
+        return jsonify({
+            "status": "success",
+            "log": "\n".join([l["message"] for l in logs]),
+            "zip": zip_base64,
+            "converted": result.success_count,
+            "errors": result.error_count
+        })
     except Exception as e:
         return jsonify({"error": str(e), "logs": logs}), 500
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
+
+@conversion_bp.route("/api/physio-rename", methods=["POST"])
+def api_physio_rename():
+    """Rename uploaded files based on a regex pattern and return a ZIP."""
+    pattern = request.form.get("pattern", "")
+    replacement = request.form.get("replacement", "")
+    dry_run = request.form.get("dry_run", "false").lower() == "true"
+    
+    files = request.files.getlist("files[]") or request.files.getlist("files")
+    
+    # If dry run, we might just have filenames in a list
+    filenames = request.form.getlist("filenames[]") or request.form.getlist("filenames")
+    
+    if not files and not filenames and not dry_run:
+        return jsonify({"error": "No files or filenames provided"}), 400
+        
+    try:
+        regex = re.compile(pattern)
+    except re.error as e:
+        return jsonify({"error": f"Invalid regex: {str(e)}"}), 400
+        
+    results = []
+    
+    if dry_run:
+        # Use filenames if provided, else use uploaded files' names
+        source_names = filenames if filenames else [f.filename for f in files if f.filename]
+        for fname in source_names:
+            try:
+                new_name = regex.sub(replacement, fname)
+                results.append({"old": fname, "new": new_name, "success": True})
+            except Exception as e:
+                results.append({"old": fname, "new": str(e), "success": False})
+        return jsonify({"results": results})
+
+    # Actual renaming and zipping
+    if not files:
+        return jsonify({"error": "No files uploaded for renaming"}), 400
+
+    mem = io.BytesIO()
+    try:
+        with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+            for f in files:
+                if not f or not f.filename: continue
+                old_name = secure_filename(f.filename)
+                
+                try:
+                    new_name = regex.sub(replacement, old_name)
+                    # Ensure new_name is safe for zip
+                    # We don't use secure_filename here because it might strip sub- etc if not careful
+                    # but actually secure_filename is good for the final filename in zip.
+                    
+                    f_content = f.read()
+                    zf.writestr(new_name, f_content)
+                    results.append({"old": old_name, "new": new_name, "success": True})
+                except Exception as e:
+                    results.append({"old": old_name, "new": str(e), "success": False})
+        
+        mem.seek(0)
+        import base64
+        zip_base64 = base64.b64encode(mem.read()).decode('utf-8')
+        
+        return jsonify({
+            "status": "success",
+            "results": results,
+            "zip": zip_base64
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
