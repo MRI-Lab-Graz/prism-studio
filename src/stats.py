@@ -29,7 +29,9 @@ class DatasetStats:
         if modality not in self.modalities:
             self.modalities[modality] = 0
         self.modalities[modality] += 1
-        if task:
+        
+        # Only add to tasks if it's not a survey or biometrics
+        if task and modality not in ["survey", "biometrics"]:
             self.tasks.add(task)
 
         if modality == "survey":
@@ -153,10 +155,33 @@ class DatasetStats:
             1, int(round(total_subjects * 0.05))
         )  # 5% of subjects (min 1)
 
+        # Special case: if we have many subjects, and only 1 or 2 have a specific session,
+        # it's almost certainly a typo (e.g., 'boseline' vs 'baseline').
+        if total_subjects >= 10:
+            very_rare_threshold = 2
+        else:
+            very_rare_threshold = 1
+
         for session in sorted(all_sessions):
             present = present_by_session.get(session, 0)
             missing = total_subjects - present
             if present == 0:
+                continue
+
+            if present <= very_rare_threshold and total_subjects >= 5:
+                # Find which subjects have this rare session
+                rare_subjects = [
+                    sid
+                    for sid, data in subjects_with_sessions.items()
+                    if session in data["sessions"]
+                ]
+                warnings.append(
+                    (
+                        "WARNING",
+                        f"Potential typo/mislabeled session: '{session}' appears only in {present} subject(s) ({', '.join(rare_subjects)}). "
+                        "Check if this should match the session name used by other subjects.",
+                    )
+                )
                 continue
 
             if present <= rare_threshold and missing >= (

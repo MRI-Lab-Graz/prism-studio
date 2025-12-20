@@ -325,9 +325,18 @@ def format_validation_results(
         total_files = (
             len(file_paths) if file_paths else len(valid_files) + len(invalid_files)
         )
+        
+    # Fallback: if still 0, count files on disk (excluding system files)
+    if total_files == 0 and dataset_path and os.path.exists(dataset_path):
+        disk_files = 0
+        for root, dirs, files in os.walk(dataset_path):
+            for f in files:
+                if not is_system_file(f) and f != ".upload_manifest.json":
+                    disk_files += 1
+        total_files = disk_files
 
     # Add error if no files found
-    if stats_total == 0 and len(file_paths) == 0:
+    if total_files == 0:
         error_code = "EMPTY_DATASET"
         if error_code not in error_groups:
             error_groups[error_code] = {
@@ -362,6 +371,44 @@ def format_validation_results(
     # A dataset is valid only if it has no errors AND has at least some files
     is_valid = total_errors == 0 and total_files > 0
 
+    # Try to get dataset name from dataset_description.json
+    dataset_name = os.path.basename(dataset_path)
+    try:
+        desc_path = os.path.join(dataset_path, "dataset_description.json")
+        if os.path.exists(desc_path):
+            with open(desc_path, "r") as f:
+                desc_data = json.load(f)
+                if "Name" in desc_data:
+                    dataset_name = desc_data["Name"]
+    except Exception:
+        pass
+
+    # Convert dataset_stats to a serializable dict if it's a DatasetStats object
+    serializable_stats = {}
+    if dataset_stats:
+        if hasattr(dataset_stats, "subjects"):
+            # Calculate unique session labels
+            session_entries = getattr(dataset_stats, "sessions", set()) or set()
+            unique_sessions = set()
+            for entry in session_entries:
+                if isinstance(entry, str) and "/" in entry:
+                    unique_sessions.add(entry.split("/", 1)[1])
+                elif entry:
+                    unique_sessions.add(entry)
+
+            serializable_stats = {
+                "total_subjects": len(getattr(dataset_stats, "subjects", [])),
+                "total_sessions": len(unique_sessions),
+                "modalities": getattr(dataset_stats, "modalities", {}),
+                "tasks": sorted(list(getattr(dataset_stats, "tasks", []))),
+                "surveys": sorted(list(getattr(dataset_stats, "surveys", []))),
+                "biometrics": sorted(list(getattr(dataset_stats, "biometrics", []))),
+                "total_files": getattr(dataset_stats, "total_files", 0),
+                "sidecar_files": getattr(dataset_stats, "sidecar_files", 0),
+            }
+        elif isinstance(dataset_stats, dict):
+            serializable_stats = dataset_stats
+
     return {
         "valid": is_valid,
         "summary": {
@@ -380,5 +427,6 @@ def format_validation_results(
             item for group in warning_groups.values() for item in group["files"]
         ],
         "dataset_path": dataset_path,
-        "dataset_stats": dataset_stats,
+        "dataset_name": dataset_name,
+        "dataset_stats": serializable_stats,
     }

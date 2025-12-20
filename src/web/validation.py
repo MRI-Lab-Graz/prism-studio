@@ -46,7 +46,9 @@ class SimpleStats:
         self.subjects = set()
         self.sessions = set()
         self.tasks = set()
-        self.modalities = set()
+        self.modalities = {}  # modality -> file count
+        self.surveys = set()
+        self.biometrics = set()
         self.sidecar_files = 0
 
 
@@ -101,12 +103,33 @@ def run_validation(
     # Try to use core validator directly first
     if core_validate:
         try:
+            # Wrap progress_callback to handle 4 arguments if it only expects 2
+            wrapped_callback = None
+            if progress_callback:
+                def wrapped_callback(*args, **kwargs):
+                    try:
+                        # runner.py calls with (current, total, message, file_path=None)
+                        # we want to call progress_callback(progress_pct, message)
+                        if len(args) >= 3:
+                            current, total, message = args[0], args[1], args[2]
+                            progress_pct = int((current / total) * 100) if total > 0 else current
+                            progress_callback(progress_pct, message)
+                        elif 'current' in kwargs and 'total' in kwargs and 'message' in kwargs:
+                            current, total, message = kwargs['current'], kwargs['total'], kwargs['message']
+                            progress_pct = int((current / total) * 100) if total > 0 else current
+                            progress_callback(progress_pct, message)
+                        elif len(args) == 2:
+                            progress_callback(args[0], args[1])
+                    except Exception as cb_err:
+                        # Fallback or ignore if it fails
+                        print(f"DEBUG: Callback error: {cb_err}")
+
             issues, stats = core_validate(
                 dataset_path,
                 verbose=verbose,
                 schema_version=schema_version,
                 run_bids=run_bids,
-                progress_callback=progress_callback,
+                progress_callback=wrapped_callback,
             )
 
             # Convert issues to web format if needed
@@ -203,6 +226,34 @@ def _parse_subprocess_output(result, dataset_path: str) -> Tuple[List, SimpleSta
             match = re.search(r"Found (\d+) files", clean_line)
             if match:
                 stats.total_files = int(match.group(1))
+            
+            # Also try to parse subjects and sessions from this line
+            # Format: 📊 Found 15 files across 1 subjects and 1 sessions
+            sub_match = re.search(r"across (\d+) subjects", clean_line)
+            if sub_match:
+                # We can't get the IDs, but we can fill the set with dummy IDs to get the count right
+                count = int(sub_match.group(1))
+                stats.subjects = {f"sub-{i:02d}" for i in range(1, count + 1)}
+            
+            ses_match = re.search(r"and (\d+) sessions", clean_line)
+            if ses_match:
+                count = int(ses_match.group(1))
+                stats.sessions = {f"ses-{i:02d}" for i in range(1, count + 1)}
+        
+        # Parse subject count from summary
+        elif "👥 Subjects:" in clean_line:
+            match = re.search(r"Subjects:\s*(\d+)", clean_line)
+            if match:
+                count = int(match.group(1))
+                stats.subjects = {f"sub-{i:02d}" for i in range(1, count + 1)}
+        
+        # Parse session count from summary
+        elif "📋 Sessions:" in clean_line:
+            match = re.search(r"Sessions:\s*(\d+)", clean_line)
+            if match:
+                count = int(match.group(1))
+                stats.sessions = {f"ses-{i:02d}" for i in range(1, count + 1)}
+
         # Parse specific error messages (bullet style)
         elif clean_line.startswith("•") and ("❌" in stdout or "ERROR" in stdout):
             issues.append(("ERROR", clean_line.replace("•", "").strip(), dataset_path))

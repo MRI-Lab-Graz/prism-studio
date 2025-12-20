@@ -487,12 +487,12 @@ def upload_dataset():
     """Handle dataset upload and validation"""
     if "dataset" not in request.files:
         flash("No dataset uploaded", "error")
-        return redirect(url_for("index"))
+        return redirect(url_for("validate_dataset"))
 
     files = request.files.getlist("dataset")
     if not files or (len(files) == 1 and files[0].filename == ""):
         flash("No files selected", "error")
-        return redirect(url_for("index"))
+        return redirect(url_for("validate_dataset"))
 
     # Get schema version from form
     schema_version = request.form.get("schema_version", "stable")
@@ -516,7 +516,11 @@ def upload_dataset():
             len(files) == 1 and not files[0].filename.lower().endswith(".zip")
         ):
             # Handle folder upload
-            dataset_path = process_folder_upload(files, temp_dir, metadata_paths)
+            # Get the list of all files (including skipped ones) from form data
+            all_files_json = request.form.get("all_files")
+            all_files_list = json.loads(all_files_json) if all_files_json else []
+            
+            dataset_path = _process_folder_upload(files, temp_dir, metadata_paths, all_files_list)
             filename = f"folder_upload_{len(files)}_files"
         else:
             # Handle ZIP upload
@@ -525,9 +529,9 @@ def upload_dataset():
             if not filename.lower().endswith(".zip"):
                 flash("Please upload a ZIP file or select a folder", "error")
                 shutil.rmtree(temp_dir, ignore_errors=True)
-                return redirect(url_for("index"))
+                return redirect(url_for("validate_dataset"))
 
-            dataset_path = process_zip_upload(file, temp_dir, filename)
+            dataset_path = _process_zip_upload(file, temp_dir, filename)
 
         # DEBUG: Print dataset_path and sample files (excluding system files)
         print(f"📁 [UPLOAD] Validating dataset at: {dataset_path}")
@@ -628,7 +632,7 @@ def upload_dataset():
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir, ignore_errors=True)
         flash(f"Error processing dataset: {str(e)}", "error")
-        return redirect(url_for("index"))
+        return redirect(url_for("validate_dataset"))
 
 
 def create_placeholder_content(file_path, extension):
@@ -1037,16 +1041,18 @@ def show_results(result_id):
     """Display validation results"""
     if result_id not in validation_results:
         flash("Results not found", "error")
-        return redirect(url_for("index"))
+        return redirect(url_for("validate_dataset"))
 
     data = validation_results[result_id]
     results = data["results"]
 
     # Get dataset stats if available
-    dataset_stats = None
-    stats_obj = results.get("dataset_stats")
-    if stats_obj:
+    dataset_stats = results.get("dataset_stats")
+    
+    # If it's still an object (legacy or direct call), convert it
+    if dataset_stats and not isinstance(dataset_stats, dict):
         try:
+            stats_obj = dataset_stats
             session_entries = getattr(stats_obj, "sessions", set()) or set()
             unique_sessions = set()
             for entry in session_entries:
@@ -1055,22 +1061,45 @@ def show_results(result_id):
                 elif entry:
                     unique_sessions.add(entry)
 
+            modalities = getattr(stats_obj, "modalities", {}) or {}
+            if not isinstance(modalities, dict):
+                if isinstance(modalities, (set, list)):
+                    modalities = {m: "?" for m in modalities}
+                else:
+                    modalities = {}
+
             dataset_stats = {
                 "total_subjects": len(getattr(stats_obj, "subjects", [])),
                 "total_sessions": len(unique_sessions),
-                "modalities": sorted(getattr(stats_obj, "modalities", set()) or set()),
+                "modalities": dict(sorted(modalities.items())),
                 "tasks": sorted(getattr(stats_obj, "tasks", set()) or set()),
+                "surveys": sorted(getattr(stats_obj, "surveys", set()) or set()),
+                "biometrics": sorted(getattr(stats_obj, "biometrics", set()) or set()),
                 "total_files": getattr(stats_obj, "total_files", 0),
                 "sidecar_files": getattr(stats_obj, "sidecar_files", 0),
             }
         except Exception as stats_error:
             print(f"⚠️  Failed to prepare dataset stats for display: {stats_error}")
+            dataset_stats = None
+    
+    # Ensure all required keys are present for the template
+    if not dataset_stats:
+        dataset_stats = {
+            "total_subjects": 0,
+            "total_sessions": 0,
+            "modalities": {},
+            "tasks": [],
+            "surveys": [],
+            "biometrics": [],
+            "total_files": results.get("summary", {}).get("total_files", 0),
+            "sidecar_files": 0
+        }
 
     return render_template(
         "results.html",
         results=results,
         result_id=result_id,
-        filename=data["filename"],
+        filename=results.get("dataset_name") or data["filename"],
         dataset_stats=dataset_stats,
         shorten_path=shorten_path,
         get_filename_from_path=get_filename_from_path,
@@ -1083,7 +1112,7 @@ def download_report(result_id):
     """Download validation report as JSON"""
     if result_id not in validation_results:
         flash("Results not found", "error")
-        return redirect(url_for("index"))
+        return redirect(url_for("validate_dataset"))
 
     data = validation_results[result_id]
     results = data["results"]
@@ -1126,7 +1155,7 @@ def cleanup(result_id):
         del validation_results[result_id]
 
     flash("Results cleaned up", "success")
-    return redirect(url_for("index"))
+    return redirect(url_for("validate_dataset"))
 
 
 @app.route("/api/validate", methods=["POST"])

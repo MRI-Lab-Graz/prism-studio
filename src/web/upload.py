@@ -18,6 +18,10 @@ METADATA_EXTENSIONS = {
     ".tsv",  # Behavioral/events data
     ".csv",  # Alternative tabular format
     ".txt",  # Text data/logs
+    ".bvec",
+    ".bval",  # Diffusion MRI metadata
+    ".vhdr",
+    ".vmrk",  # BrainVision metadata
     ".edf",  # EEG/eye-tracking (relatively small)
     ".bdf",  # BioSemi EEG format
     ".png",
@@ -37,6 +41,7 @@ SKIP_EXTENSIONS = {
     ".dat",
     ".fif",  # Large electrophysiology
     ".mat",  # MATLAB files
+    ".fdt",  # EEGLAB data
 }
 
 # Names that indicate BIDS modality folders (should not be stripped)
@@ -345,7 +350,7 @@ def process_folder_upload(
         f"📁 Processed {processed_count} metadata files, created {skipped_count} placeholders"
     )
 
-    return dataset_root, manifest
+    return dataset_root
 
 
 def process_zip_upload(file, temp_dir: str, filename: str) -> str:
@@ -368,7 +373,11 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
     skipped_count = 0
 
     with zipfile.ZipFile(file_path, "r") as zip_ref:
-        for zip_info in zip_ref.namelist():
+        all_files = zip_ref.namelist()
+        if not all_files:
+            print(f"⚠️  [UPLOAD] ZIP file {filename} is empty!")
+            
+        for zip_info in all_files:
             # Skip directories
             if zip_info.endswith("/"):
                 continue
@@ -389,7 +398,15 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
                 with open(extract_path, "w") as f:
                     f.write("")
                 skipped_count += 1
+            else:
+                # Unknown extension, extract it anyway to be safe if it's small
+                # or just skip it. For now, let's extract it if it's not obviously large.
+                zip_ref.extract(zip_info, temp_dir)
+                processed_count += 1
 
+    if processed_count == 0 and skipped_count == 0:
+        print(f"⚠️  [UPLOAD] No files were extracted from {filename}. ZIP contents: {all_files[:10]}...")
+    
     print(
         f"📦 Extracted {processed_count} metadata files, skipped {skipped_count} data files"
     )
