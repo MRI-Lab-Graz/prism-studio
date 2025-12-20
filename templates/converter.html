@@ -1,0 +1,1418 @@
+{% extends "base.html" %}
+
+{% block title %}PRISM Studio - Converter{% endblock %}
+
+{% block styles %}
+<style>
+    /* Converter Tabs Styling */
+    #converterTabs {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 4px;
+        background-color: #f8f9fa;
+    }
+    
+    #converterTabs .nav-item {
+        border-right: 1px solid #dee2e6;
+    }
+    
+    #converterTabs .nav-item:last-child {
+        border-right: none;
+    }
+    
+    #converterTabs .nav-link {
+        border-radius: 6px;
+        margin: 2px;
+        color: #495057;
+        transition: all 0.2s ease;
+    }
+    
+    #converterTabs .nav-link:hover:not(.active) {
+        background-color: #e9ecef;
+    }
+    
+    #converterTabs .nav-link.active {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Survey tab - Yellow */
+    #survey-tab.active {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    #survey-tab.active small {
+        color: rgba(0,0,0,0.6) !important;
+    }
+    
+    /* Biometrics tab - Yellow */
+    #biometrics-tab.active {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    #biometrics-tab.active small {
+        color: rgba(0,0,0,0.6) !important;
+    }
+    
+    /* Physio tab - Yellow */
+    #physio-tab.active {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    #physio-tab.active small {
+        color: rgba(0,0,0,0.6) !important;
+    }
+    
+    /* Eyetracking tab - Yellow */
+    #eyetracking-tab.active {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    #eyetracking-tab.active small {
+        color: rgba(0,0,0,0.6) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-exchange-alt text-warning me-2"></i>Prism Converter</h2>
+            <p class="text-muted">Convert Survey, Biometrics, Physio, and Eyetracking inputs to PRISM/BIDS-style outputs.</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <!-- Ribbon Navigation -->
+            <ul class="nav nav-pills nav-fill mb-4" id="converterTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="survey-tab" data-bs-toggle="pill" data-bs-target="#survey-panel" type="button" role="tab" aria-controls="survey-panel" aria-selected="true">
+                        <i class="fas fa-clipboard-list fa-lg mb-1 d-block"></i>
+                        <span class="fw-bold">Survey</span>
+                        <small class="d-block text-muted" style="font-size: 0.7rem;">Questionnaires</small>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="biometrics-tab" data-bs-toggle="pill" data-bs-target="#biometrics-panel" type="button" role="tab" aria-controls="biometrics-panel" aria-selected="false">
+                        <i class="fas fa-weight fa-lg mb-1 d-block"></i>
+                        <span class="fw-bold">Biometrics</span>
+                        <small class="d-block text-muted" style="font-size: 0.7rem;">Physical measures</small>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="physio-tab" data-bs-toggle="pill" data-bs-target="#physio-panel" type="button" role="tab" aria-controls="physio-panel" aria-selected="false">
+                        <i class="fas fa-heartbeat fa-lg mb-1 d-block"></i>
+                        <span class="fw-bold">Physio</span>
+                        <small class="d-block text-muted" style="font-size: 0.7rem;">ECG, Respiration</small>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="eyetracking-tab" data-bs-toggle="pill" data-bs-target="#eyetracking-panel" type="button" role="tab" aria-controls="eyetracking-panel" aria-selected="false">
+                        <i class="fas fa-eye fa-lg mb-1 d-block"></i>
+                        <span class="fw-bold">Eyetracking</span>
+                        <small class="d-block text-muted" style="font-size: 0.7rem;">Gaze data</small>
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="converterTabContent">
+                
+                <!-- Survey Panel -->
+                <div class="tab-pane fade show active" id="survey-panel" role="tabpanel" aria-labelledby="survey-tab">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas fa-clipboard-list fa-2x text-warning"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Survey Data Conversion</h5>
+                                    <p class="text-muted mb-0">Convert questionnaire responses from Excel or LimeSurvey archives</p>
+                                </div>
+                            </div>
+
+                            <!-- Template Library Path -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-12">
+                                    <label for="convertLibraryPath" class="form-label">Template Library Root <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="convertLibraryPath" placeholder="/path/to/library" value="">
+                                        <button class="btn btn-outline-secondary" type="button" id="convertBrowseLibraryBtn" title="Browse Folder">
+                                            <i class="fas fa-folder-open"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Root library folder containing <code>survey/</code>, <code>biometrics/</code>, and <code>participants.json</code></div>
+                                </div>
+                            </div>
+
+                            <!-- Structure Warning (missing folders/files) -->
+                            <div id="surveyStructureWarning" class="alert alert-danger d-none mb-3">
+                                <i class="fas fa-folder-minus me-2"></i>
+                                <strong>Missing Structure:</strong> <span id="surveyStructureMessage">The selected folder is missing required items.</span>
+                            </div>
+
+                            <!-- I18n Warning -->
+                            <div id="surveyI18nWarning" class="alert alert-warning d-none mb-3">
+                                <i class="fas fa-language me-2"></i>
+                                <strong>Multilanguage Notice:</strong> <span id="surveyI18nMessage">Some templates do not have multilanguage (I18n) configuration.</span>
+                            </div>
+
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-4">
+                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa)</label>
+                                    <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="convertDatasetName" class="form-label">Dataset Name (optional)</label>
+                                    <input type="text" class="form-control" id="convertDatasetName" placeholder="PRISM Survey Dataset">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="convertLanguage" class="form-label">Language</label>
+                                    <select class="form-select" id="convertLanguage">
+                                        <option value="auto" selected>Auto (template default)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-warning text-white w-100" type="button" id="convertBtn" disabled>
+                                        <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
+                                    </button>
+                                </div>
+
+                                <div class="col-12">
+                                    <a class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" href="#surveyAdvancedOptions" role="button" aria-expanded="false">
+                                        <i class="fas fa-cog me-1"></i>Advanced options
+                                    </a>
+                                </div>
+
+                                <div class="col-12 collapse" id="surveyAdvancedOptions">
+                                    <div class="row g-3 align-items-end mt-1 p-3 bg-light rounded">
+                                        <div class="col-md-6">
+                                            <label for="convertAliasFile" class="form-label">ID Mapping File (optional)</label>
+                                            <input class="form-control" type="file" id="convertAliasFile" accept=".tsv,.txt">
+                                            <div class="form-text">Only needed if item IDs changed over time.</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="convertUnknown" class="form-label">Unknown Items</label>
+                                            <select class="form-select" id="convertUnknown">
+                                                <option value="warn" selected>Show warnings</option>
+                                                <option value="ignore">Skip silently</option>
+                                                <option value="error">Stop on unknown</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="convertError" class="alert alert-danger d-none mt-3"></div>
+                            <div id="convertInfo" class="alert alert-info d-none mt-3"></div>
+
+                            <!-- Conversion Log Output -->
+                            <div id="conversionLogContainer" class="d-none mt-3">
+                                <div class="card border-secondary">
+                                    <div class="card-header bg-dark text-white py-2 d-flex justify-content-between align-items-center">
+                                        <span><i class="fas fa-terminal me-2"></i>Conversion Log</span>
+                                        <button type="button" class="btn btn-sm btn-outline-light" id="toggleLogBtn" title="Toggle log">
+                                            <i class="fas fa-chevron-down"></i>
+                                        </button>
+                                    </div>
+                                    <div class="card-body p-0" id="conversionLogBody">
+                                        <pre id="conversionLog" class="m-0 p-3 bg-dark text-light" style="max-height: 300px; overflow-y: auto; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; white-space: pre-wrap;"></pre>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Validation Results -->
+                            <div id="validationResultsContainer" class="d-none mt-3">
+                                <div class="card" id="validationResultsCard">
+                                    <div class="card-header py-2 d-flex justify-content-between align-items-center" id="validationResultsHeader">
+                                        <span><i class="fas fa-clipboard-check me-2"></i>Validation Results</span>
+                                        <span id="validationBadge" class="badge"></span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="validationSummary" class="mb-3"></div>
+                                        <div id="validationDetails"></div>
+                                        <div id="downloadSection" class="d-none mt-3 text-center">
+                                            <button class="btn btn-warning btn-lg text-white" id="downloadZipBtn">
+                                                <i class="fas fa-download me-2"></i>Download Validated Dataset
+                                            </button>
+                                            <p class="text-muted small mt-2">
+                                                <i class="fas fa-check-circle me-1"></i>Dataset passed validation
+                                            </p>
+                                        </div>
+                                        <div id="downloadWarningSection" class="d-none mt-3 text-center">
+                                            <button class="btn btn-warning btn-lg" id="downloadZipWarningBtn">
+                                                <i class="fas fa-download me-2"></i>Download Dataset (with warnings)
+                                            </button>
+                                            <p class="text-muted small mt-2">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Dataset has warnings but can still be used
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Biometrics Panel -->
+                <div class="tab-pane fade" id="biometrics-panel" role="tabpanel" aria-labelledby="biometrics-tab">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas fa-weight fa-2x text-warning"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Biometrics Data Conversion</h5>
+                                    <p class="text-muted mb-0">Convert physical measurements like grip strength, balance tests</p>
+                                </div>
+                            </div>
+
+                            <!-- Template Library Path -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-12">
+                                    <label for="biometricsLibraryPath" class="form-label">Template Library Root <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="biometricsLibraryPath" placeholder="/path/to/library" value="">
+                                        <button class="btn btn-outline-secondary" type="button" id="biometricsBrowseLibraryBtn" title="Browse Folder">
+                                            <i class="fas fa-folder-open"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Root library folder containing <code>survey/</code>, <code>biometrics/</code>, and <code>participants.json</code></div>
+                                </div>
+                            </div>
+
+                            <!-- Structure Warning (missing folders/files) -->
+                            <div id="biometricsStructureWarning" class="alert alert-danger d-none mb-3">
+                                <i class="fas fa-folder-minus me-2"></i>
+                                <strong>Missing Structure:</strong> <span id="biometricsStructureMessage">The selected folder is missing required items.</span>
+                            </div>
+
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-4">
+                                    <label for="biometricsDataFile" class="form-label">Biometrics File (.xlsx, .csv, .tsv)</label>
+                                    <input class="form-control" type="file" id="biometricsDataFile" accept=".xlsx,.csv,.tsv">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="biometricsDatasetName" class="form-label">Dataset Name (optional)</label>
+                                    <input type="text" class="form-control" id="biometricsDatasetName" placeholder="PRISM Biometrics Dataset">
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-warning text-white w-100" type="button" id="biometricsConvertBtn" disabled>
+                                        <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
+                                    </button>
+                                </div>
+
+                                <div class="col-12">
+                                    <a class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" href="#biometricsAdvancedOptions" role="button" aria-expanded="false">
+                                        <i class="fas fa-cog me-1"></i>Advanced options
+                                    </a>
+                                </div>
+
+                                <div class="col-12 collapse" id="biometricsAdvancedOptions">
+                                    <div class="row g-3 align-items-end mt-1 p-3 bg-light rounded">
+                                        <div class="col-md-6">
+                                            <label for="biometricsUnknown" class="form-label">Unknown Items</label>
+                                            <select class="form-select" id="biometricsUnknown">
+                                                <option value="warn" selected>Show warnings</option>
+                                                <option value="ignore">Skip silently</option>
+                                                <option value="error">Stop on unknown</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="biometricsError" class="alert alert-danger d-none mt-3"></div>
+                            <div id="biometricsInfo" class="alert alert-info d-none mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Physio Panel -->
+                <div class="tab-pane fade" id="physio-panel" role="tabpanel" aria-labelledby="physio-tab">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas fa-heartbeat fa-2x text-warning"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Physiological Data Conversion</h5>
+                                    <p class="text-muted mb-0">Convert Varioport recordings (ECG, respiration) to PRISM format</p>
+                                </div>
+                            </div>
+
+                            <!-- Sub-tabs for single vs batch -->
+                            <ul class="nav nav-tabs nav-sm mb-3" id="physioSubTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="physio-single-tab" data-bs-toggle="tab" data-bs-target="#physio-single" type="button" role="tab">
+                                        <i class="fas fa-file me-1"></i>Single File
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="physio-batch-tab" data-bs-toggle="tab" data-bs-target="#physio-batch" type="button" role="tab">
+                                        <i class="fas fa-folder-open me-1"></i>Batch (Multiple Files)
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <div class="tab-content" id="physioSubTabContent">
+                                <!-- Single File -->
+                                <div class="tab-pane fade show active" id="physio-single" role="tabpanel">
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-4">
+                                            <label for="physioRawFile" class="form-label">Varioport Recording (.raw or .vpd)</label>
+                                            <input class="form-control" type="file" id="physioRawFile" accept=".raw,.vpd">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="physioTask" class="form-label">Task Name</label>
+                                            <input type="text" class="form-control" id="physioTask" value="rest">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="physioSamplingRate" class="form-label">Sampling Rate (optional)</label>
+                                            <input type="number" class="form-control" id="physioSamplingRate" placeholder="e.g. 256" step="any">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <button class="btn btn-warning text-white w-100" type="button" id="physioConvertBtn" disabled>
+                                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="physioError" class="alert alert-danger d-none mt-3"></div>
+                                    <div id="physioInfo" class="alert alert-info d-none mt-3"></div>
+                                </div>
+
+                                <!-- Batch -->
+                                <div class="tab-pane fade" id="physio-batch" role="tabpanel">
+                                    <div class="alert alert-light border mb-3">
+                                        <i class="fas fa-info-circle me-2 text-info"></i>
+                                        <strong>File naming required:</strong> <code>sub-XXX_ses-YYY_task-ZZZ.raw</code> or <code>.vpd</code>
+                                        <br><small class="text-muted">Example: <code>sub-003_ses-1_task-rest.raw</code> · Session is optional</small>
+                                    </div>
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-6">
+                                            <label for="physioBatchFiles" class="form-label">Select Physio Files</label>
+                                            <input class="form-control" type="file" id="physioBatchFiles" accept=".raw,.vpd" multiple>
+                                            <small class="text-muted">Select all files (Ctrl+A / Cmd+A)</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="physioBatchDatasetName" class="form-label">Dataset Name</label>
+                                            <input type="text" class="form-control" id="physioBatchDatasetName" value="Physio Dataset">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="physioBatchSamplingRate" class="form-label">Sampling Rate (optional)</label>
+                                            <input type="number" class="form-control" id="physioBatchSamplingRate" placeholder="e.g. 256" step="any">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <button class="btn btn-warning text-white w-100" type="button" id="physioBatchConvertBtn" disabled>
+                                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert All & Download
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="physioBatchError" class="alert alert-danger d-none mt-3"></div>
+                                    <div id="physioBatchInfo" class="alert alert-info d-none mt-3"></div>
+                                    <div id="physioBatchProgress" class="progress d-none mt-3" style="height: 25px;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning text-dark" style="width: 100%">Converting...</div>
+                                    </div>
+                                    <!-- Log Window -->
+                                    <div id="physioBatchLogContainer" class="d-none mt-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="form-label mb-0"><i class="fas fa-terminal me-2"></i>Conversion Log</label>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="physioBatchLogClearBtn">
+                                                <i class="fas fa-trash-alt me-1"></i>Clear
+                                            </button>
+                                        </div>
+                                        <div id="physioBatchLog" class="bg-dark text-light p-3 rounded font-monospace" 
+                                             style="height: 200px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Eyetracking Panel -->
+                <div class="tab-pane fade" id="eyetracking-panel" role="tabpanel" aria-labelledby="eyetracking-tab">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas fa-eye fa-2x text-warning"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Eyetracking Data Conversion</h5>
+                                    <p class="text-muted mb-0">Convert SR Research EyeLink recordings (.edf) to PRISM format</p>
+                                </div>
+                            </div>
+
+                            <!-- Sub-tabs for single vs batch -->
+                            <ul class="nav nav-tabs nav-sm mb-3" id="eyetrackingSubTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="eyetracking-single-tab" data-bs-toggle="tab" data-bs-target="#eyetracking-single" type="button" role="tab">
+                                        <i class="fas fa-file me-1"></i>Single File
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="eyetracking-batch-tab" data-bs-toggle="tab" data-bs-target="#eyetracking-batch" type="button" role="tab">
+                                        <i class="fas fa-folder-open me-1"></i>Batch (Multiple Files)
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <div class="tab-content" id="eyetrackingSubTabContent">
+                                <!-- Single File -->
+                                <div class="tab-pane fade show active" id="eyetracking-single" role="tabpanel">
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-4">
+                                            <label for="eyetrackingSingleFile" class="form-label">EyeLink Recording (.edf)</label>
+                                            <input class="form-control" type="file" id="eyetrackingSingleFile" accept=".edf">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label for="eyetrackingSubject" class="form-label">Subject ID</label>
+                                            <input type="text" class="form-control" id="eyetrackingSubject" placeholder="e.g. 001">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label for="eyetrackingSession" class="form-label">Session (optional)</label>
+                                            <input type="text" class="form-control" id="eyetrackingSession" placeholder="e.g. 1">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="eyetrackingTask" class="form-label">Task Name</label>
+                                            <input type="text" class="form-control" id="eyetrackingTask" value="gaze" placeholder="e.g. antisaccade">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <button class="btn btn-warning w-100" type="button" id="eyetrackingSingleConvertBtn" disabled>
+                                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="eyetrackingSingleError" class="alert alert-danger d-none mt-3"></div>
+                                    <div id="eyetrackingSingleInfo" class="alert alert-info d-none mt-3"></div>
+                                </div>
+
+                                <!-- Batch -->
+                                <div class="tab-pane fade" id="eyetracking-batch" role="tabpanel">
+                                    <div class="alert alert-light border mb-3">
+                                        <i class="fas fa-info-circle me-2 text-info"></i>
+                                        <strong>File naming required:</strong> <code>sub-XXX_ses-YYY_task-ZZZ.edf</code>
+                                        <br><small class="text-muted">Example: <code>sub-003_ses-1_task-antisaccade.edf</code> · Session is optional</small>
+                                    </div>
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-6">
+                                            <label for="eyetrackingBatchFiles" class="form-label">Select EDF Files</label>
+                                            <input class="form-control" type="file" id="eyetrackingBatchFiles" accept=".edf" multiple>
+                                            <small class="text-muted">Select all files (Ctrl+A / Cmd+A)</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="eyetrackingBatchDatasetName" class="form-label">Dataset Name</label>
+                                            <input type="text" class="form-control" id="eyetrackingBatchDatasetName" value="Eyetracking Dataset">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <button class="btn btn-warning w-100" type="button" id="eyetrackingBatchConvertBtn" disabled>
+                                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert All & Download
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="eyetrackingBatchError" class="alert alert-danger d-none mt-3"></div>
+                                    <div id="eyetrackingBatchInfo" class="alert alert-info d-none mt-3"></div>
+                                    <div id="eyetrackingBatchProgress" class="progress d-none mt-3" style="height: 25px;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" style="width: 100%">Converting...</div>
+                                    </div>
+                                    <!-- Log Window -->
+                                    <div id="eyetrackingBatchLogContainer" class="d-none mt-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="form-label mb-0"><i class="fas fa-terminal me-2"></i>Conversion Log</label>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="eyetrackingBatchLogClearBtn">
+                                                <i class="fas fa-trash-alt me-1"></i>Clear
+                                            </button>
+                                        </div>
+                                        <div id="eyetrackingBatchLog" class="bg-dark text-light p-3 rounded font-monospace" 
+                                             style="height: 200px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Landgig: Survey Convert ---
+    const convertLibraryPathInput = document.getElementById('convertLibraryPath');
+    const convertBrowseLibraryBtn = document.getElementById('convertBrowseLibraryBtn');
+    const convertExcelFile = document.getElementById('convertExcelFile');
+    const convertAliasFile = document.getElementById('convertAliasFile');
+    const convertBtn = document.getElementById('convertBtn');
+    const convertDatasetName = document.getElementById('convertDatasetName');
+    const convertUnknown = document.getElementById('convertUnknown');
+    const convertLanguage = document.getElementById('convertLanguage');
+    const convertError = document.getElementById('convertError');
+    const convertInfo = document.getElementById('convertInfo');
+
+    // --- Biometrics Convert ---
+    const biometricsLibraryPathInput = document.getElementById('biometricsLibraryPath');
+    const biometricsBrowseLibraryBtn = document.getElementById('biometricsBrowseLibraryBtn');
+    const biometricsDataFile = document.getElementById('biometricsDataFile');
+    const biometricsDatasetName = document.getElementById('biometricsDatasetName');
+    const biometricsUnknown = document.getElementById('biometricsUnknown');
+    const biometricsConvertBtn = document.getElementById('biometricsConvertBtn');
+    const biometricsError = document.getElementById('biometricsError');
+    const biometricsInfo = document.getElementById('biometricsInfo');
+
+    // --- Physio Convert (Single) ---
+    const physioRawFile = document.getElementById('physioRawFile');
+    const physioTask = document.getElementById('physioTask');
+    const physioSamplingRate = document.getElementById('physioSamplingRate');
+    const physioConvertBtn = document.getElementById('physioConvertBtn');
+    const physioError = document.getElementById('physioError');
+    const physioInfo = document.getElementById('physioInfo');
+
+    // --- Physio Convert (Batch) ---
+    const physioBatchFiles = document.getElementById('physioBatchFiles');
+    const physioBatchDatasetName = document.getElementById('physioBatchDatasetName');
+    const physioBatchSamplingRate = document.getElementById('physioBatchSamplingRate');
+    const physioBatchConvertBtn = document.getElementById('physioBatchConvertBtn');
+    const physioBatchError = document.getElementById('physioBatchError');
+    const physioBatchInfo = document.getElementById('physioBatchInfo');
+    const physioBatchProgress = document.getElementById('physioBatchProgress');
+    const physioBatchLogContainer = document.getElementById('physioBatchLogContainer');
+    const physioBatchLog = document.getElementById('physioBatchLog');
+    const physioBatchLogClearBtn = document.getElementById('physioBatchLogClearBtn');
+
+    // --- Eyetracking Convert (Single) ---
+    const eyetrackingSingleFile = document.getElementById('eyetrackingSingleFile');
+    const eyetrackingSubject = document.getElementById('eyetrackingSubject');
+    const eyetrackingSession = document.getElementById('eyetrackingSession');
+    const eyetrackingTask = document.getElementById('eyetrackingTask');
+    const eyetrackingSingleConvertBtn = document.getElementById('eyetrackingSingleConvertBtn');
+    const eyetrackingSingleError = document.getElementById('eyetrackingSingleError');
+    const eyetrackingSingleInfo = document.getElementById('eyetrackingSingleInfo');
+
+    // --- Eyetracking Convert (Batch) ---
+    const eyetrackingBatchFiles = document.getElementById('eyetrackingBatchFiles');
+    const eyetrackingBatchDatasetName = document.getElementById('eyetrackingBatchDatasetName');
+    const eyetrackingBatchConvertBtn = document.getElementById('eyetrackingBatchConvertBtn');
+    const eyetrackingBatchError = document.getElementById('eyetrackingBatchError');
+    const eyetrackingBatchInfo = document.getElementById('eyetrackingBatchInfo');
+    const eyetrackingBatchProgress = document.getElementById('eyetrackingBatchProgress');
+    const eyetrackingBatchLogContainer = document.getElementById('eyetrackingBatchLogContainer');
+    const eyetrackingBatchLog = document.getElementById('eyetrackingBatchLog');
+    const eyetrackingBatchLogClearBtn = document.getElementById('eyetrackingBatchLogClearBtn');
+
+    if (convertBrowseLibraryBtn && convertLibraryPathInput) {
+        convertBrowseLibraryBtn.addEventListener('click', function() {
+            fetch('/api/browse-folder')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.path) {
+                        convertLibraryPathInput.value = data.path;
+                        refreshConvertLanguages();
+                    }
+                });
+        });
+    }
+
+    if (biometricsBrowseLibraryBtn) {
+        biometricsBrowseLibraryBtn.addEventListener('click', function() {
+            fetch('/api/browse-folder')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.path && biometricsLibraryPathInput) {
+                        biometricsLibraryPathInput.value = data.path;
+                    }
+                });
+        });
+    }
+
+    function refreshConvertLanguages() {
+        const libraryPath = convertLibraryPathInput ? convertLibraryPathInput.value.trim() : '';
+        const surveyI18nWarning = document.getElementById('surveyI18nWarning');
+        const surveyI18nMessage = document.getElementById('surveyI18nMessage');
+        const surveyStructureWarning = document.getElementById('surveyStructureWarning');
+        const surveyStructureMessage = document.getElementById('surveyStructureMessage');
+        
+        if (!libraryPath) {
+            // Hide warnings and reset languages if no path
+            if (surveyI18nWarning) surveyI18nWarning.classList.add('d-none');
+            if (surveyStructureWarning) surveyStructureWarning.classList.add('d-none');
+            return;
+        }
+        
+        const url = `/api/survey-languages?library_path=${encodeURIComponent(libraryPath)}`;
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                if (!convertLanguage) return;
+                const current = convertLanguage.value || 'auto';
+
+                // Reset options (keep Auto)
+                convertLanguage.innerHTML = '';
+                const autoOpt = document.createElement('option');
+                autoOpt.value = 'auto';
+                autoOpt.textContent = 'Auto (template default)';
+                convertLanguage.appendChild(autoOpt);
+
+                const langs = (data && data.languages) ? data.languages : [];
+                langs.forEach(lang => {
+                    const opt = document.createElement('option');
+                    opt.value = lang;
+                    opt.textContent = lang;
+                    convertLanguage.appendChild(opt);
+                });
+
+                const preferred = (data && data.default) ? data.default : null;
+                if (preferred && langs.includes(preferred)) {
+                    convertLanguage.value = preferred;
+                } else if (langs.includes(current)) {
+                    convertLanguage.value = current;
+                } else {
+                    convertLanguage.value = 'auto';
+                }
+                
+                // Show structure warning if missing folders/files
+                if (surveyStructureWarning && surveyStructureMessage && data.structure) {
+                    const missing = data.structure.missing_items || [];
+                    if (missing.length > 0) {
+                        surveyStructureMessage.textContent = `The selected folder is missing: ${missing.join(', ')}. Expected library structure: survey/, biometrics/, participants.json`;
+                        surveyStructureWarning.classList.remove('d-none');
+                    } else {
+                        surveyStructureWarning.classList.add('d-none');
+                    }
+                } else if (surveyStructureWarning) {
+                    surveyStructureWarning.classList.add('d-none');
+                }
+                
+                // Show I18n warning if templates don't have multilanguage support
+                if (surveyI18nWarning && surveyI18nMessage) {
+                    const hasI18n = langs.length > 0;
+                    const templateCount = data.template_count || 0;
+                    const i18nCount = data.i18n_count || 0;
+                    
+                    if (!hasI18n || (templateCount > 0 && i18nCount < templateCount)) {
+                        const missing = templateCount - i18nCount;
+                        if (!hasI18n) {
+                            surveyI18nMessage.textContent = 'No templates with multilanguage (I18n) configuration found. Consider adding I18n block with Languages array to your templates.';
+                        } else if (missing > 0) {
+                            surveyI18nMessage.textContent = `${missing} of ${templateCount} templates lack multilanguage (I18n) configuration. Available languages: ${langs.join(', ')}`;
+                        }
+                        surveyI18nWarning.classList.remove('d-none');
+                    } else {
+                        surveyI18nWarning.classList.add('d-none');
+                    }
+                }
+            })
+            .catch(() => {
+                // If this fails, keep the dropdown as-is (Auto only)
+                if (surveyI18nWarning) surveyI18nWarning.classList.add('d-none');
+                if (surveyStructureWarning) surveyStructureWarning.classList.add('d-none');
+            });
+    }
+
+    if (convertLibraryPathInput) {
+        convertLibraryPathInput.addEventListener('change', function() {
+            refreshConvertLanguages();
+            updateConvertBtn();
+        });
+        convertLibraryPathInput.addEventListener('blur', function() {
+            refreshConvertLanguages();
+            updateConvertBtn();
+        });
+    }
+
+    function updateConvertBtn() {
+        const hasFile = convertExcelFile.files && convertExcelFile.files.length === 1;
+        const hasLibraryPath = convertLibraryPathInput && convertLibraryPathInput.value.trim() !== '';
+        convertBtn.disabled = !(hasFile && hasLibraryPath);
+    }
+
+    convertExcelFile.addEventListener('change', updateConvertBtn);
+    updateConvertBtn();
+
+    // Terminal log elements
+    const conversionLogContainer = document.getElementById('conversionLogContainer');
+    const conversionLog = document.getElementById('conversionLog');
+    const conversionLogBody = document.getElementById('conversionLogBody');
+    const toggleLogBtn = document.getElementById('toggleLogBtn');
+    const validationResultsContainer = document.getElementById('validationResultsContainer');
+    const validationResultsCard = document.getElementById('validationResultsCard');
+    const validationResultsHeader = document.getElementById('validationResultsHeader');
+    const validationBadge = document.getElementById('validationBadge');
+    const validationSummary = document.getElementById('validationSummary');
+    const validationDetails = document.getElementById('validationDetails');
+    const downloadSection = document.getElementById('downloadSection');
+    const downloadWarningSection = document.getElementById('downloadWarningSection');
+    const downloadZipBtn = document.getElementById('downloadZipBtn');
+    const downloadZipWarningBtn = document.getElementById('downloadZipWarningBtn');
+
+    let currentZipBlob = null;
+
+    // Toggle log visibility
+    if (toggleLogBtn) {
+        toggleLogBtn.addEventListener('click', function() {
+            conversionLogBody.classList.toggle('d-none');
+            const icon = toggleLogBtn.querySelector('i');
+            if (conversionLogBody.classList.contains('d-none')) {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-right');
+            } else {
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-down');
+            }
+        });
+    }
+
+    function appendLog(message, type = 'info') {
+        const colors = {
+            'info': '#17a2b8',
+            'success': '#28a745',
+            'warning': '#ffc107',
+            'error': '#dc3545',
+            'step': '#6c757d'
+        };
+        const timestamp = new Date().toLocaleTimeString();
+        const color = colors[type] || colors.info;
+        conversionLog.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+        conversionLog.scrollTop = conversionLog.scrollHeight;
+    }
+
+    function resetConversionUI() {
+        conversionLogContainer.classList.add('d-none');
+        validationResultsContainer.classList.add('d-none');
+        downloadSection.classList.add('d-none');
+        downloadWarningSection.classList.add('d-none');
+        conversionLog.innerHTML = '';
+        validationSummary.innerHTML = '';
+        validationDetails.innerHTML = '';
+        currentZipBlob = null;
+    }
+
+    function displayValidationResults(validation) {
+        validationResultsContainer.classList.remove('d-none');
+        
+        const errors = validation.errors || [];
+        const warnings = validation.warnings || [];
+        const isValid = errors.length === 0;
+        
+        // Update card styling based on result
+        validationResultsCard.classList.remove('border-success', 'border-warning', 'border-danger');
+        validationResultsHeader.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'text-white', 'text-dark');
+        
+        if (isValid && warnings.length === 0) {
+            validationResultsCard.classList.add('border-success');
+            validationResultsHeader.classList.add('bg-success', 'text-white');
+            validationBadge.className = 'badge bg-light text-success';
+            validationBadge.textContent = '✓ Valid';
+        } else if (isValid) {
+            validationResultsCard.classList.add('border-warning');
+            validationResultsHeader.classList.add('bg-warning', 'text-dark');
+            validationBadge.className = 'badge bg-light text-warning';
+            validationBadge.textContent = `⚠ ${warnings.length} Warning(s)`;
+        } else {
+            validationResultsCard.classList.add('border-danger');
+            validationResultsHeader.classList.add('bg-danger', 'text-white');
+            validationBadge.className = 'badge bg-light text-danger';
+            validationBadge.textContent = `✗ ${errors.length} Error(s)`;
+        }
+        
+        // Summary
+        const summary = validation.summary || {};
+        validationSummary.innerHTML = `
+            <div class="row text-center">
+                <div class="col-4">
+                    <div class="h4 mb-0 ${errors.length > 0 ? 'text-danger' : 'text-success'}">${errors.length}</div>
+                    <small class="text-muted">Errors</small>
+                </div>
+                <div class="col-4">
+                    <div class="h4 mb-0 ${warnings.length > 0 ? 'text-warning' : 'text-success'}">${warnings.length}</div>
+                    <small class="text-muted">Warnings</small>
+                </div>
+                <div class="col-4">
+                    <div class="h4 mb-0 text-info">${summary.files_created || 'n/a'}</div>
+                    <small class="text-muted">Files</small>
+                </div>
+            </div>
+        `;
+        
+        // Details
+        let detailsHtml = '';
+        if (errors.length > 0) {
+            detailsHtml += '<h6 class="text-danger mt-3"><i class="fas fa-times-circle me-1"></i>Errors</h6><ul class="list-unstyled">';
+            errors.forEach(e => {
+                detailsHtml += `<li class="text-danger small"><i class="fas fa-times me-1"></i>${escapeHtml(e)}</li>`;
+            });
+            detailsHtml += '</ul>';
+        }
+        if (warnings.length > 0) {
+            detailsHtml += '<h6 class="text-warning mt-3"><i class="fas fa-exclamation-triangle me-1"></i>Warnings</h6><ul class="list-unstyled">';
+            warnings.forEach(w => {
+                detailsHtml += `<li class="text-warning small"><i class="fas fa-exclamation me-1"></i>${escapeHtml(w)}</li>`;
+            });
+            detailsHtml += '</ul>';
+        }
+        validationDetails.innerHTML = detailsHtml;
+        
+        // Show appropriate download button
+        if (isValid && warnings.length === 0) {
+            downloadSection.classList.remove('d-none');
+            downloadWarningSection.classList.add('d-none');
+        } else if (isValid) {
+            downloadSection.classList.add('d-none');
+            downloadWarningSection.classList.remove('d-none');
+        } else {
+            downloadSection.classList.add('d-none');
+            downloadWarningSection.classList.add('d-none');
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function downloadCurrentZip() {
+        if (!currentZipBlob) return;
+        const url = window.URL.createObjectURL(currentZipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'prism_survey_dataset.zip';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    }
+
+    if (downloadZipBtn) {
+        downloadZipBtn.addEventListener('click', downloadCurrentZip);
+    }
+    if (downloadZipWarningBtn) {
+        downloadZipWarningBtn.addEventListener('click', downloadCurrentZip);
+    }
+
+    convertBtn.addEventListener('click', function() {
+        convertError.classList.add('d-none');
+        convertInfo.classList.add('d-none');
+        convertError.textContent = '';
+        convertInfo.textContent = '';
+        resetConversionUI();
+
+        const libraryPath = convertLibraryPathInput ? convertLibraryPathInput.value.trim() : '';
+        if (!libraryPath) {
+            convertError.textContent = 'Please select a survey template library folder first.';
+            convertError.classList.remove('d-none');
+            return;
+        }
+
+        const file = convertExcelFile.files && convertExcelFile.files[0];
+        if (!file) {
+            return;
+        }
+
+        // Show log container
+        conversionLogContainer.classList.remove('d-none');
+        conversionLogBody.classList.remove('d-none');
+        const icon = toggleLogBtn.querySelector('i');
+        icon.classList.remove('fa-chevron-right');
+        icon.classList.add('fa-chevron-down');
+
+        appendLog(`Starting conversion of: ${file.name}`, 'info');
+        appendLog(`Using library: ${libraryPath}`, 'step');
+
+        const formData = new FormData();
+        formData.append('excel', file);
+
+        const alias = convertAliasFile && convertAliasFile.files && convertAliasFile.files[0];
+        if (alias) {
+            formData.append('alias', alias);
+            appendLog(`Using alias file: ${alias.name}`, 'step');
+        }
+
+        formData.append('library_path', libraryPath);
+        formData.append('dataset_name', convertDatasetName.value.trim());
+        formData.append('unknown', convertUnknown.value);
+        formData.append('language', convertLanguage ? convertLanguage.value : 'auto');
+        formData.append('validate', 'true');  // Request validation
+
+        convertBtn.disabled = true;
+        appendLog('Uploading file and starting conversion...', 'info');
+
+        fetch('/api/survey-convert-validate', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(async response => {
+            const contentType = response.headers.get('content-type') || '';
+            
+            if (contentType.includes('application/json')) {
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Conversion failed');
+                }
+                return data;
+            } else {
+                // Fallback: direct ZIP download (old API)
+                if (!response.ok) {
+                    throw new Error('Conversion failed');
+                }
+                const blob = await response.blob();
+                return { blob, validation: null };
+            }
+        })
+        .then(data => {
+            if (data.log && Array.isArray(data.log)) {
+                data.log.forEach(entry => {
+                    appendLog(entry.message, entry.type || 'info');
+                });
+            }
+
+            if (data.validation) {
+                const v = data.validation;
+                const errorCount = (v.errors || []).length;
+                const warningCount = (v.warnings || []).length;
+                
+                if (errorCount === 0 && warningCount === 0) {
+                    appendLog('✓ Validation passed - dataset is valid!', 'success');
+                } else if (errorCount === 0) {
+                    appendLog(`⚠ Validation passed with ${warningCount} warning(s)`, 'warning');
+                } else {
+                    appendLog(`✗ Validation failed with ${errorCount} error(s)`, 'error');
+                }
+                
+                displayValidationResults(data.validation);
+            }
+
+            if (data.zip_base64) {
+                // Decode base64 ZIP
+                const byteCharacters = atob(data.zip_base64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                currentZipBlob = new Blob([byteArray], { type: 'application/zip' });
+                appendLog('Dataset ready for download', 'success');
+            } else if (data.blob) {
+                currentZipBlob = data.blob;
+                appendLog('Dataset ready for download', 'success');
+            }
+
+            convertInfo.textContent = 'Conversion complete. See results below.';
+            convertInfo.classList.remove('d-none');
+        })
+        .catch(err => {
+            appendLog(`Error: ${err.message}`, 'error');
+            convertError.textContent = err.message;
+            convertError.classList.remove('d-none');
+        })
+        .finally(() => {
+            updateConvertBtn();
+        });
+    });
+
+    function updateBiometricsBtn() {
+        const hasFile = biometricsDataFile && biometricsDataFile.files && biometricsDataFile.files.length === 1;
+        const hasLibraryPath = biometricsLibraryPathInput && biometricsLibraryPathInput.value.trim() !== '';
+        if (biometricsConvertBtn) biometricsConvertBtn.disabled = !(hasFile && hasLibraryPath);
+    }
+
+    function checkBiometricsLibraryStructure() {
+        const libraryPath = biometricsLibraryPathInput ? biometricsLibraryPathInput.value.trim() : '';
+        const structureWarning = document.getElementById('biometricsStructureWarning');
+        const structureMessage = document.getElementById('biometricsStructureMessage');
+        
+        if (!libraryPath) {
+            if (structureWarning) structureWarning.classList.add('d-none');
+            return;
+        }
+        
+        const url = `/api/biometrics-check-library?library_path=${encodeURIComponent(libraryPath)}`;
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                if (structureWarning && structureMessage && data.structure) {
+                    const missing = data.structure.missing_items || [];
+                    if (missing.length > 0) {
+                        structureMessage.textContent = `The selected folder is missing: ${missing.join(', ')}. Expected library structure: survey/, biometrics/, participants.json`;
+                        structureWarning.classList.remove('d-none');
+                    } else {
+                        structureWarning.classList.add('d-none');
+                    }
+                } else if (structureWarning) {
+                    structureWarning.classList.add('d-none');
+                }
+            })
+            .catch(() => {
+                if (structureWarning) structureWarning.classList.add('d-none');
+            });
+    }
+
+    if (biometricsDataFile) {
+        biometricsDataFile.addEventListener('change', updateBiometricsBtn);
+        updateBiometricsBtn();
+    }
+
+    if (biometricsLibraryPathInput) {
+        biometricsLibraryPathInput.addEventListener('change', function() {
+            checkBiometricsLibraryStructure();
+            updateBiometricsBtn();
+        });
+        biometricsLibraryPathInput.addEventListener('blur', function() {
+            checkBiometricsLibraryStructure();
+            updateBiometricsBtn();
+        });
+    }
+
+    if (biometricsConvertBtn) {
+        biometricsConvertBtn.addEventListener('click', function() {
+            biometricsError.classList.add('d-none');
+            biometricsInfo.classList.add('d-none');
+            biometricsError.textContent = '';
+            biometricsInfo.textContent = '';
+
+            const libraryPath = biometricsLibraryPathInput ? biometricsLibraryPathInput.value.trim() : '';
+            if (!libraryPath) {
+                biometricsError.textContent = 'Please select a biometrics template library folder first.';
+                biometricsError.classList.remove('d-none');
+                return;
+            }
+
+            const file = biometricsDataFile.files && biometricsDataFile.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('data', file);
+            formData.append('library_path', libraryPath);
+            formData.append('dataset_name', biometricsDatasetName.value.trim());
+            formData.append('unknown', biometricsUnknown.value);
+
+            biometricsConvertBtn.disabled = true;
+            biometricsInfo.textContent = 'Converting... this may take a moment.';
+            biometricsInfo.classList.remove('d-none');
+
+            fetch('/api/biometrics-convert', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const data = await response.json().catch(() => null);
+                    const msg = data && data.error ? data.error : 'Conversion failed';
+                    throw new Error(msg);
+                }
+                const blob = await response.blob();
+                return blob;
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'prism_biometrics_dataset.zip';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                biometricsInfo.textContent = 'Done. Your ZIP download should start automatically.';
+                biometricsInfo.classList.remove('d-none');
+            })
+            .catch(err => {
+                biometricsError.textContent = err.message;
+                biometricsError.classList.remove('d-none');
+            })
+            .finally(() => {
+                updateBiometricsBtn();
+            });
+        });
+    }
+
+    function updatePhysioBtn() {
+        const hasFile = physioRawFile && physioRawFile.files && physioRawFile.files.length === 1;
+        if (physioConvertBtn) physioConvertBtn.disabled = !hasFile;
+    }
+
+    if (physioRawFile) {
+        physioRawFile.addEventListener('change', updatePhysioBtn);
+        updatePhysioBtn();
+    }
+
+    if (physioConvertBtn) {
+        physioConvertBtn.addEventListener('click', function() {
+            physioError.classList.add('d-none');
+            physioInfo.classList.add('d-none');
+            physioError.textContent = '';
+            physioInfo.textContent = '';
+
+            const file = physioRawFile.files && physioRawFile.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('raw', file);
+            formData.append('task', physioTask ? physioTask.value.trim() : 'rest');
+            if (physioSamplingRate && physioSamplingRate.value) {
+                formData.append('sampling_rate', physioSamplingRate.value);
+            }
+
+            physioConvertBtn.disabled = true;
+            physioInfo.textContent = 'Converting... this may take a moment.';
+            physioInfo.classList.remove('d-none');
+
+            fetch('/api/physio-convert', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const data = await response.json().catch(() => null);
+                    const msg = data && data.error ? data.error : 'Conversion failed';
+                    throw new Error(msg);
+                }
+                const blob = await response.blob();
+                return blob;
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'varioport_edfplus.zip';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                physioInfo.textContent = 'Done. Your ZIP download should start automatically.';
+                physioInfo.classList.remove('d-none');
+            })
+            .catch(err => {
+                physioError.textContent = err.message;
+                physioError.classList.remove('d-none');
+            })
+            .finally(() => {
+                updatePhysioBtn();
+            });
+        });
+    }
+
+    // --- Physio Batch Convert ---
+    function updatePhysioBatchBtn() {
+        const hasFiles = physioBatchFiles && physioBatchFiles.files && physioBatchFiles.files.length > 0;
+        if (physioBatchConvertBtn) physioBatchConvertBtn.disabled = !hasFiles;
+    }
+
+    if (physioBatchFiles) {
+        physioBatchFiles.addEventListener('change', updatePhysioBatchBtn);
+        updatePhysioBatchBtn();
+    }
+
+    if (physioBatchLogClearBtn) {
+        physioBatchLogClearBtn.addEventListener('click', () => {
+            if (physioBatchLog) physioBatchLog.textContent = '';
+        });
+    }
+
+    if (physioBatchConvertBtn) {
+        physioBatchConvertBtn.addEventListener('click', async function() {
+            physioBatchError.classList.add('d-none');
+            physioBatchInfo.classList.add('d-none');
+            physioBatchProgress.classList.remove('d-none');
+            physioBatchLogContainer.classList.remove('d-none');
+            physioBatchLog.textContent = '';
+            physioBatchConvertBtn.disabled = true;
+
+            const files = Array.from(physioBatchFiles.files);
+            const datasetName = physioBatchDatasetName ? physioBatchDatasetName.value.trim() : 'Physio Dataset';
+            const samplingRate = physioBatchSamplingRate ? physioBatchSamplingRate.value : '';
+
+            const formData = new FormData();
+            files.forEach(f => formData.append('files', f));
+            formData.append('dataset_name', datasetName);
+            formData.append('modality', 'physio');
+            if (samplingRate) formData.append('sampling_rate', samplingRate);
+
+            try {
+                const response = await fetch('/api/batch-convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const data = await response.json().catch(() => null);
+                    throw new Error(data && data.error ? data.error : 'Batch conversion failed');
+                }
+
+                const result = await response.json();
+                
+                // Show log
+                if (result.log) {
+                    physioBatchLog.textContent = result.log;
+                }
+
+                // Download the ZIP
+                if (result.download_url) {
+                    const a = document.createElement('a');
+                    a.href = result.download_url;
+                    a.download = '';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                }
+
+                physioBatchInfo.textContent = `Converted ${result.converted || 0} files. ${result.errors || 0} errors.`;
+                physioBatchInfo.classList.remove('d-none');
+            } catch (err) {
+                physioBatchError.textContent = err.message;
+                physioBatchError.classList.remove('d-none');
+            } finally {
+                physioBatchProgress.classList.add('d-none');
+                updatePhysioBatchBtn();
+            }
+        });
+    }
+
+    // --- Eyetracking Single Convert ---
+    function updateEyetrackingSingleBtn() {
+        const hasFile = eyetrackingSingleFile && eyetrackingSingleFile.files && eyetrackingSingleFile.files.length === 1;
+        const hasSubject = eyetrackingSubject && eyetrackingSubject.value.trim().length > 0;
+        if (eyetrackingSingleConvertBtn) eyetrackingSingleConvertBtn.disabled = !(hasFile && hasSubject);
+    }
+
+    if (eyetrackingSingleFile) {
+        eyetrackingSingleFile.addEventListener('change', updateEyetrackingSingleBtn);
+    }
+    if (eyetrackingSubject) {
+        eyetrackingSubject.addEventListener('input', updateEyetrackingSingleBtn);
+    }
+    updateEyetrackingSingleBtn();
+
+    if (eyetrackingSingleConvertBtn) {
+        eyetrackingSingleConvertBtn.addEventListener('click', async function() {
+            eyetrackingSingleError.classList.add('d-none');
+            eyetrackingSingleInfo.classList.add('d-none');
+            eyetrackingSingleConvertBtn.disabled = true;
+
+            const file = eyetrackingSingleFile.files[0];
+            const subject = eyetrackingSubject.value.trim();
+            const session = eyetrackingSession ? eyetrackingSession.value.trim() : '';
+            const task = eyetrackingTask ? eyetrackingTask.value.trim() : 'gaze';
+
+            const formData = new FormData();
+            formData.append('edf', file);
+            formData.append('subject', subject);
+            formData.append('task', task);
+            if (session) formData.append('session', session);
+
+            eyetrackingSingleInfo.textContent = 'Converting... this may take a moment.';
+            eyetrackingSingleInfo.classList.remove('d-none');
+
+            try {
+                const response = await fetch('/api/eyetracking-convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const data = await response.json().catch(() => null);
+                    throw new Error(data && data.error ? data.error : 'Conversion failed');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'eyetracking_prism.zip';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                eyetrackingSingleInfo.textContent = 'Done. Your ZIP download should start automatically.';
+            } catch (err) {
+                eyetrackingSingleError.textContent = err.message;
+                eyetrackingSingleError.classList.remove('d-none');
+                eyetrackingSingleInfo.classList.add('d-none');
+            } finally {
+                updateEyetrackingSingleBtn();
+            }
+        });
+    }
+
+    // --- Eyetracking Batch Convert ---
+    function updateEyetrackingBatchBtn() {
+        const hasFiles = eyetrackingBatchFiles && eyetrackingBatchFiles.files && eyetrackingBatchFiles.files.length > 0;
+        if (eyetrackingBatchConvertBtn) eyetrackingBatchConvertBtn.disabled = !hasFiles;
+    }
+
+    if (eyetrackingBatchFiles) {
+        eyetrackingBatchFiles.addEventListener('change', updateEyetrackingBatchBtn);
+        updateEyetrackingBatchBtn();
+    }
+
+    if (eyetrackingBatchLogClearBtn) {
+        eyetrackingBatchLogClearBtn.addEventListener('click', () => {
+            if (eyetrackingBatchLog) eyetrackingBatchLog.textContent = '';
+        });
+    }
+
+    if (eyetrackingBatchConvertBtn) {
+        eyetrackingBatchConvertBtn.addEventListener('click', async function() {
+            eyetrackingBatchError.classList.add('d-none');
+            eyetrackingBatchInfo.classList.add('d-none');
+            eyetrackingBatchProgress.classList.remove('d-none');
+            eyetrackingBatchLogContainer.classList.remove('d-none');
+            eyetrackingBatchLog.textContent = '';
+            eyetrackingBatchConvertBtn.disabled = true;
+
+            const files = Array.from(eyetrackingBatchFiles.files);
+            const datasetName = eyetrackingBatchDatasetName ? eyetrackingBatchDatasetName.value.trim() : 'Eyetracking Dataset';
+
+            const formData = new FormData();
+            files.forEach(f => formData.append('files', f));
+            formData.append('dataset_name', datasetName);
+            formData.append('modality', 'eyetracking');
+
+            try {
+                const response = await fetch('/api/batch-convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const data = await response.json().catch(() => null);
+                    throw new Error(data && data.error ? data.error : 'Batch conversion failed');
+                }
+
+                const result = await response.json();
+                
+                // Show log
+                if (result.log) {
+                    eyetrackingBatchLog.textContent = result.log;
+                }
+
+                // Download the ZIP
+                if (result.download_url) {
+                    const a = document.createElement('a');
+                    a.href = result.download_url;
+                    a.download = '';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                }
+
+                eyetrackingBatchInfo.textContent = `Converted ${result.converted || 0} files. ${result.errors || 0} errors.`;
+                eyetrackingBatchInfo.classList.remove('d-none');
+            } catch (err) {
+                eyetrackingBatchError.textContent = err.message;
+                eyetrackingBatchError.classList.remove('d-none');
+            } finally {
+                eyetrackingBatchProgress.classList.add('d-none');
+                updateEyetrackingBatchBtn();
+            }
+        });
+    }
+
+    // Initial populate
+    refreshConvertLanguages();
+});
+</script>
+{% endblock %}

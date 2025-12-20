@@ -2131,6 +2131,19 @@ def survey_generator():
     )
 
 
+@app.route("/converter")
+def converter():
+    """Converter page"""
+    preferred = (BASE_DIR / "library" / "survey_i18n").resolve()
+    default_library_path = preferred
+    if not (preferred.exists() and any(preferred.glob("survey-*.json"))):
+        default_library_path = (BASE_DIR / "survey_library").resolve()
+    return render_template(
+        "converter.html",
+        default_survey_library_path=str(default_library_path),
+    )
+
+
 @app.route("/derivatives")
 def derivatives():
     return render_template("derivatives.html")
@@ -2327,9 +2340,119 @@ def browse_folder():
         )
 
 
+def _extract_template_info(full_path, filename):
+    """Helper to extract metadata and questions from a PRISM JSON template"""
+    desc = ""
+    original_name = ""
+    questions = []
+    i18n = {}
+    try:
+        with open(full_path, "r") as jf:
+            data = json.load(jf)
+            study = data.get("Study", {})
+            desc = study.get("Description", "")
+            original_name = study.get("OriginalName", "")
+            i18n = data.get("I18n", {})
+            
+            if not desc:
+                desc = data.get("TaskName", "")
+
+            # Extract questions
+            questions = []
+            
+            # Check for "Questions" key (New Format)
+            if "Questions" in data and isinstance(data["Questions"], dict):
+                for k, v in data["Questions"].items():
+                    q_desc = ""
+                    q_levels = None
+                    q_units = None
+                    q_min = None
+                    q_max = None
+                    q_warn_min = None
+                    q_warn_max = None
+                    q_type = None
+                    
+                    if isinstance(v, dict):
+                        q_desc = v.get("Description", "")
+                        q_levels = v.get("Levels")
+                        q_units = v.get("Units")
+                        q_min = v.get("MinValue")
+                        q_max = v.get("MaxValue")
+                        q_warn_min = v.get("WarnMinValue")
+                        q_warn_max = v.get("WarnMaxValue")
+                        q_type = v.get("DataType")
+                        
+                    questions.append(
+                        {
+                            "id": k, 
+                            "description": q_desc, 
+                            "levels": q_levels,
+                            "units": q_units,
+                            "min": q_min,
+                            "max": q_max,
+                            "warn_min": q_warn_min,
+                            "warn_max": q_warn_max,
+                            "type": q_type
+                        }
+                    )
+            else:
+                # Fallback for Old Format (Flat structure)
+                reserved = [
+                    "Technical", "Study", "Metadata", "Categories", "TaskName", 
+                    "Name", "BIDSVersion", "Description", "URL", "License", 
+                    "Authors", "Acknowledgements", "References", "Funding", "I18n"
+                ]
+                for k, v in data.items():
+                    if k not in reserved:
+                        q_desc = ""
+                        q_levels = None
+                        q_units = None
+                        q_min = None
+                        q_max = None
+                        q_warn_min = None
+                        q_warn_max = None
+                        q_type = None
+                        
+                        if isinstance(v, dict):
+                            q_desc = v.get("Description", "")
+                            q_levels = v.get("Levels")
+                            q_units = v.get("Units")
+                            q_min = v.get("MinValue")
+                            q_max = v.get("MaxValue")
+                            q_warn_min = v.get("WarnMinValue")
+                            q_warn_max = v.get("WarnMaxValue")
+                            q_type = v.get("DataType")
+                            
+                        questions.append(
+                            {
+                                "id": k, 
+                                "description": q_desc, 
+                                "levels": q_levels,
+                                "units": q_units,
+                                "min": q_min,
+                                "max": q_max,
+                                "warn_min": q_warn_min,
+                                "warn_max": q_warn_max,
+                                "type": q_type
+                            }
+                        )
+    except:
+        pass
+
+    return {
+        "filename": filename,
+        "path": str(full_path),
+        "description": desc,
+        "original_name": original_name,
+        "questions": questions,
+        "question_count": len(questions),
+        "i18n": i18n
+    }
+
+
 @app.route("/api/list-library-files")
 def list_library_files():
-    """List JSON files in a user-specified library path"""
+    """List JSON files in a user-specified library path, grouped by modality"""
     library_path = request.args.get("path")
     if not library_path:
         return jsonify({"error": "Path parameter is required"}), 400
@@ -2340,129 +2463,36 @@ def list_library_files():
     if not os.path.isdir(library_path):
         return jsonify({"error": "Path is not a directory"}), 400
 
+    results = {
+        "participants": [],
+        "survey": [],
+        "biometrics": [],
+        "other": []
+    }
+
     try:
-        files = []
-        for f in os.listdir(library_path):
-            if f.endswith(".json") and not f.startswith("."):
-                full_path = os.path.join(library_path, f)
-                # Try to read description and metadata
-                desc = ""
-                original_name = ""
-                questions = []
-                try:
-                    with open(full_path, "r") as jf:
-                        data = json.load(jf)
-                        study = data.get("Study", {})
-                        desc = study.get("Description", "")
-                        original_name = study.get("OriginalName", "")
-                        if not desc:
-                            desc = data.get("TaskName", "")
+        # 1. Check for participants.json at root
+        participants_path = os.path.join(library_path, "participants.json")
+        if os.path.exists(participants_path):
+            results["participants"].append(_extract_template_info(participants_path, "participants.json"))
 
-                        # Extract questions
-                        questions = []
-                        
-                        # Check for "Questions" key (New Format)
-                        if "Questions" in data and isinstance(data["Questions"], dict):
-                            for k, v in data["Questions"].items():
-                                q_desc = ""
-                                q_levels = None
-                                q_units = None
-                                q_min = None
-                                q_max = None
-                                q_warn_min = None
-                                q_warn_max = None
-                                q_type = None
-                                
-                                if isinstance(v, dict):
-                                    q_desc = v.get("Description", "")
-                                    q_levels = v.get("Levels")
-                                    q_units = v.get("Units")
-                                    q_min = v.get("MinValue")
-                                    q_max = v.get("MaxValue")
-                                    q_warn_min = v.get("WarnMinValue")
-                                    q_warn_max = v.get("WarnMaxValue")
-                                    q_type = v.get("DataType")
-                                    
-                                questions.append(
-                                    {
-                                        "id": k, 
-                                        "description": q_desc, 
-                                        "levels": q_levels,
-                                        "units": q_units,
-                                        "min": q_min,
-                                        "max": q_max,
-                                        "warn_min": q_warn_min,
-                                        "warn_max": q_warn_max,
-                                        "type": q_type
-                                    }
-                                )
-                        else:
-                            # Fallback for Old Format (Flat structure)
-                            reserved = [
-                                "Technical",
-                                "Study",
-                                "Metadata",
-                                "Categories",
-                                "TaskName",
-                                "Name",
-                                "BIDSVersion",
-                                "Description",
-                                "URL",
-                                "License",
-                                "Authors",
-                                "Acknowledgements",
-                                "References",
-                                "Funding"
-                            ]
-                            for k, v in data.items():
-                                if k not in reserved:
-                                    q_desc = ""
-                                    q_levels = None
-                                    q_units = None
-                                    q_min = None
-                                    q_max = None
-                                    q_warn_min = None
-                                    q_warn_max = None
-                                    q_type = None
-                                    
-                                    if isinstance(v, dict):
-                                        q_desc = v.get("Description", "")
-                                        q_levels = v.get("Levels")
-                                        q_units = v.get("Units")
-                                        q_min = v.get("MinValue")
-                                        q_max = v.get("MaxValue")
-                                        q_warn_min = v.get("WarnMinValue")
-                                        q_warn_max = v.get("WarnMaxValue")
-                                        q_type = v.get("DataType")
-                                        
-                                    questions.append(
-                                        {
-                                            "id": k, 
-                                            "description": q_desc, 
-                                            "levels": q_levels,
-                                            "units": q_units,
-                                            "min": q_min,
-                                            "max": q_max,
-                                            "warn_min": q_warn_min,
-                                            "warn_max": q_warn_max,
-                                            "type": q_type
-                                        }
-                                    )
-                except:
-                    pass
+        # 2. Check subfolders
+        for folder in ["survey", "biometrics"]:
+            folder_path = os.path.join(library_path, folder)
+            if os.path.exists(folder_path) and os.path.isdir(folder_path):
+                for filename in os.listdir(folder_path):
+                    if filename.endswith(".json") and not filename.startswith("."):
+                        full_path = os.path.join(folder_path, filename)
+                        results[folder].append(_extract_template_info(full_path, filename))
 
-                files.append(
-                    {
-                        "filename": f,
-                        "path": full_path,
-                        "description": desc,
-                        "original_name": original_name,
-                        "questions": questions,
-                        "question_count": len(questions),
-                    }
-                )
+        # 3. Fallback: If no subfolders found, scan root (Old Format)
+        if not results["survey"] and not results["biometrics"]:
+            for filename in os.listdir(library_path):
+                if filename.endswith(".json") and not filename.startswith(".") and filename != "participants.json":
+                    full_path = os.path.join(library_path, filename)
+                    results["other"].append(_extract_template_info(full_path, filename))
 
-        return jsonify({"files": sorted(files, key=lambda x: x["filename"])})
+        return jsonify(results)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -2504,12 +2534,14 @@ def generate_lss_endpoint():
         fd, temp_path = tempfile.mkstemp(suffix=".lss")
         os.close(fd)
 
-        generate_lss(valid_files, temp_path)
+        language = data.get("language", "en")
+        ls_version = data.get("ls_version", "6")
+        generate_lss(valid_files, temp_path, language=language, ls_version=ls_version)
 
         return send_file(
             temp_path,
             as_attachment=True,
-            download_name="survey_export.lss",
+            download_name=f"survey_export_{language}.lss",
             mimetype="application/xml",
         )
 
