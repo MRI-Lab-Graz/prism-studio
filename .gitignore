@@ -14,8 +14,9 @@ prism_demo/
 survey_library/*
 .venv/
 .DS_Store
-prism_validator.egg-info/
-prism_validator.egg-info/
+*.egg-info/
+prism_demo_copy/
+comprehensive_demo_dataset/
 
 # IDE and editor files
 .vscode/

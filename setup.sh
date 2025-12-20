@@ -11,8 +11,10 @@
 VENV_DIR=".venv"
 REQUIREMENTS_FILE="requirements.txt"
 BUILD_REQUIREMENTS_FILE="requirements-build.txt"
+DEV_REQUIREMENTS_FILE="requirements-dev.txt"
 
 INSTALL_BUILD_DEPS=false
+INSTALL_DEV_DEPS=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -20,9 +22,13 @@ while [[ $# -gt 0 ]]; do
             INSTALL_BUILD_DEPS=true
             shift
             ;;
+        --dev)
+            INSTALL_DEV_DEPS=true
+            shift
+            ;;
         *)
             echo_error "Unknown argument: $1"
-            echo "Usage: bash setup.sh [--build]"
+            echo "Usage: bash setup.sh [--build] [--dev]"
             exit 1
             ;;
     esac
@@ -108,6 +114,20 @@ if [ "$INSTALL_BUILD_DEPS" = true ]; then
         exit 1
     fi
     echo_success "Build dependencies installed successfully."
+fi
+
+if [ "$INSTALL_DEV_DEPS" = true ]; then
+    if [ ! -f "$DEV_REQUIREMENTS_FILE" ]; then
+        echo_error "'$DEV_REQUIREMENTS_FILE' not found."
+        exit 1
+    fi
+    echo_info "Installing development dependencies from '$DEV_REQUIREMENTS_FILE'..."
+    uv pip install -r $DEV_REQUIREMENTS_FILE
+    if [ $? -ne 0 ]; then
+        echo_error "Failed to install development dependencies."
+        exit 1
+    fi
+    echo_success "Development dependencies installed successfully."
 fi
 
 # Install the project in development mode (editable install)

@@ -1,0 +1,6 @@
+pytest
+pytest-cov
+matplotlib
+black
+flake8
+ruff
