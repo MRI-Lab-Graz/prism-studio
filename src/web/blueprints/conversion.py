@@ -620,6 +620,8 @@ def api_physio_rename():
     pattern = request.form.get("pattern", "")
     replacement = request.form.get("replacement", "")
     dry_run = request.form.get("dry_run", "false").lower() == "true"
+    organize = request.form.get("organize", "false").lower() == "true"
+    modality = request.form.get("modality", "physio")
     
     files = request.files.getlist("files[]") or request.files.getlist("files")
     
@@ -642,7 +644,24 @@ def api_physio_rename():
         for fname in source_names:
             try:
                 new_name = regex.sub(replacement, fname)
-                results.append({"old": fname, "new": new_name, "success": True})
+                
+                # Determine the path within the ZIP (for preview)
+                zip_path = new_name
+                if organize:
+                    bids = None
+                    if parse_bids_filename:
+                        bids = parse_bids_filename(new_name)
+                    
+                    if bids:
+                        sub = bids.get("sub")
+                        ses = bids.get("ses")
+                        parts = [sub]
+                        if ses: parts.append(ses)
+                        parts.append(modality)
+                        parts.append(new_name)
+                        zip_path = "/".join(parts)
+                
+                results.append({"old": fname, "new": new_name, "path": zip_path, "success": True})
             except Exception as e:
                 results.append({"old": fname, "new": str(e), "success": False})
         return jsonify({"results": results})
@@ -660,13 +679,30 @@ def api_physio_rename():
                 
                 try:
                     new_name = regex.sub(replacement, old_name)
-                    # Ensure new_name is safe for zip
-                    # We don't use secure_filename here because it might strip sub- etc if not careful
-                    # but actually secure_filename is good for the final filename in zip.
+                    
+                    # Determine the path within the ZIP
+                    zip_path = new_name
+                    if organize:
+                        # Try to parse BIDS components to build structure
+                        bids = None
+                        if parse_bids_filename:
+                            bids = parse_bids_filename(new_name)
+                        
+                        if bids:
+                            sub = bids.get("sub")
+                            ses = bids.get("ses")
+                            
+                            parts = [sub]
+                            if ses:
+                                parts.append(ses)
+                            parts.append(modality)
+                            parts.append(new_name)
+                            
+                            zip_path = "/".join(parts)
                     
                     f_content = f.read()
-                    zf.writestr(new_name, f_content)
-                    results.append({"old": old_name, "new": new_name, "success": True})
+                    zf.writestr(zip_path, f_content)
+                    results.append({"old": old_name, "new": new_name, "success": True, "path": zip_path})
                 except Exception as e:
                     results.append({"old": old_name, "new": str(e), "success": False})
         

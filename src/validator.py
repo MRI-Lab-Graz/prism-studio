@@ -22,7 +22,7 @@ MODALITY_PATTERNS = {
     "survey": r".+_survey\.(tsv|json)$",
     "biometrics": r".+_biometrics\.(tsv|json)$",
     "events": r".+_events\.tsv$",
-    "physio": r".+_physio\.(tsv|tsv\.gz|json|edf)$",
+    "physio": r".+(_recording-(ecg|cardiac|puls|resp|eda|ppg|emg|temp|bp|spo2|trigger|[a-zA-Z0-9]+))?_physio\.(tsv|tsv\.gz|json|edf)$",
     "eyetracking": r".+_(eyetrack|eye|gaze)\.(tsv|tsv\.gz|json|edf|asc)$",
     # MRI submodalities
     "anat": r".+_(T1w|T2w|T2star|FLAIR|PD|PDw|T1map|T2map)\.nii(\.gz)?$",
@@ -36,6 +36,8 @@ BIDS_REGEX = re.compile(
     r"^sub-[a-zA-Z0-9]+"  # subject
     r"(_ses-[a-zA-Z0-9]+)?"  # optional session
     r"(_(task|survey|biometrics)-[a-zA-Z0-9]+)?"  # task/survey/biometrics label
+    r"(_acq-[a-zA-Z0-9]+)?"  # optional acquisition label
+    r"(_recording-[a-zA-Z0-9]+)?"  # optional recording label (for physio: ecg, puls, resp, etc.)
     r"(_run-[0-9]+)?"  # optional run
     r"(_desc-[a-zA-Z0-9]+)?"  # optional desc
     r"(_(survey|biometrics|physio|eyetrack|events))?$"  # PRISM modality suffixes

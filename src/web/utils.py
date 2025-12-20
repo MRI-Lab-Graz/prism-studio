@@ -40,12 +40,16 @@ def strip_temp_path(
     if not file_path:
         return None
 
+    # Normalize separators
+    file_path = file_path.replace("\\", "/")
+
     # If it's a temp path, try to extract the relative path
     temp_patterns = [
         "/tmp/",
         "/T/prism_validator_",
         "/var/folders/",
         "prism_validator_",
+        "renamed_files",
     ]
     is_temp_path = any(p in file_path for p in temp_patterns)
 
@@ -56,15 +60,26 @@ def strip_temp_path(
             if len(parts) > 1:
                 return parts[1]
 
-        # Alternative: look for BIDS structure markers (sub-, dataset_description.json)
-        match = re.search(r"((?:sub-|ses-|dataset_description\.json).*)", file_path)
-        if match:
-            return match.group(1)
+        # Look for common BIDS/PRISM root markers
+        # We look for the last occurrence of these markers to get the most specific relative path
+        markers = ["sub-", "ses-", "dataset_description.json", "participants.tsv"]
+        best_match = None
+        for marker in markers:
+            if marker in file_path:
+                idx = file_path.rfind(marker)
+                match_path = file_path[idx:]
+                if not best_match or len(match_path) < len(best_match):
+                    best_match = match_path
+        
+        if best_match:
+            return best_match
 
     # If dataset_path is a temp directory, strip it
-    if dataset_path and file_path.startswith(dataset_path):
-        relative = file_path[len(dataset_path) :].lstrip("/")
-        return relative if relative else file_path
+    if dataset_path:
+        dataset_path = dataset_path.replace("\\", "/")
+        if file_path.startswith(dataset_path):
+            relative = file_path[len(dataset_path) :].lstrip("/")
+            return relative if relative else file_path
 
     return file_path
 
@@ -73,15 +88,27 @@ def strip_temp_path_from_message(msg: str) -> str:
     """Remove temp folder paths from message text."""
     if not msg:
         return msg
+    
     # Replace temp folder paths in the message with just the relative path
-    msg = re.sub(
-        r"(/tmp/[^\s,:]+/dataset/|/T/prism_validator_[^\s,:]+/dataset/|/var/folders/[^\s,:]+/dataset/|prism_validator_[^\s,:]+/dataset/)([^\s,:]+)",
-        r"\2",
-        msg,
-    )
-    # Also replace standalone temp paths that lead to sub- or ses- files
-    msg = re.sub(r"(/tmp/[^\s,:]+/|/var/folders/[^\s,:]+/)(sub-[^\s,:/]+)", r"\2", msg)
-    return msg
+    # We look for the last occurrence of a temp-like folder name in a path
+    # and strip everything before it (including the temp folder itself)
+    temp_folders = [
+        'tmp', 
+        'var/folders', 
+        'T', 
+        r'prism_validator_[^\s,:/]+', 
+        r'renamed_files[^\s,:/]*'
+    ]
+    
+    for folder in temp_folders:
+        # Match something like /.../tmp/ or /.../renamed_files-2/
+        # and replace with nothing
+        msg = re.sub(r"(/[^\s,:]+)?/" + folder + r"/", "", msg)
+    
+    # Clean up any remaining "dataset/" prefix if it was part of a temp path
+    msg = msg.replace("dataset/", "")
+    
+    return msg.strip()
 
 
 def extract_path_from_message(
@@ -362,7 +389,14 @@ def format_validation_results(
                     "description": get_error_description(error_code),
                     "files": [],
                     "count": 0,
+                    "messages": {}  # Group by message
                 }
+            
+            # Add to message group
+            if message not in error_groups[error_code]["messages"]:
+                error_groups[error_code]["messages"][message] = []
+            error_groups[error_code]["messages"][message].append(file_path)
+            
             error_groups[error_code]["files"].append(formatted_issue)
             error_groups[error_code]["count"] += 1
 
@@ -376,7 +410,14 @@ def format_validation_results(
                     "description": get_error_description(error_code),
                     "files": [],
                     "count": 0,
+                    "messages": {}  # Group by message
                 }
+            
+            # Add to message group
+            if message not in warning_groups[error_code]["messages"]:
+                warning_groups[error_code]["messages"][message] = []
+            warning_groups[error_code]["messages"][message].append(file_path)
+            
             warning_groups[error_code]["files"].append(formatted_issue)
             warning_groups[error_code]["count"] += 1
 

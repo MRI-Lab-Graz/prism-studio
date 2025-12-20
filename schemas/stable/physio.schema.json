@@ -1,9 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/physio/v1.0.0",
-  "version": "1.0.0",
+  "$id": "https://prism.org/schemas/physio/v1.1.0",
+  "version": "1.1.0",
   "title": "Physiological Data Metadata",
-  "description": "Schema for physiological recordings (ECG, EDA, respiration, PPG, EMG) commonly used in psychological research",
+  "description": "Schema for physiological recordings (ECG, EDA, respiration, PPG, EMG) commonly used in psychological research. Files should be named with an optional recording- entity to distinguish signal types: sub-<label>[_ses-<label>]_task-<label>[_recording-<label>]_physio.<tsv.gz|json>",
   "type": "object",
   "properties": {
     "Technical": {
@@ -13,25 +13,33 @@
         "SamplingFrequency": {
           "type": "number",
           "minimum": 0,
-          "description": "Sampling frequency in Hz"
+          "description": "Sampling frequency in Hz. Required. If different signals have different sampling frequencies, split them into separate files with distinct recording- labels."
         },
         "StartTime": {
           "type": "number",
-          "description": "Start time of recording relative to first trigger/event (in seconds)"
+          "description": "Start time of recording relative to first trigger/event (in seconds). Use negative values if physio started before the first event."
         },
         "Columns": {
           "type": "array",
           "items": {"type": "string"},
-          "description": "Names of columns in the TSV file"
+          "description": "Names of columns in the TSV file, in order. Each column should have a corresponding entry in Channels."
         },
         "FileFormat": {
           "type": "string",
           "enum": ["tsv", "tsv.gz", "edf", "bdf"],
           "description": "File format of the physiological data"
         },
+        "Manufacturer": {
+          "type": "string",
+          "description": "Manufacturer of the recording device (e.g., Biopac, Varioport, ADInstruments)"
+        },
+        "ManufacturerModelName": {
+          "type": "string",
+          "description": "Model name of the recording device (e.g., MP160, BioNomadix)"
+        },
         "RecordingDevice": {
           "type": "string",
-          "description": "Name/model of the recording device (e.g., Biopac MP160, Varioport)"
+          "description": "Name/model of the recording device (e.g., Biopac MP160, Varioport). Deprecated: use Manufacturer + ManufacturerModelName instead."
         },
         "RecordingSoftware": {
           "type": "string",
@@ -44,15 +52,34 @@
       },
       "required": ["SamplingFrequency", "Columns"]
     },
+    "Recording": {
+      "type": "object",
+      "description": "Recording-specific metadata. Use recording- entity in filename to distinguish signal types (e.g., recording-ecg, recording-resp).",
+      "properties": {
+        "Type": {
+          "type": "string",
+          "enum": ["ecg", "cardiac", "puls", "ppg", "resp", "respiratory", "eda", "gsr", "emg", "temp", "bp", "spo2", "trigger", "mixed", "other"],
+          "description": "Type of physiological signal in this file. Use 'mixed' if file contains multiple signal types with identical sampling frequencies."
+        },
+        "Description": {
+          "type": "string",
+          "description": "Human-readable description of this recording"
+        }
+      }
+    },
     "Channels": {
       "type": "object",
-      "description": "Per-channel metadata",
+      "description": "Per-column/channel metadata. Keys should match column names in Technical.Columns.",
       "additionalProperties": {
         "type": "object",
         "properties": {
           "Description": {
             "type": "string",
-            "description": "Description of what this channel measures"
+            "description": "Description of what this channel/column measures"
+          },
+          "LongName": {
+            "type": "string",
+            "description": "Long (unabbreviated) name of the column"
           },
           "Type": {
             "type": "string",
@@ -61,7 +88,16 @@
           },
           "Units": {
             "type": "string",
-            "description": "Physical units (e.g., mV, µS, BPM, °C)"
+            "description": "Physical units (e.g., mV, µS, BPM, °C, n/a for dimensionless)"
+          },
+          "TermURL": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL pointing to a formal definition of this column (e.g., a SNOMED or LOINC code)"
+          },
+          "Derivative": {
+            "type": "boolean",
+            "description": "Whether this column is a derived measure (e.g., heart rate from ECG)"
           },
           "Gain": {
             "type": "number",
@@ -84,7 +120,7 @@
             "description": "Electrode/sensor placement (e.g., Lead II, left index finger)"
           }
         },
-        "required": ["Type", "Units"]
+        "required": ["Units"]
       }
     },
     "Study": {
@@ -196,5 +232,62 @@
       "required": ["SchemaVersion", "CreationDate"]
     }
   },
-  "required": ["Technical", "Study", "Metadata"]
+  "required": ["Technical", "Metadata"],
+  "examples": [
+    {
+      "_comment": "Example 1: Single-channel ECG recording",
+      "filename": "sub-01_ses-01_task-rest_recording-ecg_physio.tsv.gz",
+      "Technical": {
+        "SamplingFrequency": 1000,
+        "StartTime": 0,
+        "Columns": ["ecg"],
+        "Manufacturer": "Biopac",
+        "ManufacturerModelName": "MP160"
+      },
+      "Recording": {
+        "Type": "ecg",
+        "Description": "3-lead ECG recording during resting state"
+      },
+      "Channels": {
+        "ecg": {
+          "Description": "Electrocardiogram Lead II",
+          "Units": "mV",
+          "Placement": "Lead II"
+        }
+      },
+      "Metadata": {
+        "SchemaVersion": "1.1.0",
+        "CreationDate": "2024-01-15"
+      }
+    },
+    {
+      "_comment": "Example 2: Multi-channel physio with same sampling rate",
+      "filename": "sub-01_ses-01_task-stress_physio.tsv.gz",
+      "Technical": {
+        "SamplingFrequency": 500,
+        "StartTime": -10,
+        "Columns": ["cardiac", "respiratory"],
+        "Manufacturer": "ADInstruments"
+      },
+      "Recording": {
+        "Type": "mixed",
+        "Description": "Cardiac and respiratory signals recorded together"
+      },
+      "Channels": {
+        "cardiac": {
+          "Description": "Pulse waveform from finger photoplethysmograph",
+          "Units": "mV",
+          "Placement": "left index finger"
+        },
+        "respiratory": {
+          "Description": "Respiration belt signal",
+          "Units": "n/a"
+        }
+      },
+      "Metadata": {
+        "SchemaVersion": "1.1.0",
+        "CreationDate": "2024-01-15"
+      }
+    }
+  ]
 }
