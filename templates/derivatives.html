@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}PRISM Studio - Derivatives{% endblock %}
+{% block title %}PRISM Studio - Data Processing{% endblock %}
 
 {% block content %}
 <div class="container">
   <div class="row mb-4">
     <div class="col-12">
-      <h2><i class="fas fa-chart-line text-primary me-2"></i>Derivatives</h2>
-      <p class="text-muted">Generate survey derivatives (subscales, reverse coding) inside a PRISM-valid dataset.</p>
+      <h2><i class="fas fa-calculator text-primary me-2"></i>Data Processing</h2>
+      <p class="text-muted">Generate analysis-ready outputs (subscales, reverse coding) from a PRISM-valid dataset.</p>
     </div>
   </div>
 
   <div class="card">
     <div class="card-header bg-light">
-      <h5 class="mb-0">Survey Derivatives</h5>
+      <h5 class="mb-0">Dataset Processing & Scoring</h5>
     </div>
     <div class="card-body">
       <div class="row g-3 align-items-end">
@@ -25,7 +25,7 @@
               <i class="fas fa-folder-open"></i>
             </button>
           </div>
-          <div class="form-text">Must be a valid PRISM dataset root (will be validated before running derivatives).</div>
+          <div class="form-text">Must be a valid PRISM dataset root (will be validated before running processing).</div>
         </div>
 
         <div class="col-md-4">
@@ -54,8 +54,8 @@
         </div>
 
         <div class="col-md-4">
-          <button class="btn btn-success w-100" type="button" id="derivRunBtn">
-            <i class="fas fa-play me-2"></i>Run Derivatives
+          <button class="btn btn-primary w-100" type="button" id="derivRunBtn">
+            <i class="fas fa-play me-2"></i>Run Processing
           </button>
         </div>
       </div>
@@ -143,10 +143,10 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     derivRunBtn.disabled = true;
-    logToTerminal(`Running derivatives on: ${datasetPath}`);
+    logToTerminal(`Running processing on: ${datasetPath}`);
     logToTerminal(`Modality: ${payload.modality}, Format: ${payload.format}`);
     if (payload.survey) logToTerminal(`Recipe filter: ${payload.survey}`);
-    derivInfo.textContent = 'Running derivatives... this may take a moment.';
+    derivInfo.textContent = 'Running processing... this may take a moment.';
     derivInfo.classList.remove('d-none');
 
     fetch('/api/derivatives-surveys', {
@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(async response => {
         const data = await response.json().catch(() => null);
         if (!response.ok) {
-          const msg = data && data.error ? data.error : 'Derivatives failed';
+          const msg = data && data.error ? data.error : 'Processing failed';
           throw new Error(msg);
         }
         return data;

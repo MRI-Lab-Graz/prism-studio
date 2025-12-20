@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}PRISM Studio - Specifications{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Header Section -->
+        <div class="text-center mb-5">
+            <h1 class="display-4 mb-3">
+                <i class="fas fa-book text-primary me-3"></i>
+                PRISM Specifications
+            </h1>
+            <p class="lead text-muted">
+                Understanding the Psychological Research Information & Structure Model
+            </p>
+        </div>
+
+        <!-- Core Concept -->
+        <div class="card feature-card mb-5">
+            <div class="card-body p-5">
+                <h3 class="card-title mb-4">
+                    <i class="fas fa-lightbulb text-warning me-2"></i>
+                    The Core Concept
+                </h3>
+                <p class="lead">
+                    PRISM is a hybrid dataset validation tool designed specifically for psychological experiments. 
+                    It builds upon the <strong>BIDS (Brain Imaging Data Structure)</strong> standard while adding 
+                    stricter metadata requirements and support for non-imaging modalities.
+                </p>
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <h5><i class="fas fa-check text-success me-2"></i>BIDS Compatible</h5>
+                            <p class="text-muted mb-0">
+                                PRISM datasets remain valid BIDS datasets. Any BIDS-compatible tool (like fMRIPrep) 
+                                will still work perfectly with your PRISM-structured data.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-light h-100">
+                            <h5><i class="fas fa-plus text-primary me-2"></i>PRISM Enhanced</h5>
+                            <p class="text-muted mb-0">
+                                PRISM adds specific schemas for surveys, biometrics, and physiological data that 
+                                go beyond the standard BIDS requirements to ensure high-quality metadata.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Principles -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="fas fa-folder-tree fa-2x text-primary mb-3"></i>
+                        <h5>Standardized Structure</h5>
+                        <p class="text-muted small">
+                            Consistent naming conventions (sub-ID, ses-ID, task-ID) across all modalities.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="fas fa-file-code fa-2x text-primary mb-3"></i>
+                        <h5>Rich Metadata</h5>
+                        <p class="text-muted small">
+                            Every data file must have a JSON sidecar containing technical and descriptive metadata.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <i class="fas fa-shield-check fa-2x text-primary mb-3"></i>
+                        <h5>Validation First</h5>
+                        <p class="text-muted small">
+                            Automated checks ensure your dataset is complete and follows the specification before analysis.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Link -->
+        <div class="card bg-primary text-white mb-5">
+            <div class="card-body p-5 text-center">
+                <h3 class="mb-4">Detailed Schema Documentation</h3>
+                <p class="lead mb-4">
+                    For a deep dive into the specific JSON schemas and modality requirements, 
+                    please visit our dedicated documentation on ReadTheDocs.
+                </p>
+                <a href="https://psycho-validator.readthedocs.io/en/latest/specs/survey.html" class="btn btn-light btn-lg" target="_blank">
+                    <i class="fas fa-external-link-alt me-2"></i>Open PRISM Schema Docs
+                </a>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

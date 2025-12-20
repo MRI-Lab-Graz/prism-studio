@@ -439,6 +439,12 @@ def index():
     return render_template("home.html")
 
 
+@app.route("/specifications")
+def specifications():
+    """Page explaining the PRISM specifications"""
+    return render_template("specifications.html")
+
+
 @app.route("/api/progress/<job_id>")
 def get_validation_progress(job_id):
     """Get progress for a validation job (polled by UI)."""
@@ -2135,7 +2141,7 @@ def api_derivatives_surveys():
     """Run survey-derivatives generation inside an existing PRISM dataset."""
 
     if not compute_survey_derivatives:
-        return jsonify({"error": "Derivatives module not available"}), 500
+        return jsonify({"error": "Data processing module not available"}), 500
 
     data = request.get_json(silent=True) or {}
     dataset_path = (data.get("dataset_path") or "").strip()
@@ -2148,7 +2154,7 @@ def api_derivatives_surveys():
     if not os.path.exists(dataset_path) or not os.path.isdir(dataset_path):
         return jsonify({"error": f"Dataset path is not a directory: {dataset_path}"}), 400
 
-    # Validate that the dataset is PRISM-valid before writing derivatives.
+    # Validate that the dataset is PRISM-valid before writing outputs.
     issues, _stats = run_validation(dataset_path, verbose=False, schema_version=None, run_bids=False)
     error_issues = [i for i in (issues or []) if (len(i) >= 1 and str(i[0]).upper() == "ERROR")]
     if error_issues:
@@ -2169,9 +2175,9 @@ def api_derivatives_surveys():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-    msg = f"✅ Survey derivatives complete: wrote {result.written_files} file(s)"
+    msg = f"✅ Data processing complete: wrote {result.written_files} file(s)"
     if result.flat_out_path:
-        msg = f"✅ Survey derivatives complete: wrote {result.flat_out_path}"
+        msg = f"✅ Data processing complete: wrote {result.flat_out_path}"
     if result.fallback_note:
         msg += f" (note: {result.fallback_note})"
     return jsonify(

@@ -77,7 +77,7 @@
 <div class="container">
     <div class="row mb-4">
         <div class="col-12">
-            <h2><i class="fas fa-file-export text-primary me-2"></i><span id="surveyPageTitle">Survey Export</span></h2>
+            <h2><i class="fas fa-file-export text-info me-2"></i><span id="surveyPageTitle">Survey Export</span></h2>
             <p class="text-muted" id="surveyPageSubtitle">Select questionnaires from the library and export them to LimeSurvey (.lss).</p>
         </div>
     </div>
@@ -95,7 +95,7 @@
                         <button class="btn btn-outline-secondary" type="button" id="browseBtn" title="Browse Folder">
                             <i class="fas fa-folder-open"></i>
                         </button>
-                        <button class="btn btn-primary" type="button" id="loadLibraryBtn">
+                        <button class="btn btn-info text-white" type="button" id="loadLibraryBtn">
                             <i class="fas fa-sync-alt me-2"></i>Load Files
                         </button>
                     </div>
@@ -132,7 +132,7 @@
                 </div>
 
                 <div class="d-flex justify-content-end">
-                    <button class="btn btn-success btn-lg" id="generateLssBtn" disabled>
+                    <button class="btn btn-info btn-lg text-white" id="generateLssBtn" disabled>
                         <i class="fas fa-file-export me-2"></i>Export to LimeSurvey (.lss)
                     </button>
                 </div>
@@ -150,7 +150,7 @@
 
     <div class="card mt-4" id="landgig-convert">
         <div class="card-header bg-light">
-            <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Prism Converter</h5>
+            <h5 class="mb-0"><i class="fas fa-exchange-alt me-2 text-warning"></i>Prism Converter</h5>
         </div>
         <div class="card-body">
             <p class="text-muted mb-4">Convert your raw data files into standardized research datasets. Select the data type you want to convert:</p>
@@ -195,8 +195,8 @@
                     <div class="card border-0 shadow-sm">
                         <div class="card-body">
                             <div class="d-flex align-items-center mb-3">
-                                <div class="bg-info bg-opacity-10 rounded-circle p-3 me-3">
-                                    <i class="fas fa-clipboard-list fa-2x text-info"></i>
+                                <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas fa-clipboard-list fa-2x text-warning"></i>
                                 </div>
                                 <div>
                                     <h5 class="mb-1">Survey Data Conversion</h5>
@@ -305,7 +305,7 @@
                                         <div id="validationSummary" class="mb-3"></div>
                                         <div id="validationDetails"></div>
                                         <div id="downloadSection" class="d-none mt-3 text-center">
-                                            <button class="btn btn-success btn-lg" id="downloadZipBtn">
+                                            <button class="btn btn-warning btn-lg text-white" id="downloadZipBtn">
                                                 <i class="fas fa-download me-2"></i>Download Validated Dataset
                                             </button>
                                             <p class="text-muted small mt-2">
@@ -332,8 +332,8 @@
                     <div class="card border-0 shadow-sm">
                         <div class="card-body">
                             <div class="d-flex align-items-center mb-3">
-                                <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
-                                    <i class="fas fa-weight fa-2x text-primary"></i>
+                                <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas fa-weight fa-2x text-warning"></i>
                                 </div>
                                 <div>
                                     <h5 class="mb-1">Biometrics Data Conversion</h5>
@@ -371,7 +371,7 @@
                                     <input type="text" class="form-control" id="biometricsDatasetName" placeholder="PRISM Biometrics Dataset">
                                 </div>
                                 <div class="col-md-4">
-                                    <button class="btn btn-primary w-100" type="button" id="biometricsConvertBtn" disabled>
+                                    <button class="btn btn-warning text-white w-100" type="button" id="biometricsConvertBtn" disabled>
                                         <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
                                     </button>
                                 </div>
@@ -406,8 +406,8 @@
                     <div class="card border-0 shadow-sm">
                         <div class="card-body">
                             <div class="d-flex align-items-center mb-3">
-                                <div class="bg-success bg-opacity-10 rounded-circle p-3 me-3">
-                                    <i class="fas fa-heartbeat fa-2x text-success"></i>
+                                <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas fa-heartbeat fa-2x text-warning"></i>
                                 </div>
                                 <div>
                                     <h5 class="mb-1">Physiological Data Conversion</h5>
@@ -446,7 +446,7 @@
                                             <input type="number" class="form-control" id="physioSamplingRate" placeholder="e.g. 256" step="any">
                                         </div>
                                         <div class="col-md-4">
-                                            <button class="btn btn-success w-100" type="button" id="physioConvertBtn" disabled>
+                                            <button class="btn btn-warning text-white w-100" type="button" id="physioConvertBtn" disabled>
                                                 <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
                                             </button>
                                         </div>
@@ -477,7 +477,7 @@
                                             <input type="number" class="form-control" id="physioBatchSamplingRate" placeholder="e.g. 256" step="any">
                                         </div>
                                         <div class="col-md-4">
-                                            <button class="btn btn-success w-100" type="button" id="physioBatchConvertBtn" disabled>
+                                            <button class="btn btn-warning text-white w-100" type="button" id="physioBatchConvertBtn" disabled>
                                                 <i class="fas fa-wand-magic-sparkles me-2"></i>Convert All & Download
                                             </button>
                                         </div>
@@ -485,7 +485,7 @@
                                     <div id="physioBatchError" class="alert alert-danger d-none mt-3"></div>
                                     <div id="physioBatchInfo" class="alert alert-info d-none mt-3"></div>
                                     <div id="physioBatchProgress" class="progress d-none mt-3" style="height: 25px;">
-                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 100%">Converting...</div>
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning text-dark" style="width: 100%">Converting...</div>
                                     </div>
                                     <!-- Log Window -->
                                     <div id="physioBatchLogContainer" class="d-none mt-3">

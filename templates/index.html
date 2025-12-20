@@ -17,46 +17,59 @@
         </div>
 
         <!-- Main Upload Card -->
-        <div class="card feature-card mb-4">
+        <div class="card feature-card mb-4 border-success">
             <div class="card-body p-5">
                 <h3 class="card-title text-center mb-4">
-                    <i class="fas fa-upload text-primary me-2"></i>
+                    <i class="fas fa-check-circle text-success me-2"></i>
                     Dataset Validation
                 </h3>
+
+                <p class="text-center text-muted mb-4">
+                    The PRISM Validator ensures your dataset follows the PRISM structure and BIDS standards. 
+                    It checks for required files, naming conventions, and validates metadata against JSON schemas.
+                </p>
                 
                 <!-- File Upload Section -->
                 <div class="mb-4">
-                    <h5 class="mb-3">
-                        <i class="fas fa-upload me-2"></i>
-                        Upload Dataset
-                    </h5>
-                    
-                    <!-- Browser Support Warning -->
-                    <div class="alert alert-info alert-dismissible fade show" role="alert" id="browserWarning" style="display: none;">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Folder upload requires a modern browser.</strong> 
-                        If folder selection doesn't work, try using a ZIP file or the local folder path option below.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    
-                    <!-- DataLad-Style Upload Notice -->
-                    <div class="alert alert-success mb-3">
-                        <i class="fas fa-lightning me-2"></i>
-                        <strong>DataLad-Style Upload:</strong> Only structure and metadata (.json, .tsv, .csv, .txt) are uploaded. 
-                        Large data files (.nii.gz, .mp4, images) are automatically skipped - placeholders are created for structure validation!
-                        <br><small class="mt-1 d-block">
-                            <i class="fas fa-info-circle me-1"></i>
-                            This validates naming conventions, directory structure, and metadata completeness without transferring GB of data.
-                        </small>
-                    </div>
-                    
                     <form action="{{ url_for('upload_dataset') }}" method="post" enctype="multipart/form-data">
-                        <!-- Schema Version Selector -->
-                        <div class="mb-3">
-                            <label for="schema_version" class="form-label">
-                                <i class="fas fa-code-branch me-2"></i>Schema Version
-                            </label>
-                            <select class="form-select" id="schema_version" name="schema_version">
+                        <!-- 1. Select Dataset -->
+                        <div class="mb-4">
+                            <h5 class="mb-3">
+                                <i class="fas fa-folder-open text-success me-2"></i>
+                                1. Select Dataset
+                            </h5>
+                            
+                            <!-- Browser Support Warning -->
+                            <div class="alert alert-info alert-dismissible fade show" role="alert" id="browserWarning" style="display: none;">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Folder upload requires a modern browser.</strong> 
+                                Please use a modern browser like Chrome, Firefox, or Edge.
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+
+                            <div class="upload-area border-success" id="uploadArea">
+                                <i class="fas fa-folder-open fa-3x text-success opacity-50 mb-3"></i>
+                                <h5>Select your dataset folder</h5>
+                                <p class="text-muted">Choose a folder to start validation</p>
+                                
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-success" id="folderBtn">
+                                        <i class="fas fa-folder-open me-2"></i>Browse Folder
+                                    </button>
+                                </div>
+                                
+                                <!-- Hidden file inputs -->
+                                <input type="file" class="d-none" id="datasetFolder" name="dataset" webkitdirectory directory multiple>
+                            </div>
+                        </div>
+
+                        <!-- 2. Schema Version Selector -->
+                        <div class="mb-4">
+                            <h5 class="mb-3">
+                                <i class="fas fa-code-branch text-success me-2"></i>
+                                2. Schema Version
+                            </h5>
+                            <select class="form-select border-success" id="schema_version" name="schema_version">
                                 {% for version in schema_versions %}
                                 <option value="{{ version }}" {% if version == 'stable' %}selected{% endif %}>
                                     {{ version }}{% if version == 'stable' %} (default){% endif %}
@@ -69,126 +82,45 @@
                             </small>
                         </div>
 
-                        <!-- BIDS Validation Options -->
-                        <div class="mb-3 p-3 border rounded bg-light">
-                            <h6 class="mb-2"><i class="fas fa-cubes me-2"></i>BIDS Validation Options</h6>
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="run_bids" name="run_bids" value="true">
-                                <label class="form-check-label" for="run_bids">
-                                    Run Standard BIDS Validator
-                                </label>
+                        <!-- 3. BIDS Validation Options -->
+                        <div class="mb-4">
+                            <h5 class="mb-3">
+                                <i class="fas fa-cubes text-success me-2"></i>
+                                3. BIDS Validation (Optional)
+                            </h5>
+                            <div class="p-3 border border-success rounded bg-light">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="run_bids" name="run_bids" value="true">
+                                    <label class="form-check-label" for="run_bids">
+                                        Run Standard BIDS Validator
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch ms-4" id="bids_warnings_container" style="display: none;">
+                                    <input class="form-check-input" type="checkbox" id="bids_warnings" name="bids_warnings" value="true">
+                                    <label class="form-check-label" for="bids_warnings">
+                                        Show BIDS Warnings (can be verbose)
+                                    </label>
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Runs the official BIDS validator alongside PRISM validation.
+                                </small>
                             </div>
-                            <div class="form-check form-switch ms-4" id="bids_warnings_container" style="display: none;">
-                                <input class="form-check-input" type="checkbox" id="bids_warnings" name="bids_warnings" value="true">
-                                <label class="form-check-label" for="bids_warnings">
-                                    Show BIDS Warnings (can be verbose)
-                                </label>
-                            </div>
-                            <small class="text-muted d-block mt-1">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Runs the official BIDS validator alongside PRISM validation.
-                            </small>
                         </div>
                         
-                        <div class="upload-area" id="uploadArea">
-                            <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
-                            <h5>Select your dataset</h5>
-                            <p class="text-muted">Choose a folder or ZIP file</p>
-                            
-                            <div class="btn-group mb-3" role="group">
-                                <button type="button" class="btn btn-primary" id="folderBtn">
-                                    <i class="fas fa-folder-open me-2"></i>Browse Folder
-                                </button>
-                                <button type="button" class="btn btn-outline-primary" id="zipBtn">
-                                    <i class="fas fa-file-archive me-2"></i>Browse ZIP File
-                                </button>
-                            </div>
-                            
-                            <!-- Hidden file inputs -->
-                            <input type="file" class="d-none" id="datasetFolder" name="dataset" webkitdirectory directory multiple>
-                            <input type="file" class="d-none" id="datasetZip" name="dataset" accept=".zip">
-                        </div>
-                        
-                        <div class="mt-3 text-center">
-                            <button type="submit" class="btn btn-success btn-lg" id="uploadBtn" disabled>
-                                <i class="fas fa-check-circle me-2"></i>Validate Dataset
+                        <div class="mt-5 text-center">
+                            <button type="submit" class="btn btn-success btn-lg px-5" id="uploadBtn" disabled>
+                                <i class="fas fa-check-circle me-2"></i>Start Validation
                             </button>
                         </div>
                         
                         <div class="mt-2 text-center">
                             <small class="text-muted" id="uploadInfo">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Select a folder or ZIP file to start validation
+                                Select a folder to start validation
                             </small>
                         </div>
                     </form>
-                </div>
-
-                <hr class="my-4">
-
-                <!-- Local Folder Section -->
-                <div class="mb-4">
-                    <h5 class="mb-3">
-                        <i class="fas fa-bolt me-2 text-success"></i>
-                        Validate Local Folder (Best for Your Dataset!)
-                    </h5>
-                    <div class="alert alert-success border">
-                        <div class="row align-items-center">
-                            <div class="col-md-12">
-                                <form action="{{ url_for('validate_folder') }}" method="post" class="mb-0">
-                                    <!-- Schema Version Selector for Local Folder -->
-                                    <div class="mb-3">
-                                        <label for="folder_schema_version" class="form-label">
-                                            <i class="fas fa-code-branch me-2"></i>Schema Version
-                                        </label>
-                                        <select class="form-select" id="folder_schema_version" name="schema_version">
-                                            {% for version in schema_versions %}
-                                            <option value="{{ version }}" {% if version == 'stable' %}selected{% endif %}>
-                                                {{ version }}{% if version == 'stable' %} (default){% endif %}
-                                            </option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-
-                                    <!-- BIDS Validation Options for Local Folder -->
-                                    <div class="mb-3 p-3 border rounded bg-light">
-                                        <h6 class="mb-2"><i class="fas fa-cubes me-2"></i>BIDS Validation Options</h6>
-                                        <div class="form-check form-switch mb-2">
-                                            <input class="form-check-input" type="checkbox" id="folder_run_bids" name="run_bids" value="true">
-                                            <label class="form-check-label" for="folder_run_bids">
-                                                Run Standard BIDS Validator
-                                            </label>
-                                        </div>
-                                        <div class="form-check form-switch ms-4" id="folder_bids_warnings_container" style="display: none;">
-                                            <input class="form-check-input" type="checkbox" id="folder_bids_warnings" name="bids_warnings" value="true">
-                                            <label class="form-check-label" for="folder_bids_warnings">
-                                                Show BIDS Warnings (can be verbose)
-                                            </label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-folder-open"></i>
-                                        </span>
-                                        <input type="text" class="form-control" name="folder_path" 
-                                               placeholder="Paste path here: /path/to/bids" 
-                                               value=""
-                                               required>
-                                        <button type="submit" class="btn btn-success">
-                                            <i class="fas fa-bolt me-2"></i>Validate Now
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                        <small class="text-success mt-2 d-block">
-                            <i class="fas fa-check-circle me-1"></i>
-                            <strong>✨ No upload needed!</strong> Works with datasets of any size - validates directly from your disk.
-                        </small>
-                            <strong>Tip:</strong> Copy the full path from your file manager. No upload needed - validates directly from your computer.
-                        </small>
-                    </div>
                 </div>
             </div>
         </div>
@@ -209,10 +141,10 @@
             <div class="col-md-6 col-lg-3 mb-3">
                 <div class="card feature-card h-100">
                     <div class="card-body text-center">
-                        <i class="fas fa-desktop fa-2x text-primary mb-3"></i>
-                        <h5>Local Path (Fastest)</h5>
+                        <i class="fas fa-check-double fa-2x text-success mb-3"></i>
+                        <h5>BIDS Ready</h5>
                         <p class="text-muted small">
-                            Enter folder path directly - no upload needed. Works with any browser.
+                            Ensures your dataset is compatible with standard BIDS tools and apps.
                         </p>
                     </div>
                 </div>
@@ -220,10 +152,10 @@
             <div class="col-md-6 col-lg-3 mb-3">
                 <div class="card feature-card h-100">
                     <div class="card-body text-center">
-                        <i class="fas fa-chart-bar fa-2x text-info mb-3"></i>
-                        <h5>Comprehensive Reports</h5>
+                        <i class="fas fa-chart-bar fa-2x text-success mb-3"></i>
+                        <h5>Detailed Reports</h5>
                         <p class="text-muted small">
-                            Detailed validation results with statistics and error categorization.
+                            Comprehensive validation results with statistics and error categorization.
                         </p>
                     </div>
                 </div>
@@ -231,7 +163,7 @@
             <div class="col-md-6 col-lg-3 mb-3">
                 <div class="card feature-card h-100">
                     <div class="card-body text-center">
-                        <i class="fas fa-id-badge fa-2x text-warning mb-3"></i>
+                        <i class="fas fa-id-badge fa-2x text-success mb-3"></i>
                         <h5>Lab Contact</h5>
                         <p class="text-muted small mb-1">
                             Karl Koschutnig · MRI-Lab Graz
@@ -249,24 +181,21 @@
             <h6 class="alert-heading">
                 <i class="fas fa-browser me-2"></i>Browser Compatibility
             </h6>
-            <p class="mb-2">
-                <strong>Folder Upload:</strong> Requires Chrome 21+, Firefox 50+, Safari 11.1+, or Edge 79+
-            </p>
             <p class="mb-0">
-                <strong>Alternative:</strong> Use <em>Local Folder Path</em> (works with any browser) or ZIP file upload
+                <strong>Folder Upload:</strong> Requires Chrome 21+, Firefox 50+, Safari 11.1+, or Edge 79+
             </p>
         </div>
 
         <!-- Dataset Structure Info -->
-        <div class="card mb-4">
+        <div class="card mb-4 border-success">
             <div class="card-body">
                 <h5 class="card-title">
-                    <i class="fas fa-sitemap text-primary me-2"></i>
+                    <i class="fas fa-sitemap text-success me-2"></i>
                     Expected Dataset Structure
                 </h5>
                 <div class="row">
                     <div class="col-md-6">
-                        <pre class="bg-light p-3 rounded"><code>dataset/
+                        <pre class="bg-light p-3 rounded border-success"><code>dataset/
 ├── dataset_description.json
 ├── participants.tsv (optional)
 ├── sub-01/
@@ -280,9 +209,9 @@
                     <div class="col-md-6">
                         <h6>Supported Modalities:</h6>
                         <ul class="list-unstyled">
-                            <li><i class="fas fa-chart-line text-primary me-2"></i><code>survey/</code> - Survey/Behavioral responses</li>
-                            <li><i class="fas fa-heartbeat text-primary me-2"></i><code>biometrics/</code> - Biometric assessments (VO2max, planks)</li>
-                            <li><i class="fas fa-wave-square text-primary me-2"></i><code>physiological/</code> - Standard BIDS physio</li>
+                            <li><i class="fas fa-chart-line text-success me-2"></i><code>survey/</code> - Survey/Behavioral responses</li>
+                            <li><i class="fas fa-heartbeat text-success me-2"></i><code>biometrics/</code> - Biometric assessments (VO2max, planks)</li>
+                            <li><i class="fas fa-wave-square text-success me-2"></i><code>physiological/</code> - Standard BIDS physio</li>
                         </ul>
                     </div>
                 </div>
@@ -329,9 +258,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const uploadArea = document.getElementById('uploadArea');
     const folderInput = document.getElementById('datasetFolder');
-    const zipInput = document.getElementById('datasetZip');
     const folderBtn = document.getElementById('folderBtn');
-    const zipBtn = document.getElementById('zipBtn');
     const uploadBtn = document.getElementById('uploadBtn');
     const uploadInfo = document.getElementById('uploadInfo');
     const browserWarning = document.getElementById('browserWarning');
@@ -344,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
         folderBtn.disabled = true;
         folderBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Folder Upload Not Supported';
         folderBtn.classList.add('btn-warning');
-        folderBtn.classList.remove('btn-primary');
+        folderBtn.classList.remove('btn-success');
     }
 
     // Folder button click
@@ -352,13 +279,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (supportsFolderUpload) {
             folderInput.click();
         } else {
-            alert('Folder upload is not supported in this browser. Please use the ZIP file option or try a modern browser like Chrome, Firefox, or Edge.');
+            alert('Folder upload is not supported in this browser. Please use the local folder path option below or try a modern browser like Chrome, Firefox, or Edge.');
         }
-    });
-
-    // ZIP button click
-    zipBtn.addEventListener('click', function() {
-        zipInput.click();
     });
 
     // Drag and drop handling
@@ -378,19 +300,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const files = e.dataTransfer.files;
         if (files.length > 0) {
-            // Check if it's a ZIP file
-            const firstFile = files[0];
-            if (firstFile.name.toLowerCase().endsWith('.zip')) {
-                zipInput.files = files;
-                updateUploadButton('zip', firstFile);
+            // For folder drops, we need to simulate the file input
+            if (supportsFolderUpload && files.length > 1) {
+                // Multiple files dropped - treat as folder
+                updateUploadButton('folder', null, files.length);
             } else {
-                // For folder drops, we need to simulate the file input
-                if (supportsFolderUpload && files.length > 1) {
-                    // Multiple files dropped - treat as folder
-                    updateUploadButton('folder', null, files.length);
-                } else {
-                    uploadInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>Please drop a ZIP file or use the browse buttons';
-                }
+                uploadInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>Please use the browse button to select a folder';
             }
         }
     });
@@ -421,13 +336,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // ZIP file selection handling
-    zipInput.addEventListener('change', function() {
-        if (zipInput.files.length > 0) {
-            updateUploadButton('zip', zipInput.files[0]);
-        }
-    });
-
     function updateUploadButton(type, file, fileCount, skippedCount) {
         uploadBtn.disabled = false;
         
@@ -447,27 +355,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             uploadInfo.innerHTML = infoText;
             
-            // Clear ZIP input
-            zipInput.value = '';
-            
             // Highlight folder button
             folderBtn.classList.add('btn-success');
-            folderBtn.classList.remove('btn-primary');
-            zipBtn.classList.add('btn-outline-primary');
-            zipBtn.classList.remove('btn-success');
-            
-        } else if (type === 'zip') {
-            uploadBtn.innerHTML = `<i class="fas fa-check-circle me-2"></i>Validate "${file.name}"`;
-            uploadInfo.innerHTML = `<i class="fas fa-file-archive me-1 text-success"></i>ZIP file: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
-            
-            // Clear folder input
-            folderInput.value = '';
-            
-            // Highlight ZIP button
-            zipBtn.classList.add('btn-success');
-            zipBtn.classList.remove('btn-outline-primary');
-            folderBtn.classList.add('btn-primary');
-            folderBtn.classList.remove('btn-success');
+            folderBtn.classList.remove('btn-outline-success');
         }
     }
 
@@ -476,8 +366,8 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault(); // Prevent default submission
         
         // Validate that something is selected
-        if (folderInput.files.length === 0 && zipInput.files.length === 0) {
-            alert('Please select a folder or ZIP file before validating.');
+        if (folderInput.files.length === 0) {
+            alert('Please select a folder before validating.');
             return false;
         }
         
@@ -499,55 +389,48 @@ document.addEventListener('DOMContentLoaded', function() {
         uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Preparing upload...';
         
         try {
-            if (folderInput.files.length > 0) {
-                // Folder upload: Zip client-side
-                // This avoids "too many files" errors and reduces upload size
-                const zip = new JSZip();
-                const metadataExtensions = ['.json', '.tsv', '.csv', '.txt', '.bvec', '.bval', '.vhdr', '.vmrk'];
-                const skipExtensions = ['.nii', '.gz', '.mp4', '.avi', '.mov', '.png', '.jpg', '.jpeg', '.tiff', '.mat', '.eeg', '.dat', '.fif', '.edf', '.bdf', '.set', '.fdt'];
+            // Folder upload: Zip client-side
+            // This avoids "too many files" errors and reduces upload size
+            const zip = new JSZip();
+            const metadataExtensions = ['.json', '.tsv', '.csv', '.txt', '.bvec', '.bval', '.vhdr', '.vmrk'];
+            const skipExtensions = ['.nii', '.gz', '.mp4', '.avi', '.mov', '.png', '.jpg', '.jpeg', '.tiff', '.mat', '.eeg', '.dat', '.fif', '.edf', '.bdf', '.set', '.fdt'];
+            
+            let includedCount = 0;
+            let skippedCount = 0;
+            let totalSize = 0;
+            
+            uploadInfo.innerHTML = '<i class="fas fa-cog fa-spin me-1"></i>Compressing metadata...';
+            
+            // Process files in chunks to avoid blocking UI too much
+            const files = folderInput.files;
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const fileName = file.name.toLowerCase();
+                const filePath = file.webkitRelativePath || file.name;
                 
-                let includedCount = 0;
-                let skippedCount = 0;
-                let totalSize = 0;
+                const isMetadata = metadataExtensions.some(ext => fileName.endsWith(ext));
+                const isSkipped = skipExtensions.some(ext => fileName.endsWith(ext)) || fileName.endsWith('.nii.gz');
                 
-                uploadInfo.innerHTML = '<i class="fas fa-cog fa-spin me-1"></i>Compressing metadata...';
-                
-                // Process files in chunks to avoid blocking UI too much
-                const files = folderInput.files;
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    const fileName = file.name.toLowerCase();
-                    const filePath = file.webkitRelativePath || file.name;
-                    
-                    const isMetadata = metadataExtensions.some(ext => fileName.endsWith(ext));
-                    const isSkipped = skipExtensions.some(ext => fileName.endsWith(ext)) || fileName.endsWith('.nii.gz');
-                    
-                    if (isMetadata && !isSkipped) {
-                        zip.file(filePath, file);
-                        includedCount++;
-                        totalSize += file.size;
-                    } else if (isSkipped) {
-                        // Add empty placeholder for skipped files
-                        zip.file(filePath, "");
-                        skippedCount++;
-                    }
+                if (isMetadata && !isSkipped) {
+                    zip.file(filePath, file);
+                    includedCount++;
+                    totalSize += file.size;
+                } else if (isSkipped) {
+                    // Add empty placeholder for skipped files
+                    zip.file(filePath, "");
+                    skippedCount++;
                 }
-                
-                if (includedCount === 0 && skippedCount === 0) {
-                    throw new Error('No valid files found in the selected folder.');
-                }
-                
-                console.log(`Zipping ${includedCount} metadata files, skipping ${skippedCount} data files`);
-                uploadInfo.innerHTML = `<i class="fas fa-cog fa-spin me-1"></i>Uploading ${includedCount} metadata files (zipped)...`;
-                
-                const zipBlob = await zip.generateAsync({type: "blob"});
-                formData.append('dataset', zipBlob, "dataset.zip");
-                
-            } else {
-                // ZIP upload: Send as is
-                formData.append('dataset', zipInput.files[0]);
-                uploadInfo.innerHTML = '<i class="fas fa-cog fa-spin me-1"></i>Uploading ZIP file...';
             }
+            
+            if (includedCount === 0 && skippedCount === 0) {
+                throw new Error('No valid files found in the selected folder.');
+            }
+            
+            console.log(`Zipping ${includedCount} metadata files, skipping ${skippedCount} data files`);
+            uploadInfo.innerHTML = `<i class="fas fa-cog fa-spin me-1"></i>Uploading ${includedCount} metadata files (zipped)...`;
+            
+            const zipBlob = await zip.generateAsync({type: "blob"});
+            formData.append('dataset', zipBlob, "dataset.zip");
             
             // Submit via fetch
             const response = await fetch(form.action, {

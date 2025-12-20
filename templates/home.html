@@ -15,88 +15,104 @@
                 Professional toolkit for validating and managing psychological research datasets
             </p>
             
-            <!-- PRISM Acronym -->
-            <div class="card bg-light border-0 shadow-sm mx-auto mb-4" style="max-width: 400px;">
-                <div class="card-body py-3">
-                    <div class="d-flex justify-content-center align-items-start gap-1 flex-wrap" style="font-size: 1.1rem;">
-                        <span class="fw-bold text-primary">P</span><span class="text-muted">sychological</span>
-                        <span class="fw-bold text-primary">R</span><span class="text-muted">esearch</span>
-                        <span class="fw-bold text-primary">I</span><span class="text-muted">nformation</span>
-                        <span class="text-muted">&</span>
-                        <span class="fw-bold text-primary">S</span><span class="text-muted">tructure</span>
-                        <span class="fw-bold text-primary">M</span><span class="text-muted">odel</span>
-                    </div>
-                </div>
-            </div>
-            
             <div class="d-inline-flex flex-wrap justify-content-center align-items-center gap-2 mb-3">
                 <span class="badge bg-primary text-uppercase">MRI-Lab Graz</span>
                 <span class="badge bg-dark">BIDS-Inspired</span>
             </div>
         </div>
 
-        <!-- Overview Cards -->
-        <div class="row g-4 mb-5">
-            <!-- Validate Card -->
-            <div class="col-md-6">
-                <div class="card feature-card h-100">
-                    <div class="card-body text-center p-4">
-                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                        <h5 class="card-title mb-3">Dataset Validation</h5>
-                        <p class="card-text text-muted mb-4">
-                            Check that your dataset is complete, correctly organized, and ready for analysis or sharing.
+        <!-- Part 1: PRISM Specifications -->
+        <div class="card feature-card mb-5 border-primary">
+            <div class="card-body p-5">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h3 class="card-title mb-3">
+                            <i class="fas fa-book-open text-primary me-2"></i>
+                            PRISM Specifications
+                        </h3>
+                        <p class="lead text-muted">
+                            Learn about the PRISM structure, naming conventions, and metadata requirements. 
+                            Understand how PRISM extends BIDS for psychological research.
                         </p>
-                        <a href="{{ url_for('validate_dataset') }}" class="btn btn-success">
-                            <i class="fas fa-arrow-right me-2"></i>Validate Dataset
+                        <a href="{{ url_for('specifications') }}" class="btn btn-primary">
+                            <i class="fas fa-info-circle me-2"></i>Explore Specifications
                         </a>
+                    </div>
+                    <div class="col-md-4 text-center d-none d-md-block">
+                        <i class="fas fa-project-diagram fa-5x text-primary opacity-25"></i>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Derivatives Card -->
-            <div class="col-md-6">
-                <div class="card feature-card h-100">
-                    <div class="card-body text-center p-4">
-                        <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
-                        <h5 class="card-title mb-3">Derivatives</h5>
-                        <p class="card-text text-muted mb-4">
-                            Calculate scores, subscales, and reverse-coded items from your survey responses.
-                        </p>
-                        <a href="{{ url_for('derivatives') }}" class="btn btn-primary">
-                            <i class="fas fa-arrow-right me-2"></i>Derivatives
-                        </a>
+        <!-- Part 2: PRISM Tools -->
+        <div class="mb-5">
+            <h3 class="mb-4 text-center">
+                <i class="fas fa-tools text-secondary me-2"></i>
+                PRISM Tools
+            </h3>
+            <div class="row g-4">
+                <!-- Validate Card -->
+                <div class="col-md-6">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center p-4">
+                            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                            <h5 class="card-title mb-3">Validator</h5>
+                            <p class="card-text text-muted mb-4">
+                                Check that your dataset is complete, correctly organized, and ready for analysis or sharing.
+                            </p>
+                            <a href="{{ url_for('validate_dataset') }}" class="btn btn-success">
+                                <i class="fas fa-arrow-right me-2"></i>Open Validator
+                            </a>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Survey Generator Card -->
-            <div class="col-md-6">
-                <div class="card feature-card h-100">
-                    <div class="card-body text-center p-4">
-                        <i class="fas fa-poll-h fa-3x text-info mb-3"></i>
-                        <h5 class="card-title mb-3">Survey Generator</h5>
-                        <p class="card-text text-muted mb-4">
-                            Build questionnaire templates and export them for use in LimeSurvey.
-                        </p>
-                        <a href="{{ url_for('survey_generator') }}" class="btn btn-info text-white">
-                            <i class="fas fa-arrow-right me-2"></i>Create Survey
-                        </a>
+                <!-- Survey Generator Card -->
+                <div class="col-md-6">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center p-4">
+                            <i class="fas fa-poll-h fa-3x text-info mb-3"></i>
+                            <h5 class="card-title mb-3">Survey Generator</h5>
+                            <p class="card-text text-muted mb-4">
+                                Build questionnaire templates and export them for use in LimeSurvey.
+                            </p>
+                            <a href="{{ url_for('survey_generator') }}" class="btn btn-info text-white">
+                                <i class="fas fa-arrow-right me-2"></i>Open Generator
+                            </a>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Prism Converter Card -->
-            <div class="col-md-6">
-                <div class="card feature-card h-100">
-                    <div class="card-body text-center p-4">
-                        <i class="fas fa-file-excel fa-3x text-success mb-3"></i>
-                        <h5 class="card-title mb-3">Prism Converter</h5>
-                        <p class="card-text text-muted mb-4">
-                            Transform your survey, biometrics, or physio data into clean, standardized datasets.
-                        </p>
-                        <a href="{{ url_for('survey_generator') }}#landgig-convert" class="btn btn-success">
-                            <i class="fas fa-arrow-right me-2"></i>Open Converter
-                        </a>
+                <!-- Prism Converter Card -->
+                <div class="col-md-6">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center p-4">
+                            <i class="fas fa-file-excel fa-3x text-warning mb-3"></i>
+                            <h5 class="card-title mb-3">Converter</h5>
+                            <p class="card-text text-muted mb-4">
+                                Transform your survey, biometrics, or physio data into clean, standardized PRISM datasets.
+                            </p>
+                            <a href="{{ url_for('survey_generator') }}#landgig-convert" class="btn btn-warning text-white">
+                                <i class="fas fa-arrow-right me-2"></i>Open Converter
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Processing Card (formerly Derivatives) -->
+                <div class="col-md-6">
+                    <div class="card feature-card h-100">
+                        <div class="card-body text-center p-4">
+                            <i class="fas fa-calculator fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title mb-3">Data Processing</h5>
+                            <p class="card-text text-muted mb-4">
+                                Take a PRISM dataset and generate analysis-ready outputs like scores and subscales.
+                            </p>
+                            <a href="{{ url_for('derivatives') }}" class="btn btn-primary">
+                                <i class="fas fa-arrow-right me-2"></i>Open Processing
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -106,19 +122,19 @@
         <div class="card feature-card">
             <div class="card-body p-5">
                 <h4 class="card-title mb-4">
-                    <i class="fas fa-sparkles text-primary me-2"></i>
-                    Key Features
+                    <i class="fas fa-star text-warning me-2"></i>
+                    Key Highlights
                 </h4>
                 
                 <div class="row g-4">
                     <div class="col-md-6">
                         <div class="mb-3">
                             <h6 class="text-primary mb-2">
-                                <i class="fas fa-folder-tree me-2"></i>
-                                DataLad-Style Upload
+                                <i class="fas fa-microscope me-2"></i>
+                                Multi-Modal Support
                             </h6>
                             <p class="text-muted small mb-0">
-                                Upload only small files for structure validation — no need to transfer large data files.
+                                Specialized validation for surveys, biometrics, physio, and eyetracking alongside standard BIDS modalities.
                             </p>
                         </div>
                     </div>
@@ -126,11 +142,11 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <h6 class="text-primary mb-2">
-                                <i class="fas fa-brain me-2"></i>
-                                NeuroBagel Integration
+                                <i class="fas fa-magic me-2"></i>
+                                Automated Processing
                             </h6>
                             <p class="text-muted small mb-0">
-                                Tag participants with standardized diagnoses and demographic categories.
+                                Instantly calculate scores, subscales, and handle reverse-coding for standardized psychological questionnaires.
                             </p>
                         </div>
                     </div>
@@ -138,11 +154,11 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <h6 class="text-primary mb-2">
-                                <i class="fas fa-pen me-2"></i>
-                                Metadata Editing
+                                <i class="fas fa-sync me-2"></i>
+                                LimeSurvey Ecosystem
                             </h6>
                             <p class="text-muted small mb-0">
-                                Edit dataset information directly in the browser with helpful prompts and error checking.
+                                Generate LimeSurvey templates and convert exported responses back into structured PRISM datasets.
                             </p>
                         </div>
                     </div>
@@ -150,11 +166,35 @@
                     <div class="col-md-6">
                         <div class="mb-3">
                             <h6 class="text-primary mb-2">
-                                <i class="fas fa-check-double me-2"></i>
-                                BIDS Compliance
+                                <i class="fas fa-database me-2"></i>
+                                FAIR Metadata Standards
                             </h6>
                             <p class="text-muted small mb-0">
-                                Ensures your data follows international standards (BIDS) used by neuroimaging researchers.
+                                Enforces rich, structured JSON sidecars to ensure your data is Findable, Accessible, Interoperable, and Reusable.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">
+                                <i class="fas fa-bolt me-2"></i>
+                                Efficient Validation
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                DataLad-style metadata-only upload allows you to validate massive datasets without transferring large binary files.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">
+                                <i class="fas fa-puzzle-piece me-2"></i>
+                                BIDS Compatibility
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                PRISM datasets remain 100% BIDS-compliant, ensuring they work with fMRIPrep and other standard neuroimaging tools.
                             </p>
                         </div>
                     </div>
@@ -165,7 +205,7 @@
         <!-- Info Section -->
         <div class="alert alert-info mt-5" role="alert">
             <i class="fas fa-info-circle me-2"></i>
-            <strong>Getting Started:</strong> Choose one of the tools above to begin. Start with <strong>Validate Dataset</strong> to check your dataset, then use <strong>Derivatives</strong> to generate survey scores.
+            <strong>Getting Started:</strong> Choose one of the tools above to begin. Start with <strong>Validator</strong> to check your dataset, then use <strong>Data Processing</strong> to generate survey scores.
         </div>
     </div>
 </div>
