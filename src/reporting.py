@@ -64,7 +64,8 @@ def print_dataset_summary(dataset_path, stats):
         print(f"📋 Sessions: {len(unique_session_labels)} (unique labels)")
 
         avg_sessions = (
-            sum(len(v) for v in sessions_per_subject.values()) / len(sessions_per_subject)
+            sum(len(v) for v in sessions_per_subject.values())
+            / len(sessions_per_subject)
             if sessions_per_subject
             else 0
         )
@@ -187,7 +188,9 @@ def print_validation_results(problems, show_bids_warnings=True):
                     clean_warning = warning.replace("[BIDS] ", "", 1)
                     print(f"    \033[33m{i:2d}. {clean_warning}\033[0m")
             else:
-                print(f"\n\033[33m  🟡 WARNINGS ({len(bids_warnings)}): [Hidden] Use --bids-warnings to view\033[0m")
+                print(
+                    f"\n\033[33m  🟡 WARNINGS ({len(bids_warnings)}): [Hidden] Use --bids-warnings to view\033[0m"
+                )
 
         if bids_infos:
             print(f"\n\033[34m  🔵 INFO ({len(bids_infos)}):\033[0m")

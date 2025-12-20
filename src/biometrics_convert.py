@@ -18,7 +18,13 @@ from typing import Any
 import json
 
 
-_NON_ITEM_TOPLEVEL_KEYS: set[str] = {"Technical", "Study", "Metadata", "I18n", "LimeSurvey"}
+_NON_ITEM_TOPLEVEL_KEYS: set[str] = {
+    "Technical",
+    "Study",
+    "Metadata",
+    "I18n",
+    "LimeSurvey",
+}
 
 
 @dataclass
@@ -35,7 +41,9 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 def _write_json(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
 
 
 def _norm_col(s: str) -> str:
@@ -73,7 +81,9 @@ def _normalize_ses_id(value: Any, *, default_session: str = "ses-1") -> str:
     return f"ses-{ses}"
 
 
-def _read_table_as_dataframe(*, input_path: Path, sheet: str | int | None = None) -> "Any":
+def _read_table_as_dataframe(
+    *, input_path: Path, sheet: str | int | None = None
+) -> "Any":
     try:
         import pandas as pd
     except Exception as e:  # pragma: no cover
@@ -95,7 +105,9 @@ def _read_table_as_dataframe(*, input_path: Path, sheet: str | int | None = None
     raise ValueError("Supported formats: .csv, .xlsx, .tsv")
 
 
-def _load_biometrics_library(library_dir: Path) -> tuple[dict[str, list[str]], dict[str, dict[str, Any]]]:
+def _load_biometrics_library(
+    library_dir: Path,
+) -> tuple[dict[str, list[str]], dict[str, dict[str, Any]]]:
     """Return (task->items, task->template_json)."""
     task_to_items: dict[str, list[str]] = {}
     task_to_template: dict[str, dict[str, Any]] = {}
@@ -167,7 +179,9 @@ def convert_biometrics_table_to_prism_dataset(
         raise ValueError(f"No biometrics-*.json templates found in: {library_dir}")
 
     # Detect columns
-    col_pid = id_column or _find_col(df, {"participant_id", "participant", "subject", "sub"})
+    col_pid = id_column or _find_col(
+        df, {"participant_id", "participant", "subject", "sub"}
+    )
     if not col_pid:
         raise ValueError(
             "Missing participant id column. Provide --id-column or include 'participant_id'."
@@ -191,7 +205,8 @@ def convert_biometrics_table_to_prism_dataset(
 
     if unknown_cols and unknown == "error":
         raise ValueError(
-            "Unmapped columns (not found in any biometrics template): " + ", ".join(unknown_cols)
+            "Unmapped columns (not found in any biometrics template): "
+            + ", ".join(unknown_cols)
         )
 
     # Root files
@@ -236,7 +251,9 @@ def convert_biometrics_table_to_prism_dataset(
         if not sub_id:
             continue
 
-        ses_id = _normalize_ses_id(row.get(col_ses) if col_ses else None, default_session=default_session)
+        ses_id = _normalize_ses_id(
+            row.get(col_ses) if col_ses else None, default_session=default_session
+        )
 
         for task, items in task_to_items.items():
             values: dict[str, Any] = {}

@@ -7,7 +7,7 @@ into a table. Useful for quick inspection or downstream conversions.
 
 import argparse
 import sys
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 import zipfile
 from pathlib import Path
 from typing import List
@@ -48,7 +48,9 @@ def lsa_to_dataframe(lsa_path: Path) -> pd.DataFrame:
 
 
 def main(argv: List[str]) -> int:
-    parser = argparse.ArgumentParser(description="Convert LimeSurvey .lsa responses to TSV/CSV")
+    parser = argparse.ArgumentParser(
+        description="Convert LimeSurvey .lsa responses to TSV/CSV"
+    )
     parser.add_argument("lsa", type=Path, help="Path to .lsa archive")
     parser.add_argument(
         "output",

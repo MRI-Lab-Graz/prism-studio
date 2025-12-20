@@ -36,7 +36,7 @@ import requests
 from functools import lru_cache
 
 # Ensure we can import core validator logic from src
-if getattr(sys, 'frozen', False):
+if getattr(sys, "frozen", False):
     # Running in a PyInstaller bundle
     BASE_DIR = Path(sys._MEIPASS)
 else:
@@ -70,6 +70,7 @@ try:
         METADATA_EXTENSIONS,
         SKIP_EXTENSIONS,
     )
+
     print("✓ Web modules loaded from src/web/")
 except ImportError as e:
     print(f"⚠️  Could not import web modules: {e}")
@@ -115,7 +116,11 @@ except Exception as import_error:
     print(f"⚠️  Could not import convert_varioport: {import_error}")
 
 try:
-    from batch_convert import batch_convert_folder, create_dataset_description, parse_bids_filename
+    from batch_convert import (
+        batch_convert_folder,
+        create_dataset_description,
+        parse_bids_filename,
+    )
 except Exception as import_error:
     batch_convert_folder = None
     create_dataset_description = None
@@ -123,12 +128,14 @@ except Exception as import_error:
     print(f"⚠️  Could not import batch_convert: {import_error}")
 
 
-def _list_survey_template_languages(library_path: str) -> tuple[list[str], str | None, int, int]:
+def _list_survey_template_languages(
+    library_path: str,
+) -> tuple[list[str], str | None, int, int]:
     """Return (languages, default_language, template_count, i18n_count) from survey templates in a folder.
-    
+
     Args:
         library_path: Path to the survey template library folder
-        
+
     Returns:
         Tuple of (sorted language list, default language, total template count, templates with I18n count)
     """
@@ -148,7 +155,7 @@ def _list_survey_template_languages(library_path: str) -> tuple[list[str], str |
     for p in sorted(root.glob("survey-*.json")):
         template_count += 1
         has_i18n = False
-        
+
         try:
             with open(p, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -172,7 +179,7 @@ def _list_survey_template_languages(library_path: str) -> tuple[list[str], str |
             tl = tech.get("Language")
             if isinstance(tl, str) and tl.strip():
                 langs.add(tl.strip())
-        
+
         if has_i18n:
             i18n_count += 1
 
@@ -180,6 +187,7 @@ def _list_survey_template_languages(library_path: str) -> tuple[list[str], str |
     if len(defaults) == 1:
         default = next(iter(defaults))
     return sorted(langs), default, template_count, i18n_count
+
 
 try:
     from derivatives_surveys import compute_survey_derivatives
@@ -190,6 +198,7 @@ except Exception as import_error:
 
 # Note: run_main_validator is already aliased to run_validation above
 
+
 # Note: is_system_file is imported from src.web.utils
 # simple_is_system_file is kept for backwards compatibility only
 def simple_is_system_file(filename):
@@ -197,16 +206,18 @@ def simple_is_system_file(filename):
     return is_system_file(filename)
 
 
-if getattr(sys, 'frozen', False):
-    template_folder = os.path.join(sys._MEIPASS, 'templates')
-    static_folder = os.path.join(sys._MEIPASS, 'static')
+if getattr(sys, "frozen", False):
+    template_folder = os.path.join(sys._MEIPASS, "templates")
+    static_folder = os.path.join(sys._MEIPASS, "static")
     app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
 else:
     app = Flask(__name__)
 
 # Secret key for session management
 # In production, set PRISM_SECRET_KEY environment variable
-app.secret_key = os.environ.get("PRISM_SECRET_KEY", "prism-dev-key-change-in-production")
+app.secret_key = os.environ.get(
+    "PRISM_SECRET_KEY", "prism-dev-key-change-in-production"
+)
 app.config["MAX_CONTENT_LENGTH"] = (
     1024 * 1024 * 1024
 )  # 1GB max file size (metadata only)
@@ -245,7 +256,7 @@ except Exception as e:
     print(f"⚠️  Error registering REST API blueprint: {e}")
 
 # Note: METADATA_EXTENSIONS and SKIP_EXTENSIONS are now imported from src.web.upload
-# Note: format_validation_results, get_error_description, get_error_documentation_url 
+# Note: format_validation_results, get_error_description, get_error_documentation_url
 #       are now imported from src.web.utils
 
 
@@ -541,24 +552,25 @@ def upload_dataset():
         # Get BIDS options
         run_bids = request.form.get("run_bids") == "true"
         show_bids_warnings = request.form.get("bids_warnings") == "true"
-        
+
         # Generate a job ID for progress tracking
         import uuid
+
         job_id = request.form.get("job_id", str(uuid.uuid4()))
-        
+
         # Create progress callback
         def progress_callback(progress: int, message: str):
             update_progress(job_id, progress, message)
 
         # Validate the dataset using unified validation function
         issues, dataset_stats = run_validation(
-            dataset_path, 
-            verbose=True, 
+            dataset_path,
+            verbose=True,
             schema_version=schema_version,
             run_bids=run_bids,
-            progress_callback=progress_callback
+            progress_callback=progress_callback,
         )
-        
+
         # Mark progress as complete
         update_progress(job_id, 100, "Validation complete")
 
@@ -965,23 +977,24 @@ def validate_folder():
         # Get BIDS options
         run_bids = request.form.get("run_bids") == "true"
         show_bids_warnings = request.form.get("bids_warnings") == "true"
-        
+
         # Generate job ID for progress tracking
         import uuid
+
         job_id = request.form.get("job_id", str(uuid.uuid4()))
-        
+
         def progress_callback(progress: int, message: str):
             update_progress(job_id, progress, message)
 
         # Use unified validation function
         issues, stats = run_validation(
-            folder_path, 
-            verbose=True, 
+            folder_path,
+            verbose=True,
             schema_version=schema_version,
             run_bids=run_bids,
-            progress_callback=progress_callback
+            progress_callback=progress_callback,
         )
-        
+
         # Mark progress as complete
         update_progress(job_id, 100, "Validation complete")
 
@@ -1134,14 +1147,18 @@ def api_validate():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+
 @app.route("/api/survey-convert", methods=["POST"])
 def api_survey_convert():
     """Convert an uploaded survey file (.xlsx or .lsa) to a PRISM dataset and return it as a zip.
 
     Note: For .lsa inputs, language=auto will try to infer the language from the archive.
     """
-    if not convert_survey_xlsx_to_prism_dataset and not convert_survey_lsa_to_prism_dataset:
+    if (
+        not convert_survey_xlsx_to_prism_dataset
+        and not convert_survey_lsa_to_prism_dataset
+    ):
         return jsonify({"error": "Survey conversion module not available"}), 500
 
     uploaded_file = request.files.get("excel") or request.files.get("file")
@@ -1162,14 +1179,27 @@ def api_survey_convert():
         alias_filename = secure_filename(alias_upload.filename)
         alias_suffix = Path(alias_filename).suffix.lower()
         if alias_suffix and alias_suffix not in {".tsv", ".txt"}:
-            return jsonify({"error": "Alias file must be a .tsv or .txt mapping file"}), 400
+            return (
+                jsonify({"error": "Alias file must be a .tsv or .txt mapping file"}),
+                400,
+            )
 
     if not library_path:
-        return jsonify({"error": "Survey template library path is required. Due to copyright restrictions, templates cannot be distributed with the application."}), 400
+        return (
+            jsonify(
+                {
+                    "error": "Survey template library path is required. Due to copyright restrictions, templates cannot be distributed with the application."
+                }
+            ),
+            400,
+        )
 
     if not os.path.exists(library_path) or not os.path.isdir(library_path):
-        return jsonify({"error": f"Library path is not a directory: {library_path}"}), 400
-    
+        return (
+            jsonify({"error": f"Library path is not a directory: {library_path}"}),
+            400,
+        )
+
     # Check if the library has any survey templates
     # Support both root/survey/ structure and direct survey folder
     library_root = Path(library_path)
@@ -1180,10 +1210,17 @@ def api_survey_convert():
     else:
         # User selected the survey folder directly (backwards compatibility)
         effective_survey_dir = library_root
-    
+
     survey_templates = list(effective_survey_dir.glob("survey-*.json"))
     if not survey_templates:
-        return jsonify({"error": f"No survey templates (survey-*.json) found in: {effective_survey_dir}. Expected either {library_path}/survey/ or survey-*.json files directly."}), 400
+        return (
+            jsonify(
+                {
+                    "error": f"No survey templates (survey-*.json) found in: {effective_survey_dir}. Expected either {library_path}/survey/ or survey-*.json files directly."
+                }
+            ),
+            400,
+        )
 
     survey_filter = (request.form.get("survey") or "").strip() or None
     id_column = (request.form.get("id_column") or "").strip() or None
@@ -1221,7 +1258,14 @@ def api_survey_convert():
 
         if suffix in {".xlsx", ".csv", ".tsv"}:
             if not convert_survey_xlsx_to_prism_dataset:
-                return jsonify({"error": "Tabular data conversion is not available in this build"}), 500
+                return (
+                    jsonify(
+                        {
+                            "error": "Tabular data conversion is not available in this build"
+                        }
+                    ),
+                    500,
+                )
             convert_survey_xlsx_to_prism_dataset(
                 input_path=input_path,
                 library_dir=str(effective_survey_dir),
@@ -1240,7 +1284,14 @@ def api_survey_convert():
             )
         elif suffix == ".lsa":
             if not convert_survey_lsa_to_prism_dataset:
-                return jsonify({"error": "LimeSurvey (.lsa) conversion is not available in this build"}), 500
+                return (
+                    jsonify(
+                        {
+                            "error": "LimeSurvey (.lsa) conversion is not available in this build"
+                        }
+                    ),
+                    500,
+                )
             convert_survey_lsa_to_prism_dataset(
                 input_path=input_path,
                 library_dir=str(effective_survey_dir),
@@ -1294,15 +1345,18 @@ def api_survey_convert():
 @app.route("/api/survey-convert-validate", methods=["POST"])
 def api_survey_convert_validate():
     """Convert survey data and validate the result before allowing download.
-    
+
     Returns JSON with:
     - log: Array of log messages with type (info, success, warning, error)
     - validation: Object with errors, warnings, and summary
     - zip_base64: Base64-encoded ZIP file (only if conversion succeeded)
     """
     import base64
-    
-    if not convert_survey_xlsx_to_prism_dataset and not convert_survey_lsa_to_prism_dataset:
+
+    if (
+        not convert_survey_xlsx_to_prism_dataset
+        and not convert_survey_lsa_to_prism_dataset
+    ):
         return jsonify({"error": "Survey conversion module not available"}), 500
 
     def _sanitize_jsonable(obj):
@@ -1317,7 +1371,7 @@ def api_survey_convert_validate():
 
     log_messages = []
     conversion_warnings: list[str] = []
-    
+
     def add_log(message, msg_type="info"):
         log_messages.append({"message": message, "type": msg_type})
 
@@ -1331,16 +1385,40 @@ def api_survey_convert_validate():
     filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
     if suffix not in {".xlsx", ".lsa", ".csv", ".tsv"}:
-        return jsonify({"error": "Supported formats: .xlsx, .lsa, .csv, .tsv", "log": log_messages}), 400
+        return (
+            jsonify(
+                {
+                    "error": "Supported formats: .xlsx, .lsa, .csv, .tsv",
+                    "log": log_messages,
+                }
+            ),
+            400,
+        )
 
     add_log(f"Processing file: {filename}", "info")
 
     if not library_path:
-        return jsonify({"error": "Survey template library path is required.", "log": log_messages}), 400
+        return (
+            jsonify(
+                {
+                    "error": "Survey template library path is required.",
+                    "log": log_messages,
+                }
+            ),
+            400,
+        )
 
     if not os.path.exists(library_path) or not os.path.isdir(library_path):
-        return jsonify({"error": f"Library path is not a directory: {library_path}", "log": log_messages}), 400
-    
+        return (
+            jsonify(
+                {
+                    "error": f"Library path is not a directory: {library_path}",
+                    "log": log_messages,
+                }
+            ),
+            400,
+        )
+
     # Support both root/survey/ structure and direct survey folder
     library_root = Path(library_path)
     survey_dir = library_root / "survey"
@@ -1349,13 +1427,21 @@ def api_survey_convert_validate():
         add_log(f"Using survey subfolder: {survey_dir}", "info")
     else:
         effective_survey_dir = library_root
-    
+
     survey_templates = list(effective_survey_dir.glob("survey-*.json"))
     if not survey_templates:
-        return jsonify({"error": f"No survey templates found in: {effective_survey_dir}", "log": log_messages}), 400
+        return (
+            jsonify(
+                {
+                    "error": f"No survey templates found in: {effective_survey_dir}",
+                    "log": log_messages,
+                }
+            ),
+            400,
+        )
 
     add_log(f"Found {len(survey_templates)} survey template(s) in library", "info")
-    
+
     # Check for participants.json template
     participants_template = library_root / "participants.json"
     if participants_template.exists():
@@ -1366,7 +1452,15 @@ def api_survey_convert_validate():
         alias_filename = secure_filename(alias_upload.filename)
         alias_suffix = Path(alias_filename).suffix.lower()
         if alias_suffix and alias_suffix not in {".tsv", ".txt"}:
-            return jsonify({"error": "Alias file must be a .tsv or .txt mapping file", "log": log_messages}), 400
+            return (
+                jsonify(
+                    {
+                        "error": "Alias file must be a .tsv or .txt mapping file",
+                        "log": log_messages,
+                    }
+                ),
+                400,
+            )
 
     survey_filter = (request.form.get("survey") or "").strip() or None
     id_column = (request.form.get("id_column") or "").strip() or None
@@ -1397,7 +1491,15 @@ def api_survey_convert_validate():
         # Run conversion
         if suffix in {".xlsx", ".csv", ".tsv"}:
             if not convert_survey_xlsx_to_prism_dataset:
-                return jsonify({"error": "Tabular data conversion not available", "log": log_messages}), 500
+                return (
+                    jsonify(
+                        {
+                            "error": "Tabular data conversion not available",
+                            "log": log_messages,
+                        }
+                    ),
+                    500,
+                )
             convert_result = convert_survey_xlsx_to_prism_dataset(
                 input_path=input_path,
                 library_dir=str(effective_survey_dir),
@@ -1416,7 +1518,15 @@ def api_survey_convert_validate():
             )
         elif suffix == ".lsa":
             if not convert_survey_lsa_to_prism_dataset:
-                return jsonify({"error": "LimeSurvey conversion not available", "log": log_messages}), 500
+                return (
+                    jsonify(
+                        {
+                            "error": "LimeSurvey conversion not available",
+                            "log": log_messages,
+                        }
+                    ),
+                    500,
+                )
             convert_result = convert_survey_lsa_to_prism_dataset(
                 input_path=input_path,
                 library_dir=str(effective_survey_dir),
@@ -1436,12 +1546,23 @@ def api_survey_convert_validate():
 
         missing_summary = {}
         if convert_result and getattr(convert_result, "missing_cells_by_subject", None):
-            missing_counts = {sid: cnt for sid, cnt in convert_result.missing_cells_by_subject.items() if cnt > 0}
+            missing_counts = {
+                sid: cnt
+                for sid, cnt in convert_result.missing_cells_by_subject.items()
+                if cnt > 0
+            }
             if missing_counts:
                 token = getattr(convert_result, "missing_value_token", "na")
                 total_missing = sum(missing_counts.values())
                 subjects_with_missing = len(missing_counts)
-                top_subjects = ", ".join([f"{sid} ({cnt})" for sid, cnt in sorted(missing_counts.items(), key=lambda kv: kv[1], reverse=True)[:5]])
+                top_subjects = ", ".join(
+                    [
+                        f"{sid} ({cnt})"
+                        for sid, cnt in sorted(
+                            missing_counts.items(), key=lambda kv: kv[1], reverse=True
+                        )[:5]
+                    ]
+                )
                 warn_msg = (
                     f"Missing responses normalized to '{token}': "
                     f"{subjects_with_missing} subjects, {total_missing} cells."
@@ -1471,13 +1592,13 @@ def api_survey_convert_validate():
 
         # Run validation on the converted dataset
         add_log("Running validation on converted dataset...", "info")
-        
+
         validation_result = {
             "errors": [],
             "warnings": [],
             "summary": {
                 "files_created": file_count,
-            }
+            },
         }
 
         if missing_summary:
@@ -1487,18 +1608,18 @@ def api_survey_convert_validate():
             # Use the same validation function as the main validator
             # run_validation returns a tuple: (messages_list, stats_object)
             result = run_validation(str(output_root), schema_version="stable")
-            
+
             if result and isinstance(result, tuple) and len(result) >= 1:
                 messages = result[0] if result[0] else []
                 stats = result[1] if len(result) > 1 else None
-                
+
                 # Parse messages: each is a tuple like ('ERROR', 'message', 'path')
                 for msg in messages:
                     if isinstance(msg, tuple) and len(msg) >= 2:
                         level = msg[0].upper() if msg[0] else "INFO"
                         text = msg[1] if len(msg) > 1 else str(msg)
                         path = msg[2] if len(msg) > 2 else ""
-                        
+
                         # Format the message nicely
                         full_msg = text
                         if path:
@@ -1506,14 +1627,14 @@ def api_survey_convert_validate():
                             path_name = Path(path).name if "/" in str(path) else path
                             if path_name and path_name != text:
                                 full_msg = f"{text}"
-                        
+
                         if level == "ERROR":
                             validation_result["errors"].append(full_msg)
                         elif level == "WARNING":
                             validation_result["warnings"].append(full_msg)
                     elif isinstance(msg, str):
                         validation_result["warnings"].append(msg)
-                
+
                 # Get stats if available
                 if stats and hasattr(stats, "__dict__"):
                     for key, value in vars(stats).items():
@@ -1523,10 +1644,12 @@ def api_survey_convert_validate():
                                 validation_result["summary"][key] = sorted(value)
                             else:
                                 validation_result["summary"][key] = value
-                    
+
         except Exception as val_err:
             add_log(f"Validation error: {str(val_err)}", "warning")
-            validation_result["warnings"].append(f"Could not run full validation: {str(val_err)}")
+            validation_result["warnings"].append(
+                f"Could not run full validation: {str(val_err)}"
+            )
 
         # Propagate conversion-time warnings
         if conversion_warnings:
@@ -1541,9 +1664,9 @@ def api_survey_convert_validate():
                     arcname = p.relative_to(output_root)
                     zf.write(p, arcname.as_posix())
         mem.seek(0)
-        
+
         # Encode ZIP as base64 for JSON response
-        zip_base64 = base64.b64encode(mem.read()).decode('utf-8')
+        zip_base64 = base64.b64encode(mem.read()).decode("utf-8")
 
         add_log("Dataset package ready", "success")
 
@@ -1561,7 +1684,7 @@ def api_survey_convert_validate():
         response_payload = {
             "error": str(e),
             "log": log_messages,
-            "validation": {"errors": [str(e)], "warnings": [], "summary": {}}
+            "validation": {"errors": [str(e)], "warnings": [], "summary": {}},
         }
         return jsonify(_sanitize_jsonable(response_payload)), 500
     finally:
@@ -1589,46 +1712,50 @@ def api_survey_languages():
         "has_survey_folder": False,
         "has_biometrics_folder": False,
         "has_participants_json": False,
-        "missing_items": []
+        "missing_items": [],
     }
-    
+
     # Check for expected items
     survey_dir = library_root / "survey"
     biometrics_dir = library_root / "biometrics"
     participants_json = library_root / "participants.json"
-    
+
     structure_info["has_survey_folder"] = survey_dir.is_dir()
     structure_info["has_biometrics_folder"] = biometrics_dir.is_dir()
     structure_info["has_participants_json"] = participants_json.is_file()
-    
+
     # Build missing items list for survey conversion
     if not structure_info["has_survey_folder"]:
         structure_info["missing_items"].append("survey/")
     if not structure_info["has_participants_json"]:
         structure_info["missing_items"].append("participants.json")
-    
+
     # Determine effective survey directory
     if survey_dir.is_dir():
         effective_survey_dir = str(survey_dir)
     else:
         effective_survey_dir = library_path
 
-    langs, default, template_count, i18n_count = _list_survey_template_languages(effective_survey_dir)
-    return jsonify({
-        "languages": langs, 
-        "default": default, 
-        "library_path": effective_survey_dir,
-        "template_count": template_count,
-        "i18n_count": i18n_count,
-        "structure": structure_info
-    })
+    langs, default, template_count, i18n_count = _list_survey_template_languages(
+        effective_survey_dir
+    )
+    return jsonify(
+        {
+            "languages": langs,
+            "default": default,
+            "library_path": effective_survey_dir,
+            "template_count": template_count,
+            "i18n_count": i18n_count,
+            "structure": structure_info,
+        }
+    )
 
 
 @app.route("/api/biometrics-check-library", methods=["GET"])
 def api_biometrics_check_library():
     """Check the structure of a biometrics template library folder."""
     library_path = (request.args.get("library_path") or "").strip()
-    
+
     if not library_path:
         return jsonify({"error": "No library path provided"}), 400
 
@@ -1639,28 +1766,30 @@ def api_biometrics_check_library():
         "has_biometrics_folder": False,
         "has_participants_json": False,
         "missing_items": [],
-        "template_count": 0
+        "template_count": 0,
     }
-    
+
     # Check for expected items
     survey_dir = library_root / "survey"
     biometrics_dir = library_root / "biometrics"
     participants_json = library_root / "participants.json"
-    
+
     structure_info["has_survey_folder"] = survey_dir.is_dir()
     structure_info["has_biometrics_folder"] = biometrics_dir.is_dir()
     structure_info["has_participants_json"] = participants_json.is_file()
-    
+
     # Build missing items list for biometrics conversion
     if not structure_info["has_biometrics_folder"]:
         structure_info["missing_items"].append("biometrics/")
     if not structure_info["has_participants_json"]:
         structure_info["missing_items"].append("participants.json")
-    
+
     # Count templates in biometrics folder
     if biometrics_dir.is_dir():
-        structure_info["template_count"] = len(list(biometrics_dir.glob("biometrics-*.json")))
-    
+        structure_info["template_count"] = len(
+            list(biometrics_dir.glob("biometrics-*.json"))
+        )
+
     return jsonify({"structure": structure_info})
 
 
@@ -1682,11 +1811,21 @@ def api_biometrics_convert():
         return jsonify({"error": "Supported formats: .csv, .xlsx, .tsv"}), 400
 
     if not library_path:
-        return jsonify({"error": "Biometrics template library path is required. Due to copyright restrictions, templates cannot be distributed with the application."}), 400
+        return (
+            jsonify(
+                {
+                    "error": "Biometrics template library path is required. Due to copyright restrictions, templates cannot be distributed with the application."
+                }
+            ),
+            400,
+        )
 
     if not os.path.exists(library_path) or not os.path.isdir(library_path):
-        return jsonify({"error": f"Library path is not a directory: {library_path}"}), 400
-    
+        return (
+            jsonify({"error": f"Library path is not a directory: {library_path}"}),
+            400,
+        )
+
     # Support both root/biometrics/ structure and direct biometrics folder
     library_root = Path(library_path)
     biometrics_dir = library_root / "biometrics"
@@ -1694,10 +1833,17 @@ def api_biometrics_convert():
         effective_biometrics_dir = biometrics_dir
     else:
         effective_biometrics_dir = library_root
-    
+
     biometrics_templates = list(effective_biometrics_dir.glob("biometrics-*.json"))
     if not biometrics_templates:
-        return jsonify({"error": f"No biometrics templates (biometrics-*.json) found in: {effective_biometrics_dir}. Expected either {library_path}/biometrics/ or biometrics-*.json files directly."}), 400
+        return (
+            jsonify(
+                {
+                    "error": f"No biometrics templates (biometrics-*.json) found in: {effective_biometrics_dir}. Expected either {library_path}/biometrics/ or biometrics-*.json files directly."
+                }
+            ),
+            400,
+        )
 
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
@@ -1762,7 +1908,10 @@ def api_physio_convert():
     filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
     if suffix not in {".raw", ".vpd"}:
-        return jsonify({"error": "Only Varioport .raw and .vpd files are supported"}), 400
+        return (
+            jsonify({"error": "Only Varioport .raw and .vpd files are supported"}),
+            400,
+        )
 
     task = (request.form.get("task") or "rest").strip() or "rest"
     base_freq = (request.form.get("sampling_rate") or "").strip() or None
@@ -1812,7 +1961,9 @@ def api_physio_convert():
 
 
 # Batch conversion job tracking
-_batch_convert_jobs = {}  # job_id -> {"logs": [], "status": "running"|"complete"|"error", "result_path": str|None}
+_batch_convert_jobs = (
+    {}
+)  # job_id -> {"logs": [], "status": "running"|"complete"|"error", "result_path": str|None}
 
 
 def _get_batch_job(job_id: str) -> dict:
@@ -1823,24 +1974,32 @@ def _get_batch_job(job_id: str) -> dict:
 def _update_batch_job(job_id: str, **kwargs):
     """Update batch conversion job data."""
     if job_id not in _batch_convert_jobs:
-        _batch_convert_jobs[job_id] = {"logs": [], "status": "pending", "result_path": None}
+        _batch_convert_jobs[job_id] = {
+            "logs": [],
+            "status": "pending",
+            "result_path": None,
+        }
     _batch_convert_jobs[job_id].update(kwargs)
 
 
 def _add_batch_log(job_id: str, message: str, level: str = "info"):
     """Add a log message to a batch conversion job."""
     if job_id not in _batch_convert_jobs:
-        _batch_convert_jobs[job_id] = {"logs": [], "status": "running", "result_path": None}
+        _batch_convert_jobs[job_id] = {
+            "logs": [],
+            "status": "running",
+            "result_path": None,
+        }
     _batch_convert_jobs[job_id]["logs"].append({"message": message, "level": level})
 
 
 @app.route("/api/batch-convert", methods=["POST"])
 def api_batch_convert():
     """Batch convert physio/eyetracking files from a flat folder structure.
-    
+
     Expects files uploaded with naming pattern: sub-XXX_ses-YYY_task-ZZZ.<ext>
     Supported extensions: .raw, .vpd (physio), .edf (eyetracking)
-    
+
     Returns a JSON with logs and download URL, or ZIP file directly based on 'format' param.
     """
     if not batch_convert_folder:
@@ -1848,9 +2007,10 @@ def api_batch_convert():
 
     # Generate job ID
     import uuid
+
     job_id = str(uuid.uuid4())[:8]
     logs = []
-    
+
     def log_callback(message: str, level: str = "info"):
         logs.append({"message": message, "level": level})
 
@@ -1859,47 +2019,47 @@ def api_batch_convert():
     modality_filter = request.form.get("modality", "all")
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
     return_format = request.form.get("format", "zip")  # "zip" or "json"
-    
+
     try:
         sampling_rate = float(sampling_rate_str) if sampling_rate_str else None
     except ValueError:
         return jsonify({"error": "sampling_rate must be a number", "logs": logs}), 400
-    
+
     if modality_filter not in ("all", "physio", "eyetracking"):
         modality_filter = "all"
-    
+
     log_callback(f"🚀 Starting batch conversion job {job_id}", "info")
     log_callback(f"   Dataset name: {dataset_name}", "info")
     log_callback(f"   Modality filter: {modality_filter}", "info")
     if sampling_rate:
         log_callback(f"   Physio sampling rate: {sampling_rate} Hz", "info")
-    
+
     # Get uploaded files
     files = request.files.getlist("files[]")
     if not files:
         files = request.files.getlist("files")
     if not files:
         return jsonify({"error": "No files uploaded", "logs": logs}), 400
-    
+
     log_callback(f"📦 Received {len(files)} files", "info")
-    
+
     # Validate file names before processing
     valid_extensions = {".raw", ".vpd", ".edf"}
     validated_files = []
     validation_errors = []
-    
+
     for f in files:
         if not f or not f.filename:
             continue
         filename = secure_filename(f.filename)
         ext = Path(filename).suffix.lower()
-        
+
         if ext not in valid_extensions:
             msg = f"{f.filename}: unsupported extension (use .raw, .vpd, or .edf)"
             validation_errors.append(msg)
             log_callback(f"⚠️  {msg}", "warning")
             continue
-        
+
         # Check naming pattern
         parsed = parse_bids_filename(filename)
         if not parsed:
@@ -1907,20 +2067,20 @@ def api_batch_convert():
             validation_errors.append(msg)
             log_callback(f"⚠️  {msg}", "warning")
             continue
-        
+
         validated_files.append((f, filename, parsed))
         log_callback(f"✓ Validated: {filename}", "info")
-    
+
     if not validated_files:
         error_msg = "No valid files to convert."
         if validation_errors:
             error_msg += f" {len(validation_errors)} files had issues."
         log_callback(f"❌ {error_msg}", "error")
         return jsonify({"error": error_msg, "logs": logs}), 400
-    
+
     log_callback(f"", "info")
     log_callback(f"📋 {len(validated_files)} files ready for conversion", "info")
-    
+
     # Create temp directories
     tmp_dir = tempfile.mkdtemp(prefix="prism_batch_convert_")
     try:
@@ -1929,15 +2089,15 @@ def api_batch_convert():
         output_dir = tmp_path / "output"
         input_dir.mkdir()
         output_dir.mkdir()
-        
+
         # Save uploaded files to input directory
         log_callback(f"💾 Saving files to temporary directory...", "info")
         for f, filename, _ in validated_files:
             input_path = input_dir / filename
             f.save(str(input_path))
-        
+
         log_callback(f"", "info")
-        
+
         # Run batch conversion with logging
         result = batch_convert_folder(
             input_dir,
@@ -1946,11 +2106,11 @@ def api_batch_convert():
             modality_filter=modality_filter,
             log_callback=log_callback,
         )
-        
+
         # Create dataset_description.json
         create_dataset_description(output_dir, name=dataset_name)
         log_callback(f"📄 Created dataset_description.json", "info")
-        
+
         # Build response info
         response_info = {
             "job_id": job_id,
@@ -1960,7 +2120,7 @@ def api_batch_convert():
             "logs": logs,
             "converted": [],
         }
-        
+
         for conv in result.converted:
             conv_info = {
                 "source": conv.source_path.name,
@@ -1973,7 +2133,7 @@ def api_batch_convert():
             if conv.error:
                 conv_info["error"] = conv.error
             response_info["converted"].append(conv_info)
-        
+
         # Create ZIP of output
         log_callback(f"📦 Creating ZIP archive...", "info")
         mem = io.BytesIO()
@@ -1983,15 +2143,15 @@ def api_batch_convert():
                     arcname = file_path.relative_to(output_dir)
                     zf.write(file_path, arcname)
         mem.seek(0)
-        
+
         log_callback(f"✅ Conversion complete!", "success")
-        
+
         # Return based on format
         if return_format == "json":
             # Return JSON with logs (for polling/preview mode)
             response_info["status"] = "complete"
             return jsonify(response_info)
-        
+
         # Default: Return ZIP file directly with logs in headers
         # (Client can display these before download completes)
         safe_name = re.sub(r"[^a-zA-Z0-9_-]", "_", dataset_name)[:50]
@@ -2002,11 +2162,11 @@ def api_batch_convert():
             download_name=f"{safe_name}_prism.zip",
         )
         # Add summary info as custom headers (limited, but useful)
-        response.headers['X-Prism-Success-Count'] = str(result.success_count)
-        response.headers['X-Prism-Error-Count'] = str(result.error_count)
-        response.headers['X-Prism-Skipped-Count'] = str(len(result.skipped))
+        response.headers["X-Prism-Success-Count"] = str(result.success_count)
+        response.headers["X-Prism-Error-Count"] = str(result.error_count)
+        response.headers["X-Prism-Skipped-Count"] = str(len(result.skipped))
         return response
-        
+
     except Exception as e:
         log_callback(f"❌ Error: {str(e)}", "error")
         return jsonify({"error": str(e), "logs": logs}), 500
@@ -2034,13 +2194,15 @@ def find_dataset_root(extract_dir):
 def find_free_port(start_port):
     """Find a free port starting from start_port"""
     import socket
+
     port = start_port
     while port < 65535:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            if s.connect_ex(('127.0.0.1', port)) != 0:
+            if s.connect_ex(("127.0.0.1", port)) != 0:
                 return port
             port += 1
     return start_port
+
 
 def main():
     """Run the web application"""
@@ -2071,10 +2233,10 @@ def main():
     args = parser.parse_args()
 
     host = "0.0.0.0" if args.public else args.host
-    
+
     # Find a free port if the default one is taken
     port = args.port
-    if not args.public: # Only auto-find port for local binding
+    if not args.public:  # Only auto-find port for local binding
         port = find_free_port(args.port)
         if port != args.port:
             print(f"ℹ️  Port {args.port} is in use, using {port} instead")
@@ -2111,6 +2273,7 @@ def main():
     else:
         try:
             from waitress import serve
+
             print(f"🚀 Running with Waitress server on {host}:{port}")
             serve(app, host=host, port=port)
         except ImportError:
@@ -2165,17 +2328,33 @@ def api_derivatives_surveys():
     if not dataset_path:
         return jsonify({"error": "Missing dataset_path"}), 400
     if not os.path.exists(dataset_path) or not os.path.isdir(dataset_path):
-        return jsonify({"error": f"Dataset path is not a directory: {dataset_path}"}), 400
+        return (
+            jsonify({"error": f"Dataset path is not a directory: {dataset_path}"}),
+            400,
+        )
 
     # Validate that the dataset is PRISM-valid before writing outputs.
-    issues, _stats = run_validation(dataset_path, verbose=False, schema_version=None, run_bids=False)
-    error_issues = [i for i in (issues or []) if (len(i) >= 1 and str(i[0]).upper() == "ERROR")]
+    issues, _stats = run_validation(
+        dataset_path, verbose=False, schema_version=None, run_bids=False
+    )
+    error_issues = [
+        i for i in (issues or []) if (len(i) >= 1 and str(i[0]).upper() == "ERROR")
+    ]
     if error_issues:
         # Keep message compact but actionable.
-        first = error_issues[0][1] if len(error_issues[0]) > 1 else "Dataset has validation errors"
-        return jsonify({
-            "error": f"Dataset is not PRISM-valid (errors: {len(error_issues)}). First error: {first}",
-        }), 400
+        first = (
+            error_issues[0][1]
+            if len(error_issues[0]) > 1
+            else "Dataset has validation errors"
+        )
+        return (
+            jsonify(
+                {
+                    "error": f"Dataset is not PRISM-valid (errors: {len(error_issues)}). First error: {first}",
+                }
+            ),
+            400,
+        )
 
     try:
         result = compute_survey_derivatives(
@@ -2201,7 +2380,9 @@ def api_derivatives_surveys():
             "processed_files": result.processed_files,
             "out_format": result.out_format,
             "out_root": str(result.out_root),
-            "flat_out_path": str(result.flat_out_path) if result.flat_out_path else None,
+            "flat_out_path": (
+                str(result.flat_out_path) if result.flat_out_path else None
+            ),
         }
     )
 
@@ -2216,7 +2397,7 @@ def library_view():
     """View the survey library management page"""
     if not survey_manager:
         return "Survey Manager not initialized", 500
-    
+
     surveys = survey_manager.list_surveys()
     return render_template("library.html", surveys=surveys)
 
@@ -2226,10 +2407,12 @@ def edit_survey(filename):
     """Edit a survey draft"""
     if not survey_manager:
         return "Survey Manager not initialized", 500
-    
+
     try:
         content = survey_manager.get_draft_content(filename)
-        return render_template("library_editor.html", filename=filename, content=content)
+        return render_template(
+            "library_editor.html", filename=filename, content=content
+        )
     except FileNotFoundError:
         return "Draft not found", 404
     except Exception as e:
@@ -2241,7 +2424,7 @@ def create_draft(filename):
     """Create a new draft from master"""
     if not survey_manager:
         return jsonify({"error": "Survey Manager not initialized"}), 500
-    
+
     try:
         survey_manager.create_draft(filename)
         return jsonify({"success": True})
@@ -2254,7 +2437,7 @@ def discard_draft(filename):
     """Discard a draft"""
     if not survey_manager:
         return jsonify({"error": "Survey Manager not initialized"}), 500
-    
+
     try:
         survey_manager.discard_draft(filename)
         return jsonify({"success": True})
@@ -2267,7 +2450,7 @@ def save_draft(filename):
     """Save content to draft"""
     if not survey_manager:
         return jsonify({"error": "Survey Manager not initialized"}), 500
-    
+
     try:
         content = request.json
         survey_manager.save_draft(filename, content)
@@ -2281,7 +2464,7 @@ def publish_draft(filename):
     """Submit draft as merge request"""
     if not survey_manager:
         return jsonify({"error": "Survey Manager not initialized"}), 500
-    
+
     try:
         survey_manager.publish_draft(filename)
         return jsonify({"success": True})
@@ -2353,13 +2536,13 @@ def _extract_template_info(full_path, filename):
             desc = study.get("Description", "")
             original_name = study.get("OriginalName", "")
             i18n = data.get("I18n", {})
-            
+
             if not desc:
                 desc = data.get("TaskName", "")
 
             # Extract questions
             questions = []
-            
+
             # Check for "Questions" key (New Format)
             if "Questions" in data and isinstance(data["Questions"], dict):
                 for k, v in data["Questions"].items():
@@ -2371,7 +2554,7 @@ def _extract_template_info(full_path, filename):
                     q_warn_min = None
                     q_warn_max = None
                     q_type = None
-                    
+
                     if isinstance(v, dict):
                         q_desc = v.get("Description", "")
                         q_levels = v.get("Levels")
@@ -2381,26 +2564,38 @@ def _extract_template_info(full_path, filename):
                         q_warn_min = v.get("WarnMinValue")
                         q_warn_max = v.get("WarnMaxValue")
                         q_type = v.get("DataType")
-                        
+
                     questions.append(
                         {
-                            "id": k, 
-                            "description": q_desc, 
+                            "id": k,
+                            "description": q_desc,
                             "levels": q_levels,
                             "units": q_units,
                             "min": q_min,
                             "max": q_max,
                             "warn_min": q_warn_min,
                             "warn_max": q_warn_max,
-                            "type": q_type
+                            "type": q_type,
                         }
                     )
             else:
                 # Fallback for Old Format (Flat structure)
                 reserved = [
-                    "Technical", "Study", "Metadata", "Categories", "TaskName", 
-                    "Name", "BIDSVersion", "Description", "URL", "License", 
-                    "Authors", "Acknowledgements", "References", "Funding", "I18n"
+                    "Technical",
+                    "Study",
+                    "Metadata",
+                    "Categories",
+                    "TaskName",
+                    "Name",
+                    "BIDSVersion",
+                    "Description",
+                    "URL",
+                    "License",
+                    "Authors",
+                    "Acknowledgements",
+                    "References",
+                    "Funding",
+                    "I18n",
                 ]
                 for k, v in data.items():
                     if k not in reserved:
@@ -2412,7 +2607,7 @@ def _extract_template_info(full_path, filename):
                         q_warn_min = None
                         q_warn_max = None
                         q_type = None
-                        
+
                         if isinstance(v, dict):
                             q_desc = v.get("Description", "")
                             q_levels = v.get("Levels")
@@ -2422,21 +2617,21 @@ def _extract_template_info(full_path, filename):
                             q_warn_min = v.get("WarnMinValue")
                             q_warn_max = v.get("WarnMaxValue")
                             q_type = v.get("DataType")
-                            
+
                         questions.append(
                             {
-                                "id": k, 
-                                "description": q_desc, 
+                                "id": k,
+                                "description": q_desc,
                                 "levels": q_levels,
                                 "units": q_units,
                                 "min": q_min,
                                 "max": q_max,
                                 "warn_min": q_warn_min,
                                 "warn_max": q_warn_max,
-                                "type": q_type
+                                "type": q_type,
                             }
                         )
-    except:
+    except Exception:
         pass
 
     return {
@@ -2446,7 +2641,7 @@ def _extract_template_info(full_path, filename):
         "original_name": original_name,
         "questions": questions,
         "question_count": len(questions),
-        "i18n": i18n
+        "i18n": i18n,
     }
 
 
@@ -2463,18 +2658,15 @@ def list_library_files():
     if not os.path.isdir(library_path):
         return jsonify({"error": "Path is not a directory"}), 400
 
-    results = {
-        "participants": [],
-        "survey": [],
-        "biometrics": [],
-        "other": []
-    }
+    results = {"participants": [], "survey": [], "biometrics": [], "other": []}
 
     try:
         # 1. Check for participants.json at root
         participants_path = os.path.join(library_path, "participants.json")
         if os.path.exists(participants_path):
-            results["participants"].append(_extract_template_info(participants_path, "participants.json"))
+            results["participants"].append(
+                _extract_template_info(participants_path, "participants.json")
+            )
 
         # 2. Check subfolders
         for folder in ["survey", "biometrics"]:
@@ -2483,12 +2675,18 @@ def list_library_files():
                 for filename in os.listdir(folder_path):
                     if filename.endswith(".json") and not filename.startswith("."):
                         full_path = os.path.join(folder_path, filename)
-                        results[folder].append(_extract_template_info(full_path, filename))
+                        results[folder].append(
+                            _extract_template_info(full_path, filename)
+                        )
 
         # 3. Fallback: If no subfolders found, scan root (Old Format)
         if not results["survey"] and not results["biometrics"]:
             for filename in os.listdir(library_path):
-                if filename.endswith(".json") and not filename.startswith(".") and filename != "participants.json":
+                if (
+                    filename.endswith(".json")
+                    and not filename.startswith(".")
+                    and filename != "participants.json"
+                ):
                     full_path = os.path.join(library_path, filename)
                     results["other"].append(_extract_template_info(full_path, filename))
 

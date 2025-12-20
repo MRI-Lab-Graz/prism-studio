@@ -27,6 +27,7 @@ sys.path.append(str(project_root))
 from helpers.physio.convert_varioport import convert_varioport
 from scripts.check_survey_library import check_uniqueness
 from scripts.limesurvey_to_prism import convert_lsa_to_prism, batch_convert_lsa
+
 # excel_to_library might not be in python path if it's in scripts/ and we are in root.
 # sys.path.append(str(project_root / "scripts")) # Already added project_root, but scripts is a subdir.
 # We need to import from scripts.excel_to_library
@@ -61,7 +62,9 @@ def _read_tsv_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
 def _write_tsv_rows(path: Path, header: list[str], rows: list[dict[str, str]]) -> None:
     _ensure_dir(path.parent)
     with open(path, "w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=header, delimiter="\t", lineterminator="\n")
+        writer = csv.DictWriter(
+            f, fieldnames=header, delimiter="\t", lineterminator="\n"
+        )
         writer.writeheader()
         for row in rows:
             writer.writerow({k: row.get(k, "n/a") for k in header})
@@ -73,7 +76,7 @@ def _normalize_survey_key(raw: str) -> str:
         return s
     for prefix in ("survey-", "task-"):
         if s.startswith(prefix):
-            s = s[len(prefix):]
+            s = s[len(prefix) :]
     return s
 
 
@@ -121,7 +124,9 @@ def _format_numeric_cell(val: float | None) -> str:
     return str(val)
 
 
-def _apply_survey_derivative_recipe_to_rows(recipe: dict, rows: list[dict[str, str]]) -> tuple[list[str], list[dict[str, str]]]:
+def _apply_survey_derivative_recipe_to_rows(
+    recipe: dict, rows: list[dict[str, str]]
+) -> tuple[list[str], list[dict[str, str]]]:
     transforms = recipe.get("Transforms", {}) or {}
     invert_cfg = transforms.get("Invert") or {}
     invert_items = set(invert_cfg.get("Items") or [])
@@ -130,7 +135,9 @@ def _apply_survey_derivative_recipe_to_rows(recipe: dict, rows: list[dict[str, s
     invert_max = invert_scale.get("max")
 
     scores = recipe.get("Scores") or []
-    out_header = [str(s.get("Name", "")).strip() for s in scores if str(s.get("Name", "")).strip()]
+    out_header = [
+        str(s.get("Name", "")).strip() for s in scores if str(s.get("Name", "")).strip()
+    ]
     out_rows: list[dict[str, str]] = []
 
     for row in rows:
@@ -141,7 +148,11 @@ def _apply_survey_derivative_recipe_to_rows(recipe: dict, rows: list[dict[str, s
             val = _parse_numeric_cell(raw)
             if val is None:
                 return None
-            if item_id in invert_items and invert_min is not None and invert_max is not None:
+            if (
+                item_id in invert_items
+                and invert_min is not None
+                and invert_max is not None
+            ):
                 return (float(invert_min) + float(invert_max)) - float(val)
             return float(val)
 
@@ -150,7 +161,9 @@ def _apply_survey_derivative_recipe_to_rows(recipe: dict, rows: list[dict[str, s
             if not name:
                 continue
             method = str(score.get("Method", "sum")).strip().lower()
-            items = [str(i).strip() for i in (score.get("Items") or []) if str(i).strip()]
+            items = [
+                str(i).strip() for i in (score.get("Items") or []) if str(i).strip()
+            ]
             missing = str(score.get("Missing", "ignore")).strip().lower()
 
             values: list[float] = []
@@ -278,7 +291,9 @@ def cmd_derivatives_surveys(args):
             (recipe.get("Survey", {}) or {}).get("TaskName") or recipe_id
         )
 
-        matching = [p for p in tsv_files if _extract_task_from_survey_filename(p) == survey_task]
+        matching = [
+            p for p in tsv_files if _extract_task_from_survey_filename(p) == survey_task
+        ]
         if not matching:
             continue
 
@@ -300,9 +315,13 @@ def cmd_derivatives_surveys(args):
                 print(f"Warning: Skipping TSV without data rows: {in_path}")
                 continue
 
-            out_header, out_rows = _apply_survey_derivative_recipe_to_rows(recipe, in_rows)
+            out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
+                recipe, in_rows
+            )
             if not out_header:
-                print(f"Warning: Recipe '{recipe_id}' defines no scores; skipping: {rec['path'].name}")
+                print(
+                    f"Warning: Recipe '{recipe_id}' defines no scores; skipping: {rec['path'].name}"
+                )
                 break
 
             if out_format == "flat":
@@ -360,6 +379,7 @@ def cmd_derivatives_surveys(args):
     if processed_files != written_files:
         print(f"   (processed {processed_files} matching input file(s))")
 
+
 def sanitize_id(id_str):
     """
     Sanitizes subject/session IDs by replacing German umlauts and special characters.
@@ -367,27 +387,50 @@ def sanitize_id(id_str):
     if not id_str:
         return id_str
     replacements = {
-        'ä': 'ae', 'ö': 'oe', 'ü': 'ue',
-        'Ä': 'Ae', 'Ö': 'Oe', 'Ü': 'Ue',
-        'ß': 'ss'
+        "ä": "ae",
+        "ö": "oe",
+        "ü": "ue",
+        "Ä": "Ae",
+        "Ö": "Oe",
+        "Ü": "Ue",
+        "ß": "ss",
     }
     for char, repl in replacements.items():
         id_str = id_str.replace(char, repl)
     return id_str
 
+
 import hashlib
+
 
 def get_json_hash(json_path):
     """Calculates hash of a JSON file's semantic content."""
     try:
         with open(json_path, "r", encoding="utf-8") as f:
             obj = json.load(f)
-        canonical = json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-        return hashlib.md5(canonical.encode("utf-8")).hexdigest()
+        canonical = json.dumps(
+            obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        )
+        return hashlib.md5(
+            usedforsecurity=(
+                False
+                if hasattr(hashlib, "md5")
+                and "usedforsecurity" in hashlib.md5.__code__.co_varnames
+                else canonical.encode("utf-8")
+            )
+        ).hexdigest()
     except Exception:
         # Fallback: raw bytes hash
         with open(json_path, "rb") as f:
-            return hashlib.md5(f.read()).hexdigest()
+            return hashlib.md5(
+                usedforsecurity=(
+                    False
+                    if hasattr(hashlib, "md5")
+                    and "usedforsecurity" in hashlib.md5.__code__.co_varnames
+                    else f.read()
+                )
+            ).hexdigest()
+
 
 def consolidate_sidecars(output_dir, task, suffix):
     """
@@ -398,30 +441,30 @@ def consolidate_sidecars(output_dir, task, suffix):
     # Pattern: sub-*/ses-*/physio/*_task-<task>_<suffix>.json
     pattern = f"sub-*/ses-*/physio/*_task-{task}_{suffix}.json"
     json_files = list(output_dir.glob(pattern))
-    
+
     if not json_files:
         print("No sidecars found to consolidate.")
         return
 
     first_json = json_files[0]
     first_hash = get_json_hash(first_json)
-    
+
     all_identical = True
     for jf in json_files[1:]:
         if get_json_hash(jf) != first_hash:
             all_identical = False
             break
-    
+
     if all_identical:
         print(f"All {len(json_files)} sidecars are identical. Consolidating to root.")
         # Create root sidecar name: task-<task>_<suffix>.json
         root_json_name = f"task-{task}_{suffix}.json"
         root_json_path = output_dir / root_json_name
-        
+
         # Copy first json to root
         shutil.copy(first_json, root_json_path)
         print(f"Created root sidecar: {root_json_path}")
-        
+
         # Delete individual sidecars
         for jf in json_files:
             jf.unlink()
@@ -429,118 +472,122 @@ def consolidate_sidecars(output_dir, task, suffix):
     else:
         print("Sidecars differ. Keeping individual files.")
 
+
 def cmd_convert_physio(args):
     """
     Handles the 'convert physio' command.
     """
     input_dir = Path(args.input)
     output_dir = Path(args.output)
-    
+
     if not input_dir.exists():
         print(f"Error: Input directory '{input_dir}' does not exist.")
         sys.exit(1)
 
     print(f"Scanning {input_dir} for raw physio files...")
-    
+
     # Expected structure: sourcedata/sub-XXX/ses-YYY/physio/filename.raw
     # We search recursively for the raw files
     # The pattern should be flexible but ideally match the BIDS-like structure
-    
+
     # Find all files matching the pattern
     # We assume files end with .raw or .RAW (case insensitive check later if needed)
     # But glob is case sensitive on Linux.
     files = list(input_dir.rglob("*.[rR][aA][wW]"))
-    
+
     if not files:
         print("No .raw files found in input directory.")
         return
 
     print(f"Found {len(files)} files to process.")
-    
+
     success_count = 0
     error_count = 0
-    
+
     for raw_file in files:
         # Infer subject and session from path or filename
         # Expected filename: sub-<id>_ses-<id>_physio.raw
         filename = raw_file.name
-        
+
         # Simple parsing logic
-        parts = raw_file.stem.split('_')
+        parts = raw_file.stem.split("_")
         sub_id = None
         ses_id = None
-        
+
         for part in parts:
-            if part.startswith('sub-'):
+            if part.startswith("sub-"):
                 sub_id = part
-            elif part.startswith('ses-'):
+            elif part.startswith("ses-"):
                 ses_id = part
-        
+
         # Fallback: try to get from parent folders if not in filename
         if not sub_id:
             for parent in raw_file.parents:
-                if parent.name.startswith('sub-'):
+                if parent.name.startswith("sub-"):
                     sub_id = parent.name
                     break
-        
+
         if not ses_id:
             for parent in raw_file.parents:
-                if parent.name.startswith('ses-'):
+                if parent.name.startswith("ses-"):
                     ses_id = parent.name
                     break
-        
+
         if not sub_id or not ses_id:
             print(f"Skipping {filename}: Could not determine subject or session ID.")
             continue
-        
+
         # Sanitize IDs
         sub_id = sanitize_id(sub_id)
         ses_id = sanitize_id(ses_id)
-            
+
         # Construct output path
         # rawdata/sub-XXX/ses-YYY/physio/
         target_dir = output_dir / sub_id / ses_id / "physio"
         target_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Construct output filename
         # sub-XXX_ses-YYY_task-<task>_<suffix>.edf
         out_base = f"{sub_id}_{ses_id}_task-{args.task}_{args.suffix}"
         out_edf = target_dir / f"{out_base}.edf"
         out_json = target_dir / f"{out_base}.json"
-        
+
         print(f"Converting {filename} -> {out_base}.edf")
-        
+
         try:
             convert_varioport(
                 str(raw_file),
                 str(out_edf),
                 str(out_json),
                 task_name=args.task,
-                base_freq=args.sampling_rate
+                base_freq=args.sampling_rate,
             )
-            
+
             # Check file size
             if out_edf.exists():
                 size_kb = out_edf.stat().st_size / 1024
-                if size_kb < 10: # Warn if smaller than 10KB
-                    print(f"⚠️  WARNING: Output file is suspiciously small ({size_kb:.2f} KB): {out_edf}")
+                if size_kb < 10:  # Warn if smaller than 10KB
+                    print(
+                        f"⚠️  WARNING: Output file is suspiciously small ({size_kb:.2f} KB): {out_edf}"
+                    )
                 else:
                     print(f"✅ Created {out_edf.name} ({size_kb:.2f} KB)")
             else:
-                 print(f"❌ Error: Output file was not created: {out_edf}")
-                 error_count += 1
-                 continue
+                print(f"❌ Error: Output file was not created: {out_edf}")
+                error_count += 1
+                continue
 
             success_count += 1
         except Exception as e:
             print(f"Error converting {filename}: {e}")
             error_count += 1
-            
+
     # Consolidate sidecars if requested (or always?)
     # BIDS inheritance principle
     consolidate_sidecars(output_dir, args.task, args.suffix)
 
     print(f"\nConversion finished. Success: {success_count}, Errors: {error_count}")
+
 
 def cmd_demo_create(args):
     """
@@ -548,11 +595,11 @@ def cmd_demo_create(args):
     """
     output_path = Path(args.output)
     demo_source = project_root / "prism_demo"
-    
+
     if output_path.exists():
         print(f"Error: Output path '{output_path}' already exists.")
         sys.exit(1)
-        
+
     print(f"Creating demo dataset at {output_path}...")
     try:
         shutil.copytree(demo_source, output_path)
@@ -560,6 +607,7 @@ def cmd_demo_create(args):
     except Exception as e:
         print(f"Error creating demo dataset: {e}")
         sys.exit(1)
+
 
 def cmd_survey_import_excel(args):
     """
@@ -620,18 +668,24 @@ def cmd_survey_convert(args):
                 if isinstance(d, dict):
                     return True
                 levels = item_def.get("Levels")
-                if isinstance(levels, dict) and any(isinstance(v, dict) for v in levels.values()):
+                if isinstance(levels, dict) and any(
+                    isinstance(v, dict) for v in levels.values()
+                ):
                     return True
         return False
 
-    def _compile_i18n_library(src_dir: Path, lang: str) -> tuple[Path, tempfile.TemporaryDirectory]:
+    def _compile_i18n_library(
+        src_dir: Path, lang: str
+    ) -> tuple[Path, tempfile.TemporaryDirectory]:
         tmp = tempfile.TemporaryDirectory(prefix=f"prism_survey_library_{lang}_")
         out_dir = Path(tmp.name)
         _ensure_dir(out_dir)
         fallback_langs = [l for l in ["de", "en"] if l != lang]
 
         for p in sorted(src_dir.glob("survey-*.json")):
-            compiled = compile_survey_template(_read_json(p), lang=lang, fallback_langs=fallback_langs)
+            compiled = compile_survey_template(
+                _read_json(p), lang=lang, fallback_langs=fallback_langs
+            )
             _write_json(out_dir / p.name, compiled)
 
         return out_dir, tmp
@@ -672,7 +726,9 @@ def cmd_survey_convert(args):
             library_label = str(legacy_candidate.resolve())
         else:
             print("Error: Could not find a survey template library.")
-            print("       Looked for: library/survey_<lang>, library/survey_i18n, library/survey")
+            print(
+                "       Looked for: library/survey_<lang>, library/survey_i18n, library/survey"
+            )
             print("       Or provide --library /path/to/library")
             sys.exit(1)
 
@@ -712,11 +768,15 @@ def cmd_survey_convert(args):
         missing = result.missing_items_by_task.get(task, 0)
         print(f"\nSurvey: {task}")
         if missing:
-            print(f"  - missing items:   {missing} (will be written as '{result.missing_value_token}')")
+            print(
+                f"  - missing items:   {missing} (will be written as '{result.missing_value_token}')"
+            )
 
     if result.missing_cells_by_subject:
         total_missing = sum(result.missing_cells_by_subject.values())
-        missing_subjects = sorted(result.missing_cells_by_subject.items(), key=lambda kv: kv[1], reverse=True)
+        missing_subjects = sorted(
+            result.missing_cells_by_subject.items(), key=lambda kv: kv[1], reverse=True
+        )
         worst = ", ".join([f"{sid} ({cnt})" for sid, cnt in missing_subjects[:5]])
         print(
             f"\nWARNING: Normalized {total_missing} missing cells to '{result.missing_value_token}' "
@@ -740,7 +800,11 @@ def cmd_biometrics_import_excel(args):
     """Imports biometrics templates/library from Excel."""
     print(f"Importing biometrics library from {args.excel} (sheet={args.sheet})...")
     try:
-        sheet = int(args.sheet) if isinstance(args.sheet, str) and args.sheet.isdigit() else args.sheet
+        sheet = (
+            int(args.sheet)
+            if isinstance(args.sheet, str) and args.sheet.isdigit()
+            else args.sheet
+        )
         output_dir = args.output
         if getattr(args, "library_root", None):
             output_dir = str(_ensure_dir(Path(args.library_root) / "biometrics"))
@@ -783,7 +847,9 @@ def cmd_dataset_build_biometrics_smoketest(args):
             return args.session
         if ses.startswith("ses-"):
             return ses
-        m = __import__("re").match(r"^(?:t|visit)?\s*(\d+)\s*$", ses, flags=__import__("re").IGNORECASE)
+        m = __import__("re").match(
+            r"^(?:t|visit)?\s*(\d+)\s*$", ses, flags=__import__("re").IGNORECASE
+        )
         if m:
             return f"ses-{int(m.group(1)):02d}"
         # fallback: make it a ses-* label
@@ -798,7 +864,11 @@ def cmd_dataset_build_biometrics_smoketest(args):
     biometrics_library = _ensure_dir(library_root / "biometrics")
 
     # 1) Generate biometrics templates into the library
-    sheet = int(args.sheet) if isinstance(args.sheet, str) and args.sheet.isdigit() else args.sheet
+    sheet = (
+        int(args.sheet)
+        if isinstance(args.sheet, str) and args.sheet.isdigit()
+        else args.sheet
+    )
     process_excel_biometrics(
         args.codebook,
         str(biometrics_library),
@@ -843,7 +913,9 @@ def cmd_dataset_build_biometrics_smoketest(args):
 
     col_pid = _find_col(df_data, {"participant_id", "participant", "subject", "sub"})
     if not col_pid:
-        print("Error: dummy data must include a participant id column (e.g., 'participant_id')")
+        print(
+            "Error: dummy data must include a participant id column (e.g., 'participant_id')"
+        )
         sys.exit(1)
 
     col_ses = _find_col(df_data, {"session", "ses", "visit", "timepoint"})
@@ -865,7 +937,9 @@ def cmd_dataset_build_biometrics_smoketest(args):
     _write_json(output_root / "dataset_description.json", dataset_description)
 
     # participants.tsv (+ optional participants.json from library if present)
-    df_part = pd.DataFrame({"participant_id": df_data[col_pid].astype(str).map(_normalize_sub_id)})
+    df_part = pd.DataFrame(
+        {"participant_id": df_data[col_pid].astype(str).map(_normalize_sub_id)}
+    )
     df_part.to_csv(output_root / "participants.tsv", sep="\t", index=False)
     participants_json = biometrics_library / "participants.json"
     if participants_json.exists():
@@ -895,7 +969,9 @@ def cmd_dataset_build_biometrics_smoketest(args):
 
         template_path = biometrics_library / f"biometrics-{grp}.json"
         if not template_path.exists():
-            print(f"Warning: Missing biometrics template for group '{grp}': {template_path}")
+            print(
+                f"Warning: Missing biometrics template for group '{grp}': {template_path}"
+            )
             return
         sidecar = _read_json(template_path)
         if add_instance_meta and "instance" not in sidecar:
@@ -906,7 +982,9 @@ def cmd_dataset_build_biometrics_smoketest(args):
             }
         _write_json(sidecar_path, sidecar)
 
-    def _write_task_files(sub_id: str, ses_id: str, grp: str, df_out: "pd.DataFrame") -> None:
+    def _write_task_files(
+        sub_id: str, ses_id: str, grp: str, df_out: "pd.DataFrame"
+    ) -> None:
         if df_out is None or df_out.empty:
             return
 
@@ -930,7 +1008,9 @@ def cmd_dataset_build_biometrics_smoketest(args):
             }
         )
 
-        df_long["participant_id"] = df_long["participant_id"].astype(str).map(_normalize_sub_id)
+        df_long["participant_id"] = (
+            df_long["participant_id"].astype(str).map(_normalize_sub_id)
+        )
         if "session" not in df_long.columns or not col_ses:
             df_long["session"] = args.session
         df_long["session"] = df_long["session"].astype(str).map(_normalize_ses_id)
@@ -958,22 +1038,21 @@ def cmd_dataset_build_biometrics_smoketest(args):
         for grp in group_to_items.keys():
             _ensure_inherited_sidecar(grp, add_instance_meta=has_instance)
 
-        for (sub_id, ses_id), df_ps in df_long.groupby(["participant_id", "session"], dropna=True):
+        for (sub_id, ses_id), df_ps in df_long.groupby(
+            ["participant_id", "session"], dropna=True
+        ):
             for grp, items in group_to_items.items():
                 df_grp = df_ps[df_ps["group"] == grp]
                 if df_grp.empty:
                     continue
 
                 if has_instance:
-                    wide = (
-                        df_grp.pivot_table(
-                            index="instance",
-                            columns="item_id",
-                            values="value",
-                            aggfunc="first",
-                        )
-                        .reset_index()
-                    )
+                    wide = df_grp.pivot_table(
+                        index="instance",
+                        columns="item_id",
+                        values="value",
+                        aggfunc="first",
+                    ).reset_index()
                     # Ensure full column set and stable order
                     for col in items:
                         if col not in wide.columns:
@@ -1021,6 +1100,7 @@ def cmd_dataset_build_biometrics_smoketest(args):
     print(f"✅ Created dataset: {output_root}")
     print(f"✅ Biometrics library: {biometrics_library}")
 
+
 def cmd_survey_validate(args):
     """
     Validates the survey library.
@@ -1030,6 +1110,7 @@ def cmd_survey_validate(args):
         sys.exit(0)
     else:
         sys.exit(1)
+
 
 def cmd_survey_import_limesurvey(args):
     """
@@ -1045,15 +1126,15 @@ def cmd_survey_import_limesurvey(args):
 
 def parse_session_map(map_str):
     mapping = {}
-    for item in map_str.split(','):
+    for item in map_str.split(","):
         token = item.strip()
         if not token:
             continue
-        sep = ':' if ':' in token else ('=' if '=' in token else None)
+        sep = ":" if ":" in token else ("=" if "=" in token else None)
         if not sep:
             # allow shorthand like t1_ses-1
-            if '_' in token:
-                raw, mapped = token.split('_', 1)
+            if "_" in token:
+                raw, mapped = token.split("_", 1)
             else:
                 continue
         else:
@@ -1149,7 +1230,9 @@ def cmd_survey_i18n_build(args):
             print(f"Warning: Skipping unreadable JSON {p.name}: {e}")
             continue
 
-        compiled = compile_survey_template(data, lang=lang, fallback_langs=fallback_langs)
+        compiled = compile_survey_template(
+            data, lang=lang, fallback_langs=fallback_langs
+        )
         out_path = out_dir / p.name
         _write_json(out_path, compiled)
         written += 1
@@ -1157,38 +1240,67 @@ def cmd_survey_i18n_build(args):
     print(f"✅ Built {written} template(s) for lang='{lang}'")
     print(f"   Output: {out_dir}")
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Prism Tools: Utilities for PRISM/BIDS datasets")
+    parser = argparse.ArgumentParser(
+        description="Prism Tools: Utilities for PRISM/BIDS datasets"
+    )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
-    
+
     # Command: convert
-    parser_convert = subparsers.add_parser("convert", help="Convert raw data to BIDS format")
-    convert_subparsers = parser_convert.add_subparsers(dest="modality", help="Modality to convert")
-    
+    parser_convert = subparsers.add_parser(
+        "convert", help="Convert raw data to BIDS format"
+    )
+    convert_subparsers = parser_convert.add_subparsers(
+        dest="modality", help="Modality to convert"
+    )
+
     # Subcommand: convert physio
-    parser_physio = convert_subparsers.add_parser("physio", help="Convert physiological data (Varioport)")
-    parser_physio.add_argument("--input", required=True, help="Path to sourcedata directory")
-    parser_physio.add_argument("--output", required=True, help="Path to output rawdata directory")
-    parser_physio.add_argument("--task", default="rest", help="Task name (default: rest)")
-    parser_physio.add_argument("--suffix", default="physio", help="Output suffix (default: physio)")
-    parser_physio.add_argument("--sampling-rate", type=float, help="Override sampling rate (e.g. 256)")
-    
+    parser_physio = convert_subparsers.add_parser(
+        "physio", help="Convert physiological data (Varioport)"
+    )
+    parser_physio.add_argument(
+        "--input", required=True, help="Path to sourcedata directory"
+    )
+    parser_physio.add_argument(
+        "--output", required=True, help="Path to output rawdata directory"
+    )
+    parser_physio.add_argument(
+        "--task", default="rest", help="Task name (default: rest)"
+    )
+    parser_physio.add_argument(
+        "--suffix", default="physio", help="Output suffix (default: physio)"
+    )
+    parser_physio.add_argument(
+        "--sampling-rate", type=float, help="Override sampling rate (e.g. 256)"
+    )
+
     # Command: demo
     parser_demo = subparsers.add_parser("demo", help="Demo dataset operations")
     demo_subparsers = parser_demo.add_subparsers(dest="action", help="Action")
-    
+
     # Subcommand: demo create
-    parser_demo_create = demo_subparsers.add_parser("create", help="Create a demo dataset")
-    parser_demo_create.add_argument("--output", default="prism_demo_copy", help="Output path for the demo dataset")
+    parser_demo_create = demo_subparsers.add_parser(
+        "create", help="Create a demo dataset"
+    )
+    parser_demo_create.add_argument(
+        "--output", default="prism_demo_copy", help="Output path for the demo dataset"
+    )
 
     # Command: survey
     parser_survey = subparsers.add_parser("survey", help="Survey library operations")
     survey_subparsers = parser_survey.add_subparsers(dest="action", help="Action")
-    
+
     # Subcommand: survey import-excel
-    parser_survey_excel = survey_subparsers.add_parser("import-excel", help="Import survey library from Excel")
-    parser_survey_excel.add_argument("--excel", required=True, help="Path to Excel file")
-    parser_survey_excel.add_argument("--output", default="survey_library", help="Output directory")
+    parser_survey_excel = survey_subparsers.add_parser(
+        "import-excel", help="Import survey library from Excel"
+    )
+    parser_survey_excel.add_argument(
+        "--excel", required=True, help="Path to Excel file"
+    )
+    parser_survey_excel.add_argument(
+        "--output", default="survey_library", help="Output directory"
+    )
     parser_survey_excel.add_argument(
         "--library-root",
         dest="library_root",
@@ -1280,15 +1392,21 @@ def main():
     )
 
     # Command: biometrics
-    parser_biometrics = subparsers.add_parser("biometrics", help="Biometrics library operations")
-    biometrics_subparsers = parser_biometrics.add_subparsers(dest="action", help="Action")
+    parser_biometrics = subparsers.add_parser(
+        "biometrics", help="Biometrics library operations"
+    )
+    biometrics_subparsers = parser_biometrics.add_subparsers(
+        dest="action", help="Action"
+    )
 
     # Command: derivatives
     parser_derivatives = subparsers.add_parser(
         "derivatives",
         help="Create derivatives from an already-valid PRISM dataset",
     )
-    derivatives_subparsers = parser_derivatives.add_subparsers(dest="kind", help="Derivative kind")
+    derivatives_subparsers = parser_derivatives.add_subparsers(
+        dest="kind", help="Derivative kind"
+    )
 
     parser_deriv_surveys = derivatives_subparsers.add_parser(
         "surveys",
@@ -1335,8 +1453,12 @@ def main():
     parser_biometrics_excel = biometrics_subparsers.add_parser(
         "import-excel", help="Import biometrics templates/library from Excel"
     )
-    parser_biometrics_excel.add_argument("--excel", required=True, help="Path to Excel file")
-    parser_biometrics_excel.add_argument("--output", default="biometrics_library", help="Output directory")
+    parser_biometrics_excel.add_argument(
+        "--excel", required=True, help="Path to Excel file"
+    )
+    parser_biometrics_excel.add_argument(
+        "--output", default="biometrics_library", help="Output directory"
+    )
     parser_biometrics_excel.add_argument(
         "--library-root",
         dest="library_root",
@@ -1419,22 +1541,37 @@ def main():
         choices=["investigator", "physician", "trainer", "self"],
         help="Default Technical.Supervisor value for generated biometrics templates",
     )
-    
+
     # Subcommand: survey validate
-    parser_survey_validate = survey_subparsers.add_parser("validate", help="Validate survey library")
-    parser_survey_validate.add_argument("--library", default="survey_library", help="Path to survey library")
-    
+    parser_survey_validate = survey_subparsers.add_parser(
+        "validate", help="Validate survey library"
+    )
+    parser_survey_validate.add_argument(
+        "--library", default="survey_library", help="Path to survey library"
+    )
+
     # Subcommand: survey import-limesurvey
-    parser_survey_limesurvey = survey_subparsers.add_parser("import-limesurvey", help="Import LimeSurvey structure")
-    parser_survey_limesurvey.add_argument("--input", required=True, help="Path to .lsa/.lss file")
+    parser_survey_limesurvey = survey_subparsers.add_parser(
+        "import-limesurvey", help="Import LimeSurvey structure"
+    )
+    parser_survey_limesurvey.add_argument(
+        "--input", required=True, help="Path to .lsa/.lss file"
+    )
     parser_survey_limesurvey.add_argument("--output", help="Path to output .json file")
-    parser_survey_limesurvey.add_argument("--task", help="Optional task name override (defaults from file name)")
+    parser_survey_limesurvey.add_argument(
+        "--task", help="Optional task name override (defaults from file name)"
+    )
 
     parser_survey_limesurvey_batch = survey_subparsers.add_parser(
-        "import-limesurvey-batch", help="Batch import LimeSurvey files with session mapping"
+        "import-limesurvey-batch",
+        help="Batch import LimeSurvey files with session mapping",
     )
-    parser_survey_limesurvey_batch.add_argument("--input-dir", required=True, help="Root directory containing .lsa/.lss files")
-    parser_survey_limesurvey_batch.add_argument("--output-dir", required=True, help="Output root for generated PRISM dataset")
+    parser_survey_limesurvey_batch.add_argument(
+        "--input-dir", required=True, help="Root directory containing .lsa/.lss files"
+    )
+    parser_survey_limesurvey_batch.add_argument(
+        "--output-dir", required=True, help="Output root for generated PRISM dataset"
+    )
     parser_survey_limesurvey_batch.add_argument(
         "--session-map",
         default="t1:ses-1,t2:ses-2,t3:ses-3",
@@ -1508,7 +1645,7 @@ def main():
     )
 
     args = parser.parse_args()
-    
+
     if args.command == "convert" and args.modality == "physio":
         cmd_convert_physio(args)
     elif args.command == "demo" and args.action == "create":
@@ -1547,6 +1684,7 @@ def main():
             parser_derivatives.print_help()
     else:
         parser.print_help()
+
 
 if __name__ == "__main__":
     main()

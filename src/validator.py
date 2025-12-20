@@ -203,7 +203,9 @@ class DatasetValidator:
                                 # allow the full inclusive integer range to avoid over-rejecting mid-scale values.
                                 numeric_level_keys = []
                                 try:
-                                    numeric_level_keys = [int(float(k)) for k in level_keys]
+                                    numeric_level_keys = [
+                                        int(float(k)) for k in level_keys
+                                    ]
                                 except ValueError:
                                     numeric_level_keys = []
 
@@ -213,7 +215,9 @@ class DatasetValidator:
 
                                     # Only expand when we clearly have an ordinal numeric scale that might omit midpoints.
                                     # If the provided keys already cover every integer in the range, keep them as-is.
-                                    full_range = [str(i) for i in range(min_level, max_level + 1)]
+                                    full_range = [
+                                        str(i) for i in range(min_level, max_level + 1)
+                                    ]
                                     if set(full_range).issuperset(set(level_keys)):
                                         allowed = full_range
                                     else:

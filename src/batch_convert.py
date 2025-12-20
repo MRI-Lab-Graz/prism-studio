@@ -1,10 +1,10 @@
 """Batch conversion utilities for physiological and eyetracking data.
 
-This module provides utilities for batch converting raw data files from a flat folder 
+This module provides utilities for batch converting raw data files from a flat folder
 structure into PRISM/BIDS-style datasets. The input files must follow the naming convention:
 
     sub-<id>_ses-<id>_task-<id>.<ext>
-    
+
 Example:
     sub-003_ses-1_task-rest.raw     → physio data
     sub-003_ses-1_task-find.edf     → eyetracking data
@@ -30,7 +30,7 @@ BIDS_FILENAME_PATTERN = re.compile(
     r"_(?P<task>task-[a-zA-Z0-9]+)"
     r"(?P<extra>(?:_[a-zA-Z0-9]+-[a-zA-Z0-9]+)*)"
     r"\.(?P<ext>raw|vpd|edf)$",
-    re.IGNORECASE
+    re.IGNORECASE,
 )
 
 # Modality detection by extension
@@ -41,6 +41,7 @@ EYETRACKING_EXTENSIONS = {".edf"}
 @dataclass
 class ConvertedFile:
     """Result of converting a single file."""
+
     source_path: Path
     output_files: list[Path]
     modality: Literal["physio", "eyetracking"]
@@ -54,15 +55,16 @@ class ConvertedFile:
 @dataclass
 class BatchConvertResult:
     """Result of batch conversion."""
+
     source_folder: Path
     output_folder: Path
     converted: list[ConvertedFile] = field(default_factory=list)
     skipped: list[tuple[Path, str]] = field(default_factory=list)  # (path, reason)
-    
+
     @property
     def success_count(self) -> int:
         return sum(1 for f in self.converted if f.success)
-    
+
     @property
     def error_count(self) -> int:
         return sum(1 for f in self.converted if not f.success)
@@ -70,17 +72,17 @@ class BatchConvertResult:
 
 def parse_bids_filename(filename: str) -> dict | None:
     """Parse a BIDS-like filename into its components.
-    
+
     Args:
         filename: The filename to parse (e.g., "sub-003_ses-1_task-rest.raw")
-        
+
     Returns:
         Dictionary with keys: sub, ses, task, extra, ext, or None if invalid
     """
     match = BIDS_FILENAME_PATTERN.match(filename)
     if not match:
         return None
-    
+
     return {
         "sub": match.group("sub"),
         "ses": match.group("ses"),
@@ -95,7 +97,7 @@ def detect_modality(ext: str) -> Literal["physio", "eyetracking"] | None:
     ext_lower = ext.lower() if not ext.startswith(".") else ext.lower()
     if not ext_lower.startswith("."):
         ext_lower = f".{ext_lower}"
-    
+
     if ext_lower in PHYSIO_EXTENSIONS:
         return "physio"
     elif ext_lower in EYETRACKING_EXTENSIONS:
@@ -129,7 +131,7 @@ def _create_physio_sidecar(
             "time": {"Description": "Time in seconds", "Units": "s"},
         },
     }
-    
+
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(sidecar, f, indent=2, ensure_ascii=False)
 
@@ -158,7 +160,7 @@ def _create_eyetracking_sidecar(
         "ScreenDistance": "unknown",
         "ScreenSize": "unknown",
     }
-    
+
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(sidecar, f, indent=2, ensure_ascii=False)
 
@@ -171,7 +173,7 @@ def convert_physio_file(
     base_freq: float | None = None,
 ) -> ConvertedFile:
     """Convert a single physio file (Varioport .raw/.vpd) to PRISM format.
-    
+
     This uses the existing convert_varioport function if available, otherwise
     just copies the file and creates a sidecar.
     """
@@ -179,17 +181,17 @@ def convert_physio_file(
     ses = parsed["ses"]
     task = parsed["task"]
     ext = parsed["ext"]
-    
+
     # Build output path: output_dir/sub-XXX/[ses-YYY/]physio/
     if ses:
         out_folder = output_dir / sub / ses / "physio"
     else:
         out_folder = output_dir / sub / "physio"
     out_folder.mkdir(parents=True, exist_ok=True)
-    
+
     # Recording label based on source format
     rec_label = "vpd" if ext == "vpd" else "raw"
-    
+
     # Build BIDS filename
     parts = [sub]
     if ses:
@@ -198,17 +200,17 @@ def convert_physio_file(
     parts.append(f"recording-{rec_label}")
     parts.append("physio")
     base_name = "_".join(parts)
-    
+
     output_files = []
-    
+
     try:
         # Try to use the Varioport converter
         try:
             from helpers.physio.convert_varioport import convert_varioport
-            
+
             out_edf = out_folder / f"{base_name}.edf"
             out_json = out_folder / f"{base_name}.json"
-            
+
             convert_varioport(
                 str(source_path),
                 str(out_edf),
@@ -216,26 +218,27 @@ def convert_physio_file(
                 task_name=task.replace("task-", ""),
                 base_freq=base_freq,
             )
-            
+
             if out_edf.exists():
                 output_files.append(out_edf)
             if out_json.exists():
                 output_files.append(out_json)
-                
+
         except ImportError:
             # Fallback: just copy file and create minimal sidecar
             out_data = out_folder / f"{base_name}.{ext}"
             out_json = out_folder / f"{base_name}.json"
-            
+
             shutil.copy2(source_path, out_data)
             _create_physio_sidecar(
-                source_path, out_json,
+                source_path,
+                out_json,
                 task_name=task,
                 sampling_rate=base_freq,
             )
-            
+
             output_files.extend([out_data, out_json])
-        
+
         return ConvertedFile(
             source_path=source_path,
             output_files=output_files,
@@ -245,7 +248,7 @@ def convert_physio_file(
             task=task,
             success=True,
         )
-        
+
     except Exception as e:
         return ConvertedFile(
             source_path=source_path,
@@ -266,21 +269,21 @@ def convert_eyetracking_file(
     parsed: dict,
 ) -> ConvertedFile:
     """Convert a single eyetracking file (.edf) to PRISM format.
-    
+
     For EyeLink .edf files, we copy the file (it's already a standard format)
     and create a JSON sidecar with metadata.
     """
     sub = parsed["sub"]
     ses = parsed["ses"]
     task = parsed["task"]
-    
+
     # Build output path: output_dir/sub-XXX/[ses-YYY/]eyetracking/
     if ses:
         out_folder = output_dir / sub / ses / "eyetracking"
     else:
         out_folder = output_dir / sub / "eyetracking"
     out_folder.mkdir(parents=True, exist_ok=True)
-    
+
     # Build BIDS filename
     parts = [sub]
     if ses:
@@ -288,27 +291,27 @@ def convert_eyetracking_file(
     parts.append(task)
     parts.append("eyetrack")
     base_name = "_".join(parts)
-    
+
     out_edf = out_folder / f"{base_name}.edf"
     out_json = out_folder / f"{base_name}.json"
-    
+
     output_files = []
-    
+
     try:
         # Copy the EDF file
         shutil.copy2(source_path, out_edf)
         output_files.append(out_edf)
-        
+
         # Create sidecar
         _create_eyetracking_sidecar(source_path, out_json, task_name=task)
         output_files.append(out_json)
-        
+
         # TODO: In future, we could parse the EDF header to extract:
         # - Sampling rate
         # - Recorded eye (left/right/both)
         # - Recording duration
         # - Screen settings
-        
+
         return ConvertedFile(
             source_path=source_path,
             output_files=output_files,
@@ -318,7 +321,7 @@ def convert_eyetracking_file(
             task=task,
             success=True,
         )
-        
+
     except Exception as e:
         return ConvertedFile(
             source_path=source_path,
@@ -341,7 +344,7 @@ def batch_convert_folder(
     log_callback: callable | None = None,
 ) -> BatchConvertResult:
     """Batch convert all supported files from a flat folder structure.
-    
+
     Args:
         source_folder: Path to folder containing raw data files
         output_folder: Path to output PRISM dataset folder
@@ -349,31 +352,32 @@ def batch_convert_folder(
         modality_filter: Which modalities to process ("all", "physio", or "eyetracking")
         log_callback: Optional callback for logging messages: log_callback(message, level)
                       where level is "info", "success", "warning", or "error"
-        
+
     Returns:
         BatchConvertResult with details of all conversions
     """
+
     def log(msg: str, level: str = "info"):
         if log_callback:
             log_callback(msg, level)
-    
+
     source_folder = Path(source_folder)
     output_folder = Path(output_folder)
-    
+
     result = BatchConvertResult(
         source_folder=source_folder,
         output_folder=output_folder,
     )
-    
+
     log(f"📂 Scanning source folder: {source_folder.name}", "info")
-    
+
     # Find all supported files
     all_extensions = set()
     if modality_filter in ("all", "physio"):
         all_extensions.update(PHYSIO_EXTENSIONS)
     if modality_filter in ("all", "eyetracking"):
         all_extensions.update(EYETRACKING_EXTENSIONS)
-    
+
     # Collect files first to get total count
     files_to_process = []
     for file_path in sorted(source_folder.iterdir()):
@@ -382,24 +386,30 @@ def batch_convert_folder(
         ext = file_path.suffix.lower()
         if ext in all_extensions:
             files_to_process.append(file_path)
-    
+
     log(f"📋 Found {len(files_to_process)} files to process", "info")
-    
+
     for idx, file_path in enumerate(files_to_process, 1):
         ext = file_path.suffix.lower()
-        
+
         # Parse filename
         parsed = parse_bids_filename(file_path.name)
         if not parsed:
             msg = f"Invalid filename pattern. Expected: sub-XXX_ses-YYY_task-ZZZ.{ext}"
             result.skipped.append((file_path, msg))
-            log(f"⏭️  [{idx}/{len(files_to_process)}] Skipped: {file_path.name} - {msg}", "warning")
+            log(
+                f"⏭️  [{idx}/{len(files_to_process)}] Skipped: {file_path.name} - {msg}",
+                "warning",
+            )
             continue
-        
+
         # Detect modality and convert
         modality = detect_modality(ext)
-        log(f"🔄 [{idx}/{len(files_to_process)}] Converting: {file_path.name} ({modality})", "info")
-        
+        log(
+            f"🔄 [{idx}/{len(files_to_process)}] Converting: {file_path.name} ({modality})",
+            "info",
+        )
+
         if modality == "physio":
             converted = convert_physio_file(
                 file_path,
@@ -416,16 +426,25 @@ def batch_convert_folder(
         else:
             msg = f"Unknown modality for extension: {ext}"
             result.skipped.append((file_path, msg))
-            log(f"⏭️  [{idx}/{len(files_to_process)}] Skipped: {file_path.name} - {msg}", "warning")
+            log(
+                f"⏭️  [{idx}/{len(files_to_process)}] Skipped: {file_path.name} - {msg}",
+                "warning",
+            )
             continue
-        
+
         result.converted.append(converted)
-        
+
         if converted.success:
-            log(f"✅ [{idx}/{len(files_to_process)}] Success: {file_path.name} → {converted.modality}/", "success")
+            log(
+                f"✅ [{idx}/{len(files_to_process)}] Success: {file_path.name} → {converted.modality}/",
+                "success",
+            )
         else:
-            log(f"❌ [{idx}/{len(files_to_process)}] Error: {file_path.name} - {converted.error}", "error")
-    
+            log(
+                f"❌ [{idx}/{len(files_to_process)}] Error: {file_path.name} - {converted.error}",
+                "error",
+            )
+
     # Summary
     log(f"", "info")
     log(f"📊 Conversion complete:", "info")
@@ -434,7 +453,7 @@ def batch_convert_folder(
         log(f"   ❌ Errors: {result.error_count}", "error")
     if result.skipped:
         log(f"   ⏭️  Skipped: {len(result.skipped)}", "warning")
-    
+
     return result
 
 
@@ -457,18 +476,18 @@ def create_dataset_description(
             }
         ],
     }
-    
+
     output_path = output_folder / "dataset_description.json"
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(desc, f, indent=2, ensure_ascii=False)
-    
+
     return output_path
 
 
 # CLI interface
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser(
         description="Batch convert physio/eyetracking data from flat folder to PRISM format"
     )
@@ -498,16 +517,16 @@ if __name__ == "__main__":
         default="Converted Dataset",
         help="Name for dataset_description.json",
     )
-    
+
     args = parser.parse_args()
-    
+
     print(f"Converting files from: {args.source}")
     print(f"Output folder: {args.output}")
     print()
-    
+
     # Create output folder
     args.output.mkdir(parents=True, exist_ok=True)
-    
+
     # Run conversion
     result = batch_convert_folder(
         args.source,
@@ -515,10 +534,10 @@ if __name__ == "__main__":
         physio_sampling_rate=args.sampling_rate,
         modality_filter=args.modality,
     )
-    
+
     # Create dataset description
     create_dataset_description(args.output, name=args.dataset_name)
-    
+
     # Print summary
     print(f"✅ Successfully converted: {result.success_count} files")
     if result.error_count > 0:
@@ -527,7 +546,7 @@ if __name__ == "__main__":
         print(f"⏭️  Skipped: {len(result.skipped)} files")
         for path, reason in result.skipped:
             print(f"   - {path.name}: {reason}")
-    
+
     print()
     for conv in result.converted:
         status = "✅" if conv.success else "❌"

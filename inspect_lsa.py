@@ -1,4 +1,3 @@
-
 import sys
 import os
 import pandas as pd
@@ -20,7 +19,7 @@ try:
     print("Columns found in LSA response:")
     for col in df.columns:
         print(f"  - {col}")
-        
+
     print("\nFirst row sample:")
     print(df.iloc[0].to_dict())
 

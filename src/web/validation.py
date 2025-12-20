@@ -19,17 +19,15 @@ def update_progress(job_id: str, progress: int, message: str):
     _validation_progress[job_id] = {
         "progress": progress,
         "message": message,
-        "status": "running" if progress < 100 else "complete"
+        "status": "running" if progress < 100 else "complete",
     }
 
 
 def get_progress(job_id: str) -> dict:
     """Get progress for a validation job."""
-    return _validation_progress.get(job_id, {
-        "progress": 0, 
-        "message": "Starting...", 
-        "status": "pending"
-    })
+    return _validation_progress.get(
+        job_id, {"progress": 0, "message": "Starting...", "status": "pending"}
+    )
 
 
 def clear_progress(job_id: str):
@@ -57,17 +55,19 @@ def _get_core_validator():
     """Try to import core validator function."""
     try:
         from runner import validate_dataset
+
         return validate_dataset
     except ImportError:
         pass
-    
+
     # Try src.runner
     try:
         from src.runner import validate_dataset
+
         return validate_dataset
     except ImportError:
         pass
-    
+
     return None
 
 
@@ -86,32 +86,32 @@ def run_validation(
 ) -> Tuple[List, Any]:
     """
     Run dataset validation using core validator or subprocess fallback.
-    
+
     Args:
         dataset_path: Path to the dataset to validate
         verbose: Enable verbose output
         schema_version: Schema version to use (default: 'stable')
         run_bids: Also run standard BIDS validator
         progress_callback: Optional callback for progress updates
-        
+
     Returns:
         Tuple of (issues list, stats object)
     """
     core_validate = _get_core_validator()
-    
+
     # Try to use core validator directly first
     if core_validate:
         try:
             issues, stats = core_validate(
-                dataset_path, 
-                verbose=verbose, 
+                dataset_path,
+                verbose=verbose,
                 schema_version=schema_version,
                 run_bids=run_bids,
                 progress_callback=progress_callback,
             )
-            
+
             # Convert issues to web format if needed
-            # core_validate_dataset returns list of tuples. 
+            # core_validate_dataset returns list of tuples.
             # If they are (level, msg), we need to add path.
             web_issues = []
             for issue in issues:
@@ -119,7 +119,7 @@ def run_validation(
                     web_issues.append((issue[0], issue[1], dataset_path))
                 else:
                     web_issues.append(issue)
-            
+
             return web_issues, stats
         except Exception as e:
             print(f"⚠️  Error running core validator directly: {e}")
@@ -127,10 +127,7 @@ def run_validation(
 
     # Fallback to subprocess
     return _run_validator_subprocess(
-        dataset_path, 
-        verbose=verbose, 
-        schema_version=schema_version, 
-        run_bids=run_bids
+        dataset_path, verbose=verbose, schema_version=schema_version, run_bids=run_bids
     )
 
 
@@ -141,7 +138,7 @@ def _run_validator_subprocess(
     run_bids: bool = False,
 ) -> Tuple[List, SimpleStats]:
     """Run validation via subprocess (fallback method)."""
-    
+
     try:
         # Build command
         cmd = [sys.executable, "prism.py", dataset_path]
@@ -154,19 +151,21 @@ def _run_validator_subprocess(
 
         # Get script directory
         script_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, cwd=script_dir
-        )
+
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=script_dir)
 
         # Parse results
         if result.returncode in [0, 1]:
             return _parse_subprocess_output(result, dataset_path)
         else:
             error_msg = result.stderr or "Validation failed"
-            print(f"❌ Validator subprocess failed (code {result.returncode}): {error_msg}")
+            print(
+                f"❌ Validator subprocess failed (code {result.returncode}): {error_msg}"
+            )
             stats = SimpleStats()
-            issues = [("ERROR", f"Validation process failed: {error_msg}", dataset_path)]
+            issues = [
+                ("ERROR", f"Validation process failed: {error_msg}", dataset_path)
+            ]
             return issues, stats
 
     except FileNotFoundError:
@@ -207,18 +206,20 @@ def _parse_subprocess_output(result, dataset_path: str) -> Tuple[List, SimpleSta
                 stats.total_files = int(match.group(1))
         # Parse specific error messages (bullet style)
         elif clean_line.startswith("•") and ("❌" in stdout or "ERROR" in stdout):
-            issues.append(
-                ("ERROR", clean_line.replace("•", "").strip(), dataset_path)
-            )
+            issues.append(("ERROR", clean_line.replace("•", "").strip(), dataset_path))
         # Parse numbered error messages
-        elif re.search(r"^\d+\.\s+", clean_line) and ("❌" in stdout or "ERROR" in stdout):
+        elif re.search(r"^\d+\.\s+", clean_line) and (
+            "❌" in stdout or "ERROR" in stdout
+        ):
             msg = re.sub(r"^\d+\.\s+", "", clean_line).strip()
             issues.append(("ERROR", msg, dataset_path))
         elif clean_line.startswith("•") and ("⚠️" in stdout or "WARNING" in stdout):
             issues.append(
                 ("WARNING", clean_line.replace("•", "").strip(), dataset_path)
             )
-        elif re.search(r"^\d+\.\s+", clean_line) and ("⚠️" in stdout or "WARNING" in stdout):
+        elif re.search(r"^\d+\.\s+", clean_line) and (
+            "⚠️" in stdout or "WARNING" in stdout
+        ):
             msg = re.sub(r"^\d+\.\s+", "", clean_line).strip()
             issues.append(("WARNING", msg, dataset_path))
 
@@ -227,11 +228,13 @@ def _parse_subprocess_output(result, dataset_path: str) -> Tuple[List, SimpleSta
         pass  # No issues
     elif "❌ Dataset has validation errors" in stdout:
         if not issues:
-            issues.append((
-                "ERROR",
-                "Dataset validation failed - see terminal output for details",
-                dataset_path,
-            ))
+            issues.append(
+                (
+                    "ERROR",
+                    "Dataset validation failed - see terminal output for details",
+                    dataset_path,
+                )
+            )
     elif result.returncode != 0 and not issues:
         issues.append(("ERROR", "Dataset validation failed", dataset_path))
 

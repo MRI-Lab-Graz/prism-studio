@@ -16,11 +16,11 @@ from .utils import is_system_file
 # File extensions to process (metadata and small data files only)
 METADATA_EXTENSIONS = {
     ".json",  # Sidecar metadata
-    ".tsv",   # Behavioral/events data
-    ".csv",   # Alternative tabular format
-    ".txt",   # Text data/logs
-    ".edf",   # EEG/eye-tracking (relatively small)
-    ".bdf",   # BioSemi EEG format
+    ".tsv",  # Behavioral/events data
+    ".csv",  # Alternative tabular format
+    ".txt",  # Text data/logs
+    ".edf",  # EEG/eye-tracking (relatively small)
+    ".bdf",  # BioSemi EEG format
     ".png",
     ".jpg",
     ".jpeg",  # Stimulus images
@@ -62,12 +62,12 @@ RESTRICTED_FOLDER_NAMES = {
 
 def detect_dataset_prefix(all_paths: List[str]) -> Optional[str]:
     """Detect a common leading folder that should be stripped from uploaded paths.
-    
+
     Returns the folder name to strip, or None if no prefix should be stripped.
     """
     sanitized_parts = []
     has_root_level_files = False
-    
+
     for path in all_paths or []:
         if not path:
             continue
@@ -77,22 +77,25 @@ def detect_dataset_prefix(all_paths: List[str]) -> Optional[str]:
         if len(parts) == 1:
             has_root_level_files = True
         sanitized_parts.append(parts)
-    
+
     # If there are root-level files, don't strip anything
     if has_root_level_files or not sanitized_parts:
         return None
-    
+
     # Check if all paths start with the same folder
     first_components = {parts[0] for parts in sanitized_parts}
     if len(first_components) != 1:
         return None
-    
+
     candidate = first_components.pop()
-    
+
     # Don't strip if it looks like a BIDS folder
-    if candidate.startswith(("sub-", "ses-")) or candidate.lower() in RESTRICTED_FOLDER_NAMES:
+    if (
+        candidate.startswith(("sub-", "ses-"))
+        or candidate.lower() in RESTRICTED_FOLDER_NAMES
+    ):
         return None
-    
+
     # Only strip if it contains dataset structure
     has_dataset_description = any(
         len(parts) >= 2
@@ -104,51 +107,51 @@ def detect_dataset_prefix(all_paths: List[str]) -> Optional[str]:
         len(parts) >= 2 and parts[0] == candidate and parts[1].startswith("sub-")
         for parts in sanitized_parts
     )
-    
+
     if not (has_dataset_description or has_subject_dirs):
         return None
-    
+
     return candidate
 
 
 def normalize_relative_path(path: str, prefix_to_strip: Optional[str]) -> Optional[str]:
     """Normalize an uploaded path to be relative to the dataset root.
-    
+
     Args:
         path: The uploaded file path
         prefix_to_strip: Optional folder prefix to remove
-        
+
     Returns:
         Normalized path, or None if path is invalid
     """
     if not path:
         return None
-    
+
     cleaned = path.replace("\\", "/").lstrip("/")
-    
+
     if prefix_to_strip:
         prefix = prefix_to_strip.strip("/")
         if cleaned.startswith(prefix + "/"):
-            cleaned = cleaned[len(prefix) + 1:]
-    
+            cleaned = cleaned[len(prefix) + 1 :]
+
     normalized = os.path.normpath(cleaned)
     normalized = normalized.replace("\\", "/")
-    
+
     if normalized in ("", "."):  # Directory only
         return None
     if normalized.startswith(".."):
         return None
-    
+
     return normalized
 
 
 def create_placeholder_content(file_path: str, extension: str) -> str:
     """Create informative placeholder content for data files (DataLad-style).
-    
+
     Args:
         file_path: Original file path
         extension: File extension
-        
+
     Returns:
         Placeholder content string
     """
@@ -221,16 +224,16 @@ def process_folder_upload(
     all_files_list: Optional[List[str]] = None,
 ) -> Tuple[str, dict]:
     """Process uploaded folder files and recreate directory structure (DataLad-style).
-    
+
     DataLad-inspired approach: Upload only structure and metadata, create placeholders
     for large data files. This allows full dataset validation without transferring GB of data.
-    
+
     Args:
         files: List of uploaded file objects
         temp_dir: Temporary directory to store files
         metadata_paths: Optional list of paths for uploaded files
         all_files_list: Optional list of all file paths (including skipped ones)
-        
+
     Returns:
         Tuple of (dataset_root path, manifest dict)
     """
@@ -274,7 +277,7 @@ def process_folder_upload(
         )
         if not original_path:
             continue
-        
+
         normalized_path = normalize_relative_path(original_path, prefix_to_strip)
         if not normalized_path:
             continue
@@ -292,11 +295,13 @@ def process_folder_upload(
         file.save(file_path)
         processed_count += 1
 
-        manifest["uploaded_files"].append({
-            "path": normalized_path,
-            "size": file.content_length or 0,
-            "type": "metadata",
-        })
+        manifest["uploaded_files"].append(
+            {
+                "path": normalized_path,
+                "size": file.content_length or 0,
+                "type": "metadata",
+            }
+        )
 
     # Create smart placeholders for non-uploaded files
     for relative_path in all_files_list:
@@ -318,38 +323,42 @@ def process_folder_upload(
             ext = ".nii.gz"
         else:
             _, ext = os.path.splitext(lower_path)
-        
+
         placeholder_content = create_placeholder_content(normalized_path, ext)
         with open(file_path, "w") as f:
             f.write(placeholder_content)
         skipped_count += 1
 
-        manifest["placeholder_files"].append({
-            "path": normalized_path,
-            "extension": ext,
-            "type": "placeholder",
-        })
+        manifest["placeholder_files"].append(
+            {
+                "path": normalized_path,
+                "extension": ext,
+                "type": "placeholder",
+            }
+        )
 
     # Save manifest
     manifest_path = os.path.join(dataset_root, ".upload_manifest.json")
     with open(manifest_path, "w") as f:
         json.dump(manifest, f, indent=2)
 
-    print(f"📁 Processed {processed_count} metadata files, created {skipped_count} placeholders")
-    
+    print(
+        f"📁 Processed {processed_count} metadata files, created {skipped_count} placeholders"
+    )
+
     return dataset_root, manifest
 
 
 def process_zip_upload(file, temp_dir: str, filename: str) -> str:
     """Process uploaded ZIP file.
-    
+
     Extracts only metadata files from ZIP to reduce processing time and storage.
-    
+
     Args:
         file: Uploaded file object
         temp_dir: Temporary directory
         filename: Secure filename
-        
+
     Returns:
         Dataset root path
     """
@@ -382,17 +391,19 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
                     f.write("")
                 skipped_count += 1
 
-    print(f"📦 Extracted {processed_count} metadata files, skipped {skipped_count} data files")
+    print(
+        f"📦 Extracted {processed_count} metadata files, skipped {skipped_count} data files"
+    )
 
     return find_dataset_root(temp_dir)
 
 
 def find_dataset_root(extract_dir: str) -> str:
     """Find the actual dataset root directory after extraction.
-    
+
     Args:
         extract_dir: Directory where files were extracted
-        
+
     Returns:
         Path to the dataset root
     """

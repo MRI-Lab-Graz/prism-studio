@@ -40,7 +40,11 @@ def patch_sidecars(rawdata_root):
                 bak.write_text(text, encoding="utf-8")
 
             # Insert minimal Study block. Use OriginalName if present elsewhere.
-            original = data.get("Study", {}).get("OriginalName") if isinstance(data.get("Study"), dict) else None
+            original = (
+                data.get("Study", {}).get("OriginalName")
+                if isinstance(data.get("Study"), dict)
+                else None
+            )
             if not original:
                 # Fallback to filename
                 original = p.stem
@@ -48,7 +52,9 @@ def patch_sidecars(rawdata_root):
             data["Study"] = {"OriginalName": original}
 
             try:
-                p.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+                p.write_text(
+                    json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+                )
                 print(f"Patched: {p}")
                 patched += 1
             except Exception as e:

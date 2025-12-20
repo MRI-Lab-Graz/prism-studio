@@ -13,9 +13,7 @@ import argparse
 # Check if running inside the venv (skip for frozen/packaged apps)
 venv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".venv")
 if not getattr(sys, "frozen", False) and not sys.prefix.startswith(venv_path):
-    print(
-        "❌ Error: You are not running inside the prism virtual environment!"
-    )
+    print("❌ Error: You are not running inside the prism virtual environment!")
     print("   Please activate the venv first:")
     if os.name == "nt":  # Windows
         print(f"     {venv_path}\\Scripts\\activate")
@@ -40,7 +38,12 @@ try:
     from config import load_config, merge_cli_args, find_config_file
     from fixer import DatasetFixer, get_fixable_issues
     from formatters import format_output, FORMATTERS
-    from plugins import PluginManager, create_context, generate_plugin_template, list_plugins
+    from plugins import (
+        PluginManager,
+        create_context,
+        generate_plugin_template,
+        list_plugins,
+    )
 except ImportError as e:
     print(f"❌ Import error: {e}")
     print("Make sure you're running from the project root directory")
@@ -125,7 +128,8 @@ Examples:
         help="Output format: json, sarif, junit, markdown, csv",
     )
     parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         metavar="FILE",
         help="Write output to file instead of stdout",
     )
@@ -184,14 +188,14 @@ Examples:
     if args.init_plugin:
         if not args.dataset:
             parser.error("Dataset path required with --init-plugin")
-        
-        plugin_name = args.init_plugin.replace('.py', '')
-        plugin_path = os.path.join(args.dataset, 'validators', f'{plugin_name}.py')
-        
+
+        plugin_name = args.init_plugin.replace(".py", "")
+        plugin_path = os.path.join(args.dataset, "validators", f"{plugin_name}.py")
+
         if os.path.exists(plugin_path):
             print(f"❌ Plugin already exists: {plugin_path}")
             sys.exit(1)
-        
+
         generate_plugin_template(
             plugin_path,
             name=plugin_name,
@@ -205,7 +209,7 @@ Examples:
     if args.list_plugins:
         if not args.dataset:
             parser.error("Dataset path required with --list-plugins")
-        
+
         config = load_config(args.dataset)
         manager = PluginManager(args.dataset)
         manager.load_from_config(config.__dict__)
@@ -225,21 +229,21 @@ Examples:
     if args.fix or args.dry_run:
         fixer = DatasetFixer(args.dataset, dry_run=args.dry_run)
         fixes = fixer.analyze()
-        
+
         if not fixes:
             print("✅ No auto-fixable issues found!")
             sys.exit(0)
-        
+
         print(f"🔧 Found {len(fixes)} fixable issue(s):")
         print("=" * 60)
-        
+
         for i, fix in enumerate(fixes, 1):
             optional = " (optional)" if fix.details.get("optional") else ""
             print(f"  {i}. [{fix.issue_code}] {fix.description}{optional}")
             print(f"     Action: {fix.action_type} → {os.path.basename(fix.file_path)}")
-        
+
         print("=" * 60)
-        
+
         if args.dry_run:
             print("🔍 Dry run - no changes made.")
             print("   Run with --fix to apply these changes.")
@@ -247,26 +251,26 @@ Examples:
             # Apply fixes (skip optional ones unless they're the only ones)
             non_optional = [f for f in fixes if not f.details.get("optional")]
             to_apply = non_optional if non_optional else fixes
-            
+
             applied = fixer.apply_fixes([f.issue_code for f in to_apply])
             print(f"\n✅ Applied {len(applied)} fix(es):")
             for fix in applied:
                 print(f"   • {fix.description}")
-            
+
             print("\n💡 Re-run validation to check for remaining issues.")
-        
+
         sys.exit(0)
 
     # Load config file from dataset (if exists)
     config = load_config(args.dataset)
     config = merge_cli_args(config, args)
-    
+
     # Check if config file was found
     config_path = find_config_file(args.dataset)
     json_output = args.json or args.json_pretty
     format_output_mode = args.format is not None
     machine_output = json_output or format_output_mode
-    
+
     if config_path and not machine_output:
         print(f"📄 Using config: {os.path.basename(config_path)}")
 
@@ -276,14 +280,14 @@ Examples:
         plugin_manager = PluginManager(args.dataset)
         plugin_manager.load_from_config(config.__dict__)
         plugin_manager.discover_local_plugins()
-        
+
         if plugin_manager.plugins and not machine_output:
             print(f"🔌 Loaded {len(plugin_manager.plugins)} plugin(s)")
 
     # Use config values (CLI args already merged and take precedence)
     schema_version = config.schema_version
     run_bids = config.run_bids
-    
+
     if not machine_output:
         print(f"🔍 Validating dataset: {args.dataset}")
         if schema_version != "stable":
@@ -307,7 +311,7 @@ Examples:
         if plugin_manager and plugin_manager.plugins:
             if not machine_output:
                 print(f"🔌 Running {len(plugin_manager.plugins)} plugin(s)...")
-            
+
             plugin_context = create_context(
                 args.dataset,
                 stats,
@@ -315,17 +319,17 @@ Examples:
                 config=config.__dict__,
                 verbose=args.verbose,
             )
-            
+
             plugin_issues = plugin_manager.run_all(plugin_context)
             structured_issues.extend(plugin_issues)
-            
+
             if plugin_issues and not machine_output:
                 print(f"   Found {len(plugin_issues)} issue(s) from plugins")
 
         # Helper to write output (to file or stdout)
         def write_output(content: str):
             if args.output:
-                with open(args.output, 'w') as f:
+                with open(args.output, "w") as f:
                     f.write(content)
                 if not machine_output:
                     print(f"📄 Output written to: {args.output}")
@@ -338,7 +342,7 @@ Examples:
                 issues=structured_issues,
                 dataset_path=os.path.abspath(args.dataset),
                 format_name=args.format,
-                stats=stats
+                stats=stats,
             )
             write_output(output)
         elif json_output:

@@ -46,10 +46,10 @@ class SurveyManager:
                 }
             else:
                 surveys[f.name]["has_draft"] = True
-            
-            surveys[f.name]["draft_mtime"] = datetime.fromtimestamp(f.stat().st_mtime).strftime(
-                "%Y-%m-%d %H:%M"
-            )
+
+            surveys[f.name]["draft_mtime"] = datetime.fromtimestamp(
+                f.stat().st_mtime
+            ).strftime("%Y-%m-%d %H:%M")
 
         return sorted(surveys.values(), key=lambda x: x["filename"])
 
@@ -84,14 +84,14 @@ class SurveyManager:
         Saves content to the draft file.
         """
         draft_file = self.drafts_path / filename
-        
+
         # Ensure it's valid JSON before saving
         if isinstance(content, str):
             content = json.loads(content)
-            
+
         with open(draft_file, "w", encoding="utf-8") as f:
             json.dump(content, f, indent=2, ensure_ascii=False)
-        
+
         return True
 
     def publish_draft(self, filename):
@@ -109,11 +109,11 @@ class SurveyManager:
         try:
             with open(draft_file, "r", encoding="utf-8") as f:
                 content = json.load(f)
-            
+
             errors = self.validator.validate_draft(content, filename)
             if errors:
                 raise ValueError("Validation failed:\n" + "\n".join(errors))
-                
+
         except json.JSONDecodeError:
             raise ValueError(f"Draft {filename} contains invalid JSON.")
 

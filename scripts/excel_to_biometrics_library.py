@@ -32,7 +32,16 @@ import os
 import pandas as pd
 
 
-ID_ALIASES = {"item_id", "id", "code", "variable", "var", "name", "variablename", "variable name"}
+ID_ALIASES = {
+    "item_id",
+    "id",
+    "code",
+    "variable",
+    "var",
+    "name",
+    "variablename",
+    "variable name",
+}
 DESC_ALIASES = {"description", "question", "text", "item"}
 UNITS_ALIASES = {"units", "unit"}
 DTYPE_ALIASES = {"datatype", "data_type", "type"}
@@ -41,15 +50,35 @@ MAX_ALIASES = {"maxvalue", "max", "maximum"}
 WARN_MIN_ALIASES = {"warnminvalue", "warn_min", "warnminimum"}
 WARN_MAX_ALIASES = {"warnmaxvalue", "warn_max", "warnmaximum"}
 ALLOWED_ALIASES = {"allowedvalues", "allowed_values", "allowed", "values", "options"}
-GROUP_ALIASES = {"group", "survey", "section", "domain", "category", "test", "instrument"}
+GROUP_ALIASES = {
+    "group",
+    "survey",
+    "section",
+    "domain",
+    "category",
+    "test",
+    "instrument",
+}
 ALIAS_ALIASES = {"alias_of", "alias", "canonical", "duplicate_of", "merge_into"}
 SESSION_ALIASES = {"session", "visit", "wave", "timepoint"}
 RUN_ALIASES = {"run", "repeat"}
 SCALING_ALIASES = {"scale", "scaling", "levels"}
 
 # Optional group-level metadata columns (repeatable on rows; first non-empty per group wins)
-TEST_NAME_ALIASES = {"testname", "test_name", "originalname", "original_name", "instrument_name"}
-STUDY_DESC_ALIASES = {"studydescription", "study_description", "testdescription", "test_description", "description_long"}
+TEST_NAME_ALIASES = {
+    "testname",
+    "test_name",
+    "originalname",
+    "original_name",
+    "instrument_name",
+}
+STUDY_DESC_ALIASES = {
+    "studydescription",
+    "study_description",
+    "testdescription",
+    "test_description",
+    "description_long",
+}
 PROTOCOL_ALIASES = {"protocol", "procedure", "method"}
 INSTRUCTIONS_ALIASES = {"instructions", "instruction"}
 REFERENCE_ALIASES = {"reference", "citation", "doi"}
@@ -96,7 +125,9 @@ def _parse_float(x):
 
 
 def _infer_units(units_cell, scaling_cell, description_cell):
-    if units_cell is not None and not (isinstance(units_cell, float) and pd.isna(units_cell)):
+    if units_cell is not None and not (
+        isinstance(units_cell, float) and pd.isna(units_cell)
+    ):
         u = str(units_cell).strip()
         if u:
             return u
@@ -164,7 +195,11 @@ def _parse_allowed_values(cell):
             if not k:
                 continue
             k_num = _parse_float(k)
-            keys.append(int(k_num) if k_num is not None and k_num.is_integer() else (k_num if k_num is not None else k))
+            keys.append(
+                int(k_num)
+                if k_num is not None and k_num.is_integer()
+                else (k_num if k_num is not None else k)
+            )
         return keys or None
 
     parts = [p.strip() for p in re.split(r"[;,]\s*", s) if p.strip()]
@@ -209,7 +244,9 @@ def _parse_levels(cell):
 
 
 def _infer_datatype(datatype_cell, units, allowed_values, min_value, max_value):
-    if datatype_cell is not None and not (isinstance(datatype_cell, float) and pd.isna(datatype_cell)):
+    if datatype_cell is not None and not (
+        isinstance(datatype_cell, float) and pd.isna(datatype_cell)
+    ):
         dt = str(datatype_cell).strip().lower()
         if dt in {"string", "integer", "float"}:
             return dt
@@ -228,7 +265,10 @@ def _infer_datatype(datatype_cell, units, allowed_values, min_value, max_value):
             return "integer" if all_int else "float"
         return "string"
 
-    if any(v is not None and (isinstance(v, float) and not v.is_integer()) for v in [min_value, max_value]):
+    if any(
+        v is not None and (isinstance(v, float) and not v.is_integer())
+        for v in [min_value, max_value]
+    ):
         return "float"
 
     if units in {"n/a"}:
@@ -241,7 +281,11 @@ def _parse_minmax(min_cell, max_cell, scaling_cell):
     min_v = _parse_float(min_cell)
     max_v = _parse_float(max_cell)
 
-    if (min_v is None or max_v is None) and scaling_cell is not None and not (isinstance(scaling_cell, float) and pd.isna(scaling_cell)):
+    if (
+        (min_v is None or max_v is None)
+        and scaling_cell is not None
+        and not (isinstance(scaling_cell, float) and pd.isna(scaling_cell))
+    ):
         s = str(scaling_cell)
         if min_v is None:
             m = _RANGE_RE_MIN.search(s)
@@ -356,7 +400,9 @@ def process_excel_biometrics(
             continue
 
         manual_group = get_val(row, group_idx)
-        if manual_group is not None and not (isinstance(manual_group, float) and pd.isna(manual_group)):
+        if manual_group is not None and not (
+            isinstance(manual_group, float) and pd.isna(manual_group)
+        ):
             grp = str(manual_group).strip().lower()
             if grp in {"disable", "skip", "omit", "ignore"}:
                 continue
@@ -413,7 +459,9 @@ def process_excel_biometrics(
         scaling = get_val(row, scaling_idx)
         units = _infer_units(get_val(row, units_idx), scaling, description)
 
-        min_v, max_v = _parse_minmax(get_val(row, min_idx), get_val(row, max_idx), scaling)
+        min_v, max_v = _parse_minmax(
+            get_val(row, min_idx), get_val(row, max_idx), scaling
+        )
         warn_min_v = _parse_float(get_val(row, warn_min_idx))
         warn_max_v = _parse_float(get_val(row, warn_max_idx))
 
@@ -427,7 +475,12 @@ def process_excel_biometrics(
         dtype = _infer_datatype(get_val(row, dtype_idx), units, allowed, min_v, max_v)
 
         entry = {
-            "Description": str(description).strip() if description is not None and not (isinstance(description, float) and pd.isna(description)) else var_name,
+            "Description": (
+                str(description).strip()
+                if description is not None
+                and not (isinstance(description, float) and pd.isna(description))
+                else var_name
+            ),
             "Units": units,
             "DataType": dtype,
         }
@@ -448,13 +501,17 @@ def process_excel_biometrics(
             entry["WarnMaxValue"] = warn_max_v
 
         alias_of = get_val(row, alias_idx)
-        if alias_of is not None and not (isinstance(alias_of, float) and pd.isna(alias_of)):
+        if alias_of is not None and not (
+            isinstance(alias_of, float) and pd.isna(alias_of)
+        ):
             alias_clean = str(alias_of).strip()
             if alias_clean:
                 entry["AliasOf"] = alias_clean
 
         session_hint = get_val(row, session_idx)
-        if session_hint is not None and not (isinstance(session_hint, float) and pd.isna(session_hint)):
+        if session_hint is not None and not (
+            isinstance(session_hint, float) and pd.isna(session_hint)
+        ):
             session_clean = str(session_hint).strip().lower().replace(" ", "")
             session_clean = session_clean.replace("session", "ses-")
             session_clean = session_clean.replace("visit", "ses-")
@@ -469,7 +526,9 @@ def process_excel_biometrics(
             entry["SessionHint"] = session_clean
 
         run_hint = get_val(row, run_idx)
-        if run_hint is not None and not (isinstance(run_hint, float) and pd.isna(run_hint)):
+        if run_hint is not None and not (
+            isinstance(run_hint, float) and pd.isna(run_hint)
+        ):
             run_clean = str(run_hint).strip().lower().replace(" ", "")
             if run_clean and not run_clean.startswith("run-"):
                 run_clean = f"run-{run_clean}"
@@ -495,7 +554,9 @@ def process_excel_biometrics(
             supervisor_value = meta.get("Supervisor") or supervisor
 
             original_name = meta.get("OriginalName") or f"{group} assessment"
-            study_description = meta.get("StudyDescription") or f"Imported {group} biometrics data"
+            study_description = (
+                meta.get("StudyDescription") or f"Imported {group} biometrics data"
+            )
             sidecar = {
                 "Technical": {
                     "StimulusType": "Biometrics",
@@ -534,9 +595,17 @@ def process_excel_biometrics(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Convert Excel data dictionary to PRISM biometrics JSON library.")
-    parser.add_argument("--excel", required=True, help="Path to the Excel metadata file.")
-    parser.add_argument("--output", default="biometrics_library", help="Output directory for JSON files.")
+    parser = argparse.ArgumentParser(
+        description="Convert Excel data dictionary to PRISM biometrics JSON library."
+    )
+    parser.add_argument(
+        "--excel", required=True, help="Path to the Excel metadata file."
+    )
+    parser.add_argument(
+        "--output",
+        default="biometrics_library",
+        help="Output directory for JSON files.",
+    )
     parser.add_argument(
         "--sheet",
         default=0,
@@ -555,5 +624,15 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    sheet = int(args.sheet) if isinstance(args.sheet, str) and args.sheet.isdigit() else args.sheet
-    process_excel_biometrics(args.excel, args.output, sheet_name=sheet, equipment=args.equipment, supervisor=args.supervisor)
+    sheet = (
+        int(args.sheet)
+        if isinstance(args.sheet, str) and args.sheet.isdigit()
+        else args.sheet
+    )
+    process_excel_biometrics(
+        args.excel,
+        args.output,
+        sheet_name=sheet,
+        equipment=args.equipment,
+        supervisor=args.supervisor,
+    )

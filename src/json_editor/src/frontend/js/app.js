@@ -115,7 +115,7 @@ class BIDSJSONEditor {
           form = BIDSFormGenerator.generateForm(this.schema);
         }
 
-        formContainer.innerHTML = "";
+        formContainer.textContent = "";
         formContainer.appendChild(form);
       }
 
@@ -301,7 +301,7 @@ class BIDSJSONEditor {
     const container = form.querySelector("#participantsColumnsContainer");
     if (!container) return;
 
-    container.innerHTML = ""; // Clear
+    container.textContent = ""; // Clear
 
     Object.entries(data).forEach(([columnName, columnDef]) => {
       this._addParticipantColumnWithData(form, columnName, columnDef);

@@ -88,13 +88,9 @@ def validate_dataset(
                 issues.extend(validate_schema_version(dataset_desc, dataset_schema))
                 validate(instance=dataset_desc, schema=dataset_schema)
         except json.JSONDecodeError as e:
-            issues.append(
-                ("ERROR", f"{dataset_desc_path} is not valid JSON: {e}")
-            )
+            issues.append(("ERROR", f"{dataset_desc_path} is not valid JSON: {e}"))
         except ValidationError as e:
-            issues.append(
-                ("ERROR", f"{dataset_desc_path} schema error: {e.message}")
-            )
+            issues.append(("ERROR", f"{dataset_desc_path} schema error: {e.message}"))
         except Exception as e:
             issues.append(("ERROR", f"Error processing {dataset_desc_path}: {e}"))
 
@@ -129,17 +125,15 @@ def validate_dataset(
         for item in filtered_items
         if os.path.isdir(os.path.join(root_dir, item)) and item.startswith("sub-")
     ]
-    
+
     total_subjects = len(subject_dirs)
-    
+
     for idx, (item, item_path) in enumerate(subject_dirs):
         # Progress from 20% to 90% during subject validation
         progress_pct = 20 + int((idx / max(total_subjects, 1)) * 70)
         report_progress(progress_pct, 100, f"Validating {item}...", item_path)
-        
-        subject_issues = _validate_subject(
-            item_path, item, validator, stats, root_dir
-        )
+
+        subject_issues = _validate_subject(item_path, item, validator, stats, root_dir)
         issues.extend(subject_issues)
 
     report_progress(90, 100, "Checking consistency...")
@@ -198,14 +192,17 @@ def _run_bids_validator(root_dir, verbose=False):
         if process.stdout:
             try:
                 bids_report = json.loads(process.stdout)
-                
+
                 # Handle Deno validator structure
                 issue_list = []
                 if "issues" in bids_report:
-                    if isinstance(bids_report["issues"], dict) and "issues" in bids_report["issues"]:
-                         issue_list = bids_report["issues"]["issues"]
+                    if (
+                        isinstance(bids_report["issues"], dict)
+                        and "issues" in bids_report["issues"]
+                    ):
+                        issue_list = bids_report["issues"]["issues"]
                     elif isinstance(bids_report["issues"], list):
-                         issue_list = bids_report["issues"]
+                        issue_list = bids_report["issues"]
 
                 for issue in issue_list:
                     severity = issue.get("severity", "warning").upper()
@@ -223,15 +220,15 @@ def _run_bids_validator(root_dir, verbose=False):
                     msg = f"[BIDS] {code}"
                     if sub_code:
                         msg += f".{sub_code}"
-                    
+
                     if issue_msg:
                         msg += f": {issue_msg}"
-                    
+
                     if location:
                         msg += f"\n    Location: {location}"
 
                     issues.append((level, msg))
-                
+
                 return issues
 
             except json.JSONDecodeError:
@@ -245,7 +242,9 @@ def _run_bids_validator(root_dir, verbose=False):
                 return issues
         else:
             # Deno ran but produced no output (likely an error)
-            print(f"   ❌ Error: Deno validator produced no output. Stderr: {process.stderr}")
+            print(
+                f"   ❌ Error: Deno validator produced no output. Stderr: {process.stderr}"
+            )
             issues.append(("ERROR", f"BIDS Validator (Deno) failed: {process.stderr}"))
             return issues
 

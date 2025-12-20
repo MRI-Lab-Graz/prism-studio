@@ -89,7 +89,14 @@ def detect_language(texts):
     if re.search(r"[\u00e4\u00f6\u00fc\u00df]", combined):
         return "de"
 
-    german_tokens = [" nicht ", " oder ", " keine ", " w\u00e4hrend ", " immer ", " selten "]
+    german_tokens = [
+        " nicht ",
+        " oder ",
+        " keine ",
+        " w\u00e4hrend ",
+        " immer ",
+        " selten ",
+    ]
     padded = f" {combined} "
     if any(tok in padded for tok in german_tokens):
         return "de"
@@ -97,7 +104,9 @@ def detect_language(texts):
     return "en"
 
 
-def process_excel(excel_file, output_dir, participants_prefix=None, participants_output=None):
+def process_excel(
+    excel_file, output_dir, participants_prefix=None, participants_output=None
+):
     print(f"Loading metadata from {excel_file}...")
     try:
         df_meta = pd.read_excel(excel_file, header=None)
@@ -129,7 +138,15 @@ def process_excel(excel_file, output_dir, participants_prefix=None, participants
 
     header_detected = any(
         idx is not None
-        for idx in [id_idx, question_idx, scale_idx, group_idx, alias_idx, session_idx, run_idx]
+        for idx in [
+            id_idx,
+            question_idx,
+            scale_idx,
+            group_idx,
+            alias_idx,
+            session_idx,
+            run_idx,
+        ]
     )
     if header_detected:
         print("Detected header row (named columns). Using column names.")
@@ -218,7 +235,9 @@ def process_excel(excel_file, output_dir, participants_prefix=None, participants
         os.makedirs(participants_output, exist_ok=True)
 
     for prefix, variables in surveys.items():
-        is_participants = participants_prefix is not None and prefix == participants_prefix
+        is_participants = (
+            participants_prefix is not None and prefix == participants_prefix
+        )
 
         texts_for_lang = []
         for item in variables.values():
@@ -227,7 +246,9 @@ def process_excel(excel_file, output_dir, participants_prefix=None, participants
                 texts_for_lang.append(desc)
             levels = item.get("Levels") if isinstance(item, dict) else None
             if isinstance(levels, dict):
-                texts_for_lang.extend([v for v in levels.values() if isinstance(v, str)])
+                texts_for_lang.extend(
+                    [v for v in levels.values() if isinstance(v, str)]
+                )
 
         language = detect_language(texts_for_lang)
 

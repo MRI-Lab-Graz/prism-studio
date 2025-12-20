@@ -14,6 +14,7 @@ from typing import Optional, List, Dict, Any
 
 class Severity(Enum):
     """Issue severity levels"""
+
     ERROR = "ERROR"
     WARNING = "WARNING"
     INFO = "INFO"
@@ -23,7 +24,7 @@ class Severity(Enum):
 class Issue:
     """
     Structured validation issue.
-    
+
     Attributes:
         code: Unique error code (e.g., "PRISM001")
         severity: ERROR, WARNING, or INFO
@@ -32,13 +33,14 @@ class Issue:
         fix_hint: Suggestion for how to fix the issue (optional)
         details: Additional context (optional)
     """
+
     code: str
     severity: Severity
     message: str
     file_path: Optional[str] = None
     fix_hint: Optional[str] = None
     details: Optional[Dict[str, Any]] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization"""
         return {
@@ -49,13 +51,13 @@ class Issue:
             "fix_hint": self.fix_hint,
             "details": self.details,
         }
-    
+
     def to_tuple(self) -> tuple:
         """Convert to legacy tuple format for backward compatibility"""
         if self.file_path:
             return (self.severity.value, self.message, self.file_path)
         return (self.severity.value, self.message)
-    
+
     def __str__(self) -> str:
         """Human-readable string representation"""
         parts = [f"[{self.code}] {self.severity.value}: {self.message}"]
@@ -72,7 +74,7 @@ class Issue:
 # Format: CODE -> (default_message, fix_hint)
 # Codes are organized by category:
 #   PRISM0xx: Dataset structure errors
-#   PRISM1xx: File naming errors  
+#   PRISM1xx: File naming errors
 #   PRISM2xx: Sidecar/metadata errors
 #   PRISM3xx: Schema validation errors
 #   PRISM4xx: Content validation errors
@@ -97,7 +99,6 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Missing participants.tsv",
         "fix_hint": "Create a participants.tsv file listing all subjects with at least a 'participant_id' column",
     },
-    
     # File naming errors (1xx)
     "PRISM101": {
         "message": "Invalid filename pattern",
@@ -115,7 +116,6 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Invalid characters in filename",
         "fix_hint": "Use only alphanumeric characters, hyphens, and underscores",
     },
-    
     # Sidecar/metadata errors (2xx)
     "PRISM201": {
         "message": "Missing sidecar JSON file",
@@ -133,7 +133,6 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Empty sidecar file",
         "fix_hint": "Add metadata content to the sidecar file or remove it if not needed",
     },
-    
     # Schema validation errors (3xx)
     "PRISM301": {
         "message": "Schema validation failed",
@@ -151,7 +150,6 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Unknown modality",
         "fix_hint": "Supported modalities: survey, biometrics, events, anat, func, dwi, fmap, eeg",
     },
-    
     # Content validation errors (4xx)
     "PRISM401": {
         "message": "TSV file is empty",
@@ -173,7 +171,6 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Value not in allowed list",
         "fix_hint": "Check allowedValues/Levels constraints in the sidecar",
     },
-    
     # BIDS compatibility warnings (5xx)
     "PRISM501": {
         "message": "Non-standard modality folder",
@@ -187,7 +184,6 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "BIDS validator error",
         "fix_hint": "See BIDS specification for details",
     },
-    
     # Internal/system errors (9xx)
     "PRISM901": {
         "message": "Internal validation error",
@@ -204,6 +200,7 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
 # FACTORY FUNCTIONS
 # =============================================================================
 
+
 def create_issue(
     code: str,
     severity: Severity = Severity.ERROR,
@@ -214,7 +211,7 @@ def create_issue(
 ) -> Issue:
     """
     Create an Issue with defaults from ERROR_CODES.
-    
+
     Args:
         code: Error code (e.g., "PRISM001")
         severity: Override default severity
@@ -222,7 +219,7 @@ def create_issue(
         file_path: Path to affected file
         fix_hint: Override default fix hint
         details: Additional context
-        
+
     Returns:
         Issue instance
     """
@@ -237,24 +234,37 @@ def create_issue(
     )
 
 
-def error(code: str, file_path: Optional[str] = None, message: Optional[str] = None, **kwargs) -> Issue:
+def error(
+    code: str, file_path: Optional[str] = None, message: Optional[str] = None, **kwargs
+) -> Issue:
     """Shorthand for creating an ERROR issue"""
-    return create_issue(code, Severity.ERROR, message=message, file_path=file_path, **kwargs)
+    return create_issue(
+        code, Severity.ERROR, message=message, file_path=file_path, **kwargs
+    )
 
 
-def warning(code: str, file_path: Optional[str] = None, message: Optional[str] = None, **kwargs) -> Issue:
+def warning(
+    code: str, file_path: Optional[str] = None, message: Optional[str] = None, **kwargs
+) -> Issue:
     """Shorthand for creating a WARNING issue"""
-    return create_issue(code, Severity.WARNING, message=message, file_path=file_path, **kwargs)
+    return create_issue(
+        code, Severity.WARNING, message=message, file_path=file_path, **kwargs
+    )
 
 
-def info(code: str, file_path: Optional[str] = None, message: Optional[str] = None, **kwargs) -> Issue:
+def info(
+    code: str, file_path: Optional[str] = None, message: Optional[str] = None, **kwargs
+) -> Issue:
     """Shorthand for creating an INFO issue"""
-    return create_issue(code, Severity.INFO, message=message, file_path=file_path, **kwargs)
+    return create_issue(
+        code, Severity.INFO, message=message, file_path=file_path, **kwargs
+    )
 
 
 # =============================================================================
-# CONVERSION UTILITIES  
+# CONVERSION UTILITIES
 # =============================================================================
+
 
 def issues_to_dict(issues: List[Issue]) -> List[Dict[str, Any]]:
     """Convert list of Issues to list of dicts for JSON serialization"""
@@ -269,7 +279,7 @@ def issues_to_tuples(issues: List[Issue]) -> List[tuple]:
 def tuple_to_issue(t: tuple, default_code: str = "PRISM901") -> Issue:
     """
     Convert a legacy (severity, message[, path]) tuple to an Issue.
-    
+
     Used for backward compatibility during migration.
     """
     if len(t) == 2:
@@ -277,12 +287,16 @@ def tuple_to_issue(t: tuple, default_code: str = "PRISM901") -> Issue:
         file_path = None
     else:
         severity_str, message, file_path = t[:3]
-    
-    severity = Severity[severity_str] if severity_str in Severity.__members__ else Severity.ERROR
-    
+
+    severity = (
+        Severity[severity_str]
+        if severity_str in Severity.__members__
+        else Severity.ERROR
+    )
+
     # Try to infer code from message patterns
     code = _infer_code_from_message(message) or default_code
-    
+
     return Issue(
         code=code,
         severity=severity,
@@ -294,32 +308,32 @@ def tuple_to_issue(t: tuple, default_code: str = "PRISM901") -> Issue:
 def _infer_code_from_message(message: str) -> Optional[str]:
     """Attempt to infer error code from message content"""
     msg_lower = message.lower()
-    
+
     if "dataset_description.json" in msg_lower:
         if "missing" in msg_lower:
             return "PRISM001"
         if "invalid" in msg_lower or "json" in msg_lower:
             return "PRISM003"
-    
+
     if "no subjects found" in msg_lower:
         return "PRISM002"
-    
+
     if "sidecar" in msg_lower or "missing" in msg_lower and ".json" in msg_lower:
         return "PRISM201"
-    
+
     if "schema" in msg_lower:
         return "PRISM301"
-    
+
     if "empty" in msg_lower:
         if "tsv" in msg_lower:
             return "PRISM401"
         return "PRISM204"
-    
+
     if "[bids]" in msg_lower:
         if "error" in msg_lower:
             return "PRISM503"
         return "PRISM502"
-    
+
     return None
 
 
@@ -327,10 +341,11 @@ def _infer_code_from_message(message: str) -> Optional[str]:
 # SUMMARY UTILITIES
 # =============================================================================
 
+
 def summarize_issues(issues: List[Issue]) -> Dict[str, Any]:
     """
     Create a summary of issues by severity and code.
-    
+
     Returns:
         Dict with counts, by_severity, and by_code breakdowns
     """
@@ -341,7 +356,7 @@ def summarize_issues(issues: List[Issue]) -> Dict[str, Any]:
         "info": 0,
         "by_code": {},
     }
-    
+
     for issue in issues:
         if issue.severity == Severity.ERROR:
             summary["errors"] += 1
@@ -349,9 +364,9 @@ def summarize_issues(issues: List[Issue]) -> Dict[str, Any]:
             summary["warnings"] += 1
         else:
             summary["info"] += 1
-        
+
         if issue.code not in summary["by_code"]:
             summary["by_code"][issue.code] = 0
         summary["by_code"][issue.code] += 1
-    
+
     return summary

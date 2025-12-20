@@ -138,7 +138,7 @@ def json_to_lss(json_path, output_path, matrix_mode=False):
         levels = first_data.get("Levels", {})
 
         # Determine if it's a Matrix or Single
-        is_matrix = (len(group) > 1)
+        is_matrix = len(group) > 1
 
         qid = str(qid_counter)
         qid_counter += 1
@@ -343,18 +343,18 @@ def json_to_lss(json_path, output_path, matrix_mode=False):
     if hasattr(ET, "indent"):
         ET.indent(tree, space="  ", level=0)
 
-    if output_path.endswith('.lsa'):
+    if output_path.endswith(".lsa"):
         # Create LSA archive (Zip file containing .lss)
         # We need to write the XML to a buffer first
         xml_buffer = io.BytesIO()
         tree.write(xml_buffer, encoding="UTF-8", xml_declaration=True)
         xml_content = xml_buffer.getvalue()
-        
-        with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as z:
+
+        with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as z:
             # The .lss file inside the archive usually has the same name as the archive or 'survey_archive.lss'
-            lss_filename = os.path.basename(output_path).replace('.lsa', '.lss')
+            lss_filename = os.path.basename(output_path).replace(".lsa", ".lss")
             z.writestr(lss_filename, xml_content)
-            
+
         print(f"Successfully created LSA archive {output_path}")
     else:
         # Standard LSS file

@@ -13,7 +13,7 @@ import sys
 import os
 import json
 import zipfile
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from datetime import date
 
 
@@ -22,10 +22,10 @@ def parse_limesurvey_structure(lss_path):
     Parse LimeSurvey .lss (XML) file or .lsa (Archive) and extract question metadata.
     """
     try:
-        if lss_path.endswith('.lsa'):
-            with zipfile.ZipFile(lss_path, 'r') as z:
+        if lss_path.endswith(".lsa"):
+            with zipfile.ZipFile(lss_path, "r") as z:
                 # Find the .lss file inside the archive
-                lss_files = [f for f in z.namelist() if f.endswith('.lss')]
+                lss_files = [f for f in z.namelist() if f.endswith(".lss")]
                 if not lss_files:
                     print("Error: No .lss file found in the .lsa archive.")
                     sys.exit(1)
@@ -34,7 +34,7 @@ def parse_limesurvey_structure(lss_path):
                     tree = ET.parse(f)
         else:
             tree = ET.parse(lss_path)
-            
+
         root = tree.getroot()
     except (ET.ParseError, zipfile.BadZipFile) as e:
         print(f"Error parsing file: {e}")

@@ -39,9 +39,14 @@ def strip_temp_path(file_path: str, dataset_path: str = None) -> Optional[str]:
         return None
 
     # If it's a temp path, try to extract the relative path
-    temp_patterns = ["/tmp/", "/T/prism_validator_", "/var/folders/", "prism_validator_"]
+    temp_patterns = [
+        "/tmp/",
+        "/T/prism_validator_",
+        "/var/folders/",
+        "prism_validator_",
+    ]
     is_temp_path = any(p in file_path for p in temp_patterns)
-    
+
     if is_temp_path:
         # Find the dataset root marker - typically after 'dataset/'
         if "/dataset/" in file_path:
@@ -56,7 +61,7 @@ def strip_temp_path(file_path: str, dataset_path: str = None) -> Optional[str]:
 
     # If dataset_path is a temp directory, strip it
     if dataset_path and file_path.startswith(dataset_path):
-        relative = file_path[len(dataset_path):].lstrip("/")
+        relative = file_path[len(dataset_path) :].lstrip("/")
         return relative if relative else file_path
 
     return file_path
@@ -73,9 +78,7 @@ def strip_temp_path_from_message(msg: str) -> str:
         msg,
     )
     # Also replace standalone temp paths that lead to sub- or ses- files
-    msg = re.sub(
-        r"(/tmp/[^\s,:]+/|/var/folders/[^\s,:]+/)(sub-[^\s,:/]+)", r"\2", msg
-    )
+    msg = re.sub(r"(/tmp/[^\s,:]+/|/var/folders/[^\s,:]+/)(sub-[^\s,:/]+)", r"\2", msg)
     return msg
 
 
@@ -83,22 +86,22 @@ def extract_path_from_message(msg: str, dataset_path: str = None) -> Optional[st
     """Try to heuristically extract a file path or filename from a validator message."""
     if not msg:
         return None
-        
+
     # If message explicitly contains an absolute path
     abs_path_match = re.search(r"(/[^\s:,]+\.[A-Za-z0-9]+(?:\.gz)?)", msg)
     if abs_path_match:
         extracted = abs_path_match.group(1)
         return strip_temp_path(extracted, dataset_path)
-        
+
     # dataset_description.json special case
     if "dataset_description.json" in msg:
         return "dataset_description.json"
-        
+
     # Look for sub-... filenames like sub-01_task-foo_blah.ext
     name_match = re.search(r"(sub-[A-Za-z0-9._-]+\.[A-Za-z0-9]+(?:\.gz)?)", msg)
     if name_match:
         return name_match.group(1)
-        
+
     # Generic filename with extension (e.g., task-recognition_stim.json)
     generic_match = re.search(
         r"([A-Za-z0-9._\-]+\.(?:json|tsv|edf|nii|nii\.gz|txt|csv|mp4|png|jpg|jpeg))",
@@ -106,7 +109,7 @@ def extract_path_from_message(msg: str, dataset_path: str = None) -> Optional[st
     )
     if generic_match:
         return generic_match.group(1)
-        
+
     return None
 
 
@@ -116,7 +119,7 @@ def get_error_code_from_message(message: str) -> str:
     prism_match = re.search(r"(PRISM\d{3})", message)
     if prism_match:
         return prism_match.group(1)
-    
+
     # Legacy error code detection
     if "Invalid BIDS filename" in message or "Invalid BIDS filename format" in message:
         return "PRISM101"  # INVALID_BIDS_FILENAME -> PRISM101
@@ -128,7 +131,7 @@ def get_error_code_from_message(message: str) -> str:
         return "PRISM202"  # INVALID_JSON -> PRISM202
     elif "doesn't match expected pattern" in message:
         return "PRISM101"  # FILENAME_PATTERN_MISMATCH -> PRISM101
-    
+
     return "PRISM999"  # GENERAL_ERROR
 
 
@@ -168,7 +171,7 @@ def get_error_description(error_code: str) -> str:
 def get_error_documentation_url(error_code: str) -> str:
     """Get documentation URL for an error code."""
     base_url = "https://prism-validator.readthedocs.io/en/latest/ERROR_CODES.html"
-    
+
     # Map legacy codes to PRISM codes for URL
     code_mapping = {
         "INVALID_BIDS_FILENAME": "prism101---invalid-filename-pattern",
@@ -177,15 +180,15 @@ def get_error_documentation_url(error_code: str) -> str:
         "INVALID_JSON": "prism202---invalid-json-syntax",
         "FILENAME_PATTERN_MISMATCH": "prism101---invalid-filename-pattern",
     }
-    
+
     # PRISM code anchors
     if error_code.startswith("PRISM"):
         anchor = f"#{error_code.lower()}---"
         return f"{base_url}{anchor}"
-    
+
     if error_code in code_mapping:
         return f"{base_url}#{code_mapping[error_code]}"
-    
+
     return base_url
 
 
@@ -208,14 +211,16 @@ def get_filename_from_path(file_path: str) -> str:
     return os.path.basename(file_path)
 
 
-def format_validation_results(issues: list, dataset_stats: Any, dataset_path: str) -> dict:
+def format_validation_results(
+    issues: list, dataset_stats: Any, dataset_path: str
+) -> dict:
     """Format validation results in BIDS-validator style with grouped errors.
-    
+
     Args:
         issues: List of validation issues (tuples or dicts)
         dataset_stats: Stats object from validator
         dataset_path: Path to the validated dataset
-        
+
     Returns:
         Formatted results dictionary for web display
     """
@@ -296,7 +301,9 @@ def format_validation_results(issues: list, dataset_stats: Any, dataset_path: st
             warning_groups[error_code]["count"] += 1
 
             if file_path:
-                valid_files.append({"path": file_path})  # Warnings don't make files invalid
+                valid_files.append(
+                    {"path": file_path}
+                )  # Warnings don't make files invalid
         else:
             # Treat other levels as info/valid
             if file_path:
@@ -311,7 +318,9 @@ def format_validation_results(issues: list, dataset_stats: Any, dataset_path: st
     if stats_total:
         total_files = stats_total
     else:
-        total_files = len(file_paths) if file_paths else len(valid_files) + len(invalid_files)
+        total_files = (
+            len(file_paths) if file_paths else len(valid_files) + len(invalid_files)
+        )
 
     # Add error if no files found
     if stats_total == 0 and len(file_paths) == 0:
@@ -340,7 +349,7 @@ def format_validation_results(issues: list, dataset_stats: Any, dataset_path: st
     # Count valid vs invalid files
     invalid_file_paths = {f["path"] for f in invalid_files if f.get("path")}
     invalid_count = len(invalid_file_paths)
-    
+
     if stats_total:
         valid_count = max(0, stats_total - invalid_count)
     else:
@@ -363,7 +372,9 @@ def format_validation_results(issues: list, dataset_stats: Any, dataset_path: st
         "valid_files": valid_files,
         "invalid_files": invalid_files,
         "errors": [item for group in error_groups.values() for item in group["files"]],
-        "warnings": [item for group in warning_groups.values() for item in group["files"]],
+        "warnings": [
+            item for group in warning_groups.values() for item in group["files"]
+        ],
         "dataset_path": dataset_path,
         "dataset_stats": dataset_stats,
     }

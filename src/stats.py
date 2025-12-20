@@ -19,7 +19,9 @@ class DatasetStats:
         self.total_files = 0
         self.sidecar_files = 0
         # For consistency checking
-        self.subject_data = {}  # subject_id -> {sessions: {}, modalities: set(), tasks: set()}
+        self.subject_data = (
+            {}
+        )  # subject_id -> {sessions: {}, modalities: set(), tasks: set()}
 
     def add_file(self, subject_id, session_id, modality, task, filename):
         """Add a file to the statistics"""
@@ -149,7 +151,9 @@ class DatasetStats:
 
         # Heuristic: if a session exists in very few subjects, it's more likely a mislabeled session
         # than "missing" for everyone else.
-        rare_threshold = max(1, int(round(total_subjects * 0.05)))  # 5% of subjects (min 1)
+        rare_threshold = max(
+            1, int(round(total_subjects * 0.05))
+        )  # 5% of subjects (min 1)
 
         for session in sorted(all_sessions):
             present = present_by_session.get(session, 0)
@@ -157,7 +161,9 @@ class DatasetStats:
             if present == 0:
                 continue
 
-            if present <= rare_threshold and missing >= (total_subjects - rare_threshold):
+            if present <= rare_threshold and missing >= (
+                total_subjects - rare_threshold
+            ):
                 warnings.append(
                     (
                         "WARNING",
@@ -168,7 +174,11 @@ class DatasetStats:
                 continue
 
             # Otherwise, list missing subjects, but keep it bounded.
-            missing_subjects = [sid for sid, data in subjects_with_sessions.items() if session not in data["sessions"]]
+            missing_subjects = [
+                sid
+                for sid, data in subjects_with_sessions.items()
+                if session not in data["sessions"]
+            ]
             missing_subjects = sorted(missing_subjects)
             if not missing_subjects:
                 continue

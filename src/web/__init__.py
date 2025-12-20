@@ -38,7 +38,7 @@ from .upload import (
 __all__ = [
     # Utils
     "is_system_file",
-    "strip_temp_path", 
+    "strip_temp_path",
     "extract_path_from_message",
     "format_validation_results",
     "get_error_description",

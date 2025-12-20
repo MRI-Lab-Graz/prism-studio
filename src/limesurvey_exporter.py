@@ -1,5 +1,5 @@
 import json
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from datetime import datetime
 import os
 import io
@@ -29,7 +29,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
 
     def get_text(obj, lang, i18n_data=None, path=None):
         """
-        Get localized text. 
+        Get localized text.
         1. Checks i18n_data[lang] using the provided path (e.g. "age.Description")
         2. If not found, checks if obj is a dict (inline translation)
         3. Otherwise returns obj as string
@@ -131,7 +131,15 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
             all_questions = {
                 k: v
                 for k, v in data.items()
-                if k not in ["Technical", "Study", "Metadata", "Categories", "TaskName", "I18n"]
+                if k
+                not in [
+                    "Technical",
+                    "Study",
+                    "Metadata",
+                    "Categories",
+                    "TaskName",
+                    "I18n",
+                ]
             }
 
         # Apply inclusion filter if provided
@@ -147,8 +155,18 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
         group_sort_order += 1
 
         study_info = data.get("Study", {})
-        group_name = get_text(study_info.get("OriginalName", data.get("TaskName", os.path.splitext(os.path.basename(json_path))[0])), language, i18n_data, "Study.OriginalName")
-        group_desc = get_text(study_info.get("Description", ""), language, i18n_data, "Study.Description")
+        group_name = get_text(
+            study_info.get(
+                "OriginalName",
+                data.get("TaskName", os.path.splitext(os.path.basename(json_path))[0]),
+            ),
+            language,
+            i18n_data,
+            "Study.OriginalName",
+        )
+        group_desc = get_text(
+            study_info.get("Description", ""), language, i18n_data, "Study.Description"
+        )
 
         # Add Group
         group_data = {
@@ -162,14 +180,14 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
             group_data["group_name"] = group_name
             group_data["description"] = group_desc
             group_data["language"] = language
-        
+
         add_row(groups_rows, group_data)
 
         if is_v6:
             add_row(
                 group_l10ns_rows,
                 {
-                    "id": gid, # In LS6, l10ns often use the main ID as reference
+                    "id": gid,  # In LS6, l10ns often use the main ID as reference
                     "gid": gid,
                     "group_name": group_name,
                     "description": group_desc,
@@ -185,11 +203,11 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                 # Global grouping: group all questions with identical levels
                 groups = []
                 level_to_group_idx = {}
-                
+
                 for q_code, q_data in questions_data.items():
                     if not isinstance(q_data, dict):
                         continue
-                        
+
                     levels = q_data.get("Levels")
                     if levels and isinstance(levels, dict) and len(levels) > 0:
                         l_str = json.dumps(levels, sort_keys=True)
@@ -211,7 +229,9 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                         continue
 
                     levels = q_data.get("Levels")
-                    levels_str = json.dumps(levels, sort_keys=True) if levels else "NO_LEVELS"
+                    levels_str = (
+                        json.dumps(levels, sort_keys=True) if levels else "NO_LEVELS"
+                    )
 
                     if not current_group:
                         current_group.append((q_code, q_data))
@@ -235,10 +255,10 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
         q_sort_order = 0
         for group in grouped_questions:
             # group is a list of (q_code, q_data)
-            
+
             first_code, first_data = group[0]
             levels = first_data.get("Levels", {})
-            is_matrix = (len(group) > 1)
+            is_matrix = len(group) > 1
 
             qid = str(qid_counter)
             qid_counter += 1
@@ -282,7 +302,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                 if not is_v6:
                     q_data_row["question"] = matrix_text
                     q_data_row["language"] = language
-                
+
                 add_row(questions_rows, q_data_row)
 
                 if is_v6:
@@ -305,7 +325,12 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     qid_counter += 1
 
                     # Add Subquestion
-                    sub_q_text = get_text(data_item.get("Description", code), language, i18n_data, f"{code}.Description")
+                    sub_q_text = get_text(
+                        data_item.get("Description", code),
+                        language,
+                        i18n_data,
+                        f"{code}.Description",
+                    )
                     sub_q_row = {
                         "qid": sub_qid,
                         "parent_qid": qid,
@@ -321,7 +346,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     if not is_v6:
                         sub_q_row["question"] = sub_q_text
                         sub_q_row["language"] = language
-                    
+
                     add_row(subquestions_rows, sub_q_row)
 
                     if is_v6:
@@ -341,7 +366,12 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                         sort_ans = 0
                         for code, answer_text in levels.items():
                             sort_ans += 1
-                            ans_text = get_text(answer_text, language, i18n_data, f"{first_code}.Levels.{code}")
+                            ans_text = get_text(
+                                answer_text,
+                                language,
+                                i18n_data,
+                                f"{first_code}.Levels.{code}",
+                            )
                             ans_row = {
                                 "qid": qid,
                                 "code": code,
@@ -352,14 +382,14 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                             if not is_v6:
                                 ans_row["answer"] = ans_text
                                 ans_row["language"] = language
-                            
+
                             add_row(answers_rows, ans_row)
 
                             if is_v6:
                                 add_row(
                                     answer_l10ns_rows,
                                     {
-                                        "id": f"{qid}_{code}", # Dummy unique ID for l10n row
+                                        "id": f"{qid}_{code}",  # Dummy unique ID for l10n row
                                         "qid": qid,
                                         "code": code,
                                         "answer": ans_text,
@@ -371,7 +401,12 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                 # Single Question
                 q_code = first_code
                 q_data = first_data
-                description = get_text(q_data.get("Description", q_code), language, i18n_data, f"{q_code}.Description")
+                description = get_text(
+                    q_data.get("Description", q_code),
+                    language,
+                    i18n_data,
+                    f"{q_code}.Description",
+                )
 
                 # Determine Type
                 q_type = "L" if levels else "T"  # List (Radio) or Long Free Text
@@ -394,7 +429,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                 if not is_v6:
                     q_data_row["question"] = description
                     q_data_row["language"] = language
-                
+
                 add_row(questions_rows, q_data_row)
 
                 if is_v6:
@@ -414,7 +449,9 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     sort_ans = 0
                     for code, answer_text in levels.items():
                         sort_ans += 1
-                        ans_text = get_text(answer_text, language, i18n_data, f"{q_code}.Levels.{code}")
+                        ans_text = get_text(
+                            answer_text, language, i18n_data, f"{q_code}.Levels.{code}"
+                        )
                         ans_row = {
                             "qid": qid,
                             "code": code,
@@ -425,7 +462,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                         if not is_v6:
                             ans_row["answer"] = ans_text
                             ans_row["language"] = language
-                        
+
                         add_row(answers_rows, ans_row)
 
                         if is_v6:
@@ -465,8 +502,13 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                 d = json.load(f)
                 s_info = d.get("Study", {})
                 i_data = d.get("I18n", {})
-                survey_title = get_text(s_info.get("OriginalName", d.get("TaskName", "Combined Survey")), language, i_data, "Study.OriginalName")
-        except:
+                survey_title = get_text(
+                    s_info.get("OriginalName", d.get("TaskName", "Combined Survey")),
+                    language,
+                    i_data,
+                    "Study.OriginalName",
+                )
+        except Exception:
             pass
 
     add_row(

@@ -62,7 +62,9 @@ def _allowed_values(col_def):
     return None
 
 
-def _ensure_participants(df, id_col, output_root, library_path, candidates=None, participant_schema=None):
+def _ensure_participants(
+    df, id_col, output_root, library_path, candidates=None, participant_schema=None
+):
     """Create participants.tsv/json. Prefer explicit participant schema or library participants.json; otherwise infer."""
     rawdata_dir = os.path.join(output_root, "rawdata")
     os.makedirs(rawdata_dir, exist_ok=True)
@@ -81,9 +83,7 @@ def _ensure_participants(df, id_col, output_root, library_path, candidates=None,
         if not cols:
             return
         part_schema = {
-            "participant_id": {
-                "Description": "Participant identifier (sub-<label>)"
-            }
+            "participant_id": {"Description": "Participant identifier (sub-<label>)"}
         }
         for col in cols:
             part_schema[col] = {"Description": f"Participant attribute '{col}'"}
@@ -92,11 +92,17 @@ def _ensure_participants(df, id_col, output_root, library_path, candidates=None,
         with open(participants_json_path, "r") as f:
             part_schema = json.load(f)
 
-    print("Generating participants.tsv using participant schema..." if (used_schema or not inferred) else "Generating inferred participants.tsv...")
+    print(
+        "Generating participants.tsv using participant schema..."
+        if (used_schema or not inferred)
+        else "Generating inferred participants.tsv..."
+    )
     try:
-        part_vars = [k for k in part_schema.keys() if k not in ["Technical", "Study", "Metadata"]]
+        part_vars = [
+            k for k in part_schema.keys() if k not in ["Technical", "Study", "Metadata"]
+        ]
         found_part_vars = [v for v in part_vars if v in df.columns]
-        
+
         # Ensure id_col is not in found_part_vars to avoid "cannot insert... already exists" during reset_index
         if id_col in found_part_vars:
             found_part_vars.remove(id_col)
@@ -146,7 +152,9 @@ def process_data(csv_file, schemas, output_root, library_path):
     process_dataframe(df, schemas, output_root, library_path)
 
 
-def process_dataframe(df, schemas, output_root, library_path, session_override=None, run_override=None):
+def process_dataframe(
+    df, schemas, output_root, library_path, session_override=None, run_override=None
+):
     """Convert in-memory dataframe to BIDS TSV files based on JSON schemas."""
     rawdata_dir = os.path.join(output_root, "rawdata")
     os.makedirs(rawdata_dir, exist_ok=True)
@@ -164,7 +172,7 @@ def process_dataframe(df, schemas, output_root, library_path, session_override=N
             "HowToAcknowledge": "Please cite this dataset.",
             "Funding": ["Unknown"],
             "ReferencesAndLinks": ["https://github.com/MRI-Lab-Graz/psycho-validator"],
-            "DatasetDOI": ""
+            "DatasetDOI": "",
         }
         with open(desc_path, "w") as f:
             json.dump(dataset_description, f, indent=2)
@@ -179,7 +187,9 @@ def process_dataframe(df, schemas, output_root, library_path, session_override=N
         if "id" in first_col.lower() or "sub" in first_col.lower():
             id_cols = [first_col]
         else:
-            print("Error: Could not find a participant ID column (e.g., 'participant_id', 'subject').")
+            print(
+                "Error: Could not find a participant ID column (e.g., 'participant_id', 'subject')."
+            )
             return
     id_col = id_cols[0]
     print(f"Using '{id_col}' as participant ID column.")
@@ -214,13 +224,15 @@ def process_dataframe(df, schemas, output_root, library_path, session_override=N
 
     # Iterate over each defined survey schema
     GLOBAL_METADATA_COLS = ["startlanguage"]
-    
+
     for task_name, schema in schemas.items():
         print(f"Processing survey: {task_name}...")
 
         # Skip per-subject participant task files; participants handled at dataset root.
         if task_name == "participant":
-            print("  - Skipping per-subject participants; handled via participants.tsv/json at dataset root.")
+            print(
+                "  - Skipping per-subject participants; handled via participants.tsv/json at dataset root."
+            )
             continue
 
         # 1. Identify variables belonging to this survey
@@ -264,7 +276,7 @@ def process_dataframe(df, schemas, output_root, library_path, session_override=N
             continue
 
         print(f"  - Found {len(found_vars)} variables for {task_name}.")
-        
+
         # Identify available global metadata columns
         available_meta_cols = [c for c in GLOBAL_METADATA_COLS if c in df.columns]
 
@@ -280,12 +292,16 @@ def process_dataframe(df, schemas, output_root, library_path, session_override=N
             base_ses = session_override or "ses-1"
             if "session" in df.columns:
                 ses_val = str(row["session"])
-                base_ses = f"ses-{ses_val}" if not ses_val.startswith("ses-") else ses_val
+                base_ses = (
+                    f"ses-{ses_val}" if not ses_val.startswith("ses-") else ses_val
+                )
 
             base_run = run_override or "run-1"
             if "run" in df.columns:
                 run_val = str(row["run"])
-                base_run = f"run-{run_val}" if not run_val.startswith("run-") else run_val
+                base_run = (
+                    f"run-{run_val}" if not run_val.startswith("run-") else run_val
+                )
 
             # Partition variables by session
             buckets = {}
@@ -304,7 +320,9 @@ def process_dataframe(df, schemas, output_root, library_path, session_override=N
                 merged = {}
                 for var, val in row_data.items():
                     canon = canonical_for.get(var, var)
-                    if canon not in merged or (pd.isna(merged[canon]) and pd.notna(val)):
+                    if canon not in merged or (
+                        pd.isna(merged[canon]) and pd.notna(val)
+                    ):
                         merged[canon] = val
 
                 # Ensure columns follow canonical order
@@ -322,7 +340,7 @@ def process_dataframe(df, schemas, output_root, library_path, session_override=N
                         clean_data[k] = "n/a"
                     else:
                         clean_data[k] = val
-                
+
                 # Add global metadata columns
                 for meta_col in available_meta_cols:
                     val = row[meta_col]
@@ -351,7 +369,7 @@ def process_dataframe(df, schemas, output_root, library_path, session_override=N
         # bids_name = f"task-{task_name}_beh.json"
         # bids_path = os.path.join(rawdata_dir, bids_name)
 
-        for path in [legacy_path]: #, bids_path):
+        for path in [legacy_path]:  # , bids_path):
             if not os.path.exists(path):
                 with open(path, "w") as f:
                     json.dump(schema, f, indent=2)

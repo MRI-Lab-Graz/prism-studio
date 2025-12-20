@@ -22,8 +22,10 @@ class TestValidateDataset:
 
     def test_validate_demo_dataset(self):
         """Test validation of the demo PRISM dataset"""
-        assert DEMO_PRISM_DATASET.exists(), f"Demo dataset not found at {DEMO_PRISM_DATASET}"
-        
+        assert (
+            DEMO_PRISM_DATASET.exists()
+        ), f"Demo dataset not found at {DEMO_PRISM_DATASET}"
+
         issues, stats = validate_dataset(str(DEMO_PRISM_DATASET), verbose=False)
 
         # Should have stats
@@ -37,14 +39,14 @@ class TestValidateDataset:
     def test_validate_demo_has_subjects(self):
         """Test that demo dataset stats include subjects"""
         issues, stats = validate_dataset(str(DEMO_PRISM_DATASET), verbose=False)
-        
+
         assert "sub-001" in stats.subjects or "sub-002" in stats.subjects
         assert len(stats.subjects) >= 2
 
     def test_validate_demo_has_modalities(self):
         """Test that demo dataset stats include modalities"""
         issues, stats = validate_dataset(str(DEMO_PRISM_DATASET), verbose=False)
-        
+
         # Demo has eyetrack and physio
         assert len(stats.modalities) > 0
 

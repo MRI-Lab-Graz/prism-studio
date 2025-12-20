@@ -6,10 +6,11 @@ import sys
 import zipfile
 from datetime import datetime
 from pathlib import Path
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 import pandas as pd
 
 from scripts.csv_to_prism import load_schemas, process_dataframe
+
 
 def sanitize_task_name(name):
     """Normalize task names for BIDS/PRISM filenames."""
@@ -35,7 +36,7 @@ def parse_lsa_responses(lsa_path):
         xml_lss = z.read(next(n for n in z.namelist() if n.endswith(".lss")))
 
     lss_root = ET.fromstring(xml_lss)
-    
+
     # Helper to find text of a child element
     def get_text(element, tag):
         child = element.find(tag)
@@ -43,10 +44,10 @@ def parse_lsa_responses(lsa_path):
         return val or ""
 
     questions_map, groups_map = _parse_lss_structure(lss_root, get_text)
-    
+
     # Build simple qid->title map for column renaming
-    qid_to_title = {qid: d['title'] for qid, d in questions_map.items()}
-    
+    qid_to_title = {qid: d["title"] for qid, d in questions_map.items()}
+
     # Also include subquestions in qid_to_title if needed?
     # The original code did this:
     for row in lss_root.findall(".//subquestions/rows/row"):
@@ -82,19 +83,19 @@ def parse_lsa_timings(lsa_path):
         return None
 
     try:
-        with zipfile.ZipFile(lsa_path, 'r') as zf:
-            timings_files = [f for f in zf.namelist() if f.endswith('_timings.lsi')]
+        with zipfile.ZipFile(lsa_path, "r") as zf:
+            timings_files = [f for f in zf.namelist() if f.endswith("_timings.lsi")]
             if not timings_files:
                 return None
-            
+
             with zf.open(timings_files[0]) as f:
                 xml_content = f.read()
-                
+
         root = ET.fromstring(xml_content)
         rows = root.findall(".//row")
         if not rows:
             return None
-            
+
         records = []
         for row in rows:
             rec = {}
@@ -104,7 +105,7 @@ def parse_lsa_timings(lsa_path):
                 val = child.text
                 rec[tag] = val
             records.append(rec)
-            
+
         try:
             return pd.DataFrame(records)
         except Exception as e:
@@ -115,49 +116,50 @@ def parse_lsa_timings(lsa_path):
         return None
 
 
-
 def _parse_lss_structure(root, get_text):
     # 1. Parse Questions
     # Map qid -> {title, question, type, ...}
     questions_map = {}
     # Map gid -> title string (Group info)
     groups_map = {}
-    
+
     # Find the <groups> section to map Group ID -> Group Name (if available)
-    groups_section = root.find('groups')
+    groups_section = root.find("groups")
     if groups_section is not None:
-        rows = groups_section.find('rows')
+        rows = groups_section.find("rows")
         if rows is not None:
-            for row in rows.findall('row'):
-                gid = get_text(row, 'gid')
-                name = get_text(row, 'group_name')
+            for row in rows.findall("row"):
+                gid = get_text(row, "gid")
+                name = get_text(row, "group_name")
                 groups_map[gid] = name if name else ""
 
     # Find the <questions> section
-    questions_section = root.find('questions')
+    questions_section = root.find("questions")
     if questions_section is not None:
-        rows = questions_section.find('rows')
+        rows = questions_section.find("rows")
         if rows is not None:
-            for row in rows.findall('row'):
-                qid = get_text(row, 'qid')
-                gid = get_text(row, 'gid')
-                title = get_text(row, 'title') # This is usually the variable name (e.g. 'age', 'gender')
-                question_text = get_text(row, 'question')
-                q_type = get_text(row, 'type')
-                parent_qid = get_text(row, 'parent_qid')
-                
+            for row in rows.findall("row"):
+                qid = get_text(row, "qid")
+                gid = get_text(row, "gid")
+                title = get_text(
+                    row, "title"
+                )  # This is usually the variable name (e.g. 'age', 'gender')
+                question_text = get_text(row, "question")
+                q_type = get_text(row, "type")
+                parent_qid = get_text(row, "parent_qid")
+
                 # Clean up CDATA or HTML tags from question text if necessary
-                clean_question = re.sub('<[^<]+?>', '', question_text or '').strip()
-                
+                clean_question = re.sub("<[^<]+?>", "", question_text or "").strip()
+
                 questions_map[qid] = {
-                    'title': title,
-                    'question': clean_question,
-                    'type': q_type,
-                    'parent_qid': parent_qid,
-                    'gid': gid,
-                    'levels': {}
+                    "title": title,
+                    "question": clean_question,
+                    "type": q_type,
+                    "parent_qid": parent_qid,
+                    "gid": gid,
+                    "levels": {},
                 }
-                
+
                 # Update group map with a representative title if not set
                 if gid in groups_map and not groups_map[gid]:
                     # Heuristic: use the first question's variable name prefix?
@@ -171,6 +173,7 @@ def _parse_lss_structure(root, get_text):
                         groups_map[gid] = title
 
     return questions_map, groups_map
+
 
 def parse_lss_xml(xml_content, task_name=None):
     """Parse a LimeSurvey .lss XML blob into a Prism sidecar dict."""
@@ -190,35 +193,33 @@ def parse_lss_xml(xml_content, task_name=None):
 
     # 2. Parse Answers
     # Map qid -> {code: answer, ...}
-    answers_section = root.find('answers')
+    answers_section = root.find("answers")
     if answers_section is not None:
-        rows = answers_section.find('rows')
+        rows = answers_section.find("rows")
         if rows is not None:
-            for row in rows.findall('row'):
-                qid = get_text(row, 'qid')
-                code = get_text(row, 'code')
-                answer = get_text(row, 'answer')
-                
+            for row in rows.findall("row"):
+                qid = get_text(row, "qid")
+                code = get_text(row, "code")
+                answer = get_text(row, "answer")
+
                 if qid in questions_map:
-                    questions_map[qid]['levels'][code] = answer
+                    questions_map[qid]["levels"][code] = answer
 
     # 3. Construct Prism JSON
     prism_json = {}
-    
-    # We need to handle subquestions (if any). 
+
+    # We need to handle subquestions (if any).
     # In LimeSurvey, subquestions have a parent_qid != 0.
     # For now, let's treat them as separate entries or try to group them.
     # Prism usually expects a flat list of columns (keys) in the sidecar.
-    
+
     for qid, q_data in questions_map.items():
-        key = q_data['title']
+        key = q_data["title"]
 
-        entry = {
-            "Description": q_data['question']
-        }
+        entry = {"Description": q_data["question"]}
 
-        if q_data['levels']:
-            entry["Levels"] = q_data['levels']
+        if q_data["levels"]:
+            entry["Levels"] = q_data["levels"]
 
         prism_json[key] = entry
 
@@ -257,10 +258,10 @@ def convert_lsa_to_prism(lsa_path, output_path=None, task_name=None):
 
     xml_content = None
 
-    if lsa_path.endswith('.lsa'):
+    if lsa_path.endswith(".lsa"):
         try:
-            with zipfile.ZipFile(lsa_path, 'r') as zip_ref:
-                lss_files = [f for f in zip_ref.namelist() if f.endswith('.lss')]
+            with zipfile.ZipFile(lsa_path, "r") as zip_ref:
+                lss_files = [f for f in zip_ref.namelist() if f.endswith(".lss")]
                 if not lss_files:
                     print("No .lss file found in the archive.")
                     return
@@ -272,8 +273,8 @@ def convert_lsa_to_prism(lsa_path, output_path=None, task_name=None):
         except zipfile.BadZipFile:
             print("Invalid zip file.")
             return
-    elif lsa_path.endswith('.lss'):
-        with open(lsa_path, 'rb') as f:
+    elif lsa_path.endswith(".lss"):
+        with open(lsa_path, "rb") as f:
             xml_content = f.read()
     else:
         print("Unsupported file extension. Please provide .lsa or .lss")
@@ -284,7 +285,7 @@ def convert_lsa_to_prism(lsa_path, output_path=None, task_name=None):
 
         if prism_data:
             if output_path:
-                with open(output_path, 'w', encoding='utf-8') as f:
+                with open(output_path, "w", encoding="utf-8") as f:
                     json.dump(prism_data, f, indent=4, ensure_ascii=False)
                 print(f"Successfully wrote Prism JSON to {output_path}")
             else:
@@ -306,7 +307,9 @@ def convert_lsa_to_dataset(
     if id_column:
         # Fail fast if the requested ID column is missing; do not silently fall back.
         df_preview, questions_map, groups_map = parse_lsa_responses(lsa_path)
-        match = next((c for c in df_preview.columns if c.lower() == id_column.lower()), None)
+        match = next(
+            (c for c in df_preview.columns if c.lower() == id_column.lower()), None
+        )
         if not match:
             available = ", ".join(df_preview.columns)
             raise ValueError(
@@ -332,7 +335,7 @@ def convert_lsa_to_dataset(
         # Fallback: first column
         id_col = df.columns[0]
     df = df.rename(columns={id_col: "participant_id"})
-    
+
     # Apply ID mapping if provided
     if id_map:
         # Normalize IDs as strings
@@ -367,12 +370,12 @@ def convert_lsa_to_dataset(
         try:
             start = pd.to_datetime(df["startdate"], errors="coerce")
             submit = pd.to_datetime(df["submitdate"], errors="coerce")
-            
+
             # Duration in minutes
             df["SurveyDuration"] = (submit - start).dt.total_seconds() / 60.0
             # Round to 2 decimals
             df["SurveyDuration"] = df["SurveyDuration"].round(2)
-            
+
             # Start Time (HH:MM:SS)
             df["SurveyStartTime"] = start.dt.strftime("%H:%M:%S")
         except Exception as e:
@@ -381,7 +384,7 @@ def convert_lsa_to_dataset(
     # --- Merge Group Timings ---
     try:
         timings_df = parse_lsa_timings(lsa_path)
-        
+
         group_duration_fields = {}
         if timings_df is not None and not timings_df.empty:
             # Rename columns using groups_map
@@ -389,10 +392,10 @@ def convert_lsa_to_dataset(
             new_cols = {}
             for col in timings_df.columns:
                 # Remove leading underscore if present (xml tags often have it)
-                clean_col = col.lstrip('_')
+                clean_col = col.lstrip("_")
                 # Regex to find GroupID before 'time'
                 # The format is SurveyID X GroupID time. e.g. 244841X43550time
-                m = re.match(r'\d+X(\d+)time', clean_col)
+                m = re.match(r"\d+X(\d+)time", clean_col)
                 if m:
                     gid = m.group(1)
                     if gid in groups_map:
@@ -403,26 +406,28 @@ def convert_lsa_to_dataset(
                         new_cols[col] = col_name
                         group_duration_fields[col_name] = {
                             "Description": f"Duration for question group '{title}'",
-                            "Units": "seconds"
+                            "Units": "seconds",
                         }
-            
+
             if new_cols:
                 timings_df = timings_df.rename(columns=new_cols)
                 # Keep only the renamed columns
                 # Use set to avoid duplicates if multiple groups map to same title (should be rare now)
                 # Filter columns that exist in timings_df (after rename)
                 timings_df = timings_df.loc[:, ~timings_df.columns.duplicated()]
-                
+
                 # Convert to numeric (seconds)
                 for c in timings_df.columns:
                     if c.startswith("Duration_"):
-                        timings_df[c] = pd.to_numeric(timings_df[c], errors='coerce')
-                
+                        timings_df[c] = pd.to_numeric(timings_df[c], errors="coerce")
+
                 # Merge by index (assuming row alignment)
                 if len(df) == len(timings_df):
                     df = pd.concat([df, timings_df], axis=1)
                 else:
-                    print(f"Warning: Timings row count ({len(timings_df)}) does not match responses ({len(df)}). Skipping timings.")
+                    print(
+                        f"Warning: Timings row count ({len(timings_df)}) does not match responses ({len(df)}). Skipping timings."
+                    )
     except Exception as e:
         print(f"Error processing timings: {e}")
         # Continue without timings
@@ -437,18 +442,16 @@ def convert_lsa_to_dataset(
     # Create a dedicated 'limesurvey' task for session-level metadata
     # instead of injecting it into every questionnaire.
     schemas["limesurvey"] = {
-        "Technical": {
-            "Description": "General metadata for the LimeSurvey session"
-        },
+        "Technical": {"Description": "General metadata for the LimeSurvey session"},
         "SurveyDuration": {
             "Description": "Total duration of the LimeSurvey session in minutes (submitdate - startdate)",
-            "Units": "minutes"
+            "Units": "minutes",
         },
         "SurveyStartTime": {
             "Description": "Start time of the LimeSurvey session (HH:MM:SS)",
-            "Units": "hh:mm:ss"
+            "Units": "hh:mm:ss",
         },
-        **group_duration_fields
+        **group_duration_fields,
     }
 
     # process_dataframe will copy needed sidecars into rawdata
@@ -460,17 +463,19 @@ def convert_lsa_to_dataset(
 
         # Work on a copy to avoid side effects between tasks
         task_df = df.copy()
-        
+
         # 1. Check for granular duration
         # Strategy: Find which group the task's variables belong to.
         # Get variables in this task
-        task_vars = [k for k in t_schema.keys() if k not in ["Technical", "Study", "Metadata"]]
-        
+        task_vars = [
+            k for k in t_schema.keys() if k not in ["Technical", "Study", "Metadata"]
+        ]
+
         # Find which group these variables belong to
         gids = []
         # Optimization: Create a map of title -> gid
-        title_to_gid = {v['title']: v['gid'] for v in questions_map.values()}
-        
+        title_to_gid = {v["title"]: v["gid"] for v in questions_map.values()}
+
         for var in task_vars:
             if var in title_to_gid:
                 gids.append(title_to_gid[var])
@@ -482,14 +487,15 @@ def convert_lsa_to_dataset(
                     if var.startswith(title):
                         if best_match is None or len(title) > len(best_match):
                             best_match = title
-                
+
                 if best_match:
                     gids.append(title_to_gid[best_match])
-        
+
         granular_col = None
         if gids:
             # Find mode
             from collections import Counter
+
             most_common_gid = Counter(gids).most_common(1)[0][0]
             if most_common_gid in groups_map:
                 group_title = groups_map[most_common_gid]
@@ -497,14 +503,14 @@ def convert_lsa_to_dataset(
                 candidate = f"Duration_{safe_title}"
                 if candidate in task_df.columns:
                     granular_col = candidate
-        
+
         # Fallback: try matching task name
         if not granular_col:
             for col in task_df.columns:
                 if col.lower() == f"duration_{t_name}".lower():
                     granular_col = col
                     break
-        
+
         if t_name == "ads" and not granular_col:
             pass
 
@@ -513,12 +519,12 @@ def convert_lsa_to_dataset(
         if "SurveyDuration" not in t_schema:
             t_schema["SurveyDuration"] = {
                 "Description": f"Duration for task {t_name}",
-                "Units": "minutes" # Default to global unit
+                "Units": "minutes",  # Default to global unit
             }
         if "SurveyStartTime" not in t_schema:
             t_schema["SurveyStartTime"] = {
                 "Description": "Start time of the LimeSurvey session (HH:MM:SS)",
-                "Units": "hh:mm:ss"
+                "Units": "hh:mm:ss",
             }
 
         # 3. Overwrite SurveyDuration with granular data if available
@@ -527,20 +533,28 @@ def convert_lsa_to_dataset(
             # or update schema unit to seconds.
             # Let's update schema to seconds for precision.
             t_schema["SurveyDuration"]["Units"] = "seconds"
-            t_schema["SurveyDuration"]["Description"] = f"Duration for task {t_name} (derived from group timing)"
+            t_schema["SurveyDuration"][
+                "Description"
+            ] = f"Duration for task {t_name} (derived from group timing)"
             task_df["SurveyDuration"] = task_df[granular_col]
-            
+
             # Debug: Compare durations
             try:
-                avg_task = pd.to_numeric(task_df[granular_col], errors='coerce').mean()
-                avg_global = pd.to_numeric(df["SurveyDuration"], errors='coerce').mean()
+                avg_task = pd.to_numeric(task_df[granular_col], errors="coerce").mean()
+                avg_global = pd.to_numeric(df["SurveyDuration"], errors="coerce").mean()
                 # print(f"  -> Duration Check for {t_name}: Avg Task = {avg_task:.2f}s vs Avg Global = {avg_global:.2f}min")
             except Exception:
                 pass
-        
+
         # 4. Process this single task
         # print(f"DEBUG: Processing task {t_name}")
-        process_dataframe(task_df, {t_name: t_schema}, output_root, library_path, session_override=session_label)
+        process_dataframe(
+            task_df,
+            {t_name: t_schema},
+            output_root,
+            library_path,
+            session_override=session_label,
+        )
 
 
 def load_id_mapping(map_path):
@@ -550,20 +564,34 @@ def load_id_mapping(map_path):
     """
     if not map_path:
         return None
-    
+
     path = Path(map_path)
     if not path.exists():
         print(f"Warning: ID map file {path} not found.")
         return None
-    
+
     try:
-        sep = '\t' if path.suffix.lower() == '.tsv' else ','
+        sep = "\t" if path.suffix.lower() == ".tsv" else ","
         df = pd.read_csv(path, sep=sep, dtype=str)
-        
+
         # Try to find standard columns, else take first two
-        src_col = next((c for c in df.columns if c.lower() in ['limesurvey_id', 'source_id', 'code', 'id']), None)
-        dst_col = next((c for c in df.columns if c.lower() in ['participant_id', 'bids_id', 'sub_id', 'subject_id']), None)
-        
+        src_col = next(
+            (
+                c
+                for c in df.columns
+                if c.lower() in ["limesurvey_id", "source_id", "code", "id"]
+            ),
+            None,
+        )
+        dst_col = next(
+            (
+                c
+                for c in df.columns
+                if c.lower() in ["participant_id", "bids_id", "sub_id", "subject_id"]
+            ),
+            None,
+        )
+
         if not src_col or not dst_col:
             if len(df.columns) >= 2:
                 src_col = df.columns[0]
@@ -571,11 +599,11 @@ def load_id_mapping(map_path):
             else:
                 print(f"Warning: ID map file {path} must have at least 2 columns.")
                 return None
-        
+
         # Create dict
         mapping = dict(zip(df[src_col], df[dst_col]))
-        # Clean up destination: remove 'sub-' prefix if present, as it's added later? 
-        # Actually, the code adds 'sub-' if missing. 
+        # Clean up destination: remove 'sub-' prefix if present, as it's added later?
+        # Actually, the code adds 'sub-' if missing.
         # If mapping has 'sub-123', code sees it starts with 'sub-' and leaves it.
         # If mapping has '123', code adds 'sub-'.
         # So we just pass the value as is.
@@ -585,7 +613,15 @@ def load_id_mapping(map_path):
         return None
 
 
-def batch_convert_lsa(input_root, output_root, session_map, library_path, task_fallback=None, id_column=None, id_map_file=None):
+def batch_convert_lsa(
+    input_root,
+    output_root,
+    session_map,
+    library_path,
+    task_fallback=None,
+    id_column=None,
+    id_map_file=None,
+):
     """Batch-convert .lsa/.lss under input_root into BIDS/PRISM datasets using survey library."""
     input_root = Path(input_root)
     output_root = Path(output_root)
@@ -616,8 +652,10 @@ def batch_convert_lsa(input_root, output_root, session_map, library_path, task_f
 
         task_hint = lsa_file.stem
         for raw in normalized_map.keys():
-            task_hint = re.sub(fr"[_\-]{raw}$", "", task_hint, flags=re.IGNORECASE)
-        task_name = sanitize_task_name(task_hint if task_hint else (task_fallback or "survey"))
+            task_hint = re.sub(rf"[_\-]{raw}$", "", task_hint, flags=re.IGNORECASE)
+        task_name = sanitize_task_name(
+            task_hint if task_hint else (task_fallback or "survey")
+        )
 
         print(f"Converting {lsa_file} -> session {session_label}, task {task_name}")
         convert_lsa_to_dataset(
@@ -630,11 +668,14 @@ def batch_convert_lsa(input_root, output_root, session_map, library_path, task_f
             id_map=id_map,
         )
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Convert LimeSurvey .lsa/.lss to Prism JSON sidecar.")
+    parser = argparse.ArgumentParser(
+        description="Convert LimeSurvey .lsa/.lss to Prism JSON sidecar."
+    )
     parser.add_argument("input_file", help="Path to .lsa or .lss file")
     parser.add_argument("-o", "--output", help="Path to output .json file")
-    
+
     args = parser.parse_args()
-    
+
     convert_lsa_to_prism(args.input_file, args.output)

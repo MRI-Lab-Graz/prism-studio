@@ -15,7 +15,16 @@ def _detect_language_from_texts(texts: list[str]) -> str:
     if any(ch in combined for ch in ["ä", "ö", "ü", "ß"]):
         return "de"
 
-    german_tokens = [" nicht ", " oder ", " keine ", " während ", " immer ", " selten ", " meistens ", " öfter "]
+    german_tokens = [
+        " nicht ",
+        " oder ",
+        " keine ",
+        " während ",
+        " immer ",
+        " selten ",
+        " meistens ",
+        " öfter ",
+    ]
     padded = f" {combined} "
     if any(tok in padded for tok in german_tokens):
         return "de"
@@ -43,7 +52,7 @@ def localize(value: Any, lang: str, fallback_langs: list[str] | None = None) -> 
     if lang and lang in value and value[lang] not in (None, ""):
         return value[lang]
 
-    for fb in (fallback_langs or []):
+    for fb in fallback_langs or []:
         fb = (fb or "").strip()
         if fb and fb in value and value[fb] not in (None, ""):
             return value[fb]
@@ -57,7 +66,9 @@ def localize(value: Any, lang: str, fallback_langs: list[str] | None = None) -> 
     return ""
 
 
-def compile_survey_template(source: dict, lang: str, fallback_langs: list[str] | None = None) -> dict:
+def compile_survey_template(
+    source: dict, lang: str, fallback_langs: list[str] | None = None
+) -> dict:
     """Compile an i18n-capable library template into a PRISM survey sidecar.
 
     The output is schema-compatible with `schemas/*/survey.schema.json`:
@@ -74,13 +85,21 @@ def compile_survey_template(source: dict, lang: str, fallback_langs: list[str] |
     out: dict[str, Any] = {}
 
     # Copy known blocks first, localizing selected fields.
-    technical = copy.deepcopy(source.get("Technical", {}) if isinstance(source.get("Technical"), dict) else {})
-    study = copy.deepcopy(source.get("Study", {}) if isinstance(source.get("Study"), dict) else {})
-    metadata = copy.deepcopy(source.get("Metadata", {}) if isinstance(source.get("Metadata"), dict) else {})
+    technical = copy.deepcopy(
+        source.get("Technical", {}) if isinstance(source.get("Technical"), dict) else {}
+    )
+    study = copy.deepcopy(
+        source.get("Study", {}) if isinstance(source.get("Study"), dict) else {}
+    )
+    metadata = copy.deepcopy(
+        source.get("Metadata", {}) if isinstance(source.get("Metadata"), dict) else {}
+    )
 
     # Localize potentially user-facing strings inside blocks.
     if "SoftwarePlatform" in technical:
-        technical["SoftwarePlatform"] = localize(technical.get("SoftwarePlatform"), lang, fallback_langs)
+        technical["SoftwarePlatform"] = localize(
+            technical.get("SoftwarePlatform"), lang, fallback_langs
+        )
 
     # Force a single BCP-47-ish tag here (schema expects string).
     technical["Language"] = lang
@@ -104,12 +123,16 @@ def compile_survey_template(source: dict, lang: str, fallback_langs: list[str] |
         item_out: dict[str, Any] = copy.deepcopy(item_def)
 
         if "Description" in item_out:
-            item_out["Description"] = str(localize(item_out.get("Description"), lang, fallback_langs) or "")
+            item_out["Description"] = str(
+                localize(item_out.get("Description"), lang, fallback_langs) or ""
+            )
 
         if "Levels" in item_out and isinstance(item_out.get("Levels"), dict):
             levels_out: dict[str, Any] = {}
             for level_key, level_val in item_out["Levels"].items():
-                levels_out[str(level_key)] = str(localize(level_val, lang, fallback_langs) or "")
+                levels_out[str(level_key)] = str(
+                    localize(level_val, lang, fallback_langs) or ""
+                )
             item_out["Levels"] = levels_out
 
         out[item_id] = item_out
@@ -155,7 +178,9 @@ def migrate_survey_template_to_i18n(source: dict, languages: list[str]) -> dict:
                     texts.append(lv)
 
     detected = _detect_language_from_texts(texts)
-    default_lang = detected if detected in languages else (languages[0] if languages else "de")
+    default_lang = (
+        detected if detected in languages else (languages[0] if languages else "de")
+    )
 
     def wrap_str(value: Any) -> Any:
         if not isinstance(value, str):
