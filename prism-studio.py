@@ -175,6 +175,17 @@ validation_results: Dict[str, Any] = {}
 app.config["VALIDATION_RESULTS"] = validation_results
 
 
+@app.context_processor
+def inject_utilities():
+    """Inject utility functions into all templates"""
+    return {
+        "get_filename_from_path": get_filename_from_path,
+        "shorten_path": shorten_path,
+        "get_error_description": get_error_description,
+        "get_error_documentation_url": get_error_documentation_url,
+    }
+
+
 @app.route("/")
 def index():
     """Home page with tool selection"""

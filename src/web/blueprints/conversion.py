@@ -15,7 +15,8 @@ import base64
 from pathlib import Path
 from flask import Blueprint, request, jsonify, send_file, render_template, current_app
 from werkzeug.utils import secure_filename
-from src.web.utils import list_survey_template_languages, sanitize_jsonable, run_validation
+from src.web.utils import list_survey_template_languages, sanitize_jsonable
+from src.web import run_validation
 
 # Import conversion logic
 try:
@@ -54,32 +55,6 @@ conversion_bp = Blueprint('conversion', __name__)
 
 # Batch conversion job tracking
 _batch_convert_jobs = {}
-
-@conversion_bp.route("/survey-generator")
-def survey_generator():
-    """Survey generator page"""
-    base_dir = Path(current_app.root_path)
-    preferred = (base_dir / "library" / "survey_i18n").resolve()
-    default_library_path = preferred
-    if not (preferred.exists() and any(preferred.glob("survey-*.json"))):
-        default_library_path = (base_dir / "survey_library").resolve()
-    return render_template(
-        "survey_generator.html",
-        default_survey_library_path=str(default_library_path),
-    )
-
-@conversion_bp.route("/converter")
-def converter():
-    """Converter page"""
-    base_dir = Path(current_app.root_path)
-    preferred = (base_dir / "library" / "survey_i18n").resolve()
-    default_library_path = preferred
-    if not (preferred.exists() and any(preferred.glob("survey-*.json"))):
-        default_library_path = (base_dir / "survey_library").resolve()
-    return render_template(
-        "converter.html",
-        default_survey_library_path=str(default_library_path),
-    )
 
 @conversion_bp.route("/api/survey-languages", methods=["GET"])
 def api_survey_languages():
