@@ -33,18 +33,7 @@
     "License": {
       "type": "string",
       "title": "License",
-      "description": "License under which the dataset is made available",
-      "enum": [
-        "CC0",
-        "CC-BY-4.0", 
-        "CC-BY-SA-4.0",
-        "CC-BY-NC-4.0",
-        "CC-BY-NC-SA-4.0",
-        "MIT",
-        "Apache-2.0",
-        "GPL-3.0",
-        "All rights reserved"
-      ]
+      "description": "License under which the dataset is made available. The use of license name abbreviations (e.g., CC0, MIT) is RECOMMENDED."
     },
     "Authors": {
       "type": "array",
@@ -70,7 +59,7 @@
                 "type": "string",
                 "title": "ORCID ID",
                 "description": "ORCID identifier for author",
-                "pattern": "^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$"
+                "pattern": "^([0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X])?$"
               },
               "affiliation": {
                 "type": "string",
@@ -98,7 +87,7 @@
       "type": "string",
       "title": "Dataset DOI",
       "description": "Digital Object Identifier for the dataset",
-      "pattern": "^10\\..+/.+"
+      "pattern": "^(10\\..+/.+)?$"
     },
     "Description": {
       "type": "string",
@@ -140,26 +129,34 @@
       "title": "Funding Information",
       "description": "Funding sources for the research",
       "items": {
-        "type": "object",
-        "required": ["agency"],
-        "properties": {
-          "agency": {
+        "oneOf": [
+          {
             "type": "string",
-            "title": "Funding Agency",
-            "description": "Name of the funding agency"
+            "description": "Simple funding source or grant number"
           },
-          "grant_number": {
-            "type": "string",
-            "title": "Grant Number",
-            "description": "Grant or award number"
-          },
-          "funder_id": {
-            "type": "string",
-            "title": "Funder ID",
-            "description": "Crossref Funder Registry identifier",
-            "format": "uri"
+          {
+            "type": "object",
+            "required": ["agency"],
+            "properties": {
+              "agency": {
+                "type": "string",
+                "title": "Funding Agency",
+                "description": "Name of the funding agency"
+              },
+              "grant_number": {
+                "type": "string",
+                "title": "Grant Number",
+                "description": "Grant or award number"
+              },
+              "funder_id": {
+                "type": "string",
+                "title": "Funder ID",
+                "description": "Crossref Funder Registry identifier",
+                "format": "uri"
+              }
+            }
           }
-        }
+        ]
       }
     },
     "EthicsApprovals": {
@@ -210,7 +207,7 @@
           "type": "string",
           "title": "Contact ORCID",
           "description": "ORCID ID of the contact person",
-          "pattern": "^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$"
+          "pattern": "^([0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X])?$"
         }
       }
     },
@@ -261,7 +258,7 @@
             "type": "string",
             "title": "Publication DOI",
             "description": "DOI of the publication",
-            "pattern": "^10\\..+/.+"
+            "pattern": "^(10\\..+/.+)?$"
           },
           "year": {
             "type": "string",

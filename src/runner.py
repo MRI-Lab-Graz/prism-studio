@@ -14,7 +14,7 @@ from jsonschema import validate, ValidationError
 
 from schema_manager import load_all_schemas
 from schema_manager import validate_schema_version
-from validator import DatasetValidator, MODALITY_PATTERNS, resolve_sidecar_path
+from validator import DatasetValidator, MODALITY_PATTERNS, BIDS_MODALITIES, resolve_sidecar_path
 from stats import DatasetStats
 from system_files import filter_system_files
 from bids_integration import check_and_update_bidsignore
@@ -35,6 +35,7 @@ def validate_dataset(
     verbose=False,
     schema_version=None,
     run_bids=False,
+    run_prism=True,
     progress_callback: Optional[ProgressCallback] = None,
 ):
     """Main dataset validation function (refactored from prism.py)
@@ -44,6 +45,7 @@ def validate_dataset(
         verbose: Enable verbose output
         schema_version: Schema version to use (e.g., 'stable', 'v0.1', '0.1')
         run_bids: Whether to run the standard BIDS validator
+        run_prism: Whether to run PRISM-specific validation
         progress_callback: Optional callback for progress updates.
                            Called as callback(current, total, message, file_path)
 
@@ -68,7 +70,9 @@ def validate_dataset(
     if verbose:
         version_tag = schema_version or "stable"
         print(f"📋 Loaded {len(schemas)} schemas (version: {version_tag})")
-        print(f"📁 Scanning modalities: {list(MODALITY_PATTERNS.keys())}")
+        print(f"📁 Validating PRISM modalities: {list(MODALITY_PATTERNS.keys())}")
+        print(f"📁 Pass-through BIDS modalities: anat, func, fmap, dwi, eeg (use BIDS validator for these)")
+
 
     # Initialize validator
     validator = DatasetValidator(schemas)
@@ -78,23 +82,31 @@ def validate_dataset(
     # Check for dataset description
     dataset_desc_path = os.path.join(root_dir, "dataset_description.json")
     if not os.path.exists(dataset_desc_path):
-        issues.append(("ERROR", "Missing dataset_description.json"))
+        if run_prism:
+            issues.append(("ERROR", "Missing dataset_description.json", dataset_desc_path))
     else:
         # Validate dataset_description.json against the dataset_description schema (if present)
         try:
             with open(dataset_desc_path, "r", encoding="utf-8") as f:
                 dataset_desc = json.load(f)
 
-            dataset_schema = schemas.get("dataset_description")
-            if dataset_schema:
-                issues.extend(validate_schema_version(dataset_desc, dataset_schema))
-                validate(instance=dataset_desc, schema=dataset_schema)
+            if run_prism:
+                dataset_schema = schemas.get("dataset_description")
+                if dataset_schema:
+                    version_issues = validate_schema_version(dataset_desc, dataset_schema)
+                    for level, msg in version_issues:
+                        issues.append((level, msg, dataset_desc_path))
+                    
+                    validate(instance=dataset_desc, schema=dataset_schema)
         except json.JSONDecodeError as e:
-            issues.append(("ERROR", f"{dataset_desc_path} is not valid JSON: {e}"))
+            if run_prism:
+                issues.append(("ERROR", f"dataset_description.json is not valid JSON: {e}", dataset_desc_path))
         except ValidationError as e:
-            issues.append(("ERROR", f"{dataset_desc_path} schema error: {e.message}"))
+            if run_prism:
+                issues.append(("ERROR", f"dataset_description.json schema error: {e.message}", dataset_desc_path))
         except Exception as e:
-            issues.append(("ERROR", f"Error processing {dataset_desc_path}: {e}"))
+            if run_prism:
+                issues.append(("ERROR", f"Error processing dataset_description.json: {e}", dataset_desc_path))
 
     report_progress(10, 100, "Checking BIDS compatibility...")
 
@@ -135,7 +147,7 @@ def validate_dataset(
         progress_pct = 20 + int((idx / max(total_subjects, 1)) * 70)
         report_progress(progress_pct, 100, f"Validating {item}...", item_path)
 
-        subject_issues = _validate_subject(item_path, item, validator, stats, root_dir)
+        subject_issues = _validate_subject(item_path, item, validator, stats, root_dir, run_prism=run_prism)
         issues.extend(subject_issues)
 
     report_progress(90, 100, "Checking consistency...")
@@ -165,10 +177,91 @@ def validate_dataset(
     return issues, stats
 
 
+def _get_placeholder_files(root_dir):
+    """Get list of placeholder files from upload manifest if it exists."""
+    manifest_path = os.path.join(root_dir, ".upload_manifest.json")
+    if os.path.exists(manifest_path):
+        try:
+            with open(manifest_path, "r") as f:
+                manifest = json.load(f)
+                return {f["path"] for f in manifest.get("placeholder_files", [])}
+        except Exception:
+            pass
+    return set()
+
+
+def _get_upload_manifest(root_dir):
+    """Load upload manifest if present (web structure-only uploads)."""
+    manifest_path = os.path.join(root_dir, ".upload_manifest.json")
+    if not os.path.exists(manifest_path):
+        return None
+    try:
+        with open(manifest_path, "r") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            return data
+    except Exception:
+        pass
+    return None
+
+
 def _run_bids_validator(root_dir, verbose=False):
     """Run the standard BIDS validator CLI"""
     issues = []
     print("\n🤖 Running standard BIDS Validator...")
+
+    # Load placeholders to filter out content-related issues (expected in structure-only uploads)
+    manifest = _get_upload_manifest(root_dir)
+    upload_type = (manifest or {}).get("upload_type")
+    structure_only = upload_type == "structure_only"
+
+    placeholders = _get_placeholder_files(root_dir)
+    placeholder_basenames = {os.path.basename(p) for p in placeholders}
+
+    # Content-related issues that are expected in structure-only validation.
+    # We keep structural compliance errors, but suppress data-content checks.
+    content_error_codes = {
+        "EMPTY_FILE",
+        "NIFTI_HEADER_UNREADABLE",
+        "QUICK_TEST_FAILED",
+        "BVAL_MULTIPLE_ROWS",
+        "BVEC_NUMBER_ROWS",
+    }
+
+    def _looks_like_content_file(location: str) -> bool:
+        if not location:
+            return False
+        loc = location.replace("\\", "/").lower()
+        return loc.endswith(
+            (
+                ".nii",
+                ".nii.gz",
+                ".eeg",
+                ".fif",
+                ".dat",
+                ".tsv.gz",
+            )
+        )
+
+    def _is_placeholder_location(location: str) -> bool:
+        if not placeholders or not location:
+            return False
+        loc = location.replace("\\", "/").lstrip("/")
+        if loc in placeholders:
+            return True
+        # Deno validator sometimes reports only the filename.
+        if os.path.basename(loc) in placeholder_basenames:
+            return True
+        # And sometimes reports a path prefix/suffix; handle partial match.
+        return any(loc.endswith(p) or p.endswith(loc) for p in placeholders)
+
+    if verbose and structure_only:
+        print("   ℹ️  Detected structure-only upload. Will suppress BIDS data-content checks.")
+
+    if placeholders and verbose:
+        print(
+            f"   ℹ️  Found {len(placeholders)} placeholder files. Will suppress {sorted(content_error_codes)} for these."
+        )
 
     # 1. Try Deno-based validator (modern)
     deno_found = False
@@ -207,6 +300,16 @@ def _run_bids_validator(root_dir, verbose=False):
                         issue_list = bids_report["issues"]
 
                 for issue in issue_list:
+                    code = issue.get("code", "UNKNOWN_CODE")
+                    location = issue.get("location", "")
+
+                    # Suppress content-related errors for placeholders (and for structure-only uploads).
+                    if code in content_error_codes:
+                        if _is_placeholder_location(location):
+                            continue
+                        if structure_only and _looks_like_content_file(location):
+                            continue
+
                     severity = issue.get("severity", "warning").upper()
                     # Map severity to our levels
                     if severity == "ERROR":
@@ -214,9 +317,7 @@ def _run_bids_validator(root_dir, verbose=False):
                     else:
                         level = "WARNING"
 
-                    code = issue.get("code", "UNKNOWN_CODE")
                     sub_code = issue.get("subCode", "")
-                    location = issue.get("location", "")
                     issue_msg = issue.get("issueMessage", "")
 
                     msg = f"[BIDS] {code}"
@@ -282,23 +383,53 @@ def _run_bids_validator(root_dir, verbose=False):
 
                 # Map BIDS issues to our format ("LEVEL", "Message")
                 for issue in bids_report.get("issues", {}).get("errors", []):
-                    msg = f"[BIDS] {issue.get('reason')} ({issue.get('key')})"
+                    key = issue.get("key", "")
+                    
+                    # Filter files for this issue
+                    filtered_files = []
+                    content_error_keys = {"EMPTY_FILE", "NIFTI_HEADER_UNREADABLE", "QUICK_TEST_FAILED"}
                     for file in issue.get("files", []):
                         file_obj = file.get("file")
                         if file_obj:
                             file_path = file_obj.get("relativePath", "")
-                            if file_path:
-                                msg += f"\n    File: {file_path}"
+                            # Suppress content-related errors for placeholders
+                            if key in content_error_keys and file_path.lstrip("/") in placeholders:
+                                continue
+                            if structure_only and key == "EMPTY_FILE" and file_path.lower().endswith((".nii", ".nii.gz", ".tsv.gz")):
+                                continue
+                            filtered_files.append(file_path)
+                    
+                    if not filtered_files and issue.get("files"):
+                        continue
+
+                    msg = f"[BIDS] {issue.get('reason')} ({key})"
+                    for file_path in filtered_files:
+                        msg += f"\n    File: {file_path}"
                     issues.append(("ERROR", msg))
 
                 for issue in bids_report.get("issues", {}).get("warnings", []):
-                    msg = f"[BIDS] {issue.get('reason')} ({issue.get('key')})"
+                    key = issue.get("key", "")
+                    
+                    # Filter files for this issue
+                    filtered_files = []
+                    content_error_keys = {"EMPTY_FILE", "NIFTI_HEADER_UNREADABLE", "QUICK_TEST_FAILED"}
                     for file in issue.get("files", []):
                         file_obj = file.get("file")
                         if file_obj:
                             file_path = file_obj.get("relativePath", "")
-                            if file_path:
-                                msg += f"\n    File: {file_path}"
+                            # Suppress content-related errors for placeholders
+                            if key in content_error_keys and file_path.lstrip("/") in placeholders:
+                                continue
+                            if structure_only and key == "EMPTY_FILE" and file_path.lower().endswith((".nii", ".nii.gz", ".tsv.gz")):
+                                continue
+                            filtered_files.append(file_path)
+                    
+                    if not filtered_files and issue.get("files"):
+                        continue
+
+                    msg = f"[BIDS] {issue.get('reason')} ({key})"
+                    for file_path in filtered_files:
+                        msg += f"\n    File: {file_path}"
                     issues.append(("WARNING", msg))
 
             except json.JSONDecodeError:
@@ -323,7 +454,7 @@ def _run_bids_validator(root_dir, verbose=False):
     return issues
 
 
-def _validate_subject(subject_dir, subject_id, validator, stats, root_dir):
+def _validate_subject(subject_dir, subject_id, validator, stats, root_dir, run_prism=True):
     issues = []
 
     all_items = os.listdir(subject_dir)
@@ -337,26 +468,27 @@ def _validate_subject(subject_dir, subject_id, validator, stats, root_dir):
             filtered_contents = filter_system_files(dir_contents)
 
             if not filtered_contents:
-                issues.append(("ERROR", f"Empty directory found: {item_path}"))
+                if run_prism:
+                    issues.append(("ERROR", f"Empty directory found: {item}", item_path))
                 continue
 
             if item.startswith("ses-"):
                 issues.extend(
                     _validate_session(
-                        item_path, subject_id, item, validator, stats, root_dir
+                        item_path, subject_id, item, validator, stats, root_dir, run_prism=run_prism
                     )
                 )
-            elif item in MODALITY_PATTERNS:
+            elif item in MODALITY_PATTERNS or item in BIDS_MODALITIES:
                 issues.extend(
                     _validate_modality_dir(
-                        item_path, subject_id, None, item, validator, stats, root_dir
+                        item_path, subject_id, None, item, validator, stats, root_dir, run_prism=run_prism
                     )
                 )
 
     return issues
 
 
-def _validate_session(session_dir, subject_id, session_id, validator, stats, root_dir):
+def _validate_session(session_dir, subject_id, session_id, validator, stats, root_dir, run_prism=True):
     issues = []
 
     all_items = os.listdir(session_dir)
@@ -370,10 +502,11 @@ def _validate_session(session_dir, subject_id, session_id, validator, stats, roo
             filtered_contents = filter_system_files(dir_contents)
 
             if not filtered_contents:
-                issues.append(("ERROR", f"Empty directory found: {item_path}"))
+                if run_prism:
+                    issues.append(("ERROR", f"Empty directory found: {item}", item_path))
                 continue
 
-            if item in MODALITY_PATTERNS:
+            if item in MODALITY_PATTERNS or item in BIDS_MODALITIES:
                 issues.extend(
                     _validate_modality_dir(
                         item_path,
@@ -383,6 +516,7 @@ def _validate_session(session_dir, subject_id, session_id, validator, stats, roo
                         validator,
                         stats,
                         root_dir,
+                        run_prism=run_prism,
                     )
                 )
 
@@ -390,7 +524,7 @@ def _validate_session(session_dir, subject_id, session_id, validator, stats, roo
 
 
 def _validate_modality_dir(
-    modality_dir, subject_id, session_id, modality, validator, stats, root_dir
+    modality_dir, subject_id, session_id, modality, validator, stats, root_dir, run_prism=True
 ):
     issues = []
 
@@ -420,19 +554,22 @@ def _validate_modality_dir(
             # Add to stats
             stats.add_file(subject_id, session_id, modality, task, fname)
 
-            # Validate filename
-            filename_issues = validator.validate_filename(
-                fname, modality, subject_id=subject_id, session_id=session_id
-            )
-            issues.extend(filename_issues)
-
-            # Validate sidecar if not JSON file itself
-            if not fname.endswith(".json"):
-                sidecar_modality = _effective_modality_for_file(modality, fname)
-                sidecar_issues = validator.validate_sidecar(
-                    file_path, sidecar_modality, root_dir
+            if run_prism:
+                # Validate filename
+                filename_issues = validator.validate_filename(
+                    fname, modality, subject_id=subject_id, session_id=session_id
                 )
-                issues.extend(sidecar_issues)
+                for level, msg in filename_issues:
+                    issues.append((level, msg, file_path))
+
+                # Validate sidecar if not JSON file itself
+                if not fname.endswith(".json"):
+                    sidecar_modality = _effective_modality_for_file(modality, fname)
+                    sidecar_issues = validator.validate_sidecar(
+                        file_path, sidecar_modality, root_dir
+                    )
+                    for level, msg in sidecar_issues:
+                        issues.append((level, msg, file_path))
 
                 # Extract OriginalName for stats
                 try:
@@ -457,6 +594,7 @@ def _validate_modality_dir(
                 content_issues = validator.validate_data_content(
                     file_path, modality, root_dir
                 )
-                issues.extend(content_issues)
+                for level, msg in content_issues:
+                    issues.append((level, msg, file_path))
 
     return issues

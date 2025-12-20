@@ -43,6 +43,33 @@ def strip_temp_path(
     # Normalize separators
     file_path = file_path.replace("\\", "/")
 
+    # Look for common BIDS/PRISM root markers
+    # We look for the earliest occurrence of these markers to get the full relative path from root
+    markers = ["sub-", "dataset_description.json", "participants.tsv", "task-", "survey-"]
+    best_match = None
+    for marker in markers:
+        if marker in file_path:
+            idx = file_path.find(marker)
+            # If there's a slash before the marker, we want to start from the marker
+            # If not, it might be part of a larger filename already relative
+            match_path = file_path[idx:]
+            if not best_match or len(match_path) > len(best_match):
+                best_match = match_path
+    
+    if best_match:
+        return best_match
+
+    # If dataset_path is a temp directory, strip it
+    if dataset_path:
+        dataset_path = dataset_path.replace("\\", "/")
+        # Ensure dataset_path ends with a slash for correct prefix matching
+        ds_prefix = dataset_path if dataset_path.endswith("/") else dataset_path + "/"
+        if file_path.startswith(ds_prefix):
+            return file_path[len(ds_prefix) :]
+        elif dataset_path in file_path:
+            idx = file_path.find(dataset_path)
+            return file_path[idx + len(dataset_path) :].lstrip("/")
+
     # If it's a temp path, try to extract the relative path
     temp_patterns = [
         "/tmp/",
@@ -59,27 +86,27 @@ def strip_temp_path(
             parts = file_path.split("/dataset/", 1)
             if len(parts) > 1:
                 return parts[1]
-
-        # Look for common BIDS/PRISM root markers
-        # We look for the last occurrence of these markers to get the most specific relative path
-        markers = ["sub-", "ses-", "dataset_description.json", "participants.tsv"]
-        best_match = None
-        for marker in markers:
-            if marker in file_path:
-                idx = file_path.rfind(marker)
-                match_path = file_path[idx:]
-                if not best_match or len(match_path) < len(best_match):
-                    best_match = match_path
         
-        if best_match:
-            return best_match
-
-    # If dataset_path is a temp directory, strip it
-    if dataset_path:
-        dataset_path = dataset_path.replace("\\", "/")
-        if file_path.startswith(dataset_path):
-            relative = file_path[len(dataset_path) :].lstrip("/")
-            return relative if relative else file_path
+        # If we see renamed_files-X, strip everything before it
+        if "renamed_files" in file_path:
+            idx = file_path.rfind("renamed_files")
+            # Find the next slash after renamed_files-X
+            slash_idx = file_path.find("/", idx)
+            if slash_idx != -1:
+                return file_path[slash_idx + 1:]
+            else:
+                return file_path[idx:]
+        
+        # Last resort: if it still looks like a temp path, show only the last 2-3 parts
+        parts = [p for p in file_path.split("/") if p]
+        if len(parts) > 0:
+            # If the last part is a filename, and the one before it is a modality or sub-
+            if len(parts) >= 2:
+                if parts[-2].startswith("sub-") or parts[-2] in ["physio", "anat", "func", "survey", "eyetracking", "dwi", "fmap"]:
+                    return "/".join(parts[-2:])
+            if len(parts) >= 3 and parts[-3].startswith("sub-"):
+                return "/".join(parts[-3:])
+            return parts[-1] # Just the filename
 
     return file_path
 
@@ -89,23 +116,38 @@ def strip_temp_path_from_message(msg: str) -> str:
     if not msg:
         return msg
     
-    # Replace temp folder paths in the message with just the relative path
-    # We look for the last occurrence of a temp-like folder name in a path
-    # and strip everything before it (including the temp folder itself)
-    temp_folders = [
-        'tmp', 
-        'var/folders', 
-        'T', 
-        r'prism_validator_[^\s,:/]+', 
-        r'renamed_files[^\s,:/]*'
+    # Normalize separators
+    msg = msg.replace("\\", "/")
+    
+    # 1. Handle absolute paths in the message by stripping everything before BIDS markers
+    # We only strip if the marker is preceded by a slash (indicating it's part of a path)
+    # We prioritize sub- to avoid cropping it when ses- is also present
+    markers = ["sub-", "dataset_description.json", "participants.tsv", "task-", "survey-"]
+    for marker in markers:
+        if marker in msg:
+            # Match anything ending with a slash followed by the marker
+            # e.g., "/var/folders/.../sub-01" -> "sub-01"
+            pattern = r"/[^\s,:]*/" + re.escape(marker)
+            msg = re.sub(pattern, marker, msg)
+            
+            # Also handle the case where the path starts with the marker but has a temp prefix
+            # e.g., "prism_validator_123sub-01" -> "sub-01"
+            # But only if it looks like a temp prefix (contains prism_validator or renamed_files)
+            temp_prefix_pattern = r"(?:prism_validator|renamed_files)[^/\s,:]*" + re.escape(marker)
+            msg = re.sub(temp_prefix_pattern, marker, msg)
+
+    # 2. Handle specific temp folder patterns that might remain
+    temp_patterns = [
+        r"/var/folders/[^/\s,:]+/[^/\s,:]+/T/prism_validator_[^/\s,:]+/",
+        r"/tmp/prism_validator_[^/\s,:]+/",
+        r"prism_validator_[^/\s,:]+/",
+        r"renamed_files[^/\s,:]*/"
     ]
     
-    for folder in temp_folders:
-        # Match something like /.../tmp/ or /.../renamed_files-2/
-        # and replace with nothing
-        msg = re.sub(r"(/[^\s,:]+)?/" + folder + r"/", "", msg)
+    for pattern in temp_patterns:
+        msg = re.sub(pattern, "", msg)
     
-    # Clean up any remaining "dataset/" prefix if it was part of a temp path
+    # 3. Clean up any remaining "dataset/" prefix if it was part of a temp path
     msg = msg.replace("dataset/", "")
     
     return msg.strip()
@@ -129,13 +171,13 @@ def extract_path_from_message(
         return "dataset_description.json"
 
     # Look for sub-... filenames like sub-01_task-foo_blah.ext
-    name_match = re.search(r"(sub-[A-Za-z0-9._-]+\.[A-Za-z0-9]+(?:\.gz)?)", msg)
+    name_match = re.search(r"((?:sub|ses)-[A-Za-z0-9._-]+\.[A-Za-z0-9]+(?:\.gz)?)", msg)
     if name_match:
         return name_match.group(1)
 
     # Generic filename with extension (e.g., task-recognition_stim.json)
     generic_match = re.search(
-        r"([A-Za-z0-9._\-]+\.(?:json|tsv|edf|nii|nii\.gz|txt|csv|mp4|png|jpg|jpeg))",
+        r"([A-Za-z0-9._\-]+\.(?:json|tsv|edf|nii|nii\.gz|txt|csv|mp4|png|jpg|jpeg|bval|bvec|vhdr|vmrk|eeg|dat|fif))",
         msg,
     )
     if generic_match:
@@ -146,51 +188,75 @@ def extract_path_from_message(
 
 def get_error_code_from_message(message: str) -> str:
     """Extract error code from validation message."""
-    # Check for PRISM error codes first (new format)
+    # Check for explicit PRISM error codes first
     prism_match = re.search(r"(PRISM\d{3})", message)
     if prism_match:
         return prism_match.group(1)
 
-    # Legacy error code detection
+    # Check for BIDS validator messages (from optional BIDS validation)
+    if message.startswith("[BIDS]") or "[BIDS]" in message:
+        # Extract BIDS error code if present
+        bids_code_match = re.search(r"\[BIDS\]\s*([A-Z_]+)", message)
+        if bids_code_match:
+            return f"BIDS_{bids_code_match.group(1)}"
+        return "BIDS_GENERAL"
+
+    # PRISM-specific error detection
     if "Invalid BIDS filename" in message or "Invalid BIDS filename format" in message:
-        return "PRISM101"  # INVALID_BIDS_FILENAME -> PRISM101
+        return "PRISM101"
     elif "Missing sidecar" in message or "Missing sidecar for" in message:
-        return "PRISM201"  # MISSING_SIDECAR -> PRISM201
+        return "PRISM201"
     elif "schema error" in message:
-        return "PRISM301"  # SCHEMA_VALIDATION_ERROR -> PRISM301
+        return "PRISM301"
     elif "not valid JSON" in message or "is not valid JSON" in message:
-        return "PRISM202"  # INVALID_JSON -> PRISM202
+        return "PRISM202"
     elif "doesn't match expected pattern" in message:
-        return "PRISM101"  # FILENAME_PATTERN_MISMATCH -> PRISM101
+        return "PRISM102"
+    elif "does not start with subject ID" in message:
+        return "PRISM103"
+    elif "does not match session directory" in message:
+        return "PRISM104"
+    elif "missing" in message.lower() and ("subject" in message.lower() or "session" in message.lower()):
+        return "PRISM601"
+    elif "consistency" in message.lower() or "mislabeled" in message.lower() or "typo" in message.lower():
+        return "PRISM601"
 
-    return "PRISM999"  # GENERAL_ERROR
+    return "PRISM999"
 
 
-# Error descriptions using new PRISM codes
+# Error descriptions using PRISM and BIDS codes
 ERROR_DESCRIPTIONS = {
+    # PRISM Structure Errors (0xx)
     "PRISM001": "Missing dataset_description.json file",
     "PRISM002": "No subjects found in dataset",
     "PRISM003": "Invalid dataset_description.json content",
-    "PRISM101": "Filenames must follow BIDS naming convention (sub-<label>_[ses-<label>_]...)",
-    "PRISM102": "Subject ID mismatch between filename and directory",
-    "PRISM103": "Session ID mismatch between filename and directory",
-    "PRISM201": "Required JSON sidecar files are missing for data files",
-    "PRISM202": "JSON files contain syntax errors or are not valid JSON",
+    # PRISM Filename Errors (1xx)
+    "PRISM101": "PRISM filename must follow pattern (sub-<label>_[ses-<label>_]..._<suffix>)",
+    "PRISM102": "Filename doesn't match expected PRISM modality pattern",
+    "PRISM103": "Subject ID mismatch between filename and directory",
+    "PRISM104": "Session ID mismatch between filename and directory",
+    # PRISM Sidecar Errors (2xx)
+    "PRISM201": "Required JSON sidecar is missing for PRISM data file",
+    "PRISM202": "JSON sidecar contains syntax errors",
     "PRISM203": "Empty sidecar file",
-    "PRISM301": "Missing required field in sidecar",
-    "PRISM302": "Invalid field type in sidecar",
-    "PRISM303": "Invalid field value in sidecar",
+    # PRISM Schema Errors (3xx)
+    "PRISM301": "Metadata schema validation failed",
+    "PRISM302": "Invalid field type in PRISM sidecar",
+    "PRISM303": "Invalid field value in PRISM sidecar",
+    # PRISM Consistency Errors (6xx)
+    "PRISM601": "Cross-subject consistency issue",
+    # PRISM Compatibility (5xx)
     "PRISM501": ".bidsignore needs update for PRISM compatibility",
+    # PRISM General (9xx)
     "PRISM900": "Plugin validation issue",
-    "PRISM999": "General validation error",
-    "EMPTY_DATASET": "Dataset contains no data files or all files were filtered as system files",
-    # Legacy mappings for backwards compatibility
-    "INVALID_BIDS_FILENAME": "Filenames must follow BIDS naming convention",
-    "MISSING_SIDECAR": "Required JSON sidecar files are missing",
-    "SCHEMA_VALIDATION_ERROR": "JSON sidecar content does not match required schema",
-    "INVALID_JSON": "JSON files contain syntax errors",
-    "FILENAME_PATTERN_MISMATCH": "Filenames do not match expected patterns",
-    "GENERAL_ERROR": "Validation error",
+    "PRISM999": "General PRISM validation error",
+    # BIDS Validator Errors (from optional BIDS validation)
+    "BIDS_GENERAL": "BIDS specification violation (run BIDS validator for details)",
+    "BIDS_MISSING_FILE": "Required BIDS file is missing",
+    "BIDS_INVALID_JSON": "BIDS JSON file is invalid",
+    "BIDS_FILENAME": "BIDS filename does not follow specification",
+    # Special
+    "EMPTY_DATASET": "Dataset contains no data files",
 }
 
 
@@ -201,9 +267,19 @@ def get_error_description(error_code: str) -> str:
 
 def get_error_documentation_url(error_code: str) -> str:
     """Get documentation URL for an error code."""
+    # BIDS errors link to BIDS documentation
+    if error_code.startswith("BIDS"):
+        return "https://bids-specification.readthedocs.io/en/stable/"
+    
+    # PRISM errors link to our documentation
     base_url = "https://prism-validator.readthedocs.io/en/latest/ERROR_CODES.html"
 
-    # Map legacy codes to PRISM codes for URL
+    # PRISM code anchors
+    if error_code.startswith("PRISM"):
+        anchor = f"#{error_code.lower()}---"
+        return f"{base_url}{anchor}"
+
+    # Legacy code mapping
     code_mapping = {
         "INVALID_BIDS_FILENAME": "prism101---invalid-filename-pattern",
         "MISSING_SIDECAR": "prism201---missing-sidecar",
@@ -211,11 +287,6 @@ def get_error_documentation_url(error_code: str) -> str:
         "INVALID_JSON": "prism202---invalid-json-syntax",
         "FILENAME_PATTERN_MISMATCH": "prism101---invalid-filename-pattern",
     }
-
-    # PRISM code anchors
-    if error_code.startswith("PRISM"):
-        anchor = f"#{error_code.lower()}---"
-        return f"{base_url}{anchor}"
 
     if error_code in code_mapping:
         return f"{base_url}#{code_mapping[error_code]}"
@@ -375,6 +446,24 @@ def format_validation_results(
         # Extract error code from message
         error_code = get_error_code_from_message(message)
 
+        # Create a generic message for grouping (strip filename/path prefix)
+        # This ensures that the same error across different files is grouped together
+        group_message = message
+        if ": " in message:
+            parts = message.split(": ", 1)
+            # If the first part looks like a filename or path, use the second part as the group message
+            # We check if it's a relatively short string that looks like a path or BIDS entity
+            # but NOT if it looks like a descriptive sentence (like "Session ses-1 missing for subjects")
+            first_part = parts[0].lower()
+            if len(parts[0]) < 100 and any(
+                m in first_part
+                for m in ["sub-", "ses-", ".json", ".tsv", ".nii", "dataset_description"]
+            ) and not any(
+                word in first_part
+                for word in ["missing", "potential", "mislabeled", "mixed", "appears only", "subject", "session"]
+            ):
+                group_message = parts[1]
+
         formatted_issue = {
             "code": error_code,
             "message": message,
@@ -389,14 +478,14 @@ def format_validation_results(
                     "description": get_error_description(error_code),
                     "files": [],
                     "count": 0,
-                    "messages": {}  # Group by message
+                    "messages": {},  # Group by message
                 }
-            
+
             # Add to message group
-            if message not in error_groups[error_code]["messages"]:
-                error_groups[error_code]["messages"][message] = []
-            error_groups[error_code]["messages"][message].append(file_path)
-            
+            if group_message not in error_groups[error_code]["messages"]:
+                error_groups[error_code]["messages"][group_message] = []
+            error_groups[error_code]["messages"][group_message].append(file_path)
+
             error_groups[error_code]["files"].append(formatted_issue)
             error_groups[error_code]["count"] += 1
 
@@ -410,14 +499,14 @@ def format_validation_results(
                     "description": get_error_description(error_code),
                     "files": [],
                     "count": 0,
-                    "messages": {}  # Group by message
+                    "messages": {},  # Group by message
                 }
-            
+
             # Add to message group
-            if message not in warning_groups[error_code]["messages"]:
-                warning_groups[error_code]["messages"][message] = []
-            warning_groups[error_code]["messages"][message].append(file_path)
-            
+            if group_message not in warning_groups[error_code]["messages"]:
+                warning_groups[error_code]["messages"][group_message] = []
+            warning_groups[error_code]["messages"][group_message].append(file_path)
+
             warning_groups[error_code]["files"].append(formatted_issue)
             warning_groups[error_code]["count"] += 1
 

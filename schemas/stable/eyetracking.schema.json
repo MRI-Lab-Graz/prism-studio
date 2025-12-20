@@ -1,9 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/eyetracking/v1.0.0",
-  "version": "1.0.0",
+  "$id": "https://prism.org/schemas/eyetracking/v1.1.0",
+  "version": "1.1.0",
   "title": "Eye-Tracking Data Metadata",
-  "description": "Schema for eye-tracking recordings used in psychological and cognitive research",
+  "description": "Schema for eye-tracking recordings used in psychological and cognitive research. Files should be named: sub-<label>[_ses-<label>]_task-<label>[_trackedEye-<left|right|both>][_run-<index>]_eyetrack.<edf|asc|tsv.gz>",
   "type": "object",
   "properties": {
     "Technical": {
@@ -15,13 +15,21 @@
           "minimum": 0,
           "description": "Sampling frequency in Hz"
         },
+        "StartTime": {
+          "type": "number",
+          "description": "Start time of recording relative to first trigger/event (in seconds). Use negative values if recording started before the first event."
+        },
         "Manufacturer": {
           "type": "string",
           "description": "Eye tracker manufacturer (e.g., SR Research, Tobii, SMI)"
         },
-        "ManufacturersModelName": {
+        "ManufacturerModelName": {
           "type": "string",
           "description": "Model name (e.g., EyeLink 1000 Plus, Tobii Pro Spectrum)"
+        },
+        "ManufacturersModelName": {
+          "type": "string",
+          "description": "DEPRECATED: Use ManufacturerModelName instead"
         },
         "SoftwareVersion": {
           "type": "string",

@@ -193,6 +193,11 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Schema loading failed",
         "fix_hint": "Check that schema files exist and are valid JSON",
     },
+    # Consistency warnings (6xx)
+    "PRISM601": {
+        "message": "Dataset consistency warning",
+        "fix_hint": "Check for missing sessions or modalities across subjects",
+    },
 }
 
 

@@ -43,6 +43,9 @@
     .bg-warning-soft {
         background-color: rgba(255, 193, 7, 0.1);
     }
+    .bg-info-soft {
+        background-color: rgba(13, 202, 240, 0.1);
+    }
     .x-small {
         font-size: 0.75rem;
     }
@@ -163,11 +166,17 @@
                 {% for error_code, error_group in results.error_groups.items() %}
                 <div class="border-bottom p-4">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h6 class="text-danger fw-bold mb-0">
-                            <i class="fas fa-bug me-2"></i>
+                        <h6 class="{% if error_code.startswith('BIDS') %}text-info{% else %}text-danger{% endif %} fw-bold mb-0">
+                            {% if error_code.startswith('BIDS') %}
+                            <i class="fas fa-brain me-2"></i>
+                            <span class="badge bg-info me-2">BIDS</span>
+                            {% else %}
+                            <i class="fas fa-gem me-2"></i>
+                            <span class="badge bg-danger me-2">PRISM</span>
+                            {% endif %}
                             {{ error_code }}
                         </h6>
-                        <span class="badge bg-danger-soft text-danger border border-danger">{{ error_group.count }} occurrences</span>
+                        <span class="badge {% if error_code.startswith('BIDS') %}bg-info-soft text-info border-info{% else %}bg-danger-soft text-danger border-danger{% endif %} border">{{ error_group.count }} occurrences</span>
                     </div>
                     <p class="text-muted small mb-3">{{ error_group.description }}</p>
                     
@@ -176,7 +185,7 @@
                             {% for message, files in error_group.messages.items() %}
                             <div class="mb-3 {% if not loop.last %}border-bottom pb-2{% endif %}">
                                 <div class="small fw-bold mb-2 text-dark">
-                                    <i class="fas fa-exclamation-triangle text-danger me-1"></i>
+                                    <i class="fas fa-exclamation-triangle {% if error_code.startswith('BIDS') %}text-info{% else %}text-danger{% endif %} me-1"></i>
                                     {{ message }}
                                 </div>
                                 <div class="ms-3 ps-2 border-start border-2">
@@ -263,8 +272,14 @@
             <div class="card-body p-0">
                 {% for warning_code, warning_group in results.warning_groups.items() %}
                 <div class="border-bottom p-4">
-                    <h6 class="text-warning fw-bold mb-3">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
+                    <h6 class="{% if warning_code.startswith('BIDS') %}text-info{% else %}text-warning{% endif %} fw-bold mb-3">
+                        {% if warning_code.startswith('BIDS') %}
+                        <i class="fas fa-brain me-2"></i>
+                        <span class="badge bg-info me-2">BIDS</span>
+                        {% else %}
+                        <i class="fas fa-gem me-2"></i>
+                        <span class="badge bg-warning text-dark me-2">PRISM</span>
+                        {% endif %}
                         {{ warning_code }} ({{ warning_group.count }})
                     </h6>
                     <div class="bg-light rounded p-3">

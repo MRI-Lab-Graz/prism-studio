@@ -82,28 +82,54 @@
                             </small>
                         </div>
 
-                        <!-- 3. BIDS Validation Options -->
+                        <!-- 3. Validation Mode -->
                         <div class="mb-4">
                             <h5 class="mb-3">
-                                <i class="fas fa-cubes text-success me-2"></i>
-                                3. BIDS Validation (Optional)
+                                <i class="fas fa-tasks text-success me-2"></i>
+                                3. Validation Mode
                             </h5>
                             <div class="p-3 border border-success rounded bg-light">
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox" id="run_bids" name="run_bids" value="true">
-                                    <label class="form-check-label" for="run_bids">
-                                        Run Standard BIDS Validator
-                                    </label>
+                                <div class="mb-3">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="validation_mode" id="mode_both" value="both" checked>
+                                        <label class="form-check-label fw-bold" for="mode_both">
+                                            Full Validation (PRISM + BIDS)
+                                        </label>
+                                        <div class="text-muted small ms-4">
+                                            Recommended. Validates PRISM extensions and runs the official BIDS validator.
+                                        </div>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="validation_mode" id="mode_prism" value="prism">
+                                        <label class="form-check-label fw-bold" for="mode_prism">
+                                            PRISM Only
+                                        </label>
+                                        <div class="text-muted small ms-4">
+                                            Only validates PRISM-specific modalities (survey, biometrics, etc.) and structure.
+                                        </div>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="validation_mode" id="mode_bids" value="bids">
+                                        <label class="form-check-label fw-bold" for="mode_bids">
+                                            BIDS Only
+                                        </label>
+                                        <div class="text-muted small ms-4">
+                                            Only runs the standard BIDS validator. Skips PRISM-specific schema checks.
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="form-check form-switch ms-4" id="bids_warnings_container" style="display: none;">
-                                    <input class="form-check-input" type="checkbox" id="bids_warnings" name="bids_warnings" value="true">
-                                    <label class="form-check-label" for="bids_warnings">
-                                        Show BIDS Warnings (can be verbose)
-                                    </label>
+
+                                <div id="bids_options" class="ms-4 border-start ps-3">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" id="bids_warnings" name="bids_warnings" value="true">
+                                        <label class="form-check-label" for="bids_warnings">
+                                            Show BIDS Warnings (can be verbose)
+                                        </label>
+                                    </div>
                                 </div>
-                                <small class="text-muted d-block mt-1">
+                                <small class="text-muted d-block mt-2">
                                     <i class="fas fa-info-circle me-1"></i>
-                                    Runs the official BIDS validator alongside PRISM validation.
+                                    Choose how you want to validate your dataset.
                                 </small>
                             </div>
                         </div>
@@ -239,22 +265,23 @@
 <script>
 // File upload handling
 document.addEventListener('DOMContentLoaded', function() {
-    // BIDS Validation Toggles
-    const runBids = document.getElementById('run_bids');
-    const bidsWarningsContainer = document.getElementById('bids_warnings_container');
-    if (runBids && bidsWarningsContainer) {
-        runBids.addEventListener('change', function() {
-            bidsWarningsContainer.style.display = this.checked ? 'block' : 'none';
-        });
+    // Validation Mode Toggles
+    const modeRadios = document.querySelectorAll('input[name="validation_mode"]');
+    const bidsOptions = document.getElementById('bids_options');
+    
+    function updateBidsOptions() {
+        const selectedMode = document.querySelector('input[name="validation_mode"]:checked').value;
+        if (bidsOptions) {
+            bidsOptions.style.display = (selectedMode === 'both' || selectedMode === 'bids') ? 'block' : 'none';
+        }
     }
 
-    const folderRunBids = document.getElementById('folder_run_bids');
-    const folderBidsWarningsContainer = document.getElementById('folder_bids_warnings_container');
-    if (folderRunBids && folderBidsWarningsContainer) {
-        folderRunBids.addEventListener('change', function() {
-            folderBidsWarningsContainer.style.display = this.checked ? 'block' : 'none';
-        });
-    }
+    modeRadios.forEach(radio => {
+        radio.addEventListener('change', updateBidsOptions);
+    });
+    
+    // Initial state
+    updateBidsOptions();
 
     const uploadArea = document.getElementById('uploadArea');
     const folderInput = document.getElementById('datasetFolder');
@@ -314,20 +341,27 @@ document.addEventListener('DOMContentLoaded', function() {
     folderInput.addEventListener('change', function() {
         if (folderInput.files.length > 0) {
             // Filter to metadata files only
-            const metadataExtensions = ['.json', '.tsv', '.csv', '.txt', '.bvec', '.bval', '.vhdr', '.vmrk'];
-            const skipExtensions = ['.nii', '.gz', '.mp4', '.avi', '.mov', '.png', '.jpg', '.jpeg', '.tiff', '.mat', '.edf', '.bdf', '.set', '.fdt'];
+            const metadataExtensions = ['.json', '.tsv', '.csv', '.txt'];
+            const skipExtensions = ['.nii', '.gz', '.mp4', '.avi', '.mov', '.png', '.jpg', '.jpeg', '.tiff', '.mat', '.eeg', '.dat', '.fif', '.edf', '.bdf', '.set', '.fdt', '.vhdr', '.vmrk', '.bvec', '.bval'];
             
             let metadataCount = 0;
             let skippedCount = 0;
             
             for (let file of folderInput.files) {
-                const fileName = file.name.toLowerCase();
-                const isSkipped = skipExtensions.some(ext => fileName.endsWith(ext));
-                const isMetadata = metadataExtensions.some(ext => fileName.endsWith(ext));
+                const fileName = file.name;
+                const fileNameLower = fileName.toLowerCase();
+                
+                // Skip system files
+                if (fileName.startsWith('.') || fileName.startsWith('._') || fileName === 'Thumbs.db') {
+                    continue;
+                }
+
+                const isSkipped = skipExtensions.some(ext => fileNameLower.endsWith(ext));
+                const isMetadata = metadataExtensions.some(ext => fileNameLower.endsWith(ext));
                 
                 if (isMetadata) {
                     metadataCount++;
-                } else if (isSkipped || fileName.endsWith('.nii.gz')) {
+                } else if (isSkipped || fileNameLower.endsWith('.nii.gz')) {
                     skippedCount++;
                 }
             }
@@ -374,15 +408,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const form = e.target;
         const formData = new FormData();
         
+        // Add Validation Mode
+        const selectedMode = document.querySelector('input[name="validation_mode"]:checked').value;
+        formData.append('validation_mode', selectedMode);
+        
         // Add BIDS options
-        const runBidsCheckbox = document.getElementById('run_bids');
         const bidsWarningsCheckbox = document.getElementById('bids_warnings');
-        if (runBidsCheckbox && runBidsCheckbox.checked) {
-            formData.append('run_bids', 'true');
-        }
         if (bidsWarningsCheckbox && bidsWarningsCheckbox.checked) {
             formData.append('bids_warnings', 'true');
         }
+        
+        // Add Schema Version
+        const schemaVersion = document.getElementById('schema_version').value;
+        formData.append('schema_version', schemaVersion);
 
         // Show progress
         uploadBtn.disabled = true;
@@ -392,7 +430,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Folder upload: Zip client-side
             // This avoids "too many files" errors and reduces upload size
             const zip = new JSZip();
+            // ONLY upload content for these files (the actual metadata)
             const metadataExtensions = ['.json', '.tsv', '.csv', '.txt', '.bvec', '.bval', '.vhdr', '.vmrk'];
+            // For everything else, we only send the filename (empty content) to validate structure
             const skipExtensions = ['.nii', '.gz', '.mp4', '.avi', '.mov', '.png', '.jpg', '.jpeg', '.tiff', '.mat', '.eeg', '.dat', '.fif', '.edf', '.bdf', '.set', '.fdt'];
             
             let includedCount = 0;
@@ -403,18 +443,42 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Process files in chunks to avoid blocking UI too much
             const files = folderInput.files;
-            for (let i = 0; i < files.length; i++) {
+            const totalFiles = files.length;
+            
+            for (let i = 0; i < totalFiles; i++) {
+                // Update progress every 100 files
+                if (i % 100 === 0) {
+                    uploadInfo.innerHTML = `<i class="fas fa-cog fa-spin me-1"></i>Preparing files (${i}/${totalFiles})...`;
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+
                 const file = files[i];
-                const fileName = file.name.toLowerCase();
-                const filePath = file.webkitRelativePath || file.name;
+                const fileName = file.name;
+                const fileNameLower = fileName.toLowerCase();
+                const filePath = file.webkitRelativePath || fileName;
                 
-                const isMetadata = metadataExtensions.some(ext => fileName.endsWith(ext));
-                const isSkipped = skipExtensions.some(ext => fileName.endsWith(ext)) || fileName.endsWith('.nii.gz');
+                // Skip system files (macOS .DS_Store, ._ files, etc.)
+                if (fileName.startsWith('.') || fileName.startsWith('._') || fileName === 'Thumbs.db') {
+                    continue;
+                }
+
+                const isMetadata = metadataExtensions.some(ext => fileNameLower.endsWith(ext));
+                const isSkipped = skipExtensions.some(ext => fileNameLower.endsWith(ext)) || fileNameLower.endsWith('.nii.gz');
                 
                 if (isMetadata && !isSkipped) {
-                    zip.file(filePath, file);
-                    includedCount++;
-                    totalSize += file.size;
+                    try {
+                        // Read file content to ensure it's readable and avoid lazy read errors in generateAsync
+                        // This also helps identify exactly which file is failing
+                        const content = await file.arrayBuffer();
+                        zip.file(filePath, content);
+                        includedCount++;
+                        totalSize += file.size;
+                    } catch (readError) {
+                        console.warn(`Could not read file ${filePath}:`, readError);
+                        // Add a placeholder instead of failing the whole upload
+                        zip.file(filePath, `# ERROR: Could not read file content during upload\n# Original size: ${file.size}\n# Error: ${readError.message}`);
+                        includedCount++;
+                    }
                 } else if (isSkipped) {
                     // Add empty placeholder for skipped files
                     zip.file(filePath, "");

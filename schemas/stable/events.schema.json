@@ -1,9 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/events/v1.0.0",
-  "version": "1.0.0",
+  "$id": "https://prism.org/schemas/events/v1.1.0",
+  "version": "1.1.0",
   "title": "Events Metadata",
-  "description": "Schema for BIDS events.tsv sidecars",
+  "description": "Schema for BIDS events.tsv sidecars. Events files document the timing and nature of stimuli and responses during a task.",
   "type": "object",
   "properties": {
     "StimulusPresentation": {
@@ -12,11 +12,11 @@
       "properties": {
         "OperatingSystem": {
           "type": "string",
-          "description": "Operating system used for stimulus presentation"
+          "description": "Operating system used for stimulus presentation (e.g., Windows 10, macOS 12)"
         },
         "SoftwareName": {
           "type": "string",
-          "description": "Name of the stimulus presentation software"
+          "description": "Name of the stimulus presentation software (e.g., PsychoPy, E-Prime, Presentation)"
         },
         "SoftwareVersion": {
           "type": "string",
@@ -24,14 +24,43 @@
         },
         "SoftwareRRID": {
           "type": "string",
-          "description": "RRID of the stimulus presentation software"
+          "description": "RRID of the stimulus presentation software (e.g., SCR_006571 for PsychoPy)"
         },
         "Code": {
           "type": "string",
-          "description": "URL to the code used for stimulus presentation"
+          "format": "uri",
+          "description": "URL to the code/scripts used for stimulus presentation (e.g., GitHub, OSF)"
+        },
+        "ScreenResolution": {
+          "type": "array",
+          "items": {"type": "integer"},
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Screen resolution [width, height] in pixels"
+        },
+        "ScreenRefreshRate": {
+          "type": "number",
+          "description": "Screen refresh rate in Hz"
+        },
+        "ScreenDistance": {
+          "type": "number",
+          "description": "Distance from participant's eyes to screen in cm"
         }
       },
-      "required": ["OperatingSystem", "SoftwareName"]
+      "required": ["SoftwareName"]
+    },
+    "TaskDescription": {
+      "type": "string",
+      "description": "Detailed description of the experimental task"
+    },
+    "TaskInstructions": {
+      "type": "string", 
+      "description": "Instructions given to participants"
+    },
+    "CogAtlasID": {
+      "type": "string",
+      "format": "uri",
+      "description": "Cognitive Atlas Task ID (e.g., https://www.cognitiveatlas.org/task/id/tsk_...)"
     },
     "trial_type": {
       "type": "object",
@@ -39,25 +68,65 @@
       "properties": {
         "LongName": { "type": "string" },
         "Description": { "type": "string" },
-        "Levels": { "type": "object" }
+        "Levels": { 
+          "type": "object",
+          "description": "Mapping of trial_type values to descriptions"
+        }
       }
     },
     "onset": {
       "type": "object",
-      "description": "Description of the onset column",
+      "description": "Description of the onset column (REQUIRED in events.tsv)",
       "properties": {
-        "LongName": { "type": "string" },
-        "Description": { "type": "string" },
-        "Units": { "type": "string" }
+        "LongName": { "type": "string", "default": "Event Onset" },
+        "Description": { "type": "string", "default": "Onset time of the event relative to the beginning of the acquisition" },
+        "Units": { "type": "string", "default": "s" }
       }
     },
     "duration": {
       "type": "object",
-      "description": "Description of the duration column",
+      "description": "Description of the duration column (REQUIRED in events.tsv)",
+      "properties": {
+        "LongName": { "type": "string", "default": "Event Duration" },
+        "Description": { "type": "string", "default": "Duration of the event" },
+        "Units": { "type": "string", "default": "s" }
+      }
+    },
+    "response_time": {
+      "type": "object",
+      "description": "Description of response_time column if present",
       "properties": {
         "LongName": { "type": "string" },
         "Description": { "type": "string" },
-        "Units": { "type": "string" }
+        "Units": { "type": "string", "enum": ["s", "ms"] }
+      }
+    },
+    "stim_file": {
+      "type": "object",
+      "description": "Description of stim_file column if present",
+      "properties": {
+        "LongName": { "type": "string" },
+        "Description": { "type": "string" }
+      }
+    },
+    "Metadata": {
+      "type": "object",
+      "description": "Administrative metadata",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Version of this schema"
+        },
+        "CreationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date this metadata file was created"
+        },
+        "Creator": {
+          "type": "string",
+          "description": "Person or system that created this metadata"
+        }
       }
     }
   },

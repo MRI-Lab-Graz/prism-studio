@@ -1,282 +1,218 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/behavior/v1.0.0",
-  "version": "1.0.0",
-  "title": "Behavioral Data Metadata",
-  "description": "Schema for behavioral performance data (reaction times, accuracy, responses)",
+  "$id": "https://prism.org/schemas/survey/v1.1.0",
+  "version": "1.1.0",
+  "title": "Survey Data Metadata",
+  "description": "Schema for questionnaire and survey data. Files should be named: sub-<label>[_ses-<label>]_survey-<label>[_acq-<label>][_run-<index>]_survey.<tsv|json>",
   "type": "object",
   "properties": {
     "Technical": {
       "type": "object",
-      "description": "Technical behavioral data properties",
+      "description": "Technical survey properties",
       "properties": {
         "StimulusType": {
           "type": "string",
-          "enum": ["Behavior"],
-          "description": "Must be 'Behavior' for behavioral data"
+          "enum": ["Questionnaire"],
+          "description": "Must be 'Questionnaire' for survey data"
         },
         "FileFormat": {
           "type": "string",
-          "enum": ["tsv", "csv", "json", "mat", "txt"],
-          "description": "Behavioral data file format"
-        },
-        "ResponseType": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": ["keypress", "mouse_click", "touchscreen", "voice", "joystick", "eye_gaze", "gesture"]
-          },
-          "description": "Types of behavioral responses recorded"
-        },
-        "TimingPrecision": {
-          "type": "number",
-          "minimum": 0.1,
-          "maximum": 1000,
-          "description": "Timing precision in milliseconds"
-        },
-        "InputDevices": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": ["keyboard", "mouse", "touchscreen", "response_box", "joystick", "microphone", "custom"]
-          },
-          "description": "Input devices used for responses"
+          "enum": ["tsv"],
+          "description": "Survey data file format"
         },
         "SoftwarePlatform": {
           "type": "string",
-          "enum": ["PsychoPy", "Psychtoolbox", "E-Prime", "Presentation", "OpenSesame", "jsPsych", "Gorilla", "custom"],
-          "description": "Software platform used for data collection"
+          "description": "Software platform used for data collection (e.g., LimeSurvey, REDCap, Qualtrics)"
+        },
+        "SoftwareVersion": {
+          "type": "string",
+          "description": "Version of the survey software platform"
+        },
+        "Language": {
+          "type": "string",
+          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+          "description": "Language of the questionnaire (e.g., en, en-US, de-AT)"
+        },
+        "Respondent": {
+          "type": "string",
+          "enum": ["self", "clinician", "parent", "teacher", "caregiver", "other"],
+          "description": "Who provided the responses"
+        },
+        "AdministrationMethod": {
+          "type": "string",
+          "enum": ["online", "paper", "interview", "phone", "mixed"],
+          "description": "How the survey was administered"
         }
       },
-      "required": ["StimulusType", "FileFormat", "ResponseType", "SoftwarePlatform"]
+      "required": ["StimulusType", "FileFormat", "Language", "Respondent"]
+    },
+    "I18n": {
+      "type": "object",
+      "description": "Internationalization settings for multi-language surveys",
+      "properties": {
+        "Languages": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$"},
+          "description": "List of available languages (e.g., ['en', 'de', 'fr'])"
+        },
+        "DefaultLanguage": {
+          "type": "string",
+          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+          "description": "Default/primary language of the instrument"
+        },
+        "TranslationMethod": {
+          "type": "string",
+          "enum": ["forward-backward", "committee", "parallel", "original", "validated-translation"],
+          "description": "Method used for translation validation"
+        }
+      }
     },
     "Study": {
       "type": "object",
-      "description": "Study-specific behavioral parameters",
+      "description": "Study-specific survey parameters",
       "properties": {
-        "Task": {
+        "TaskName": {
           "type": "string",
           "pattern": "^[a-zA-Z0-9]+$",
-          "description": "Task identifier (alphanumeric, no spaces)"
+          "description": "Short task identifier matching filename (e.g., bdi, phq9, dass21)"
         },
-        "Subject": {
+        "OriginalName": {
           "type": "string",
-          "pattern": "^sub-[0-9]+$",
-          "description": "Subject identifier in BIDS format (e.g., sub-001)"
+          "description": "Full canonical name of the instrument (e.g., Beck Depression Inventory)"
         },
-        "Session": {
+        "ShortName": {
           "type": "string",
-          "pattern": "^ses-[a-zA-Z0-9]+$",
-          "description": "Session identifier in BIDS format (e.g., ses-001)"
+          "description": "Common abbreviation (e.g., BDI-II, PHQ-9)"
         },
-        "Run": {
+        "Version": {
           "type": "string",
-          "pattern": "^run-[0-9]+$",
-          "description": "Run identifier in BIDS format (e.g., run-01)"
+          "description": "Version of the instrument (e.g., II, 5.0, 21-item)"
         },
-        "TaskType": {
+        "Citation": {
           "type": "string",
-          "enum": ["reaction_time", "decision_making", "memory_task", "attention_task", "learning_task", "cognitive_control", "perceptual_task", "motor_task"],
-          "description": "Type of behavioral task"
+          "description": "DOI or citation for the instrument"
         },
-        "ExperimentalDesign": {
+        "TermURL": {
           "type": "string",
-          "enum": ["within_subjects", "between_subjects", "mixed_design", "single_case"],
-          "description": "Experimental design type"
+          "format": "uri",
+          "description": "URL to formal definition (e.g., PhenX, SNOMED)"
         },
-        "TrialStructure": {
-          "type": "object",
-          "description": "Trial structure parameters",
-          "properties": {
-            "TrialCount": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "Total number of trials"
-            },
-            "BlockCount": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "Number of experimental blocks"
-            },
-            "TrialsPerBlock": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "Number of trials per block"
-            },
-            "InterTrialInterval": {
-              "type": "array",
-              "items": {
-                "type": "number"
-              },
-              "minItems": 2,
-              "maxItems": 2,
-              "description": "Inter-trial interval range in seconds [min, max]"
-            }
-          },
-          "required": ["TrialCount"]
+        "Construct": {
+          "type": "string",
+          "description": "Primary psychological construct measured (e.g., depression, anxiety, stress)"
         },
-        "Conditions": {
+        "Subscales": {
           "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "ConditionID": {
-                "type": "string",
-                "description": "Unique identifier for the condition"
-              },
-              "ConditionName": {
-                "type": "string",
-                "description": "Descriptive name of the condition"
-              },
-              "TrialCount": {
-                "type": "integer",
-                "minimum": 1,
-                "description": "Number of trials in this condition"
-              }
-            },
-            "required": ["ConditionID", "ConditionName", "TrialCount"]
-          },
-          "description": "Experimental conditions"
+          "items": {"type": "string"},
+          "description": "List of subscale names if applicable"
         }
       },
-      "required": ["Task", "Subject", "Run", "TaskType", "TrialStructure"]
+      "required": ["TaskName", "OriginalName"]
     },
-    "Categories": {
+    "Scoring": {
       "type": "object",
-      "description": "Behavioral analysis categorization",
+      "description": "Scoring and interpretation information",
       "properties": {
-        "CognitiveDomains": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": ["attention", "memory", "executive_function", "processing_speed", "language", "visuospatial", "motor_control", "social_cognition"]
-          },
-          "description": "Cognitive domains assessed"
-        },
-        "PerformanceMetrics": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": ["accuracy", "reaction_time", "response_time", "error_rate", "response_bias", "sensitivity", "efficiency", "learning_rate"]
-          },
-          "description": "Performance metrics analyzed"
-        },
-        "TaskDifficulty": {
+        "ScoringMethod": {
           "type": "string",
-          "enum": ["easy", "moderate", "difficult", "adaptive"],
-          "description": "Overall task difficulty level"
+          "description": "How items are scored (e.g., sum, mean, weighted)"
         },
-        "DataQuality": {
+        "ScoreRange": {
           "type": "object",
-          "description": "Data quality indicators",
           "properties": {
-            "CompletionRate": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 100,
-              "description": "Percentage of trials completed"
-            },
-            "OutlierPercentage": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 100,
-              "description": "Percentage of outlier responses"
-            },
-            "MissedResponses": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 100,
-              "description": "Percentage of missed responses"
-            }
-          }
-        },
-        "BehavioralPhenotypes": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": ["impulsivity", "attention_deficit", "response_inhibition", "working_memory_capacity", "cognitive_flexibility", "processing_efficiency"]
+            "min": {"type": "number"},
+            "max": {"type": "number"}
           },
-          "description": "Behavioral phenotypes or characteristics measured"
+          "description": "Possible score range"
+        },
+        "Cutoffs": {
+          "type": "object",
+          "description": "Clinical cutoff scores and their interpretations",
+          "additionalProperties": {"type": "string"}
+        },
+        "ReverseCodedItems": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "List of reverse-coded item column names"
         }
       }
     },
     "Metadata": {
       "type": "object",
-      "description": "Additional metadata and administrative information",
+      "description": "Administrative metadata",
       "properties": {
         "SchemaVersion": {
           "type": "string",
-          "pattern": "^\\d+\\.\\d+\\.\\d+$",
-          "description": "Version of the schema used (semantic versioning)"
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
         },
         "CreationDate": {
           "type": "string",
-          "format": "date",
-          "description": "Date when the metadata was created (YYYY-MM-DD)"
+          "format": "date"
         },
         "Creator": {
-          "type": "string",
-          "description": "Person or system that created this metadata"
-        },
-        "Institution": {
-          "type": "string",
-          "description": "Institution where the data was collected"
-        },
-        "TaskValidation": {
-          "type": "object",
-          "description": "Task validation information",
-          "properties": {
-            "ValidatedPopulation": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": ["adults", "children", "elderly", "clinical", "healthy", "cross_cultural"]
-              },
-              "description": "Populations where task has been validated"
-            },
-            "ReliabilityCoefficient": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1,
-              "description": "Task reliability coefficient (e.g., Cronbach's alpha)"
-            },
-            "ValidityType": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": ["construct", "content", "criterion", "convergent", "discriminant"]
-              },
-              "description": "Types of validity established for the task"
-            }
-          }
-        },
-        "TestingEnvironment": {
-          "type": "object",
-          "description": "Testing environment details",
-          "properties": {
-            "Setting": {
-              "type": "string",
-              "enum": ["laboratory", "classroom", "home", "clinic", "online"],
-              "description": "Testing environment"
-            },
-            "Supervision": {
-              "type": "string",
-              "enum": ["supervised", "unsupervised", "semi_supervised"],
-              "description": "Level of supervision during testing"
-            },
-            "DistractionsControlled": {
-              "type": "boolean",
-              "description": "Whether environmental distractions were controlled"
-            }
-          }
-        },
-        "AnalysisNotes": {
-          "type": "string",
-          "description": "Notes about behavioral data analysis and interpretation"
+          "type": "string"
         }
       },
       "required": ["SchemaVersion", "CreationDate"]
     }
   },
-  "required": ["Technical", "Study", "Metadata"]
+  "required": ["Technical", "Study", "Metadata"],
+  "additionalProperties": {
+    "type": "object",
+    "properties": {
+      "Description": {
+        "type": "string",
+        "description": "The exact question text presented to the participant"
+      },
+      "Levels": {
+        "type": "object",
+        "description": "Mapping of numeric values to text labels",
+        "patternProperties": {
+          "^.*$": { "type": "string" }
+        }
+      },
+      "Units": {
+        "type": "string",
+        "description": "Unit of measurement (if applicable)"
+      },
+      "TermURL": {
+        "type": "string",
+        "format": "uri",
+        "description": "URL to a definition of the term"
+      },
+      "Relevance": {
+        "type": "string",
+        "description": "Logic/Relevance equation for this item (e.g., Q01 == 1)"
+      },
+      "MinValue": {
+        "type": "number",
+        "description": "Minimum allowed value for this column"
+      },
+      "MaxValue": {
+        "type": "number",
+        "description": "Maximum allowed value for this column"
+      },
+      "WarnMinValue": {
+        "type": "number",
+        "description": "Minimum value threshold for warning"
+      },
+      "WarnMaxValue": {
+        "type": "number",
+        "description": "Maximum value threshold for warning"
+      },
+      "AllowedValues": {
+        "type": "array",
+        "items": {
+          "type": ["string", "number"]
+        },
+        "description": "List of allowed values for this column"
+      },
+      "DataType": {
+        "type": "string",
+        "enum": ["string", "integer", "float"],
+        "description": "Expected data type for this column"
+      }
+    },
+    "required": ["Description"]
+  }
 }

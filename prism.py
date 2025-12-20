@@ -97,6 +97,11 @@ Examples:
         help="Show warnings from the BIDS validator (default: hidden)",
     )
     parser.add_argument(
+        "--no-prism",
+        action="store_true",
+        help="Skip PRISM-specific validation (only run BIDS validator if --bids is set)",
+    )
+    parser.add_argument(
         "--json",
         action="store_true",
         help="Output results as JSON (useful for CI/CD pipelines)",
@@ -299,6 +304,7 @@ Examples:
             verbose=args.verbose and not machine_output,
             schema_version=schema_version,
             run_bids=run_bids,
+            run_prism=not args.no_prism,
         )
 
         # Convert legacy tuples to Issue objects for structured output

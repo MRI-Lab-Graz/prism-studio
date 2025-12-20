@@ -1,9 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/survey/v1.0.0",
-  "version": "1.0.0",
+  "$id": "https://prism.org/schemas/survey/v1.1.0",
+  "version": "1.1.0",
   "title": "Survey Data Metadata",
-  "description": "Schema for questionnaire and survey data",
+  "description": "Schema for questionnaire and survey data. Files should be named: sub-<label>[_ses-<label>]_survey-<label>[_acq-<label>][_run-<index>]_survey.<tsv|json>",
   "type": "object",
   "properties": {
     "Technical": {
@@ -22,7 +22,11 @@
         },
         "SoftwarePlatform": {
           "type": "string",
-          "description": "Software platform used for data collection (e.g., LimeSurvey, RedCap)"
+          "description": "Software platform used for data collection (e.g., LimeSurvey, REDCap, Qualtrics)"
+        },
+        "SoftwareVersion": {
+          "type": "string",
+          "description": "Version of the survey software platform"
         },
         "Language": {
           "type": "string",
@@ -31,11 +35,37 @@
         },
         "Respondent": {
           "type": "string",
-          "enum": ["self", "clinician", "parent", "teacher", "other"],
+          "enum": ["self", "clinician", "parent", "teacher", "caregiver", "other"],
           "description": "Who provided the responses"
+        },
+        "AdministrationMethod": {
+          "type": "string",
+          "enum": ["online", "paper", "interview", "phone", "mixed"],
+          "description": "How the survey was administered"
         }
       },
       "required": ["StimulusType", "FileFormat", "Language", "Respondent"]
+    },
+    "I18n": {
+      "type": "object",
+      "description": "Internationalization settings for multi-language surveys",
+      "properties": {
+        "Languages": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$"},
+          "description": "List of available languages (e.g., ['en', 'de', 'fr'])"
+        },
+        "DefaultLanguage": {
+          "type": "string",
+          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+          "description": "Default/primary language of the instrument"
+        },
+        "TranslationMethod": {
+          "type": "string",
+          "enum": ["forward-backward", "committee", "parallel", "original", "validated-translation"],
+          "description": "Method used for translation validation"
+        }
+      }
     },
     "Study": {
       "type": "object",
@@ -44,22 +74,68 @@
         "TaskName": {
           "type": "string",
           "pattern": "^[a-zA-Z0-9]+$",
-          "description": "Short task identifier (e.g., bdi, ads)"
+          "description": "Short task identifier matching filename (e.g., bdi, phq9, dass21)"
         },
         "OriginalName": {
           "type": "string",
           "description": "Full canonical name of the instrument (e.g., Beck Depression Inventory)"
         },
+        "ShortName": {
+          "type": "string",
+          "description": "Common abbreviation (e.g., BDI-II, PHQ-9)"
+        },
         "Version": {
           "type": "string",
-          "description": "Version of the instrument (e.g., II, 5.0)"
+          "description": "Version of the instrument (e.g., II, 5.0, 21-item)"
         },
         "Citation": {
           "type": "string",
           "description": "DOI or citation for the instrument"
+        },
+        "TermURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to formal definition (e.g., PhenX, SNOMED)"
+        },
+        "Construct": {
+          "type": "string",
+          "description": "Primary psychological construct measured (e.g., depression, anxiety, stress)"
+        },
+        "Subscales": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "List of subscale names if applicable"
         }
       },
       "required": ["TaskName", "OriginalName"]
+    },
+    "Scoring": {
+      "type": "object",
+      "description": "Scoring and interpretation information",
+      "properties": {
+        "ScoringMethod": {
+          "type": "string",
+          "description": "How items are scored (e.g., sum, mean, weighted)"
+        },
+        "ScoreRange": {
+          "type": "object",
+          "properties": {
+            "min": {"type": "number"},
+            "max": {"type": "number"}
+          },
+          "description": "Possible score range"
+        },
+        "Cutoffs": {
+          "type": "object",
+          "description": "Clinical cutoff scores and their interpretations",
+          "additionalProperties": {"type": "string"}
+        },
+        "ReverseCodedItems": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "List of reverse-coded item column names"
+        }
+      }
     },
     "Metadata": {
       "type": "object",

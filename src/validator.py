@@ -16,31 +16,31 @@ from cross_platform import (
     validate_filename_cross_platform,
 )
 
-# Modality patterns
+# PRISM-specific modalities that we validate with our schemas
+# Standard BIDS modalities (anat, func, fmap, dwi, eeg) are passed through
+# and should be validated by the optional BIDS validator instead
+PRISM_MODALITIES = {"survey", "biometrics", "events", "physio", "eyetracking"}
+
+# Standard BIDS modalities - we only do minimal checks (subject/session consistency)
+# Full validation is delegated to the BIDS validator
+BIDS_MODALITIES = {"anat", "func", "fmap", "dwi", "eeg"}
+
+# Modality patterns (only enforced for PRISM modalities)
 MODALITY_PATTERNS = {
     # PRISM survey/biometrics must carry explicit suffixes
     "survey": r".+_survey\.(tsv|json)$",
     "biometrics": r".+_biometrics\.(tsv|json)$",
     "events": r".+_events\.tsv$",
     "physio": r".+(_recording-(ecg|cardiac|puls|resp|eda|ppg|emg|temp|bp|spo2|trigger|[a-zA-Z0-9]+))?_physio\.(tsv|tsv\.gz|json|edf)$",
-    "eyetracking": r".+_(eyetrack|eye|gaze)\.(tsv|tsv\.gz|json|edf|asc)$",
-    # MRI submodalities
-    "anat": r".+_(T1w|T2w|T2star|FLAIR|PD|PDw|T1map|T2map)\.nii(\.gz)?$",
-    "func": r".+(_bold\.nii(\.gz)?|_sbref\.nii(\.gz)?|_(events|physio|stim)\.tsv(\.gz)?)$",
-    "fmap": r".+_(magnitude1|magnitude2|phasediff|fieldmap|epi)\.nii(\.gz)?$",
-    "dwi": r".+_dwi(\.nii(\.gz)?|\.bvec|\.bval)$",
+    "eyetracking": r".+(_trackedEye-(left|right|both))?_(eyetrack|eye|gaze)\.(tsv|tsv\.gz|json|edf|asc)$",
 }
 
 # BIDS naming patterns
 BIDS_REGEX = re.compile(
     r"^sub-[a-zA-Z0-9]+"  # subject
     r"(_ses-[a-zA-Z0-9]+)?"  # optional session
-    r"(_(task|survey|biometrics)-[a-zA-Z0-9]+)?"  # task/survey/biometrics label
-    r"(_acq-[a-zA-Z0-9]+)?"  # optional acquisition label
-    r"(_recording-[a-zA-Z0-9]+)?"  # optional recording label (for physio: ecg, puls, resp, etc.)
-    r"(_run-[0-9]+)?"  # optional run
-    r"(_desc-[a-zA-Z0-9]+)?"  # optional desc
-    r"(_(survey|biometrics|physio|eyetrack|events))?$"  # PRISM modality suffixes
+    r"(_[a-zA-Z0-9]+-[a-zA-Z0-9]+)*"  # any number of key-value pairs (task, acq, dir, rec, run, etc.)
+    r"(_[a-zA-Z0-9]+)?$"  # generic suffix (e.g., _dwi, _T1w, _bold, _physio, _events)
 )
 
 MRI_SUFFIX_REGEX = re.compile(
@@ -433,7 +433,23 @@ class DatasetValidator:
         """Validate filename against BIDS conventions and modality patterns"""
         issues = []
 
-        # Cross-platform filename validation
+        # For standard BIDS modalities, skip detailed validation
+        # The BIDS validator handles these properly
+        if modality in BIDS_MODALITIES:
+            # Only do basic subject/session consistency checks
+            if subject_id and not filename.startswith(subject_id + "_"):
+                issues.append(
+                    ("WARNING", f"Filename {filename} does not start with subject ID {subject_id}")
+                )
+            if session_id:
+                expected_prefix = f"{subject_id}_{session_id}_"
+                if not filename.startswith(expected_prefix):
+                    issues.append(
+                        ("WARNING", f"Filename {filename} does not match session directory {session_id}")
+                    )
+            return issues  # Skip PRISM-specific validation for BIDS modalities
+
+        # Cross-platform filename validation (PRISM modalities only)
         platform_issues = validate_filename_cross_platform(filename)
         for issue in platform_issues:
             issues.append(("WARNING", issue))
@@ -442,7 +458,7 @@ class DatasetValidator:
         pattern = re.compile(MODALITY_PATTERNS.get(modality, r".*"))
         is_sidecar = filename.endswith(".json")
 
-        # Check BIDS naming
+        # Check BIDS naming for PRISM files
         if not BIDS_REGEX.match(base):
             issues.append(("ERROR", f"Invalid BIDS filename format: {filename}"))
 
@@ -455,20 +471,13 @@ class DatasetValidator:
                         f"Filename doesn't match expected pattern for {modality}: {filename}",
                     )
                 )
-        else:
+        elif modality in PRISM_MODALITIES:
             if not is_sidecar and not pattern.match(filename):
                 issues.append(
                     (
                         "WARNING",
                         f"Filename doesn't match expected pattern for {modality}: {filename}",
                     )
-                )
-
-        # Check MRI-specific patterns
-        if modality in ("anat", "func", "fmap", "dwi"):
-            if ext in (".nii", ".nii.gz") and not MRI_SUFFIX_REGEX.search(base):
-                issues.append(
-                    ("ERROR", f"Invalid MRI suffix for {modality}: {filename}")
                 )
 
         # Check subject consistency
@@ -508,6 +517,12 @@ class DatasetValidator:
 
     def validate_sidecar(self, file_path, modality, root_dir):
         """Validate JSON sidecar against schema"""
+        
+        # Skip sidecar validation for standard BIDS modalities
+        # The BIDS validator handles these
+        if modality in BIDS_MODALITIES:
+            return []
+        
         sidecar_path = resolve_sidecar_path(file_path, root_dir)
         issues = []
 
@@ -519,7 +534,7 @@ class DatasetValidator:
             content = CrossPlatformFile.read_text(sidecar_path)
             sidecar_data = json.loads(content)
 
-            # Validate against schema if available
+            # Validate against schema if available (PRISM modalities only)
             schema = self.schemas.get(modality)
             if schema:
                 # Version compatibility checks (only warns when explicitly specified and incompatible)

@@ -4,7 +4,7 @@ import tempfile
 import shutil
 import uuid
 from datetime import datetime
-from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app
+from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app, send_file
 from werkzeug.utils import secure_filename
 
 from src.web import (
@@ -82,7 +82,10 @@ def upload_dataset():
                 return redirect(url_for("validation.validate_dataset"))
             dataset_path = _process_zip_upload(file, temp_dir, filename)
 
-        run_bids = request.form.get("run_bids") == "true"
+        validation_mode = request.form.get("validation_mode", "both")
+        run_bids = validation_mode in ["both", "bids"]
+        run_prism = validation_mode in ["both", "prism"]
+        
         show_bids_warnings = request.form.get("bids_warnings") == "true"
         job_id = request.form.get("job_id", str(uuid.uuid4()))
 
@@ -94,6 +97,7 @@ def upload_dataset():
             verbose=True,
             schema_version=schema_version,
             run_bids=run_bids,
+            run_prism=run_prism,
             progress_callback=progress_callback,
         )
 
@@ -146,7 +150,10 @@ def validate_folder():
         return redirect(url_for("validation.validate_dataset"))
 
     schema_version = request.form.get("schema_version", "stable")
-    run_bids = request.form.get("run_bids") == "true"
+    validation_mode = request.form.get("validation_mode", "both")
+    run_bids = validation_mode in ["both", "bids"]
+    run_prism = validation_mode in ["both", "prism"]
+    
     show_bids_warnings = request.form.get("bids_warnings") == "true"
     job_id = request.form.get("job_id", str(uuid.uuid4()))
 
@@ -159,6 +166,7 @@ def validate_folder():
             verbose=True,
             schema_version=schema_version,
             run_bids=run_bids,
+            run_prism=run_prism,
             progress_callback=progress_callback,
         )
 

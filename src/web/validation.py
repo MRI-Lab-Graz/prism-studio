@@ -83,6 +83,7 @@ def run_validation(
     verbose: bool = False,
     schema_version: Optional[str] = None,
     run_bids: bool = False,
+    run_prism: bool = True,
     progress_callback: Optional[Callable[[int, str], None]] = None,
 ) -> Tuple[List, Any]:
     """
@@ -93,6 +94,7 @@ def run_validation(
         verbose: Enable verbose output
         schema_version: Schema version to use (default: 'stable')
         run_bids: Also run standard BIDS validator
+        run_prism: Also run PRISM-specific validation
         progress_callback: Optional callback for progress updates
 
     Returns:
@@ -129,6 +131,7 @@ def run_validation(
                 verbose=verbose,
                 schema_version=schema_version,
                 run_bids=run_bids,
+                run_prism=run_prism,
                 progress_callback=wrapped_callback,
             )
 
@@ -158,6 +161,7 @@ def _run_validator_subprocess(
     verbose: bool = False,
     schema_version: Optional[str] = None,
     run_bids: bool = False,
+    run_prism: bool = True,
 ) -> Tuple[List, SimpleStats]:
     """Run validation via subprocess (fallback method)."""
 
@@ -170,6 +174,8 @@ def _run_validator_subprocess(
             cmd.extend(["--schema-version", schema_version])
         if run_bids:
             cmd.append("--bids")
+        if not run_prism:
+            cmd.append("--no-prism")
 
         # Get script directory
         script_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))

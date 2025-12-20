@@ -1,19 +1,19 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/biometrics/v1.0.0",
-  "version": "1.0.0",
+  "$id": "https://prism.org/schemas/biometrics/v1.1.0",
+  "version": "1.1.0",
   "title": "Biometrics Metadata",
-  "description": "Schema for biometric and physiological assessment data (e.g., VO2max, planks, balance)",
+  "description": "Schema for biometric and physical performance assessment data (e.g., VO2max, planks, balance, grip strength). Files should be named: sub-<label>[_ses-<label>]_biometrics-<label>[_run-<index>]_biometrics.<tsv|json>",
   "type": "object",
   "properties": {
     "Technical": {
       "type": "object",
       "description": "Technical biometric properties",
       "properties": {
-        "StimulusType": {
+        "Type": {
           "type": "string",
-          "enum": ["Biometrics"],
-          "description": "Must be 'Biometrics' for biometric data"
+          "enum": ["Biometrics", "PhysicalPerformance", "Anthropometry", "FitnessTest"],
+          "description": "Type of biometric assessment"
         },
         "FileFormat": {
           "type": "string",
@@ -22,15 +22,33 @@
         },
         "Equipment": {
           "type": "string",
-          "description": "Equipment used for measurement (e.g., Stopwatch, Cycle Ergometer, Balance Board)"
+          "description": "Equipment used for measurement (e.g., Stopwatch, Cycle Ergometer, Dynamometer)"
+        },
+        "EquipmentManufacturer": {
+          "type": "string",
+          "description": "Manufacturer of the equipment"
+        },
+        "EquipmentModel": {
+          "type": "string", 
+          "description": "Model name/number of the equipment"
+        },
+        "CalibrationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "Date of last equipment calibration"
         },
         "Supervisor": {
           "type": "string",
-          "enum": ["investigator", "physician", "trainer", "self"],
+          "enum": ["investigator", "physician", "trainer", "physiotherapist", "self"],
           "description": "Who supervised the assessment"
+        },
+        "Location": {
+          "type": "string",
+          "enum": ["laboratory", "clinic", "gym", "field", "home"],
+          "description": "Where the assessment was conducted"
         }
       },
-      "required": ["StimulusType", "FileFormat", "Equipment"]
+      "required": ["Type", "FileFormat", "Equipment"]
     },
     "Study": {
       "type": "object",
@@ -39,11 +57,16 @@
         "BiometricName": {
           "type": "string",
           "pattern": "^[a-zA-Z0-9]+$",
-          "description": "Short biometric identifier (e.g., vo2max, planks)"
+          "description": "Short biometric identifier matching filename (e.g., vo2max, planks, grip)"
         },
         "OriginalName": {
           "type": "string",
-          "description": "Full name of the test (e.g., UKK Walk Test, Plank Test)"
+          "description": "Full name of the test (e.g., UKK Walk Test, Plank Test, Handgrip Strength)"
+        },
+        "Category": {
+          "type": "string",
+          "enum": ["cardiorespiratory", "muscular-strength", "muscular-endurance", "flexibility", "balance", "body-composition", "anthropometry"],
+          "description": "Category of fitness/biometric test"
         },
         "Protocol": {
           "type": "string",
@@ -80,9 +103,31 @@
         "ExclusionCriteria": {
           "type": "string",
           "description": "Conditions under which the test should not be performed"
+        },
+        "WarmupProtocol": {
+          "type": "string",
+          "description": "Warmup procedure before the test (if required)"
         }
       },
       "required": ["BiometricName", "OriginalName", "Description"]
+    },
+    "Normative": {
+      "type": "object",
+      "description": "Normative data and reference values",
+      "properties": {
+        "ReferencePopulation": {
+          "type": "string",
+          "description": "Population on which normative data is based"
+        },
+        "ReferenceSource": {
+          "type": "string",
+          "description": "Citation for normative data"
+        },
+        "Percentiles": {
+          "type": "object",
+          "description": "Percentile cutoffs (e.g., {'p25': 10, 'p50': 15, 'p75': 20})"
+        }
+      }
     },
     "Metadata": {
       "type": "object",

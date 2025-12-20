@@ -350,7 +350,7 @@ def process_folder_upload(
         f"📁 Processed {processed_count} metadata files, created {skipped_count} placeholders"
     )
 
-    return dataset_root
+    return find_dataset_root(dataset_root)
 
 
 def process_zip_upload(file, temp_dir: str, filename: str) -> str:
@@ -371,6 +371,15 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
 
     processed_count = 0
     skipped_count = 0
+    manifest: Dict[str, Any] = {
+        "uploaded_files": [],
+        "placeholder_files": [],
+        "upload_type": "structure_only",
+        "timestamp": datetime.now().isoformat(),
+        "source": "zip",
+    }
+
+    placeholder_full_paths: List[str] = []
 
     with zipfile.ZipFile(file_path, "r") as zip_ref:
         all_files = zip_ref.namelist()
@@ -391,18 +400,45 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
             if ext in METADATA_EXTENSIONS or ext == "":
                 zip_ref.extract(zip_info, temp_dir)
                 processed_count += 1
+
+                manifest["uploaded_files"].append(
+                    {
+                        "path": zip_info.lstrip("/").replace("\\", "/"),
+                        "type": "metadata",
+                    }
+                )
             elif ext in SKIP_EXTENSIONS:
-                # Create empty placeholder
+                # Create informative placeholder
                 extract_path = os.path.join(temp_dir, zip_info)
                 os.makedirs(os.path.dirname(extract_path), exist_ok=True)
+
+                rel_path = zip_info.lstrip("/").replace("\\", "/")
+                placeholder_content = create_placeholder_content(rel_path, ext)
                 with open(extract_path, "w") as f:
-                    f.write("")
+                    f.write(placeholder_content)
+
                 skipped_count += 1
+                placeholder_full_paths.append(extract_path)
+
+                manifest["placeholder_files"].append(
+                    {
+                        "path": rel_path,
+                        "extension": ext,
+                        "type": "placeholder",
+                    }
+                )
             else:
                 # Unknown extension, extract it anyway to be safe if it's small
                 # or just skip it. For now, let's extract it if it's not obviously large.
                 zip_ref.extract(zip_info, temp_dir)
                 processed_count += 1
+
+                manifest["uploaded_files"].append(
+                    {
+                        "path": zip_info.lstrip("/").replace("\\", "/"),
+                        "type": "other",
+                    }
+                )
 
     if processed_count == 0 and skipped_count == 0:
         print(f"⚠️  [UPLOAD] No files were extracted from {filename}. ZIP contents: {all_files[:10]}...")
@@ -411,7 +447,30 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
         f"📦 Extracted {processed_count} metadata files, skipped {skipped_count} data files"
     )
 
-    return find_dataset_root(temp_dir)
+    dataset_root = find_dataset_root(temp_dir)
+
+    # Normalize placeholder paths to be relative to the dataset root, so the runner can match them.
+    if manifest.get("placeholder_files"):
+        for entry in manifest["placeholder_files"]:
+            path_str = entry.get("path", "")
+            if not path_str:
+                continue
+            full_path = os.path.normpath(os.path.join(temp_dir, path_str))
+            try:
+                rel = os.path.relpath(full_path, dataset_root)
+                entry["path"] = rel.replace("\\", "/")
+            except Exception:
+                entry["path"] = path_str
+
+    # Save manifest at the dataset root
+    try:
+        manifest_path = os.path.join(dataset_root, ".upload_manifest.json")
+        with open(manifest_path, "w") as f:
+            json.dump(manifest, f, indent=2)
+    except Exception:
+        pass
+
+    return dataset_root
 
 
 def find_dataset_root(extract_dir: str) -> str:
