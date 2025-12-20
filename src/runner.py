@@ -220,12 +220,12 @@ def _run_bids_validator(root_dir, verbose=False):
 
     # Content-related issues that are expected in structure-only validation.
     # We keep structural compliance errors, but suppress data-content checks.
+    # Note: BVAL/BVEC are excluded here because we now upload them; 
+    # they are only suppressed if they are explicitly placeholders.
     content_error_codes = {
         "EMPTY_FILE",
         "NIFTI_HEADER_UNREADABLE",
         "QUICK_TEST_FAILED",
-        "BVAL_MULTIPLE_ROWS",
-        "BVEC_NUMBER_ROWS",
     }
 
     def _looks_like_content_file(location: str) -> bool:
@@ -260,7 +260,7 @@ def _run_bids_validator(root_dir, verbose=False):
 
     if placeholders and verbose:
         print(
-            f"   ℹ️  Found {len(placeholders)} placeholder files. Will suppress {sorted(content_error_codes)} for these."
+            f"   ℹ️  Found {len(placeholders)} placeholder files. Will suppress content errors for these."
         )
 
     # 1. Try Deno-based validator (modern)

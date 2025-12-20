@@ -286,11 +286,15 @@
                         {% if warning_group.messages %}
                             {% for message, files in warning_group.messages.items() %}
                             <div class="mb-3 {% if not loop.last %}border-bottom pb-2{% endif %}">
-                                <div class="small fw-bold mb-2 text-dark">{{ message }}</div>
+                                <div class="small mb-2 text-dark {% if warning_code == 'PRISM601' %}fst-italic{% else %}fw-bold{% endif %}">{{ message }}</div>
                                 <div class="ms-3 ps-2 border-start border-2">
                                     {% for file in files[:5] %}
                                     <div class="d-flex align-items-center mb-1">
+                                        {% if warning_code == 'PRISM601' %}
+                                        <i class="fas fa-users text-muted me-2 x-small"></i>
+                                        {% else %}
                                         <i class="fas fa-file text-muted me-2 x-small"></i>
+                                        {% endif %}
                                         <span class="file-path x-small text-break">{{ file if file else 'General' }}</span>
                                     </div>
                                     {% endfor %}

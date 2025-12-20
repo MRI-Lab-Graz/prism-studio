@@ -216,9 +216,9 @@ def get_error_code_from_message(message: str) -> str:
         return "PRISM103"
     elif "does not match session directory" in message:
         return "PRISM104"
-    elif "missing" in message.lower() and ("subject" in message.lower() or "session" in message.lower()):
+    elif "missing" in message.lower() and ("subject" in message.lower() or "session" in message.lower() or "data" in message.lower() or "task" in message.lower()):
         return "PRISM601"
-    elif "consistency" in message.lower() or "mislabeled" in message.lower() or "typo" in message.lower():
+    elif "consistency" in message.lower() or "mislabeled" in message.lower() or "typo" in message.lower() or "mixed session" in message.lower():
         return "PRISM601"
 
     return "PRISM999"

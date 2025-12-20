@@ -124,8 +124,8 @@ class DatasetStats:
             warnings.append(
                 (
                     "WARNING",
-                    f"Mixed session structure: {len(subjects_with_sessions)} subjects have sessions, "
-                    f"{len(subjects_without_sessions)} don't",
+                    "Mixed session structure",
+                    f"{len(subjects_with_sessions)} subjects have sessions, {len(subjects_without_sessions)} don't",
                 )
             )
 
@@ -178,8 +178,8 @@ class DatasetStats:
                 warnings.append(
                     (
                         "WARNING",
-                        f"Potential typo/mislabeled session: '{session}' appears only in {present} subject(s) ({', '.join(rare_subjects)}). "
-                        "Check if this should match the session name used by other subjects.",
+                        f"Potential typo/mislabeled session: '{session}'",
+                        f"Appears only in {present} subject(s): {', '.join(rare_subjects)}",
                     )
                 )
                 continue
@@ -190,7 +190,7 @@ class DatasetStats:
                 warnings.append(
                     (
                         "WARNING",
-                        f"Session {session} appears only in {present}/{total_subjects} subjects. "
+                        f"Session {session} appears only in {present}/{total_subjects} subjects",
                         "This is often caused by a mislabeled session column/value (e.g., one accidental '2' among '1's).",
                     )
                 )
@@ -212,14 +212,16 @@ class DatasetStats:
                 warnings.append(
                     (
                         "WARNING",
-                        f"Session {session} missing for {len(missing_subjects)}/{total_subjects} subjects (showing first {max_list}): {shown}",
+                        f"Session {session} missing for {len(missing_subjects)}/{total_subjects} subjects",
+                        f"Subjects (showing first {max_list}): {shown}",
                     )
                 )
             else:
                 warnings.append(
                     (
                         "WARNING",
-                        f"Session {session} missing for subjects: {', '.join(missing_subjects)}",
+                        f"Session {session} missing for subjects",
+                        ", ".join(missing_subjects),
                     )
                 )
 
@@ -243,12 +245,12 @@ class DatasetStats:
 
             for modality in missing_modalities:
                 warnings.append(
-                    ("WARNING", f"Subject {subject_id} missing {modality} data")
+                    ("WARNING", f"Missing {modality} data", subject_id)
                 )
 
             for task in missing_tasks:
                 warnings.append(
-                    ("WARNING", f"Subject {subject_id} missing task {task}")
+                    ("WARNING", f"Missing task {task}", subject_id)
                 )
 
         return warnings
