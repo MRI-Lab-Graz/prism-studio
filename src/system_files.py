@@ -36,6 +36,7 @@ SYSTEM_FILES = {
     ".pytest_cache",  # Pytest cache
     # Temporary files
     ".tmp",  # Temporary files
+    ".TemporaryItems",  # macOS temporary items
     "~*",  # Backup files (pattern)
     "#*#",  # Emacs temp files (pattern)
     ".#*",  # Emacs lock files (pattern)

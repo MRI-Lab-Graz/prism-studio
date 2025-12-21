@@ -82,13 +82,17 @@ fi
 echo_info "'$REQUIREMENTS_FILE' found."
 
 # 3. Create virtual environment
-echo_info "Creating virtual environment in '$VENV_DIR'..."
-uv venv $VENV_DIR
-if [ $? -ne 0 ]; then
-    echo_error "Failed to create virtual environment."
-    exit 1
+if [ -d "$VENV_DIR" ]; then
+    echo_info "Virtual environment already exists in '$VENV_DIR' - reusing it."
+else
+    echo_info "Creating virtual environment in '$VENV_DIR'..."
+    uv venv $VENV_DIR
+    if [ $? -ne 0 ]; then
+        echo_error "Failed to create virtual environment."
+        exit 1
+    fi
+    echo_success "Virtual environment created."
 fi
-echo_success "Virtual environment created."
 
 # 4. Install dependencies
 echo_info "Installing dependencies from '$REQUIREMENTS_FILE'..."

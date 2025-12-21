@@ -7,6 +7,7 @@ This module provides:
 - Utility functions for creating issues
 """
 
+import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, List, Dict, Any
@@ -79,6 +80,7 @@ class Issue:
 #   PRISM3xx: Schema validation errors
 #   PRISM4xx: Content validation errors
 #   PRISM5xx: BIDS compatibility warnings
+#   PRISM6xx: Consistency errors
 #   PRISM9xx: Internal/system errors
 
 ERROR_CODES: Dict[str, Dict[str, str]] = {
@@ -99,106 +101,152 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Missing participants.tsv",
         "fix_hint": "Create a participants.tsv file listing all subjects with at least a 'participant_id' column",
     },
-    # File naming errors (1xx)
+    # Filename errors (1xx)
     "PRISM101": {
-        "message": "Invalid filename pattern",
-        "fix_hint": "Use BIDS naming: sub-<label>[_ses-<label>][_task-<label>]_<suffix>.<ext>",
+        "message": "Invalid BIDS filename format",
+        "fix_hint": "Ensure filename follows sub-<label>[_ses-<label>]_task-<label>_<suffix>.<ext>",
     },
     "PRISM102": {
-        "message": "Subject ID mismatch between filename and directory",
-        "fix_hint": "Ensure the sub-<label> in the filename matches the parent directory name",
+        "message": "Filename doesn't match expected pattern for modality",
+        "fix_hint": "Check modality-specific naming requirements (e.g., _survey.tsv)",
     },
     "PRISM103": {
-        "message": "Session ID mismatch between filename and directory",
-        "fix_hint": "Ensure the ses-<label> in the filename matches the parent directory name",
+        "message": "Subject ID mismatch",
+        "fix_hint": "Ensure the sub-<label> in the filename matches the parent directory",
     },
     "PRISM104": {
-        "message": "Invalid characters in filename",
-        "fix_hint": "Use only alphanumeric characters, hyphens, and underscores",
+        "message": "Session ID mismatch",
+        "fix_hint": "Ensure the ses-<label> in the filename matches the parent directory",
     },
-    # Sidecar/metadata errors (2xx)
+    # Sidecar errors (2xx)
     "PRISM201": {
-        "message": "Missing sidecar JSON file",
-        "fix_hint": "Create a .json sidecar file with the same name as your data file",
+        "message": "Missing JSON sidecar",
+        "fix_hint": "Every data file must have a corresponding .json sidecar with metadata",
     },
     "PRISM202": {
-        "message": "Invalid JSON in sidecar file",
-        "fix_hint": "Check for syntax errors in your JSON file (missing commas, brackets, etc.)",
+        "message": "Invalid JSON syntax in sidecar",
+        "fix_hint": "Check for missing commas, quotes, or brackets in the .json file",
     },
     "PRISM203": {
-        "message": "Sidecar missing required field",
-        "fix_hint": "Add the missing field to your sidecar JSON file",
+        "message": "Empty sidecar file",
+        "fix_hint": "The .json sidecar exists but contains no data",
     },
     "PRISM204": {
-        "message": "Empty sidecar file",
-        "fix_hint": "Add metadata content to the sidecar file or remove it if not needed",
+        "message": "Empty data file",
+        "fix_hint": "The data file exists but contains no content",
     },
-    # Schema validation errors (3xx)
+    # Schema errors (3xx)
     "PRISM301": {
-        "message": "Schema validation failed",
-        "fix_hint": "Check that your sidecar matches the expected schema structure",
+        "message": "Metadata schema validation failed",
+        "fix_hint": "Ensure all required fields for this modality are present in the JSON sidecar",
     },
     "PRISM302": {
-        "message": "Invalid field value",
-        "fix_hint": "Check the allowed values for this field in the schema",
+        "message": "Invalid field type in sidecar",
+        "fix_hint": "Check that field values match the expected type (string, number, etc.)",
     },
-    "PRISM303": {
-        "message": "Schema version mismatch",
-        "fix_hint": "Update your metadata to match the expected schema version",
-    },
-    "PRISM304": {
-        "message": "Unknown modality",
-        "fix_hint": "Supported modalities: survey, biometrics, events, anat, func, dwi, fmap, eeg",
-    },
-    # Content validation errors (4xx)
+    # Content errors (4xx)
     "PRISM401": {
-        "message": "TSV file is empty",
-        "fix_hint": "Add data to the file or remove it if the data is missing",
+        "message": "TSV file is empty or missing header",
+        "fix_hint": "Ensure the TSV file has a tab-separated header row",
     },
     "PRISM402": {
-        "message": "TSV column count mismatch",
-        "fix_hint": "Ensure all rows have the same number of columns as the header",
+        "message": "Value not in allowed levels",
+        "fix_hint": "Check that the value in the TSV matches one of the Levels defined in the sidecar",
     },
-    "PRISM403": {
-        "message": "TSV missing required column",
-        "fix_hint": "Add the required column to your TSV file",
-    },
-    "PRISM404": {
-        "message": "Value out of allowed range",
-        "fix_hint": "Check minValue/maxValue constraints in the sidecar",
-    },
-    "PRISM405": {
-        "message": "Value not in allowed list",
-        "fix_hint": "Check allowedValues/Levels constraints in the sidecar",
-    },
-    # BIDS compatibility warnings (5xx)
+    # BIDS compatibility (5xx)
     "PRISM501": {
-        "message": "Non-standard modality folder",
-        "fix_hint": "This folder will be added to .bidsignore for BIDS-App compatibility",
+        "message": ".bidsignore needs update",
+        "fix_hint": "Add PRISM-specific modalities to .bidsignore to avoid BIDS validator errors",
     },
     "PRISM502": {
         "message": "BIDS validator warning",
-        "fix_hint": "See BIDS specification for details",
+        "fix_hint": "Standard BIDS validator reported a warning",
     },
     "PRISM503": {
         "message": "BIDS validator error",
-        "fix_hint": "See BIDS specification for details",
+        "fix_hint": "Standard BIDS validator reported an error",
     },
-    # Internal/system errors (9xx)
-    "PRISM901": {
-        "message": "Internal validation error",
-        "fix_hint": "This may be a bug - please report it",
-    },
-    "PRISM902": {
-        "message": "Schema loading failed",
-        "fix_hint": "Check that schema files exist and are valid JSON",
-    },
-    # Consistency warnings (6xx)
+    # Consistency errors (6xx)
     "PRISM601": {
         "message": "Dataset consistency warning",
         "fix_hint": "Check for missing sessions or modalities across subjects",
     },
+    # Internal/System (9xx)
+    "PRISM901": {
+        "message": "Internal validation error",
+        "fix_hint": "An unexpected error occurred during validation",
+    },
+    "PRISM999": {
+        "message": "General validation error",
+        "fix_hint": "Check the error message for details",
+    },
 }
+
+
+def get_error_description(code: str) -> str:
+    """Get user-friendly description for an error code."""
+    if code.startswith("BIDS_"):
+        return f"BIDS specification violation: {code[5:]}"
+    
+    defaults = ERROR_CODES.get(code, {})
+    return defaults.get("message", "Validation error")
+
+
+def get_error_documentation_url(code: str) -> str:
+    """Get documentation URL for an error code."""
+    if code.startswith("BIDS"):
+        return "https://bids-specification.readthedocs.io/en/stable/"
+    
+    base_url = "https://prism-validator.readthedocs.io/en/latest/ERROR_CODES.html"
+    if code.startswith("PRISM"):
+        return f"{base_url}#{code.lower()}---"
+    
+    return base_url
+
+
+def infer_code_from_message(message: str) -> str:
+    """Extract or infer error code from validation message."""
+    # Check for explicit PRISM error codes first
+    prism_match = re.search(r"(PRISM\d{3})", message)
+    if prism_match:
+        return prism_match.group(1)
+
+    # Check for BIDS validator messages
+    if "[BIDS]" in message:
+        bids_code_match = re.search(r"\[BIDS\]\s*([A-Z_]+)", message)
+        if bids_code_match:
+            return f"BIDS_{bids_code_match.group(1)}"
+        return "BIDS_GENERAL"
+
+    # PRISM-specific error detection (legacy patterns)
+    msg_lower = message.lower()
+    
+    if "invalid bids filename" in msg_lower:
+        return "PRISM101"
+    elif "missing sidecar" in msg_lower:
+        return "PRISM201"
+    elif "schema error" in msg_lower or "schema validation failed" in msg_lower:
+        return "PRISM301"
+    elif "not valid json" in msg_lower:
+        return "PRISM202"
+    elif "doesn't match expected pattern" in msg_lower:
+        return "PRISM102"
+    elif "does not start with subject id" in msg_lower:
+        return "PRISM103"
+    elif "does not match session directory" in msg_lower:
+        return "PRISM104"
+    elif "dataset_description.json" in msg_lower:
+        if "missing" in msg_lower: return "PRISM001"
+        return "PRISM003"
+    elif "no subjects found" in msg_lower:
+        return "PRISM002"
+    elif "consistency" in msg_lower or "mislabeled" in msg_lower or "mixed session" in msg_lower:
+        return "PRISM601"
+    elif "empty" in msg_lower:
+        if "tsv" in msg_lower: return "PRISM401"
+        return "PRISM204"
+
+    return "PRISM999"
 
 
 # =============================================================================
@@ -300,7 +348,9 @@ def tuple_to_issue(t: tuple, default_code: str = "PRISM901") -> Issue:
     )
 
     # Try to infer code from message patterns
-    code = _infer_code_from_message(message) or default_code
+    code = infer_code_from_message(message)
+    if code == "PRISM999":
+        code = default_code
 
     return Issue(
         code=code,
@@ -311,35 +361,9 @@ def tuple_to_issue(t: tuple, default_code: str = "PRISM901") -> Issue:
 
 
 def _infer_code_from_message(message: str) -> Optional[str]:
-    """Attempt to infer error code from message content"""
-    msg_lower = message.lower()
-
-    if "dataset_description.json" in msg_lower:
-        if "missing" in msg_lower:
-            return "PRISM001"
-        if "invalid" in msg_lower or "json" in msg_lower:
-            return "PRISM003"
-
-    if "no subjects found" in msg_lower:
-        return "PRISM002"
-
-    if "sidecar" in msg_lower or "missing" in msg_lower and ".json" in msg_lower:
-        return "PRISM201"
-
-    if "schema" in msg_lower:
-        return "PRISM301"
-
-    if "empty" in msg_lower:
-        if "tsv" in msg_lower:
-            return "PRISM401"
-        return "PRISM204"
-
-    if "[bids]" in msg_lower:
-        if "error" in msg_lower:
-            return "PRISM503"
-        return "PRISM502"
-
-    return None
+    """Legacy internal helper, now points to infer_code_from_message"""
+    code = infer_code_from_message(message)
+    return code if code != "PRISM999" else None
 
 
 # =============================================================================
@@ -356,7 +380,7 @@ def summarize_issues(issues: List[Issue]) -> Dict[str, Any]:
     """
     errors = 0
     warnings = 0
-    info = 0
+    info_count = 0
     by_code: Dict[str, int] = {}
 
     for issue in issues:
@@ -365,7 +389,7 @@ def summarize_issues(issues: List[Issue]) -> Dict[str, Any]:
         elif issue.severity == Severity.WARNING:
             warnings += 1
         else:
-            info += 1
+            info_count += 1
 
         if issue.code not in by_code:
             by_code[issue.code] = 0
@@ -375,6 +399,7 @@ def summarize_issues(issues: List[Issue]) -> Dict[str, Any]:
         "total": len(issues),
         "errors": errors,
         "warnings": warnings,
-        "info": info,
+        "info": info_count,
         "by_code": by_code,
     }
+

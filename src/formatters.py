@@ -15,7 +15,12 @@ from typing import List, Dict, Any, Callable
 from defusedxml import ElementTree as ET
 from defusedxml import minidom
 
-from issues import Issue, Severity, summarize_issues
+from issues import (
+    Issue,
+    Severity,
+    summarize_issues,
+    get_error_documentation_url,
+)
 
 
 # =============================================================================
@@ -60,7 +65,7 @@ def to_sarif(
                         :200
                     ]  # First line, max 200 chars
                 },
-                "helpUri": f"https://prism.readthedocs.io/en/latest/errors/#{issue.code}",
+                "helpUri": get_error_documentation_url(issue.code),
                 "properties": {
                     "category": _get_issue_category(issue.code),
                 },

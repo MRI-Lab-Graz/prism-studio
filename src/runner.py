@@ -18,6 +18,7 @@ from validator import DatasetValidator, MODALITY_PATTERNS, BIDS_MODALITIES, reso
 from stats import DatasetStats
 from system_files import filter_system_files
 from bids_integration import check_and_update_bidsignore
+from bids_validator import run_bids_validator as _run_bids_validator_cli
 
 # Add current directory to path for imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -207,251 +208,18 @@ def _get_upload_manifest(root_dir):
 
 def _run_bids_validator(root_dir, verbose=False):
     """Run the standard BIDS validator CLI"""
-    issues = []
-    print("\n🤖 Running standard BIDS Validator...")
-
     # Load placeholders to filter out content-related issues (expected in structure-only uploads)
     manifest = _get_upload_manifest(root_dir)
     upload_type = (manifest or {}).get("upload_type")
     structure_only = upload_type == "structure_only"
-
     placeholders = _get_placeholder_files(root_dir)
-    placeholder_basenames = {os.path.basename(p) for p in placeholders}
 
-    # Content-related issues that are expected in structure-only validation.
-    # We keep structural compliance errors, but suppress data-content checks.
-    # Note: BVAL/BVEC are excluded here because we now upload them; 
-    # they are only suppressed if they are explicitly placeholders.
-    content_error_codes = {
-        "EMPTY_FILE",
-        "NIFTI_HEADER_UNREADABLE",
-        "QUICK_TEST_FAILED",
-    }
-
-    def _looks_like_content_file(location: str) -> bool:
-        if not location:
-            return False
-        loc = location.replace("\\", "/").lower()
-        return loc.endswith(
-            (
-                ".nii",
-                ".nii.gz",
-                ".eeg",
-                ".fif",
-                ".dat",
-                ".tsv.gz",
-            )
-        )
-
-    def _is_placeholder_location(location: str) -> bool:
-        if not placeholders or not location:
-            return False
-        loc = location.replace("\\", "/").lstrip("/")
-        if loc in placeholders:
-            return True
-        # Deno validator sometimes reports only the filename.
-        if os.path.basename(loc) in placeholder_basenames:
-            return True
-        # And sometimes reports a path prefix/suffix; handle partial match.
-        return any(loc.endswith(p) or p.endswith(loc) for p in placeholders)
-
-    if verbose and structure_only:
-        print("   ℹ️  Detected structure-only upload. Will suppress BIDS data-content checks.")
-
-    if placeholders and verbose:
-        print(
-            f"   ℹ️  Found {len(placeholders)} placeholder files. Will suppress content errors for these."
-        )
-
-    # 1. Try Deno-based validator (modern)
-    deno_found = False
-    try:
-        # Check if deno is installed
-        subprocess.run(
-            ["deno", "--version"],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        deno_found = True
-        print("   Using Deno-based validator (jsr:@bids/validator)")
-
-        # Run Deno validator
-        process = subprocess.run(
-            ["deno", "run", "-ERWN", "jsr:@bids/validator", root_dir, "--json"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-
-        if process.stdout:
-            try:
-                bids_report = json.loads(process.stdout)
-
-                # Handle Deno validator structure
-                issue_list = []
-                if "issues" in bids_report:
-                    if (
-                        isinstance(bids_report["issues"], dict)
-                        and "issues" in bids_report["issues"]
-                    ):
-                        issue_list = bids_report["issues"]["issues"]
-                    elif isinstance(bids_report["issues"], list):
-                        issue_list = bids_report["issues"]
-
-                for issue in issue_list:
-                    code = issue.get("code", "UNKNOWN_CODE")
-                    location = issue.get("location", "")
-
-                    # Suppress content-related errors for placeholders (and for structure-only uploads).
-                    if code in content_error_codes:
-                        if _is_placeholder_location(location):
-                            continue
-                        if structure_only and _looks_like_content_file(location):
-                            continue
-
-                    severity = issue.get("severity", "warning").upper()
-                    # Map severity to our levels
-                    if severity == "ERROR":
-                        level = "ERROR"
-                    else:
-                        level = "WARNING"
-
-                    sub_code = issue.get("subCode", "")
-                    issue_msg = issue.get("issueMessage", "")
-
-                    msg = f"[BIDS] {code}"
-                    if sub_code:
-                        msg += f".{sub_code}"
-
-                    if issue_msg:
-                        msg += f": {issue_msg}"
-
-                    if location:
-                        msg += f"\n    Location: {location}"
-
-                    issues.append((level, msg))
-
-                return issues
-
-            except json.JSONDecodeError:
-                print("   ❌ Error: Could not parse Deno BIDS validator JSON output.")
-                issues.append(
-                    (
-                        "ERROR",
-                        "BIDS Validator (Deno) ran but output could not be parsed.",
-                    )
-                )
-                return issues
-        else:
-            # Deno ran but produced no output (likely an error)
-            print(
-                f"   ❌ Error: Deno validator produced no output. Stderr: {process.stderr}"
-            )
-            issues.append(("ERROR", f"BIDS Validator (Deno) failed: {process.stderr}"))
-            return issues
-
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        # Deno not found
-        pass
-
-    # If we found Deno but crashed, we returned above.
-    # If we are here, Deno was not found.
-
-    # 2. Try legacy Python/Node CLI validator
-    print("   ⚠️  Deno not found. Falling back to legacy 'bids-validator' CLI...")
-    try:
-        # Check if bids-validator is installed
-        subprocess.run(
-            ["bids-validator", "--version"],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-
-        # Run validation
-        process = subprocess.run(
-            ["bids-validator", root_dir, "--json"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-
-        if process.stdout:
-            try:
-                bids_report = json.loads(process.stdout)
-
-                # Map BIDS issues to our format ("LEVEL", "Message")
-                for issue in bids_report.get("issues", {}).get("errors", []):
-                    key = issue.get("key", "")
-                    
-                    # Filter files for this issue
-                    filtered_files = []
-                    content_error_keys = {"EMPTY_FILE", "NIFTI_HEADER_UNREADABLE", "QUICK_TEST_FAILED"}
-                    for file in issue.get("files", []):
-                        file_obj = file.get("file")
-                        if file_obj:
-                            file_path = file_obj.get("relativePath", "")
-                            # Suppress content-related errors for placeholders
-                            if key in content_error_keys and file_path.lstrip("/") in placeholders:
-                                continue
-                            if structure_only and key == "EMPTY_FILE" and file_path.lower().endswith((".nii", ".nii.gz", ".tsv.gz")):
-                                continue
-                            filtered_files.append(file_path)
-                    
-                    if not filtered_files and issue.get("files"):
-                        continue
-
-                    msg = f"[BIDS] {issue.get('reason')} ({key})"
-                    for file_path in filtered_files:
-                        msg += f"\n    File: {file_path}"
-                    issues.append(("ERROR", msg))
-
-                for issue in bids_report.get("issues", {}).get("warnings", []):
-                    key = issue.get("key", "")
-                    
-                    # Filter files for this issue
-                    filtered_files = []
-                    content_error_keys = {"EMPTY_FILE", "NIFTI_HEADER_UNREADABLE", "QUICK_TEST_FAILED"}
-                    for file in issue.get("files", []):
-                        file_obj = file.get("file")
-                        if file_obj:
-                            file_path = file_obj.get("relativePath", "")
-                            # Suppress content-related errors for placeholders
-                            if key in content_error_keys and file_path.lstrip("/") in placeholders:
-                                continue
-                            if structure_only and key == "EMPTY_FILE" and file_path.lower().endswith((".nii", ".nii.gz", ".tsv.gz")):
-                                continue
-                            filtered_files.append(file_path)
-                    
-                    if not filtered_files and issue.get("files"):
-                        continue
-
-                    msg = f"[BIDS] {issue.get('reason')} ({key})"
-                    for file_path in filtered_files:
-                        msg += f"\n    File: {file_path}"
-                    issues.append(("WARNING", msg))
-
-            except json.JSONDecodeError:
-                # Fallback if JSON parsing fails
-                if verbose:
-                    print("Warning: Could not parse BIDS validator JSON output.")
-                issues.append(
-                    (
-                        "INFO",
-                        "BIDS Validator ran but output could not be parsed. See console for details if verbose.",
-                    )
-                )
-
-        if process.returncode != 0 and not issues:
-            issues.append(("ERROR", f"BIDS Validator failed to run: {process.stderr}"))
-
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        issues.append(
-            ("WARNING", "bids-validator not found or failed to run. Is it installed?")
-        )
-
-    return issues
+    return _run_bids_validator_cli(
+        root_dir, 
+        verbose=verbose, 
+        placeholders=placeholders, 
+        structure_only=structure_only
+    )
 
 
 def _validate_subject(subject_dir, subject_id, validator, stats, root_dir, run_prism=True):
