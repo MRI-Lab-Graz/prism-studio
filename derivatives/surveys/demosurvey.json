@@ -1,0 +1,17 @@
+{
+  "RecipeVersion": "0.1",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "Demo Survey",
+    "TaskName": "demosurvey"
+  },
+  "Scores": [
+    {
+      "Name": "DEMO_total",
+      "Description": "Demo total score (sum of DEMO_01 and DEMO_02)",
+      "Method": "sum",
+      "Items": ["DEMO_01", "DEMO_02"],
+      "Missing": "ignore"
+    }
+  ]
+}

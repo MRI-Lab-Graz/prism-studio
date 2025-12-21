@@ -168,7 +168,13 @@ PRISM supports bilingual survey templates that contain both German and English i
 
 **Template Format:**
 
-Each item can have ``question_de`` and ``question_en`` keys (or ``Levels_de``/``Levels_en`` for response scales).
+Survey templates can store multiple languages in one JSON file. The common convention is:
+
+- ``Study.OriginalName`` / ``Study.Version`` / ``Study.Description`` / ``Study.Instructions`` as language maps like ``{"de": "…", "en": "…"}``
+- item ``Description`` as a language map
+- item ``Levels`` values as language maps, e.g. ``{"0": {"de": "Nie", "en": "Never"}, ...}``
+
+At build/convert time, you select a single language to produce a schema-valid sidecar.
 
 **Migrate Existing Survey to i18n Format:**
 
@@ -178,7 +184,7 @@ Each item can have ``question_de`` and ``question_en`` keys (or ``Levels_de``/``
       --input library/survey/survey-ads.json \
       --output library/survey/survey-ads.json
 
-This adds the ``_de`` and ``_en`` suffix keys to each item, marking them for translation.
+This helps migrate older survey JSONs into PRISM's current i18n-capable template format.
 
 **Build Compiled Survey (Choose Language):**
 
@@ -226,7 +232,7 @@ Batch import with session mapping (e.g., t1/t2/t3 -> ses-1/ses-2/ses-3) and subj
       --output-dir /Volumes/Evo/data/AF134/survey_json \
       --session-map t1:ses-1,t2:ses-2,t3:ses-3
 
-The batch command walks `input-dir` for `.lsa/.lss` files, looks for `sub-*` and session tokens (e.g., `t1`) in the path, and writes sidecars like `sub-<id>/ses-1/survey/sub-<id>_ses-1_task-<task>_beh.json` under `output-dir`.
+The batch command walks `input-dir` for `.lsa/.lss` files, looks for `sub-*` and session tokens (e.g., `t1`) in the path, and writes sidecars like `sub-<id>/ses-1/survey/sub-<id>_ses-1_task-<task>_survey.json` under `output-dir`.
 
 
 Biometrics Library Management

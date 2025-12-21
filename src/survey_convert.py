@@ -62,6 +62,15 @@ def sanitize_id(id_str: str) -> str:
     return id_str
 
 
+def _sanitize_bids_label(val: str, *, fallback: str = "survey") -> str:
+    """Return a BIDS-safe label (alphanumeric only).
+
+    BIDS entity values must be strictly alphanumeric; underscores/hyphens are not allowed.
+    """
+    cleaned = re.sub(r"[^A-Za-z0-9]+", "", str(val).strip()).lower()
+    return cleaned or fallback
+
+
 def _ensure_dir(path: Path) -> Path:
     path.mkdir(parents=True, exist_ok=True)
     return path
@@ -503,7 +512,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         task = str(sidecar.get("Study", {}).get("TaskName") or task_from_name).strip()
         if not task:
             task = task_from_name
-        task_norm = task.lower()
+        task_norm = _sanitize_bids_label(task, fallback="survey")
         if canonical_aliases:
             sidecar = _canonicalize_template_items(
                 sidecar=sidecar, canonical_aliases=canonical_aliases
@@ -539,7 +548,10 @@ def _convert_survey_dataframe_to_prism_dataset(
     if survey:
         parts = [p.strip() for p in str(survey).replace(";", ",").split(",")]
         parts = [p for p in parts if p]
-        selected = {p.lower().replace("survey-", "") for p in parts}
+        selected = {
+            _sanitize_bids_label(p.lower().replace("survey-", ""), fallback="survey")
+            for p in parts
+        }
 
         unknown_surveys = sorted([t for t in selected if t not in templates])
         if unknown_surveys:
@@ -777,6 +789,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     _write_json(participants_json_path, participants_json)
 
     # inherited sidecars at dataset root (inheritance principle)
+    localized_by_task: dict[str, dict] = {}
     for task in sorted(tasks_with_data):
         # Write survey sidecar: task-<name>_survey.json (BIDS-aligned: entity != suffix)
         sidecar_path = output_root / f"task-{task}_survey.json"
@@ -787,7 +800,24 @@ def _convert_survey_dataframe_to_prism_dataset(
             localized = _inject_missing_token(localized, token=_MISSING_TOKEN)
             if technical_overrides:
                 localized = _apply_technical_overrides(localized, technical_overrides)
+
+            # Ensure TaskName is schema-valid (alphanumeric only) and consistent
+            # with the written filenames.
+            if not isinstance(localized.get("Study"), dict):
+                localized["Study"] = {}
+            localized["Study"]["TaskName"] = task
             _write_json(sidecar_path, localized)
+            localized_by_task[task] = localized
+        else:
+            try:
+                localized_by_task[task] = _read_json(sidecar_path)
+            except Exception:
+                localized = _localize_survey_template(
+                    templates[task]["json"], language=language
+                )
+                localized_by_task[task] = _inject_missing_token(
+                    localized, token=_MISSING_TOKEN
+                )
 
     def _normalize_item_value(val) -> str:
         if _is_missing_value(val):
@@ -888,6 +918,14 @@ def _convert_survey_dataframe_to_prism_dataset(
                 )
                 writer.writeheader()
                 writer.writerow(out)
+
+            # PRISM requires a JSON sidecar per data file (even if an inherited
+            # task-level sidecar exists at dataset root).
+            per_file_sidecar = (
+                modality_dir / f"{sub_id}_{ses_id}_task-{task}_survey.json"
+            )
+            if not per_file_sidecar.exists() or force:
+                _write_json(per_file_sidecar, localized_by_task.get(task, {}))
 
     return SurveyConvertResult(
         tasks_included=sorted(tasks_with_data),

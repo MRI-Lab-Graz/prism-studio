@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import re
+import sys
 import zipfile
 from datetime import datetime
 from pathlib import Path

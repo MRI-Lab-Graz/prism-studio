@@ -26,20 +26,22 @@ Surveys now support **bilingual templates** with both German and English in a si
 
 ### Template Format
 
-Each item contains language-specific keys:
+Library survey templates use language maps for study metadata and item text:
 
 ```json
 {
   "Study": {
-    "OriginalName_de": "Fragebogen zur Gesundheit",
-    "OriginalName_en": "Patient Health Questionnaire"
+    "OriginalName": {"de": "Fragebogen zur Gesundheit", "en": "Patient Health Questionnaire"},
+    "Instructions": {"de": "…", "en": "…"}
   },
-  "Items": {
-    "PHQ01": {
-      "question_de": "Wenig Interesse oder Freude an Tätigkeiten",
-      "question_en": "Little interest or pleasure in doing things",
-      "Levels_de": {"0": "Überhaupt nicht", "1": "An einzelnen Tagen", ...},
-      "Levels_en": {"0": "Not at all", "1": "Several days", ...}
+  "PHQ01": {
+    "Description": {
+      "de": "Wenig Interesse oder Freude an Tätigkeiten",
+      "en": "Little interest or pleasure in doing things"
+    },
+    "Levels": {
+      "0": {"de": "Überhaupt nicht", "en": "Not at all"},
+      "1": {"de": "An einzelnen Tagen", "en": "Several days"}
     }
   }
 }

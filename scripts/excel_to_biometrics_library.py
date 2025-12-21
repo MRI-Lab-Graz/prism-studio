@@ -84,6 +84,8 @@ STUDY_DESC_ALIASES = {
 }
 PROTOCOL_ALIASES = {"protocol", "procedure", "method"}
 INSTRUCTIONS_ALIASES = {"instructions", "instruction"}
+INSTRUCTIONS_EN_ALIASES = {"instructions_en"}
+INSTRUCTIONS_DE_ALIASES = {"instructions_de"}
 REFERENCE_ALIASES = {"reference", "citation", "doi"}
 ESTIMATED_DURATION_ALIASES = {"estimatedduration", "estimated_duration", "duration"}
 EQUIPMENT_ALIASES = {"equipment", "device"}
@@ -304,6 +306,8 @@ def process_excel_biometrics(
     study_desc_idx = find_column_idx(header_row, STUDY_DESC_ALIASES)
     protocol_idx = find_column_idx(header_row, PROTOCOL_ALIASES)
     instructions_idx = find_column_idx(header_row, INSTRUCTIONS_ALIASES)
+    instructions_en_idx = find_column_idx(header_row, INSTRUCTIONS_EN_ALIASES)
+    instructions_de_idx = find_column_idx(header_row, INSTRUCTIONS_DE_ALIASES)
     reference_idx = find_column_idx(header_row, REFERENCE_ALIASES)
     duration_idx = find_column_idx(header_row, ESTIMATED_DURATION_ALIASES)
     equipment_idx = find_column_idx(header_row, EQUIPMENT_ALIASES)
@@ -328,6 +332,8 @@ def process_excel_biometrics(
             study_desc_idx,
             protocol_idx,
             instructions_idx,
+            instructions_en_idx,
+            instructions_de_idx,
             reference_idx,
             duration_idx,
             equipment_idx,
@@ -388,6 +394,8 @@ def process_excel_biometrics(
                 "StudyDescription": None,
                 "Protocol": None,
                 "Instructions": None,
+                "Instructions_en": None,
+                "Instructions_de": None,
                 "Reference": None,
                 "EstimatedDuration": None,
                 "Equipment": None,
@@ -412,6 +420,8 @@ def process_excel_biometrics(
         _set_once("StudyDescription", study_desc_idx)
         _set_once("Protocol", protocol_idx)
         _set_once("Instructions", instructions_idx)
+        _set_once("Instructions_en", instructions_en_idx)
+        _set_once("Instructions_de", instructions_de_idx)
         _set_once("Reference", reference_idx)
         _set_once("EstimatedDuration", duration_idx)
         _set_once("Equipment", equipment_idx)
@@ -540,7 +550,7 @@ def process_excel_biometrics(
                     "Description": study_description,
                 },
                 "Metadata": {
-                    "SchemaVersion": "1.0.0",
+                    "SchemaVersion": "1.1.0",
                     "CreationDate": pd.Timestamp.now().strftime("%Y-%m-%d"),
                     "Creator": "excel_to_biometrics_library.py",
                 },
@@ -548,6 +558,10 @@ def process_excel_biometrics(
 
             if meta.get("Instructions"):
                 sidecar["Study"]["Instructions"] = meta["Instructions"]
+            if meta.get("Instructions_en"):
+                sidecar["Study"]["Instructions_en"] = meta["Instructions_en"]
+            if meta.get("Instructions_de"):
+                sidecar["Study"]["Instructions_de"] = meta["Instructions_de"]
             if meta.get("Reference"):
                 sidecar["Study"]["Reference"] = meta["Reference"]
             if meta.get("EstimatedDuration"):

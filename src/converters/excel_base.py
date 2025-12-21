@@ -81,5 +81,5 @@ def detect_language(texts: List[str]) -> str:
 
 def sanitize_task_name(name: str) -> str:
     """Normalize task names for BIDS/PRISM filenames."""
-    cleaned = re.sub(r"[^A-Za-z0-9]+", "-", str(name).strip()).strip("-")
+    cleaned = re.sub(r"[^A-Za-z0-9]+", "", str(name).strip())
     return cleaned.lower() or "survey"

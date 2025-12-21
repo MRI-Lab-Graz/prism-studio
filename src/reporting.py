@@ -132,10 +132,34 @@ def print_validation_results(problems, show_bids_warnings=True):
         print("🎉 No issues found! Dataset is valid.")
         return
 
+    # Normalize problems to (level, message) pairs.
+    normalized: list[tuple[str, str]] = []
+    for problem in problems:
+        # Structured Issue object
+        if hasattr(problem, "severity") and hasattr(problem, "message"):
+            try:
+                level = problem.severity.value  # type: ignore[attr-defined]
+            except Exception:
+                level = str(problem.severity)  # type: ignore[attr-defined]
+            normalized.append((level, str(problem.message)))  # type: ignore[attr-defined]
+            continue
+
+        # Legacy tuple format: (level, message) or (level, message, file_path)
+        if isinstance(problem, tuple) and len(problem) >= 2:
+            level = str(problem[0])
+            message = str(problem[1])
+            if len(problem) >= 3 and problem[2]:
+                message = f"{message} (File: {problem[2]})"
+            normalized.append((level, message))
+            continue
+
+        # Fallback: stringify unknown structures
+        normalized.append(("INFO", str(problem)))
+
     # Categorize problems
-    errors = [msg for level, msg in problems if level == "ERROR"]
-    warnings = [msg for level, msg in problems if level == "WARNING"]
-    infos = [msg for level, msg in problems if level == "INFO"]
+    errors = [msg for level, msg in normalized if level == "ERROR"]
+    warnings = [msg for level, msg in normalized if level == "WARNING"]
+    infos = [msg for level, msg in normalized if level == "INFO"]
 
     # Split BIDS vs PRISM
     bids_errors = [e for e in errors if e.startswith("[BIDS]")]

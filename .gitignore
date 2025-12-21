@@ -7,6 +7,7 @@ PK01/*
 PK01
 .Python
 env/
+tmp/
 prism_demo/*
 venv/
 archive/
