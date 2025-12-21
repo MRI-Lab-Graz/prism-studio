@@ -319,3 +319,36 @@ Dummy data formats
       --library-root library \
       --output test_dataset/_tmp_prism_biometrics_dataset
 
+
+Manuscript methods boilerplate (scientific text)
+------------------------------------------------
+
+Generate a manuscript-ready Methods section snippet (Markdown) describing the instruments and measures defined in your libraries.
+The text is derived from ``Study.OriginalName``, ``Study.Description``, and (for biometrics) technical metadata such as ``Technical.Equipment``.
+
+.. code-block:: bash
+
+    # English methods snippet
+    ./prism_tools.py library generate-methods-text \
+      --output tmp/methods_en.md \
+      --lang en
+
+    # German methods snippet
+    ./prism_tools.py library generate-methods-text \
+      --output tmp/methods_de.md \
+      --lang de
+
+By default, the command reads from ``library/survey`` and ``library/biometrics``.
+You can override paths if needed:
+
+.. code-block:: bash
+
+    ./prism_tools.py library generate-methods-text \
+      --survey-lib /path/to/survey_library \
+      --biometrics-lib /path/to/biometrics_library \
+      --output methods.md \
+      --lang en
+
+Note: This output is a starting point for a paper.
+Always review and adapt it to your actual study protocol and reporting standards.
+

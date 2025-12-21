@@ -40,6 +40,9 @@ python prism_tools.py --help
 # Build bilingual survey template
 python prism_tools.py survey i18n-build library/survey/survey-phq9.json --lang en
 
+# Generate a manuscript-ready Methods snippet from your libraries
+python prism_tools.py library generate-methods-text --output methods_en.md --lang en
+
 # Initialize a plugin
 python prism.py --init-plugin my_validator /path/to/dataset
 ```

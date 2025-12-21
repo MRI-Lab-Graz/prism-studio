@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import json
 import argparse
 from pathlib import Path
@@ -11,16 +10,20 @@ def get_i18n_text(field, lang='en'):
     if isinstance(field, dict):
         # Try requested language
         val = field.get(lang)
-        if val: return val
+        if val:
+            return val
         # Try English
         val = field.get('en')
-        if val: return val
+        if val:
+            return val
         # Try German
         val = field.get('de')
-        if val: return val
+        if val:
+            return val
         # Try anything else
         for v in field.values():
-            if v: return v
+            if v:
+                return v
     return ""
 
 def generate_methods_text(library_dirs, output_file, lang='en'):

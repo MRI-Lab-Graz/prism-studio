@@ -2,7 +2,11 @@
 
 [![Documentation Status](https://readthedocs.org/projects/prism-validator/badge/?version=latest)](https://prism-validator.readthedocs.io/en/latest/?badge=latest)
 
-## 🚀 Quick Start
+## � Documentation
+
+For a detailed guide on how to use PRISM, see the **[Comprehensive Walkthrough](docs/WALKTHROUGH.md)**.
+
+## �🚀 Quick Start
 
 **👉 Run the Desktop GUI** (recommended):
 

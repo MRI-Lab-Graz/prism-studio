@@ -3,10 +3,7 @@
 PRISM Documentation
 =============================
 
-.. image:: https://img.shields.io/badge/BIDS-Extension-blue.svg
-   :target: https://bids.neuroimaging.io/
-
-PRISM is a hybrid dataset validation tool for psychological experiments. It validates standard BIDS datasets and additionally enforces PRISM extensions (e.g., stricter metadata requirements for certain files and support for non-BIDS modalities like surveys/biometrics/physio) while remaining compatible with BIDS tools/apps.
+PRISM is an independent, BIDS-compatible dataset validation tool for psychological experiments. It validates standard BIDS datasets and additionally enforces PRISM extensions (e.g., stricter metadata requirements for certain files and support for modalities like surveys and biometrics) while remaining compatible with BIDS tools/apps.
 
 **Key Features:**
 
@@ -22,6 +19,7 @@ PRISM is a hybrid dataset validation tool for psychological experiments. It vali
    :maxdepth: 2
    :caption: Getting Started
 
+   WALKTHROUGH
    QUICK_START
    INSTALLATION
    USAGE
@@ -33,8 +31,16 @@ PRISM is a hybrid dataset validation tool for psychological experiments. It vali
 
 .. toctree::
    :maxdepth: 2
+   :caption: Reference
+
+   WEB_INTERFACE
+   CLI_REFERENCE
+
+.. toctree::
+   :maxdepth: 2
    :caption: Understanding the Data
 
+   SPECIFICATIONS
    specs/biometrics
    specs/events
    specs/survey
