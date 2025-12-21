@@ -618,6 +618,9 @@ def cmd_survey_import_excel(args):
         if getattr(args, "library_root", None):
             output_dir = str(_ensure_dir(Path(args.library_root) / "survey"))
         process_excel(args.excel, output_dir)
+        
+        print("\nValidating imported files...")
+        check_uniqueness(output_dir)
     except Exception as e:
         print(f"Error importing Excel: {e}")
         sys.exit(1)
@@ -814,6 +817,9 @@ def cmd_biometrics_import_excel(args):
             equipment=args.equipment,
             supervisor=args.supervisor,
         )
+        
+        print("\nValidating imported files...")
+        check_uniqueness(output_dir)
     except Exception as e:
         print(f"Error importing Excel: {e}")
         sys.exit(1)
@@ -1118,6 +1124,9 @@ def cmd_survey_import_limesurvey(args):
     print(f"Importing LimeSurvey structure from {args.input}...")
     try:
         convert_lsa_to_prism(args.input, args.output, task_name=args.task)
+        
+        print("\nValidating imported files...")
+        check_uniqueness(args.output)
     except Exception as e:
         print(f"Error importing LimeSurvey: {e}")
         sys.exit(1)
@@ -1158,6 +1167,9 @@ def cmd_survey_import_limesurvey_batch(args):
             id_column=args.subject_id_col,
             id_map_file=args.id_map,
         )
+        
+        print("\nValidating imported files...")
+        check_uniqueness(args.output_dir)
     except Exception as e:
         print(f"Error importing LimeSurvey: {e}")
         sys.exit(1)

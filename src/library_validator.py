@@ -6,7 +6,7 @@ from pathlib import Path
 class LibraryValidator:
     def __init__(self, library_path):
         self.library_path = Path(library_path)
-        self.IGNORE_KEYS = {"Technical", "Study", "Metadata", "Questions"}
+        self.IGNORE_KEYS = {"Technical", "Study", "Metadata", "Questions", "I18n", "Scoring"}
 
     def get_all_library_variables(self, exclude_file=None):
         """
@@ -18,10 +18,11 @@ class LibraryValidator:
         if not self.library_path.exists():
             return var_map
 
+        # Look for both survey and biometrics files
         files = [
             f
             for f in self.library_path.glob("*.json")
-            if f.name.startswith("survey-") and f.name != exclude_file
+            if (f.name.startswith("survey-") or f.name.startswith("biometrics-")) and f.name != exclude_file
         ]
 
         for file_path in files:

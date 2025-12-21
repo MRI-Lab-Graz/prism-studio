@@ -61,8 +61,8 @@ SURVEY_METADATA = {
 }
 
 
-ID_ALIASES = {"item_id", "id", "code", "variable", "var", "name", "variablename"}
-QUESTION_ALIASES = {"item", "question", "description", "text"}
+ID_ALIASES = {"item_id", "id", "code", "variable", "var", "name", "variablename", "itemname"}
+QUESTION_ALIASES = {"item", "question", "description", "text", "itemdescription"}
 SCALE_ALIASES = {"scale", "scaling", "levels", "options", "answers"}
 GROUP_ALIASES = {"group", "survey", "section", "domain", "category"}
 ALIAS_ALIASES = {"alias_of", "alias", "canonical", "duplicate_of", "merge_into"}
