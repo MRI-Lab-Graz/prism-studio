@@ -1,36 +1,38 @@
-#!/usr/bin/env python3
-"""Excel to Biometrics JSON Library Converter
-
-Converts an Excel data dictionary into a library of PRISM-compliant biometrics JSON sidecars.
-
-This mirrors `scripts/excel_to_library.py` (survey) but targets the biometrics schema.
-
-Recommended Excel format (header row, case-insensitive):
-- item_id: variable name / column name in the biometrics TSV
-- description: description of the metric
-- units: unit of measurement (required by biometrics schema)
-- datatype: string | integer | float (optional)
-- minvalue / maxvalue: numeric bounds (optional)
-- warnminvalue / warnmaxvalue: warning bounds (optional)
-- allowedvalues: comma/semicolon list or "1=foo;2=bar" (optional)
-- group: groups variables into one biometrics JSON per test (e.g., ybalance, cmj)
-- alias_of, session, run: accepted for parity with survey import (optional)
-
-If you omit a header row, positional columns map in order:
-item_id, description, units, datatype, minvalue, maxvalue, allowedvalues, group, alias_of, session, run.
-
-Usage:
-  python scripts/excel_to_biometrics_library.py --excel sport.xlsx --sheet Description --output biometrics_library
-"""
-
 import argparse
 import json
 import re
 import sys
 import os
 from typing import Dict, Any
+from pathlib import Path
 
 import pandas as pd
+
+# Add project root to path to import from src
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+try:
+    from src.converters.excel_base import (
+        norm_key,
+        find_column_idx,
+        clean_variable_name,
+        parse_levels as _base_parse_levels,
+        detect_language,
+        sanitize_task_name,
+    )
+except ImportError:
+    # Fallback for different execution contexts
+    sys.path.append(os.path.join(os.getcwd(), "src"))
+    from converters.excel_base import (
+        norm_key,
+        find_column_idx,
+        clean_variable_name,
+        parse_levels as _base_parse_levels,
+        detect_language,
+        sanitize_task_name,
+    )
 
 
 ID_ALIASES = {
@@ -86,18 +88,6 @@ REFERENCE_ALIASES = {"reference", "citation", "doi"}
 ESTIMATED_DURATION_ALIASES = {"estimatedduration", "estimated_duration", "duration"}
 EQUIPMENT_ALIASES = {"equipment", "device"}
 SUPERVISOR_ALIASES = {"supervisor"}
-
-
-def _norm(s: str) -> str:
-    return str(s).replace(" ", "").replace("_", "").lower()
-
-
-def _find_idx(header_lower, aliases) -> int | None:
-    aliases_norm = {_norm(a) for a in aliases}
-    for i, val in enumerate(header_lower):
-        if _norm(val) in aliases_norm:
-            return i
-    return None
 
 
 def _clean_key(value):
@@ -220,28 +210,7 @@ def _parse_allowed_values(cell):
 
 def _parse_levels(cell):
     """Parse a labeled scale like '0=Never; 1=Sometimes' into a Levels mapping."""
-    if cell is None or (isinstance(cell, float) and pd.isna(cell)):
-        return None
-
-    s = str(cell).strip()
-    if not s or s.lower() == "none":
-        return None
-
-    if "=" not in s:
-        return None
-
-    levels = {}
-    for part in re.split(r"[;,]\s*", s):
-        if "=" not in part:
-            continue
-        val, label = part.split("=", 1)
-        val = val.strip()
-        label = label.strip()
-        if not val or not label:
-            continue
-        levels[val] = label
-
-    return levels or None
+    return _base_parse_levels(cell)
 
 
 def _infer_datatype(datatype_cell, units, allowed_values, min_value, max_value):
@@ -314,32 +283,31 @@ def process_excel_biometrics(
         print(f"Error reading Excel file: {e}")
         sys.exit(1)
 
-    header_row = df_meta.iloc[0].tolist()
-    header_lower = [str(v).strip().lower() for v in header_row]
+    header_row = [str(v) for v in df_meta.iloc[0].tolist()]
 
-    id_idx = _find_idx(header_lower, ID_ALIASES)
-    desc_idx = _find_idx(header_lower, DESC_ALIASES)
-    units_idx = _find_idx(header_lower, UNITS_ALIASES)
-    dtype_idx = _find_idx(header_lower, DTYPE_ALIASES)
-    min_idx = _find_idx(header_lower, MIN_ALIASES)
-    max_idx = _find_idx(header_lower, MAX_ALIASES)
-    warn_min_idx = _find_idx(header_lower, WARN_MIN_ALIASES)
-    warn_max_idx = _find_idx(header_lower, WARN_MAX_ALIASES)
-    allowed_idx = _find_idx(header_lower, ALLOWED_ALIASES)
-    group_idx = _find_idx(header_lower, GROUP_ALIASES)
-    alias_idx = _find_idx(header_lower, ALIAS_ALIASES)
-    session_idx = _find_idx(header_lower, SESSION_ALIASES)
-    run_idx = _find_idx(header_lower, RUN_ALIASES)
-    scaling_idx = _find_idx(header_lower, SCALING_ALIASES)
+    id_idx = find_column_idx(header_row, ID_ALIASES)
+    desc_idx = find_column_idx(header_row, DESC_ALIASES)
+    units_idx = find_column_idx(header_row, UNITS_ALIASES)
+    dtype_idx = find_column_idx(header_row, DTYPE_ALIASES)
+    min_idx = find_column_idx(header_row, MIN_ALIASES)
+    max_idx = find_column_idx(header_row, MAX_ALIASES)
+    warn_min_idx = find_column_idx(header_row, WARN_MIN_ALIASES)
+    warn_max_idx = find_column_idx(header_row, WARN_MAX_ALIASES)
+    allowed_idx = find_column_idx(header_row, ALLOWED_ALIASES)
+    group_idx = find_column_idx(header_row, GROUP_ALIASES)
+    alias_idx = find_column_idx(header_row, ALIAS_ALIASES)
+    session_idx = find_column_idx(header_row, SESSION_ALIASES)
+    run_idx = find_column_idx(header_row, RUN_ALIASES)
+    scaling_idx = find_column_idx(header_row, SCALING_ALIASES)
 
-    test_name_idx = _find_idx(header_lower, TEST_NAME_ALIASES)
-    study_desc_idx = _find_idx(header_lower, STUDY_DESC_ALIASES)
-    protocol_idx = _find_idx(header_lower, PROTOCOL_ALIASES)
-    instructions_idx = _find_idx(header_lower, INSTRUCTIONS_ALIASES)
-    reference_idx = _find_idx(header_lower, REFERENCE_ALIASES)
-    duration_idx = _find_idx(header_lower, ESTIMATED_DURATION_ALIASES)
-    equipment_idx = _find_idx(header_lower, EQUIPMENT_ALIASES)
-    supervisor_idx = _find_idx(header_lower, SUPERVISOR_ALIASES)
+    test_name_idx = find_column_idx(header_row, TEST_NAME_ALIASES)
+    study_desc_idx = find_column_idx(header_row, STUDY_DESC_ALIASES)
+    protocol_idx = find_column_idx(header_row, PROTOCOL_ALIASES)
+    instructions_idx = find_column_idx(header_row, INSTRUCTIONS_ALIASES)
+    reference_idx = find_column_idx(header_row, REFERENCE_ALIASES)
+    duration_idx = find_column_idx(header_row, ESTIMATED_DURATION_ALIASES)
+    equipment_idx = find_column_idx(header_row, EQUIPMENT_ALIASES)
+    supervisor_idx = find_column_idx(header_row, SUPERVISOR_ALIASES)
 
     header_detected = any(
         idx is not None

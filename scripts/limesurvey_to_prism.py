@@ -8,13 +8,21 @@ from pathlib import Path
 import defusedxml.ElementTree as ET
 import pandas as pd
 
-from scripts.csv_to_prism import load_schemas, process_dataframe
+# Add project root to path to import from src
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
+try:
+    from src.converters.survey_base import load_survey_library as load_schemas
+    from src.converters.excel_base import sanitize_task_name
+except ImportError:
+    # Fallback for different execution contexts
+    sys.path.append(os.path.join(os.getcwd(), "src"))
+    from converters.survey_base import load_survey_library as load_schemas
+    from converters.excel_base import sanitize_task_name
 
-def sanitize_task_name(name):
-    """Normalize task names for BIDS/PRISM filenames."""
-    cleaned = re.sub(r"[^A-Za-z0-9]+", "-", name.strip()).strip("-")
-    return cleaned.lower() or "survey"
+from scripts.csv_to_prism import process_dataframe
 
 
 def _map_field_to_code(fieldname, qid_to_title):

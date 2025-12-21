@@ -20,8 +20,35 @@ import json
 import os
 import re
 import sys
+from pathlib import Path
 
 import pandas as pd
+
+# Add project root to path to import from src
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+try:
+    from src.converters.excel_base import (
+        norm_key,
+        find_column_idx,
+        clean_variable_name,
+        parse_levels,
+        detect_language,
+        sanitize_task_name,
+    )
+except ImportError:
+    # Fallback for different execution contexts
+    sys.path.append(os.path.join(os.getcwd(), "src"))
+    from converters.excel_base import (
+        norm_key,
+        find_column_idx,
+        clean_variable_name,
+        parse_levels,
+        detect_language,
+        sanitize_task_name,
+    )
 
 # Standard metadata for known instruments
 # You can extend this dictionary or load it from an external file
@@ -47,61 +74,15 @@ SESSION_ALIASES = {"session", "visit", "wave", "timepoint"}
 RUN_ALIASES = {"run", "repeat"}
 
 
-def clean_variable_name(name):
-    """Clean variable name to be used as a key."""
-    return str(name).strip()
-
-
 def extract_prefix(var_name):
     """
     Extract prefix from variable name to group surveys.
     Example: ADS1 -> ADS, BDI_1 -> BDI
     """
-    match = re.match(r"([a-zA-Z]+)", var_name)
+    match = re.match(r"([a-zA-Z]+)", str(var_name))
     if match:
         return match.group(1)
     return "unknown"
-
-
-def parse_levels(scale_str):
-    """
-    Parse scale string into a dictionary.
-    Format expected: "1=Label A; 2=Label B" or "1=Label A, 2=Label B"
-    """
-    if pd.isna(scale_str):
-        return None
-
-    levels = {}
-    parts = re.split(r"[;,]\s*", str(scale_str))
-    for part in parts:
-        if "=" in part:
-            val, label = part.split("=", 1)
-            levels[val.strip()] = label.strip()
-    return levels if levels else None
-
-
-def detect_language(texts):
-    """Tiny heuristic: flag German if umlauts/ß or common tokens are present."""
-    combined = " ".join([t for t in texts if isinstance(t, str)]).lower()
-    if not combined.strip():
-        return "en"
-
-    if re.search(r"[\u00e4\u00f6\u00fc\u00df]", combined):
-        return "de"
-
-    german_tokens = [
-        " nicht ",
-        " oder ",
-        " keine ",
-        " w\u00e4hrend ",
-        " immer ",
-        " selten ",
-    ]
-    padded = f" {combined} "
-    if any(tok in padded for tok in german_tokens):
-        return "de"
-
-    return "en"
 
 
 def process_excel(
@@ -115,26 +96,15 @@ def process_excel(
         sys.exit(1)
 
     # Detect header row and column indices
-    header_row = df_meta.iloc[0].tolist()
-    header_lower = [str(v).strip().lower() for v in header_row]
+    header_row = [str(v) for v in df_meta.iloc[0].tolist()]
 
-    def norm(s):
-        return str(s).replace(" ", "").replace("_", "").lower()
-
-    def find_idx(aliases):
-        aliases_norm = {norm(a) for a in aliases}
-        for i, val in enumerate(header_lower):
-            if norm(val) in aliases_norm:
-                return i
-        return None
-
-    id_idx = find_idx(ID_ALIASES)
-    question_idx = find_idx(QUESTION_ALIASES)
-    scale_idx = find_idx(SCALE_ALIASES)
-    group_idx = find_idx(GROUP_ALIASES)
-    alias_idx = find_idx(ALIAS_ALIASES)
-    session_idx = find_idx(SESSION_ALIASES)
-    run_idx = find_idx(RUN_ALIASES)
+    id_idx = find_column_idx(header_row, ID_ALIASES)
+    question_idx = find_column_idx(header_row, QUESTION_ALIASES)
+    scale_idx = find_column_idx(header_row, SCALE_ALIASES)
+    group_idx = find_column_idx(header_row, GROUP_ALIASES)
+    alias_idx = find_column_idx(header_row, ALIAS_ALIASES)
+    session_idx = find_column_idx(header_row, SESSION_ALIASES)
+    run_idx = find_column_idx(header_row, RUN_ALIASES)
 
     header_detected = any(
         idx is not None
@@ -300,8 +270,8 @@ def process_excel(
             target_dir = output_dir
 
         json_path = os.path.join(target_dir, json_filename)
-        with open(json_path, "w") as f:
-            json.dump(sidecar, f, indent=2)
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(sidecar, f, indent=2, ensure_ascii=False)
             print(f"  - Created {json_path}")
 
     print("Done!")

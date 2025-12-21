@@ -1,5 +1,6 @@
 import os
 import json
+import argparse
 import pandas as pd
 
 
@@ -9,7 +10,7 @@ def generate_index(library_path, output_file):
     records = []
 
     if not os.path.exists(library_path):
-        print("Library path not found.")
+        print(f"Error: Library path '{library_path}' not found.")
         return
 
     files = sorted(
@@ -20,10 +21,14 @@ def generate_index(library_path, output_file):
         ]
     )
 
+    if not files:
+        print(f"No survey JSON files found in '{library_path}'.")
+        return
+
     for filename in files:
         filepath = os.path.join(library_path, filename)
         try:
-            with open(filepath, "r") as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
             study = data.get("Study", {})
@@ -54,19 +59,46 @@ def generate_index(library_path, output_file):
         except Exception as e:
             print(f"Error reading {filename}: {e}")
 
+    if not records:
+        print("No valid survey records found.")
+        return
+
     # Create DataFrame
     df = pd.DataFrame(records)
 
     # Generate Markdown
     md_content = "# Survey Library Catalog\n\n"
     md_content += f"**Total Instruments:** {len(records)}\n\n"
-    md_content += df.to_markdown(index=False)
+    
+    try:
+        md_content += df.to_markdown(index=False)
+    except ImportError:
+        # Fallback if tabulate is not installed
+        md_content += df.to_string(index=False)
 
-    with open(output_file, "w") as f:
+    # Ensure output directory exists
+    output_dir = os.path.dirname(output_file)
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    with open(output_file, "w", encoding="utf-8") as f:
         f.write(md_content)
 
     print(f"Catalog generated at: {output_file}")
 
 
 if __name__ == "__main__":
-    generate_index("survey_library", "survey_library/CATALOG.md")
+    parser = argparse.ArgumentParser(description="Generate a catalog of the survey library.")
+    parser.add_argument(
+        "--library", 
+        default="survey_library", 
+        help="Path to the survey library folder (default: survey_library)"
+    )
+    parser.add_argument(
+        "--output", 
+        default="survey_library/CATALOG.md", 
+        help="Path to the output Markdown file (default: survey_library/CATALOG.md)"
+    )
+    
+    args = parser.parse_args()
+    generate_index(args.library, args.output)

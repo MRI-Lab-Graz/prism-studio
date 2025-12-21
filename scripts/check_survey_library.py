@@ -1,7 +1,18 @@
 import os
-import json
 import sys
-from collections import defaultdict
+from pathlib import Path
+
+# Add project root to path to import from src
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+try:
+    from src.library_validator import LibraryValidator
+except ImportError:
+    # Fallback for different execution contexts
+    sys.path.append(os.path.join(os.getcwd(), "src"))
+    from library_validator import LibraryValidator
 
 
 def check_uniqueness(library_path):
@@ -9,36 +20,10 @@ def check_uniqueness(library_path):
 
     if not os.path.exists(library_path):
         print(f"Error: Library path {library_path} does not exist.")
-        return
+        return False
 
-    # Store where each variable is seen: variable -> [file1, file2]
-    var_map = defaultdict(list)
-
-    # Standard keys to ignore
-    IGNORE_KEYS = {"Technical", "Study", "Metadata"}
-
-    files = [
-        f
-        for f in os.listdir(library_path)
-        if f.endswith(".json") and f.startswith("survey-")
-    ]
-
-    for filename in files:
-        filepath = os.path.join(library_path, filename)
-        try:
-            with open(filepath, "r") as f:
-                data = json.load(f)
-
-            # Get variables
-            variables = [k for k in data.keys() if k not in IGNORE_KEYS]
-
-            for var in variables:
-                var_map[var].append(filename)
-
-        except json.JSONDecodeError:
-            print(f"Error decoding {filename}")
-        except Exception as e:
-            print(f"Error processing {filename}: {e}")
+    validator = LibraryValidator(library_path)
+    var_map = validator.get_all_library_variables()
 
     # Report duplicates
     duplicates = {k: v for k, v in var_map.items() if len(v) > 1}
@@ -60,4 +45,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         library_dir = sys.argv[1]
 
-    check_uniqueness(library_dir)
+    success = check_uniqueness(library_dir)
+    sys.exit(0 if success else 1)
