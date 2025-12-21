@@ -3,6 +3,7 @@ import json
 import re
 import sys
 import os
+import copy
 from typing import Dict, Any
 from pathlib import Path
 
@@ -90,6 +91,45 @@ REFERENCE_ALIASES = {"reference", "citation", "doi"}
 ESTIMATED_DURATION_ALIASES = {"estimatedduration", "estimated_duration", "duration"}
 EQUIPMENT_ALIASES = {"equipment", "device"}
 SUPERVISOR_ALIASES = {"supervisor"}
+
+ACRONYMS = {"cmj", "hgs", "ads", "bdi", "stai", "psqi", "gad7", "phq9", "vo2max"}
+
+TRANSLATIONS = {
+    "Measures right leg length from hip to medial malleolus in supine position": "Misst die rechte Beinlänge vom Hüftknochen bis zum Innenknöchel in Rückenlage",
+    "Measures left leg length from hip to medial malleolus in supine position": "Misst die linke Beinlänge vom Hüftknochen bis zum Innenknöchel in Rückenlage",
+    "Measures dynamic balance and anterior reach": "Misst das dynamische Gleichgewicht und die Reichweite nach vorne (anterior)",
+    "Measures dynamic balance and posteromedial reach": "Misst das dynamische Gleichgewicht und die Reichweite nach hinten-innen (posteromedial)",
+    "Measures dynamic balance and posterolateral reach": "Misst das dynamische Gleichgewicht und die Reichweite nach hinten-außen (posterolateral)",
+    "Measures maximal isometric right-hand grip strength using Jamar hand dynamometer": "Misst die maximale isometrische Greifkraft der rechten Hand mit einem Jamar-Handdynamometer",
+    "Measures maximal isometric left-hand grip strength using Jamar hand dynamometer": "Misst die maximale isometrische Greifkraft der linken Hand mit einem Jamar-Handdynamometer",
+    "Participant self-assessment of": "Selbsteinschätzung des Teilnehmers bezüglich",
+    "How well do you think you have performed this task?": "Wie gut haben Sie diese Aufgabe Ihrer Meinung nach ausgeführt?",
+    "very bad": "sehr schlecht",
+    "very good": "sehr gut",
+    "pre-intervention": "vor der Intervention",
+    "mid-intervention": "während der Intervention",
+    "post-intervention": "nach der Intervention",
+    "trial": "Durchgang",
+    "assessment": "Untersuchung",
+    "Imported": "Importierte",
+    "biometrics data": "biometrische Daten",
+    "Team at": "Team zum Zeitpunkt",
+}
+
+
+def translate_text(text):
+    if not text:
+        return text
+    out = text
+    for en, de in TRANSLATIONS.items():
+        out = out.replace(en, de)
+    return out
+
+
+def format_group_name(name):
+    if name.lower() in ACRONYMS:
+        return name.upper()
+    return name.capitalize()
 
 
 def _clean_key(value):
@@ -383,7 +423,21 @@ def process_excel_biometrics(
                 continue
             group = grp if grp else "biometrics"
         else:
-            group = "biometrics"
+            # Heuristic for grouping (e.g., spowi.xlsx pattern)
+            lowered_var = var_name.lower()
+            if lowered_var in {"code", "group", "subject", "participant_id"}:
+                group = "participants"
+            else:
+                # Pattern: pre_testname_...
+                match = re.match(r"^(pre|mid|post)_([a-zA-Z0-9]+)", var_name, re.IGNORECASE)
+                if match:
+                    group = match.group(2).lower()
+                else:
+                    # Fallback: first part before underscore
+                    if "_" in var_name:
+                        group = var_name.split("_")[0].lower()
+                    else:
+                        group = "biometrics"
 
         if group not in biometrics:
             biometrics[group] = {}
@@ -503,6 +557,20 @@ def process_excel_biometrics(
             if not session_clean.startswith("ses-"):
                 session_clean = f"ses-{session_clean}"
             entry["SessionHint"] = session_clean
+        else:
+            # Heuristic: extract session from variable name prefix
+            lowered_var = var_name.lower()
+            if lowered_var.startswith("pre_"):
+                entry["SessionHint"] = "ses-1"
+            elif lowered_var.startswith("mid_"):
+                entry["SessionHint"] = "ses-2"
+            elif lowered_var.startswith("post_"):
+                entry["SessionHint"] = "ses-3"
+            
+            # Heuristic: extract run from variable name suffix
+            m_run = re.search(r"_(\d+)$", var_name)
+            if m_run:
+                entry["RunHint"] = f"run-{m_run.group(1)}"
 
         run_hint = get_val(row, run_idx)
         if run_hint is not None and not (
@@ -523,31 +591,72 @@ def process_excel_biometrics(
 
     for group, variables in biometrics.items():
         if group in participant_groups:
-            sidecar = {}
-            sidecar.update(variables)
-            json_filename = "participants.json"
-            json_path = os.path.join(output_dir, json_filename)
-        else:
-            meta = group_meta.get(group, {})
-            equipment_value = meta.get("Equipment") or equipment
-            supervisor_value = meta.get("Supervisor") or supervisor
+            print(f"  - Skipping {group} group (dropped as requested)")
+            continue
+        
+        meta = group_meta.get(group, {})
+        equipment_value = meta.get("Equipment") or equipment
+        supervisor_value = meta.get("Supervisor") or supervisor
 
-            original_name = meta.get("OriginalName") or f"{group} assessment"
-            study_description = (
-                meta.get("StudyDescription") or f"Imported {group} biometrics data"
-            )
+        original_name = meta.get("OriginalName") or f"{format_group_name(group)} assessment"
+        study_description = (
+            meta.get("StudyDescription") or f"Imported {group} biometrics data"
+        )
+
+        # Detect language for i18n
+        all_texts = [original_name, study_description]
+        for var_def in variables.values():
+            if isinstance(var_def.get("Description"), str):
+                all_texts.append(var_def["Description"])
+                if isinstance(var_def.get("Levels"), dict):
+                    for v in var_def["Levels"].values():
+                        if isinstance(v, str):
+                            all_texts.append(v)
+            
+            default_lang = detect_language(all_texts)
+            
+            # Convert to i18n format
+            i18n_variables = {}
+            for var_name, var_def in variables.items():
+                new_def = copy.deepcopy(var_def)
+                if isinstance(new_def.get("Description"), str):
+                    en_text = new_def["Description"]
+                    new_def["Description"] = {
+                        "en": en_text,
+                        "de": translate_text(en_text)
+                    }
+                if isinstance(new_def.get("Levels"), dict):
+                    new_levels = {}
+                    for k, v in new_def["Levels"].items():
+                        if isinstance(v, str):
+                            new_levels[k] = {
+                                "en": v,
+                                "de": translate_text(v)
+                            }
+                        else:
+                            new_levels[k] = v
+                    new_def["Levels"] = new_levels
+                i18n_variables[var_name] = new_def
+
             sidecar = {
                 "Technical": {
-                    "StimulusType": "Biometrics",
+                    "Type": "Biometrics",
                     "FileFormat": "tsv",
                     "Equipment": equipment_value,
                     "Supervisor": supervisor_value,
+                },
+                "I18n": {
+                    "Languages": ["en", "de"],
+                    "DefaultLanguage": default_lang,
                 },
                 "Study": {
                     "BiometricName": group,
                     "OriginalName": original_name,
                     "Protocol": meta.get("Protocol") or "",
-                    "Description": study_description,
+                    "Description": {
+                        "en": study_description,
+                        "de": translate_text(study_description)
+                    },
                 },
                 "Metadata": {
                     "SchemaVersion": "1.1.0",
@@ -557,16 +666,22 @@ def process_excel_biometrics(
             }
 
             if meta.get("Instructions"):
-                sidecar["Study"]["Instructions"] = meta["Instructions"]
-            if meta.get("Instructions_en"):
-                sidecar["Study"]["Instructions_en"] = meta["Instructions_en"]
-            if meta.get("Instructions_de"):
-                sidecar["Study"]["Instructions_de"] = meta["Instructions_de"]
+                sidecar["Study"]["Instructions"] = {default_lang: meta["Instructions"]}
+            elif meta.get("Instructions_en") or meta.get("Instructions_de"):
+                instr = {}
+                if meta.get("Instructions_en"): instr["en"] = meta["Instructions_en"]
+                if meta.get("Instructions_de"): instr["de"] = meta["Instructions_de"]
+                sidecar["Study"]["Instructions"] = instr
+                for l in instr:
+                    if l not in sidecar["I18n"]["Languages"]:
+                        sidecar["I18n"]["Languages"].append(l)
+
             if meta.get("Reference"):
                 sidecar["Study"]["Reference"] = meta["Reference"]
             if meta.get("EstimatedDuration"):
                 sidecar["Study"]["EstimatedDuration"] = meta["EstimatedDuration"]
-            sidecar.update(variables)
+            
+            sidecar.update(i18n_variables)
 
             json_filename = f"biometrics-{group}.json"
             json_path = os.path.join(output_dir, json_filename)

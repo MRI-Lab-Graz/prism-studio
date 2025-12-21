@@ -50,6 +50,27 @@
       },
       "required": ["Type", "FileFormat", "Equipment"]
     },
+    "I18n": {
+      "type": "object",
+      "description": "Internationalization settings for multi-language biometrics",
+      "properties": {
+        "Languages": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$"},
+          "description": "List of available languages (e.g., ['en', 'de', 'fr'])"
+        },
+        "DefaultLanguage": {
+          "type": "string",
+          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+          "description": "Default/primary language of the instrument"
+        },
+        "TranslationMethod": {
+          "type": "string",
+          "enum": ["forward-backward", "committee", "parallel", "original", "validated-translation"],
+          "description": "Method used for translation validation"
+        }
+      }
+    },
     "Study": {
       "type": "object",
       "description": "Study-specific assessment parameters",
@@ -73,11 +94,11 @@
           "description": "Reference to the protocol used"
         },
         "Description": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "Detailed description of the test procedure"
         },
         "Instructions": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "Instructions given to the participant"
         },
         "Author": {
@@ -153,7 +174,7 @@
     "type": "object",
     "properties": {
       "Description": {
-        "type": "string",
+        "type": ["string", "object"],
         "description": "Description of the metric"
       },
       "Units": {
@@ -187,7 +208,7 @@
         "type": "object",
         "description": "Optional mapping of coded values to human-readable labels (e.g., Likert scales)",
         "patternProperties": {
-          "^.*$": { "type": "string" }
+          "^.*$": { "type": ["string", "object"] }
         }
       },
       "DataType": {

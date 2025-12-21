@@ -21,9 +21,16 @@ The web interface will open automatically at `http://localhost:5001`.
 
 ---
 
+## Citation
+
+- Citation metadata: see [CITATION.cff](CITATION.cff)
+- JOSS manuscript scaffold: see [paper/paper.md](paper/paper.md)
+
+---
+
 ## Overview
 
-PRISM is a **BIDS Extension** framework and toolkit designed to enrich standard BIDS datasets with psychological and physiological metadata.
+PRISM is an **independent, BIDS-compatible** framework and toolkit designed to enrich standard BIDS datasets with psychological and physiological metadata.
 
 **Core Philosophy: Extension, not Replacement**
 - **BIDS Core**: The main architecture remains standard BIDS. Files like `participants.tsv`, `dataset_description.json`, and standard modalities (`anat`, `func`, `eeg`) are preserved and validated according to BIDS standards.
@@ -31,7 +38,7 @@ PRISM is a **BIDS Extension** framework and toolkit designed to enrich standard 
 
 ## ✨ Key Features
 
-### 🧬 BIDS Extensions
+### 🧬 BIDS-Compatible Add-ons
 - **Survey Modality (`survey/`)**: Full support for complex questionnaires (LimeSurvey integration), treating surveys as rich data with sidecar metadata.
 - **Biometrics Modality (`biometrics/`)**: Structured storage for physiological assessments (VO2max, planks, balance tests) that don't fit into standard `beh` or `physio` categories.
 - **Non-Destructive**: Your standard BIDS files (`participants.tsv`, `dataset_description.json`) remain untouched. We only validate the extensions.

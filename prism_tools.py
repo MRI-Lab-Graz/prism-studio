@@ -32,6 +32,8 @@ from scripts.limesurvey_to_prism import convert_lsa_to_prism, batch_convert_lsa
 # We need to import from scripts.excel_to_library
 from scripts.excel_to_library import process_excel
 from scripts.excel_to_biometrics_library import process_excel_biometrics
+from scripts.generate_boilerplates import generate_boilerplate
+from scripts.generate_methods_boilerplate import generate_methods_text
 from src.library_i18n import compile_survey_template, migrate_survey_template_to_i18n
 
 
@@ -1252,6 +1254,30 @@ def cmd_survey_i18n_build(args):
     print(f"   Output: {out_dir}")
 
 
+def cmd_library_generate_boilerplate(args):
+    input_path = Path(args.input)
+    output_dir = Path(args.output)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    if input_path.is_file():
+        generate_boilerplate(input_path, output_dir)
+    elif input_path.is_dir():
+        for f in sorted(input_path.glob("*.json")):
+            generate_boilerplate(f, output_dir)
+    else:
+        print(f"Error: {input_path} not found.")
+
+
+def cmd_library_generate_methods_text(args):
+    libs = []
+    if args.survey_lib:
+        libs.append(args.survey_lib)
+    if args.biometrics_lib:
+        libs.append(args.biometrics_lib)
+
+    generate_methods_text(libs, args.output, lang=args.lang)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Prism Tools: Utilities for PRISM/BIDS datasets"
@@ -1655,6 +1681,44 @@ def main():
         help="Fallback language if a translation is missing (default: de)",
     )
 
+    # --- Library Command ---
+    parser_library = subparsers.add_parser(
+        "library", help="Manage PRISM library templates"
+    )
+    subparsers_library = parser_library.add_subparsers(
+        dest="action", help="Library actions"
+    )
+
+    parser_lib_boilerplate = subparsers_library.add_parser(
+        "generate-boilerplate",
+        help="Generate empty TSV files from library JSON templates",
+    )
+    parser_lib_boilerplate.add_argument(
+        "input", help="Path to a JSON file or directory (e.g., library/survey)"
+    )
+    parser_lib_boilerplate.add_argument(
+        "--output", default="boilerplates", help="Output directory for TSV files"
+    )
+
+    parser_lib_methods = subparsers_library.add_parser(
+        "generate-methods-text",
+        help="Generate a scientific methods section boilerplate from library templates",
+    )
+    parser_lib_methods.add_argument(
+        "--survey-lib", default="library/survey", help="Path to survey library"
+    )
+    parser_lib_methods.add_argument(
+        "--biometrics-lib",
+        default="library/biometrics",
+        help="Path to biometrics library",
+    )
+    parser_lib_methods.add_argument(
+        "--output", default="methods_boilerplate.md", help="Output markdown file"
+    )
+    parser_lib_methods.add_argument(
+        "--lang", default="en", choices=["en", "de"], help="Language for the text"
+    )
+
     args = parser.parse_args()
 
     if args.command == "convert" and args.modality == "physio":
@@ -1683,6 +1747,13 @@ def main():
             cmd_biometrics_import_excel(args)
         else:
             parser_biometrics.print_help()
+    elif args.command == "library":
+        if args.action == "generate-boilerplate":
+            cmd_library_generate_boilerplate(args)
+        elif args.action == "generate-methods-text":
+            cmd_library_generate_methods_text(args)
+        else:
+            parser_library.print_help()
     elif args.command == "dataset":
         if args.action == "build-biometrics-smoketest":
             cmd_dataset_build_biometrics_smoketest(args)
