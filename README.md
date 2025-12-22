@@ -1,6 +1,6 @@
 # PRISM - Psychological Research Information Standard for Metadata
 
-[![Documentation Status](https://readthedocs.org/projects/prism-validator/badge/?version=latest)](https://prism-validator.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/prism-studio/badge/?version=latest)](https://prism-studio.readthedocs.io/en/latest/?badge=latest)
 
 ## � Documentation
 
@@ -546,18 +546,18 @@ Settings can be overridden via CLI arguments.
 
 **macOS/Linux:**
 ```bash
-git clone https://github.com/MRI-Lab-Graz/prism-validator.git
-cd prism-validator
+git clone https://github.com/MRI-Lab-Graz/prism-studio.git
+cd prism-studio
 bash scripts/setup/setup.sh
-python prism-validator-web.py
+python prism-studio.py
 ```
 
 **Windows:**
 ```cmd
-git clone https://github.com/MRI-Lab-Graz/prism-validator.git
-cd prism-validator
+git clone https://github.com/MRI-Lab-Graz/prism-studio.git
+cd prism-studio
 scripts\setup\setup-windows.bat
-python prism-validator-web.py
+python prism-studio.py
 ```
 
 The web interface opens automatically! 🌐

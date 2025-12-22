@@ -54,7 +54,7 @@ PRISM provides:
 - A web interface (PRISM Studio) to validate datasets and interact with metadata.
 - Utilities to generate manuscript-ready method boilerplate text from library templates.
 
-Documentation is available at https://prism-validator.readthedocs.io/en/latest/.
+Documentation is available at https://prism-studio.readthedocs.io/en/latest/.
 
 # Acknowledgements
 

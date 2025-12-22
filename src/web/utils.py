@@ -45,7 +45,7 @@ except ImportError:
         )
     except ImportError:
         def _get_error_description(code): return "Validation error"
-        def _get_error_documentation_url(code): return "https://prism-validator.readthedocs.io/"
+        def _get_error_documentation_url(code): return "https://prism-studio.readthedocs.io/"
         def _get_error_code_from_message(msg): return "PRISM999"
 
 

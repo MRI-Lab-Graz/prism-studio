@@ -228,4 +228,4 @@ For details on recipe syntax (including mathematical formulas), see [DERIVATIVES
 
 ---
 
-Need more help? Check out the [Full Documentation](https://prism-validator.readthedocs.io/) or open an issue on GitHub!
+Need more help? Check out the [Full Documentation](https://prism-studio.readthedocs.io/) or open an issue on GitHub!

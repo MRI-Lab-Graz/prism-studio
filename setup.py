@@ -27,7 +27,7 @@ setup(
     long_description_content_type="text/markdown",
     author="MRI-Lab-Graz",
     author_email="contact@mri-lab-graz.at",
-    url="https://github.com/MRI-Lab-Graz/prism",
+    url="https://github.com/MRI-Lab-Graz/prism-studio",
     packages=["src"],
     package_dir={"src": "src"},
     package_data={

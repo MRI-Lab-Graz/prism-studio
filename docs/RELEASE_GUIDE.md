@@ -70,7 +70,7 @@ git push origin v1.0.0
 ### Option A: Using GitHub Web Interface (Recommended)
 
 1. **Navigate to your repository**
-   - Go to: https://github.com/MRI-Lab-Graz/prism
+   - Go to: https://github.com/MRI-Lab-Graz/prism-studio
 
 2. **Click on "Releases"**
    - Located in the right sidebar or under "Code" tab
@@ -107,10 +107,10 @@ git push origin v1.0.0
    ## 📦 Quick Start
 
    ```bash
-   git clone https://github.com/MRI-Lab-Graz/prism.git
-   cd prism
+   git clone https://github.com/MRI-Lab-Graz/prism-studio.git
+   cd prism-studio
    ./setup.sh
-   python launch_web.py
+   python prism-studio.py
    ```
 
    ## 📚 Documentation
@@ -157,7 +157,7 @@ gh release create v1.0.0 \
 ## Step 4: Verify Release
 
 1. **Check release page:**
-   - https://github.com/MRI-Lab-Graz/prism/releases/tag/v1.0.0
+   - https://github.com/MRI-Lab-Graz/prism-studio/releases/tag/v1.0.0
 
 2. **Verify:**
    - [ ] Release shows correct version (v1.0.0)

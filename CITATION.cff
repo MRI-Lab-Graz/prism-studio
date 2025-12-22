@@ -7,7 +7,7 @@ license: "MIT"
 version: "1.6.1"
 date-released: "2025-12-22"
 repository-code: "https://github.com/MRI-Lab-Graz/prism-studio"
-url: "https://prism-validator.readthedocs.io/en/latest/"
+url: "https://prism-studio.readthedocs.io/en/latest/"
 authors:
   - family-names: "Koschutnig"
     given-names: "Karl"

@@ -197,7 +197,7 @@ def get_error_documentation_url(code: str) -> str:
     if code.startswith("BIDS"):
         return "https://bids-specification.readthedocs.io/en/stable/"
     
-    base_url = "https://prism-validator.readthedocs.io/en/latest/ERROR_CODES.html"
+    base_url = "https://prism-studio.readthedocs.io/en/latest/ERROR_CODES.html"
     if code.startswith("PRISM"):
         return f"{base_url}#{code.lower()}---"
     
