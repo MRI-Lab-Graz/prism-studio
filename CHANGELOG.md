@@ -220,6 +220,6 @@ For existing users:
 ## [1.3.0] - 2025-11-28
 
 ### Changed
-- **Project Rename**: Renamed project from `psycho-validator` to `prism`.
+- **Project Rename**: Renamed project from `prism-studio` to `prism`.
 - **Repository Restructuring**: Moved helper scripts to `helpers/` directory.
 - **Documentation**: Updated all documentation to reflect the new name.

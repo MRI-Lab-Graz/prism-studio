@@ -11,7 +11,7 @@ import sys
 def run_validator_demo():
     """Demonstrate the validator on different dataset types"""
 
-    print("🧪 PRISM-VALIDATOR DEMONSTRATION")
+    print("🧪 PRISM Studio DEMONSTRATION")
     print("=" * 60)
 
     datasets = [

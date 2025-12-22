@@ -1,6 +1,6 @@
 @echo off
 ::
-:: Setup script for prism-validator on Windows
+:: Setup script for prism-studio on Windows
 ::
 :: This script will:
 :: 1. Check if 'uv' is installed.
@@ -12,7 +12,7 @@ set VENV_DIR=.venv
 set REQUIREMENTS_FILE=requirements.txt
 
 :: --- Main Script ---
-echo INFO: Starting project setup for prism-validator...
+echo INFO: Starting project setup for prism-studio...
 
 :: 1. Check for uv
 uv --version >nul 2>nul

@@ -1,10 +1,10 @@
-# .bidsignore created by prism-validator
+# .bidsignore created by prism-studio
 # Ignores custom modalities to ensure BIDS-App compatibility
 biometrics/
 events/
 survey/
 
-# Added by prism-validator
+# Added by prism-studio
 *_report_*.txt
 physio/
 

@@ -50,7 +50,7 @@
   ],
   "Acknowledgements": "We thank all participants and the technical staff for their contributions.",
   "ReferencesAndLinks": [
-    "https://github.com/MRI-Lab-Graz/psycho-validator",
+    "https://github.com/MRI-Lab-Graz/prism-studio",
     "https://bids.neuroimaging.io/"
   ],
   "DataCollection": {
@@ -61,7 +61,7 @@
   },
   "Publications": [
     {
-      "title": "FAIR Psychology Data Management with Psycho-Validator",
+      "title": "FAIR Psychology Data Management with PRISM Studio",
       "doi": "10.1000/xyz123",
       "year": "2024"
     }
@@ -73,9 +73,9 @@
   },
   "GeneratedBy": [
     {
-      "Name": "psycho-validator",
+      "Name": "prism-studio",
       "Version": "1.2.0",
-      "CodeURL": "https://github.com/MRI-Lab-Graz/psycho-validator"
+      "CodeURL": "https://github.com/MRI-Lab-Graz/prism-studio"
     }
   ]
 }

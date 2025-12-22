@@ -1,6 +1,6 @@
 @echo off
 ::
-:: Simple Windows setup script for prism-validator
+:: Simple Windows setup script for prism-studio
 :: Uses standard Python tools (no external dependencies like uv)
 ::
 
@@ -25,7 +25,7 @@ goto :eof
 
 :: --- Main Script ---
 :main
-call :echo_info "Starting project setup for prism-validator (Windows)..."
+call :echo_info "Starting project setup for prism-studio (Windows)..."
 
 :: 1. Check for Python
 python --version >nul 2>nul
@@ -69,10 +69,10 @@ if %errorlevel% neq 0 (
 )
 
 :: Install the project in development mode
-call :echo_info "Installing prism-validator in development mode..."
+call :echo_info "Installing prism-studio in development mode..."
 pip install -e .
 if %errorlevel% neq 0 (
-    call :echo_error "Failed to install prism-validator package."
+    call :echo_error "Failed to install prism-studio package."
     :: Continue anyway as this is optional for direct script usage
 )
 
@@ -97,12 +97,12 @@ echo To activate the virtual environment, run:
 echo %VENV_DIR%\Scripts\activate
 echo.
 echo To run the validator:
-echo python prism-validator.py /path/to/dataset
+echo python prism.py /path/to/dataset
 echo.
 echo Windows-specific notes:
 echo - Use backslashes or forward slashes for paths
 echo - File paths with spaces should be quoted
-echo - Example: python prism-validator.py "C:\My Data\dataset"
+echo - Example: python prism.py "C:\My Data\dataset"
 echo --------------------------------------------------
 
 goto :eof

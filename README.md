@@ -712,4 +712,4 @@ For most users and interactive validation, please use the web interface instead.
 
 See LICENSE file for details.
 
-For questions or contributions, visit the [GitHub repository](https://github.com/MRI-Lab-Graz/prism-validator).
+For questions or contributions, visit the [GitHub repository](https://github.com/MRI-Lab-Graz/prism-studio).

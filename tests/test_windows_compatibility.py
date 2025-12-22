@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test Windows compatibility for psycho-validator
+Test Windows compatibility for prism-studio
 """
 
 import os

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Prism-Validator - Survey{% endblock %}
+{% block title %}PRISM Studio - Survey{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -243,12 +243,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isConvert) {
             if (pageTitleEl) pageTitleEl.textContent = 'Prism Converter';
             if (pageSubtitleEl) pageSubtitleEl.textContent = 'Convert Survey, Biometrics, and Physio inputs to PRISM/BIDS-style outputs.';
-            document.title = 'Prism-Validator - Prism Converter';
+            document.title = 'PRISM Studio - Prism Converter';
             if (exportCardEl) exportCardEl.classList.add('d-none');
         } else {
             if (pageTitleEl) pageTitleEl.textContent = 'Survey Export';
             if (pageSubtitleEl) pageSubtitleEl.textContent = 'Select questionnaires from the library and export them to LimeSurvey (.lss).';
-            document.title = 'Prism-Validator - Survey Export';
+            document.title = 'PRISM Studio - Survey Export';
             if (exportCardEl) exportCardEl.classList.remove('d-none');
         }
     }

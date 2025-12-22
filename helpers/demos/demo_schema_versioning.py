@@ -27,7 +27,7 @@ def run_command(cmd, description):
 
 
 def main():
-    print("🎯 PRISM-VALIDATOR SCHEMA VERSIONING SHOWCASE")
+    print("🎯 PRISM Studio SCHEMA VERSIONING SHOWCASE")
     print("=" * 80)
 
     # Ensure we're in the right directory

@@ -174,7 +174,7 @@ def main() -> int:
 
     if sys.platform == "darwin":
         pyinstaller_args.append(
-            "--osx-bundle-identifier=at.ac.uni-graz.mri.prism-validator"
+            "--osx-bundle-identifier=at.ac.uni-graz.mri.prism-studio"
         )
 
     if icon_file:

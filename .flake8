@@ -1,4 +1,4 @@
 [flake8]
-exclude = .venv,venv,build,dist,__pycache__,archive,prism_validator.egg-info,prism-validator.egg-info,docs/_build
+exclude = .venv,venv,build,dist,__pycache__,archive,prism_studio.egg-info,prism-studio.egg-info,docs/_build
 max-line-length = 88
 extend-ignore = E203, W503

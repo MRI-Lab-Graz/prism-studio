@@ -14,8 +14,8 @@ def sanitize_task_name(name):
     return s.lower()
 
 def convert_resources():
-    resources_dir = Path("/Volumes/Evo/software/psycho-validator/tmp/resources")
-    output_dir = Path("/Volumes/Evo/software/psycho-validator/library/survey")
+    resources_dir = Path("/Volumes/Evo/software/prism-studio/tmp/resources")
+    output_dir = Path("/Volumes/Evo/software/prism-studio/library/survey")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     files = [f for f in resources_dir.glob("*.xlsx") if not f.name.startswith("~$")]
