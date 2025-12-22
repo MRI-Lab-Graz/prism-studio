@@ -5,6 +5,15 @@ All notable changes to the PRISM project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2025-12-22
+
+### Added
+- **Survey Generator UI**: Added display of response scales (levels), units, and value ranges for items in the Survey Export tool.
+- **Metadata Extraction**: Enhanced template info extraction to include item-level metadata (Scale, Units, Min/Max values).
+
+### Fixed
+- **Version Consistency**: Synchronized version numbers across `setup.py`, `src/__init__.py`, `prism.py`, and API endpoints.
+
 ## [1.6.0] - 2025-12-20
 
 ### Added

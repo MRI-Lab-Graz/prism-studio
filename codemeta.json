@@ -3,11 +3,11 @@
   "@type": "SoftwareSourceCode",
   "name": "PRISM",
   "description": "A BIDS-compatible validator and metadata framework for psychological experiment datasets.",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "url": "https://prism-validator.readthedocs.io/en/latest/",
   "codeRepository": "https://github.com/MRI-Lab-Graz/prism-studio",
   "license": "MIT",
   "programmingLanguage": ["Python"],
-  "dateCreated": "2025-12-21",
+  "dateCreated": "2025-12-22",
   "keywords": ["BIDS", "validation", "metadata", "psychology", "surveys", "biometrics"]
 }
