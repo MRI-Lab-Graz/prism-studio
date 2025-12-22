@@ -139,16 +139,27 @@ def _extract_template_info(full_path, filename):
             if not desc:
                 desc = data.get("TaskName", "")
 
+            def _get_q_info(k, v):
+                if not isinstance(v, dict):
+                    return {"id": k, "description": str(v)}
+                return {
+                    "id": k,
+                    "description": v.get("Description", ""),
+                    "levels": v.get("Levels", {}),
+                    "scale": v.get("Scale", ""),
+                    "units": v.get("Units", ""),
+                    "min_value": v.get("MinValue"),
+                    "max_value": v.get("MaxValue"),
+                }
+
             if "Questions" in data and isinstance(data["Questions"], dict):
                 for k, v in data["Questions"].items():
-                    q_desc = v.get("Description", "") if isinstance(v, dict) else ""
-                    questions.append({"id": k, "description": q_desc})
+                    questions.append(_get_q_info(k, v))
             else:
                 reserved = ["Technical", "Study", "Metadata", "Categories", "TaskName", "Name", "BIDSVersion", "Description", "URL", "License", "Authors", "Acknowledgements", "References", "Funding", "I18n"]
                 for k, v in data.items():
                     if k not in reserved:
-                        q_desc = v.get("Description", "") if isinstance(v, dict) else ""
-                        questions.append({"id": k, "description": q_desc})
+                        questions.append(_get_q_info(k, v))
     except Exception:
         pass
 

@@ -4,6 +4,7 @@ This page is the **detailed reference** for PRISM’s command-line tools and scr
 
 - For a first-time, step-by-step narrative: see [WALKTHROUGH.md](WALKTHROUGH.md).
 - For specification / schema details: see [SPECIFICATIONS.md](SPECIFICATIONS.md).
+- For derivative scoring recipes: see [DERIVATIVES.md](DERIVATIVES.md).
 
 ---
 
@@ -205,12 +206,18 @@ Generate a small biometrics dataset (templates + dummy data) for testing.
 python prism_tools.py dataset build-biometrics-smoketest --output /tmp/prism_biometrics_smoketest
 ```
 
-#### `derivatives surveys`
-Compute derived survey scores from TSVs in an already valid PRISM dataset.
+#### `derivatives surveys` / `derivatives biometrics`
+Compute derived scores from TSVs in an already valid PRISM dataset.
 
 ```bash
+# Survey derivatives
 python prism_tools.py derivatives surveys --prism /path/to/dataset --format prism
+
+# Biometric derivatives (supports xlsx, csv, save, r)
+python prism_tools.py derivatives biometrics --prism /path/to/dataset --format xlsx
 ```
+
+See [DERIVATIVES.md](DERIVATIVES.md) for details on how to write scoring recipes.
 
 #### `library generate-methods-text`
 Generate manuscript-ready methods text from libraries.

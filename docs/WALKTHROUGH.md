@@ -202,7 +202,22 @@ The sidecar contains the "intelligence" of your data. It defines what the column
 
 ---
 
-## 8. Summary of Tools
+## 8. Computing Derivatives (Scores & Subscales)
+
+Once your dataset is valid, you can automatically compute scores (e.g., PHQ-9 total score) or derived variables (e.g., best of 3 CMJ trials).
+
+1.  **Create a Recipe**: Define your scoring logic in a JSON file under `derivatives/surveys/` or `derivatives/biometrics/`.
+2.  **Run the Tool**:
+    ```bash
+    python prism_tools.py derivatives surveys --prism /path/to/dataset
+    ```
+3.  **Check Results**: PRISM creates a `derivatives/` folder in your dataset containing the computed scores and a BIDS-compliant `dataset_description.json`.
+
+For details on recipe syntax (including mathematical formulas), see [DERIVATIVES.md](DERIVATIVES.md).
+
+---
+
+## 9. Summary of Tools
 
 | Tool | Purpose |
 | :--- | :--- |

@@ -73,6 +73,7 @@ A complete toolset for converting external survey data (CSV/Excel) into PRISM-co
 2.  **Library Validation**: Ensure variable uniqueness and generate catalogs (via `prism_tools.py survey validate`).
 3.  **Session/Run-aware items**: In the Excel/CSV, you can add columns `session` and `run` per item; defaults are `ses-1` and no run suffix (run-1 is implicit). Use multiple rows for repeat occurrences: set `alias_of` to the canonical item_id, and set per-row `session`/`run` hints. Example header: `item_id,question,scale,group,alias_of,session,run`.
 4.  **Convert survey responses (Excel)**: Convert a wide survey export (`.xlsx`) into a PRISM/BIDS-like dataset (via `prism_tools.py survey convert`). The converter matches your column headers against the item IDs in `library/survey/survey-*.json` (e.g., `ADS01`, `ADS02`, …).
+5.  **Compute Derivatives**: Automatically calculate scores, subscales, and intermediate variables (e.g., best of 3 trials) using JSON recipes. Supports complex formulas and reverse-coding (via `prism_tools.py derivatives surveys` or `derivatives biometrics`). See [DERIVATIVES.md](docs/DERIVATIVES.md) for details.
 
 ## 💓 Biometrics Template Workflow (Codebook → JSON)
 

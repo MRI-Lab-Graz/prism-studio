@@ -4,6 +4,7 @@ code/
 **/.DS_Store
 branding/
 
+
 # Custom modality folders (kept for prism-validator)
 sub-*/ses-*/audio/
 sub-*/ses-*/image/

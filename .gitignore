@@ -80,3 +80,5 @@ test_dataset/Biometrics_dummy_data_long.csv
 # Added by fix script
 .env
 node_modules
+derivatives/biometrics/cmj.json
+derivatives/

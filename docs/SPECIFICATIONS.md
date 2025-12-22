@@ -72,7 +72,17 @@ Each data file should have a corresponding JSON sidecar with the same stem.
 
 ---
 
-## 5) What is inside a PRISM schema?
+## 5) Derivatives
+
+PRISM supports generating derived variables (scores, subscales) from raw data. These are stored in a BIDS-compliant `derivatives/` folder.
+
+- **Location**: `derivatives/surveys/` or `derivatives/biometrics/`
+- **Metadata**: Each derivative dataset must contain its own `dataset_description.json` (BIDS-derivatives requirement). PRISM automatically generates this file, inheriting relevant metadata from the root dataset.
+- **Recipes**: Transformations are defined in JSON recipe files. See [DERIVATIVES.md](DERIVATIVES.md) for the full specification.
+
+---
+
+## 6) What is inside a PRISM schema?
 
 PRISM uses JSON Schema documents to define:
 - required top-level blocks (commonly `Technical`, `Study`, `Metadata`)

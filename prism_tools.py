@@ -34,6 +34,7 @@ from scripts.excel_to_library import process_excel
 from scripts.excel_to_biometrics_library import process_excel_biometrics
 from scripts.generate_methods_boilerplate import generate_methods_text
 from src.library_i18n import compile_survey_template, migrate_survey_template_to_i18n
+from src.derivatives_surveys import compute_survey_derivatives, SurveyDerivativesResult
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -124,76 +125,6 @@ def _format_numeric_cell(val: float | None) -> str:
     return str(val)
 
 
-def _apply_survey_derivative_recipe_to_rows(
-    recipe: dict, rows: list[dict[str, str]]
-) -> tuple[list[str], list[dict[str, str]]]:
-    transforms = recipe.get("Transforms", {}) or {}
-    invert_cfg = transforms.get("Invert") or {}
-    invert_items = set(invert_cfg.get("Items") or [])
-    invert_scale = invert_cfg.get("Scale") or {}
-    invert_min = invert_scale.get("min")
-    invert_max = invert_scale.get("max")
-
-    scores = recipe.get("Scores") or []
-    out_header = [
-        str(s.get("Name", "")).strip() for s in scores if str(s.get("Name", "")).strip()
-    ]
-    out_rows: list[dict[str, str]] = []
-
-    for row in rows:
-        out: dict[str, str] = {}
-
-        def _get_item_value(item_id: str) -> float | None:
-            raw = row.get(item_id)
-            val = _parse_numeric_cell(raw)
-            if val is None:
-                return None
-            if (
-                item_id in invert_items
-                and invert_min is not None
-                and invert_max is not None
-            ):
-                return (float(invert_min) + float(invert_max)) - float(val)
-            return float(val)
-
-        for score in scores:
-            name = str(score.get("Name", "")).strip()
-            if not name:
-                continue
-            method = str(score.get("Method", "sum")).strip().lower()
-            items = [
-                str(i).strip() for i in (score.get("Items") or []) if str(i).strip()
-            ]
-            missing = str(score.get("Missing", "ignore")).strip().lower()
-
-            values: list[float] = []
-            any_missing = False
-            for item_id in items:
-                v = _get_item_value(item_id)
-                if v is None:
-                    any_missing = True
-                else:
-                    values.append(v)
-
-            result: float | None
-            if missing in {"require_all", "all", "strict"} and any_missing:
-                result = None
-            elif not values:
-                result = None
-            else:
-                if method == "mean":
-                    result = sum(values) / float(len(values))
-                else:
-                    # default: sum
-                    result = sum(values)
-
-            out[name] = _format_numeric_cell(result)
-
-        out_rows.append(out)
-
-    return out_header, out_rows
-
-
 def cmd_derivatives_surveys(args):
     prism_root = Path(args.prism).resolve()
     if not prism_root.exists() or not prism_root.is_dir():
@@ -201,183 +132,51 @@ def cmd_derivatives_surveys(args):
         sys.exit(1)
 
     out_format = str(getattr(args, "format", "prism") or "prism").strip().lower()
-    if out_format not in {"prism", "flat"}:
-        print("Error: --format must be one of: prism, flat")
-        sys.exit(1)
+    survey_filter = (str(args.survey).strip() if getattr(args, "survey", None) else "") or None
 
-    recipes_dir = (project_root / "derivatives" / "surveys").resolve()
-    if not recipes_dir.exists() or not recipes_dir.is_dir():
-        print(f"Error: Missing recipe folder: {recipes_dir}")
-        print("       Expected derivatives/surveys/*.json in the repo.")
-        sys.exit(1)
-
-    recipe_paths = sorted(recipes_dir.glob("*.json"))
-    if not recipe_paths:
-        print(f"Error: No survey derivative recipes found in: {recipes_dir}")
-        sys.exit(1)
-
-    recipes: dict[str, dict] = {}
-    for p in recipe_paths:
-        try:
-            recipe = _read_json(p)
-        except Exception as e:
-            print(f"Warning: Skipping invalid JSON recipe {p.name}: {e}")
-            continue
-        recipe_id = _normalize_survey_key(p.stem)
-        recipes[recipe_id] = {"path": p, "json": recipe}
-
-    if not recipes:
-        print("Error: No valid recipes could be loaded.")
-        sys.exit(1)
-
-    selected = None
-    if args.survey:
-        parts = [p.strip() for p in str(args.survey).replace(";", ",").split(",")]
-        parts = [_normalize_survey_key(p) for p in parts if p.strip()]
-        selected = set([p for p in parts if p])
-        unknown = sorted([s for s in selected if s not in recipes])
-        if unknown:
-            print("Error: Unknown survey recipe names in --survey:")
-            for s in unknown:
-                print(f"  - {s}")
-            print("Available survey recipes:")
-            for s in sorted(recipes.keys()):
-                print(f"  - {s}")
-            sys.exit(1)
-
-    # Scan dataset for survey TSV files
-    tsv_files: list[Path] = []
-    tsv_files.extend(prism_root.glob("sub-*/ses-*/survey/*.tsv"))
-    tsv_files.extend(prism_root.glob("sub-*/survey/*.tsv"))
-    tsv_files = sorted(set([p for p in tsv_files if p.is_file()]))
-    if not tsv_files:
-        print(f"Error: No survey TSV files found under: {prism_root}")
-        print("       Expected paths like sub-*/ses-*/survey/*.tsv")
-        sys.exit(1)
-
-    out_root = prism_root / "derivatives" / "surveys"
-    _ensure_dir(out_root)
-
-    # Ensure derivative dataset has a dataset_description.json (BIDS derivatives convention)
-    out_desc = out_root / "dataset_description.json"
-    if not out_desc.exists():
-        _write_json(
-            out_desc,
-            {
-                "Name": "PRISM Survey Derivatives",
-                "BIDSVersion": "1.8.0",
-                "DatasetType": "derivative",
-                "GeneratedBy": [
-                    {
-                        "Name": "prism_tools",
-                        "Description": "Survey derivative scoring (reverse coding, subscales)",
-                    }
-                ],
-            },
+    try:
+        result = compute_survey_derivatives(
+            prism_root=prism_root,
+            repo_root=project_root,
+            survey=survey_filter,
+            out_format=out_format,
+            modality="survey",
         )
-    processed_files = 0
-    written_files = 0
-
-    # Flat output accumulator (single file for stats packages)
-    flat_rows: list[dict[str, str]] = []
-    flat_key_to_idx: dict[tuple[str, str, str, int], int] = {}
-
-    for recipe_id, rec in sorted(recipes.items()):
-        if selected is not None and recipe_id not in selected:
-            continue
-
-        recipe = rec["json"]
-        survey_task = _normalize_survey_key(
-            (recipe.get("Survey", {}) or {}).get("TaskName") or recipe_id
-        )
-
-        matching = [
-            p for p in tsv_files if _extract_task_from_survey_filename(p) == survey_task
-        ]
-        if not matching:
-            continue
-
-        for in_path in matching:
-            processed_files += 1
-            sub_id, ses_id = _infer_sub_ses_from_path(in_path)
-            if not sub_id:
-                print(f"Warning: Skipping (no sub-*/ in path): {in_path}")
-                continue
-            if not ses_id:
-                ses_id = "ses-1"
-
-            in_header, in_rows = _read_tsv_rows(in_path)
-            if not in_header:
-                print(f"Warning: Skipping empty TSV (no header): {in_path}")
-                continue
-            if not in_rows:
-                # still write an empty-row TSV? keep conservative.
-                print(f"Warning: Skipping TSV without data rows: {in_path}")
-                continue
-
-            out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
-                recipe, in_rows
-            )
-            if not out_header:
-                print(
-                    f"Warning: Recipe '{recipe_id}' defines no scores; skipping: {rec['path'].name}"
-                )
-                break
-
-            if out_format == "flat":
-                # One row per (participant_id, session, survey, row_index)
-                # Prefix score columns with recipe id to avoid collisions across surveys.
-                prefix = f"{recipe_id}_"
-                for row_index, score_row in enumerate(out_rows):
-                    key = (sub_id, ses_id, recipe_id, row_index)
-                    if key in flat_key_to_idx:
-                        merged = flat_rows[flat_key_to_idx[key]]
-                    else:
-                        merged = {
-                            "participant_id": sub_id,
-                            "session": ses_id,
-                            "survey": recipe_id,
-                        }
-                        flat_key_to_idx[key] = len(flat_rows)
-                        flat_rows.append(merged)
-
-                    for col in out_header:
-                        merged[prefix + col] = score_row.get(col, "n/a")
-
-                written_files += 1
-            else:
-                out_dir = out_root / recipe_id / sub_id / ses_id / "survey"
-                stem = in_path.stem
-                if stem.endswith("_beh"):
-                    new_stem = stem[:-4] + "_desc-scores_beh"
-                else:
-                    new_stem = stem + "_desc-scores"
-                out_path = out_dir / f"{new_stem}.tsv"
-                _write_tsv_rows(out_path, out_header, out_rows)
-                written_files += 1
-
-    if written_files == 0:
-        msg = "No matching recipes applied."
-        if selected:
-            msg += " (No survey TSV matched the selected --survey.)"
-        else:
-            msg += " (No survey TSV matched any recipe TaskName.)"
-        print(msg)
+        print(f"✅ Derivative survey scoring complete: {result.written_files} file(s) written")
+        if result.flat_out_path:
+            print(f"   Flat output: {result.flat_out_path}")
+        if result.fallback_note:
+            print(f"   Note: {result.fallback_note}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
         sys.exit(1)
 
-    if out_format == "flat":
-        # Stable header: id columns first, then sorted score columns.
-        fixed = ["participant_id", "session", "survey"]
-        score_cols = sorted({k for r in flat_rows for k in r.keys() if k not in fixed})
-        flat_header = fixed + score_cols
-        out_path = prism_root / "derivatives" / "survey_derivatives.tsv"
-        _write_tsv_rows(out_path, flat_header, flat_rows)
-        print(f"✅ Derivative survey scoring complete: wrote {out_path}")
-        print(f"   Rows: {len(flat_rows)}")
-    else:
-        print(f"✅ Derivative survey scoring complete: {written_files} file(s) written")
-    if processed_files != written_files:
-        print(f"   (processed {processed_files} matching input file(s))")
+
+def cmd_derivatives_biometrics(args):
+    prism_root = Path(args.prism).resolve()
+    if not prism_root.exists() or not prism_root.is_dir():
+        print(f"Error: --prism is not a directory: {prism_root}")
+        sys.exit(1)
+
+    out_format = str(getattr(args, "format", "prism") or "prism").strip().lower()
+    biometric_filter = (str(args.biometric).strip() if getattr(args, "biometric", None) else "") or None
+
+    try:
+        result = compute_survey_derivatives(
+            prism_root=prism_root,
+            repo_root=project_root,
+            survey=biometric_filter,
+            out_format=out_format,
+            modality="biometrics",
+        )
+        print(f"✅ Biometric derivative scoring complete: {result.written_files} file(s) written")
+        if result.flat_out_path:
+            print(f"   Flat output: {result.flat_out_path}")
+        if result.fallback_note:
+            print(f"   Note: {result.fallback_note}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        sys.exit(1)
 
 
 def sanitize_id(id_str):
@@ -1471,6 +1270,26 @@ def main():
         help="Output format: 'prism' (default hierarchical derivatives) or 'flat' (single TSV for stats software)",
     )
 
+    parser_deriv_biometrics = derivatives_subparsers.add_parser(
+        "biometrics",
+        help="Compute biometric derivatives (e.g., best of trials, composite scores) from TSVs",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--prism",
+        required=True,
+        help="Path to the PRISM dataset root (input + output target)",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--biometric",
+        help="Optional comma-separated recipe selection (e.g., 'y_balance'). Default: run all matching recipes.",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--format",
+        default="prism",
+        choices=["prism", "flat", "csv", "xlsx", "save", "r"],
+        help="Output format: 'prism', 'flat', 'csv', 'xlsx', 'save', 'r'",
+    )
+
     # Subcommand: biometrics import-excel
     parser_biometrics_excel = biometrics_subparsers.add_parser(
         "import-excel", help="Import biometrics templates/library from Excel"
@@ -1734,6 +1553,8 @@ def main():
     elif args.command == "derivatives":
         if args.kind in {"surveys", "surves"}:
             cmd_derivatives_surveys(args)
+        elif args.kind == "biometrics":
+            cmd_derivatives_biometrics(args)
         else:
             parser_derivatives.print_help()
     else:

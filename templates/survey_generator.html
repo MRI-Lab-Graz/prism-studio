@@ -408,11 +408,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <div class="col-md-7">
                                                 <div class="fw-bold q-id-container">
                                                     ${q.id}
+                                                    ${q.scale ? `<span class="badge bg-light text-info border border-info ms-2 small" title="Scale">${getText(q.scale, currentLanguage)}</span>` : ''}
+                                                    ${q.units ? `<span class="badge bg-light text-secondary border border-secondary ms-1 small" title="Units">${getText(q.units, currentLanguage)}</span>` : ''}
+                                                    ${(q.min_value !== undefined && q.min_value !== null && q.max_value !== undefined && q.max_value !== null) ? `<span class="badge bg-light text-muted border ms-1 small" title="Range">${q.min_value}-${q.max_value}</span>` : ''}
                                                 </div>
                                                 <div class="text-muted small">${getText(q.description, currentLanguage)}</div>
                                             </div>
                                             <div class="col-md-5">
-                                                ${q.levels ? `
+                                                ${(q.levels && Object.keys(q.levels).length > 0) ? `
                                                     <div class="border-start ps-3 levels-table-container">
                                                         <table class="table table-sm table-borderless mb-0 small text-muted">
                                                             <tbody>

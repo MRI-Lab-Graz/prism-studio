@@ -340,6 +340,9 @@ def _apply_survey_derivative_recipe_to_rows(
     invert_min = invert_scale.get("min")
     invert_max = invert_scale.get("max")
 
+    # Support for Derived variables (e.g. best of trials)
+    derived_cfg = transforms.get("Derived") or []
+
     scores = recipe.get("Scores") or []
     out_header = [
         str(s.get("Name", "")).strip() for s in scores if str(s.get("Name", "")).strip()
@@ -347,9 +350,11 @@ def _apply_survey_derivative_recipe_to_rows(
     out_rows: list[dict[str, str]] = []
 
     for row in rows:
+        # We work on a copy to allow derived variables to be used in scores
+        current_row = row.copy()
 
-        def _get_item_value(item_id: str) -> float | None:
-            raw = row.get(item_id)
+        def _get_item_value(item_id: str, data: dict) -> float | None:
+            raw = data.get(item_id)
             v = _parse_numeric_cell(raw)
             if v is None:
                 return None
@@ -364,6 +369,34 @@ def _apply_survey_derivative_recipe_to_rows(
                     return v
             return v
 
+        # 1) Compute Derived variables first
+        for d in derived_cfg:
+            d_name = d.get("Name")
+            if not d_name:
+                continue
+            d_method = str(d.get("Method", "max")).strip().lower()
+            d_items = [str(i).strip() for i in (d.get("Items") or []) if str(i).strip()]
+
+            d_values = []
+            for item_id in d_items:
+                v = _get_item_value(item_id, current_row)
+                if v is not None:
+                    d_values.append(v)
+
+            d_result = None
+            if d_values:
+                if d_method == "max":
+                    d_result = max(d_values)
+                elif d_method == "min":
+                    d_result = min(d_values)
+                elif d_method in ("mean", "avg"):
+                    d_result = sum(d_values) / float(len(d_values))
+                elif d_method == "sum":
+                    d_result = sum(d_values)
+
+            current_row[d_name] = _format_numeric_cell(d_result)
+
+        # 2) Compute Scores
         out: dict[str, str] = {}
         for score in scores:
             name = str(score.get("Name", "")).strip()
@@ -378,7 +411,7 @@ def _apply_survey_derivative_recipe_to_rows(
             values: list[float] = []
             any_missing = False
             for item_id in items:
-                v = _get_item_value(item_id)
+                v = _get_item_value(item_id, current_row)
                 if v is None:
                     any_missing = True
                 else:
@@ -387,6 +420,22 @@ def _apply_survey_derivative_recipe_to_rows(
             result: float | None
             if missing in {"require_all", "all", "strict"} and any_missing:
                 result = None
+            elif method == "formula":
+                formula = score.get("Formula")
+                if formula:
+                    expr = formula
+                    # Replace {item_id} with value from current_row (which includes derived)
+                    for item_id in items:
+                        v = _get_item_value(item_id, current_row)
+                        val_str = str(v) if v is not None else "0.0"
+                        expr = expr.replace(f"{{{item_id}}}", val_str)
+                    try:
+                        # Safe-ish eval for basic math
+                        result = eval(expr, {"__builtins__": None}, {})
+                    except Exception:
+                        result = None
+                else:
+                    result = None
             elif not values:
                 result = None
             else:
@@ -402,27 +451,48 @@ def _apply_survey_derivative_recipe_to_rows(
     return out_header, out_rows
 
 
-def _write_derivatives_dataset_description(*, out_root: Path) -> None:
-    """Create a BIDS-derivatives dataset_description.json under derivatives/surveys/."""
+def _write_derivatives_dataset_description(*, out_root: Path, modality: str, prism_root: Path) -> None:
+    """Create a BIDS-derivatives dataset_description.json under derivatives/<modality>/."""
 
     desc_path = out_root / "dataset_description.json"
     if desc_path.exists():
         return
 
+    # Try to inherit some metadata from the root dataset_description.json
+    root_desc_path = prism_root / "dataset_description.json"
+    root_meta = {}
+    if root_desc_path.exists():
+        try:
+            root_meta = _read_json(root_desc_path)
+        except Exception:
+            pass
+
+    modality_label = modality.capitalize()
     obj = {
-        "Name": "PRISM Survey Derivatives",
+        "Name": f"{root_meta.get('Name', 'PRISM')} {modality_label} Derivatives",
         "BIDSVersion": "1.8.0",
         "DatasetType": "derivative",
         "GeneratedBy": [
             {
                 "Name": "prism-tools",
-                "Description": "Survey derivative scoring (reverse coding, subscales)",
-                "Version": "unknown",
-                "CodeURL": "",
+                "Description": f"{modality_label} derivative scoring (reverse coding, subscales, formulas)",
+                "Version": "1.0.0",
+                "CodeURL": "https://github.com/MRI-Lab-Graz/prism-studio",
+            }
+        ],
+        "SourceDatasets": [
+            {
+                "URL": "local",
+                "DOI": root_meta.get("DatasetDOI", "n/a"),
             }
         ],
         "GeneratedOn": datetime.now().isoformat(timespec="seconds"),
     }
+
+    # Copy relevant fields from root
+    for field in ["Authors", "License", "HowToAcknowledge", "Funding"]:
+        if field in root_meta:
+            obj[field] = root_meta[field]
 
     _write_json(desc_path, obj)
 
@@ -455,28 +525,28 @@ def compute_survey_derivatives(
         raise ValueError(f"--prism is not a directory: {prism_root}")
 
     modality = str(modality or "survey").strip().lower()
-    out_format = str(out_format or "csv").strip().lower()
+    out_format = str(out_format or "prism").strip().lower()
+    final_format = out_format
 
-    # For survey modality we expect file formats (csv, xlsx, save, r).
+    if out_format not in {"prism", "flat", "csv", "xlsx", "save", "r"}:
+        raise ValueError("--format must be one of: prism, flat, csv, xlsx, save, r")
+
+    # Locate recipe folder by modality.
     if modality == "survey":
-        if out_format not in {"csv", "xlsx", "save", "r"}:
-            raise ValueError(
-                "For modality=survey --format must be one of: csv, xlsx, save, r"
-            )
+        recipes_dir = (repo_root / "derivatives" / "surveys").resolve()
+        expected = "derivatives/surveys/*.json"
+    elif modality == "biometrics":
+        recipes_dir = (repo_root / "derivatives" / "biometrics").resolve()
+        expected = "derivatives/biometrics/*.json"
     else:
-        # keep legacy behaviour for other modalities
-        if out_format not in {"prism", "flat", "csv", "xlsx", "save", "r"}:
-            raise ValueError("--format must be one of: prism, flat, csv, xlsx, save, r")
+        raise ValueError("modality must be one of: survey, biometrics")
 
-    recipes_dir = (repo_root / "derivatives" / "surveys").resolve()
     if not recipes_dir.exists() or not recipes_dir.is_dir():
-        raise ValueError(
-            f"Missing recipe folder: {recipes_dir}. Expected derivatives/surveys/*.json"
-        )
+        raise ValueError(f"Missing recipe folder: {recipes_dir}. Expected {expected}")
 
     recipe_paths = sorted(recipes_dir.glob("*.json"))
     if not recipe_paths:
-        raise ValueError(f"No survey derivative recipes found in: {recipes_dir}")
+        raise ValueError(f"No derivative recipes found in: {recipes_dir}")
 
     recipes: dict[str, dict] = {}
     for p in recipe_paths:
@@ -489,6 +559,29 @@ def compute_survey_derivatives(
 
     if not recipes:
         raise ValueError("No valid recipes could be loaded.")
+
+    # Validate recipe structure before executing.
+    try:
+        from .derivative_recipe_validation import validate_derivative_recipe
+    except (ImportError, ValueError):
+        try:
+            from derivative_recipe_validation import validate_derivative_recipe
+        except ImportError:
+            validate_derivative_recipe = None
+
+    if validate_derivative_recipe is not None:
+        recipe_errors: list[str] = []
+        for recipe_id, rec in sorted(recipes.items()):
+            errs = validate_derivative_recipe(rec.get("json") or {}, recipe_id=recipe_id)
+            # Only treat "Scores missing" as a warning-like error if the recipe truly has no scores.
+            # We still surface it because it usually indicates a non-functional recipe.
+            recipe_errors.extend([f"{rec.get('path').name}: {e}" for e in errs])
+
+        if recipe_errors:
+            # Fail-fast: better to abort than to produce partial/wrong outputs.
+            raise ValueError(
+                "Invalid derivative recipe(s):\n- " + "\n- ".join(recipe_errors)
+            )
 
     selected: set[str] | None = None
     if survey:
@@ -504,13 +597,22 @@ def compute_survey_derivatives(
                 + ", ".join(sorted(recipes.keys()))
             )
 
-    # Scan dataset for survey TSV files
+    # Scan dataset for TSV files based on modality
     tsv_files: list[Path] = []
-    tsv_files.extend(prism_root.glob("sub-*/ses-*/survey/*.tsv"))
-    tsv_files.extend(prism_root.glob("sub-*/survey/*.tsv"))
+    if modality == "survey":
+        tsv_files.extend(prism_root.glob("sub-*/ses-*/survey/*.tsv"))
+        tsv_files.extend(prism_root.glob("sub-*/survey/*.tsv"))
+    elif modality == "biometrics":
+        tsv_files.extend(prism_root.glob("sub-*/ses-*/biometrics/*.tsv"))
+        tsv_files.extend(prism_root.glob("sub-*/biometrics/*.tsv"))
+    else:
+        # Fallback: search both
+        tsv_files.extend(prism_root.glob("sub-*/ses-*/*/*.tsv"))
+        tsv_files.extend(prism_root.glob("sub-*/*/*.tsv"))
+
     tsv_files = sorted(set([p for p in tsv_files if p.is_file()]))
     if not tsv_files:
-        raise ValueError(f"No survey TSV files found under: {prism_root}")
+        raise ValueError(f"No {modality} TSV files found under: {prism_root}")
 
     # Load participants.tsv if available (for merging demographic data)
     participants_df = None
@@ -535,7 +637,8 @@ def compute_survey_derivatives(
         except Exception:
             participants_meta = {}
 
-    out_root = prism_root / "derivatives" / "surveys"
+    # Output derivatives into standard folders.
+    out_root = prism_root / "derivatives" / ("surveys" if modality == "survey" else "biometrics")
     flat_rows: list[dict] = []
     flat_key_to_idx: dict[tuple, int] = {}
 
@@ -545,24 +648,30 @@ def compute_survey_derivatives(
     flat_out_path: Path | None = None
     fallback_note: str | None = None
 
-    # If modality=survey we will write one flat file per survey (recipe)
+    # If modality=survey/biometrics we will write one flat file per survey/biometric (recipe)
     for recipe_id, rec in sorted(recipes.items()):
         if selected is not None and recipe_id not in selected:
             continue
 
         recipe = rec["json"]
+        # For biometrics, we might use BiometricName instead of TaskName
+        task_key = "BiometricName" if modality == "biometrics" else "TaskName"
+        info_key = "Biometrics" if modality == "biometrics" else "Survey"
+        
         survey_task = _normalize_survey_key(
-            (recipe.get("Survey", {}) or {}).get("TaskName") or recipe_id
+            (recipe.get(info_key, {}) or {}).get(task_key) or recipe_id
         )
 
-        matching = [
-            p for p in tsv_files if _extract_task_from_survey_filename(p) == survey_task
-        ]
+        matching = []
+        for p in tsv_files:
+            task = _extract_task_from_survey_filename(p)
+            if task == survey_task:
+                matching.append(p)
         if not matching:
             continue
 
-        if modality == "survey":
-            # Accumulate scores across all matching participant TSVs for this survey
+        if out_format in ("csv", "xlsx", "save", "r"):
+            # Aggregated formats (one file per recipe)
             rows_accum: List[Dict[str, Any]] = []
             for in_path in matching:
                 processed_files += 1
@@ -591,13 +700,13 @@ def compute_survey_derivatives(
             if not rows_accum:
                 continue
 
-            # Write a single file for this survey
+            # Write a single file for this recipe
             _ensure_dir(out_root)
             try:
                 import pandas as pd
             except Exception:
                 raise RuntimeError(
-                    "pandas is required to write flat survey outputs (install pandas)"
+                    f"pandas is required to write flat {modality} outputs (install pandas)"
                 )
 
             df = pd.DataFrame(rows_accum)
@@ -857,32 +966,34 @@ def compute_survey_derivatives(
 
                     written_files += 1
                 else:
-                    out_dir = out_root / recipe_id / sub_id / ses_id / "survey"
+                    out_dir = out_root / recipe_id / sub_id / ses_id / modality
                     stem = in_path.stem
                     base_stem, _in_suffix = _strip_suffix(stem)
                     # Write derivatives with the new _survey suffix; legacy _beh inputs are upgraded.
-                    new_stem = f"{base_stem}_desc-scores_survey"
+                    new_stem = f"{base_stem}_desc-scores_{modality}"
                     out_path = out_dir / f"{new_stem}.tsv"
                     _write_tsv_rows(out_path, out_header, out_rows)
                     written_files += 1
 
     if written_files == 0:
-        msg = "No matching recipes applied."
+        msg = f"No matching {modality} recipes applied."
         if selected:
-            msg += " (No survey TSV matched the selected --survey.)"
+            msg += f" (No {modality} TSV matched the selected --survey/--biometric.)"
         else:
-            msg += " (No survey TSV matched any recipe TaskName.)"
+            msg += f" (No {modality} TSV matched any recipe TaskName/BiometricName.)"
         raise ValueError(msg)
 
     if out_format == "flat":
-        fixed = ["participant_id", "session", "survey"]
+        fixed = ["participant_id", "session", modality]
         score_cols = sorted({k for r in flat_rows for k in r.keys() if k not in fixed})
         flat_header = fixed + score_cols
-        flat_out_path = prism_root / "derivatives" / "survey_derivatives.tsv"
+        flat_out_path = prism_root / "derivatives" / f"{modality}_derivatives.tsv"
         _write_tsv_rows(flat_out_path, flat_header, flat_rows)
 
     _ensure_dir(out_root)
-    _write_derivatives_dataset_description(out_root=out_root)
+    _write_derivatives_dataset_description(
+        out_root=out_root, modality=modality, prism_root=prism_root
+    )
 
     return SurveyDerivativesResult(
         processed_files=processed_files,
