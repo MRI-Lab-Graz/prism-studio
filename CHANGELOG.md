@@ -10,9 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Survey Generator UI**: Added display of response scales (levels), units, and value ranges for items in the Survey Export tool.
 - **Metadata Extraction**: Enhanced template info extraction to include item-level metadata (Scale, Units, Min/Max values).
+- **Rebranding**: Renamed repository to `prism-studio` and updated all internal/external references.
 
 ### Fixed
 - **Version Consistency**: Synchronized version numbers across `setup.py`, `src/__init__.py`, `prism.py`, and API endpoints.
+- **Documentation**: Updated all documentation links and script names to reflect the new `prism-studio` branding.
 
 ## [1.6.0] - 2025-12-20
 
