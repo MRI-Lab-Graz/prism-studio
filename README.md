@@ -121,7 +121,7 @@ The dummy CSV can be either:
   --library-root library \
   --output test_dataset/_tmp_prism_biometrics_dataset
 
-python prism-validator.py test_dataset/_tmp_prism_biometrics_dataset
+python prism.py test_dataset/_tmp_prism_biometrics_dataset
 ```
 
 Note: the repo ships a wide dummy CSV at `test_dataset/Biometrics_dummy_data.csv`. Long-format dummy files (e.g., `test_dataset/Biometrics_dummy_data_long.csv`) are intended to be generated locally.
@@ -253,7 +253,7 @@ dataset/
 
 ## Super-BIDS: Enhanced Validation
 
-Prism-Validator implements a "Super-BIDS" layer—a stricter set of validation rules that sits on top of standard BIDS to ensure higher data quality and reproducibility.
+PRISM Studio implements a "Super-BIDS" layer—a stricter set of validation rules that sits on top of standard BIDS to ensure higher data quality and reproducibility.
 
 ### Why "Super-BIDS"?
 Standard BIDS is excellent for file organization but often permissive with metadata. "Super-BIDS" enforces mandatory fields that are critical for scientific reproducibility but optional in the base standard.
@@ -315,40 +315,40 @@ Each stimulus file must be associated with metadata in a `.json` sidecar. Sideca
 
 ### Basic validation:
 ```bash
-python prism-validator.py /path/to/dataset
+python prism.py /path/to/dataset
 ```
 
 ### JSON output for CI/CD:
 ```bash
-python prism-validator.py /path/to/dataset --json
-python prism-validator.py /path/to/dataset --json-pretty
+python prism.py /path/to/dataset --json
+python prism.py /path/to/dataset --json-pretty
 ```
 
 ### Auto-fix common issues:
 ```bash
-python prism-validator.py /path/to/dataset --fix          # Apply fixes
-python prism-validator.py /path/to/dataset --dry-run      # Preview fixes
-python prism-validator.py --list-fixes                    # List fixable issues
+python prism.py /path/to/dataset --fix          # Apply fixes
+python prism.py /path/to/dataset --dry-run      # Preview fixes
+python prism.py --list-fixes                    # List fixable issues
 ```
 
 ### Output formats (SARIF, JUnit, etc.):
 ```bash
-python prism-validator.py /path/to/dataset --format sarif -o report.sarif
-python prism-validator.py /path/to/dataset --format junit -o report.xml
-python prism-validator.py /path/to/dataset --format markdown -o report.md
-python prism-validator.py /path/to/dataset --format csv -o report.csv
+python prism.py /path/to/dataset --format sarif -o report.sarif
+python prism.py /path/to/dataset --format junit -o report.xml
+python prism.py /path/to/dataset --format markdown -o report.md
+python prism.py /path/to/dataset --format csv -o report.csv
 ```
 
 ### Plugin system:
 ```bash
-python prism-validator.py /path/to/dataset --init-plugin my_checks  # Create plugin template
-python prism-validator.py /path/to/dataset --list-plugins           # List loaded plugins
-python prism-validator.py /path/to/dataset --no-plugins             # Disable plugins
+python prism.py /path/to/dataset --init-plugin my_checks  # Create plugin template
+python prism.py /path/to/dataset --list-plugins           # List loaded plugins
+python prism.py /path/to/dataset --no-plugins             # Disable plugins
 ```
 
 ### Verbose output (shows scanning details):
 ```bash
-python prism-validator.py /path/to/dataset -v
+python prism.py /path/to/dataset -v
 ```
 
 ### Example Output:
@@ -431,7 +431,7 @@ The included `test_dataset/` demonstrates:
 
 ## 📁 Repository Structure
 
-- **`prism-validator-web.py`** - **✨ MAIN ENTRY POINT** - Web interface with NeuroBagel integration
+- **`prism-studio.py`** - **✨ MAIN ENTRY POINT** - Web interface with NeuroBagel integration
 - `schemas/` - JSON schemas for each modality
 - `docs/` - Documentation (web interface guide, examples, NeuroBagel integration)
 - `tests/` - Test dataset and test scripts
@@ -441,7 +441,7 @@ The included `test_dataset/` demonstrates:
 - `archive/` - Legacy scripts (not tracked in git)
 
 ### Additional Files
-- `prism-validator.py` - Command-line tool (see footnote below)
+- `prism.py` - Command-line tool (see footnote below)
 - `scripts/setup/setup.sh` / `scripts/setup/setup-windows.bat` - Installation scripts
 - `requirements.txt` - Python dependencies
 
@@ -469,7 +469,7 @@ See [`docs/NEUROBAGEL_INTEGRATION_STRATEGY.md`](docs/NEUROBAGEL_INTEGRATION_STRA
 
 ## 📊 LimeSurvey Integration
 
-Prism-Validator now includes a complete workflow for integrating LimeSurvey questionnaires into the BIDS/PRISM structure.
+PRISM Studio now includes a complete workflow for integrating LimeSurvey questionnaires into the BIDS/PRISM structure.
 
 ### Features:
 - **Automated Conversion**:
@@ -573,7 +573,7 @@ source .venv/bin/activate  # macOS/Linux or .venv\Scripts\activate on Windows
 pip install -r requirements.txt
 
 # Run web interface
-python prism-validator-web.py
+python prism-studio.py
 ```
 
 ---
@@ -584,7 +584,7 @@ python prism-validator-web.py
 
 Simply run:
 ```bash
-python prism-validator-web.py
+python prism-studio.py
 ```
 
 The interface opens at `http://localhost:5001` with three main sections:
@@ -632,38 +632,38 @@ source .venv/bin/activate  # macOS/Linux
 .venv\Scripts\activate     # Windows
 
 # Basic validation (uses stable schema)
-python prism-validator.py /path/to/dataset
+python prism.py /path/to/dataset
 
 # Validate with specific schema version
-python prism-validator.py /path/to/dataset --schema-version v0.1
+python prism.py /path/to/dataset --schema-version v0.1
 
 # JSON output for CI/CD pipelines
-python prism-validator.py /path/to/dataset --json
-python prism-validator.py /path/to/dataset --json-pretty
+python prism.py /path/to/dataset --json
+python prism.py /path/to/dataset --json-pretty
 
 # Auto-fix common issues
-python prism-validator.py /path/to/dataset --fix
-python prism-validator.py /path/to/dataset --dry-run  # Preview only
+python prism.py /path/to/dataset --fix
+python prism.py /path/to/dataset --dry-run  # Preview only
 
 # Output to different formats
-python prism-validator.py /path/to/dataset --format sarif -o report.sarif
-python prism-validator.py /path/to/dataset --format junit -o results.xml
+python prism.py /path/to/dataset --format sarif -o report.sarif
+python prism.py /path/to/dataset --format junit -o results.xml
 
 # Plugin management
-python prism-validator.py /path/to/dataset --init-plugin custom_rules
-python prism-validator.py /path/to/dataset --list-plugins
+python prism.py /path/to/dataset --init-plugin custom_rules
+python prism.py /path/to/dataset --list-plugins
 
 # List available schema versions
-python prism-validator.py --list-versions
+python prism.py --list-versions
 
 # List auto-fixable issues
-python prism-validator.py --list-fixes
+python prism.py --list-fixes
 
 # Verbose output
-python prism-validator.py /path/to/dataset -v
+python prism.py /path/to/dataset -v
 
 # Show help
-python prism-validator.py --help
+python prism.py --help
 ```
 
 **Note:** This is primarily for automation and batch processing. The web interface is recommended for interactive use.
@@ -691,11 +691,11 @@ Optional (for dummy file generation):
 
 ## 📝 Footnote: Command-Line Tool
 
-While the **web interface is the primary and recommended method** for using Prism-Validator, a command-line interface is also available for automation and batch processing.
+While the **web interface is the primary and recommended method** for using PRISM Studio, a command-line interface is also available for automation and batch processing.
 
 **Command-line tool usage:**
 ```bash
-python prism-validator.py /path/to/dataset [--schema-version VERSION] [-v]
+python prism.py /path/to/dataset [--schema-version VERSION] [-v]
 ```
 
 This is useful for:

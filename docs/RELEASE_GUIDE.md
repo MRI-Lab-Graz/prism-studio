@@ -10,7 +10,7 @@
 ## Step 1: Commit All Changes
 
 ```bash
-cd /Users/karl/work/github/prism
+cd /Users/karl/work/github/prism-studio
 
 # Add all new files
 git add schemas/stable/
@@ -25,7 +25,7 @@ git add README.md
 git add prism.py
 git add src/schema_manager.py
 git add src/runner.py
-git add web_interface.py
+git add prism-studio.py
 git add templates/base.html
 git add templates/index.html
 git add templates/results.html
@@ -261,7 +261,7 @@ git push origin --delete v1.0.0
 
 ```bash
 # Complete release workflow
-cd /Users/karl/work/github/prism
+cd /Users/karl/work/github/prism-studio
 
 # 1. Commit everything
 git add .

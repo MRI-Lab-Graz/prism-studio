@@ -15,8 +15,8 @@ PRISM is designed to be easy to install on Windows, macOS, and Linux.
 Open your terminal and run:
 
 ```bash
-git clone https://github.com/MRI-Lab-Graz/prism.git
-cd prism
+git clone https://github.com/MRI-Lab-Graz/prism-studio.git
+cd prism-studio
 bash scripts/setup/setup.sh
 ```
 
@@ -25,8 +25,8 @@ bash scripts/setup/setup.sh
 Open Command Prompt or PowerShell and run:
 
 ```bat
-git clone https://github.com/MRI-Lab-Graz/prism.git
-cd prism
+git clone https://github.com/MRI-Lab-Graz/prism-studio.git
+cd prism-studio
 scripts\setup\setup-windows.bat
 ```
 
@@ -43,8 +43,8 @@ If you prefer to set it up manually:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/MRI-Lab-Graz/prism.git
-cd prism
+git clone https://github.com/MRI-Lab-Graz/prism-studio.git
+cd prism-studio
 
 # 2. Create a virtual environment
 python -m venv .venv

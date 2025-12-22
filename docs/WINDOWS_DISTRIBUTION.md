@@ -31,8 +31,8 @@ This guide covers how to build and distribute the Prism Validator as a standalon
 
 ```powershell
 # 1. Clone the repository
-git clone https://github.com/your-org/psycho-validator.git
-cd psycho-validator
+git clone https://github.com/MRI-Lab-Graz/prism-studio.git
+cd prism-studio
 
 # 2. Run the build script
 .\scripts\build\build_windows.ps1
