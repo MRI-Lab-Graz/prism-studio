@@ -194,7 +194,7 @@ The sidecar contains the "intelligence" of your data. It defines what the column
     "MaxValue": 100
   },
   "Metadata": {
-    "SchemaVersion": "1.1.0",
+    "SchemaVersion": "1.1.1",
     "CreationDate": "2025-12-21"
   }
 }

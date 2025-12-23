@@ -130,7 +130,7 @@ You can generate biometrics JSON templates from a single-sheet Excel **codebook*
     "EstimatedDuration": "15-20 min"
   },
   "Metadata": {
-    "SchemaVersion": "1.0.0",
+    "SchemaVersion": "1.1.1",
     "CreationDate": "2025-11-27"
   }
 }

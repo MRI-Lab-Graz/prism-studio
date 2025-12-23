@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/survey/v1.1.0",
-  "version": "1.1.0",
+  "$id": "https://prism.org/schemas/survey/v1.1.1",
+  "version": "1.1.1",
   "title": "Survey Data Metadata",
   "description": "Schema for questionnaire and survey data. Files should be named: sub-<label>[_ses-<label>]_survey-<label>[_acq-<label>][_run-<index>]_survey.<tsv|json>",
   "type": "object",
@@ -42,6 +42,11 @@
           "type": "string",
           "enum": ["online", "paper", "interview", "phone", "mixed"],
           "description": "How the survey was administered"
+        },
+        "ResponseType": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Input/response modality (e.g., paper-pencil, button, slider, keyboard, voice, mixed)"
         }
       },
       "required": ["StimulusType", "FileFormat", "Language", "Respondent"]
@@ -114,6 +119,24 @@
           "format": "uri",
           "description": "License URL when available (e.g., creativecommons.org link)"
         },
+        "CopyrightHolder": {
+          "type": "string",
+          "description": "Rights holder for the instrument (e.g., publisher, author group)"
+        },
+        "Access": {
+          "type": "string",
+          "enum": ["public", "permission-required", "licensed", "unknown"],
+          "description": "High-level access/permission classification for transparency"
+        },
+        "PermissionsNote": {
+          "type": ["string", "object"],
+          "description": "Short note describing permissions/usage constraints"
+        },
+        "PermissionsURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to permission statement or licensing portal"
+        },
         "TermURL": {
           "type": "string",
           "format": "uri",
@@ -164,6 +187,73 @@
         "Norming": {
           "type": ["string", "object"],
           "description": "Information about the norming of the instrument"
+        },
+        "References": {
+          "type": "array",
+          "description": "Structured reference list for the instrument (primary paper, manual, translation, norms, validation, etc.)",
+          "items": {
+            "type": "object",
+            "properties": {
+              "Type": {
+                "type": "string",
+                "enum": ["primary", "manual", "translation", "validation", "norms", "other"],
+                "description": "Reference type"
+              },
+              "Citation": {
+                "type": "string",
+                "description": "Human-readable citation"
+              },
+              "DOI": {
+                "type": "string",
+                "description": "DOI for the reference"
+              },
+              "URL": {
+                "type": "string",
+                "format": "uri",
+                "description": "URL for the reference"
+              },
+              "Year": {
+                "type": "integer",
+                "description": "Publication year"
+              },
+              "Notes": {
+                "type": ["string", "object"],
+                "description": "Optional notes about the reference"
+              }
+            }
+          }
+        },
+        "Translation": {
+          "type": "object",
+          "description": "Translation/adaptation provenance (especially for non-original language versions)",
+          "properties": {
+            "SourceLanguage": {
+              "type": "string",
+              "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+              "description": "Source language of the instrument"
+            },
+            "TargetLanguage": {
+              "type": "string",
+              "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+              "description": "Target language used in this dataset"
+            },
+            "Validated": {
+              "type": "boolean",
+              "description": "Whether this translation/adaptation is validated"
+            },
+            "Method": {
+              "type": "string",
+              "description": "Translation/adaptation method (if different from I18n.TranslationMethod)"
+            },
+            "Reference": {
+              "type": "string",
+              "description": "Citation/DOI/URL for the translation/adaptation reference"
+            },
+            "Notes": {
+              "type": ["string", "object"],
+              "description": "Additional provenance notes"
+            }
+          }
         }
       },
       "required": ["TaskName", "OriginalName"]
@@ -193,6 +283,43 @@
           "type": "array",
           "items": {"type": "string"},
           "description": "List of reverse-coded item column names"
+        },
+        "ReverseCodingScale": {
+          "type": "object",
+          "description": "Scale bounds used for reverse coding (min/max), if applicable",
+          "properties": {
+            "min": {"type": "number"},
+            "max": {"type": "number"}
+          }
+        },
+        "CutoffsSource": {
+          "type": ["string", "object"],
+          "description": "Reference for cutoffs (citation/DOI/URL)"
+        },
+        "NormsSource": {
+          "type": ["string", "object"],
+          "description": "Reference for norms (citation/DOI/URL)"
+        },
+        "Subscales": {
+          "type": "array",
+          "description": "Optional structured subscale definitions for transparent scoring",
+          "items": {
+            "type": "object",
+            "properties": {
+              "Name": {"type": ["string", "object"], "description": "Subscale name"},
+              "Items": {"type": "array", "items": {"type": "string"}, "description": "Item IDs contributing to the subscale"},
+              "Method": {"type": "string", "enum": ["sum", "mean", "weighted", "custom"], "description": "Aggregation method"},
+              "Range": {
+                "type": "object",
+                "properties": {
+                  "min": {"type": "number"},
+                  "max": {"type": "number"}
+                }
+              },
+              "ReverseCodedItems": {"type": "array", "items": {"type": "string"}, "description": "Reverse-coded items within this subscale"},
+              "Note": {"type": ["string", "object"], "description": "Notes about scoring or interpretation"}
+            }
+          }
         }
       }
     },
@@ -220,15 +347,19 @@
     "type": "object",
     "properties": {
       "Description": {
-        "type": "string",
+        "type": ["string", "object"],
         "description": "The exact question text presented to the participant"
       },
       "Levels": {
         "type": "object",
         "description": "Mapping of numeric values to text labels",
         "patternProperties": {
-          "^.*$": { "type": "string" }
+          "^.*$": { "type": ["string", "object"] }
         }
+      },
+      "Unit": {
+        "type": "string",
+        "description": "Unit of measurement (if applicable)"
       },
       "Units": {
         "type": "string",
