@@ -3,21 +3,21 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-PK01/*
-PK01
 .Python
 env/
 tmp/
-prism_demo/*
 venv/
 archive/
-prism_demo/
 survey_library/*
 .venv/
 .DS_Store
 *.egg-info/
-prism_demo_copy/
-comprehensive_demo_dataset/
+
+# Demo datasets
+demo/prism_demo/
+demo/comprehensive_demo_dataset/
+archive/prism_demo_copy/
+archive/PK01/
 
 # IDE and editor files
 .vscode/

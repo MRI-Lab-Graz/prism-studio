@@ -150,7 +150,7 @@ def create_demo_metadata():
     print("Creating comprehensive demo dataset with new modalities...")
 
     # Create directory structure
-    base_dir = "comprehensive_demo_dataset"
+    base_dir = "demo/comprehensive_demo_dataset"
 
     # Dataset description
     dataset_desc = {

@@ -11,7 +11,7 @@ import gzip
 import csv
 import random
 
-ROOT_DIR = "prism_demo"
+ROOT_DIR = "demo/prism_demo"
 
 
 def create_directory(path):

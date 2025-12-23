@@ -127,7 +127,7 @@ python prism_tools.py convert physio \
 Create a demo dataset for testing.
 
 ```bash
-python prism_tools.py demo create --output prism_demo_copy
+python prism_tools.py demo create --output archive/prism_demo_copy
 ```
 
 #### `survey import-excel`

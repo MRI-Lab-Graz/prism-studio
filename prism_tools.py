@@ -397,7 +397,7 @@ def cmd_demo_create(args):
     Creates a demo dataset.
     """
     output_path = Path(args.output)
-    demo_source = project_root / "prism_demo"
+    demo_source = project_root / "demo" / "prism_demo"
 
     if output_path.exists():
         print(f"Error: Output path '{output_path}' already exists.")
@@ -1119,7 +1119,7 @@ def main():
         "create", help="Create a demo dataset"
     )
     parser_demo_create.add_argument(
-        "--output", default="prism_demo_copy", help="Output path for the demo dataset"
+        "--output", default="archive/prism_demo_copy", help="Output path for the demo dataset"
     )
 
     # Command: survey
