@@ -54,6 +54,7 @@ def api_derivatives_surveys():
     modality = (data.get("modality") or "survey").strip().lower() or "survey"
     out_format = (data.get("format") or "csv").strip().lower() or "csv"
     survey_filter = (data.get("survey") or "").strip() or None
+    lang = (data.get("lang") or "en").strip().lower() or "en"
 
     if not dataset_path or not os.path.exists(dataset_path) or not os.path.isdir(dataset_path):
         return jsonify({"error": "Invalid dataset path"}), 400
@@ -77,6 +78,7 @@ def api_derivatives_surveys():
             survey=survey_filter,
             out_format=out_format,
             modality=modality,
+            lang=lang,
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -128,6 +130,7 @@ def _extract_template_info(full_path, filename):
     original_name = ""
     questions = []
     i18n = {}
+    study_info = {}
     try:
         with open(full_path, "r") as jf:
             data = json.load(jf)
@@ -135,6 +138,23 @@ def _extract_template_info(full_path, filename):
             desc = study.get("Description", "")
             original_name = study.get("OriginalName", "")
             i18n = data.get("I18n", {})
+            
+            # Capture all study metadata for UI display
+            study_info = {
+                "Authors": study.get("Authors", []),
+                "Citation": study.get("Citation", ""),
+                "DOI": study.get("DOI", ""),
+                "License": study.get("License", ""),
+                "LicenseID": study.get("LicenseID", ""),
+                "LicenseURL": study.get("LicenseURL", ""),
+                "ItemCount": study.get("ItemCount"),
+                "AgeRange": study.get("AgeRange", ""),
+                "AdministrationTime": study.get("AdministrationTime", ""),
+                "ScoringTime": study.get("ScoringTime", ""),
+                "Norming": study.get("Norming", ""),
+                "Reliability": study.get("Reliability", ""),
+                "Validity": study.get("Validity", ""),
+            }
 
             if not desc:
                 desc = data.get("TaskName", "")
@@ -156,7 +176,7 @@ def _extract_template_info(full_path, filename):
                 for k, v in data["Questions"].items():
                     questions.append(_get_q_info(k, v))
             else:
-                reserved = ["Technical", "Study", "Metadata", "Categories", "TaskName", "Name", "BIDSVersion", "Description", "URL", "License", "Authors", "Acknowledgements", "References", "Funding", "I18n"]
+                reserved = ["Technical", "Study", "Metadata", "Categories", "TaskName", "Name", "BIDSVersion", "Description", "URL", "License", "Authors", "Acknowledgements", "References", "Funding", "I18n", "Scoring"]
                 for k, v in data.items():
                     if k not in reserved:
                         questions.append(_get_q_info(k, v))
@@ -171,6 +191,7 @@ def _extract_template_info(full_path, filename):
         "questions": questions,
         "question_count": len(questions),
         "i18n": i18n,
+        "study": study_info,
     }
 
 @tools_bp.route("/api/list-library-files")

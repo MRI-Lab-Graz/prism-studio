@@ -75,13 +75,27 @@ def generate_methods_text(library_dirs_or_files, output_file, lang='en', github_
             study = data.get("Study", {})
             name = get_i18n_text(study.get("OriginalName", json_file.stem), lang)
             desc = get_i18n_text(study.get("Description", ""), lang)
+            license_id = study.get("LicenseID") or study.get("License")
+            authors = study.get("Authors", [])
+            citation = study.get("Citation") or study.get("DOI")
             
             if "survey-" in json_file.name:
-                surveys.append((name, desc))
+                surveys.append({
+                    "name": name,
+                    "desc": desc,
+                    "license": license_id,
+                    "authors": authors,
+                    "citation": citation
+                })
             elif "biometrics-" in json_file.name:
                 tech = data.get("Technical", {})
                 equip = tech.get("Equipment", "standard equipment")
-                biometrics.append((name, desc, equip))
+                biometrics.append({
+                    "name": name,
+                    "desc": desc,
+                    "equip": equip,
+                    "license": license_id
+                })
         except Exception:
             continue
 
@@ -92,8 +106,16 @@ def generate_methods_text(library_dirs_or_files, output_file, lang='en', github_
             "Psychological assessments were administered and stored as tab-separated value (.tsv) files with "
             "corresponding JSON metadata sidecars. The following standardized instruments were included:\n"
         )
-        for name, desc in surveys:
-            sections.append(f"- **{name}**: {desc}")
+        for s in surveys:
+            line = f"- **{s['name']}**"
+            if s['authors']:
+                line += f" ({', '.join(s['authors'][:3])}{' et al.' if len(s['authors']) > 3 else ''})"
+            line += f": {s['desc']}"
+            if s['license']:
+                line += f" [License: {s['license']}]"
+            if s['citation']:
+                line += f" (see {s['citation']})"
+            sections.append(line)
 
     # 4. Biometrics Section
     if biometrics:
@@ -103,8 +125,11 @@ def generate_methods_text(library_dirs_or_files, output_file, lang='en', github_
             "Metadata for each test includes technical specifications such as equipment used and supervisor roles. "
             "The following measures were obtained:\n"
         )
-        for name, desc, equip in biometrics:
-            sections.append(f"- **{name}**: {desc} (Equipment: {equip})")
+        for b in biometrics:
+            line = f"- **{b['name']}**: {b['desc']} (Equipment: {b['equip']})"
+            if b['license']:
+                line += f" [License: {b['license']}]"
+            sections.append(line)
 
     # 5. Metadata and Reproducibility
     sections.append("\n## Metadata and Reproducibility\n")

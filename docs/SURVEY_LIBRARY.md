@@ -32,6 +32,10 @@ Library survey templates use language maps for study metadata and item text:
 {
   "Study": {
     "OriginalName": {"de": "Fragebogen zur Gesundheit", "en": "Patient Health Questionnaire"},
+    "Authors": ["Spitzer, R. L.", "Kroenke, K.", "Williams, J. B."],
+    "DOI": "https://doi.org/10.1046/j.1525-1497.1999.06299.x",
+    "Construct": {"de": "Depression", "en": "Depression"},
+    "Reliability": {"de": "Cronbachs Alpha = 0.89", "en": "Cronbach's alpha = 0.89"},
     "Instructions": {"de": "…", "en": "…"}
   },
   "PHQ01": {
@@ -67,6 +71,30 @@ Convert a single-language survey to the bilingual format:
 python prism_tools.py survey i18n-migrate \
   --input library/survey/survey-ads.json \
   --output library/survey/survey-ads.json
+
+## Metadata harvesting (Open Test Archive / Testarchiv)
+
+Some public registries (e.g., https://www.testarchiv.eu/) provide a rich set of **instrument metadata** (authors, DOI, license, reliability/validity notes, item count, subscales, etc.).
+
+PRISM can ingest this **metadata** into the library to support:
+- manuscript boilerplate generation
+- discoverability/search
+- consistent citation and provenance
+
+Important: this harvesting is intentionally **metadata-only**.
+- Do not automatically copy questionnaire item texts or full manuals into PRISM unless the license explicitly allows redistribution and your usage complies with the registry’s terms.
+- Many instruments are distributed with restrictions (e.g., `CC BY-NC-ND`), which usually makes “turning the test into a modified JSON template” a derivative work.
+
+Script:
+
+```bash
+python scripts/harvest_testarchiv.py \
+  --url https://www.testarchiv.eu/de/test/9006565 \
+  --auto-en \
+  --out survey_library
+```
+
+This writes a PRISM-shaped `survey-*.json` template with filled `Study` metadata, but without item variables.
 ```
 
 ## Workflow Overview

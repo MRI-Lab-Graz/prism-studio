@@ -87,7 +87,15 @@ PRISM supports generating derived variables (scores, subscales) from raw data. T
 PRISM uses JSON Schema documents to define:
 - required top-level blocks (commonly `Technical`, `Study`, `Metadata`)
 - required fields and allowed types
-- optional blocks like `I18n`
+- optional blocks like `I18n` and `Scoring`
+
+The `Study` block now supports comprehensive metadata including:
+- `Authors`, `DOI`, `Citation`
+- `Construct`, `Keywords`
+- `Reliability`, `Validity`
+- `Instructions`
+
+Many of these fields support **i18n objects** (e.g., `{"de": "...", "en": "..."}`) to allow for multi-language documentation.
 
 Schemas live in `schemas/<version>/`.
 

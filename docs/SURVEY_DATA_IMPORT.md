@@ -47,7 +47,9 @@ Instrument-level metadata (repeat in any row; first non-empty per `Group` wins):
 
 - `OriginalName_de`, `OriginalName_en`, `ShortName`
 - `Version_de`, `Version_en`, `StudyDescription_de`, `StudyDescription_en`
-- `Citation`, `Construct`, `Keywords`
+- `Authors`, `DOI`, `Citation`
+- `Construct_de`, `Construct_en`, `Keywords`
+- `Reliability_de`, `Reliability_en`, `Validity_de`, `Validity_en`
 - `Instructions_de`, `Instructions_en` (participant-facing instructions)
 - `Respondent`, `AdministrationMethod`, `SoftwarePlatform`, `SoftwareVersion`
 - `Languages`, `DefaultLanguage`, `TranslationMethod`

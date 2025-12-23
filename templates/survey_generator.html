@@ -390,6 +390,49 @@ document.addEventListener('DOMContentLoaded', function() {
         trDetails.innerHTML = `
             <td colspan="8" class="p-0 border-0">
                 <div class="collapse bg-light p-3" id="${collapseId}">
+                    <!-- Metadata Section -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body py-2 px-3">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <small class="text-muted d-block">Authors</small>
+                                            <span class="small">${Array.isArray(file.study?.Authors) ? file.study.Authors.join(', ') : (file.study?.Authors || 'N/A')}</span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <small class="text-muted d-block">License</small>
+                                            <span class="small">
+                                                ${file.study?.LicenseID ? `<span class="badge bg-info text-white">${file.study.LicenseID}</span>` : (file.study?.License || 'N/A')}
+                                                ${file.study?.LicenseURL ? `<a href="${file.study.LicenseURL}" target="_blank" class="ms-1"><i class="fas fa-external-link-alt small"></i></a>` : ''}
+                                            </span>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <small class="text-muted d-block">Citation / DOI</small>
+                                            <span class="small text-truncate d-block" title="${file.study?.Citation || file.study?.DOI || ''}">
+                                                ${file.study?.DOI ? `<a href="https://doi.org/${file.study.DOI}" target="_blank">${file.study.DOI}</a>` : (file.study?.Citation || 'N/A')}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-md-3">
+                                            <small class="text-muted d-block">Age Range</small>
+                                            <span class="small">${getText(file.study?.AgeRange, currentLanguage) || 'N/A'}</span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <small class="text-muted d-block">Admin Time</small>
+                                            <span class="small">${getText(file.study?.AdministrationTime, currentLanguage) || 'N/A'}</span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <small class="text-muted d-block">Items</small>
+                                            <span class="small">${file.study?.ItemCount || file.question_count || 0}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="d-flex align-items-center">
                             <small class="text-muted fw-bold me-3">Questions to include:</small>

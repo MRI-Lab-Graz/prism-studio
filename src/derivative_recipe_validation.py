@@ -15,7 +15,7 @@ from typing import Any
 
 
 ALLOWED_DERIVED_METHODS = {"max", "min", "mean", "avg", "sum"}
-ALLOWED_SCORE_METHODS = {"sum", "mean", "formula"}
+ALLOWED_SCORE_METHODS = {"sum", "mean", "formula", "map"}
 ALLOWED_MISSING = {"ignore", "require_all", "all", "strict"}
 
 
@@ -145,7 +145,14 @@ def validate_derivative_recipe(recipe: dict[str, Any], *, recipe_id: str | None 
                 errors.append(prefix + f"Scores[{idx}].Method must be one of {sorted(ALLOWED_SCORE_METHODS)}")
 
             items = _as_list_of_str(s.get("Items"))
-            if not items:
+            if method == "map":
+                source = s.get("Source")
+                if not _is_nonempty_str(source):
+                    errors.append(prefix + f"Scores[{idx}] uses Method='map' but has no non-empty Source")
+                mapping = s.get("Mapping")
+                if not isinstance(mapping, dict) or not mapping:
+                    errors.append(prefix + f"Scores[{idx}] uses Method='map' but has no non-empty Mapping object")
+            elif not items:
                 errors.append(prefix + f"Scores[{idx}].Items must be a non-empty list of strings")
 
             missing = str(s.get("Missing", "ignore")).strip().lower()

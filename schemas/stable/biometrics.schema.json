@@ -81,8 +81,25 @@
           "description": "Short biometric identifier matching filename (e.g., vo2max, planks, grip)"
         },
         "OriginalName": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "Full name of the test (e.g., UKK Walk Test, Plank Test, Handgrip Strength)"
+        },
+        "ShortName": {
+          "type": ["string", "object"],
+          "description": "Common abbreviation (e.g., VO2max, 6MWT)"
+        },
+        "Authors": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Authors of the test protocol"
+        },
+        "Citation": {
+          "type": "string",
+          "description": "DOI or citation for the test protocol"
+        },
+        "DOI": {
+          "type": "string",
+          "description": "Digital Object Identifier (DOI) for the test protocol"
         },
         "Category": {
           "type": "string",
@@ -93,9 +110,22 @@
           "type": "string",
           "description": "Reference to the protocol used"
         },
+        "Keywords": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Keywords describing the test"
+        },
         "Description": {
           "type": ["string", "object"],
           "description": "Detailed description of the test procedure"
+        },
+        "Reliability": {
+          "type": ["string", "object"],
+          "description": "Information about the reliability of the test"
+        },
+        "Validity": {
+          "type": ["string", "object"],
+          "description": "Information about the validity of the test"
         },
         "Instructions": {
           "type": ["string", "object"],

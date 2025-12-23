@@ -81,7 +81,7 @@ A complete toolset for converting external survey data (CSV/Excel) into PRISM-co
 For biometrics assessments (e.g., Y-Balance, CMJ, Sit-and-Reach), PRISM supports generating **biometrics JSON templates** from a single-sheet Excel *codebook* (no data required).
 
 1. **Create a codebook** (one row per variable/TSV column) with headers like:
-   `item_id,description,units,datatype,minvalue,maxvalue,allowedvalues,group,originalname,protocol,instructions,reference,estimatedduration,equipment,supervisor`
+   `item_id,description,units,datatype,minvalue,maxvalue,allowedvalues,group,originalname,authors,doi,protocol,instructions,reference,reliability,validity,estimatedduration,equipment,supervisor`
   Optional: add per-variable `session` and `run` columns (e.g., `ses-1`, `run-2`). The importer stores these as `SessionHint`/`RunHint` in the generated template.
 2. **Generate templates**:
 

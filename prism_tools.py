@@ -133,6 +133,7 @@ def cmd_derivatives_surveys(args):
 
     out_format = str(getattr(args, "format", "prism") or "prism").strip().lower()
     survey_filter = (str(args.survey).strip() if getattr(args, "survey", None) else "") or None
+    lang = str(getattr(args, "lang", "en") or "en").strip().lower()
 
     try:
         result = compute_survey_derivatives(
@@ -141,6 +142,7 @@ def cmd_derivatives_surveys(args):
             survey=survey_filter,
             out_format=out_format,
             modality="survey",
+            lang=lang,
         )
         print(f"✅ Derivative survey scoring complete: {result.written_files} file(s) written")
         if result.flat_out_path:
@@ -160,6 +162,7 @@ def cmd_derivatives_biometrics(args):
 
     out_format = str(getattr(args, "format", "prism") or "prism").strip().lower()
     biometric_filter = (str(args.biometric).strip() if getattr(args, "biometric", None) else "") or None
+    lang = str(getattr(args, "lang", "en") or "en").strip().lower()
 
     try:
         result = compute_survey_derivatives(
@@ -168,6 +171,7 @@ def cmd_derivatives_biometrics(args):
             survey=biometric_filter,
             out_format=out_format,
             modality="biometrics",
+            lang=lang,
         )
         print(f"✅ Biometric derivative scoring complete: {result.written_files} file(s) written")
         if result.flat_out_path:
@@ -1255,8 +1259,14 @@ def main():
     parser_deriv_surveys.add_argument(
         "--format",
         default="prism",
-        choices=["prism", "flat"],
-        help="Output format: 'prism' (default hierarchical derivatives) or 'flat' (single TSV for stats software)",
+        choices=["prism", "flat", "csv", "xlsx", "save", "r"],
+        help="Output format: 'prism' (default), 'flat', 'csv', 'xlsx', 'save' (SPSS), 'r' (feather)",
+    )
+    parser_deriv_surveys.add_argument(
+        "--lang",
+        default="en",
+        choices=["en", "de"],
+        help="Language for metadata labels in export formats (default: en)",
     )
 
     # Backwards/typo-friendly alias matching common usage in docs/notes.
@@ -1276,8 +1286,14 @@ def main():
     parser_deriv_surves.add_argument(
         "--format",
         default="prism",
-        choices=["prism", "flat"],
-        help="Output format: 'prism' (default hierarchical derivatives) or 'flat' (single TSV for stats software)",
+        choices=["prism", "flat", "csv", "xlsx", "save", "r"],
+        help="Output format: 'prism' (default), 'flat', 'csv', 'xlsx', 'save' (SPSS), 'r' (feather)",
+    )
+    parser_deriv_surves.add_argument(
+        "--lang",
+        default="en",
+        choices=["en", "de"],
+        help="Language for metadata labels in export formats (default: en)",
     )
 
     parser_deriv_biometrics = derivatives_subparsers.add_parser(
@@ -1298,6 +1314,12 @@ def main():
         default="prism",
         choices=["prism", "flat", "csv", "xlsx", "save", "r"],
         help="Output format: 'prism', 'flat', 'csv', 'xlsx', 'save', 'r'",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--lang",
+        default="en",
+        choices=["en", "de"],
+        help="Language for metadata labels in export formats (default: en)",
     )
 
     # Subcommand: biometrics import-excel

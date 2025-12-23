@@ -106,6 +106,16 @@ INSTRUCTIONS_DE_ALIASES = {"instructions_de", "taskinstructions_de"}
 STUDY_DESC_EN_ALIASES = {"study_description_en", "studydescription_en", "description_en"}
 STUDY_DESC_DE_ALIASES = {"study_description_de", "studydescription_de", "description_de"}
 KEYWORDS_ALIASES = {"keywords", "tags"}
+AUTHORS_ALIASES = {"authors", "author", "creator", "creators"}
+DOI_ALIASES = {"doi", "digital_object_identifier"}
+RELIABILITY_ALIASES = {"reliability", "internal_consistency"}
+RELIABILITY_EN_ALIASES = {"reliability_en"}
+RELIABILITY_DE_ALIASES = {"reliability_de"}
+VALIDITY_ALIASES = {"validity", "construct_validity", "criterion_validity"}
+VALIDITY_EN_ALIASES = {"validity_en"}
+VALIDITY_DE_ALIASES = {"validity_de"}
+CONSTRUCT_EN_ALIASES = {"construct_en", "domain_en", "measure_en"}
+CONSTRUCT_DE_ALIASES = {"construct_de", "domain_de", "measure_de"}
 
 # Technical/I18n settings
 RESPONDENT_ALIASES = {"respondent"}
@@ -260,6 +270,16 @@ def process_excel(
     i18n_translation_method_idx = find_column_idx(
         header_row, I18N_TRANSLATION_METHOD_ALIASES
     )
+    authors_idx = find_column_idx(header_row, AUTHORS_ALIASES)
+    doi_idx = find_column_idx(header_row, DOI_ALIASES)
+    reliability_idx = find_column_idx(header_row, RELIABILITY_ALIASES)
+    reliability_en_idx = find_column_idx(header_row, RELIABILITY_EN_ALIASES)
+    reliability_de_idx = find_column_idx(header_row, RELIABILITY_DE_ALIASES)
+    validity_idx = find_column_idx(header_row, VALIDITY_ALIASES)
+    validity_en_idx = find_column_idx(header_row, VALIDITY_EN_ALIASES)
+    validity_de_idx = find_column_idx(header_row, VALIDITY_DE_ALIASES)
+    construct_en_idx = find_column_idx(header_row, CONSTRUCT_EN_ALIASES)
+    construct_de_idx = find_column_idx(header_row, CONSTRUCT_DE_ALIASES)
 
     header_detected = any(
         idx is not None
@@ -376,6 +396,16 @@ def process_excel(
         i18n_languages = get_val(row, i18n_languages_idx)
         i18n_default_lang = get_val(row, i18n_default_lang_idx)
         i18n_translation_method = get_val(row, i18n_translation_method_idx)
+        authors = get_val(row, authors_idx)
+        doi = get_val(row, doi_idx)
+        reliability = get_val(row, reliability_idx)
+        reliability_en = get_val(row, reliability_en_idx)
+        reliability_de = get_val(row, reliability_de_idx)
+        validity = get_val(row, validity_idx)
+        validity_en = get_val(row, validity_en_idx)
+        validity_de = get_val(row, validity_de_idx)
+        construct_en = get_val(row, construct_en_idx)
+        construct_de = get_val(row, construct_de_idx)
 
         if var_name.lower() == "nan" or not var_name:
             continue
@@ -411,8 +441,31 @@ def process_excel(
             meta["Version_de"] = _clean_cell(version_de)
         if _clean_cell(citation) and "Citation" not in meta:
             meta["Citation"] = _clean_cell(citation)
+        if _clean_cell(doi) and "DOI" not in meta:
+            meta["DOI"] = _clean_cell(doi)
+        if _clean_cell(authors) and "Authors" not in meta:
+            meta["Authors"] = [a.strip() for a in re.split(r"[;,]", str(authors)) if a.strip()]
+        
         if _clean_cell(construct) and "Construct" not in meta:
             meta["Construct"] = _clean_cell(construct)
+        if _clean_cell(construct_en) and "Construct_en" not in meta:
+            meta["Construct_en"] = _clean_cell(construct_en)
+        if _clean_cell(construct_de) and "Construct_de" not in meta:
+            meta["Construct_de"] = _clean_cell(construct_de)
+
+        if _clean_cell(reliability) and "Reliability" not in meta:
+            meta["Reliability"] = _clean_cell(reliability)
+        if _clean_cell(reliability_en) and "Reliability_en" not in meta:
+            meta["Reliability_en"] = _clean_cell(reliability_en)
+        if _clean_cell(reliability_de) and "Reliability_de" not in meta:
+            meta["Reliability_de"] = _clean_cell(reliability_de)
+
+        if _clean_cell(validity) and "Validity" not in meta:
+            meta["Validity"] = _clean_cell(validity)
+        if _clean_cell(validity_en) and "Validity_en" not in meta:
+            meta["Validity_en"] = _clean_cell(validity_en)
+        if _clean_cell(validity_de) and "Validity_de" not in meta:
+            meta["Validity_de"] = _clean_cell(validity_de)
 
         if _clean_cell(study_desc_en) and "StudyDescription_en" not in meta:
             meta["StudyDescription_en"] = _clean_cell(study_desc_en)
@@ -666,8 +719,8 @@ def process_excel(
                     "OriginalName": {"de": original_name_de, "en": original_name_en},
                     "ShortName": meta.get("ShortName", ""),
                     "Version": {"de": version_de, "en": version_en},
-                    "Citation": "",
-                    "Construct": construct,
+                    "Citation": citation,
+                    "Construct": {"de": meta.get("Construct_de", ""), "en": meta.get("Construct_en", "")},
                     "Description": {"de": study_desc_de, "en": study_desc_en},
                 },
                 "Metadata": {
@@ -677,10 +730,43 @@ def process_excel(
                 },
             }
 
-            if citation:
-                sidecar["Study"]["Citation"] = citation
+            # Handle Construct fallback if no i18n provided
+            if not sidecar["Study"]["Construct"]["de"] and not sidecar["Study"]["Construct"]["en"]:
+                raw_construct = meta.get("Construct") or fallback_meta.get("Domain", "")
+                if default_language == "de":
+                    sidecar["Study"]["Construct"]["de"] = raw_construct
+                else:
+                    sidecar["Study"]["Construct"]["en"] = raw_construct
+
+            if meta.get("Authors"):
+                sidecar["Study"]["Authors"] = meta["Authors"]
+            if meta.get("DOI"):
+                sidecar["Study"]["DOI"] = meta["DOI"]
             if keywords:
                 sidecar["Study"]["Keywords"] = keywords
+
+            # Reliability & Validity
+            rel_de = meta.get("Reliability_de") or ""
+            rel_en = meta.get("Reliability_en") or ""
+            if not rel_de and not rel_en:
+                raw_rel = meta.get("Reliability") or ""
+                if default_language == "de":
+                    rel_de = raw_rel
+                else:
+                    rel_en = raw_rel
+            if rel_de or rel_en:
+                sidecar["Study"]["Reliability"] = {"de": rel_de, "en": rel_en}
+
+            val_de = meta.get("Validity_de") or ""
+            val_en = meta.get("Validity_en") or ""
+            if not val_de and not val_en:
+                raw_val = meta.get("Validity") or ""
+                if default_language == "de":
+                    val_de = raw_val
+                else:
+                    val_en = raw_val
+            if val_de or val_en:
+                sidecar["Study"]["Validity"] = {"de": val_de, "en": val_en}
 
             # Subject-facing instructions (template stores i18n dict)
             instr_de = meta.get("Instructions_de") or ""

@@ -68,10 +68,19 @@ def _write_tsv_rows(path: Path, header: list[str], rows: list[dict[str, str]]) -
             writer.writerow({k: r.get(k, "") for k in header})
 
 
+def get_i18n_text(obj: Any, lang: str = "en") -> str:
+    """Get localized text from a string or a dictionary of translations."""
+    if isinstance(obj, dict):
+        # Try requested language, then English, then first available
+        return str(obj.get(lang, obj.get("en", next(iter(obj.values()), ""))))
+    return str(obj or "")
+
+
 def _build_variable_metadata(
     columns: list[str],
     participants_meta: dict,
     recipe: dict,
+    lang: str = "en",
 ) -> tuple[dict[str, str], dict[str, dict], dict[str, dict]]:
     """Build variable labels and value labels from metadata sources.
 
@@ -96,12 +105,14 @@ def _build_variable_metadata(
                 # Description/variable label
                 desc = col_meta.get("Description") or col_meta.get("description") or ""
                 if desc:
-                    variable_labels[col] = desc
+                    variable_labels[col] = get_i18n_text(desc, lang)
                 # Levels/value labels
                 levels = col_meta.get("Levels") or col_meta.get("levels") or {}
                 if levels and isinstance(levels, dict):
                     # Convert to {code: label} format
-                    value_labels[col] = {str(k): str(v) for k, v in levels.items()}
+                    value_labels[col] = {
+                        str(k): get_i18n_text(v, lang) for k, v in levels.items()
+                    }
 
     # From recipe Scores - extract full details
     scores = recipe.get("Scores") or []
@@ -110,11 +121,13 @@ def _build_variable_metadata(
         if name and name in columns:
             desc = score.get("Description") or ""
             if desc:
-                variable_labels[name] = desc
+                variable_labels[name] = get_i18n_text(desc, lang)
             # Add interpretation as value labels if present
             interp = score.get("Interpretation")
             if interp and isinstance(interp, dict):
-                value_labels[name] = {str(k): str(v) for k, v in interp.items()}
+                value_labels[name] = {
+                    str(k): get_i18n_text(v, lang) for k, v in interp.items()
+                }
 
             # Build detailed score info
             details = {}
@@ -125,7 +138,7 @@ def _build_variable_metadata(
             if score.get("Range"):
                 details["range"] = score["Range"]
             if score.get("Note"):
-                details["note"] = score["Note"]
+                details["note"] = get_i18n_text(score["Note"], lang)
             if score.get("Missing"):
                 details["missing_handling"] = score["Missing"]
             if details:
@@ -134,7 +147,7 @@ def _build_variable_metadata(
     return variable_labels, value_labels, score_details
 
 
-def _build_survey_metadata(recipe: dict) -> dict:
+def _build_survey_metadata(recipe: dict, lang: str = "en") -> dict:
     """Extract survey-level metadata from recipe for inclusion in codebook."""
     meta = {}
 
@@ -147,15 +160,19 @@ def _build_survey_metadata(recipe: dict) -> dict:
     # Survey info block
     survey_info = recipe.get("Survey") or {}
     if survey_info.get("Name"):
-        meta["survey_name"] = survey_info["Name"]
+        meta["survey_name"] = get_i18n_text(survey_info["Name"], lang)
     if survey_info.get("TaskName"):
         meta["task_name"] = survey_info["TaskName"]
     if survey_info.get("Description"):
-        meta["survey_description"] = survey_info["Description"]
+        meta["survey_description"] = get_i18n_text(survey_info["Description"], lang)
     if survey_info.get("Version"):
         meta["survey_version"] = survey_info["Version"]
+    if survey_info.get("Authors"):
+        meta["authors"] = survey_info["Authors"]
     if survey_info.get("Citation"):
         meta["citation"] = survey_info["Citation"]
+    if survey_info.get("License"):
+        meta["license"] = survey_info["License"]
     if survey_info.get("URL"):
         meta["url"] = survey_info["URL"]
 
@@ -322,12 +339,16 @@ def _parse_numeric_cell(val: str | None) -> float | None:
         return None
 
 
-def _format_numeric_cell(val: float | None) -> str:
+def _format_numeric_cell(val: Any) -> str:
     if val is None:
         return "n/a"
-    if float(val).is_integer():
-        return str(int(val))
-    return str(val)
+    try:
+        fval = float(val)
+        if fval.is_integer():
+            return str(int(fval))
+        return str(fval)
+    except (ValueError, TypeError):
+        return str(val)
 
 
 def _apply_survey_derivative_recipe_to_rows(
@@ -436,6 +457,31 @@ def _apply_survey_derivative_recipe_to_rows(
                         result = None
                 else:
                     result = None
+            elif method == "map":
+                source = score.get("Source")
+                mapping = score.get("Mapping")
+                if source and mapping:
+                    val = _get_item_value(source, current_row)
+                    result = None
+                    if val is not None:
+                        for range_str, cat_val in mapping.items():
+                            if "-" in str(range_str):
+                                try:
+                                    low, high = map(float, str(range_str).split("-"))
+                                    if low <= val <= high:
+                                        result = cat_val
+                                        break
+                                except Exception:
+                                    pass
+                            else:
+                                try:
+                                    if float(val) == float(range_str):
+                                        result = cat_val
+                                        break
+                                except Exception:
+                                    pass
+                else:
+                    result = None
             elif not values:
                 result = None
             else:
@@ -504,6 +550,7 @@ def compute_survey_derivatives(
     survey: str | None = None,
     out_format: str = "prism",
     modality: str = "survey",
+    lang: str = "en",
 ) -> SurveyDerivativesResult:
     """Compute survey derivatives in a PRISM dataset.
 
@@ -512,6 +559,7 @@ def compute_survey_derivatives(
             repo_root: Repository root (used to locate recipe JSONs).
             survey: Optional comma-separated recipe ids to apply.
             out_format: "prism" or "flat".
+            lang: Language for metadata labels (e.g., "en", "de").
 
     Raises:
             ValueError: For user errors (missing paths, unknown recipes, etc.).
@@ -747,8 +795,9 @@ def compute_survey_derivatives(
                 list(df.columns),
                 participants_meta,
                 recipe,
+                lang=lang,
             )
-            survey_meta = _build_survey_metadata(recipe)
+            survey_meta = _build_survey_metadata(recipe, lang=lang)
 
             if out_format == "csv":
                 out_fname = out_root / f"{recipe_id}.csv"

@@ -672,10 +672,20 @@ class PrismValidatorGUI:
         survey_entry = ttk.Entry(frame, textvariable=self.deriv_survey_var)
         survey_entry.grid(row=3, column=1, sticky="ew", padx=10)
 
+        ttk.Label(frame, text="Language:").grid(row=4, column=0, sticky="w", pady=6)
+        self.deriv_lang_var = tk.StringVar(value="en")
+        lang_combo = ttk.Combobox(
+            frame,
+            textvariable=self.deriv_lang_var,
+            values=("en", "de"),
+            state="readonly",
+        )
+        lang_combo.grid(row=4, column=1, sticky="w", padx=10)
+
         self.deriv_run_btn = ttk.Button(
             frame, text="Run Derivatives", command=self.start_derivatives
         )
-        self.deriv_run_btn.grid(row=4, column=1, sticky="e", padx=10, pady=(12, 0))
+        self.deriv_run_btn.grid(row=5, column=1, sticky="e", padx=10, pady=(12, 0))
 
         # Status
         self.deriv_status = ttk.Label(frame, text="")
@@ -1003,6 +1013,7 @@ class PrismValidatorGUI:
         modality = self.deriv_modality_var.get().strip()
         out_format = self.deriv_format_var.get().strip()
         survey_filter = self.deriv_survey_var.get().strip() or None
+        lang = self.deriv_lang_var.get().strip()
 
         if not dataset_path or not os.path.isdir(dataset_path):
             messagebox.showerror("Error", "Please select a valid PRISM dataset folder")
@@ -1013,12 +1024,12 @@ class PrismValidatorGUI:
 
         thread = threading.Thread(
             target=self._derivatives_thread,
-            args=(dataset_path, modality, out_format, survey_filter),
+            args=(dataset_path, modality, out_format, survey_filter, lang),
         )
         thread.daemon = True
         thread.start()
 
-    def _derivatives_thread(self, dataset_path, modality, out_format, survey_filter):
+    def _derivatives_thread(self, dataset_path, modality, out_format, survey_filter, lang):
         try:
             # Validate dataset first (block on ERROR-level issues)
             if validate_dataset:
@@ -1050,6 +1061,7 @@ class PrismValidatorGUI:
                 survey=survey_filter,
                 out_format=out_format,
                 modality=modality,
+                lang=lang,
             )
             msg = f"Wrote {result.written_files} file(s) to {result.out_root}"
             self.root.after(0, lambda: self._deriv_finished(msg))

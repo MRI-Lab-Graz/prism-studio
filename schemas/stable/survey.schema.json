@@ -77,20 +77,42 @@
           "description": "Short task identifier matching filename (e.g., bdi, phq9, dass21)"
         },
         "OriginalName": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "Full canonical name of the instrument (e.g., Beck Depression Inventory)"
         },
         "ShortName": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "Common abbreviation (e.g., BDI-II, PHQ-9)"
         },
         "Version": {
           "type": "string",
           "description": "Version of the instrument (e.g., II, 5.0, 21-item)"
         },
+        "Authors": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Authors of the instrument"
+        },
         "Citation": {
           "type": "string",
           "description": "DOI or citation for the instrument"
+        },
+        "DOI": {
+          "type": "string",
+          "description": "Digital Object Identifier (DOI) for the instrument"
+        },
+        "License": {
+          "type": "string",
+          "description": "License statement for this instrument as provided by the source registry"
+        },
+        "LicenseID": {
+          "type": "string",
+          "description": "Normalized license identifier when available (e.g., CC-BY-NC-ND-3.0)"
+        },
+        "LicenseURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "License URL when available (e.g., creativecommons.org link)"
         },
         "TermURL": {
           "type": "string",
@@ -98,13 +120,50 @@
           "description": "URL to formal definition (e.g., PhenX, SNOMED)"
         },
         "Construct": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "Primary psychological construct measured (e.g., depression, anxiety, stress)"
+        },
+        "Keywords": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Keywords describing the instrument"
+        },
+        "Description": {
+          "type": ["string", "object"],
+          "description": "Detailed description or abstract of the instrument"
+        },
+        "Reliability": {
+          "type": ["string", "object"],
+          "description": "Information about the reliability of the instrument"
+        },
+        "Validity": {
+          "type": ["string", "object"],
+          "description": "Information about the validity of the instrument"
         },
         "Subscales": {
           "type": "array",
           "items": {"type": "string"},
           "description": "List of subscale names if applicable"
+        },
+        "ItemCount": {
+          "type": "integer",
+          "description": "Number of items in the instrument"
+        },
+        "AgeRange": {
+          "type": ["string", "object"],
+          "description": "Target age range for the instrument"
+        },
+        "AdministrationTime": {
+          "type": ["string", "object"],
+          "description": "Estimated time to complete the instrument"
+        },
+        "ScoringTime": {
+          "type": ["string", "object"],
+          "description": "Estimated time to score the instrument"
+        },
+        "Norming": {
+          "type": ["string", "object"],
+          "description": "Information about the norming of the instrument"
         }
       },
       "required": ["TaskName", "OriginalName"]

@@ -84,3 +84,5 @@ test_dataset/
 node_modules
 derivatives/biometrics/cmj.json
 derivatives/
+# Harvest script
+scripts/harvest_testarchiv.py

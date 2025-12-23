@@ -54,6 +54,15 @@
         </div>
 
         <div class="col-md-4">
+          <label for="derivLang" class="form-label">Language</label>
+          <select class="form-select" id="derivLang">
+            <option value="en" selected>English</option>
+            <option value="de">German</option>
+          </select>
+          <div class="form-text">For metadata labels in exports.</div>
+        </div>
+
+        <div class="col-md-4">
           <button class="btn btn-primary w-100" type="button" id="derivRunBtn">
             <i class="fas fa-play me-2"></i>Run Processing
           </button>
@@ -140,11 +149,12 @@ document.addEventListener('DOMContentLoaded', function() {
       modality: document.getElementById('derivModality').value,
       format: derivFormat.value,
       survey: derivSurvey.value.trim(),
+      lang: document.getElementById('derivLang').value,
     };
 
     derivRunBtn.disabled = true;
     logToTerminal(`Running processing on: ${datasetPath}`);
-    logToTerminal(`Modality: ${payload.modality}, Format: ${payload.format}`);
+    logToTerminal(`Modality: ${payload.modality}, Format: ${payload.format}, Language: ${payload.lang}`);
     if (payload.survey) logToTerminal(`Recipe filter: ${payload.survey}`);
     derivInfo.textContent = 'Running processing... this may take a moment.';
     derivInfo.classList.remove('d-none');

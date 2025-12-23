@@ -80,10 +80,10 @@ PRISM focuses on two main "extensions" to BIDS: **Surveys** and **Biometrics**.
 Before you can validate data, you need a "Golden Master" JSON template for your instrument. You can generate this from an Excel codebook.
 
 **Excel Headers for Biometrics:**
-`item_id`, `description`, `units`, `datatype`, `minvalue`, `maxvalue`, `allowedvalues`, `group`, `originalname`, `protocol`, `instructions`, `reference`, `equipment`, `supervisor`
+`item_id`, `description`, `units`, `datatype`, `minvalue`, `maxvalue`, `allowedvalues`, `group`, `originalname`, `authors`, `doi`, `protocol`, `instructions`, `reference`, `reliability`, `validity`, `equipment`, `supervisor`
 
 **Excel Headers for Surveys:**
-`item_id`, `question`, `scale`, `group`, `alias_of`, `session`, `run`
+`item_id`, `question`, `scale`, `group`, `alias_of`, `session`, `run`, `originalname_de`, `originalname_en`, `authors`, `doi`, `citation`, `construct_de`, `construct_en`, `keywords`, `reliability_de`, `reliability_en`, `validity_de`, `validity_en`
 
 ### B. Preparing Raw Data for Conversion
 If you have a "wide" Excel file (one row per participant, columns for every question), PRISM can convert it into a BIDS-compliant structure.
