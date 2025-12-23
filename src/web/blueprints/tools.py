@@ -233,3 +233,61 @@ def generate_lss_endpoint():
         return send_file(temp_path, as_attachment=True, download_name=f"survey_export_{language}.lss", mimetype="application/xml")
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@tools_bp.route("/api/generate-boilerplate", methods=["POST"])
+def generate_boilerplate_endpoint():
+    """Generate Methods Boilerplate from selected JSON files"""
+    try:
+        # Add root to sys.path if needed to import from scripts
+        root_dir = str(Path(current_app.root_path))
+        if root_dir not in sys.path:
+            sys.path.insert(0, root_dir)
+        from scripts.generate_methods_boilerplate import generate_methods_text
+    except ImportError:
+        generate_methods_text = None
+
+    if not generate_methods_text:
+        return jsonify({"error": "Boilerplate generator not available"}), 500
+
+    try:
+        data = request.get_json()
+        files = data.get("files", [])
+        if not files:
+            return jsonify({"error": "No files selected"}), 400
+
+        # Extract paths from file objects
+        file_paths = []
+        for f in files:
+            if isinstance(f, dict) and f.get("path"):
+                file_paths.append(f.get("path"))
+            elif isinstance(f, str):
+                file_paths.append(f)
+
+        valid_files = [f for f in file_paths if os.path.exists(f)]
+        if not valid_files:
+            return jsonify({"error": "No valid files found"}), 404
+
+        fd, temp_path = tempfile.mkstemp(suffix=".md")
+        os.close(fd)
+
+        language = data.get("language", "en")
+        
+        # Get metadata for boilerplate
+        github_url = "https://github.com/MRI-Lab-Graz/prism-studio"
+        try:
+            from src.schema_manager import DEFAULT_SCHEMA_VERSION
+            schema_version = DEFAULT_SCHEMA_VERSION
+        except ImportError:
+            schema_version = "stable"
+
+        generate_methods_text(
+            valid_files, 
+            temp_path, 
+            lang=language,
+            github_url=github_url,
+            schema_version=schema_version
+        )
+
+        return send_file(temp_path, as_attachment=True, download_name=f"methods_boilerplate_{language}.md", mimetype="text/markdown")
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

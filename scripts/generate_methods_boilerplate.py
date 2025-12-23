@@ -26,48 +26,64 @@ def get_i18n_text(field, lang='en'):
                 return v
     return ""
 
-def generate_methods_text(library_dirs, output_file, lang='en'):
+def generate_methods_text(library_dirs_or_files, output_file, lang='en', github_url=None, schema_version=None):
     """
     Generates a formal methods section boilerplate based on PRISM library templates.
+    library_dirs_or_files can be a list of directories or a list of specific JSON files.
     """
     sections = []
     
     # 1. General PRISM/BIDS Section
     sections.append("## Data Standardization and Validation\n")
-    sections.append(
+    
+    prism_desc = (
         "Data were organized and validated according to the PRISM (Psychological Research Information System & Metadata) "
         "standard, which extends the Brain Imaging Data Structure (BIDS; Gorgolewski et al., 2016) to psychological "
         "and behavioral research. This framework ensures high interoperability and machine-readability by enforcing "
         "standardized filename patterns and comprehensive metadata sidecars in JSON format. All datasets were "
         "automatically validated for structural integrity and schema compliance using the PRISM validator."
     )
+    
+    if schema_version:
+        prism_desc += f" The dataset follows PRISM schema version {schema_version}."
+    
+    if github_url:
+        prism_desc += f" More information about the PRISM standard and tools can be found at {github_url}."
+        
+    sections.append(prism_desc)
 
     # 2. Modalities
     surveys = []
     biometrics = []
     
-    for lib_dir in library_dirs:
-        lib_path = Path(lib_dir)
-        if not lib_path.exists():
+    all_files = []
+    for item in library_dirs_or_files:
+        path = Path(item)
+        if not path.exists():
             continue
+        
+        if path.is_dir():
+            all_files.extend(sorted(path.glob("*.json")))
+        else:
+            all_files.append(path)
             
-        for json_file in sorted(lib_path.glob("*.json")):
-            try:
-                with open(json_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                
-                study = data.get("Study", {})
-                name = get_i18n_text(study.get("OriginalName", json_file.stem), lang)
-                desc = get_i18n_text(study.get("Description", ""), lang)
-                
-                if "survey-" in json_file.name:
-                    surveys.append((name, desc))
-                elif "biometrics-" in json_file.name:
-                    tech = data.get("Technical", {})
-                    equip = tech.get("Equipment", "standard equipment")
-                    biometrics.append((name, desc, equip))
-            except Exception:
-                continue
+    for json_file in all_files:
+        try:
+            with open(json_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            study = data.get("Study", {})
+            name = get_i18n_text(study.get("OriginalName", json_file.stem), lang)
+            desc = get_i18n_text(study.get("Description", ""), lang)
+            
+            if "survey-" in json_file.name:
+                surveys.append((name, desc))
+            elif "biometrics-" in json_file.name:
+                tech = data.get("Technical", {})
+                equip = tech.get("Equipment", "standard equipment")
+                biometrics.append((name, desc, equip))
+        except Exception:
+            continue
 
     # 3. Surveys Section
     if surveys:
@@ -95,8 +111,18 @@ def generate_methods_text(library_dirs, output_file, lang='en'):
     
     # Check for participants.json in library
     participants_vars = []
-    for lib_dir in library_dirs:
-        p_json = Path(lib_dir) / "participants.json"
+    checked_dirs = set()
+    for item in library_dirs_or_files:
+        path = Path(item)
+        if not path.exists():
+            continue
+        
+        search_dir = path if path.is_dir() else path.parent
+        if search_dir in checked_dirs:
+            continue
+        checked_dirs.add(search_dir)
+        
+        p_json = search_dir / "participants.json"
         if p_json.exists():
             try:
                 with open(p_json, 'r', encoding='utf-8') as f:
@@ -130,10 +156,18 @@ def main():
     parser.add_argument("--biometrics-lib", default="library/biometrics", help="Path to biometrics library")
     parser.add_argument("--output", default="methods_boilerplate.md", help="Output markdown file")
     parser.add_argument("--lang", default="en", choices=["en", "de"], help="Language for the text")
+    parser.add_argument("--github-url", help="GitHub URL for the project")
+    parser.add_argument("--schema-version", help="PRISM schema version")
     
     args = parser.parse_args()
     
-    generate_methods_text([args.survey_lib, args.biometrics_lib], args.output, args.lang)
+    generate_methods_text(
+        [args.survey_lib, args.biometrics_lib], 
+        args.output, 
+        lang=args.lang,
+        github_url=args.github_url,
+        schema_version=args.schema_version
+    )
 
 if __name__ == "__main__":
     main()
