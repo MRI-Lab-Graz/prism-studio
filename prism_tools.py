@@ -414,13 +414,18 @@ def cmd_survey_import_excel(args):
     """
     print(f"Importing survey library from {args.excel}...")
     try:
-        output_dir = args.output
         if getattr(args, "library_root", None):
-            output_dir = str(_ensure_dir(Path(args.library_root) / "survey"))
-        process_excel(args.excel, output_dir)
-        
+            output_dir = Path(args.library_root) / "survey"
+        else:
+            output_dir = Path(args.output)
+            if output_dir.name != "survey":
+                output_dir = output_dir / "survey"
+
+        output_dir_str = str(_ensure_dir(output_dir))
+        process_excel(args.excel, output_dir_str)
+
         print("\nValidating imported files...")
-        check_uniqueness(output_dir)
+        check_uniqueness(output_dir_str)
     except Exception as e:
         print(f"Error importing Excel: {e}")
         sys.exit(1)
@@ -607,19 +612,24 @@ def cmd_biometrics_import_excel(args):
             if isinstance(args.sheet, str) and args.sheet.isdigit()
             else args.sheet
         )
-        output_dir = args.output
         if getattr(args, "library_root", None):
-            output_dir = str(_ensure_dir(Path(args.library_root) / "biometrics"))
+            output_dir = Path(args.library_root) / "biometrics"
+        else:
+            output_dir = Path(args.output)
+            if output_dir.name != "biometrics":
+                output_dir = output_dir / "biometrics"
+
+        output_dir_str = str(_ensure_dir(output_dir))
         process_excel_biometrics(
             args.excel,
-            output_dir,
+            output_dir_str,
             sheet_name=sheet,
             equipment=args.equipment,
             supervisor=args.supervisor,
         )
-        
+
         print("\nValidating imported files...")
-        check_uniqueness(output_dir)
+        check_uniqueness(output_dir_str)
     except Exception as e:
         print(f"Error importing Excel: {e}")
         sys.exit(1)
