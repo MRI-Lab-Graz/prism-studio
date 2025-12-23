@@ -75,6 +75,8 @@ biometrics_library/
 test_dataset/_tmp_prism_biometrics_dataset/
 test_dataset/_tmp_biometrics*/
 test_dataset/Biometrics_dummy_data_long.csv
+consistent_test_dataset/
+test_dataset/
 
 
 # Added by fix script
