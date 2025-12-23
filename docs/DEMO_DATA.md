@@ -9,10 +9,22 @@ The `demo/` folder demonstrates the complete PRISM ecosystem:
 | Component | Purpose |
 |-----------|---------|
 | `templates/` | Multilingual JSON sidecars (survey, biometrics) |
+| `docs/examples/` | Excel templates for importing new surveys/biometrics |
 | `raw_data/` | Example source files + bad examples for testing |
 | `derivatives/` | Scoring recipes for computed measures |
 | `prism_structure_example/` | Correctly organized PRISM dataset |
 | `flat_structure_example/` | Common disorganized format (for comparison) |
+
+---
+
+## Excel Import Templates
+
+If you are starting from scratch with your own survey or biometrics data, use these Excel templates to define your variables.
+
+- **Survey Template**: [docs/examples/survey_import_template.xlsx](docs/examples/survey_import_template.xlsx)
+- **Biometrics Template**: [docs/examples/biometrics_import_template.xlsx](docs/examples/biometrics_import_template.xlsx)
+
+Both files include a **Help** sheet that explains every column name and provides examples of valid options.
 
 ---
 

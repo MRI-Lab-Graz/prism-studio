@@ -83,6 +83,21 @@ Survey Library Management
 
 Tools for managing the JSON survey library used by the validator.
 
+Import from Excel
+~~~~~~~~~~~~~~~~~
+
+You can import survey definitions from an Excel file into the PRISM library format.
+
+.. code-block:: bash
+
+    ./prism_tools.py survey import-excel --excel my_definitions.xlsx --output library/survey
+
+**Templates:**
+We provide Excel templates with a **Help** sheet explaining all supported columns:
+
+* `Survey Template <https://github.com/MRI-Lab-Graz/prism-studio/blob/main/docs/examples/survey_import_template.xlsx>`_
+* `Biometrics Template <https://github.com/MRI-Lab-Graz/prism-studio/blob/main/docs/examples/biometrics_import_template.xlsx>`_
+
 Convert Survey Data (Wide Table)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -2,6 +2,9 @@
 
 The `survey` modality is a PRISM extension for handling complex questionnaires. It treats surveys as rich data with detailed metadata, rather than simple phenotypic variables.
 
+> [!TIP]
+> **Starting a new survey?** Use the [Survey Import Template](../examples/survey_import_template.xlsx) to define your variables in Excel. It includes a **Help** sheet explaining all options.
+
 ## File Name Structure
 
 Survey data files MUST follow this naming convention:

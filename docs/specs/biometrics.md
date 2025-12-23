@@ -2,6 +2,9 @@
 
 The `biometrics` modality is a PRISM extension designed for physiological assessments that do not fit into standard BIDS `beh` or `physio` categories. Examples include VO2max tests, plank tests, balance assessments, or anthropometric measurements.
 
+> [!TIP]
+> **Starting a new biometric assessment?** Use the [Biometrics Import Template](../examples/biometrics_import_template.xlsx) to define your variables in Excel. It includes a **Help** sheet explaining all options.
+
 ## File Name Structure
 
 Biometric data files MUST follow this naming convention:

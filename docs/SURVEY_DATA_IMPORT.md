@@ -12,10 +12,10 @@ Key points:
 
 Do **not** combine survey + biometrics in one Excel.
 
-- Survey template: `demo/import_survey_template/survey_import_template.xlsx`
-- Biometrics template: `demo/import_survey_template/biometrics_import_template.xlsx`
+- Survey template: [docs/examples/survey_import_template.xlsx](docs/examples/survey_import_template.xlsx)
+- Biometrics template: [docs/examples/biometrics_import_template.xlsx](docs/examples/biometrics_import_template.xlsx)
 
-Both templates include placeholder participant-facing instruction text (DE/EN) that you should replace with the **exact wording** used in your study.
+Both templates include a **Help** sheet explaining all column names and options. They also include placeholder participant-facing instruction text (DE/EN) that you should replace with the **exact wording** used in your study.
 
 ## 2) Survey Excel format (minimal vs advanced)
 

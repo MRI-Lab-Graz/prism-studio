@@ -69,6 +69,7 @@ PRISM is an **independent, BIDS-compatible** framework and toolkit designed to e
 
 ## 🛠️ Survey Data Import Workflow
 A complete toolset for converting external survey data (CSV/Excel) into PRISM-compliant datasets:
+0.  **Start with Templates**: Use the provided [Survey Template](docs/examples/survey_import_template.xlsx) or [Biometrics Template](docs/examples/biometrics_import_template.xlsx) (includes a **Help** sheet with column explanations).
 1.  **Excel to Library**: Convert data dictionaries into a "Golden Master" JSON library (via `prism_tools.py survey import-excel`).
 2.  **Library Validation**: Ensure variable uniqueness and generate catalogs (via `prism_tools.py survey validate`).
 3.  **Session/Run-aware items**: In the Excel/CSV, you can add columns `session` and `run` per item; defaults are `ses-1` and no run suffix (run-1 is implicit). Use multiple rows for repeat occurrences: set `alias_of` to the canonical item_id, and set per-row `session`/`run` hints. Example header: `item_id,question,scale,group,alias_of,session,run`.
