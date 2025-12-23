@@ -16,6 +16,62 @@ def _maybe_rm_tree(path: Path) -> None:
         pass
 
 
+def _get_version() -> str:
+    """Extract version from src/__init__.py"""
+    try:
+        init_path = Path(__file__).resolve().parents[2] / "src" / "__init__.py"
+        with open(init_path, "r") as f:
+            for line in f:
+                if line.startswith("__version__"):
+                    return line.split("=")[1].strip().strip('"').strip("'")
+    except Exception:
+        pass
+    return "1.0.0"
+
+
+def _generate_version_info(name: str, version: str) -> str:
+    """Generates a Windows version info file for PyInstaller."""
+    # Convert version "1.6.1" to (1, 6, 1, 0)
+    v_parts = version.split(".")
+    while len(v_parts) < 4:
+        v_parts.append("0")
+    v_tuple = tuple(map(int, v_parts[:4]))
+
+    content = f"""# UTF-8
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers={v_tuple},
+    prodvers={v_tuple},
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0)
+    ),
+  kids=[
+    StringFileInfo(
+      [
+      StringTable(
+        u'040904B0',
+        [StringStruct(u'CompanyName', u'MRI-Lab-Graz'),
+        StringStruct(u'FileDescription', u'{name}'),
+        StringStruct(u'FileVersion', u'{version}'),
+        StringStruct(u'InternalName', u'{name}'),
+        StringStruct(u'LegalCopyright', u'Copyright (c) 2025 MRI-Lab-Graz'),
+        StringStruct(u'OriginalFilename', u'{name}.exe'),
+        StringStruct(u'ProductName', u'{name}'),
+        StringStruct(u'ProductVersion', u'{version}')])
+      ]), 
+    VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
+  ]
+)
+"""
+    version_file = Path(f"{name}_version.txt")
+    version_file.write_text(content, encoding="utf-8")
+    return str(version_file)
+
+
 def _generate_icon(name: str) -> str | None:
     """Best-effort icon generation.
 
@@ -138,9 +194,16 @@ def main() -> int:
     # Ensure optional runtime dirs exist so they can be bundled.
     (project_root / "survey_library").mkdir(parents=True, exist_ok=True)
 
+    version = _get_version()
+    print(f"[BUILD] Building {args.name} version {version}")
+
     icon_file = None
     if not args.no_icon:
         icon_file = _generate_icon(args.name)
+
+    version_file = None
+    if sys.platform == "win32":
+        version_file = _generate_version_info(args.name, version)
 
     # On Windows use ; as separator, on Unix use :
     sep = ";" if os.name == "nt" else ":"
@@ -179,6 +242,9 @@ def main() -> int:
 
     if icon_file:
         pyinstaller_args.append(f"--icon={icon_file}")
+
+    if version_file:
+        pyinstaller_args.append(f"--version-file={version_file}")
 
     for data in datas:
         pyinstaller_args.append(f"--add-data={data}")

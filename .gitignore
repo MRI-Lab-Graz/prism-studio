@@ -65,6 +65,7 @@ example_*_metadata.json
 /build/
 dist/
 *.spec
+*_version.txt
 PrismValidator.iconset/
 PrismValidator.icns
 survey_library/

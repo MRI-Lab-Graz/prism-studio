@@ -13,9 +13,32 @@ This guide covers how to build and distribute the Prism Validator as a standalon
 
 ### Troubleshooting for Users
 
-- **Windows Defender Warning**: Click "More info" → "Run anyway" (the app is unsigned)
-- **Firewall Prompt**: Click "Allow" - the app runs a local web server on your computer only
-- **Browser doesn't open**: Visit `http://localhost:5001` manually
+- **Windows Defender Warning**: Click "More info" → "Run anyway" (the app is unsigned).
+- **SmartScreen "Unknown Publisher"**: This is expected for unsigned open-source software. Adding version metadata (which we do) helps, but only a paid certificate removes this completely.
+- **Firewall Prompt**: Click "Allow" - the app runs a local web server on your computer only.
+- **Browser doesn't open**: Visit `http://localhost:5001` manually.
+
+---
+
+## SmartScreen and Code Signing
+
+Microsoft Defender SmartScreen flags any executable that is not signed with a trusted Code Signing Certificate.
+
+### Why the warning appears
+1. **No Digital Signature**: The `.exe` is not signed by a Certificate Authority (CA).
+2. **Low Reputation**: SmartScreen uses a reputation-based system. New files or files with few downloads are flagged until they "earn" reputation.
+
+### How we improve this
+- **Version Metadata**: We embed version information (Company, Product Name, Version) into the `.exe` using PyInstaller's `--version-file`. This makes the file look more legitimate to the OS.
+- **Icon**: We bundle a high-resolution icon.
+
+### How to fully remove the warning
+To completely eliminate the warning, the executable must be signed using `signtool.exe` with a valid certificate (e.g., from Sectigo, DigiCert). This typically costs $200-$500/year.
+
+If you have a certificate, you can sign the build:
+```powershell
+signtool sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /a dist\PrismValidator\PrismValidator.exe
+```
 
 ---
 
