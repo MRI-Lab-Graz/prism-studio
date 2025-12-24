@@ -12,12 +12,12 @@
       "properties": {
         "StimulusType": {
           "type": "string",
-          "enum": ["Questionnaire"],
+          "enum": ["Questionnaire", ""],
           "description": "Must be 'Questionnaire' for survey data"
         },
         "FileFormat": {
           "type": "string",
-          "enum": ["tsv"],
+          "enum": ["tsv", ""],
           "description": "Survey data file format"
         },
         "SoftwarePlatform": {
@@ -30,23 +30,50 @@
         },
         "Language": {
           "type": "string",
-          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+          "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
           "description": "Language of the questionnaire (e.g., en, en-US, de-AT)"
         },
         "Respondent": {
           "type": "string",
-          "enum": ["self", "clinician", "parent", "teacher", "caregiver", "other"],
+          "enum": ["self", "clinician", "parent", "teacher", "caregiver", "other", ""],
           "description": "Who provided the responses"
         },
         "AdministrationMethod": {
           "type": "string",
-          "enum": ["online", "paper", "interview", "phone", "mixed"],
+          "enum": ["online", "paper", "interview", "phone", "mixed", ""],
           "description": "How the survey was administered"
         },
         "ResponseType": {
           "type": "array",
           "items": {"type": "string"},
           "description": "Input/response modality (e.g., paper-pencil, button, slider, keyboard, voice, mixed)"
+        },
+        "Equipment": {
+          "type": "string",
+          "description": "Equipment used for measurement (e.g., Stopwatch, Cycle Ergometer, Dynamometer)"
+        },
+        "EquipmentManufacturer": {
+          "type": "string",
+          "description": "Manufacturer of the equipment"
+        },
+        "EquipmentModel": {
+          "type": "string", 
+          "description": "Model name/number of the equipment"
+        },
+        "CalibrationDate": {
+          "type": "string",
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$",
+          "description": "Date of last equipment calibration"
+        },
+        "Supervisor": {
+          "type": "string",
+          "enum": ["investigator", "physician", "trainer", "physiotherapist", "self", ""],
+          "description": "Who supervised the assessment"
+        },
+        "Location": {
+          "type": "string",
+          "enum": ["laboratory", "clinic", "gym", "field", "home", ""],
+          "description": "Where the assessment was conducted"
         }
       },
       "required": ["StimulusType", "FileFormat", "Language", "Respondent"]
@@ -57,17 +84,17 @@
       "properties": {
         "Languages": {
           "type": "array",
-          "items": {"type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$"},
+          "items": {"type": "string", "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$"},
           "description": "List of available languages (e.g., ['en', 'de', 'fr'])"
         },
         "DefaultLanguage": {
           "type": "string",
-          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+          "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
           "description": "Default/primary language of the instrument"
         },
         "TranslationMethod": {
           "type": "string",
-          "enum": ["forward-backward", "committee", "parallel", "original", "validated-translation"],
+          "enum": ["forward-backward", "committee", "parallel", "original", "validated-translation", ""],
           "description": "Method used for translation validation"
         }
       }
@@ -78,7 +105,7 @@
       "properties": {
         "TaskName": {
           "type": "string",
-          "pattern": "^[a-zA-Z0-9]+$",
+          "pattern": "^[a-zA-Z0-9]*$",
           "description": "Short task identifier matching filename (e.g., bdi, phq9, dass21)"
         },
         "OriginalName": {
@@ -125,7 +152,7 @@
         },
         "Access": {
           "type": "string",
-          "enum": ["public", "permission-required", "licensed", "unknown"],
+          "enum": ["public", "permission-required", "licensed", "unknown", ""],
           "description": "High-level access/permission classification for transparency"
         },
         "PermissionsNote": {
@@ -134,7 +161,6 @@
         },
         "PermissionsURL": {
           "type": "string",
-          "format": "uri",
           "description": "URL to permission statement or licensing portal"
         },
         "TermURL": {
@@ -155,6 +181,14 @@
           "type": ["string", "object"],
           "description": "Detailed description or abstract of the instrument"
         },
+        "Instructions": {
+          "type": ["string", "object"],
+          "description": "Instructions given to the participant"
+        },
+        "Instruction": {
+          "type": ["string", "object"],
+          "description": "Instructions given to the participant (alias for Instructions)"
+        },
         "Reliability": {
           "type": ["string", "object"],
           "description": "Information about the reliability of the instrument"
@@ -169,7 +203,7 @@
           "description": "List of subscale names if applicable"
         },
         "ItemCount": {
-          "type": "integer",
+          "type": ["integer", "null"],
           "description": "Number of items in the instrument"
         },
         "AgeRange": {
@@ -196,7 +230,7 @@
             "properties": {
               "Type": {
                 "type": "string",
-                "enum": ["primary", "manual", "translation", "validation", "norms", "other"],
+                "enum": ["primary", "manual", "translation", "validation", "norms", "other", ""],
                 "description": "Reference type"
               },
               "Citation": {
@@ -209,11 +243,10 @@
               },
               "URL": {
                 "type": "string",
-                "format": "uri",
                 "description": "URL for the reference"
               },
               "Year": {
-                "type": "integer",
+                "type": ["integer", "null"],
                 "description": "Publication year"
               },
               "Notes": {
@@ -229,12 +262,12 @@
           "properties": {
             "SourceLanguage": {
               "type": "string",
-              "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+              "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
               "description": "Source language of the instrument"
             },
             "TargetLanguage": {
               "type": "string",
-              "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+              "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
               "description": "Target language used in this dataset"
             },
             "Validated": {
@@ -269,8 +302,8 @@
         "ScoreRange": {
           "type": "object",
           "properties": {
-            "min": {"type": "number"},
-            "max": {"type": "number"}
+            "min": {"type": ["number", "null"]},
+            "max": {"type": ["number", "null"]}
           },
           "description": "Possible score range"
         },
@@ -288,8 +321,8 @@
           "type": "object",
           "description": "Scale bounds used for reverse coding (min/max), if applicable",
           "properties": {
-            "min": {"type": "number"},
-            "max": {"type": "number"}
+            "min": {"type": ["number", "null"]},
+            "max": {"type": ["number", "null"]}
           }
         },
         "CutoffsSource": {
@@ -308,18 +341,36 @@
             "properties": {
               "Name": {"type": ["string", "object"], "description": "Subscale name"},
               "Items": {"type": "array", "items": {"type": "string"}, "description": "Item IDs contributing to the subscale"},
-              "Method": {"type": "string", "enum": ["sum", "mean", "weighted", "custom"], "description": "Aggregation method"},
+              "Method": {"type": "string", "enum": ["sum", "mean", "weighted", "custom", ""], "description": "Aggregation method"},
               "Range": {
                 "type": "object",
                 "properties": {
-                  "min": {"type": "number"},
-                  "max": {"type": "number"}
+                  "min": {"type": ["number", "null"]},
+                  "max": {"type": ["number", "null"]}
                 }
               },
               "ReverseCodedItems": {"type": "array", "items": {"type": "string"}, "description": "Reverse-coded items within this subscale"},
               "Note": {"type": ["string", "object"], "description": "Notes about scoring or interpretation"}
             }
           }
+        }
+      }
+    },
+    "Normative": {
+      "type": "object",
+      "description": "Normative data and reference values",
+      "properties": {
+        "ReferencePopulation": {
+          "type": "string",
+          "description": "Population on which normative data is based"
+        },
+        "ReferenceSource": {
+          "type": "string",
+          "description": "Citation for normative data"
+        },
+        "Percentiles": {
+          "type": "object",
+          "description": "Percentile cutoffs (e.g., {'p25': 10, 'p50': 15, 'p75': 20})"
         }
       }
     },
@@ -333,7 +384,8 @@
         },
         "CreationDate": {
           "type": "string",
-          "format": "date"
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$",
+          "description": "Date of creation"
         },
         "Creator": {
           "type": "string"
@@ -367,7 +419,6 @@
       },
       "TermURL": {
         "type": "string",
-        "format": "uri",
         "description": "URL to a definition of the term"
       },
       "Relevance": {
@@ -375,19 +426,19 @@
         "description": "Logic/Relevance equation for this item (e.g., Q01 == 1)"
       },
       "MinValue": {
-        "type": "number",
+        "type": ["number", "null"],
         "description": "Minimum allowed value for this column"
       },
       "MaxValue": {
-        "type": "number",
+        "type": ["number", "null"],
         "description": "Maximum allowed value for this column"
       },
       "WarnMinValue": {
-        "type": "number",
+        "type": ["number", "null"],
         "description": "Minimum value threshold for warning"
       },
       "WarnMaxValue": {
-        "type": "number",
+        "type": ["number", "null"],
         "description": "Maximum value threshold for warning"
       },
       "AllowedValues": {
@@ -399,8 +450,18 @@
       },
       "DataType": {
         "type": "string",
-        "enum": ["string", "integer", "float"],
+        "enum": ["string", "integer", "float", ""],
         "description": "Expected data type for this column"
+      },
+      "SessionHint": {
+        "type": "string",
+        "pattern": "^(ses-[a-zA-Z0-9]+)?$",
+        "description": "Optional session hint for repeated assessments (e.g., 'ses-1')"
+      },
+      "RunHint": {
+        "type": "string",
+        "pattern": "^(run-[a-zA-Z0-9]+)?$",
+        "description": "Optional run hint for repeated assessments (e.g., 'run-2')"
       }
     },
     "required": ["Description"]

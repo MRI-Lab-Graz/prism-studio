@@ -6,7 +6,7 @@ from pathlib import Path
 class LibraryValidator:
     def __init__(self, library_path):
         self.library_path = Path(library_path)
-        self.IGNORE_KEYS = {"Technical", "Study", "Metadata", "Questions", "I18n", "Scoring"}
+        self.IGNORE_KEYS = {"Technical", "Study", "Metadata", "Questions", "I18n", "Scoring", "Normative"}
 
     def get_all_library_variables(self, exclude_file=None):
         """

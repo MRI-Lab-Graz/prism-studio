@@ -338,17 +338,47 @@ def api_survey_convert_validate():
         # Run validation
         add_log("Running validation...", "info")
         validation_result = {"errors": [], "warnings": [], "summary": {}}
-        try:
-            result = run_validation(str(output_root), schema_version="stable")
-            if result and isinstance(result, tuple):
-                messages = result[0]
-                for msg in messages:
-                    if isinstance(msg, tuple) and len(msg) >= 2:
-                        level, text = msg[0].upper(), msg[1]
-                        if level == "ERROR": validation_result["errors"].append(text)
-                        elif level == "WARNING": validation_result["warnings"].append(text)
-        except Exception as val_err:
-            validation_result["warnings"].append(f"Validation error: {str(val_err)}")
+        if request.form.get("validate") == "true":
+            try:
+                v_res = run_validation(str(output_root), schema_version="stable")
+                if v_res and isinstance(v_res, tuple):
+                    issues = v_res[0]
+                    stats = v_res[1]
+                    
+                    # Format results for the UI
+                    from src.web.reporting_utils import format_validation_results
+                    formatted = format_validation_results(issues, stats, str(output_root))
+                    
+                    # Include the full formatted results for the UI to display properly
+                    validation_result["formatted"] = formatted
+                    
+                    # Log errors to the web terminal
+                    total_err = formatted.get("total_errors", 0)
+                    total_warn = formatted.get("total_warnings", 0)
+                    
+                    if total_err > 0:
+                        add_log(f"✗ Validation failed with {total_err} error(s)", "error")
+                        # Log the first 20 errors specifically to the terminal
+                        count = 0
+                        for group in formatted.get("error_groups", {}).values():
+                            for f in group.get("files", []):
+                                if count < 20:
+                                    # Clean up message for terminal
+                                    msg = f["message"]
+                                    if ": " in msg:
+                                        msg = msg.split(": ", 1)[1]
+                                    add_log(f"  - {msg}", "error")
+                                    count += 1
+                        if total_err > 20:
+                            add_log(f"  ... and {total_err - 20} more errors (see details below)", "error")
+                    else:
+                        add_log("✓ PRISM validation passed!", "success")
+
+                    if total_warn > 0:
+                        add_log(f"⚠ {total_warn} warning(s) found", "warning")
+                
+            except Exception as val_err:
+                validation_result["warnings"].append(f"Validation error: {str(val_err)}")
 
         validation_result["warnings"].extend(conversion_warnings)
 
@@ -393,6 +423,43 @@ def api_biometrics_check_library():
 
     return jsonify({"structure": structure_info})
 
+@conversion_bp.route("/api/biometrics-detect", methods=["POST"])
+def api_biometrics_detect():
+    """Detect which biometrics tasks are present in the uploaded file."""
+    from src.biometrics_convert import detect_biometrics_in_table
+
+    uploaded_file = request.files.get("data") or request.files.get("file")
+    library_path = (request.form.get("library_path") or "").strip()
+
+    if not uploaded_file or not getattr(uploaded_file, "filename", ""):
+        return jsonify({"error": "Missing input file"}), 400
+
+    if not library_path:
+        return jsonify({"error": "Biometrics template library path is required."}), 400
+
+    filename = secure_filename(uploaded_file.filename)
+    tmp_dir = tempfile.mkdtemp(prefix="prism_biometrics_detect_")
+    try:
+        tmp_dir_path = Path(tmp_dir)
+        input_path = tmp_dir_path / filename
+        uploaded_file.save(str(input_path))
+
+        library_root = Path(library_path)
+        biometrics_dir = library_root / "biometrics"
+        effective_biometrics_dir = biometrics_dir if biometrics_dir.is_dir() else library_root
+
+        detected_tasks = detect_biometrics_in_table(
+            input_path=input_path,
+            library_dir=effective_biometrics_dir,
+            sheet=(request.form.get("sheet") or "0").strip() or 0
+        )
+
+        return jsonify({"tasks": detected_tasks})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
 @conversion_bp.route("/api/biometrics-convert", methods=["POST"])
 def api_biometrics_convert():
     """Convert an uploaded biometrics table (.csv or .xlsx) into a PRISM/BIDS-style dataset ZIP."""
@@ -429,6 +496,16 @@ def api_biometrics_convert():
     sheet = (request.form.get("sheet") or "0").strip() or 0
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
+    
+    # Get tasks to export
+    tasks_to_export = request.form.getlist("tasks[]")
+    if not tasks_to_export:
+        # Fallback to all if none specified (for backward compatibility)
+        tasks_to_export = None
+
+    log = []
+    def log_msg(message, type="info"):
+        log.append({"message": message, "type": type})
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_biometrics_convert_")
     try:
@@ -438,7 +515,11 @@ def api_biometrics_convert():
 
         output_root = tmp_dir_path / "prism_dataset"
 
-        convert_biometrics_table_to_prism_dataset(
+        log_msg(f"Starting biometrics conversion for {filename}", "info")
+        if tasks_to_export:
+            log_msg(f"Exporting tasks: {', '.join(tasks_to_export)}", "step")
+
+        result = convert_biometrics_table_to_prism_dataset(
             input_path=input_path,
             library_dir=str(effective_biometrics_dir),
             output_root=output_root,
@@ -449,8 +530,20 @@ def api_biometrics_convert():
             force=True,
             name=dataset_name,
             authors=["prism-studio"],
+            tasks_to_export=tasks_to_export
         )
 
+        log_msg(f"Detected ID column: {result.id_column}", "success")
+        if result.session_column:
+            log_msg(f"Detected session column: {result.session_column}", "success")
+        
+        log_msg(f"Included tasks: {', '.join(result.tasks_included)}", "info")
+        
+        if result.unknown_columns:
+            for col in result.unknown_columns:
+                log_msg(f"Unknown column ignored: {col}", "warning")
+
+        # Create ZIP
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for p in output_root.rglob("*"):
@@ -458,15 +551,79 @@ def api_biometrics_convert():
                     arcname = p.relative_to(output_root)
                     zf.write(p, arcname.as_posix())
         mem.seek(0)
+        
+        zip_base64 = base64.b64encode(mem.read()).decode("utf-8")
+        
+        # Run validation if requested
+        validation = None
+        if request.form.get("validate") == "true":
+            log_msg("Running PRISM validation on generated dataset...", "step")
+            validation = {"errors": [], "warnings": [], "summary": {}}
+            try:
+                # Use run_validation which is already imported and handles the tuple return
+                v_res = run_validation(str(output_root), schema_version="stable")
+                if v_res and isinstance(v_res, tuple):
+                    issues = v_res[0]
+                    stats = v_res[1]
+                    
+                    # Format results for the UI
+                    from src.web.reporting_utils import format_validation_results
+                    formatted = format_validation_results(issues, stats, str(output_root))
+                    
+                    # Extract flat lists for the simple log
+                    for group in formatted.get("errors", []):
+                        for f in group.get("files", []):
+                            validation["errors"].append(f"{group['code']}: {f['message']} ({f['file']})")
+                    
+                    for group in formatted.get("warnings", []):
+                        for f in group.get("files", []):
+                            validation["warnings"].append(f"{group['code']}: {f['message']} ({f['file']})")
+                    
+                    validation["summary"] = {
+                        "files_created": len(list(output_root.rglob("*_biometrics.tsv"))),
+                        "total_errors": formatted.get("total_errors", 0),
+                        "total_warnings": formatted.get("total_warnings", 0)
+                    }
+                    
+                    # Include the full formatted results for the UI to display properly
+                    validation["formatted"] = formatted
+                    
+                    # Log errors to the web terminal
+                    total_err = formatted.get("summary", {}).get("total_errors", 0)
+                    total_warn = formatted.get("summary", {}).get("total_warnings", 0)
+                    
+                    if total_err > 0:
+                        log_msg(f"✗ Validation failed with {total_err} error(s)", "error")
+                        # Log the first 20 errors specifically to the terminal
+                        count = 0
+                        for group in formatted.get("errors", []):
+                            for f in group.get("files", []):
+                                if count < 20:
+                                    # Clean up message for terminal (remove file path if redundant)
+                                    msg = f["message"]
+                                    if ": " in msg:
+                                        msg = msg.split(": ", 1)[1]
+                                    log_msg(f"  - {msg}", "error")
+                                    count += 1
+                        if total_err > 20:
+                            log_msg(f"  ... and {total_err - 20} more errors (see details below)", "error")
+                    else:
+                        log_msg("✓ PRISM validation passed!", "success")
 
-        return send_file(
-            mem,
-            mimetype="application/zip",
-            as_attachment=True,
-            download_name="prism_biometrics_dataset.zip",
-        )
+                    if total_warn > 0:
+                        log_msg(f"⚠ {total_warn} warning(s) found", "warning")
+                
+            except Exception as val_err:
+                log_msg(f"Validation error: {val_err}", "error")
+
+        return jsonify({
+            "log": log,
+            "zip_base64": zip_base64,
+            "validation": validation
+        })
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e), "log": log}), 500
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 

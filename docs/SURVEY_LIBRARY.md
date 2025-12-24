@@ -142,3 +142,14 @@ The Survey Library is fully integrated into the PRISM web interface:
 1.  **Library Dashboard**: View all surveys, their status (Live/Draft), and perform actions (Checkout, Edit, Submit).
 2.  **Editor**: A user-friendly form-based editor for modifying survey content.
 3.  **Survey Export**: Select multiple questionnaires from the library and export them as a single LimeSurvey (`.lss`) file for data collection.
+
+## Library Maintenance
+
+To keep the library files up-to-date with the latest PRISM schema (e.g., adding new metadata fields like scoring or normative data), you can use the maintenance script:
+
+```bash
+# Fill missing metadata keys in library files from schema
+python scripts/fill_missing_metadata.py --modality survey --path library/survey
+```
+
+This script adds missing keys as empty placeholders, making it easy to see what additional information can be provided for each instrument.

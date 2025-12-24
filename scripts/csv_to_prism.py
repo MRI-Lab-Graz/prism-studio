@@ -74,7 +74,7 @@ def _ensure_participants(
     )
     try:
         part_vars = [
-            k for k in part_schema.keys() if k not in ["Technical", "Study", "Metadata"]
+            k for k in part_schema.keys() if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]
         ]
         found_part_vars = [v for v in part_vars if v in df.columns]
 
@@ -173,7 +173,7 @@ def process_dataframe(
     all_schema_vars = set()
     for schema in schemas.values():
         for k in schema.keys():
-            if k in ["Technical", "Study", "Metadata"]:
+            if k in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]:
                 continue
             all_schema_vars.add(k)
 
@@ -213,7 +213,7 @@ def process_dataframe(
         # 1. Identify variables belonging to this survey
         # Exclude standard metadata sections
         survey_vars = [
-            k for k in schema.keys() if k not in ["Technical", "Study", "Metadata"]
+            k for k in schema.keys() if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]
         ]
 
         # Build canonical mapping and hints

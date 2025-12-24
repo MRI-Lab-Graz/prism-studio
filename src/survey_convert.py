@@ -14,7 +14,7 @@ from pathlib import Path
 import csv
 import json
 import zipfile
-import defusedxml.ElementTree as ET
+import xml.etree.ElementTree as ET
 from copy import deepcopy
 import re
 from typing import Iterable
@@ -60,15 +60,6 @@ def sanitize_id(id_str: str) -> str:
     for char, repl in replacements.items():
         id_str = id_str.replace(char, repl)
     return id_str
-
-
-def _sanitize_bids_label(val: str, *, fallback: str = "survey") -> str:
-    """Return a BIDS-safe label (alphanumeric only).
-
-    BIDS entity values must be strictly alphanumeric; underscores/hyphens are not allowed.
-    """
-    cleaned = re.sub(r"[^A-Za-z0-9]+", "", str(val).strip()).lower()
-    return cleaned or fallback
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -134,9 +125,7 @@ def _normalize_participant_template_dict(template: dict | None) -> dict | None:
     return template
 
 
-def _participants_json_from_template(
-    *, columns: list[str], template: dict | None
-) -> dict:
+def _participants_json_from_template(*, columns: list[str], template: dict | None) -> dict:
     """Create a BIDS-style participants.json for the given TSV columns."""
 
     template = _normalize_participant_template_dict(template)
@@ -266,9 +255,7 @@ def convert_survey_lsa_to_prism_dataset(
     df = _read_table_as_dataframe(input_path=input_path, kind="lsa")
 
     # If language was not explicitly specified, try to infer it from the LSA.
-    inferred_lang, inferred_tech = _infer_lsa_language_and_tech(
-        input_path=input_path, df=df
-    )
+    inferred_lang, inferred_tech = _infer_lsa_language_and_tech(input_path=input_path, df=df)
     effective_language = language
     if not effective_language or effective_language.strip().lower() == "auto":
         effective_language = inferred_lang
@@ -344,19 +331,18 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
             # If the single column name contains semicolons or commas, likely wrong delimiter
             if ";" in col_name:
                 raise ValueError(
-                    "TSV file appears to use semicolons (;) as delimiter instead of tabs. "
-                    "Please convert to tab-separated format or save as CSV."
+                    f"TSV file appears to use semicolons (;) as delimiter instead of tabs. "
+                    f"Please convert to tab-separated format or save as CSV."
                 )
             elif "," in col_name:
                 raise ValueError(
-                    "TSV file appears to use commas as delimiter instead of tabs. "
-                    "Please save as .csv file or convert to tab-separated format."
+                    f"TSV file appears to use commas as delimiter instead of tabs. "
+                    f"Please save as .csv file or convert to tab-separated format."
                 )
 
         return df.rename(columns={c: str(c).strip() for c in df.columns})
 
     if kind == "lsa":
-
         def _normalize_lsa_columns(cols: list[str]) -> list[str]:
             """Normalize LimeSurvey export column names.
 
@@ -387,9 +373,7 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
             return out_cols
 
         def _find_responses_member(zf: zipfile.ZipFile) -> str:
-            matches = [
-                name for name in zf.namelist() if name.endswith("_responses.lsr")
-            ]
+            matches = [name for name in zf.namelist() if name.endswith("_responses.lsr")]
             if not matches:
                 raise ValueError("No *_responses.lsr found inside the .lsa archive")
             matches.sort()
@@ -457,9 +441,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     output_root = Path(output_root).resolve()
 
     if not library_dir.exists() or not library_dir.is_dir():
-        raise ValueError(
-            f"Library folder does not exist or is not a directory: {library_dir}"
-        )
+        raise ValueError(f"Library folder does not exist or is not a directory: {library_dir}")
 
     if output_root.exists() and any(output_root.iterdir()) and not force:
         raise ValueError(
@@ -484,15 +466,11 @@ def _convert_survey_dataframe_to_prism_dataset(
             alias_map = _build_alias_map(rows)
             canonical_aliases = _build_canonical_aliases(rows)
 
-    participant_template = _normalize_participant_template_dict(
-        _load_participants_template(library_dir)
-    )
+    participant_template = _normalize_participant_template_dict(_load_participants_template(library_dir))
     participant_columns_lower: set[str] = set()
     if participant_template:
         participant_columns_lower = {
-            str(k).strip().lower()
-            for k in participant_template.keys()
-            if isinstance(k, str)
+            str(k).strip().lower() for k in participant_template.keys() if isinstance(k, str)
         }
 
     # --- Load survey templates ---
@@ -512,11 +490,9 @@ def _convert_survey_dataframe_to_prism_dataset(
         task = str(sidecar.get("Study", {}).get("TaskName") or task_from_name).strip()
         if not task:
             task = task_from_name
-        task_norm = _sanitize_bids_label(task, fallback="survey")
+        task_norm = task.lower()
         if canonical_aliases:
-            sidecar = _canonicalize_template_items(
-                sidecar=sidecar, canonical_aliases=canonical_aliases
-            )
+            sidecar = _canonicalize_template_items(sidecar=sidecar, canonical_aliases=canonical_aliases)
 
         templates[task_norm] = {"path": json_path, "json": sidecar, "task": task_norm}
 
@@ -524,21 +500,15 @@ def _convert_survey_dataframe_to_prism_dataset(
             if k in _NON_ITEM_TOPLEVEL_KEYS:
                 continue
             if k in item_to_task and item_to_task[k] != task_norm:
-                duplicate_items.setdefault(k, set()).update(
-                    {item_to_task[k], task_norm}
-                )
+                duplicate_items.setdefault(k, set()).update({item_to_task[k], task_norm})
             else:
                 item_to_task[k] = task_norm
 
     if not templates:
-        raise ValueError(
-            f"No survey templates found in: {library_dir} (expected survey-*.json)"
-        )
+        raise ValueError(f"No survey templates found in: {library_dir} (expected survey-*.json)")
 
     if duplicate_items:
-        msg_lines = [
-            "Duplicate item IDs found across survey templates (ambiguous mapping):"
-        ]
+        msg_lines = ["Duplicate item IDs found across survey templates (ambiguous mapping):"]
         for item_id, tasks in sorted(duplicate_items.items()):
             msg_lines.append(f"- {item_id}: {', '.join(sorted(tasks))}")
         raise ValueError("\n".join(msg_lines))
@@ -548,18 +518,12 @@ def _convert_survey_dataframe_to_prism_dataset(
     if survey:
         parts = [p.strip() for p in str(survey).replace(";", ",").split(",")]
         parts = [p for p in parts if p]
-        selected = {
-            _sanitize_bids_label(p.lower().replace("survey-", ""), fallback="survey")
-            for p in parts
-        }
+        selected = {p.lower().replace("survey-", "") for p in parts}
 
         unknown_surveys = sorted([t for t in selected if t not in templates])
         if unknown_surveys:
             raise ValueError(
-                "Unknown surveys: "
-                + ", ".join(unknown_surveys)
-                + ". Available: "
-                + ", ".join(sorted(templates.keys()))
+                "Unknown surveys: " + ", ".join(unknown_surveys) + ". Available: " + ", ".join(sorted(templates.keys()))
             )
         selected_tasks = selected
 
@@ -578,17 +542,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             )
     else:
         # LimeSurvey response archives commonly use `token`.
-        resolved_id_col = _find_col(
-            {
-                "participant_id",
-                "subject",
-                "id",
-                "sub_id",
-                "participant",
-                "code",
-                "token",
-            }
-        )
+        resolved_id_col = _find_col({"participant_id", "subject", "id", "sub_id", "participant", "code", "token"})
         if not resolved_id_col:
             raise ValueError(
                 "Could not determine participant id column. Provide id_column explicitly (e.g., participant_id, CODE)."
@@ -597,9 +551,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     resolved_session_col: str | None
     if session_column:
         if session_column not in df.columns:
-            raise ValueError(
-                f"session_column '{session_column}' not found in input columns"
-            )
+            raise ValueError(f"session_column '{session_column}' not found in input columns")
         resolved_session_col = session_column
     else:
         resolved_session_col = _find_col({"session", "ses", "visit", "timepoint"})
@@ -665,20 +617,14 @@ def _convert_survey_dataframe_to_prism_dataset(
         if c in lower_to_col
     }
 
-    cols = [
-        c
-        for c in df.columns
-        if c not in {resolved_id_col} and c != resolved_session_col
-    ]
+    cols = [c for c in df.columns if c not in {resolved_id_col} and c != resolved_session_col]
     col_to_task: dict[str, str] = {}
     unknown_cols: list[str] = []
     for c in cols:
         col_lower = str(c).strip().lower()
         if c in item_to_task:
             col_to_task[c] = item_to_task[c]
-        elif (
-            c in participant_columns_present or col_lower in participant_columns_present
-        ):
+        elif c in participant_columns_present or col_lower in participant_columns_present:
             continue
         elif col_lower in participant_columns_lower:
             continue
@@ -708,12 +654,8 @@ def _convert_survey_dataframe_to_prism_dataset(
             raise ValueError("Unmapped columns: " + ", ".join(unknown_cols))
         if unknown == "warn":
             shown = ", ".join(unknown_cols[:10])
-            more = (
-                "" if len(unknown_cols) <= 10 else f" (+{len(unknown_cols) - 10} more)"
-            )
-            conversion_warnings.append(
-                f"Unmapped columns (not in any survey template): {shown}{more}"
-            )
+            more = "" if len(unknown_cols) <= 10 else f" (+{len(unknown_cols)-10} more)"
+            conversion_warnings.append(f"Unmapped columns (not in any survey template): {shown}{more}")
 
     if dry_run:
         return SurveyConvertResult(
@@ -739,9 +681,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         _write_json(ds_desc, dataset_description)
 
     # participants.tsv
-    df_part = pd.DataFrame(
-        {"participant_id": df[resolved_id_col].astype(str).map(_normalize_sub_id)}
-    )
+    df_part = pd.DataFrame({"participant_id": df[resolved_id_col].astype(str).map(_normalize_sub_id)})
     extra_part_cols: list[str] = []
 
     for col in participant_columns_present:
@@ -749,12 +689,9 @@ def _convert_survey_dataframe_to_prism_dataset(
             extra_part_cols.append(col)
 
     for candidate in ["age", "sex", "gender"]:
-        candidate_col = lower_to_col.get(candidate)
-        if candidate_col and candidate_col not in {
-            resolved_id_col,
-            resolved_session_col,
-        }:
-            extra_part_cols.append(candidate_col)
+        col = lower_to_col.get(candidate)
+        if col and col not in {resolved_id_col, resolved_session_col}:
+            extra_part_cols.append(col)
 
     if extra_part_cols:
         # Preserve original order while removing duplicates
@@ -763,17 +700,9 @@ def _convert_survey_dataframe_to_prism_dataset(
     if extra_part_cols:
         df_extra = df[[resolved_id_col] + extra_part_cols].copy()
         for c in extra_part_cols:
-            df_extra[c] = df_extra[c].apply(
-                lambda v: _MISSING_TOKEN if _is_missing_value(v) else v
-            )
-        df_extra[resolved_id_col] = (
-            df_extra[resolved_id_col].astype(str).map(_normalize_sub_id)
-        )
-        df_extra = (
-            df_extra.groupby(resolved_id_col, dropna=False)[extra_part_cols]
-            .first()
-            .reset_index()
-        )
+            df_extra[c] = df_extra[c].apply(lambda v: _MISSING_TOKEN if _is_missing_value(v) else v)
+        df_extra[resolved_id_col] = df_extra[resolved_id_col].astype(str).map(_normalize_sub_id)
+        df_extra = df_extra.groupby(resolved_id_col, dropna=False)[extra_part_cols].first().reset_index()
         df_extra = df_extra.rename(columns={resolved_id_col: "participant_id"})
         df_part = df_part.merge(df_extra, on="participant_id", how="left")
 
@@ -789,35 +718,15 @@ def _convert_survey_dataframe_to_prism_dataset(
     _write_json(participants_json_path, participants_json)
 
     # inherited sidecars at dataset root (inheritance principle)
-    localized_by_task: dict[str, dict] = {}
     for task in sorted(tasks_with_data):
         # Write survey sidecar: task-<name>_survey.json (BIDS-aligned: entity != suffix)
         sidecar_path = output_root / f"task-{task}_survey.json"
         if not sidecar_path.exists() or force:
-            localized = _localize_survey_template(
-                templates[task]["json"], language=language
-            )
+            localized = _localize_survey_template(templates[task]["json"], language=language)
             localized = _inject_missing_token(localized, token=_MISSING_TOKEN)
             if technical_overrides:
                 localized = _apply_technical_overrides(localized, technical_overrides)
-
-            # Ensure TaskName is schema-valid (alphanumeric only) and consistent
-            # with the written filenames.
-            if not isinstance(localized.get("Study"), dict):
-                localized["Study"] = {}
-            localized["Study"]["TaskName"] = task
             _write_json(sidecar_path, localized)
-            localized_by_task[task] = localized
-        else:
-            try:
-                localized_by_task[task] = _read_json(sidecar_path)
-            except Exception:
-                localized = _localize_survey_template(
-                    templates[task]["json"], language=language
-                )
-                localized_by_task[task] = _inject_missing_token(
-                    localized, token=_MISSING_TOKEN
-                )
 
     def _normalize_item_value(val) -> str:
         if _is_missing_value(val):
@@ -871,11 +780,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     # per-subject TSVs
     for _, row in df.iterrows():
         sub_id = _normalize_sub_id(row[resolved_id_col])
-        ses_id = (
-            _normalize_ses_id(row[resolved_session_col])
-            if resolved_session_col
-            else "ses-1"
-        )
+        ses_id = _normalize_ses_id(row[resolved_session_col]) if resolved_session_col else "ses-1"
 
         modality_dir = _ensure_dir(output_root / sub_id / ses_id / "survey")
 
@@ -896,36 +801,17 @@ def _convert_survey_dataframe_to_prism_dataset(
                     _validate_item_value(item_id, row[item_id], schema, sub_id, task)
                     normalized = _normalize_item_value(row[item_id])
                     if normalized == _MISSING_TOKEN:
-                        missing_cells_by_subject[sub_id] = (
-                            missing_cells_by_subject.get(sub_id, 0) + 1
-                        )
+                        missing_cells_by_subject[sub_id] = missing_cells_by_subject.get(sub_id, 0) + 1
                     out[item_id] = normalized
                 else:
                     out[item_id] = _MISSING_TOKEN
-                    missing_cells_by_subject[sub_id] = (
-                        missing_cells_by_subject.get(sub_id, 0) + 1
-                    )
+                    missing_cells_by_subject[sub_id] = missing_cells_by_subject.get(sub_id, 0) + 1
 
             # stable column order
-            with open(
-                modality_dir / f"{sub_id}_{ses_id}_task-{task}_survey.tsv",
-                "w",
-                encoding="utf-8",
-                newline="",
-            ) as f:
-                writer = csv.DictWriter(
-                    f, fieldnames=expected, delimiter="\t", lineterminator="\n"
-                )
+            with open(modality_dir / f"{sub_id}_{ses_id}_task-{task}_survey.tsv", "w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=expected, delimiter="\t", lineterminator="\n")
                 writer.writeheader()
                 writer.writerow(out)
-
-            # PRISM requires a JSON sidecar per data file (even if an inherited
-            # task-level sidecar exists at dataset root).
-            per_file_sidecar = (
-                modality_dir / f"{sub_id}_{ses_id}_task-{task}_survey.json"
-            )
-            if not per_file_sidecar.exists() or force:
-                _write_json(per_file_sidecar, localized_by_task.get(task, {}))
 
     return SurveyConvertResult(
         tasks_included=sorted(tasks_with_data),
@@ -1045,6 +931,8 @@ def _inject_missing_token(sidecar: dict, *, token: str) -> dict:
 
     return sidecar
 
+    return out
+
 
 def _read_alias_rows(path: Path) -> list[list[str]]:
     rows: list[list[str]] = []
@@ -1055,9 +943,7 @@ def _read_alias_rows(path: Path) -> list[list[str]]:
                 continue
             if line.startswith("#"):
                 continue
-            parts = [
-                p.strip() for p in (line.split("\t") if "\t" in line else line.split())
-            ]
+            parts = [p.strip() for p in (line.split("\t") if "\t" in line else line.split())]
             parts = [p for p in parts if p]
             if len(parts) < 2:
                 continue
@@ -1084,9 +970,7 @@ def _build_alias_map(rows: Iterable[list[str]]) -> dict[str, str]:
             if not a:
                 continue
             if a in out and out[a] != canonical:
-                raise ValueError(
-                    f"Alias '{a}' maps to multiple canonical IDs: {out[a]} vs {canonical}"
-                )
+                raise ValueError(f"Alias '{a}' maps to multiple canonical IDs: {out[a]} vs {canonical}")
             out[a] = canonical
     return out
 
@@ -1115,7 +999,7 @@ def _apply_alias_file_to_dataframe(*, df, alias_file: str | Path) -> "object":
     """
 
     try:
-        pass
+        import pandas as pd
     except Exception as e:  # pragma: no cover
         raise RuntimeError(
             "pandas is required for survey conversion. Ensure dependencies are installed via setup.sh"
@@ -1134,8 +1018,6 @@ def _apply_alias_file_to_dataframe(*, df, alias_file: str | Path) -> "object":
 
 
 def _apply_alias_map_to_dataframe(*, df, alias_map: dict[str, str]) -> "object":
-    import pandas as pd
-
     """Apply an alias->canonical mapping to dataframe columns."""
 
     # Determine which existing columns would map to which canonical ID.
@@ -1189,9 +1071,7 @@ def _apply_alias_map_to_dataframe(*, df, alias_map: dict[str, str]) -> "object":
     return df
 
 
-def _canonicalize_template_items(
-    *, sidecar: dict, canonical_aliases: dict[str, list[str]]
-) -> dict:
+def _canonicalize_template_items(*, sidecar: dict, canonical_aliases: dict[str, list[str]]) -> dict:
     """Remove/merge alias item IDs inside a survey template (in-memory).
 
     If a template contains both canonical and alias item IDs, keep only the canonical key.

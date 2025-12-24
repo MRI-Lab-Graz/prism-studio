@@ -12,13 +12,31 @@
       "properties": {
         "Type": {
           "type": "string",
-          "enum": ["Biometrics", "PhysicalPerformance", "Anthropometry", "FitnessTest"],
+          "enum": ["Biometrics", "PhysicalPerformance", "Anthropometry", "FitnessTest", ""],
           "description": "Type of biometric assessment"
         },
         "FileFormat": {
           "type": "string",
-          "enum": ["tsv"],
+          "enum": ["tsv", ""],
           "description": "Data file format"
+        },
+        "SoftwarePlatform": {
+          "type": "string",
+          "description": "Software platform used for data collection (e.g., My Jump Lab, Kubios)"
+        },
+        "SoftwareVersion": {
+          "type": "string",
+          "description": "Version of the software platform"
+        },
+        "Language": {
+          "type": "string",
+          "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
+          "description": "Primary language of the assessment (e.g., en, en-US, de-AT)"
+        },
+        "Respondent": {
+          "type": "string",
+          "enum": ["self", "clinician", "parent", "teacher", "caregiver", "other", ""],
+          "description": "Who provided the responses/performed the test"
         },
         "Equipment": {
           "type": "string",
@@ -34,17 +52,17 @@
         },
         "CalibrationDate": {
           "type": "string",
-          "format": "date",
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$",
           "description": "Date of last equipment calibration"
         },
         "Supervisor": {
           "type": "string",
-          "enum": ["investigator", "physician", "trainer", "physiotherapist", "self"],
+          "enum": ["investigator", "physician", "trainer", "physiotherapist", "self", ""],
           "description": "Who supervised the assessment"
         },
         "Location": {
           "type": "string",
-          "enum": ["laboratory", "clinic", "gym", "field", "home"],
+          "enum": ["laboratory", "clinic", "gym", "field", "home", ""],
           "description": "Where the assessment was conducted"
         }
       },
@@ -56,17 +74,17 @@
       "properties": {
         "Languages": {
           "type": "array",
-          "items": {"type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$"},
+          "items": {"type": "string", "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$"},
           "description": "List of available languages (e.g., ['en', 'de', 'fr'])"
         },
         "DefaultLanguage": {
           "type": "string",
-          "pattern": "^[a-z]{2}(-[A-Z]{2})?$",
+          "pattern": "^([a-z]{2}(-[A-Z]{2})?)?$",
           "description": "Default/primary language of the instrument"
         },
         "TranslationMethod": {
           "type": "string",
-          "enum": ["forward-backward", "committee", "parallel", "original", "validated-translation"],
+          "enum": ["forward-backward", "committee", "parallel", "original", "validated-translation", ""],
           "description": "Method used for translation validation"
         }
       }
@@ -77,7 +95,7 @@
       "properties": {
         "BiometricName": {
           "type": "string",
-          "pattern": "^[a-zA-Z0-9]+$",
+          "pattern": "^[a-zA-Z0-9]*$",
           "description": "Short biometric identifier matching filename (e.g., vo2max, planks, grip)"
         },
         "OriginalName": {
@@ -103,7 +121,7 @@
         },
         "Category": {
           "type": "string",
-          "enum": ["cardiorespiratory", "muscular-strength", "muscular-endurance", "flexibility", "balance", "body-composition", "anthropometry"],
+          "enum": ["cardiorespiratory", "muscular-strength", "muscular-endurance", "flexibility", "balance", "body-composition", "anthropometry", ""],
           "description": "Category of fitness/biometric test"
         },
         "Protocol": {
@@ -131,13 +149,9 @@
           "type": ["string", "object"],
           "description": "Instructions given to the participant"
         },
-        "Author": {
-          "type": "string",
-          "description": "Author(s) of the test protocol"
-        },
-        "DOI": {
-          "type": "string",
-          "description": "DOI of the reference publication"
+        "Instruction": {
+          "type": ["string", "object"],
+          "description": "Instructions given to the participant (alias for Instructions)"
         },
         "Reference": {
           "type": "string",
@@ -161,6 +175,71 @@
         }
       },
       "required": ["BiometricName", "OriginalName", "Description"]
+    },
+    "Scoring": {
+      "type": "object",
+      "description": "Scoring and interpretation information",
+      "properties": {
+        "ScoringMethod": {
+          "type": "string",
+          "description": "How items are scored (e.g., sum, mean, weighted, best-of-trial)"
+        },
+        "ScoreRange": {
+          "type": "object",
+          "properties": {
+            "min": {"type": ["number", "null"]},
+            "max": {"type": ["number", "null"]}
+          },
+          "description": "Possible score range"
+        },
+        "Cutoffs": {
+          "type": "object",
+          "description": "Clinical or performance cutoff scores and their interpretations",
+          "additionalProperties": {"type": "string"}
+        },
+        "ReverseCodedItems": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "List of reverse-coded item column names"
+        },
+        "ReverseCodingScale": {
+          "type": "object",
+          "description": "Scale bounds used for reverse coding (min/max), if applicable",
+          "properties": {
+            "min": {"type": ["number", "null"]},
+            "max": {"type": ["number", "null"]}
+          }
+        },
+        "CutoffsSource": {
+          "type": ["string", "object"],
+          "description": "Reference for cutoffs (citation/DOI/URL)"
+        },
+        "NormsSource": {
+          "type": ["string", "object"],
+          "description": "Reference for norms (citation/DOI/URL)"
+        },
+        "Subscales": {
+          "type": "array",
+          "description": "Optional structured subscale definitions for transparent scoring",
+          "items": {
+            "type": "object",
+            "properties": {
+              "Name": {"type": ["string", "object"], "description": "Subscale name"},
+              "Items": {"type": "array", "items": {"type": "string"}, "description": "Item IDs contributing to the subscale"},
+              "Method": {"type": "string", "enum": ["sum", "mean", "weighted", "custom", "best", ""], "description": "Aggregation method"},
+              "Range": {
+                "type": "object",
+                "properties": {
+                  "min": {"type": ["number", "null"]},
+                  "max": {"type": ["number", "null"]}
+                }
+              },
+              "ReverseCodedItems": {"type": "array", "items": {"type": "string"}, "description": "Reverse-coded items within this subscale"},
+              "Note": {"type": ["string", "object"], "description": "Notes about scoring or interpretation"}
+            }
+          }
+        }
+      }
     },
     "Normative": {
       "type": "object",
@@ -190,7 +269,8 @@
         },
         "CreationDate": {
           "type": "string",
-          "format": "date"
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$",
+          "description": "Date of creation"
         },
         "Creator": {
           "type": "string"
@@ -212,19 +292,19 @@
         "description": "Unit of measurement (e.g., kg, sec, ml/kg/min)"
       },
       "MinValue": {
-        "type": "number",
+        "type": ["number", "null"],
         "description": "Minimum allowed value for this column"
       },
       "MaxValue": {
-        "type": "number",
+        "type": ["number", "null"],
         "description": "Maximum allowed value for this column"
       },
       "WarnMinValue": {
-        "type": "number",
+        "type": ["number", "null"],
         "description": "Minimum value threshold for warning"
       },
       "WarnMaxValue": {
-        "type": "number",
+        "type": ["number", "null"],
         "description": "Maximum value threshold for warning"
       },
       "AllowedValues": {
@@ -243,17 +323,17 @@
       },
       "DataType": {
         "type": "string",
-        "enum": ["string", "integer", "float"],
+        "enum": ["string", "integer", "float", ""],
         "description": "Expected data type for this column"
       },
       "SessionHint": {
         "type": "string",
-        "pattern": "^ses-[a-zA-Z0-9]+$",
+        "pattern": "^(ses-[a-zA-Z0-9]+)?$",
         "description": "Optional session hint for repeated assessments (e.g., 'ses-1')"
       },
       "RunHint": {
         "type": "string",
-        "pattern": "^run-[a-zA-Z0-9]+$",
+        "pattern": "^(run-[a-zA-Z0-9]+)?$",
         "description": "Optional run hint for repeated assessments (e.g., 'run-2')"
       }
     },

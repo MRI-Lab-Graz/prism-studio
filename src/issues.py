@@ -153,6 +153,14 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Value not in allowed levels",
         "fix_hint": "Check that the value in the TSV matches one of the Levels defined in the sidecar",
     },
+    "PRISM403": {
+        "message": "Value out of range",
+        "fix_hint": "Check if the value is within the MinValue and MaxValue range defined in the sidecar",
+    },
+    "PRISM404": {
+        "message": "Value out of warning range",
+        "fix_hint": "The value is within absolute limits but outside the typical warning range",
+    },
     # BIDS compatibility (5xx)
     "PRISM501": {
         "message": ".bidsignore needs update",
@@ -192,6 +200,30 @@ def get_error_description(code: str) -> str:
     return defaults.get("message", "Validation error")
 
 
+def get_fix_hint(code: str, message: str = "") -> str:
+    """Get fix hint for an error code, optionally using the message for context."""
+    import re
+    
+    # Handle specific cases with regex if message is provided
+    if message:
+        # Levels errors (PRISM402)
+        if code == "PRISM402":
+            match = re.search(r"Value '([^']+)' not found in allowed levels: \[(.*)\]", message)
+            if match:
+                val, levels = match.groups()
+                return f"The value '{val}' is not defined in the 'Levels' dictionary in the sidecar JSON. Add it to the sidecar or correct the data."
+        
+        # Range errors (PRISM403)
+        if code == "PRISM403":
+            match = re.search(r"Value '([^']+)' is out of range \(([^,]+), ([^)]+)\)", message)
+            if match:
+                val, min_val, max_val = match.groups()
+                return f"The value '{val}' is outside the allowed range [{min_val}, {max_val}]. Check the sidecar JSON for 'MinValue' and 'MaxValue' definitions for this column."
+
+    defaults = ERROR_CODES.get(code, {})
+    return defaults.get("fix_hint", "")
+
+
 def get_error_documentation_url(code: str) -> str:
     """Get documentation URL for an error code."""
     if code.startswith("BIDS"):
@@ -227,6 +259,12 @@ def infer_code_from_message(message: str) -> str:
         return "PRISM201"
     elif "schema error" in msg_lower or "schema validation failed" in msg_lower:
         return "PRISM301"
+    elif "not found in allowed levels" in msg_lower:
+        return "PRISM402"
+    elif "is out of range" in msg_lower:
+        return "PRISM403"
+    elif "out of warning range" in msg_lower:
+        return "PRISM404"
     elif "not valid json" in msg_lower:
         return "PRISM202"
     elif "doesn't match expected pattern" in msg_lower:
@@ -245,6 +283,12 @@ def infer_code_from_message(message: str) -> str:
     elif "empty" in msg_lower:
         if "tsv" in msg_lower: return "PRISM401"
         return "PRISM204"
+    elif "not in allowed values" in msg_lower:
+        return "PRISM402"
+    elif "less than minvalue" in msg_lower or "greater than maxvalue" in msg_lower:
+        return "PRISM403"
+    elif "less than warnminvalue" in msg_lower or "greater than warnmaxvalue" in msg_lower:
+        return "PRISM404"
 
     return "PRISM999"
 

@@ -150,6 +150,10 @@ For advanced data conversion tasks, use the `prism_tools.py` utility.
 # Create a demo dataset
 ./prism_tools.py demo create --output my_demo
 
+# Fill missing metadata keys in library files from schema
+python scripts/fill_missing_metadata.py --modality survey --path library/survey
+python scripts/fill_missing_metadata.py --modality biometrics --path library/biometrics
+
 # Import survey library from Excel
 ./prism_tools.py survey import-excel --excel metadata.xlsx
 

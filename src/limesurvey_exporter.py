@@ -139,6 +139,8 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     "Categories",
                     "TaskName",
                     "I18n",
+                    "Scoring",
+                    "Normative",
                 ]
             }
 

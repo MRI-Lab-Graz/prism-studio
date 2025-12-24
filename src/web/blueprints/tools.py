@@ -176,7 +176,7 @@ def _extract_template_info(full_path, filename):
                 for k, v in data["Questions"].items():
                     questions.append(_get_q_info(k, v))
             else:
-                reserved = ["Technical", "Study", "Metadata", "Categories", "TaskName", "Name", "BIDSVersion", "Description", "URL", "License", "Authors", "Acknowledgements", "References", "Funding", "I18n", "Scoring"]
+                reserved = ["Technical", "Study", "Metadata", "Categories", "TaskName", "Name", "BIDSVersion", "Description", "URL", "License", "Authors", "Acknowledgements", "References", "Funding", "I18n", "Scoring", "Normative"]
                 for k, v in data.items():
                     if k not in reserved:
                         questions.append(_get_q_info(k, v))

@@ -195,9 +195,9 @@ class DatasetValidator:
 
                             # Check AllowedValues or Levels
                             allowed = None
-                            if "AllowedValues" in col_def:
+                            if "AllowedValues" in col_def and isinstance(col_def["AllowedValues"], list):
                                 allowed = [str(x) for x in col_def["AllowedValues"]]
-                            elif "Levels" in col_def:
+                            elif "Levels" in col_def and isinstance(col_def["Levels"], dict):
                                 levels = col_def["Levels"]
                                 level_keys = list(levels.keys())
 
@@ -229,12 +229,24 @@ class DatasetValidator:
 
                             if allowed:
                                 if value not in allowed:
-                                    issues.append(
-                                        (
-                                            "ERROR",
-                                            f"{os.path.basename(file_path)} line {row_idx}: Value '{value}' for '{col_name}' is not in allowed values: {allowed}",
+                                    # Try numeric normalization (e.g., "7.0" -> "7")
+                                    is_normalized = False
+                                    try:
+                                        f_val = float(value)
+                                        if f_val.is_integer():
+                                            norm_val = str(int(f_val))
+                                            if norm_val in allowed:
+                                                is_normalized = True
+                                    except (ValueError, TypeError):
+                                        pass
+
+                                    if not is_normalized:
+                                        issues.append(
+                                            (
+                                                "ERROR",
+                                                f"{os.path.basename(file_path)} line {row_idx}: Value '{value}' for '{col_name}' is not in allowed values: {allowed}",
+                                            )
                                         )
-                                    )
 
                             # Check DataType
                             if "DataType" in col_def:
@@ -351,7 +363,7 @@ class DatasetValidator:
 
                             # Check MinValue/MaxValue/WarnMinValue/WarnMaxValue
                             if any(
-                                k in col_def
+                                col_def.get(k) not in [None, ""]
                                 for k in [
                                     "MinValue",
                                     "MaxValue",
@@ -362,7 +374,7 @@ class DatasetValidator:
                                 try:
                                     num_val = float(value)
 
-                                    if "MinValue" in col_def:
+                                    if "MinValue" in col_def and col_def["MinValue"] not in [None, ""]:
                                         min_val = float(col_def["MinValue"])
                                         if num_val < min_val:
                                             issues.append(
@@ -372,7 +384,7 @@ class DatasetValidator:
                                                 )
                                             )
 
-                                    if "MaxValue" in col_def:
+                                    if "MaxValue" in col_def and col_def["MaxValue"] not in [None, ""]:
                                         max_val = float(col_def["MaxValue"])
                                         if num_val > max_val:
                                             issues.append(
@@ -382,7 +394,7 @@ class DatasetValidator:
                                                 )
                                             )
 
-                                    if "WarnMinValue" in col_def:
+                                    if "WarnMinValue" in col_def and col_def["WarnMinValue"] not in [None, ""]:
                                         warn_min_val = float(col_def["WarnMinValue"])
                                         if num_val < warn_min_val:
                                             issues.append(
@@ -392,7 +404,7 @@ class DatasetValidator:
                                                 )
                                             )
 
-                                    if "WarnMaxValue" in col_def:
+                                    if "WarnMaxValue" in col_def and col_def["WarnMaxValue"] not in [None, ""]:
                                         warn_max_val = float(col_def["WarnMaxValue"])
                                         if num_val > warn_max_val:
                                             issues.append(

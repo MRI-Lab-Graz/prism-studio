@@ -471,7 +471,7 @@ def cmd_survey_convert(args):
                 continue
             if isinstance(data, dict) and "I18n" in data:
                 return True
-            reserved = {"Technical", "Study", "Metadata", "I18n"}
+            reserved = {"Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"}
             for item_id, item_def in (data or {}).items():
                 if item_id in reserved or not isinstance(item_def, dict):
                     continue

@@ -113,7 +113,7 @@ def compile_survey_template(
     out["Metadata"] = metadata
 
     # Items: any other top-level key except known blocks.
-    reserved = {"Technical", "Study", "Metadata", "I18n"}
+    reserved = {"Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"}
     for item_id, item_def in source.items():
         if item_id in reserved:
             continue
@@ -164,7 +164,7 @@ def migrate_survey_template_to_i18n(source: dict, languages: list[str]) -> dict:
         if isinstance(v, str):
             texts.append(v)
 
-    reserved = {"Technical", "Study", "Metadata", "I18n"}
+    reserved = {"Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"}
     for item_id, item_def in source.items():
         if item_id in reserved:
             continue
@@ -205,7 +205,7 @@ def migrate_survey_template_to_i18n(source: dict, languages: list[str]) -> dict:
                 out["Study"][k] = wrap_str(out["Study"].get(k))
 
     # Items
-    reserved = {"Technical", "Study", "Metadata", "I18n"}
+    reserved = {"Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"}
     for item_id, item_def in list(out.items()):
         if item_id in reserved:
             continue

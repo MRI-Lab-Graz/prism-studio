@@ -476,7 +476,7 @@ def convert_lsa_to_dataset(
         # Strategy: Find which group the task's variables belong to.
         # Get variables in this task
         task_vars = [
-            k for k in t_schema.keys() if k not in ["Technical", "Study", "Metadata"]
+            k for k in t_schema.keys() if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]
         ]
 
         # Find which group these variables belong to

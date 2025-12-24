@@ -854,6 +854,9 @@ class PrismValidatorGUI:
                                     "Acknowledgements",
                                     "References",
                                     "Funding",
+                                    "I18n",
+                                    "Scoring",
+                                    "Normative",
                                 ]
                                 for k, v in data.items():
                                     if k not in reserved:

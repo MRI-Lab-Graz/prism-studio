@@ -24,6 +24,8 @@ _NON_ITEM_TOPLEVEL_KEYS: set[str] = {
     "Metadata",
     "I18n",
     "LimeSurvey",
+    "Scoring",
+    "Normative",
 }
 
 
@@ -130,6 +132,30 @@ def _load_biometrics_library(
     return task_to_items, task_to_template
 
 
+def detect_biometrics_in_table(
+    *,
+    input_path: str | Path,
+    library_dir: str | Path,
+    sheet: str | int | None = None,
+) -> list[str]:
+    """Detect which biometrics tasks are present in the input table."""
+    input_path = Path(input_path).resolve()
+    library_dir = Path(library_dir).resolve()
+
+    df = _read_table_as_dataframe(input_path=input_path, sheet=sheet)
+    task_to_items, _ = _load_biometrics_library(library_dir)
+
+    df_cols_norm = {_norm_col(c) for c in df.columns}
+    
+    detected_tasks: list[str] = []
+    for task, items in task_to_items.items():
+        # A task is detected if at least one of its items is present in the table (case-insensitive)
+        if any(_norm_col(item) in df_cols_norm for item in items):
+            detected_tasks.append(task)
+
+    return sorted(detected_tasks)
+
+
 def convert_biometrics_table_to_prism_dataset(
     *,
     input_path: str | Path,
@@ -143,6 +169,7 @@ def convert_biometrics_table_to_prism_dataset(
     name: str | None = None,
     authors: list[str] | None = None,
     default_session: str = "ses-1",
+    tasks_to_export: list[str] | None = None,
 ) -> BiometricsConvertResult:
     """Convert biometrics CSV/XLSX (wide format) into a PRISM/BIDS-style dataset.
 
@@ -178,6 +205,13 @@ def convert_biometrics_table_to_prism_dataset(
     if not task_to_items:
         raise ValueError(f"No biometrics-*.json templates found in: {library_dir}")
 
+    # Filter tasks if requested
+    if tasks_to_export is not None:
+        task_to_items = {t: i for t, i in task_to_items.items() if t in tasks_to_export}
+        task_to_template = {
+            t: temp for t, temp in task_to_template.items() if t in tasks_to_export
+        }
+
     # Detect columns
     col_pid = id_column or _find_col(
         df, {"participant_id", "participant", "subject", "sub"}
@@ -189,17 +223,27 @@ def convert_biometrics_table_to_prism_dataset(
 
     col_ses = session_column or _find_col(df, {"session", "ses", "visit", "timepoint"})
 
-    # Build mapping of known item columns
-    all_item_cols: set[str] = set()
+    # Build mapping of known item columns (case-insensitive)
+    all_item_cols_norm: dict[str, str] = {}
     for items in task_to_items.values():
-        all_item_cols.update(items)
+        for item in items:
+            all_item_cols_norm[_norm_col(item)] = item
 
     unknown_cols: list[str] = []
     for c in list(df.columns):
         c_str = str(c)
+        c_norm = _norm_col(c_str)
+        
         if c_str == col_pid or (col_ses and c_str == col_ses):
             continue
-        if c_str in all_item_cols:
+        if _norm_col(col_pid) == c_norm or (col_ses and _norm_col(col_ses) == c_norm):
+            continue
+            
+        if c_norm in all_item_cols_norm:
+            continue
+            
+        # Also ignore reserved keys
+        if any(_norm_col(k) == c_norm for k in _NON_ITEM_TOPLEVEL_KEYS):
             continue
         unknown_cols.append(c_str)
 
@@ -255,23 +299,28 @@ def convert_biometrics_table_to_prism_dataset(
             row.get(col_ses) if col_ses else None, default_session=default_session
         )
 
+        # Map dataframe columns to normalized names for easier lookup
+        df_col_map = {_norm_col(c): c for c in df.columns}
+
         for task, items in task_to_items.items():
             values: dict[str, Any] = {}
             any_present = False
             for item in items:
-                if item in df.columns:
-                    v = row.get(item)
+                item_norm = _norm_col(item)
+                if item_norm in df_col_map:
+                    real_col = df_col_map[item_norm]
+                    v = row.get(real_col)
                     if v is None or pd.isna(v):
                         values[item] = "n/a"
                     else:
                         values[item] = v
-                        if str(v).strip():
+                        if str(v).strip() and str(v).lower() != "nan":
                             any_present = True
                 else:
                     values[item] = "n/a"
 
             # If this task has no columns in the input at all, skip writing.
-            if not any_present and not any(item in df.columns for item in items):
+            if not any_present and not any(_norm_col(item) in df_col_map for item in items):
                 continue
 
             modality_dir = output_root / sub_id / ses_id / "biometrics"

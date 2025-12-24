@@ -12,6 +12,8 @@ from src.web.path_utils import (
 )
 from src.issues import (
     get_error_description, 
+    get_fix_hint,
+    get_error_documentation_url,
     infer_code_from_message
 )
 from src.system_files import is_system_file
@@ -91,6 +93,8 @@ def format_validation_results(
                 target_groups[error_code] = {
                     "code": error_code,
                     "description": get_error_description(error_code),
+                    "fix_hint": get_fix_hint(error_code, message),
+                    "documentation_url": get_error_documentation_url(error_code),
                     "files": [],
                     "count": 0,
                     "messages": {},
@@ -178,6 +182,19 @@ def format_validation_results(
         elif isinstance(dataset_stats, dict):
             serializable_stats = dataset_stats
 
+    # Prepare grouped results for the UI (BIDS-validator style)
+    errors_list = []
+    for group in error_groups.values():
+        g = dict(group)
+        g["message"] = g.get("description") or g.get("code")
+        errors_list.append(g)
+        
+    warnings_list = []
+    for group in warning_groups.values():
+        g = dict(group)
+        g["message"] = g.get("description") or g.get("code")
+        warnings_list.append(g)
+
     return {
         "valid": is_valid,
         "summary": {
@@ -191,8 +208,8 @@ def format_validation_results(
         "warning_groups": warning_groups,
         "valid_files": valid_files,
         "invalid_files": invalid_files,
-        "errors": [item for group in error_groups.values() for item in group["files"]],
-        "warnings": [item for group in warning_groups.values() for item in group["files"]],
+        "errors": errors_list,
+        "warnings": warnings_list,
         "dataset_path": dataset_path,
         "dataset_name": dataset_name,
         "dataset_stats": serializable_stats,

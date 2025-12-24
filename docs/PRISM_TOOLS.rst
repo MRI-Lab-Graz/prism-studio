@@ -92,6 +92,19 @@ You can import survey definitions from an Excel file into the PRISM library form
 
     ./prism_tools.py survey import-excel --excel my_definitions.xlsx --output library/survey
 
+Library Maintenance
+~~~~~~~~~~~~~~~~~~~
+
+You can automatically fill missing metadata keys in your library files based on the current PRISM schema. This is useful to see which additional fields (like scoring, normative data, or equipment details) can be provided.
+
+.. code-block:: bash
+
+    # For surveys
+    python scripts/fill_missing_metadata.py --modality survey --path library/survey
+
+    # For biometrics
+    python scripts/fill_missing_metadata.py --modality biometrics --path library/biometrics
+
 **Templates:**
 We provide Excel templates with a **Help** sheet explaining all supported columns:
 

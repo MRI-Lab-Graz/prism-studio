@@ -482,6 +482,10 @@
                                 <div class="col-12 collapse" id="biometricsAdvancedOptions">
                                     <div class="row g-3 align-items-end mt-1 p-3 bg-light rounded">
                                         <div class="col-md-6">
+                                            <label for="biometricsSheet" class="form-label">Excel Sheet (name or index)</label>
+                                            <input type="text" class="form-control" id="biometricsSheet" placeholder="0" value="0">
+                                        </div>
+                                        <div class="col-md-6">
                                             <label for="biometricsUnknown" class="form-label">Unknown Items</label>
                                             <select class="form-select" id="biometricsUnknown">
                                                 <option value="warn" selected>Show warnings</option>
@@ -494,6 +498,75 @@
                             </div>
                             <div id="biometricsError" class="alert alert-danger d-none mt-3"></div>
                             <div id="biometricsInfo" class="alert alert-info d-none mt-3"></div>
+
+                            <!-- Detected Biometrics List -->
+                            <div id="biometricsDetectedContainer" class="d-none mt-3">
+                                <div class="card border-warning">
+                                    <div class="card-header bg-warning bg-opacity-10 fw-bold">
+                                        <i class="fas fa-search me-2 text-warning"></i>Detected Biometrics
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="small text-muted mb-2">The following biometrics tasks were detected in your file. Select which ones to export:</p>
+                                        <div id="biometricsDetectedList" class="row g-2">
+                                            <!-- Dynamic checkboxes here -->
+                                        </div>
+                                        <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="biometricsSelectAll" checked>
+                                                <label class="form-check-label small" for="biometricsSelectAll">Select All</label>
+                                            </div>
+                                            <button class="btn btn-sm btn-warning text-white" id="biometricsConfirmBtn">
+                                                <i class="fas fa-check me-1"></i>Confirm & Convert
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Conversion Log Output -->
+                            <div id="biometricsLogContainer" class="d-none mt-3">
+                                <div class="card border-secondary">
+                                    <div class="card-header bg-dark text-white py-2 d-flex justify-content-between align-items-center">
+                                        <span><i class="fas fa-terminal me-2"></i>Conversion Log</span>
+                                        <button type="button" class="btn btn-sm btn-outline-light" id="toggleBiometricsLogBtn" title="Toggle log">
+                                            <i class="fas fa-chevron-down"></i>
+                                        </button>
+                                    </div>
+                                    <div class="card-body p-0" id="biometricsLogBody">
+                                        <pre id="biometricsLog" class="m-0 p-3 bg-dark text-light" style="max-height: 300px; overflow-y: auto; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; white-space: pre-wrap;"></pre>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Validation Results -->
+                            <div id="biometricsValidationResultsContainer" class="d-none mt-3">
+                                <div class="card" id="biometricsValidationResultsCard">
+                                    <div class="card-header py-2 d-flex justify-content-between align-items-center" id="biometricsValidationResultsHeader">
+                                        <span><i class="fas fa-clipboard-check me-2"></i>Validation Results</span>
+                                        <span id="biometricsValidationBadge" class="badge"></span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="biometricsValidationSummary" class="mb-3"></div>
+                                        <div id="biometricsValidationDetails"></div>
+                                        <div id="biometricsDownloadSection" class="d-none mt-3 text-center">
+                                            <button class="btn btn-warning btn-lg text-white" id="biometricsDownloadZipBtn">
+                                                <i class="fas fa-download me-2"></i>Download Validated Dataset
+                                            </button>
+                                            <p class="text-muted small mt-2">
+                                                <i class="fas fa-check-circle me-1"></i>Dataset passed validation
+                                            </p>
+                                        </div>
+                                        <div id="biometricsDownloadWarningSection" class="d-none mt-3 text-center">
+                                            <button class="btn btn-warning btn-lg" id="biometricsDownloadZipWarningBtn">
+                                                <i class="fas fa-download me-2"></i>Download Dataset (with warnings)
+                                            </button>
+                                            <p class="text-muted small mt-2">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Dataset has warnings but can still be used
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1034,7 +1107,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const downloadZipBtn = document.getElementById('downloadZipBtn');
     const downloadZipWarningBtn = document.getElementById('downloadZipWarningBtn');
 
+    // Biometrics elements
+    const biometricsLogContainer = document.getElementById('biometricsLogContainer');
+    const biometricsLog = document.getElementById('biometricsLog');
+    const biometricsLogBody = document.getElementById('biometricsLogBody');
+    const toggleBiometricsLogBtn = document.getElementById('toggleBiometricsLogBtn');
+    const biometricsValidationResultsContainer = document.getElementById('biometricsValidationResultsContainer');
+    const biometricsValidationResultsCard = document.getElementById('biometricsValidationResultsCard');
+    const biometricsValidationResultsHeader = document.getElementById('biometricsValidationResultsHeader');
+    const biometricsValidationBadge = document.getElementById('biometricsValidationBadge');
+    const biometricsValidationSummary = document.getElementById('biometricsValidationSummary');
+    const biometricsValidationDetails = document.getElementById('biometricsValidationDetails');
+    const biometricsDownloadSection = document.getElementById('biometricsDownloadSection');
+    const biometricsDownloadWarningSection = document.getElementById('biometricsDownloadWarningSection');
+    const biometricsDownloadZipBtn = document.getElementById('biometricsDownloadZipBtn');
+    const biometricsDownloadZipWarningBtn = document.getElementById('biometricsDownloadZipWarningBtn');
+    const biometricsDetectedContainer = document.getElementById('biometricsDetectedContainer');
+    const biometricsDetectedList = document.getElementById('biometricsDetectedList');
+    const biometricsConfirmBtn = document.getElementById('biometricsConfirmBtn');
+    const biometricsSelectAll = document.getElementById('biometricsSelectAll');
+
     let currentZipBlob = null;
+    let currentBiometricsZipBlob = null;
 
     // Toggle log visibility
     if (toggleLogBtn) {
@@ -1042,6 +1136,20 @@ document.addEventListener('DOMContentLoaded', function() {
             conversionLogBody.classList.toggle('d-none');
             const icon = toggleLogBtn.querySelector('i');
             if (conversionLogBody.classList.contains('d-none')) {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-right');
+            } else {
+                icon.classList.remove('fa-chevron-right');
+                icon.classList.add('fa-chevron-down');
+            }
+        });
+    }
+
+    if (toggleBiometricsLogBtn) {
+        toggleBiometricsLogBtn.addEventListener('click', function() {
+            biometricsLogBody.classList.toggle('d-none');
+            const icon = toggleBiometricsLogBtn.querySelector('i');
+            if (biometricsLogBody.classList.contains('d-none')) {
                 icon.classList.remove('fa-chevron-down');
                 icon.classList.add('fa-chevron-right');
             } else {
@@ -1079,37 +1187,62 @@ document.addEventListener('DOMContentLoaded', function() {
         currentZipBlob = null;
     }
 
-    function displayValidationResults(validation) {
-        validationResultsContainer.classList.remove('d-none');
+    function resetBiometricsUI() {
+        biometricsLogContainer.classList.add('d-none');
+        biometricsValidationResultsContainer.classList.add('d-none');
+        biometricsDownloadSection.classList.add('d-none');
+        biometricsDownloadWarningSection.classList.add('d-none');
+        biometricsDetectedContainer.classList.add('d-none');
+        biometricsLog.innerHTML = '';
+        biometricsValidationSummary.innerHTML = '';
+        biometricsValidationDetails.innerHTML = '';
+        biometricsDetectedList.innerHTML = '';
+        currentBiometricsZipBlob = null;
+    }
+
+    function displayValidationResults(validation, prefix = '') {
+        const getEl = (id) => document.getElementById(prefix ? prefix + id.charAt(0).toUpperCase() + id.slice(1) : id);
+        
+        const container = getEl('validationResultsContainer');
+        const card = getEl('validationResultsCard');
+        const header = getEl('validationResultsHeader');
+        const badge = getEl('validationBadge');
+        const summaryEl = getEl('validationSummary');
+        const detailsEl = getEl('validationDetails');
+        const dlSection = getEl('downloadSection');
+        const dlWarningSection = getEl('downloadWarningSection');
+
+        if (!container) return;
+        container.classList.remove('d-none');
         
         const errors = validation.errors || [];
         const warnings = validation.warnings || [];
         const isValid = errors.length === 0;
         
         // Update card styling based on result
-        validationResultsCard.classList.remove('border-success', 'border-warning', 'border-danger');
-        validationResultsHeader.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'text-white', 'text-dark');
+        card.classList.remove('border-success', 'border-warning', 'border-danger');
+        header.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'text-white', 'text-dark');
         
         if (isValid && warnings.length === 0) {
-            validationResultsCard.classList.add('border-success');
-            validationResultsHeader.classList.add('bg-success', 'text-white');
-            validationBadge.className = 'badge bg-light text-success';
-            validationBadge.textContent = '✓ Valid';
+            card.classList.add('border-success');
+            header.classList.add('bg-success', 'text-white');
+            badge.className = 'badge bg-light text-success';
+            badge.textContent = '✓ Valid';
         } else if (isValid) {
-            validationResultsCard.classList.add('border-warning');
-            validationResultsHeader.classList.add('bg-warning', 'text-dark');
-            validationBadge.className = 'badge bg-light text-warning';
-            validationBadge.textContent = `⚠ ${warnings.length} Warning(s)`;
+            card.classList.add('border-warning');
+            header.classList.add('bg-warning', 'text-dark');
+            badge.className = 'badge bg-light text-warning';
+            badge.textContent = `⚠ ${warnings.length} Warning(s)`;
         } else {
-            validationResultsCard.classList.add('border-danger');
-            validationResultsHeader.classList.add('bg-danger', 'text-white');
-            validationBadge.className = 'badge bg-light text-danger';
-            validationBadge.textContent = `✗ ${errors.length} Error(s)`;
+            card.classList.add('border-danger');
+            header.classList.add('bg-danger', 'text-white');
+            badge.className = 'badge bg-light text-danger';
+            badge.textContent = `✗ ${errors.length} Error(s)`;
         }
         
         // Summary
         const summary = validation.summary || {};
-        validationSummary.innerHTML = `
+        summaryEl.innerHTML = `
             <div class="row text-center">
                 <div class="col-4">
                     <div class="h4 mb-0 ${errors.length > 0 ? 'text-danger' : 'text-success'}">${errors.length}</div>
@@ -1128,32 +1261,121 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Details
         let detailsHtml = '';
-        if (errors.length > 0) {
-            detailsHtml += '<h6 class="text-danger mt-3"><i class="fas fa-times-circle me-1"></i>Errors</h6><ul class="list-unstyled">';
-            errors.forEach(e => {
-                detailsHtml += `<li class="text-danger small"><i class="fas fa-times me-1"></i>${escapeHtml(e)}</li>`;
-            });
-            detailsHtml += '</ul>';
+        
+        if (validation.formatted) {
+            const f = validation.formatted;
+            
+            if (f.errors && f.errors.length > 0) {
+                detailsHtml += '<h6 class="text-danger mt-3"><i class="fas fa-times-circle me-1"></i>Errors</h6>';
+                f.errors.forEach(group => {
+                    detailsHtml += `
+                        <div class="validation-group mb-3 p-3 border rounded bg-light shadow-sm">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="fw-bold text-danger">
+                                    <span class="badge bg-danger me-2">${group.code}</span>
+                                    ${escapeHtml(group.message)}
+                                </div>
+                                ${group.documentation_url ? `
+                                    <a href="${group.documentation_url}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">
+                                        <i class="fas fa-book me-1"></i>Docs
+                                    </a>
+                                ` : ''}
+                            </div>
+                            
+                            ${group.fix_hint ? `
+                                <div class="alert alert-info py-2 px-3 mb-2 smaller">
+                                    <i class="fas fa-lightbulb me-2 text-warning"></i>
+                                    <strong>Fix Hint:</strong> ${escapeHtml(group.fix_hint)}
+                                </div>
+                            ` : ''}
+
+                            <ul class="list-unstyled ms-2 mb-0 smaller">
+                                ${(group.files || []).map(file => `
+                                    <li class="mb-1 border-bottom pb-1 last-child-no-border">
+                                        <div class="d-flex justify-content-between">
+                                            <code class="text-dark fw-bold">${escapeHtml(file.file || 'unknown')}</code>
+                                            ${file.line ? `<span class="badge bg-secondary">Line ${file.line}</span>` : ''}
+                                        </div>
+                                        ${file.message && file.message !== group.message ? `<div class="text-muted mt-1">${escapeHtml(file.message)}</div>` : ''}
+                                        ${file.evidence ? `<div class="text-muted italic ms-2 mt-1 p-1 bg-white border rounded" style="font-size: 0.85em; font-family: monospace;">${escapeHtml(file.evidence)}</div>` : ''}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                });
+            }
+            
+            if (f.warnings && f.warnings.length > 0) {
+                detailsHtml += '<h6 class="text-warning mt-3"><i class="fas fa-exclamation-triangle me-1"></i>Warnings</h6>';
+                f.warnings.forEach(group => {
+                    detailsHtml += `
+                        <div class="validation-group mb-3 p-3 border rounded bg-light shadow-sm">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="fw-bold text-warning">
+                                    <span class="badge bg-warning text-dark me-2">${group.code}</span>
+                                    ${escapeHtml(group.message)}
+                                </div>
+                                ${group.documentation_url ? `
+                                    <a href="${group.documentation_url}" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;">
+                                        <i class="fas fa-book me-1"></i>Docs
+                                    </a>
+                                ` : ''}
+                            </div>
+
+                            ${group.fix_hint ? `
+                                <div class="alert alert-info py-2 px-3 mb-2 smaller">
+                                    <i class="fas fa-lightbulb me-2 text-warning"></i>
+                                    <strong>Fix Hint:</strong> ${escapeHtml(group.fix_hint)}
+                                </div>
+                            ` : ''}
+
+                            <ul class="list-unstyled ms-2 mb-0 smaller">
+                                ${(group.files || []).map(file => `
+                                    <li class="mb-1 border-bottom pb-1 last-child-no-border">
+                                        <div class="d-flex justify-content-between">
+                                            <code class="text-dark fw-bold">${escapeHtml(file.file || 'unknown')}</code>
+                                            ${file.line ? `<span class="badge bg-secondary">Line ${file.line}</span>` : ''}
+                                        </div>
+                                        ${file.message && file.message !== group.message ? `<div class="text-muted mt-1">${escapeHtml(file.message)}</div>` : ''}
+                                        ${file.evidence ? `<div class="text-muted italic ms-2 mt-1 p-1 bg-white border rounded" style="font-size: 0.85em; font-family: monospace;">${escapeHtml(file.evidence)}</div>` : ''}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                });
+            }
+        } else {
+            // Fallback to old list
+            if (errors.length > 0) {
+                detailsHtml += '<h6 class="text-danger mt-3"><i class="fas fa-times-circle me-1"></i>Errors</h6><ul class="list-unstyled">';
+                errors.forEach(e => {
+                    detailsHtml += `<li class="text-danger small"><i class="fas fa-times me-1"></i>${escapeHtml(e)}</li>`;
+                });
+                detailsHtml += '</ul>';
+            }
+            if (warnings.length > 0) {
+                detailsHtml += '<h6 class="text-warning mt-3"><i class="fas fa-exclamation-triangle me-1"></i>Warnings</h6><ul class="list-unstyled">';
+                warnings.forEach(w => {
+                    detailsHtml += `<li class="text-warning small"><i class="fas fa-exclamation me-1"></i>${escapeHtml(w)}</li>`;
+                });
+                detailsHtml += '</ul>';
+            }
         }
-        if (warnings.length > 0) {
-            detailsHtml += '<h6 class="text-warning mt-3"><i class="fas fa-exclamation-triangle me-1"></i>Warnings</h6><ul class="list-unstyled">';
-            warnings.forEach(w => {
-                detailsHtml += `<li class="text-warning small"><i class="fas fa-exclamation me-1"></i>${escapeHtml(w)}</li>`;
-            });
-            detailsHtml += '</ul>';
-        }
-        validationDetails.innerHTML = detailsHtml;
+        
+        detailsEl.innerHTML = detailsHtml;
         
         // Show appropriate download button
         if (isValid && warnings.length === 0) {
-            downloadSection.classList.remove('d-none');
-            downloadWarningSection.classList.add('d-none');
+            dlSection.classList.remove('d-none');
+            dlWarningSection.classList.add('d-none');
         } else if (isValid) {
-            downloadSection.classList.add('d-none');
-            downloadWarningSection.classList.remove('d-none');
+            dlSection.classList.add('d-none');
+            dlWarningSection.classList.remove('d-none');
         } else {
-            downloadSection.classList.add('d-none');
-            downloadWarningSection.classList.add('d-none');
+            dlSection.classList.add('d-none');
+            dlWarningSection.classList.add('d-none');
         }
     }
 
@@ -1355,12 +1577,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function downloadCurrentBiometricsZip() {
+        if (!currentBiometricsZipBlob) return;
+        const url = window.URL.createObjectURL(currentBiometricsZipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'prism_biometrics_dataset.zip';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    }
+
+    if (biometricsDownloadZipBtn) {
+        biometricsDownloadZipBtn.addEventListener('click', downloadCurrentBiometricsZip);
+    }
+    if (biometricsDownloadZipWarningBtn) {
+        biometricsDownloadZipWarningBtn.addEventListener('click', downloadCurrentBiometricsZip);
+    }
+
     if (biometricsConvertBtn) {
         biometricsConvertBtn.addEventListener('click', function() {
             biometricsError.classList.add('d-none');
             biometricsInfo.classList.add('d-none');
             biometricsError.textContent = '';
             biometricsInfo.textContent = '';
+            resetBiometricsUI();
 
             const libraryPath = biometricsLibraryPathInput ? biometricsLibraryPathInput.value.trim() : '';
             if (!libraryPath) {
@@ -1375,43 +1617,153 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('data', file);
             formData.append('library_path', libraryPath);
-            formData.append('dataset_name', biometricsDatasetName.value.trim());
-            formData.append('unknown', biometricsUnknown.value);
+            formData.append('sheet', (document.getElementById('biometricsSheet') || {value: '0'}).value);
 
             biometricsConvertBtn.disabled = true;
-            biometricsInfo.textContent = 'Converting... this may take a moment.';
+            biometricsInfo.textContent = 'Analyzing file...';
             biometricsInfo.classList.remove('d-none');
 
-            fetch('/api/biometrics-convert', {
+            fetch('/api/biometrics-detect', {
                 method: 'POST',
                 body: formData,
             })
             .then(async response => {
                 if (!response.ok) {
                     const data = await response.json().catch(() => null);
-                    const msg = data && data.error ? data.error : 'Conversion failed';
-                    throw new Error(msg);
+                    throw new Error(data && data.error ? data.error : 'Detection failed');
                 }
-                const blob = await response.blob();
-                return blob;
+                return response.json();
             })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'prism_biometrics_dataset.zip';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                biometricsInfo.textContent = 'Done. Your ZIP download should start automatically.';
-                biometricsInfo.classList.remove('d-none');
+            .then(data => {
+                biometricsInfo.classList.add('d-none');
+                if (!data.tasks || data.tasks.length === 0) {
+                    biometricsError.textContent = 'No biometrics tasks detected in the file. Please check your templates and column names.';
+                    biometricsError.classList.remove('d-none');
+                    return;
+                }
+
+                // Show detected tasks
+                biometricsDetectedContainer.classList.remove('d-none');
+                biometricsDetectedList.innerHTML = '';
+                data.tasks.forEach(task => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4';
+                    col.innerHTML = `
+                        <div class="form-check">
+                            <input class="form-check-input biometrics-task-check" type="checkbox" value="${task}" id="task_${task}" checked>
+                            <label class="form-check-label small" for="task_${task}">
+                                ${task}
+                            </label>
+                        </div>
+                    `;
+                    biometricsDetectedList.appendChild(col);
+                });
             })
             .catch(err => {
                 biometricsError.textContent = err.message;
                 biometricsError.classList.remove('d-none');
             })
             .finally(() => {
-                updateBiometricsBtn();
+                biometricsConvertBtn.disabled = false;
+            });
+        });
+    }
+
+    if (biometricsSelectAll) {
+        biometricsSelectAll.addEventListener('change', function() {
+            const checks = document.querySelectorAll('.biometrics-task-check');
+            checks.forEach(c => c.checked = biometricsSelectAll.checked);
+        });
+    }
+
+    if (biometricsConfirmBtn) {
+        biometricsConfirmBtn.addEventListener('click', function() {
+            const selectedTasks = Array.from(document.querySelectorAll('.biometrics-task-check:checked')).map(c => c.value);
+            if (selectedTasks.length === 0) {
+                alert('Please select at least one task to export.');
+                return;
+            }
+
+            biometricsError.classList.add('d-none');
+            biometricsInfo.classList.add('d-none');
+            
+            // Show log container
+            biometricsLogContainer.classList.remove('d-none');
+            biometricsLogBody.classList.remove('d-none');
+            const icon = toggleBiometricsLogBtn.querySelector('i');
+            icon.classList.remove('fa-chevron-right');
+            icon.classList.add('fa-chevron-down');
+
+            const libraryPath = biometricsLibraryPathInput ? biometricsLibraryPathInput.value.trim() : '';
+            const file = biometricsDataFile.files && biometricsDataFile.files[0];
+
+            appendLog(`Starting conversion of: ${file.name}`, 'info', biometricsLog);
+            appendLog(`Using library: ${libraryPath}`, 'step', biometricsLog);
+
+            const formData = new FormData();
+            formData.append('data', file);
+            formData.append('library_path', libraryPath);
+            formData.append('dataset_name', biometricsDatasetName.value.trim());
+            formData.append('unknown', biometricsUnknown.value);
+            formData.append('validate', 'true');
+            selectedTasks.forEach(t => formData.append('tasks[]', t));
+
+            biometricsConfirmBtn.disabled = true;
+            appendLog('Uploading file and starting conversion...', 'info', biometricsLog);
+
+            fetch('/api/biometrics-convert', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.error || 'Conversion failed');
+                }
+                return data;
+            })
+            .then(data => {
+                if (data.log && Array.isArray(data.log)) {
+                    data.log.forEach(entry => {
+                        appendLog(entry.message, entry.type || 'info', biometricsLog);
+                    });
+                }
+
+                if (data.validation) {
+                    const v = data.validation;
+                    const errorCount = (v.errors || []).length;
+                    const warningCount = (v.warnings || []).length;
+                    
+                    if (errorCount === 0 && warningCount === 0) {
+                        appendLog('✓ Validation passed - dataset is valid!', 'success', biometricsLog);
+                    } else if (errorCount === 0) {
+                        appendLog(`⚠ Validation passed with ${warningCount} warning(s)`, 'warning', biometricsLog);
+                    } else {
+                        appendLog(`✗ Validation failed with ${errorCount} error(s)`, 'error', biometricsLog);
+                    }
+                    
+                    displayValidationResults(data.validation, 'biometrics');
+                }
+
+                if (data.zip_base64) {
+                    const byteCharacters = atob(data.zip_base64);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    currentBiometricsZipBlob = new Blob([byteArray], {type: 'application/zip'});
+                    
+                    appendLog('Conversion complete. Click the download button below.', 'success', biometricsLog);
+                }
+            })
+            .catch(err => {
+                appendLog(`Error: ${err.message}`, 'error', biometricsLog);
+                biometricsError.textContent = err.message;
+                biometricsError.classList.remove('d-none');
+            })
+            .finally(() => {
+                biometricsConfirmBtn.disabled = false;
             });
         });
     }
