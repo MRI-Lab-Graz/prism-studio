@@ -114,7 +114,7 @@ def to_sarif(
                 "tool": {
                     "driver": {
                         "name": "prism",
-                        "version": "1.6.1",
+                        "version": "1.6.2",
                         "informationUri": "https://prism.readthedocs.io",
                         "rules": list(rules.values()),
                     }

@@ -5,6 +5,19 @@ All notable changes to the PRISM project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - 2025-12-24
+
+### Added
+- **Biometrics Support**: Enhanced biometrics conversion and validation UI.
+- **Methods Boilerplate**: Added API endpoint and UI for generating methods boilerplate text.
+- **Internationalization**: Enhanced metadata structure for internationalization support.
+- **Build Tools**: Added macOS build script and enhanced Windows build version metadata.
+- **Schemas**: Added new PRISM schemas and example templates for survey and biometrics.
+
+### Changed
+- **Refactoring**: Improved output directory handling and validation for survey and biometrics imports.
+- **Demo Data**: Restructured demo dataset paths and related scripts.
+
 ## [1.6.1] - 2025-12-22
 
 ### Added
