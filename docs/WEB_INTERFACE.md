@@ -71,7 +71,28 @@ This helps when building metadata iteratively.
 
 ---
 
-## 5) NeuroBagel integration (participants)
+## 5) Template Editor (Survey / Biometrics)
+
+PRISM Studio includes a **Template Editor** to create or modify PRISM library templates (Survey or Biometrics) without editing raw JSON.
+
+What it supports:
+- **Load** a template from a library folder or create a **new** template from the selected PRISM schema version
+- **Value-only editing**: keys stay fixed/locked; the UI renders fields as form controls
+- **No brackets for typical fields**: arrays/levels/translations are edited via add/remove controls and language rows
+- **Schema help**: hover the ⓘ icons to see descriptions and allowed values
+- **Validate** against the selected schema and **download** the JSON (no server-side overwrite)
+
+Where to find it:
+- From the navbar: **Template Editor**
+- Or open directly: `http://localhost:5001/template-editor`
+
+Tips:
+- Use **Add** in the left “Items (questions/metrics)” panel to add a new item ID (it becomes fixed once created).
+- For translated text fields, language codes (e.g., `de`, `en`) are non-editable; only the text values are editable.
+
+---
+
+## 6) NeuroBagel integration (participants)
 
 PRISM Studio provides a participants annotation workflow compatible with NeuroBagel:
 - Reads `participants.tsv`
@@ -80,7 +101,7 @@ PRISM Studio provides a participants annotation workflow compatible with NeuroBa
 
 ---
 
-## 6) Tips for first-time use
+## 7) Tips for first-time use
 
 - Start with a small demo dataset: see [DEMO_DATA.md](DEMO_DATA.md).
 - Validate first, then iterate on metadata fields.

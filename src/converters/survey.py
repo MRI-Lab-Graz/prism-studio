@@ -31,6 +31,8 @@ _NON_ITEM_TOPLEVEL_KEYS = {
     "LimeSurvey",
 }
 
+_MISSING_TOKEN = "na"
+
 
 @dataclass(frozen=True)
 class SurveyConvertResult:

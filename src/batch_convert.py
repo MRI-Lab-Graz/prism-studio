@@ -115,12 +115,16 @@ def _create_physio_sidecar(
     task_name: str,
     sampling_rate: float | None = None,
     recording_label: str = "ecg",
+    extra_meta: dict | None = None,
 ) -> None:
     """Create a PRISM-compliant JSON sidecar for physio data."""
+    extra_meta = extra_meta or {}
     sidecar = {
         "Technical": {
-            "SamplingRate": sampling_rate or "unknown",
-            "RecordingDuration": "unknown",
+            "SamplingRate": sampling_rate
+            or extra_meta.get("SamplingFrequency")
+            or "unknown",
+            "RecordingDuration": extra_meta.get("RecordingDuration") or "unknown",
             "SourceFormat": source_path.suffix.lower().lstrip("."),
         },
         "Study": {
@@ -128,12 +132,18 @@ def _create_physio_sidecar(
         },
         "Metadata": {
             "SourceFile": source_path.name,
-            "ConvertedFrom": "Varioport",
+            "ConvertedFrom": "Varioport"
+            if source_path.suffix.lower() in (".raw", ".vpd")
+            else "EDF",
         },
         "Columns": {
             "time": {"Description": "Time in seconds", "Units": "s"},
         },
     }
+
+    if "Channels" in extra_meta:
+        for ch in extra_meta["Channels"]:
+            sidecar["Columns"][ch] = {"Description": f"Channel {ch}"}
 
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(sidecar, f, indent=2, ensure_ascii=False)
@@ -144,11 +154,13 @@ def _create_eyetracking_sidecar(
     output_json: Path,
     *,
     task_name: str,
+    extra_meta: dict | None = None,
 ) -> None:
     """Create a PRISM-compliant JSON sidecar for eyetracking data."""
+    extra_meta = extra_meta or {}
     sidecar = {
         "Technical": {
-            "SamplingRate": "unknown",  # Would need to read EDF header
+            "SamplingRate": extra_meta.get("SamplingFrequency") or "unknown",
             "Manufacturer": "SR Research",
             "DeviceSerialNumber": "unknown",
             "EyeTrackingMethod": "video-based",
@@ -166,6 +178,43 @@ def _create_eyetracking_sidecar(
 
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(sidecar, f, indent=2, ensure_ascii=False)
+
+
+def _extract_edf_metadata(edf_path: Path) -> dict:
+    """Extract metadata from an EDF file using pyedflib."""
+    try:
+        import pyedflib
+        from collections import Counter
+
+        f = pyedflib.EdfReader(str(edf_path))
+
+        # Get basic info
+        n_channels = f.signals_in_file
+        duration = f.file_duration
+        start_datetime = f.getStartdatetime()
+
+        # Get channel info
+        channels = []
+        sampling_rates = []
+        for i in range(n_channels):
+            channels.append(f.getLabel(i))
+            sampling_rates.append(f.getSampleFrequency(i))
+
+        f.close()
+
+        # Use the most common sampling rate as the default
+        common_sr = Counter(sampling_rates).most_common(1)[0][0] if sampling_rates else 0
+
+        return {
+            "SamplingFrequency": common_sr,
+            "RecordingDuration": duration,
+            "StartTime": start_datetime.strftime("%H:%M:%S") if start_datetime else None,
+            "Channels": channels,
+            "AllSamplingRates": sampling_rates,
+        }
+    except Exception as e:
+        print(f"Warning: Could not extract EDF metadata from {edf_path}: {e}")
+        return {}
 
 
 def convert_physio_file(
@@ -248,11 +297,18 @@ def convert_physio_file(
             out_json = out_folder / f"{base_name}.json"
 
             shutil.copy2(source_path, out_data)
+
+            # Extract metadata if it's an EDF file
+            edf_meta = {}
+            if ext == "edf":
+                edf_meta = _extract_edf_metadata(source_path)
+
             _create_physio_sidecar(
                 source_path,
                 out_json,
                 task_name=task,
                 sampling_rate=base_freq,
+                extra_meta=edf_meta,
             )
             output_files.extend([out_data, out_json])
 
@@ -320,7 +376,10 @@ def convert_eyetracking_file(
         output_files.append(out_edf)
 
         # Create sidecar
-        _create_eyetracking_sidecar(source_path, out_json, task_name=task)
+        edf_meta = _extract_edf_metadata(source_path)
+        _create_eyetracking_sidecar(
+            source_path, out_json, task_name=task, extra_meta=edf_meta
+        )
         output_files.append(out_json)
 
         # Try to enrich sidecar with EDF header info if pyedflib is available

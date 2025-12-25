@@ -55,7 +55,7 @@ def create_api_blueprint(schema_dir: Optional[str] = None):
             {
                 "status": "healthy",
                 "service": "prism",
-                "version": "1.6.2",
+                "version": "1.6.5",
                 "timestamp": datetime.utcnow().isoformat() + "Z",
             }
         )

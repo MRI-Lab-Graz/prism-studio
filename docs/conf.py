@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(".."))
 project = "PRISM"
 copyright = "2025, MRI-Lab-Graz"
 author = "MRI-Lab-Graz"
-release = "1.6.2"
+release = "1.6.5"
 
 # -- General configuration ---------------------------------------------------
 extensions = [

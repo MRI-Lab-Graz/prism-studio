@@ -17,8 +17,8 @@ python prism-gui.py
 **👉 Run the Web Interface (PRISM Studio)**:
 
 ```bash
-bash scripts/setup/setup.sh    # One-time setup (macOS/Linux)
-python prism-studio.py
+bash setup.sh    # One-time setup (macOS/Linux)
+./prism-studio.py
 ```
 
 The web interface will open automatically at `http://localhost:5001`.
@@ -63,6 +63,7 @@ PRISM is an **independent, BIDS-compatible** framework and toolkit designed to e
   - Auto-detect and parse participants.tsv files
   - Categorical value extraction and labeling
 - **JSON Editor** - Edit and create metadata files interactively
+- **Template Editor** - Create/edit Survey/Biometrics templates with schema-guided, value-only forms (validate + download)
 - **Local processing** - All data stays on your machine (no cloud uploads)
 - **Cross-platform** - Works on Windows, macOS, and Linux
 - **Responsive design** - Works on desktop and mobile browsers

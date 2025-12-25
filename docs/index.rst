@@ -14,6 +14,7 @@ PRISM is an independent, BIDS-compatible dataset validation tool for psychologic
 - **Plugin system**: Custom validators for project-specific rules
 - **REST API**: Integrate validation into workflows
 - **Bilingual surveys**: German + English templates in single JSON files
+- **Template Editor (Web UI)**: Value-only editing for Survey/Biometrics templates with schema guidance
 
 .. toctree::
    :maxdepth: 2

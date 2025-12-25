@@ -1,0 +1,1248 @@
+{% extends "base.html" %}
+
+{% block title %}Template Editor - PRISM Studio{% endblock %}
+
+{% block styles %}
+<style>
+  .schema-hint {
+    cursor: help;
+  }
+  .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  }
+  .item-list {
+    max-height: 240px;
+    overflow: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.25rem;
+  }
+  .item-list .list-group-item {
+    cursor: pointer;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <div class="text-center mb-4">
+      <h2 class="mb-2">
+        <i class="fas fa-file-code text-primary me-2"></i>
+        Template Editor
+      </h2>
+      <p class="text-muted mb-0">Create or edit PRISM JSON templates for Survey or Biometrics, validate them, then download.</p>
+    </div>
+
+    <div class="card feature-card mb-4">
+      <div class="card-body p-4">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-6">
+            <label class="form-label">Library folder</label>
+            <div class="input-group">
+              <input id="libraryPath" type="text" class="form-control" placeholder="/path/to/survey_library" />
+              <button class="btn btn-outline-secondary" id="btnBrowseLibrary" type="button">
+                <i class="fas fa-folder-open me-1"></i>Browse
+              </button>
+            </div>
+            <div class="form-text">Select the root library folder that contains a survey/ and/or biometrics/ subfolder.</div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Modality</label>
+            <select id="modality" class="form-select">
+              <option value="survey" selected>survey</option>
+              <option value="biometrics">biometrics</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Schema version</label>
+            <select id="schemaVersion" class="form-select">
+              {% for v in schema_versions %}
+              <option value="{{ v }}" {% if v == default_schema_version %}selected{% endif %}>{{ v }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Library template</label>
+            <select id="templateSelect" class="form-select">
+              <option value="">(select one)</option>
+            </select>
+            <div class="form-text" id="libraryInfo"></div>
+          </div>
+          <div class="col-md-2 d-grid gap-2">
+            <button class="btn btn-outline-primary" id="btnLoad" type="button">
+              <i class="fas fa-folder-open me-1"></i>Load
+            </button>
+            <button class="btn btn-primary" id="btnNew" type="button">
+              <i class="fas fa-plus me-1"></i>New
+            </button>
+          </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="row g-3 align-items-end">
+          <div class="col-md-6">
+            <label class="form-label">Output filename</label>
+            <input id="filename" type="text" class="form-control" placeholder="survey-mytemplate.json" />
+            <div class="form-text">Used for the downloaded file. Nothing is written to disk on the server.</div>
+          </div>
+          <div class="col-md-6 d-flex gap-2 justify-content-end">
+            <button class="btn btn-success" id="btnValidate" type="button">
+              <i class="fas fa-check me-1"></i>Validate
+            </button>
+            <button class="btn btn-outline-secondary" id="btnDownload" type="button" disabled>
+              <i class="fas fa-download me-1"></i>Download JSON
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-3" id="alertArea"></div>
+
+        <div class="mt-4">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <label class="form-label mb-0">Template Editor</label>
+            <span class="text-muted small">Keys are fixed; edit values only.</span>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-lg-4">
+              <div class="card">
+                <div class="card-header bg-light">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>Items</strong>
+                      <span class="text-muted">(questions / metrics)</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="input-group mb-2">
+                    <input id="newItemId" type="text" class="form-control" placeholder="e.g., pss_01" />
+                    <button class="btn btn-outline-primary" id="btnAddItem" type="button">Add</button>
+                  </div>
+                  <div class="form-text mb-2">Item IDs become fixed once added.</div>
+
+                  <div id="itemList" class="item-list list-group"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-8">
+              <div class="accordion" id="templateAccordion">
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="headingTop">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTop" aria-expanded="true" aria-controls="collapseTop">
+                      Top-level
+                    </button>
+                  </h2>
+                  <div id="collapseTop" class="accordion-collapse collapse show" aria-labelledby="headingTop" data-bs-parent="#templateAccordion">
+                    <div class="accordion-body" id="topLevelForm"></div>
+                  </div>
+                </div>
+
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="headingItem">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseItem" aria-expanded="false" aria-controls="collapseItem">
+                      Selected item
+                    </button>
+                  </h2>
+                  <div id="collapseItem" class="accordion-collapse collapse" aria-labelledby="headingItem" data-bs-parent="#templateAccordion">
+                    <div class="accordion-body">
+                      <div class="mb-3">
+                        <label class="form-label">Selected item ID</label>
+                        <input id="selectedItemId" class="form-control mono" type="text" disabled />
+                      </div>
+                      <div id="itemForm"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-text mt-2">Hover the ⓘ icons for schema guidance (description, allowed values, patterns).</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  const modalityEl = document.getElementById('modality');
+  const schemaEl = document.getElementById('schemaVersion');
+  const templateSelectEl = document.getElementById('templateSelect');
+  const libraryInfoEl = document.getElementById('libraryInfo');
+  const libraryPathEl = document.getElementById('libraryPath');
+  const btnBrowseLibrary = document.getElementById('btnBrowseLibrary');
+  const filenameEl = document.getElementById('filename');
+  const topLevelFormEl = document.getElementById('topLevelForm');
+  const itemFormEl = document.getElementById('itemForm');
+  const itemListEl = document.getElementById('itemList');
+  const newItemIdEl = document.getElementById('newItemId');
+  const btnAddItem = document.getElementById('btnAddItem');
+  const selectedItemIdEl = document.getElementById('selectedItemId');
+  const selectedItemCollapseEl = document.getElementById('collapseItem');
+  const alertAreaEl = document.getElementById('alertArea');
+  const btnLoad = document.getElementById('btnLoad');
+  const btnNew = document.getElementById('btnNew');
+  const btnValidate = document.getElementById('btnValidate');
+  const btnDownload = document.getElementById('btnDownload');
+
+  const RESERVED_TOPLEVEL = new Set([
+    'Technical', 'Study', 'Metadata', 'I18n', 'LimeSurvey', 'Scoring', 'Normative'
+  ]);
+
+  let currentSchema = null;
+  let currentTemplate = null;
+  let selectedItemId = null;
+
+  function enableTooltips() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      // eslint-disable-next-line no-undef
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  }
+
+  function openSelectedItemPanel() {
+    try {
+      if (!selectedItemCollapseEl) return;
+      // eslint-disable-next-line no-undef
+      const collapse = bootstrap.Collapse.getOrCreateInstance(selectedItemCollapseEl, { toggle: false });
+      collapse.show();
+    } catch {
+      // ignore if bootstrap isn't available
+    }
+  }
+
+  function showAlert(kind, text) {
+    // kind: 'success' | 'danger' | 'warning' | 'info'
+    alertAreaEl.innerHTML = `
+      <div class="alert alert-${kind}" role="alert">
+        ${text}
+      </div>
+    `;
+  }
+
+  function clearAlert() {
+    alertAreaEl.innerHTML = '';
+  }
+
+  async function apiGet(url) {
+    const res = await fetch(url, { method: 'GET' });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || `Request failed (${res.status})`);
+    }
+    return data;
+  }
+
+  async function apiPost(url, body) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || `Request failed (${res.status})`);
+    }
+    return data;
+  }
+
+  function schemaExample(sch) {
+    if (!sch || typeof sch !== 'object') return null;
+    if (Array.isArray(sch.examples) && sch.examples.length) return sch.examples[0];
+    if (sch.default !== undefined) return sch.default;
+    if (Array.isArray(sch.enum) && sch.enum.length) {
+      const nonEmpty = sch.enum.find(v => v !== '');
+      return nonEmpty !== undefined ? nonEmpty : sch.enum[0];
+    }
+    let t = sch.type;
+    if (Array.isArray(t)) {
+      const pref = ['object','array','string','integer','number','boolean','null'];
+      t = pref.find(x => t.includes(x)) || t[0];
+    }
+    if (t === 'object' || (!t && sch.properties)) {
+      const out = {};
+      if (sch.properties && typeof sch.properties === 'object') {
+        for (const k of Object.keys(sch.properties)) {
+          out[k] = schemaExample(sch.properties[k]);
+        }
+      }
+      return out;
+    }
+    if (t === 'array') {
+      return [schemaExample(sch.items || {})];
+    }
+    if (t === 'integer') return 0;
+    if (t === 'number') return 0;
+    if (t === 'boolean') return false;
+    if (t === 'null') return null;
+    return 'example';
+  }
+
+  async function refreshSchema() {
+    const modality = modalityEl.value;
+    const schema_version = schemaEl.value;
+    const data = await apiGet(`/api/template-editor/schema?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schema_version)}`);
+    currentSchema = data.schema;
+  }
+
+  function getItemSchema() {
+    if (!currentSchema) return null;
+    return currentSchema.additionalProperties || null;
+  }
+
+  function getSectionSchema(sectionKey) {
+    if (!currentSchema || !currentSchema.properties) return null;
+    return currentSchema.properties[sectionKey] || null;
+  }
+
+  function sortedFieldNames(props, required) {
+    const keys = Object.keys(props || {});
+    return keys.sort((a, b) => {
+      const ar = required.includes(a) ? 0 : 1;
+      const br = required.includes(b) ? 0 : 1;
+      if (ar !== br) return ar - br;
+      return a.localeCompare(b);
+    });
+  }
+
+  function infoHtml(fieldSchema) {
+    const parts = [];
+    if (fieldSchema.description) parts.push(fieldSchema.description);
+    if (Array.isArray(fieldSchema.enum)) parts.push('Allowed: ' + fieldSchema.enum.filter(v => v !== '').join(', '));
+    if (fieldSchema.pattern) parts.push('Pattern: ' + fieldSchema.pattern);
+    const ex = schemaExample(fieldSchema);
+    if (ex !== null && ex !== undefined) {
+      const exStr = (typeof ex === 'object') ? JSON.stringify(ex) : String(ex);
+      parts.push('Example: ' + exStr);
+    }
+    return parts.join('\n');
+  }
+
+  function makeLabel(name, fieldSchema, isRequired) {
+    const label = document.createElement('label');
+    label.className = 'form-label';
+    label.textContent = name;
+
+    const hint = document.createElement('span');
+    hint.className = 'ms-2 text-muted schema-hint';
+    hint.setAttribute('data-bs-toggle', 'tooltip');
+    hint.setAttribute('data-bs-placement', 'right');
+    hint.setAttribute('title', infoHtml(fieldSchema));
+    hint.textContent = 'ⓘ';
+    label.appendChild(hint);
+
+    if (isRequired) {
+      const star = document.createElement('span');
+      star.className = 'ms-1 text-danger';
+      star.textContent = '*';
+      label.appendChild(star);
+    }
+    return label;
+  }
+
+  function createInput(fieldSchema, value, onChange) {
+    // Enums
+    if (Array.isArray(fieldSchema.enum)) {
+      const sel = document.createElement('select');
+      sel.className = 'form-select';
+      for (const v of fieldSchema.enum) {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v === '' ? '(empty)' : String(v);
+        sel.appendChild(opt);
+      }
+      sel.value = value === undefined || value === null ? '' : String(value);
+      sel.addEventListener('change', () => onChange(sel.value));
+      return sel;
+    }
+
+    // Bool
+    if (fieldSchema.type === 'boolean') {
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.className = 'form-check-input';
+      chk.checked = value === true;
+      chk.addEventListener('change', () => onChange(chk.checked));
+      return chk;
+    }
+
+    // Numeric
+    if (fieldSchema.type === 'integer' || fieldSchema.type === 'number') {
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.className = 'form-control';
+      inp.value = (value === undefined || value === null) ? '' : String(value);
+      inp.addEventListener('input', () => {
+        const raw = inp.value;
+        if (raw === '') return onChange(null);
+        onChange(fieldSchema.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw));
+      });
+      return inp;
+    }
+
+    // Arrays/objects
+    const t = fieldSchema.type;
+    const multi = Array.isArray(t) ? t : [t].filter(Boolean);
+    const allowsObject = multi.includes('object') || (!multi.length && !!fieldSchema.properties);
+    const allowsArray = multi.includes('array');
+    const allowsString = multi.includes('string') || !multi.length;
+
+    // Arrays of primitives: provide bracket-free editing
+    if (allowsArray || t === 'array') {
+      const items = fieldSchema.items || {};
+      const itemsType = items.type;
+      const isPrimitive = ['string', 'integer', 'number'].includes(itemsType);
+      const current = Array.isArray(value) ? value : (value === undefined || value === null ? [] : [value]);
+
+      // Enum arrays -> multi-select
+      if (isPrimitive && Array.isArray(items.enum) && items.enum.length) {
+        const sel = document.createElement('select');
+        sel.className = 'form-select';
+        sel.multiple = true;
+        for (const v of items.enum) {
+          const opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v === '' ? '(empty)' : String(v);
+          sel.appendChild(opt);
+        }
+        // set selected
+        const selectedSet = new Set(current.map(x => String(x)));
+        Array.from(sel.options).forEach(opt => {
+          opt.selected = selectedSet.has(opt.value);
+        });
+        sel.addEventListener('change', () => {
+          const out = Array.from(sel.selectedOptions).map(o => {
+            if (itemsType === 'integer') return parseInt(o.value, 10);
+            if (itemsType === 'number') return parseFloat(o.value);
+            return o.value;
+          });
+          onChange(out);
+        });
+        return sel;
+      }
+
+      // Freeform primitive arrays -> add/remove rows
+      if (isPrimitive && !items.properties && !items.oneOf && !items.anyOf && !items.allOf) {
+        const container = document.createElement('div');
+
+        const list = document.createElement('div');
+        container.appendChild(list);
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'btn btn-sm btn-outline-primary mt-2';
+        addBtn.textContent = 'Add entry';
+        container.appendChild(addBtn);
+
+        function coerce(raw) {
+          if (itemsType === 'integer') {
+            const v = parseInt(raw, 10);
+            return Number.isNaN(v) ? null : v;
+          }
+          if (itemsType === 'number') {
+            const v = parseFloat(raw);
+            return Number.isNaN(v) ? null : v;
+          }
+          return raw;
+        }
+
+        function render(arr) {
+          list.innerHTML = '';
+          const normalized = Array.isArray(arr) ? arr : [];
+          if (!normalized.length) {
+            const p = document.createElement('div');
+            p.className = 'text-muted small';
+            p.textContent = 'No entries.';
+            list.appendChild(p);
+          }
+
+          normalized.forEach((val, idx) => {
+            const row = document.createElement('div');
+            row.className = 'input-group mb-2';
+
+            const inp = document.createElement('input');
+            inp.type = (itemsType === 'integer' || itemsType === 'number') ? 'number' : 'text';
+            inp.className = 'form-control';
+            inp.value = (val === undefined || val === null) ? '' : String(val);
+
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'btn btn-outline-danger';
+            delBtn.textContent = 'Remove';
+
+            function sync() {
+              const next = normalized.slice();
+              const coerced = coerce(inp.value);
+              next[idx] = coerced;
+              // filter nulls for number/integer
+              const out = (itemsType === 'integer' || itemsType === 'number') ? next.filter(x => x !== null) : next;
+              onChange(out);
+              render(out);
+            }
+
+            inp.addEventListener('change', sync);
+            delBtn.addEventListener('click', () => {
+              const next = normalized.slice();
+              next.splice(idx, 1);
+              onChange(next);
+              render(next);
+            });
+
+            row.appendChild(inp);
+            row.appendChild(delBtn);
+            list.appendChild(row);
+          });
+        }
+
+        addBtn.addEventListener('click', () => {
+          const next = current.slice();
+          next.push(itemsType === 'string' ? '' : 0);
+          onChange(next);
+          render(next);
+        });
+
+        render(current);
+        return container;
+      }
+    }
+
+    // Detect if value is a translation table (object with lang keys like "de", "en", etc.)
+    function isTranslationObject(val) {
+      if (!val || typeof val !== 'object' || Array.isArray(val)) return false;
+      const keys = Object.keys(val);
+      if (keys.length === 0) return false;
+      // If all keys are 2-letter lang codes (optionally with region) → translation table
+      const langPattern = /^[a-z]{2}(-[A-Z]{2})?$/;
+      return keys.every(k => langPattern.test(k));
+    }
+
+    // Special: string|object fields that can hold translations (Description, etc.)
+    // Trigger if: allows both string and object AND (has additionalProperties OR value is already a translation object)
+    if (allowsObject && allowsString && (fieldSchema.additionalProperties || fieldSchema.patternProperties || isTranslationObject(value))) {
+      const container = document.createElement('div');
+      container.className = 'border rounded p-2';
+
+      const table = document.createElement('div');
+      container.appendChild(table);
+      const addRowBtn = document.createElement('button');
+      addRowBtn.type = 'button';
+      addRowBtn.className = 'btn btn-sm btn-outline-primary mt-2';
+      addRowBtn.textContent = 'Add language';
+      container.appendChild(addRowBtn);
+
+      // Internal state for table keys (fixed once added)
+      let tableData = {};
+
+      function renderTable(obj) {
+        table.innerHTML = '';
+        tableData = Object.assign({}, obj || {});
+        const entries = Object.entries(tableData);
+        if (!entries.length) {
+          // Start with default languages
+          tableData = { de: '', en: '' };
+          onChange(Object.assign({}, tableData));
+        }
+        for (const [k, v] of Object.entries(tableData)) {
+          const row = document.createElement('div');
+          row.className = 'row g-2 align-items-center mb-1';
+
+          // Key: fixed, non-editable
+          const colK = document.createElement('div');
+          colK.className = 'col-2';
+          const keyLabel = document.createElement('span');
+          keyLabel.className = 'form-control-plaintext mono fw-bold';
+          keyLabel.textContent = k;
+          colK.appendChild(keyLabel);
+
+          // Value: editable
+          const colV = document.createElement('div');
+          colV.className = 'col-9';
+          const valInp = document.createElement('input');
+          valInp.type = 'text';
+          valInp.className = 'form-control';
+          valInp.value = (v === undefined || v === null) ? '' : String(v);
+          valInp.addEventListener('input', () => {
+            tableData[k] = valInp.value;
+            onChange(Object.assign({}, tableData));
+          });
+          colV.appendChild(valInp);
+
+          // Remove button
+          const colX = document.createElement('div');
+          colX.className = 'col-1 d-grid';
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'btn btn-sm btn-outline-danger';
+          delBtn.textContent = '×';
+          delBtn.addEventListener('click', () => {
+            delete tableData[k];
+            onChange(Object.assign({}, tableData));
+            renderTable(tableData);
+          });
+          colX.appendChild(delBtn);
+
+          row.appendChild(colK);
+          row.appendChild(colV);
+          row.appendChild(colX);
+          table.appendChild(row);
+        }
+      }
+
+      addRowBtn.addEventListener('click', () => {
+        const newLang = prompt('Enter language code (e.g., en, de, fr):');
+        if (!newLang || !/^[a-z]{2}(-[A-Z]{2})?$/.test(newLang.trim())) {
+          if (newLang !== null) alert('Invalid language code. Use format like "en" or "de-AT".');
+          return;
+        }
+        const lang = newLang.trim();
+        if (tableData[lang] !== undefined) {
+          alert('Language already exists.');
+          return;
+        }
+        tableData[lang] = '';
+        onChange(Object.assign({}, tableData));
+        renderTable(tableData);
+      });
+
+      // Initialize with existing data or defaults
+      const initVal = (typeof value === 'object' && value && !Array.isArray(value)) ? value : { de: '', en: '' };
+      renderTable(initVal);
+      return container;
+    }
+
+    // Structured objects with defined properties (like Translation, References items, etc.)
+    if (allowsObject && fieldSchema.properties && !allowsString && !allowsArray) {
+      const container = document.createElement('div');
+      container.className = 'border rounded p-2 bg-light';
+
+      const props = fieldSchema.properties;
+      const required = fieldSchema.required || [];
+      const names = sortedFieldNames(props, required);
+
+      // Ensure value is an object
+      let objVal = (typeof value === 'object' && value && !Array.isArray(value)) ? value : {};
+
+      for (const name of names) {
+        const subSchema = props[name];
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'mb-2';
+
+        const isReq = required.includes(name);
+        fieldDiv.appendChild(makeLabel(name, subSchema, isReq));
+
+        if (objVal[name] === undefined) {
+          objVal[name] = schemaExample(subSchema);
+        }
+
+        const subInput = createInput(subSchema, objVal[name], (v) => {
+          objVal[name] = v;
+          onChange(Object.assign({}, objVal));
+        });
+        fieldDiv.appendChild(subInput);
+        container.appendChild(fieldDiv);
+      }
+
+      return container;
+    }
+
+    // Special: Levels object - nested structure {"0": {"de": "...", "en": "..."}, "1": {...}, ...}
+    // Detect by: object with numeric-ish keys where values are objects or strings
+    function isLevelsObject(val) {
+      if (!val || typeof val !== 'object' || Array.isArray(val)) return false;
+      const keys = Object.keys(val);
+      if (keys.length === 0) return false;
+      // Keys are typically "0", "1", "2", etc. or could be any short code
+      return keys.every(k => typeof val[k] === 'object' || typeof val[k] === 'string');
+    }
+
+    if (allowsObject && fieldSchema.patternProperties && isLevelsObject(value)) {
+      const container = document.createElement('div');
+      container.className = 'border rounded p-2';
+
+      const levelsTable = document.createElement('div');
+      container.appendChild(levelsTable);
+
+      const addLevelBtn = document.createElement('button');
+      addLevelBtn.type = 'button';
+      addLevelBtn.className = 'btn btn-sm btn-outline-primary mt-2';
+      addLevelBtn.textContent = 'Add level';
+      container.appendChild(addLevelBtn);
+
+      let levelsData = Object.assign({}, value || {});
+
+      function renderLevels() {
+        levelsTable.innerHTML = '';
+        const entries = Object.entries(levelsData);
+        if (!entries.length) {
+          const p = document.createElement('div');
+          p.className = 'text-muted small';
+          p.textContent = 'No levels defined. Click "Add level" to add response options.';
+          levelsTable.appendChild(p);
+          return;
+        }
+
+        for (const [levelKey, levelVal] of entries) {
+          const levelBlock = document.createElement('div');
+          levelBlock.className = 'mb-3 p-2 bg-light rounded';
+
+          // Level key header (non-editable)
+          const header = document.createElement('div');
+          header.className = 'd-flex justify-content-between align-items-center mb-2';
+          const keyLabel = document.createElement('span');
+          keyLabel.className = 'fw-bold mono';
+          keyLabel.textContent = `Level ${levelKey}`;
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'btn btn-sm btn-outline-danger';
+          delBtn.textContent = 'Remove';
+          delBtn.addEventListener('click', () => {
+            delete levelsData[levelKey];
+            onChange(Object.assign({}, levelsData));
+            renderLevels();
+          });
+          header.appendChild(keyLabel);
+          header.appendChild(delBtn);
+          levelBlock.appendChild(header);
+
+          // If levelVal is an object (translations), render each language
+          if (typeof levelVal === 'object' && levelVal !== null) {
+            const langEntries = Object.entries(levelVal);
+            for (const [lang, text] of langEntries) {
+              const row = document.createElement('div');
+              row.className = 'row g-2 align-items-center mb-1';
+
+              const colLang = document.createElement('div');
+              colLang.className = 'col-2';
+              const langLabel = document.createElement('span');
+              langLabel.className = 'form-control-plaintext mono small';
+              langLabel.textContent = lang;
+              colLang.appendChild(langLabel);
+
+              const colVal = document.createElement('div');
+              colVal.className = 'col-10';
+              const valInp = document.createElement('input');
+              valInp.type = 'text';
+              valInp.className = 'form-control';
+              valInp.value = text || '';
+              valInp.addEventListener('input', () => {
+                levelsData[levelKey][lang] = valInp.value;
+                onChange(Object.assign({}, levelsData));
+              });
+              colVal.appendChild(valInp);
+
+              row.appendChild(colLang);
+              row.appendChild(colVal);
+              levelBlock.appendChild(row);
+            }
+
+            // Add language button for this level
+            const addLangBtn = document.createElement('button');
+            addLangBtn.type = 'button';
+            addLangBtn.className = 'btn btn-sm btn-outline-secondary mt-1';
+            addLangBtn.textContent = '+ Language';
+            addLangBtn.addEventListener('click', () => {
+              const newLang = prompt('Enter language code (e.g., en, de):');
+              if (!newLang || !/^[a-z]{2}(-[A-Z]{2})?$/.test(newLang.trim())) {
+                if (newLang !== null) alert('Invalid language code.');
+                return;
+              }
+              const lang = newLang.trim();
+              if (levelsData[levelKey][lang] !== undefined) {
+                alert('Language already exists for this level.');
+                return;
+              }
+              levelsData[levelKey][lang] = '';
+              onChange(Object.assign({}, levelsData));
+              renderLevels();
+            });
+            levelBlock.appendChild(addLangBtn);
+          } else {
+            // Simple string value
+            const row = document.createElement('div');
+            row.className = 'row g-2 align-items-center';
+            const colVal = document.createElement('div');
+            colVal.className = 'col-12';
+            const valInp = document.createElement('input');
+            valInp.type = 'text';
+            valInp.className = 'form-control';
+            valInp.value = levelVal || '';
+            valInp.addEventListener('input', () => {
+              levelsData[levelKey] = valInp.value;
+              onChange(Object.assign({}, levelsData));
+            });
+            colVal.appendChild(valInp);
+            row.appendChild(colVal);
+            levelBlock.appendChild(row);
+          }
+
+          levelsTable.appendChild(levelBlock);
+        }
+      }
+
+      addLevelBtn.addEventListener('click', () => {
+        const newKey = prompt('Enter level key (e.g., 0, 1, 2, or a code):');
+        if (!newKey) return;
+        const key = newKey.trim();
+        if (levelsData[key] !== undefined) {
+          alert('Level already exists.');
+          return;
+        }
+        // Default to object with common languages
+        levelsData[key] = { de: '', en: '' };
+        onChange(Object.assign({}, levelsData));
+        renderLevels();
+      });
+
+      renderLevels();
+      return container;
+    }
+
+    if (allowsArray || allowsObject) {
+      // Fallback: complex JSON (kept, but minimized in typical flows)
+      const ta = document.createElement('textarea');
+      ta.className = 'form-control mono';
+      ta.rows = 4;
+      const v = (value === undefined) ? schemaExample(fieldSchema) : value;
+      ta.value = (v === undefined || v === null) ? '' : JSON.stringify(v, null, 2);
+      ta.addEventListener('input', () => {
+        const raw = ta.value.trim();
+        if (!raw) return onChange(allowsArray ? [] : {});
+        try {
+          onChange(JSON.parse(raw));
+        } catch {
+          // keep invalid until validate; do not throw on each keystroke
+        }
+      });
+      return ta;
+    }
+
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'form-control';
+    inp.value = (value === undefined || value === null) ? '' : String(value);
+    inp.placeholder = schemaExample(fieldSchema) ? String(schemaExample(fieldSchema)) : '';
+    if (fieldSchema.pattern) inp.pattern = fieldSchema.pattern;
+    inp.addEventListener('input', () => onChange(inp.value));
+    return inp;
+  }
+
+  function renderSection(sectionKey, targetObj, sectionSchema, mountEl) {
+    mountEl.innerHTML = '';
+    if (!sectionSchema || !sectionSchema.properties) {
+      const p = document.createElement('div');
+      p.className = 'text-muted';
+      p.textContent = 'No schema information available.';
+      mountEl.appendChild(p);
+      return;
+    }
+
+    const props = sectionSchema.properties;
+    const required = sectionSchema.required || [];
+    const names = sortedFieldNames(props, required);
+
+    const row = document.createElement('div');
+    row.className = 'row g-3';
+    for (const name of names) {
+      const fieldSchema = props[name];
+      const col = document.createElement('div');
+      col.className = 'col-md-6';
+
+      const isRequired = required.includes(name);
+      col.appendChild(makeLabel(name, fieldSchema, isRequired));
+
+      if (targetObj[name] === undefined) {
+        targetObj[name] = schemaExample(fieldSchema);
+      }
+
+      const input = createInput(fieldSchema, targetObj[name], (v) => {
+        targetObj[name] = v;
+        btnDownload.disabled = true;
+      });
+
+      // checkbox layout
+      if (input.classList.contains('form-check-input')) {
+        const wrap = document.createElement('div');
+        wrap.className = 'form-check';
+        wrap.appendChild(input);
+        col.appendChild(wrap);
+      } else {
+        col.appendChild(input);
+      }
+
+      row.appendChild(col);
+    }
+    mountEl.appendChild(row);
+  }
+
+  function itemKeysFromTemplate(tpl) {
+    if (!tpl || typeof tpl !== 'object') return [];
+    return Object.keys(tpl).filter(k => !RESERVED_TOPLEVEL.has(k));
+  }
+
+  function renderItemList() {
+    itemListEl.innerHTML = '';
+    const keys = itemKeysFromTemplate(currentTemplate);
+    if (!keys.length) {
+      const p = document.createElement('div');
+      p.className = 'text-muted small p-2';
+      p.textContent = 'No items yet.';
+      itemListEl.appendChild(p);
+      return;
+    }
+    keys.sort().forEach(k => {
+      const a = document.createElement('button');
+      a.type = 'button';
+      a.className = 'list-group-item list-group-item-action';
+      a.textContent = k;
+      if (k === selectedItemId) a.classList.add('active');
+      a.addEventListener('click', () => {
+        selectedItemId = k;
+        renderItemList();
+        renderSelectedItem();
+        openSelectedItemPanel();
+      });
+      itemListEl.appendChild(a);
+    });
+  }
+
+  function renderSelectedItem() {
+    selectedItemIdEl.value = selectedItemId || '';
+    itemFormEl.innerHTML = '';
+    if (!selectedItemId) {
+      const p = document.createElement('div');
+      p.className = 'text-muted';
+      p.textContent = 'Select an item to edit its values.';
+      itemFormEl.appendChild(p);
+      return;
+    }
+    const itemSchema = getItemSchema();
+    if (!itemSchema || !itemSchema.properties) {
+      const p = document.createElement('div');
+      p.className = 'text-muted';
+      p.textContent = 'No item schema available.';
+      itemFormEl.appendChild(p);
+      return;
+    }
+    if (!currentTemplate[selectedItemId] || typeof currentTemplate[selectedItemId] !== 'object') {
+      currentTemplate[selectedItemId] = {};
+    }
+    renderSection('ITEM', currentTemplate[selectedItemId], itemSchema, itemFormEl);
+    enableTooltips();
+  }
+
+  function renderTopLevel() {
+    topLevelFormEl.innerHTML = '';
+    const sections = ['Technical', 'Study', 'Metadata', 'I18n'];
+
+    const acc = document.createElement('div');
+    acc.className = 'accordion';
+    acc.id = 'topLevelAccordion';
+
+    sections.forEach((s, idx) => {
+      const sch = getSectionSchema(s);
+      if (!sch) return;
+      if (!currentTemplate[s] || typeof currentTemplate[s] !== 'object') currentTemplate[s] = {};
+
+      const item = document.createElement('div');
+      item.className = 'accordion-item';
+
+      const h = document.createElement('h2');
+      h.className = 'accordion-header';
+      h.id = `tlHead_${s}`;
+
+      const btn = document.createElement('button');
+      btn.className = 'accordion-button' + (idx === 0 ? '' : ' collapsed');
+      btn.type = 'button';
+      btn.setAttribute('data-bs-toggle', 'collapse');
+      btn.setAttribute('data-bs-target', `#tlBody_${s}`);
+      btn.setAttribute('aria-expanded', idx === 0 ? 'true' : 'false');
+      btn.setAttribute('aria-controls', `tlBody_${s}`);
+      btn.textContent = s;
+      h.appendChild(btn);
+
+      const bodyWrap = document.createElement('div');
+      bodyWrap.id = `tlBody_${s}`;
+      bodyWrap.className = 'accordion-collapse collapse' + (idx === 0 ? ' show' : '');
+      bodyWrap.setAttribute('aria-labelledby', `tlHead_${s}`);
+      bodyWrap.setAttribute('data-bs-parent', '#topLevelAccordion');
+
+      const body = document.createElement('div');
+      body.className = 'accordion-body';
+      const mount = document.createElement('div');
+      body.appendChild(mount);
+      renderSection(s, currentTemplate[s], sch, mount);
+      bodyWrap.appendChild(body);
+
+      item.appendChild(h);
+      item.appendChild(bodyWrap);
+      acc.appendChild(item);
+    });
+
+    topLevelFormEl.appendChild(acc);
+    enableTooltips();
+  }
+
+  function renderAll() {
+    renderTopLevel();
+    renderItemList();
+    renderSelectedItem();
+  }
+
+  async function refreshTemplateList() {
+    const modality = modalityEl.value;
+    const library_path = (libraryPathEl.value || '').trim();
+    clearAlert();
+    btnDownload.disabled = true;
+
+    const qp = new URLSearchParams({ modality });
+    if (library_path) qp.set('library_path', library_path);
+    const data = await apiGet(`/api/template-editor/list?${qp.toString()}`);
+
+    templateSelectEl.innerHTML = '<option value="">(select one)</option>';
+    for (const name of (data.templates || [])) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      templateSelectEl.appendChild(opt);
+    }
+
+    if (data.library_dir && !library_path) {
+      libraryPathEl.value = data.library_dir;
+    }
+    libraryInfoEl.textContent = data.library_dir ? `Library: ${data.library_dir}` : '';
+  }
+
+  async function loadNewTemplate() {
+    const modality = modalityEl.value;
+    const schema_version = schemaEl.value;
+    clearAlert();
+    btnDownload.disabled = true;
+
+    await refreshSchema();
+
+    const data = await apiGet(`/api/template-editor/new?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schema_version)}`);
+    currentTemplate = data.template;
+    filenameEl.value = data.suggested_filename || `${modality}-new.json`;
+    selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
+    renderAll();
+    showAlert('info', 'New example template loaded. Edit values, validate, then download.');
+  }
+
+  async function loadSelectedTemplate() {
+    const modality = modalityEl.value;
+    const schema_version = schemaEl.value;
+    const filename = templateSelectEl.value;
+    const library_path = (libraryPathEl.value || '').trim();
+    if (!filename) {
+      showAlert('warning', 'Select a template to load.');
+      return;
+    }
+
+    clearAlert();
+    btnDownload.disabled = true;
+
+    await refreshSchema();
+
+    const qp = new URLSearchParams({
+      modality,
+      schema_version,
+      filename
+    });
+    if (library_path) qp.set('library_path', library_path);
+    const data = await apiGet(`/api/template-editor/load?${qp.toString()}`);
+    currentTemplate = data.template;
+    filenameEl.value = data.filename || filename;
+    selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
+    renderAll();
+    showAlert('info', `Loaded ${filename}. Edit values, then validate.`);
+  }
+
+  async function validateCurrent() {
+    const modality = modalityEl.value;
+    const schema_version = schemaEl.value;
+
+    const obj = currentTemplate;
+    if (!obj || typeof obj !== 'object') {
+      btnDownload.disabled = true;
+      showAlert('danger', 'No template loaded');
+      return;
+    }
+
+    const data = await apiPost('/api/template-editor/validate', {
+      modality,
+      schema_version,
+      template: obj
+    });
+
+    if (data.ok) {
+      btnDownload.disabled = false;
+      showAlert('success', '✅ Valid template for the selected schema. You can download it now.');
+    } else {
+      btnDownload.disabled = true;
+      const errs = (data.errors || []).slice(0, 50);
+      const list = errs.map(e => `<li><code>${e.path || '(root)'}</code>: ${e.message}</li>`).join('');
+      const extra = (data.errors || []).length > errs.length ? `<div class="mt-2 text-muted small">(showing first ${errs.length} errors)</div>` : '';
+      showAlert('danger', `❌ Validation failed.<ul class="mb-0">${list}</ul>${extra}`);
+    }
+  }
+
+  async function downloadCurrent() {
+    const obj = currentTemplate;
+    if (!obj || typeof obj !== 'object') {
+      showAlert('danger', 'No template loaded');
+      return;
+    }
+
+    const filename = (filenameEl.value || '').trim() || `${modalityEl.value}-template.json`;
+
+    const res = await fetch('/api/template-editor/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename, template: obj })
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || `Download failed (${res.status})`);
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename.toLowerCase().endsWith('.json') ? filename : (filename + '.json');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
+  // Wire events
+  modalityEl.addEventListener('change', async () => {
+    try {
+      await refreshTemplateList();
+      await loadNewTemplate();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  libraryPathEl.addEventListener('change', async () => {
+    try {
+      await refreshTemplateList();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  btnBrowseLibrary.addEventListener('click', async () => {
+    try {
+      const data = await apiGet('/api/browse-folder');
+      if (data.path) {
+        libraryPathEl.value = data.path;
+        await refreshTemplateList();
+      }
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  schemaEl.addEventListener('change', async () => {
+    try {
+      btnDownload.disabled = true;
+      await loadNewTemplate();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  btnNew.addEventListener('click', async () => {
+    try {
+      await loadNewTemplate();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  btnLoad.addEventListener('click', async () => {
+    try {
+      await loadSelectedTemplate();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  btnValidate.addEventListener('click', async () => {
+    try {
+      await validateCurrent();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  btnDownload.addEventListener('click', async () => {
+    try {
+      await downloadCurrent();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  btnAddItem.addEventListener('click', () => {
+    try {
+      if (!currentTemplate) {
+        showAlert('warning', 'Load or create a template first.');
+        return;
+      }
+      const id = (newItemIdEl.value || '').trim();
+      if (!id) {
+        showAlert('warning', 'Enter an item ID (e.g., pss_01).');
+        return;
+      }
+      if (RESERVED_TOPLEVEL.has(id)) {
+        showAlert('danger', 'That ID is reserved.');
+        return;
+      }
+      if (currentTemplate[id]) {
+        showAlert('warning', 'That item already exists.');
+        return;
+      }
+      const itemSchema = getItemSchema();
+      if (!itemSchema) {
+        showAlert('danger', 'Item schema not loaded.');
+        return;
+      }
+      currentTemplate[id] = schemaExample(itemSchema);
+      selectedItemId = id;
+      newItemIdEl.value = '';
+      renderAll();
+      openSelectedItemPanel();
+      btnDownload.disabled = true;
+      showAlert('success', `Added item ${id}.`);
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  // Initial load
+  (async () => {
+    try {
+      await refreshSchema();
+      await refreshTemplateList();
+      await loadNewTemplate();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  })();
+})();
+</script>
+{% endblock %}

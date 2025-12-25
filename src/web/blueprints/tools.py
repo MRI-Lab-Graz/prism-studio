@@ -1,12 +1,175 @@
 import os
 import sys
 import json
+import io
 import tempfile
 import subprocess
 from pathlib import Path
+from datetime import date
 from flask import Blueprint, render_template, request, jsonify, send_file, current_app
 
 tools_bp = Blueprint("tools", __name__)
+
+
+def _default_library_root_for_templates(*, modality: str) -> Path:
+    base_dir = Path(current_app.root_path)
+
+    preferred = (base_dir / "library" / "survey_i18n").resolve()
+    if modality == "survey":
+        if preferred.exists() and any(preferred.glob("survey-*.json")):
+            return preferred
+
+    return (base_dir / "survey_library").resolve()
+
+
+def _resolve_library_root(library_path: str | None) -> Path:
+    if library_path:
+        p = Path(library_path).expanduser().resolve()
+        if p.exists() and p.is_dir():
+            return p
+        raise FileNotFoundError(f"Invalid library folder: {library_path}")
+    return Path(_default_library_root_for_templates(modality="survey")).resolve()
+
+
+def _template_dir(*, modality: str, library_root: Path) -> Path:
+    candidate = library_root / modality
+    if candidate.is_dir():
+        return candidate
+    return library_root
+
+
+def _load_prism_schema(*, modality: str, schema_version: str | None) -> dict:
+    from src.schema_manager import load_schema
+
+    schema_dir = os.path.join(current_app.root_path, "schemas")
+    schema = load_schema(modality, schema_dir=schema_dir, version=schema_version)
+    if not schema:
+        raise FileNotFoundError(
+            f"No schema found for modality={modality} version={schema_version}"
+        )
+    return schema
+
+
+def _pick_enum_value(values: list) -> object:
+    for v in values:
+        if v != "":
+            return v
+    return values[0] if values else ""
+
+
+def _schema_example(schema: dict) -> object:
+    if not isinstance(schema, dict):
+        return None
+
+    if isinstance(schema.get("examples"), list) and schema.get("examples"):
+        return schema["examples"][0]
+    if "default" in schema:
+        return schema.get("default")
+    if isinstance(schema.get("enum"), list) and schema.get("enum"):
+        return _pick_enum_value(schema["enum"])
+
+    t = schema.get("type")
+    if isinstance(t, list):
+        # Prefer deterministic order
+        for preferred in ("object", "array", "string", "integer", "number", "boolean", "null"):
+            if preferred in t:
+                t = preferred
+                break
+        else:
+            t = t[0] if t else None
+
+    if t == "object" or (t is None and "properties" in schema):
+        out: dict[str, object] = {}
+        props = schema.get("properties") or {}
+        if isinstance(props, dict):
+            for k, v in props.items():
+                out[k] = _schema_example(v if isinstance(v, dict) else {})
+        return out
+
+    if t == "array":
+        item_schema = schema.get("items") if isinstance(schema.get("items"), dict) else {}
+        return [_schema_example(item_schema)]
+
+    if t == "integer":
+        return 0
+    if t == "number":
+        return 0
+    if t == "boolean":
+        return False
+    if t == "null":
+        return None
+
+    # Default string-like
+    return "example"
+
+
+def _deep_merge(base: object, override: object) -> object:
+    if isinstance(base, dict) and isinstance(override, dict):
+        out = dict(base)
+        for k, v in override.items():
+            if k in out:
+                out[k] = _deep_merge(out[k], v)
+            else:
+                out[k] = v
+        return out
+    return override
+
+
+def _new_template_from_schema(*, modality: str, schema_version: str | None) -> dict:
+    schema = _load_prism_schema(modality=modality, schema_version=schema_version)
+    out: dict[str, object] = {}
+
+    props = schema.get("properties") if isinstance(schema.get("properties"), dict) else {}
+    for k, v in props.items():
+        out[k] = _schema_example(v if isinstance(v, dict) else {})
+
+    # Sensible defaults
+    schema_semver = schema.get("version")
+    if isinstance(out.get("Metadata"), dict):
+        md = dict(out["Metadata"])
+        if isinstance(schema_semver, str):
+            md["SchemaVersion"] = schema_semver
+        md.setdefault("CreationDate", date.today().isoformat())
+        out["Metadata"] = md
+
+    if modality == "survey":
+        # Add a sample item demonstrating all available item options.
+        if isinstance(schema.get("additionalProperties"), dict):
+            out.setdefault(
+                "Q01",
+                _schema_example(schema["additionalProperties"]),
+            )
+        # Align with schema naming conventions
+        if isinstance(out.get("Technical"), dict):
+            out["Technical"]["StimulusType"] = out["Technical"].get("StimulusType") or "Questionnaire"
+            out["Technical"]["FileFormat"] = out["Technical"].get("FileFormat") or "tsv"
+
+    if modality == "biometrics":
+        if isinstance(schema.get("additionalProperties"), dict):
+            out.setdefault(
+                "metric01",
+                _schema_example(schema["additionalProperties"]),
+            )
+        if isinstance(out.get("Technical"), dict):
+            out["Technical"]["FileFormat"] = out["Technical"].get("FileFormat") or "tsv"
+
+    return out
+
+
+def _validate_against_schema(*, instance: object, schema: dict) -> list[dict]:
+    from jsonschema import Draft7Validator
+
+    v = Draft7Validator(schema)
+    errors = []
+    for err in sorted(v.iter_errors(instance), key=lambda e: list(e.path)):
+        path = "/".join(str(p) for p in err.path)
+        errors.append(
+            {
+                "path": path,
+                "message": err.message,
+            }
+        )
+    return errors
 
 @tools_bp.route("/survey-generator")
 def survey_generator():
@@ -37,6 +200,162 @@ def converter():
 @tools_bp.route("/derivatives")
 def derivatives():
     return render_template("derivatives.html")
+
+
+@tools_bp.route("/template-editor")
+def template_editor():
+    """Edit or create PRISM JSON templates (survey/biometrics) based on schemas."""
+    try:
+        from src.schema_manager import get_available_schema_versions
+
+        schema_versions = get_available_schema_versions(
+            os.path.join(current_app.root_path, "schemas")
+        )
+    except Exception:
+        schema_versions = ["stable"]
+
+    return render_template(
+        "template_editor.html",
+        schema_versions=schema_versions,
+        default_schema_version=(schema_versions[0] if schema_versions else "stable"),
+    )
+
+
+@tools_bp.route("/api/template-editor/list", methods=["GET"])
+def api_template_editor_list():
+    modality = (request.args.get("modality") or "").strip().lower()
+    library_path = (request.args.get("library_path") or "").strip() or None
+    if modality not in {"survey", "biometrics"}:
+        return jsonify({"error": "Invalid modality"}), 400
+
+    try:
+        library_root = _resolve_library_root(library_path)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+    folder = _template_dir(modality=modality, library_root=library_root)
+    if not folder.exists() or not folder.is_dir():
+        return jsonify({"templates": [], "library_dir": str(folder)}), 200
+
+    out = []
+    for p in sorted(folder.glob("*.json")):
+        if p.name.startswith("."):
+            continue
+        out.append(p.name)
+
+    return jsonify({"templates": out, "library_dir": str(folder)}), 200
+
+
+@tools_bp.route("/api/template-editor/new", methods=["GET"])
+def api_template_editor_new():
+    modality = (request.args.get("modality") or "").strip().lower()
+    schema_version = (request.args.get("schema_version") or "stable").strip()
+    if modality not in {"survey", "biometrics"}:
+        return jsonify({"error": "Invalid modality"}), 400
+
+    try:
+        template = _new_template_from_schema(modality=modality, schema_version=schema_version)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    suggested = f"{modality}-new.json"
+    return jsonify({"template": template, "suggested_filename": suggested}), 200
+
+
+@tools_bp.route("/api/template-editor/load", methods=["GET"])
+def api_template_editor_load():
+    modality = (request.args.get("modality") or "").strip().lower()
+    filename = (request.args.get("filename") or "").strip()
+    schema_version = (request.args.get("schema_version") or "stable").strip()
+    library_path = (request.args.get("library_path") or "").strip() or None
+    if modality not in {"survey", "biometrics"}:
+        return jsonify({"error": "Invalid modality"}), 400
+    if not filename or "/" in filename or "\\" in filename:
+        return jsonify({"error": "Invalid filename"}), 400
+
+    try:
+        library_root = _resolve_library_root(library_path)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+    folder = _template_dir(modality=modality, library_root=library_root)
+    path = (folder / filename).resolve()
+    if not str(path).startswith(str(folder.resolve())):
+        return jsonify({"error": "Invalid filename"}), 400
+    if not path.exists() or not path.is_file():
+        return jsonify({"error": "Template not found"}), 404
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            loaded = json.load(f)
+    except Exception as e:
+        return jsonify({"error": f"Could not read JSON: {e}"}), 400
+
+    try:
+        base = _new_template_from_schema(modality=modality, schema_version=schema_version)
+        merged = _deep_merge(base, loaded)
+    except Exception:
+        merged = loaded
+
+    return jsonify({"template": merged, "filename": filename, "library_path": str(path)}), 200
+
+
+@tools_bp.route("/api/template-editor/validate", methods=["POST"])
+def api_template_editor_validate():
+    payload = request.get_json(silent=True) or {}
+    modality = (payload.get("modality") or "").strip().lower()
+    schema_version = (payload.get("schema_version") or "stable").strip()
+    template = payload.get("template")
+
+    if modality not in {"survey", "biometrics"}:
+        return jsonify({"error": "Invalid modality"}), 400
+    if not isinstance(template, dict):
+        return jsonify({"error": "Template must be a JSON object"}), 400
+
+    try:
+        schema = _load_prism_schema(modality=modality, schema_version=schema_version)
+        errors = _validate_against_schema(instance=template, schema=schema)
+        return jsonify({"ok": len(errors) == 0, "errors": errors}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@tools_bp.route("/api/template-editor/schema", methods=["GET"])
+def api_template_editor_schema():
+    modality = (request.args.get("modality") or "").strip().lower()
+    schema_version = (request.args.get("schema_version") or "stable").strip()
+    if modality not in {"survey", "biometrics"}:
+        return jsonify({"error": "Invalid modality"}), 400
+
+    try:
+        schema = _load_prism_schema(modality=modality, schema_version=schema_version)
+        # The jsonschema Draft7Validator ignores unknown keys, but frontend tooling might not.
+        # Keep schema as-is; it's useful to surface version metadata.
+        return jsonify({"ok": True, "schema": schema}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@tools_bp.route("/api/template-editor/download", methods=["POST"])
+def api_template_editor_download():
+    payload = request.get_json(silent=True) or {}
+    filename = (payload.get("filename") or "").strip()
+    template = payload.get("template")
+
+    if not filename or "/" in filename or "\\" in filename:
+        return jsonify({"error": "Invalid filename"}), 400
+    if not filename.lower().endswith(".json"):
+        filename += ".json"
+    if not isinstance(template, dict):
+        return jsonify({"error": "Template must be a JSON object"}), 400
+
+    data = json.dumps(template, indent=2, ensure_ascii=False).encode("utf-8")
+    return send_file(
+        io.BytesIO(data),
+        mimetype="application/json",
+        as_attachment=True,
+        download_name=filename,
+    )
 
 @tools_bp.route("/api/derivatives-surveys", methods=["POST"])
 def api_derivatives_surveys():
