@@ -31,7 +31,7 @@ try:
     from runner import validate_dataset
     from schema_manager import get_available_schema_versions
     from limesurvey_exporter import generate_lss
-    from survey_convert import convert_survey_xlsx_to_prism_dataset
+    from src.converters.survey import convert_survey_xlsx_to_prism_dataset
     from derivatives_surveys import compute_survey_derivatives
     from reporting import print_dataset_summary, print_validation_results
     from theme import apply_prism_theme

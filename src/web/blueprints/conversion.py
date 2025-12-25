@@ -20,7 +20,7 @@ from src.web import run_validation
 
 # Import conversion logic
 try:
-    from src.survey_convert import (
+    from src.converters.survey import (
         convert_survey_xlsx_to_prism_dataset,
         convert_survey_lsa_to_prism_dataset,
         infer_lsa_metadata,
@@ -31,7 +31,7 @@ except ImportError:
     infer_lsa_metadata = None
 
 try:
-    from src.biometrics_convert import convert_biometrics_table_to_prism_dataset
+    from src.converters.biometrics import convert_biometrics_table_to_prism_dataset
 except ImportError:
     convert_biometrics_table_to_prism_dataset = None
 
@@ -426,7 +426,7 @@ def api_biometrics_check_library():
 @conversion_bp.route("/api/biometrics-detect", methods=["POST"])
 def api_biometrics_detect():
     """Detect which biometrics tasks are present in the uploaded file."""
-    from src.biometrics_convert import detect_biometrics_in_table
+    from src.converters.biometrics import detect_biometrics_in_table
 
     uploaded_file = request.files.get("data") or request.files.get("file")
     library_path = (request.form.get("library_path") or "").strip()

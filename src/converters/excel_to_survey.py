@@ -30,16 +30,15 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 try:
-    from src.converters.excel_base import (
+    from .excel_base import (
         find_column_idx,
         clean_variable_name,
         parse_levels,
         detect_language,
     )
-except ImportError:
+except (ImportError, ValueError):
     # Fallback for different execution contexts
-    sys.path.append(os.path.join(os.getcwd(), "src"))
-    from converters.excel_base import (
+    from excel_base import (
         find_column_idx,
         clean_variable_name,
         parse_levels,

@@ -7,10 +7,7 @@ import re
 import pandas as pd
 from typing import Dict, Any, List, Optional
 
-
-def norm_key(s: str) -> str:
-    """Normalize a string for key matching (lowercase, no spaces/underscores)."""
-    return str(s).replace(" ", "").replace("_", "").lower()
+from ..utils.naming import norm_key, sanitize_task_name
 
 
 def find_column_idx(header: List[str], aliases: set) -> Optional[int]:
@@ -77,9 +74,3 @@ def detect_language(texts: List[str]) -> str:
         return "de"
 
     return "en"
-
-
-def sanitize_task_name(name: str) -> str:
-    """Normalize task names for BIDS/PRISM filenames."""
-    cleaned = re.sub(r"[^A-Za-z0-9]+", "", str(name).strip())
-    return cleaned.lower() or "survey"

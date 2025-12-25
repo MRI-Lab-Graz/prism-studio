@@ -1,6 +1,82 @@
 import json
+import os
 from collections import defaultdict
 from pathlib import Path
+
+
+def check_uniqueness(library_path):
+    """
+    Validates the library for variable uniqueness and schema compliance.
+    Returns True if successful, False if errors were found.
+    """
+    print(f"Validating library at {library_path}...")
+
+    if not os.path.exists(library_path):
+        print(f"Error: Library path {library_path} does not exist.")
+        return False
+
+    validator = LibraryValidator(library_path)
+
+    # 1. Check Uniqueness
+    print("Checking variable uniqueness...")
+    var_map = validator.get_all_library_variables()
+    duplicates = {k: v for k, v in var_map.items() if len(v) > 1}
+
+    if not duplicates:
+        print("✅ SUCCESS: All variable names are unique across the library.")
+    else:
+        print(
+            f"⚠️  WARNING: Found {len(duplicates)} variable names appearing in multiple files:"
+        )
+        for var, file_list in duplicates.items():
+            print(f"  - '{var}' appears in: {', '.join(file_list)}")
+
+    # 2. Check Schema
+    # Note: We don't import load_schema here to avoid circular imports if any.
+    # But we can try to import it locally.
+    try:
+        from .schema_manager import load_schema
+        from jsonschema import validate, ValidationError
+
+        print("\nChecking schema compliance...")
+        survey_schema = load_schema("survey", version="stable")
+        biometrics_schema = load_schema("biometrics", version="stable")
+
+        files = list(Path(library_path).glob("*.json"))
+        schema_errors = 0
+        for file_path in files:
+            if not (
+                file_path.name.startswith("survey-")
+                or file_path.name.startswith("biometrics-")
+            ):
+                continue
+
+            schema = (
+                survey_schema
+                if file_path.name.startswith("survey-")
+                else biometrics_schema
+            )
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                validate(instance=data, schema=schema)
+            except ValidationError as e:
+                print(f"❌ Schema error in {file_path.name}: {e.message}")
+                schema_errors += 1
+            except Exception as e:
+                print(f"❌ Error reading {file_path.name}: {e}")
+                schema_errors += 1
+
+        if schema_errors == 0:
+            print("✅ SUCCESS: All files comply with the PRISM schema.")
+        else:
+            print(f"❌ FAILURE: Found {schema_errors} schema errors.")
+            return False
+
+    except ImportError:
+        print("⚠️  Skipping schema check (jsonschema not installed).")
+
+    return True
 
 
 class LibraryValidator:

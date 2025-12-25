@@ -323,11 +323,27 @@ def convert_eyetracking_file(
         _create_eyetracking_sidecar(source_path, out_json, task_name=task)
         output_files.append(out_json)
 
-        # TODO: In future, we could parse the EDF header to extract:
-        # - Sampling rate
-        # - Recorded eye (left/right/both)
-        # - Recording duration
-        # - Screen settings
+        # Try to enrich sidecar with EDF header info if pyedflib is available
+        try:
+            import pyedflib
+            with pyedflib.EdfReader(str(source_path)) as f:
+                with open(out_json, "r", encoding="utf-8") as jf:
+                    sidecar = json.load(jf)
+                
+                if "Technical" not in sidecar:
+                    sidecar["Technical"] = {}
+                
+                # Extract sampling rate (from first signal)
+                if f.signals_in_file > 0:
+                    sidecar["Technical"]["SamplingFrequency"] = f.getSampleFrequency(0)
+                
+                # Extract duration
+                sidecar["Technical"]["Duration"] = f.getFileDuration()
+                
+                with open(out_json, "w", encoding="utf-8") as jf:
+                    json.dump(sidecar, jf, indent=2)
+        except (ImportError, Exception):
+            pass
 
         return ConvertedFile(
             source_path=source_path,

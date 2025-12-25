@@ -15,7 +15,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 try:
-    from src.converters.excel_base import (
+    from .excel_base import (
         norm_key,
         find_column_idx,
         clean_variable_name,
@@ -23,10 +23,9 @@ try:
         detect_language,
         sanitize_task_name,
     )
-except ImportError:
+except (ImportError, ValueError):
     # Fallback for different execution contexts
-    sys.path.append(os.path.join(os.getcwd(), "src"))
-    from converters.excel_base import (
+    from excel_base import (
         norm_key,
         find_column_idx,
         clean_variable_name,

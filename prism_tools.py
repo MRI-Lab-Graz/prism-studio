@@ -23,52 +23,17 @@ if not getattr(sys, "frozen", False) and not sys.prefix.startswith(venv_path):
 project_root = Path(__file__).resolve().parent
 sys.path.append(str(project_root))
 
-from helpers.physio.convert_varioport import convert_varioport
-from scripts.check_survey_library import check_uniqueness
-from scripts.limesurvey_to_prism import convert_lsa_to_prism, batch_convert_lsa
+from src.utils.io import ensure_dir as _ensure_dir, read_json as _read_json, write_json as _write_json, read_tsv_rows as _read_tsv_rows, write_tsv_rows as _write_tsv_rows
+from src.utils.naming import sanitize_task_name
 
-# excel_to_library might not be in python path if it's in scripts/ and we are in root.
-# sys.path.append(str(project_root / "scripts")) # Already added project_root, but scripts is a subdir.
-# We need to import from scripts.excel_to_library
-from scripts.excel_to_library import process_excel
-from scripts.excel_to_biometrics_library import process_excel_biometrics
-from scripts.generate_methods_boilerplate import generate_methods_text
+from helpers.physio.convert_varioport import convert_varioport
+from src.library_validator import check_uniqueness
+from src.converters.limesurvey import convert_lsa_to_prism, batch_convert_lsa
+from src.converters.excel_to_survey import process_excel
+from src.converters.excel_to_biometrics import process_excel_biometrics
+from src.reporting import generate_methods_text
 from src.library_i18n import compile_survey_template, migrate_survey_template_to_i18n
 from src.derivatives_surveys import compute_survey_derivatives, SurveyDerivativesResult
-
-
-def _ensure_dir(path: Path) -> Path:
-    path.mkdir(parents=True, exist_ok=True)
-    return path
-
-
-def _read_json(path: Path) -> dict:
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def _write_json(path: Path, obj: dict) -> None:
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(obj, f, indent=2, ensure_ascii=False)
-
-
-def _read_tsv_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-    with open(path, "r", encoding="utf-8", newline="") as f:
-        reader = csv.DictReader(f, delimiter="\t")
-        header = list(reader.fieldnames or [])
-        rows = [dict(r) for r in reader]
-    return header, rows
-
-
-def _write_tsv_rows(path: Path, header: list[str], rows: list[dict[str, str]]) -> None:
-    _ensure_dir(path.parent)
-    with open(path, "w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=header, delimiter="\t", lineterminator="\n"
-        )
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({k: row.get(k, "n/a") for k in header})
 
 
 def _normalize_survey_key(raw: str) -> str:
@@ -438,14 +403,7 @@ def cmd_survey_import_excel(args):
 def cmd_survey_convert(args):
     """Convert a wide survey table (currently .xlsx) into a PRISM/BIDS survey dataset."""
     try:
-        try:
-            from survey_convert import convert_survey_xlsx_to_prism_dataset
-        except Exception:
-            # `survey_convert.py` lives in `src/` for reuse by web+GUI.
-            src_dir = project_root / "src"
-            if str(src_dir) not in sys.path:
-                sys.path.insert(0, str(src_dir))
-            from survey_convert import convert_survey_xlsx_to_prism_dataset
+        from src.converters.survey import convert_survey_xlsx_to_prism_dataset
     except Exception as e:
         print(f"Error: Could not import survey conversion module: {e}")
         sys.exit(1)
@@ -1076,6 +1034,46 @@ def cmd_library_generate_methods_text(args):
     generate_methods_text(libs, args.output, lang=args.lang)
 
 
+def cmd_library_sync(args):
+    """Synchronize keys across library files using a template."""
+    from src.maintenance.sync_survey_keys import sync_survey_keys
+    from src.maintenance.sync_biometrics_keys import sync_biometrics_keys
+
+    if args.modality == "survey":
+        sync_survey_keys(args.path)
+    elif args.modality == "biometrics":
+        sync_biometrics_keys(args.path)
+    else:
+        print(f"Error: Unsupported modality for sync: {args.modality}")
+
+
+def cmd_library_catalog(args):
+    """Generate a CSV catalog of the survey library."""
+    from src.maintenance.catalog_survey_library import generate_index
+
+    generate_index(args.input, args.output)
+
+
+def cmd_library_fill(args):
+    """Fill missing metadata keys in library files based on schema."""
+    from src.maintenance.fill_missing_metadata import process_file
+    from src.schema_manager import load_schema
+
+    schema = load_schema(args.modality, version=args.version)
+    if not schema:
+        print(f"Error: Could not load schema for {args.modality}")
+        return
+
+    p = Path(args.path)
+    if p.is_file():
+        process_file(p, schema)
+    elif p.is_dir():
+        for f in p.glob("*.json"):
+            process_file(f, schema)
+    else:
+        print(f"Error: Path not found: {args.path}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Prism Tools: Utilities for PRISM/BIDS datasets"
@@ -1544,6 +1542,32 @@ def main():
         "--lang", default="en", choices=["en", "de"], help="Language for the text"
     )
 
+    # library sync
+    parser_lib_sync = subparsers_library.add_parser(
+        "sync", help="Synchronize keys across library files"
+    )
+    parser_lib_sync.add_argument(
+        "--modality", choices=["survey", "biometrics"], required=True
+    )
+    parser_lib_sync.add_argument("--path", help="Path to library directory")
+
+    # library catalog
+    parser_lib_catalog = subparsers_library.add_parser(
+        "catalog", help="Generate a CSV catalog of the survey library"
+    )
+    parser_lib_catalog.add_argument("--input", required=True, help="Path to library")
+    parser_lib_catalog.add_argument("--output", required=True, help="Output CSV path")
+
+    # library fill
+    parser_lib_fill = subparsers_library.add_parser(
+        "fill", help="Fill missing metadata keys based on schema"
+    )
+    parser_lib_fill.add_argument(
+        "--modality", choices=["survey", "biometrics"], required=True
+    )
+    parser_lib_fill.add_argument("--path", required=True, help="Path to file or directory")
+    parser_lib_fill.add_argument("--version", default="stable", help="Schema version")
+
     args = parser.parse_args()
 
     if args.command == "convert" and args.modality == "physio":
@@ -1575,6 +1599,12 @@ def main():
     elif args.command == "library":
         if args.action == "generate-methods-text":
             cmd_library_generate_methods_text(args)
+        elif args.action == "sync":
+            cmd_library_sync(args)
+        elif args.action == "catalog":
+            cmd_library_catalog(args)
+        elif args.action == "fill":
+            cmd_library_fill(args)
         else:
             parser_library.print_help()
     elif args.command == "dataset":

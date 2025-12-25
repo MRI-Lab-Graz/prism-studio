@@ -48,6 +48,185 @@ def print_dataset_summary(dataset_path, stats):
     has_sessions = len(stats.sessions) > 0
 
     print(f"👥 Subjects: {num_subjects}")
+
+
+def get_i18n_text(field, lang="en"):
+    """Extract text from an i18n field (string or dict)."""
+    if isinstance(field, str):
+        return field
+    if isinstance(field, dict):
+        # Try requested language
+        val = field.get(lang)
+        if val:
+            return val
+        # Try English
+        val = field.get("en")
+        if val:
+            return val
+        # Try German
+        val = field.get("de")
+        if val:
+            return val
+        # Try anything else
+        for v in field.values():
+            if v:
+                return v
+    return ""
+
+
+def _format_reference(ref: dict, lang: str = "en") -> str:
+    if not isinstance(ref, dict):
+        return ""
+    citation = (ref.get("Citation") or "").strip()
+    doi = (ref.get("DOI") or "").strip()
+    url = (ref.get("URL") or "").strip()
+    year = ref.get("Year")
+
+    parts = []
+    if citation:
+        parts.append(citation)
+    elif doi:
+        parts.append(f"DOI: {doi}")
+    elif url:
+        parts.append(url)
+
+    if isinstance(year, int):
+        parts.append(str(year))
+    if doi and (not citation):
+        parts.append(f"DOI: {doi}")
+    if url and (not citation) and (url not in parts):
+        parts.append(url)
+    return "; ".join([p for p in parts if p])
+
+
+def _pick_references(study: dict, lang: str = "en") -> dict:
+    """Return a small structured set of references for reporting."""
+    out = {
+        "primary": None,
+        "manual": None,
+        "translation": None,
+        "validation": None,
+        "norms": None,
+    }
+    refs = study.get("References") or []
+    if not isinstance(refs, list):
+        refs = []
+    for r in refs:
+        if not isinstance(r, dict):
+            continue
+        t = str(r.get("Type") or "other").strip().lower()
+        if t in out and out[t] is None:
+            out[t] = _format_reference(r, lang=lang)
+    return out
+
+
+def generate_methods_text(
+    library_dirs_or_files,
+    output_file,
+    lang="en",
+    github_url=None,
+    schema_version=None,
+):
+    """
+    Generates a formal methods section boilerplate based on PRISM library templates.
+    library_dirs_or_files can be a list of directories or a list of specific JSON files.
+    """
+    from pathlib import Path
+
+    sections = []
+
+    # 1. General PRISM/BIDS Section
+    sections.append("## Data Standardization and Validation\n")
+
+    prism_desc = (
+        "Data were organized and validated according to the PRISM (Psychological Research Information System & Metadata) "
+        "standard, which extends the Brain Imaging Data Structure (BIDS; Gorgolewski et al., 2016) to psychological "
+        "and behavioral research. This framework ensures high interoperability and machine-readability by enforcing "
+        "standardized filename patterns and comprehensive metadata sidecars in JSON format. All datasets were "
+        "automatically validated for structural integrity and schema compliance using the PRISM validator."
+    )
+
+    if schema_version:
+        prism_desc += f" The dataset follows PRISM schema version {schema_version}."
+
+    if github_url:
+        prism_desc += f" More information about the PRISM standard and tools can be found at {github_url}."
+
+    sections.append(prism_desc)
+
+    # 2. Modalities
+    surveys = []
+    biometrics = []
+
+    all_files = []
+    for item in library_dirs_or_files:
+        p = Path(item)
+        if p.is_dir():
+            all_files.extend(list(p.glob("*.json")))
+        else:
+            all_files.append(p)
+
+    for file_path in all_files:
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            if file_path.name.startswith("survey-"):
+                surveys.append(data)
+            elif file_path.name.startswith("biometrics-"):
+                biometrics.append(data)
+        except Exception:
+            continue
+
+    # 3. Surveys Section
+    if surveys:
+        sections.append("\n## Psychological Assessments\n")
+        sections.append(
+            f"A total of {len(surveys)} psychological instruments were administered. "
+            "For each instrument, metadata including item descriptions, response scales, "
+            "and scoring procedures were documented in machine-readable JSON sidecars."
+        )
+
+        for s in surveys:
+            study = s.get("Study", {})
+            name = get_i18n_text(study.get("OriginalName") or study.get("TaskName"), lang)
+            desc = get_i18n_text(study.get("Description"), lang)
+            refs = _pick_references(study, lang)
+
+            text = f"\n### {name}\n"
+            if desc:
+                text += f"{desc} "
+            if refs["primary"]:
+                text += f"The instrument is based on {refs['primary']}. "
+            if refs["translation"]:
+                text += f"The translation used is {refs['translation']}. "
+
+            sections.append(text)
+
+    # 4. Biometrics Section
+    if biometrics:
+        sections.append("\n## Biometric and Physiological Measures\n")
+        for b in biometrics:
+            study = b.get("Study", {})
+            name = get_i18n_text(study.get("OriginalName") or study.get("TaskName"), lang)
+            tech = b.get("Technical", {})
+            device = tech.get("Manufacturer") or tech.get("SoftwarePlatform")
+
+            text = f"\n### {name}\n"
+            if device:
+                text += f"Data were recorded using {device}. "
+            sections.append(text)
+
+    # Write to file
+    content = "\n".join(sections)
+    if output_file:
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write(content)
+        print(f"✅ Methods boilerplate written to {output_file}")
+    else:
+        print(content)
+
+    return content
     if has_sessions:
         # stats.sessions is a list of subject/session combinations like "sub-01/ses-01".
         # For the summary, report the number of unique session *labels* (e.g., ses-01),

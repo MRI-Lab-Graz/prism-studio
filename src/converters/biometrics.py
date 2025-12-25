@@ -17,6 +17,9 @@ from typing import Any
 
 import json
 
+from ..utils.io import read_json as _read_json, write_json as _write_json
+from ..utils.naming import norm_key as _norm_key
+
 
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = {
     "Technical",
@@ -37,19 +40,8 @@ class BiometricsConvertResult:
     unknown_columns: list[str]
 
 
-def _read_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def _write_json(path: Path, data: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
-
-
 def _norm_col(s: str) -> str:
-    return str(s).strip().lower().replace(" ", "").replace("_", "")
+    return _norm_key(s)
 
 
 def _find_col(df: "Any", candidates: set[str]) -> str | None:

@@ -15,15 +15,14 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 try:
-    from src.converters.survey_base import load_survey_library as load_schemas
-    from src.converters.excel_base import sanitize_task_name
-except ImportError:
+    from .survey_base import load_survey_library as load_schemas
+    from .excel_base import sanitize_task_name
+except (ImportError, ValueError):
     # Fallback for different execution contexts
-    sys.path.append(os.path.join(os.getcwd(), "src"))
-    from converters.survey_base import load_survey_library as load_schemas
-    from converters.excel_base import sanitize_task_name
+    from survey_base import load_survey_library as load_schemas
+    from excel_base import sanitize_task_name
 
-from scripts.csv_to_prism import process_dataframe
+from .csv import process_dataframe
 
 
 def _map_field_to_code(fieldname, qid_to_title):

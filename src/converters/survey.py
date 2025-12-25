@@ -19,8 +19,8 @@ from copy import deepcopy
 import re
 from typing import Iterable
 
-
-_MISSING_TOKEN = "na"
+from ..utils.io import ensure_dir as _ensure_dir, read_json as _read_json, write_json as _write_json
+from ..utils.naming import sanitize_id
 
 _NON_ITEM_TOPLEVEL_KEYS = {
     "Technical",
@@ -42,39 +42,6 @@ class SurveyConvertResult:
     missing_cells_by_subject: dict[str, int] = field(default_factory=dict)
     missing_value_token: str = _MISSING_TOKEN
     conversion_warnings: list[str] = field(default_factory=list)
-
-
-def sanitize_id(id_str: str) -> str:
-    """Sanitize IDs by replacing German umlauts and special characters."""
-    if not id_str:
-        return id_str
-    replacements = {
-        "ä": "ae",
-        "ö": "oe",
-        "ü": "ue",
-        "Ä": "Ae",
-        "Ö": "Oe",
-        "Ü": "Ue",
-        "ß": "ss",
-    }
-    for char, repl in replacements.items():
-        id_str = id_str.replace(char, repl)
-    return id_str
-
-
-def _ensure_dir(path: Path) -> Path:
-    path.mkdir(parents=True, exist_ok=True)
-    return path
-
-
-def _read_json(path: Path) -> dict:
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def _write_json(path: Path, obj: dict) -> None:
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(obj, f, indent=2, ensure_ascii=False)
 
 
 def _load_participants_template(library_dir: Path) -> dict | None:

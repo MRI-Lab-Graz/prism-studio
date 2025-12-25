@@ -11,13 +11,12 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 try:
-    from src.converters.survey_base import load_survey_library as load_schemas, get_allowed_values
-    from src.converters.excel_base import sanitize_task_name
-except ImportError:
+    from .survey_base import load_survey_library as load_schemas, get_allowed_values
+    from .excel_base import sanitize_task_name
+except (ImportError, ValueError):
     # Fallback for different execution contexts
-    sys.path.append(os.path.join(os.getcwd(), "src"))
-    from converters.survey_base import load_survey_library as load_schemas, get_allowed_values
-    from converters.excel_base import sanitize_task_name
+    from survey_base import load_survey_library as load_schemas, get_allowed_values
+    from excel_base import sanitize_task_name
 
 
 IGNORE_PARTICIPANT_COLS = {
