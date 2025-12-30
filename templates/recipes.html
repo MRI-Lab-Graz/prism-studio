@@ -78,6 +78,12 @@
               Include Raw Data Columns
             </label>
           </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="derivBoilerplate">
+            <label class="form-check-label" for="derivBoilerplate">
+              Generate Methods Boilerplate
+            </label>
+          </div>
           <button class="btn btn-primary w-100" type="button" id="derivRunBtn">
             <i class="fas fa-play me-2"></i>Run Processing
           </button>
@@ -166,13 +172,15 @@ document.addEventListener('DOMContentLoaded', function() {
       survey: derivSurvey.value.trim(),
       lang: document.getElementById('derivLang').value,
       layout: document.getElementById('derivLayout').value,
-      include_raw: document.getElementById('derivIncludeRaw').checked
+      include_raw: document.getElementById('derivIncludeRaw').checked,
+      boilerplate: document.getElementById('derivBoilerplate').checked
     };
 
     derivRunBtn.disabled = true;
     logToTerminal(`Running processing on: ${datasetPath}`);
     logToTerminal(`Modality: ${payload.modality}, Format: ${payload.format}, Language: ${payload.lang}, Layout: ${payload.layout}`);
     if (payload.include_raw) logToTerminal(`Including raw data columns`);
+    if (payload.boilerplate) logToTerminal(`Generating methods boilerplate`);
     if (payload.survey) logToTerminal(`Recipe filter: ${payload.survey}`);
     derivInfo.textContent = 'Running processing... this may take a moment.';
     derivInfo.classList.remove('d-none');
@@ -197,6 +205,12 @@ document.addEventListener('DOMContentLoaded', function() {
         logToTerminal(msg, 'success');
         if (data && data.out_format) {
           logToTerminal(`Output format used: ${data.out_format}`);
+        }
+        if (data && data.boilerplate_path) {
+          logToTerminal(`Methods boilerplate (MD): ${data.boilerplate_path}`);
+        }
+        if (data && data.boilerplate_html_path) {
+          logToTerminal(`Methods boilerplate (HTML): ${data.boilerplate_html_path}`);
         }
         if (data && data.nan_report) {
           logToTerminal('Columns with all n/a:', 'warning');

@@ -698,14 +698,20 @@ class PrismValidatorGUI:
         )
         raw_check.grid(row=6, column=1, sticky="w", padx=10, pady=5)
 
+        self.deriv_boilerplate_var = tk.BooleanVar(value=False)
+        boilerplate_check = ttk.Checkbutton(
+            frame, text="Generate Methods Boilerplate", variable=self.deriv_boilerplate_var
+        )
+        boilerplate_check.grid(row=7, column=1, sticky="w", padx=10, pady=5)
+
         self.deriv_run_btn = ttk.Button(
             frame, text="Run Recipes", command=self.start_recipes
         )
-        self.deriv_run_btn.grid(row=7, column=1, sticky="e", padx=10, pady=(12, 0))
+        self.deriv_run_btn.grid(row=8, column=1, sticky="e", padx=10, pady=(12, 0))
 
         # Status
         self.deriv_status = ttk.Label(frame, text="")
-        self.deriv_status.grid(row=7, column=0, columnspan=3, sticky="w", pady=(10, 0))
+        self.deriv_status.grid(row=8, column=0, columnspan=3, sticky="w", pady=(10, 0))
         self.current_survey_filename = None
 
     # --- Validator Methods ---
@@ -1035,6 +1041,7 @@ class PrismValidatorGUI:
         lang = self.deriv_lang_var.get().strip()
         layout = self.deriv_layout_var.get().strip()
         include_raw = self.deriv_raw_var.get()
+        boilerplate = self.deriv_boilerplate_var.get()
 
         if not dataset_path or not os.path.isdir(dataset_path):
             messagebox.showerror("Error", "Please select a valid PRISM dataset folder")
@@ -1045,12 +1052,12 @@ class PrismValidatorGUI:
 
         thread = threading.Thread(
             target=self._recipes_thread,
-            args=(dataset_path, modality, out_format, survey_filter, lang, layout, include_raw),
+            args=(dataset_path, modality, out_format, survey_filter, lang, layout, include_raw, boilerplate),
         )
         thread.daemon = True
         thread.start()
 
-    def _recipes_thread(self, dataset_path, modality, out_format, survey_filter, lang, layout, include_raw):
+    def _recipes_thread(self, dataset_path, modality, out_format, survey_filter, lang, layout, include_raw, boilerplate):
         try:
             # Validate dataset first (block on ERROR-level issues)
             if validate_dataset:
@@ -1085,6 +1092,7 @@ class PrismValidatorGUI:
                 lang=lang,
                 layout=layout,
                 include_raw=include_raw,
+                boilerplate=boilerplate,
             )
             msg = f"Wrote {result.written_files} file(s) to {result.out_root}"
             self.root.after(0, lambda: self._deriv_finished(msg, result))

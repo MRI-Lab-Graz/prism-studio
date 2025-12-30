@@ -22,6 +22,8 @@ import csv
 import json
 from typing import Any, Dict, List, Optional
 
+from src.reporting import get_i18n_text, _pick_references
+
 
 @dataclass(frozen=True)
 class SurveyRecipesResult:
@@ -32,6 +34,8 @@ class SurveyRecipesResult:
     flat_out_path: Path | None
     fallback_note: str | None = None
     nan_report: dict[str, list[str]] | None = None
+    boilerplate_path: Path | None = None
+    boilerplate_html_path: Path | None = None
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -618,6 +622,191 @@ def _write_recipes_dataset_description(*, out_root: Path, modality: str, prism_r
     _write_json(desc_path, obj)
 
 
+def _generate_recipes_boilerplate(
+    applied_recipes: list[dict], out_path: Path, lang: str = "en"
+) -> None:
+    """Generate a formal methods section boilerplate based on applied recipes (MD and HTML)."""
+    sections = []
+
+    # 1. General PRISM/BIDS Section
+    if lang == "de":
+        sections.append("## Datenstandardisierung und Validierung\n")
+        sections.append(
+            "Die Daten wurden nach dem PRISM-Standard (Psychological Research Information System & Metadata) organisiert und validiert. "
+            "Dieser Standard erweitert die Brain Imaging Data Structure (BIDS) auf die psychologische Forschung. "
+            "Die Datenverarbeitung und Berechnung der Scores erfolgte automatisiert mit dem PRISM-System, "
+            "wobei die in den JSON-Rezepten definierten Scoring-Logiken angewendet wurden.\n"
+        )
+    else:
+        sections.append("## Data Standardization and Validation\n")
+        sections.append(
+            "Data were organized and validated according to the PRISM (Psychological Research Information System & Metadata) "
+            "standard, which extends the Brain Imaging Data Structure (BIDS) to psychological research. "
+            "Data processing and score calculation were performed automatically using the PRISM system, "
+            "applying the scoring logic defined in machine-readable JSON recipes.\n"
+        )
+
+    # 2. Psychological Assessments Section
+    if lang == "de":
+        sections.append("## Psychologische Testverfahren\n")
+        sections.append(
+            f"Insgesamt wurden {len(applied_recipes)} psychologische Instrumente ausgewertet. "
+            "Für jedes Instrument wurden die Scoring-Prozeduren (Invertierung, Skalenbildung) in Rezept-Dateien dokumentiert."
+        )
+    else:
+        sections.append("## Psychological Assessments\n")
+        sections.append(
+            f"A total of {len(applied_recipes)} psychological instruments were processed. "
+            "For each instrument, scoring procedures including item inversions and subscale calculations "
+            "were documented in machine-readable recipe files."
+        )
+
+    for recipe in applied_recipes:
+        # Recipes might use "Survey" or "Study" (for compatibility)
+        survey_info = recipe.get("Survey") or recipe.get("Study") or {}
+        
+        name = get_i18n_text(survey_info.get("Name") or survey_info.get("OriginalName") or survey_info.get("TaskName"), lang)
+        desc = get_i18n_text(survey_info.get("Description"), lang)
+        refs = _pick_references(survey_info, lang)
+
+        sections.append(f"\n### {name}\n")
+        
+        text_parts = []
+        if desc:
+            text_parts.append(desc)
+        
+        if refs["primary"]:
+            if lang == "de":
+                text_parts.append(f"Das Instrument basiert auf {refs['primary']}.")
+            else:
+                text_parts.append(f"The instrument is based on {refs['primary']}.")
+        
+        if refs["translation"]:
+            if lang == "de":
+                text_parts.append(f"Die verwendete Übersetzung ist {refs['translation']}.")
+            else:
+                text_parts.append(f"The translation used is {refs['translation']}.")
+
+        if text_parts:
+            sections.append(" ".join(text_parts) + "\n")
+
+        # Scoring details (brief)
+        transforms = recipe.get("Transforms", {})
+        invert = transforms.get("Invert", {})
+        has_invert = invert and invert.get("Items")
+        
+        scores = recipe.get("Scores", [])
+        
+        if has_invert or scores:
+            sections.append("**Scoring**:")
+            
+            if has_invert:
+                if lang == "de":
+                    sections.append("- Negativ gepolte Items wurden vor der Skalenbildung invertiert.")
+                else:
+                    sections.append("- Negatively keyed items were reverse-coded prior to score calculation.")
+            
+            for s in scores:
+                s_name = s.get("Name")
+                s_method = s.get("Method", "sum")
+                s_items = s.get("Items", [])
+                s_source = s.get("Source")
+                
+                method_desc = s_method
+                if s_method == "sum":
+                    method_desc = "sum score" if lang == "en" else "Summenwert"
+                elif s_method == "mean":
+                    method_desc = "mean score" if lang == "en" else "Mittelwert"
+                elif s_method == "map":
+                    method_desc = "categorical mapping" if lang == "en" else "kategorisierte Zuordnung"
+                
+                item_count = len(s_items)
+                if item_count > 0:
+                    if lang == "de":
+                        sections.append(f"- `{s_name}`: {method_desc} ({item_count} Items).")
+                    else:
+                        sections.append(f"- `{s_name}`: {method_desc} ({item_count} items).")
+                elif s_source:
+                    if lang == "de":
+                        sections.append(f"- `{s_name}`: {method_desc} basierend auf `{s_source}`.")
+                    else:
+                        sections.append(f"- `{s_name}`: {method_desc} based on `{s_source}`.")
+                else:
+                    sections.append(f"- `{s_name}`: {method_desc}.")
+
+    # Write Markdown
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(sections))
+
+    # Write HTML
+    html_path = out_path.with_suffix(".html")
+    html_content = [
+        "<!DOCTYPE html>",
+        "<html>",
+        "<head>",
+        '<meta charset="utf-8">',
+        "<style>",
+        "body { font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; }",
+        "h2 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 40px; }",
+        "h3 { color: #16a085; margin-top: 30px; }",
+        "code { background: #f4f4f4; padding: 2px 4px; border-radius: 4px; font-family: monospace; }",
+        "ul { padding-left: 20px; margin-bottom: 15px; }",
+        "li { margin-bottom: 5px; }",
+        "p { margin-bottom: 15px; }",
+        "</style>",
+        "</head>",
+        "<body>"
+    ]
+
+    in_list = False
+    for line in sections:
+        line = line.strip()
+        if not line:
+            continue
+        
+        if line.startswith("- "):
+            if not in_list:
+                html_content.append("<ul>")
+                in_list = True
+            
+            li_text = line[2:]
+            while "`" in li_text:
+                li_text = li_text.replace("`", "<code>", 1).replace("`", "</code>", 1)
+            html_content.append(f"  <li>{li_text}</li>")
+            continue
+        
+        # If we were in a list and the line doesn't start with "- ", close the list
+        if in_list:
+            html_content.append("</ul>")
+            in_list = False
+
+        if line.startswith("## "):
+            html_content.append(f"<h2>{line[3:]}</h2>")
+        elif line.startswith("### "):
+            html_content.append(f"<h3>{line[4:]}</h3>")
+        elif line.startswith("**"):
+            # Handle bold headers like **Scoring**:
+            bold_text = line.replace("**", "").strip().strip(":")
+            html_content.append(f"<p><strong>{bold_text}:</strong></p>")
+        else:
+            # Handle backticks in paragraphs
+            p_text = line
+            while "`" in p_text:
+                p_text = p_text.replace("`", "<code>", 1).replace("`", "</code>", 1)
+            html_content.append(f"<p>{p_text}</p>")
+
+    if in_list:
+        html_content.append("</ul>")
+
+    html_content.extend(["</body>", "</html>"])
+    
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(html_content))
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(sections))
+
+
 def compute_survey_recipes(
     *,
     prism_root: str | Path,
@@ -628,6 +817,7 @@ def compute_survey_recipes(
     lang: str = "en",
     layout: str = "long",
     include_raw: bool = False,
+    boilerplate: bool = False,
 ) -> SurveyRecipesResult:
     """Compute survey scores in a PRISM dataset using recipes.
 
@@ -639,6 +829,7 @@ def compute_survey_recipes(
             lang: Language for metadata labels (e.g., "en", "de").
             layout: "long" (default) or "wide" for repeated measures.
             include_raw: If True, include original columns in the output.
+            boilerplate: If True, generate a methods boilerplate.
 
     Raises:
             ValueError: For user errors (missing paths, unknown recipes, etc.).
@@ -781,6 +972,8 @@ def compute_survey_recipes(
     flat_rows: list[dict] = []
     flat_key_to_idx: dict[tuple, int] = {}
     nan_report: dict[str, list[str]] = {}
+    applied_recipes_list: list[dict] = []
+    boilerplate_path: Path | None = None
 
     processed_files = 0
     written_files = 0
@@ -809,6 +1002,8 @@ def compute_survey_recipes(
                 matching.append(p)
         if not matching:
             continue
+
+        applied_recipes_list.append(recipe)
 
         if out_format in ("csv", "xlsx", "save", "r"):
             # Aggregated formats (one file per recipe)
@@ -1226,6 +1421,13 @@ def compute_survey_recipes(
         out_root=out_root, modality=modality, prism_root=output_prism_root
     )
 
+    if boilerplate and applied_recipes_list:
+        boilerplate_path = out_root / "methods_boilerplate.md"
+        _generate_recipes_boilerplate(
+            applied_recipes=applied_recipes_list, out_path=boilerplate_path, lang=lang
+        )
+        boilerplate_html_path = boilerplate_path.with_suffix(".html")
+
     return SurveyRecipesResult(
         processed_files=processed_files,
         written_files=written_files,
@@ -1234,4 +1436,6 @@ def compute_survey_recipes(
         flat_out_path=flat_out_path,
         fallback_note=fallback_note,
         nan_report=nan_report if nan_report else None,
+        boilerplate_path=boilerplate_path,
+        boilerplate_html_path=boilerplate_html_path,
     )

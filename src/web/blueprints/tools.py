@@ -376,6 +376,7 @@ def api_recipes_surveys():
     lang = (data.get("lang") or "en").strip().lower() or "en"
     layout = (data.get("layout") or "long").strip().lower() or "long"
     include_raw = bool(data.get("include_raw", False))
+    boilerplate = bool(data.get("boilerplate", False))
 
     if not dataset_path or not os.path.exists(dataset_path) or not os.path.isdir(dataset_path):
         return jsonify({"error": "Invalid dataset path"}), 400
@@ -402,6 +403,7 @@ def api_recipes_surveys():
             lang=lang,
             layout=layout,
             include_raw=include_raw,
+            boilerplate=boilerplate,
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -419,6 +421,8 @@ def api_recipes_surveys():
         "out_format": result.out_format,
         "out_root": str(result.out_root),
         "flat_out_path": str(result.flat_out_path) if result.flat_out_path else None,
+        "boilerplate_path": str(result.boilerplate_path) if result.boilerplate_path else None,
+        "boilerplate_html_path": str(result.boilerplate_html_path) if result.boilerplate_html_path else None,
         "nan_report": result.nan_report,
     })
 

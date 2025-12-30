@@ -106,6 +106,7 @@ def cmd_recipes_surveys(args):
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
     include_raw = bool(getattr(args, "include_raw", False))
+    boilerplate = bool(getattr(args, "boilerplate", False))
 
     try:
         result = compute_survey_recipes(
@@ -117,10 +118,15 @@ def cmd_recipes_surveys(args):
             lang=lang,
             layout=layout,
             include_raw=include_raw,
+            boilerplate=boilerplate,
         )
         print(f"✅ Survey recipe scoring complete: {result.written_files} file(s) written")
         if result.flat_out_path:
             print(f"   Flat output: {result.flat_out_path}")
+        if result.boilerplate_path:
+            print(f"   Methods boilerplate (MD):   {result.boilerplate_path}")
+        if result.boilerplate_html_path:
+            print(f"   Methods boilerplate (HTML): {result.boilerplate_html_path}")
         if result.fallback_note:
             print(f"   Note: {result.fallback_note}")
         if result.nan_report:
@@ -1310,6 +1316,11 @@ def main():
         "--include-raw",
         action="store_true",
         help="Include original raw data columns in the output",
+    )
+    parser_deriv_surveys.add_argument(
+        "--boilerplate",
+        action="store_true",
+        help="Generate a scientific methods boilerplate describing the scoring logic",
     )
 
     # Backwards/typo-friendly alias matching common usage in docs/notes.
