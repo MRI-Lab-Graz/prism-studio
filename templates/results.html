@@ -326,12 +326,12 @@
         {% endif %}
 
         <!-- Valid Files Section -->
-        {% if results.valid_files %}
+        {% if results.summary.valid_files > 0 %}
         <div class="card mb-4 border-0 shadow-sm">
             <div class="card-header bg-white py-3">
                 <h5 class="mb-0 fw-bold">
                     <i class="fas fa-check-circle text-success me-2"></i>
-                    Valid Files ({{ results.valid_files|length }})
+                    Valid Files ({{ results.summary.valid_files }})
                     <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#validFiles">
                         <i class="fas fa-chevron-down"></i>
                     </button>
@@ -339,6 +339,7 @@
             </div>
             <div class="collapse" id="validFiles">
                 <div class="card-body">
+                    {% if results.valid_files %}
                     <div class="row">
                         {% for file in results.valid_files %}
                         <div class="col-md-6 mb-2">
@@ -349,18 +350,21 @@
                         </div>
                         {% endfor %}
                     </div>
+                    {% else %}
+                    <p class="text-muted small mb-0">All {{ results.summary.valid_files }} files passed validation with no warnings.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
         {% endif %}
 
         <!-- Invalid Files Section -->
-        {% if results.invalid_files %}
+        {% if results.summary.invalid_files > 0 %}
         <div class="card mb-4 border-0 shadow-sm">
             <div class="card-header bg-white py-3">
                 <h5 class="mb-0 fw-bold">
                     <i class="fas fa-times-circle text-danger me-2"></i>
-                    Invalid Files ({{ results.invalid_files|length }})
+                    Invalid Files ({{ results.summary.invalid_files }})
                     <button class="btn btn-sm btn-outline-secondary float-end" type="button" data-bs-toggle="collapse" data-bs-target="#invalidFiles">
                         <i class="fas fa-chevron-down"></i>
                     </button>
@@ -368,6 +372,7 @@
             </div>
             <div class="collapse show" id="invalidFiles">
                 <div class="card-body p-0">
+                    {% if results.invalid_files %}
                     {% for file in results.invalid_files %}
                     <div class="p-3 border-bottom">
                         <h6 class="text-danger mb-2 fw-bold small">
@@ -388,6 +393,9 @@
                         {% endif %}
                     </div>
                     {% endfor %}
+                    {% else %}
+                    <p class="p-3 text-muted small mb-0">Dataset has {{ results.summary.invalid_files }} invalid files (see error groups above for details).</p>
+                    {% endif %}
                 </div>
             </div>
         </div>

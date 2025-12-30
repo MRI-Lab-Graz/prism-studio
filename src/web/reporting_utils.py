@@ -37,8 +37,8 @@ def format_validation_results(
     error_groups: Dict[str, Dict[str, Any]] = {}
     warning_groups: Dict[str, Dict[str, Any]] = {}
 
-    valid_files = []
-    invalid_files = []
+    # Track unique files and their issues to avoid double-counting and ensure correct categorization
+    file_issues = {} # path -> {errors: [], warnings: []}
     file_paths = set()
 
     for issue in issues:
@@ -63,6 +63,13 @@ def format_validation_results(
 
         if file_path:
             file_paths.add(file_path)
+            if file_path not in file_issues:
+                file_issues[file_path] = {"errors": [], "warnings": []}
+            
+            if level == "ERROR":
+                file_issues[file_path]["errors"].append(message)
+            elif level == "WARNING":
+                file_issues[file_path]["warnings"].append(message)
 
         message = strip_temp_path_from_message(message)
         error_code = infer_code_from_message(message)
@@ -107,13 +114,18 @@ def format_validation_results(
             target_groups[error_code]["files"].append(formatted_issue)
             target_groups[error_code]["count"] += 1
 
-            if level == "ERROR" and file_path:
-                invalid_files.append({"path": file_path, "errors": [message]})
-            elif level == "WARNING" and file_path:
-                valid_files.append({"path": file_path})
+    # Categorize files for the UI lists
+    invalid_files = []
+    valid_files = []
+    
+    for path, data in file_issues.items():
+        if data["errors"]:
+            invalid_files.append({"path": path, "errors": data["errors"]})
         else:
-            if file_path:
-                valid_files.append({"path": file_path})
+            # Only include in valid_files list if it has warnings
+            # (to avoid huge lists of perfectly fine files)
+            if data["warnings"]:
+                valid_files.append({"path": path, "warnings": data["warnings"]})
 
     try:
         stats_total = getattr(dataset_stats, "total_files", 0)

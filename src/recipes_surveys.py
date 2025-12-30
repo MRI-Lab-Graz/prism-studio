@@ -890,17 +890,17 @@ def compute_survey_recipes(
 
     # Validate recipe structure before executing.
     try:
-        from .derivative_recipe_validation import validate_derivative_recipe
+        from .recipe_validation import validate_recipe
     except (ImportError, ValueError):
         try:
-            from derivative_recipe_validation import validate_derivative_recipe
+            from recipe_validation import validate_recipe
         except ImportError:
-            validate_derivative_recipe = None
+            validate_recipe = None
 
-    if validate_derivative_recipe is not None:
+    if validate_recipe is not None:
         recipe_errors: list[str] = []
         for recipe_id, rec in sorted(recipes.items()):
-            errs = validate_derivative_recipe(rec.get("json") or {}, recipe_id=recipe_id)
+            errs = validate_recipe(rec.get("json") or {}, recipe_id=recipe_id)
             # Only treat "Scores missing" as a warning-like error if the recipe truly has no scores.
             # We still surface it because it usually indicates a non-functional recipe.
             recipe_errors.extend([f"{rec.get('path').name}: {e}" for e in errs])
@@ -967,8 +967,8 @@ def compute_survey_recipes(
         except Exception:
             participants_meta = {}
 
-    # Output scores into BIDS-derivatives folders; recipes remain the instruction set in the repo.
-    out_root = output_prism_root / "derivatives" / ("surveys" if modality == "survey" else "biometrics")
+    # Output scores into BIDS-recipes folders; recipes remain the instruction set in the repo.
+    out_root = output_prism_root / "recipes" / ("surveys" if modality == "survey" else "biometrics")
     flat_rows: list[dict] = []
     flat_key_to_idx: dict[tuple, int] = {}
     nan_report: dict[str, list[str]] = {}
@@ -1385,17 +1385,17 @@ def compute_survey_recipes(
                 df_flat = df_wide.reset_index().fillna("n/a")
                 
                 flat_header = ["participant_id"] + sorted([c for c in df_flat.columns if c != "participant_id"])
-                flat_out_path = output_prism_root / "derivatives" / f"{modality}_scores.tsv"
+                flat_out_path = output_prism_root / "recipes" / f"{modality}_scores.tsv"
                 # Convert back to rows for _write_tsv_rows
                 flat_rows = df_flat.to_dict("records")
             except Exception as e:
                 if fallback_note is None:
                     fallback_note = f"Could not create wide flat layout: {e}"
                 flat_header = fixed + score_cols
-                flat_out_path = output_prism_root / "derivatives" / f"{modality}_scores.tsv"
+                flat_out_path = output_prism_root / "recipes" / f"{modality}_scores.tsv"
         else:
             flat_header = fixed + score_cols
-            flat_out_path = output_prism_root / "derivatives" / f"{modality}_scores.tsv"
+            flat_out_path = output_prism_root / "recipes" / f"{modality}_scores.tsv"
 
         _write_tsv_rows(flat_out_path, flat_header, flat_rows)
 

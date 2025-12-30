@@ -381,7 +381,8 @@ def api_recipes_surveys():
     if not dataset_path or not os.path.exists(dataset_path) or not os.path.isdir(dataset_path):
         return jsonify({"error": "Invalid dataset path"}), 400
 
-    # Validate that the dataset is PRISM-valid before writing outputs.
+    # Validate that the dataset is PRISM-valid. 
+    # We log errors but don't block processing unless it's a critical path issue.
     from src.web import run_validation
     issues, _stats = run_validation(
         dataset_path, verbose=False, schema_version=None, run_bids=False
@@ -389,9 +390,11 @@ def api_recipes_surveys():
     error_issues = [
         i for i in (issues or []) if (len(i) >= 1 and str(i[0]).upper() == "ERROR")
     ]
+    
+    validation_warning = None
     if error_issues:
         first = error_issues[0][1] if len(error_issues[0]) > 1 else "Dataset has validation errors"
-        return jsonify({"error": f"Dataset is not PRISM-valid (errors: {len(error_issues)}). First error: {first}"}), 400
+        validation_warning = f"Dataset has {len(error_issues)} validation error(s). First: {first}"
 
     try:
         result = compute_survey_recipes(
@@ -413,9 +416,11 @@ def api_recipes_surveys():
         msg = f"✅ Data processing complete: wrote {result.flat_out_path}"
     if result.fallback_note:
         msg += f" (note: {result.fallback_note})"
+    
     return jsonify({
         "ok": True,
         "message": msg,
+        "validation_warning": validation_warning,
         "written_files": result.written_files,
         "processed_files": result.processed_files,
         "out_format": result.out_format,
@@ -587,11 +592,11 @@ def generate_lss_endpoint():
 def generate_boilerplate_endpoint():
     """Generate Methods Boilerplate from selected JSON files"""
     try:
-        # Add root to sys.path if needed to import from scripts
+        # Add root to sys.path if needed to import from src
         root_dir = str(Path(current_app.root_path))
         if root_dir not in sys.path:
             sys.path.insert(0, root_dir)
-        from scripts.generate_methods_boilerplate import generate_methods_text
+        from src.reporting import generate_methods_text
     except ImportError:
         generate_methods_text = None
 
@@ -637,6 +642,27 @@ def generate_boilerplate_endpoint():
             schema_version=schema_version
         )
 
-        return send_file(temp_path, as_attachment=True, download_name=f"methods_boilerplate_{language}.md", mimetype="text/markdown")
+        with open(temp_path, "r", encoding="utf-8") as f:
+            md_content = f.read()
+        
+        html_path = Path(temp_path).with_suffix(".html")
+        html_content = ""
+        if html_path.exists():
+            with open(html_path, "r", encoding="utf-8") as f:
+                html_content = f.read()
+
+        # Clean up
+        try:
+            os.remove(temp_path)
+            if html_path.exists():
+                os.remove(html_path)
+        except:
+            pass
+
+        return jsonify({
+            "md": md_content,
+            "html": html_content,
+            "filename_base": f"methods_boilerplate_{language}"
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500

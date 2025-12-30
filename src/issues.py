@@ -101,6 +101,10 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Missing participants.tsv",
         "fix_hint": "Create a participants.tsv file listing all subjects with at least a 'participant_id' column",
     },
+    "PRISM005": {
+        "message": "Schema version mismatch",
+        "fix_hint": "The metadata uses an older or newer schema version than the validator. Consider updating the 'SchemaVersion' in your metadata files.",
+    },
     # Filename errors (1xx)
     "PRISM101": {
         "message": "Invalid BIDS filename format",
@@ -273,6 +277,8 @@ def infer_code_from_message(message: str) -> str:
         return "PRISM103"
     elif "does not match session directory" in msg_lower:
         return "PRISM104"
+    elif "schema version mismatch" in msg_lower:
+        return "PRISM005"
     elif "dataset_description.json" in msg_lower:
         if "missing" in msg_lower: return "PRISM001"
         return "PRISM003"

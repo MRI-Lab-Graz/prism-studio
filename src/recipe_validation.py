@@ -36,7 +36,7 @@ def _as_list_of_str(x: Any) -> list[str]:
     return out
 
 
-def validate_derivative_recipe(recipe: dict[str, Any], *, recipe_id: str | None = None) -> list[str]:
+def validate_recipe(recipe: dict[str, Any], *, recipe_id: str | None = None) -> list[str]:
     """Return a list of human-readable validation errors for a recipe."""
 
     errors: list[str] = []

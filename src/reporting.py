@@ -49,6 +49,80 @@ def print_dataset_summary(dataset_path, stats):
 
     print(f"👥 Subjects: {num_subjects}")
 
+    if has_sessions:
+        # stats.sessions is a list of subject/session combinations like "sub-01/ses-01".
+        # For the summary, report the number of unique session *labels* (e.g., ses-01),
+        # not the number of subject-session folders.
+        sessions_per_subject: dict[str, set[str]] = {}
+        unique_session_labels: set[str] = set()
+        for session in stats.sessions:
+            parts = session.split("/")
+            subj = parts[0] if parts else session
+            ses = parts[1] if len(parts) > 1 else session
+            sessions_per_subject.setdefault(subj, set()).add(ses)
+            unique_session_labels.add(ses)
+
+        print(f"📋 Sessions: {len(unique_session_labels)} (unique labels)")
+
+        avg_sessions = (
+            sum(len(v) for v in sessions_per_subject.values())
+            / len(sessions_per_subject)
+            if sessions_per_subject
+            else 0
+        )
+        print(f"📊 Sessions per subject: {avg_sessions:.1f} (avg)")
+    else:
+        print("📋 Sessions: No session structure detected")
+
+    # Modality breakdown
+    print(f"\n🎯 MODALITIES ({len(stats.modalities)} found):")
+    if stats.modalities:
+        for modality, count in sorted(stats.modalities.items()):
+            print(f"  • {modality}: {count} files")
+    else:
+        print("  No modality data found")
+
+    # Task breakdown (exclude items that are surveys or biometrics)
+    pure_tasks = {
+        t for t in stats.tasks if t not in stats.surveys and t not in stats.biometrics
+    }
+    print(f"\n📝 TASKS ({len(pure_tasks)} found):")
+    if pure_tasks:
+        for task in sorted(pure_tasks):
+            desc = get_entity_description(dataset_path, "task", task, stats)
+            if desc:
+                print(f"  • {task} - {desc}")
+            else:
+                print(f"  • {task}")
+    else:
+        print("  No tasks detected")
+
+    # Survey breakdown
+    print(f"\n📋 SURVEYS ({len(stats.surveys)} found):")
+    if stats.surveys:
+        for survey in sorted(stats.surveys):
+            desc = get_entity_description(dataset_path, "survey", survey, stats)
+            if desc:
+                print(f"  • {survey} - {desc}")
+            else:
+                print(f"  • {survey}")
+    else:
+        print("  No surveys detected")
+
+    # Biometrics breakdown
+    print(f"\n🧬 BIOMETRICS ({len(stats.biometrics)} found):")
+    if stats.biometrics:
+        for biometric in sorted(stats.biometrics):
+            desc = get_entity_description(dataset_path, "biometrics", biometric, stats)
+            if desc:
+                print(f"  • {biometric} - {desc}")
+            else:
+                print(f"  • {biometric}")
+    else:
+        print("  No biometrics detected")
+
+    # File statistics intentionally omitted (counts often exclude inherited sidecars and can be misleading)
+
 
 def get_i18n_text(field, lang="en"):
     """Extract text from an i18n field (string or dict)."""
@@ -223,83 +297,80 @@ def generate_methods_text(
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(content)
         print(f"✅ Methods boilerplate written to {output_file}")
+        
+        # Also generate HTML version
+        try:
+            html_path = Path(output_file).with_suffix(".html")
+            html_content = [
+                "<!DOCTYPE html>",
+                "<html>",
+                "<head>",
+                '<meta charset="utf-8">',
+                "<style>",
+                "body { font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #333; }",
+                "h2 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 40px; }",
+                "h3 { color: #34495e; margin-top: 30px; }",
+                "p { margin: 15px 0; }",
+                "ul { padding-left: 20px; }",
+                "li { margin-bottom: 5px; }",
+                "code { background: #f8f9fa; padding: 2px 4px; border-radius: 3px; font-family: monospace; }",
+                "strong { color: #2c3e50; }",
+                "</style>",
+                "</head>",
+                "<body>"
+            ]
+            
+            in_list = False
+            for line in sections:
+                line = line.strip()
+                if not line:
+                    continue
+                
+                if line.startswith("- "):
+                    if not in_list:
+                        html_content.append("<ul>")
+                        in_list = True
+                    
+                    li_text = line[2:]
+                    while "`" in li_text:
+                        li_text = li_text.replace("`", "<code>", 1).replace("`", "</code>", 1)
+                    html_content.append(f"  <li>{li_text}</li>")
+                    continue
+                
+                # If we were in a list and the line doesn't start with "- ", close the list
+                if in_list:
+                    html_content.append("</ul>")
+                    in_list = False
+
+                if line.startswith("## "):
+                    html_content.append(f"<h2>{line[3:]}</h2>")
+                elif line.startswith("### "):
+                    html_content.append(f"<h3>{line[4:]}</h3>")
+                elif line.startswith("**"):
+                    # Handle bold headers like **Scoring**:
+                    bold_text = line.replace("**", "").strip().strip(":")
+                    html_content.append(f"<p><strong>{bold_text}:</strong></p>")
+                else:
+                    # Handle backticks in paragraphs
+                    p_text = line
+                    while "`" in p_text:
+                        p_text = p_text.replace("`", "<code>", 1).replace("`", "</code>", 1)
+                    html_content.append(f"<p>{p_text}</p>")
+            
+            if in_list:
+                html_content.append("</ul>")
+            
+            html_content.append("</body></html>")
+            
+            with open(html_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(html_content))
+            print(f"✅ Methods boilerplate (HTML) written to {html_path}")
+        except Exception as e:
+            print(f"⚠️ Could not generate HTML boilerplate: {e}")
     else:
         print(content)
 
     return content
-    if has_sessions:
-        # stats.sessions is a list of subject/session combinations like "sub-01/ses-01".
-        # For the summary, report the number of unique session *labels* (e.g., ses-01),
-        # not the number of subject-session folders.
-        sessions_per_subject: dict[str, set[str]] = {}
-        unique_session_labels: set[str] = set()
-        for session in stats.sessions:
-            parts = session.split("/")
-            subj = parts[0] if parts else session
-            ses = parts[1] if len(parts) > 1 else session
-            sessions_per_subject.setdefault(subj, set()).add(ses)
-            unique_session_labels.add(ses)
-
-        print(f"📋 Sessions: {len(unique_session_labels)} (unique labels)")
-
-        avg_sessions = (
-            sum(len(v) for v in sessions_per_subject.values())
-            / len(sessions_per_subject)
-            if sessions_per_subject
-            else 0
-        )
-        print(f"📊 Sessions per subject: {avg_sessions:.1f} (avg)")
-    else:
-        print("📋 Sessions: No session structure detected")
-
-    # Modality breakdown
-    print(f"\n🎯 MODALITIES ({len(stats.modalities)} found):")
-    if stats.modalities:
-        for modality, count in sorted(stats.modalities.items()):
-            print(f"  • {modality}: {count} files")
-    else:
-        print("  No modality data found")
-
-    # Task breakdown (exclude items that are surveys or biometrics)
-    pure_tasks = {
-        t for t in stats.tasks if t not in stats.surveys and t not in stats.biometrics
-    }
-    print(f"\n📝 TASKS ({len(pure_tasks)} found):")
-    if pure_tasks:
-        for task in sorted(pure_tasks):
-            desc = get_entity_description(dataset_path, "task", task, stats)
-            if desc:
-                print(f"  • {task} - {desc}")
-            else:
-                print(f"  • {task}")
-    else:
-        print("  No tasks detected")
-
-    # Survey breakdown
-    print(f"\n📋 SURVEYS ({len(stats.surveys)} found):")
-    if stats.surveys:
-        for survey in sorted(stats.surveys):
-            desc = get_entity_description(dataset_path, "survey", survey, stats)
-            if desc:
-                print(f"  • {survey} - {desc}")
-            else:
-                print(f"  • {survey}")
-    else:
-        print("  No surveys detected")
-
-    # Biometrics breakdown
-    print(f"\n🧬 BIOMETRICS ({len(stats.biometrics)} found):")
-    if stats.biometrics:
-        for biometric in sorted(stats.biometrics):
-            desc = get_entity_description(dataset_path, "biometrics", biometric, stats)
-            if desc:
-                print(f"  • {biometric} - {desc}")
-            else:
-                print(f"  • {biometric}")
-    else:
-        print("  No biometrics detected")
-
-    # File statistics intentionally omitted (counts often exclude inherited sidecars and can be misleading)
 
 
 def print_validation_results(problems, show_bids_warnings=True):
