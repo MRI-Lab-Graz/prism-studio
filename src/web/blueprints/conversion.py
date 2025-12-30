@@ -359,17 +359,19 @@ def api_survey_convert_validate():
                     formatted = format_validation_results(issues, stats, str(output_root))
                     
                     # Include the full formatted results for the UI to display properly
-                    validation_result["formatted"] = formatted
+                    # We use a new dict to avoid circular references
+                    validation_result = {"formatted": formatted}
+                    validation_result.update(formatted)
                     
                     # Log errors to the web terminal
-                    total_err = formatted.get("total_errors", 0)
-                    total_warn = formatted.get("total_warnings", 0)
+                    total_err = formatted.get("summary", {}).get("total_errors", 0)
+                    total_warn = formatted.get("summary", {}).get("total_warnings", 0)
                     
                     if total_err > 0:
                         add_log(f"✗ Validation failed with {total_err} error(s)", "error")
                         # Log the first 20 errors specifically to the terminal
                         count = 0
-                        for group in formatted.get("error_groups", {}).values():
+                        for group in formatted.get("errors", []):
                             for f in group.get("files", []):
                                 if count < 20:
                                     # Clean up message for terminal
@@ -389,7 +391,26 @@ def api_survey_convert_validate():
             except Exception as val_err:
                 validation_result["warnings"].append(f"Validation error: {str(val_err)}")
 
-        validation_result["warnings"].extend(conversion_warnings)
+        # Add conversion warnings to the final result
+        if conversion_warnings:
+            if "warnings" not in validation_result:
+                validation_result["warnings"] = []
+            
+            # Add as a group if we have formatted results
+            if "formatted" in validation_result:
+                conv_group = {
+                    "code": "CONVERSION",
+                    "message": "Conversion Warnings",
+                    "description": "Issues encountered during data conversion",
+                    "files": [{"file": filename, "message": w} for w in conversion_warnings],
+                    "count": len(conversion_warnings)
+                }
+                validation_result["warnings"].append(conv_group)
+                if "summary" in validation_result:
+                    validation_result["summary"]["total_warnings"] += len(conversion_warnings)
+            else:
+                # Simple string list for non-formatted results
+                validation_result["warnings"].extend(conversion_warnings)
 
         # Create ZIP
         mem = io.BytesIO()
@@ -590,8 +611,8 @@ def api_biometrics_convert():
                     
                     validation["summary"] = {
                         "files_created": len(list(output_root.rglob("*_biometrics.tsv"))),
-                        "total_errors": formatted.get("total_errors", 0),
-                        "total_warnings": formatted.get("total_warnings", 0)
+                        "total_errors": formatted.get("summary", {}).get("total_errors", 0),
+                        "total_warnings": formatted.get("summary", {}).get("total_warnings", 0)
                     }
                     
                     # Include the full formatted results for the UI to display properly

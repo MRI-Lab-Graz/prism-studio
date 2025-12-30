@@ -1260,7 +1260,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <small class="text-muted">Warnings</small>
                 </div>
                 <div class="col-4">
-                    <div class="h4 mb-0 text-info">${summary.files_created || 'n/a'}</div>
+                    <div class="h4 mb-0 text-info">${summary.total_files || summary.files_created || 'n/a'}</div>
                     <small class="text-muted">Files</small>
                 </div>
             </div>
