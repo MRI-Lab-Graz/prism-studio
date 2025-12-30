@@ -362,6 +362,11 @@
                                             <div class="form-text">Only needed if item IDs changed over time.</div>
                                         </div>
                                         <div class="col-md-6">
+                                            <label for="convertSession" class="form-label">Session ID (optional)</label>
+                                            <input type="text" class="form-control" id="convertSession" placeholder="e.g. 1">
+                                            <div class="form-text">Force a specific session ID (e.g. '1' becomes 'ses-1').</div>
+                                        </div>
+                                        <div class="col-md-6">
                                             <label for="convertUnknown" class="form-label">Unknown Items</label>
                                             <select class="form-select" id="convertUnknown">
                                                 <option value="warn" selected>Show warnings</option>
@@ -491,6 +496,11 @@
                                         <div class="col-md-6">
                                             <label for="biometricsSheet" class="form-label">Excel Sheet (name or index)</label>
                                             <input type="text" class="form-control" id="biometricsSheet" placeholder="0" value="0">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="biometricsSession" class="form-label">Session ID (optional)</label>
+                                            <input type="text" class="form-control" id="biometricsSession" placeholder="e.g. 1">
+                                            <div class="form-text">Force a specific session ID (e.g. '1' becomes 'ses-1').</div>
                                         </div>
                                         <div class="col-md-6">
                                             <label for="biometricsUnknown" class="form-label">Unknown Items</label>
@@ -1452,6 +1462,13 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('library_path', libraryPath);
         formData.append('dataset_name', convertDatasetName.value.trim());
         formData.append('unknown', convertUnknown.value);
+
+        const sessionVal = document.getElementById('convertSession') ? document.getElementById('convertSession').value.trim() : '';
+        if (sessionVal) {
+            formData.append('session', sessionVal);
+            appendLog(`Forcing session ID: ${sessionVal}`, 'step');
+        }
+
         formData.append('language', convertLanguage ? convertLanguage.value : 'auto');
         formData.append('validate', 'true');  // Request validation
 
@@ -1718,6 +1735,13 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('library_path', libraryPath);
             formData.append('dataset_name', biometricsDatasetName.value.trim());
             formData.append('unknown', biometricsUnknown.value);
+
+            const sessionVal = document.getElementById('biometricsSession') ? document.getElementById('biometricsSession').value.trim() : '';
+            if (sessionVal) {
+                formData.append('session', sessionVal);
+                appendLog(`Forcing session ID: ${sessionVal}`, 'step', biometricsLog);
+            }
+
             formData.append('validate', 'true');
             selectedTasks.forEach(t => formData.append('tasks[]', t));
 

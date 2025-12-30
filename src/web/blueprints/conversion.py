@@ -158,6 +158,7 @@ def api_survey_convert():
     survey_filter = (request.form.get("survey") or "").strip() or None
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
+    session_override = (request.form.get("session") or "").strip() or None
     sheet = (request.form.get("sheet") or "0").strip() or 0
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
@@ -198,6 +199,7 @@ def api_survey_convert():
                 survey=survey_filter,
                 id_column=id_column,
                 session_column=session_column,
+                session=session_override,
                 sheet=sheet,
                 unknown=unknown,
                 dry_run=False,
@@ -215,6 +217,7 @@ def api_survey_convert():
                 survey=survey_filter,
                 id_column=id_column,
                 session_column=session_column,
+                session=session_override,
                 unknown=unknown,
                 dry_run=False,
                 force=True,
@@ -291,6 +294,7 @@ def api_survey_convert_validate():
     survey_filter = (request.form.get("survey") or "").strip() or None
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
+    session_override = (request.form.get("session") or "").strip() or None
     sheet = (request.form.get("sheet") or "0").strip() or 0
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
@@ -320,7 +324,8 @@ def api_survey_convert_validate():
             convert_result = convert_survey_xlsx_to_prism_dataset(
                 input_path=input_path, library_dir=str(effective_survey_dir),
                 output_root=output_root, survey=survey_filter, id_column=id_column,
-                session_column=session_column, sheet=sheet, unknown=unknown,
+                session_column=session_column, session=session_override,
+                sheet=sheet, unknown=unknown,
                 dry_run=False, force=True, name=dataset_name, authors=["prism-studio"],
                 language=language, alias_file=alias_path,
             )
@@ -328,7 +333,8 @@ def api_survey_convert_validate():
             convert_result = convert_survey_lsa_to_prism_dataset(
                 input_path=input_path, library_dir=str(effective_survey_dir),
                 output_root=output_root, survey=survey_filter, id_column=id_column,
-                session_column=session_column, unknown=unknown, dry_run=False,
+                session_column=session_column, session=session_override,
+                unknown=unknown, dry_run=False,
                 force=True, name=dataset_name, authors=["prism-studio"],
                 language=language, alias_file=alias_path,
                 strict_levels=True if strict_levels else None,
@@ -349,7 +355,11 @@ def api_survey_convert_validate():
         validation_result = {"errors": [], "warnings": [], "summary": {}}
         if request.form.get("validate") == "true":
             try:
-                v_res = run_validation(str(output_root), schema_version="stable")
+                v_res = run_validation(
+                    str(output_root), 
+                    schema_version="stable",
+                    library_path=str(effective_survey_dir)
+                )
                 if v_res and isinstance(v_res, tuple):
                     issues = v_res[0]
                     stats = v_res[1]
@@ -523,6 +533,7 @@ def api_biometrics_convert():
 
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
+    session_override = (request.form.get("session") or "").strip() or None
     sheet = (request.form.get("sheet") or "0").strip() or 0
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
@@ -555,6 +566,7 @@ def api_biometrics_convert():
             output_root=output_root,
             id_column=id_column,
             session_column=session_column,
+            session=session_override,
             sheet=sheet,
             unknown=unknown,
             force=True,
@@ -591,7 +603,11 @@ def api_biometrics_convert():
             validation = {"errors": [], "warnings": [], "summary": {}}
             try:
                 # Use run_validation which is already imported and handles the tuple return
-                v_res = run_validation(str(output_root), schema_version="stable")
+                v_res = run_validation(
+                    str(output_root), 
+                    schema_version="stable",
+                    library_path=str(library_root)
+                )
                 if v_res and isinstance(v_res, tuple):
                     issues = v_res[0]
                     stats = v_res[1]

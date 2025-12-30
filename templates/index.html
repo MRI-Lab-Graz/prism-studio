@@ -82,6 +82,24 @@
                             </small>
                         </div>
 
+                        <!-- 2b. Template Library Root (Optional) -->
+                        <div class="mb-4">
+                            <h5 class="mb-3">
+                                <i class="fas fa-book text-success me-2"></i>
+                                2b. Template Library Root (Optional)
+                            </h5>
+                            <div class="input-group">
+                                <input type="text" class="form-control border-success" id="library_path" name="library_path" placeholder="/path/to/library">
+                                <button class="btn btn-outline-success" type="button" id="browseLibraryBtn" title="Browse Folder">
+                                    <i class="fas fa-folder-open"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                If your dataset uses external survey/biometrics templates, specify the library folder here.
+                            </small>
+                        </div>
+
                         <!-- 3. Validation Mode -->
                         <div class="mb-4">
                             <h5 class="mb-3">
@@ -289,6 +307,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadBtn = document.getElementById('uploadBtn');
     const uploadInfo = document.getElementById('uploadInfo');
     const browserWarning = document.getElementById('browserWarning');
+    const browseLibraryBtn = document.getElementById('browseLibraryBtn');
+    const libraryPathInput = document.getElementById('library_path');
+
+    if (browseLibraryBtn && libraryPathInput) {
+        browseLibraryBtn.addEventListener('click', function() {
+            fetch('/api/browse-folder')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.path) {
+                        libraryPathInput.value = data.path;
+                    }
+                });
+        });
+    }
 
     // Check for webkitdirectory support
     const supportsFolderUpload = 'webkitdirectory' in document.createElement('input');

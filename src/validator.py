@@ -6,6 +6,7 @@ import os
 import re
 import json
 import csv
+from pathlib import Path
 from datetime import datetime
 from jsonschema import validate, ValidationError
 from schema_manager import validate_schema_version
@@ -78,7 +79,7 @@ def _extract_entity_value(stem, key):
     return None
 
 
-def resolve_sidecar_path(file_path, root_dir):
+def resolve_sidecar_path(file_path, root_dir, library_path=None):
     """Return best-matching sidecar path, supporting dataset-level survey sidecars."""
     candidate = derive_sidecar_path(file_path)
     if os.path.exists(candidate):
@@ -110,6 +111,13 @@ def resolve_sidecar_path(file_path, root_dir):
         safe_path_join(root_dir, "biometrics"),
     ]
 
+    # Add library paths if provided
+    if library_path:
+        library_root = Path(library_path)
+        search_dirs.append(str(library_root))
+        search_dirs.append(str(library_root / "survey"))
+        search_dirs.append(str(library_root / "biometrics"))
+
     for prefix, value in label_candidates:
         base_name = f"{prefix}-{value}"
         suffix_part = f"_{suffix}" if suffix and suffix != base_name else ""
@@ -127,8 +135,9 @@ def resolve_sidecar_path(file_path, root_dir):
 class DatasetValidator:
     """Main dataset validation class"""
 
-    def __init__(self, schemas=None):
+    def __init__(self, schemas=None, library_path=None):
         self.schemas = schemas or {}
+        self.library_path = library_path
 
     def validate_data_content(self, file_path, modality, root_dir):
         """Validate data content against constraints in sidecar"""
@@ -138,7 +147,7 @@ class DatasetValidator:
         if modality not in ["survey", "biometrics"]:
             return issues
 
-        sidecar_path = resolve_sidecar_path(file_path, root_dir)
+        sidecar_path = resolve_sidecar_path(file_path, root_dir, self.library_path)
         if not os.path.exists(sidecar_path):
             # Missing sidecar is already reported by validate_sidecar
             return issues
@@ -547,7 +556,7 @@ class DatasetValidator:
         if modality in BIDS_MODALITIES:
             return []
         
-        sidecar_path = resolve_sidecar_path(file_path, root_dir)
+        sidecar_path = resolve_sidecar_path(file_path, root_dir, self.library_path)
         issues = []
 
         if not os.path.exists(sidecar_path):

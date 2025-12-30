@@ -88,6 +88,7 @@ def upload_dataset():
         
         show_bids_warnings = request.form.get("bids_warnings") == "true"
         job_id = request.form.get("job_id", str(uuid.uuid4()))
+        library_path = request.form.get("library_path")
 
         def progress_callback(progress: int, message: str):
             update_progress(job_id, progress, message)
@@ -98,6 +99,7 @@ def upload_dataset():
             schema_version=schema_version,
             run_bids=run_bids,
             run_prism=run_prism,
+            library_path=library_path,
             progress_callback=progress_callback,
         )
 
@@ -156,6 +158,7 @@ def validate_folder():
     
     show_bids_warnings = request.form.get("bids_warnings") == "true"
     job_id = request.form.get("job_id", str(uuid.uuid4()))
+    library_path = request.form.get("library_path")
 
     def progress_callback(progress: int, message: str):
         update_progress(job_id, progress, message)
@@ -167,6 +170,7 @@ def validate_folder():
             schema_version=schema_version,
             run_bids=run_bids,
             run_prism=run_prism,
+            library_path=library_path,
             progress_callback=progress_callback,
         )
 
@@ -314,11 +318,16 @@ def api_validate():
             return jsonify({"error": "Missing dataset_path parameter"}), 400
 
         dataset_path = data["dataset_path"]
+        library_path = data.get("library_path")
         if not os.path.exists(dataset_path):
             return jsonify({"error": "Dataset path does not exist"}), 400
 
         # Use unified validation function
-        issues, stats = run_validation(dataset_path, verbose=False)
+        issues, stats = run_validation(
+            dataset_path, 
+            verbose=False,
+            library_path=library_path
+        )
         results = format_validation_results(issues, stats, dataset_path)
 
         return jsonify(results)

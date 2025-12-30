@@ -84,6 +84,7 @@ def run_validation(
     schema_version: Optional[str] = None,
     run_bids: bool = False,
     run_prism: bool = True,
+    library_path: Optional[str] = None,
     progress_callback: Optional[Callable[[int, str], None]] = None,
 ) -> Tuple[List, Any]:
     """
@@ -95,6 +96,7 @@ def run_validation(
         schema_version: Schema version to use (default: 'stable')
         run_bids: Also run standard BIDS validator
         run_prism: Also run PRISM-specific validation
+        library_path: Optional path to a template library for sidecar resolution
         progress_callback: Optional callback for progress updates
 
     Returns:
@@ -132,6 +134,7 @@ def run_validation(
                 schema_version=schema_version,
                 run_bids=run_bids,
                 run_prism=run_prism,
+                library_path=library_path,
                 progress_callback=wrapped_callback,
             )
 

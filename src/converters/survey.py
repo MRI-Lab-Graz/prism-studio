@@ -148,6 +148,7 @@ def convert_survey_xlsx_to_prism_dataset(
     survey: str | None = None,
     id_column: str | None = None,
     session_column: str | None = None,
+    session: str | None = None,
     sheet: str | int = 0,
     unknown: str = "warn",
     dry_run: bool = False,
@@ -185,6 +186,7 @@ def convert_survey_xlsx_to_prism_dataset(
         survey=survey,
         id_column=id_column,
         session_column=session_column,
+        session=session,
         unknown=unknown,
         dry_run=dry_run,
         force=force,
@@ -204,6 +206,7 @@ def convert_survey_lsa_to_prism_dataset(
     survey: str | None = None,
     id_column: str | None = None,
     session_column: str | None = None,
+    session: str | None = None,
     unknown: str = "warn",
     dry_run: bool = False,
     force: bool = False,
@@ -240,6 +243,7 @@ def convert_survey_lsa_to_prism_dataset(
         survey=survey,
         id_column=id_column,
         session_column=session_column,
+        session=session,
         unknown=unknown,
         dry_run=dry_run,
         force=force,
@@ -399,6 +403,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     survey: str | None,
     id_column: str | None,
     session_column: str | None,
+    session: str | None = None,
     unknown: str,
     dry_run: bool,
     force: bool,
@@ -796,7 +801,12 @@ def _convert_survey_dataframe_to_prism_dataset(
     # per-subject TSVs
     for _, row in df.iterrows():
         sub_id = _normalize_sub_id(row[resolved_id_col])
-        ses_id = _normalize_ses_id(row[resolved_session_col]) if resolved_session_col else "ses-1"
+        if session:
+            ses_id = _normalize_ses_id(session)
+        elif resolved_session_col:
+            ses_id = _normalize_ses_id(row[resolved_session_col])
+        else:
+            ses_id = "ses-1"
 
         modality_dir = _ensure_dir(output_root / sub_id / ses_id / "survey")
 
