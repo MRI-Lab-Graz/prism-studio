@@ -163,7 +163,7 @@ def main():
                 "StudyID": "PRISM_001",
             },
             "Metadata": {
-                "SchemaVersion": "1.0.0",
+                "SchemaVersion": "1.1.1",
                 "CreationDate": "2025-01-01",
                 "Creator": "Script",
             },

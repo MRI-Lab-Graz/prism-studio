@@ -723,7 +723,7 @@ def process_excel(
                     "Description": {"de": study_desc_de, "en": study_desc_en},
                 },
                 "Metadata": {
-                    "SchemaVersion": "1.1.0",
+                    "SchemaVersion": "1.1.1",
                     "CreationDate": pd.Timestamp.now().strftime("%Y-%m-%d"),
                     "Creator": "excel_to_library.py",
                 },

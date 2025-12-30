@@ -136,7 +136,7 @@ def generate_prism_json(questions, output_path):
             "TrialStructure": {"TrialCount": len(questions)},
         },
         "Metadata": {
-            "SchemaVersion": "1.0.0",
+            "SchemaVersion": "1.1.1",
             "CreationDate": date.today().isoformat(),
             "Creator": "LimeSurvey to Prism Converter",
         },

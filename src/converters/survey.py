@@ -31,7 +31,7 @@ _NON_ITEM_TOPLEVEL_KEYS = {
     "LimeSurvey",
 }
 
-_MISSING_TOKEN = "na"
+_MISSING_TOKEN = "n/a"
 
 
 @dataclass(frozen=True)
@@ -192,6 +192,7 @@ def convert_survey_xlsx_to_prism_dataset(
         authors=authors,
         language=language,
         alias_file=alias_file,
+        strict_levels=True,
     )
 
 
@@ -210,6 +211,7 @@ def convert_survey_lsa_to_prism_dataset(
     authors: list[str] | None = None,
     language: str | None = None,
     alias_file: str | Path | None = None,
+    strict_levels: bool | None = None,
 ) -> SurveyConvertResult:
     """Convert a LimeSurvey response archive (.lsa) into a PRISM dataset.
 
@@ -229,6 +231,8 @@ def convert_survey_lsa_to_prism_dataset(
     if not effective_language or effective_language.strip().lower() == "auto":
         effective_language = inferred_lang
 
+    effective_strict_levels = False if strict_levels is None else bool(strict_levels)
+
     return _convert_survey_dataframe_to_prism_dataset(
         df=df,
         library_dir=library_dir,
@@ -244,6 +248,7 @@ def convert_survey_lsa_to_prism_dataset(
         language=effective_language,
         technical_overrides=inferred_tech,
         alias_file=alias_file,
+        strict_levels=effective_strict_levels,
     )
 
 
@@ -402,6 +407,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     language: str | None,
     technical_overrides: dict | None = None,
     alias_file: str | Path | None = None,
+    strict_levels: bool = True,
 ) -> SurveyConvertResult:
     if unknown not in {"error", "warn", "ignore"}:
         raise ValueError("unknown must be one of: error, warn, ignore")
@@ -710,8 +716,19 @@ def _convert_survey_dataframe_to_prism_dataset(
             return str(val)
         return str(val)
 
+    def _try_float(x) -> float | None:
+        try:
+            return float(str(x).strip())
+        except Exception:
+            return None
+
     def _validate_item_value(item_id: str, val, schema: dict, sub_id: str, task: str):
-        """Validate that a value matches the allowed levels in the schema."""
+        """Validate that a value matches the allowed levels in the schema.
+
+        When strict_levels=False (used for .lsa inputs), numeric values that fall within a
+        range implied by MinValue/MaxValue (or inferred from numeric Levels keys) are accepted,
+        but a detailed warning is recorded explaining what would have caused a strict error.
+        """
         if _is_missing_value(val):
             return  # Missing values are normalized later
 
@@ -731,18 +748,48 @@ def _convert_survey_dataframe_to_prism_dataset(
         # Check if value is in allowed levels
         allowed_keys = set(str(k) for k in levels.keys())
         if val_str not in allowed_keys:
-            # Try to give helpful error message
-            if allowed_keys:
-                levels_list = sorted(allowed_keys, key=lambda x: (len(x), x))
-                allowed_str = ", ".join(levels_list)
-                raise ValueError(
-                    f"Invalid value '{val}' for question '{item_id}' in {sub_id} task '{task}'. "
-                    f"Expected one of: {allowed_str}"
-                )
-            else:
-                raise ValueError(
-                    f"Invalid value '{val}' for question '{item_id}' in {sub_id} task '{task}'."
-                )
+            levels_list = sorted(allowed_keys, key=lambda x: (len(x), x)) if allowed_keys else []
+            allowed_str = ", ".join(levels_list) if levels_list else "(no levels declared)"
+
+            val_num = _try_float(val_str)
+            min_val = item_schema.get("MinValue")
+            max_val = item_schema.get("MaxValue")
+
+            min_num = _try_float(min_val) if min_val is not None else None
+            max_num = _try_float(max_val) if max_val is not None else None
+
+            # If EXPLICIT range is provided in schema, we allow it even in strict mode
+            # (This supports scales where only anchors are labeled in Levels)
+            if val_num is not None and min_num is not None and max_num is not None:
+                if min_num <= val_num <= max_num:
+                    return
+
+            if not strict_levels:
+                # Tolerant mode: accept numeric values within a range implied by the template.
+                if min_num is None or max_num is None:
+                    level_nums = []
+                    for k in levels.keys():
+                        n = _try_float(k)
+                        if n is not None:
+                            level_nums.append(n)
+                    if len(level_nums) >= 2:
+                        min_num = min(level_nums)
+                        max_num = max(level_nums)
+
+                if val_num is not None and min_num is not None and max_num is not None and min_num <= val_num <= max_num:
+                    conversion_warnings.append(
+                        "[LSA tolerance] Value accepted but would fail strict Levels check: "
+                        f"question='{item_id}', subject='{sub_id}', task='{task}', value='{val_str}'. "
+                        f"Template Levels keys={allowed_str}; treated as numeric range {min_num}..{max_num}. "
+                        "Consider adding MinValue/MaxValue or enumerating all numeric Levels."
+                    )
+                    return
+
+            # Strict (or not safely tolerable): error with detailed context.
+            raise ValueError(
+                f"Invalid value '{val}' for question '{item_id}' in {sub_id} task '{task}'. "
+                f"Expected one of: {allowed_str}"
+            )
 
     missing_cells_by_subject: dict[str, int] = {}
 

@@ -190,10 +190,10 @@ class DatasetValidator:
                             col_def = sidecar_data[col_name]
 
                             # Skip empty values
-                            if value is None or value.strip() == "" or value == "n/a":
+                            if value is None or value.strip() == "" or value.lower() in ("n/a", "na"):
                                 continue
 
-                            # Check AllowedValues or Levels
+                            # Check AllowedValues, Levels, or Min/Max range
                             allowed = None
                             if "AllowedValues" in col_def and isinstance(col_def["AllowedValues"], list):
                                 allowed = [str(x) for x in col_def["AllowedValues"]]
@@ -201,31 +201,43 @@ class DatasetValidator:
                                 levels = col_def["Levels"]
                                 level_keys = list(levels.keys())
 
-                                # If level keys are numeric endpoints (e.g., {"0": "...", "5": "..."})
-                                # allow the full inclusive integer range to avoid over-rejecting mid-scale values.
-                                numeric_level_keys = []
-                                try:
-                                    numeric_level_keys = [
-                                        int(float(k)) for k in level_keys
-                                    ]
-                                except ValueError:
-                                    numeric_level_keys = []
-
-                                if numeric_level_keys:
-                                    min_level = min(numeric_level_keys)
-                                    max_level = max(numeric_level_keys)
-
-                                    # Only expand when we clearly have an ordinal numeric scale that might omit midpoints.
-                                    # If the provided keys already cover every integer in the range, keep them as-is.
-                                    full_range = [
-                                        str(i) for i in range(min_level, max_level + 1)
-                                    ]
-                                    if set(full_range).issuperset(set(level_keys)):
-                                        allowed = full_range
-                                    else:
+                                # If explicit MinValue/MaxValue are provided, use them to define the range
+                                min_val = col_def.get("MinValue")
+                                max_val = col_def.get("MaxValue")
+                                
+                                if min_val is not None and max_val is not None:
+                                    try:
+                                        min_i = int(float(min_val))
+                                        max_i = int(float(max_val))
+                                        allowed = [str(i) for i in range(min_i, max_i + 1)]
+                                    except (ValueError, TypeError):
                                         allowed = level_keys
                                 else:
-                                    allowed = level_keys
+                                    # Fallback: If level keys are numeric endpoints (e.g., {"0": "...", "5": "..."})
+                                    # allow the full inclusive integer range to avoid over-rejecting mid-scale values.
+                                    numeric_level_keys = []
+                                    try:
+                                        numeric_level_keys = [
+                                            int(float(k)) for k in level_keys
+                                        ]
+                                    except ValueError:
+                                        numeric_level_keys = []
+
+                                    if numeric_level_keys:
+                                        min_level = min(numeric_level_keys)
+                                        max_level = max(numeric_level_keys)
+
+                                        # Only expand when we clearly have an ordinal numeric scale that might omit midpoints.
+                                        # If the provided keys already cover every integer in the range, keep them as-is.
+                                        full_range = [
+                                            str(i) for i in range(min_level, max_level + 1)
+                                        ]
+                                        if set(full_range).issuperset(set(level_keys)):
+                                            allowed = full_range
+                                        else:
+                                            allowed = level_keys
+                                    else:
+                                        allowed = level_keys
 
                             if allowed:
                                 if value not in allowed:

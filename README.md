@@ -293,7 +293,7 @@ Each stimulus file must be associated with metadata in a `.json` sidecar. Sideca
   "FileFormat": "tsv",
   "TaskName": "bdi",
   "OriginalName": "Beck Depression Inventory",
-  "SchemaVersion": "1.0.0"
+  "SchemaVersion": "1.1.1"
 }
 ```
 
@@ -311,7 +311,7 @@ Each stimulus file must be associated with metadata in a `.json` sidecar. Sideca
     "Protocol": "2k walk"
   },
   "Metadata": {
-    "SchemaVersion": "1.0.0",
+    "SchemaVersion": "1.1.1",
     "CreationDate": "2023-01-01"
   }
 }

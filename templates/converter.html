@@ -369,6 +369,13 @@
                                                 <option value="error">Stop on unknown</option>
                                             </select>
                                         </div>
+                                        <div class="col-md-12">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="convertStrictLevels">
+                                                <label class="form-check-label" for="convertStrictLevels">Strict Levels Validation</label>
+                                            </div>
+                                            <div class="form-text">If enabled, values must match the template's enumerated Levels exactly. For .lsa inputs, leave this off to allow numeric scale values (e.g., 1) with detailed warnings.</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1447,6 +1454,12 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('unknown', convertUnknown.value);
         formData.append('language', convertLanguage ? convertLanguage.value : 'auto');
         formData.append('validate', 'true');  // Request validation
+
+        const strictLevelsEl = document.getElementById('convertStrictLevels');
+        if (strictLevelsEl && strictLevelsEl.checked) {
+            formData.append('strict_levels', 'true');
+            appendLog('Strict Levels Validation: enabled', 'step');
+        }
 
         convertBtn.disabled = true;
         appendLog('Uploading file and starting conversion...', 'info');

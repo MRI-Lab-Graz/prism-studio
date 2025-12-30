@@ -13,8 +13,14 @@
     "ValidationAccuracy": 0.45
   },
   "Screen": {
-    "ScreenResolution": [1920, 1080],
-    "ScreenSize": [52.7, 29.6],
+    "ScreenResolution": [
+      1920,
+      1080
+    ],
+    "ScreenSize": [
+      52.7,
+      29.6
+    ],
     "ScreenDistance": 60,
     "ScreenRefreshRate": 60
   },
@@ -45,7 +51,7 @@
     "TaskDescription": "Visual search task with target detection"
   },
   "Metadata": {
-    "SchemaVersion": "1.0.0",
+    "SchemaVersion": "1.1.1",
     "CreationDate": "2025-12-19",
     "Creator": "Prism Demo Generator"
   }

@@ -70,7 +70,7 @@ The JSON structure is divided into three main objects to organize metadata logic
 
 | Key | Requirement | Type | Description |
 | --- | --- | --- | --- |
-| `SchemaVersion` | **REQUIRED** | `string` | Version of the schema used (e.g., `"1.0.0"`). |
+| `SchemaVersion` | **REQUIRED** | `string` | Version of the schema used (e.g., `"1.1.1"`). |
 | `CreationDate` | **REQUIRED** | `string` | Date of file creation in `YYYY-MM-DD` format. |
 | `Creator` | OPTIONAL | `string` | Tool or person who created the file. |
 

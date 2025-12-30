@@ -162,6 +162,8 @@ def api_survey_convert():
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
     language = (request.form.get("language") or "").strip() or None
+    strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
+    strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_")
     try:
@@ -220,6 +222,7 @@ def api_survey_convert():
                 authors=["prism-studio"],
                 language=language,
                 alias_file=alias_path,
+                strict_levels=True if strict_levels else None,
             )
 
         mem = io.BytesIO()
@@ -292,6 +295,8 @@ def api_survey_convert_validate():
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
     language = (request.form.get("language") or "").strip() or None
+    strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
+    strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_validate_")
     try:
@@ -306,6 +311,9 @@ def api_survey_convert_validate():
 
         output_root = tmp_dir_path / "prism_dataset"
         add_log("Starting data conversion...", "info")
+
+        if strict_levels:
+            add_log("Strict Levels Validation: enabled", "info")
 
         convert_result = None
         if suffix in {".xlsx", ".csv", ".tsv"}:
@@ -323,6 +331,7 @@ def api_survey_convert_validate():
                 session_column=session_column, unknown=unknown, dry_run=False,
                 force=True, name=dataset_name, authors=["prism-studio"],
                 language=language, alias_file=alias_path,
+                strict_levels=True if strict_levels else None,
             )
         add_log("Conversion completed", "success")
 
