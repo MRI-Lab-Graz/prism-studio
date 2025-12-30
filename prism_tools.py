@@ -33,7 +33,7 @@ from src.converters.excel_to_survey import process_excel
 from src.converters.excel_to_biometrics import process_excel_biometrics
 from src.reporting import generate_methods_text
 from src.library_i18n import compile_survey_template, migrate_survey_template_to_i18n
-from src.derivatives_surveys import compute_survey_derivatives, SurveyDerivativesResult
+from src.recipes_surveys import compute_survey_recipes, SurveyRecipesResult
 
 
 def _normalize_survey_key(raw: str) -> str:
@@ -90,59 +90,85 @@ def _format_numeric_cell(val: float | None) -> str:
     return str(val)
 
 
-def cmd_derivatives_surveys(args):
+def cmd_recipes_surveys(args):
     prism_root = Path(args.prism).resolve()
     if not prism_root.exists() or not prism_root.is_dir():
         print(f"Error: --prism is not a directory: {prism_root}")
         sys.exit(1)
 
-    out_format = str(getattr(args, "format", "prism") or "prism").strip().lower()
+    repo_root = Path(getattr(args, "repo", project_root)).resolve()
+    if not repo_root.exists() or not repo_root.is_dir():
+        print(f"Error: --repo is not a directory: {repo_root}")
+        sys.exit(1)
+
+    out_format = str(getattr(args, "format", "flat") or "flat").strip().lower()
     survey_filter = (str(args.survey).strip() if getattr(args, "survey", None) else "") or None
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
+    layout = str(getattr(args, "layout", "long") or "long").strip().lower()
+    include_raw = bool(getattr(args, "include_raw", False))
 
     try:
-        result = compute_survey_derivatives(
+        result = compute_survey_recipes(
             prism_root=prism_root,
-            repo_root=project_root,
+            repo_root=repo_root,
             survey=survey_filter,
             out_format=out_format,
             modality="survey",
             lang=lang,
+            layout=layout,
+            include_raw=include_raw,
         )
-        print(f"✅ Derivative survey scoring complete: {result.written_files} file(s) written")
+        print(f"✅ Survey recipe scoring complete: {result.written_files} file(s) written")
         if result.flat_out_path:
             print(f"   Flat output: {result.flat_out_path}")
         if result.fallback_note:
             print(f"   Note: {result.fallback_note}")
+        if result.nan_report:
+            print("   Columns with all n/a:")
+            for key, cols in result.nan_report.items():
+                joined = ", ".join(sorted(cols))
+                print(f"     - {key}: {joined}")
     except Exception as e:
         print(f"❌ Error: {e}")
         sys.exit(1)
 
 
-def cmd_derivatives_biometrics(args):
+def cmd_recipes_biometrics(args):
     prism_root = Path(args.prism).resolve()
     if not prism_root.exists() or not prism_root.is_dir():
         print(f"Error: --prism is not a directory: {prism_root}")
         sys.exit(1)
 
-    out_format = str(getattr(args, "format", "prism") or "prism").strip().lower()
+    repo_root = Path(getattr(args, "repo", project_root)).resolve()
+    if not repo_root.exists() or not repo_root.is_dir():
+        print(f"Error: --repo is not a directory: {repo_root}")
+        sys.exit(1)
+
+    out_format = str(getattr(args, "format", "flat") or "flat").strip().lower()
     biometric_filter = (str(args.biometric).strip() if getattr(args, "biometric", None) else "") or None
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
+    layout = str(getattr(args, "layout", "long") or "long").strip().lower()
 
     try:
-        result = compute_survey_derivatives(
+        result = compute_survey_recipes(
             prism_root=prism_root,
-            repo_root=project_root,
+            repo_root=repo_root,
             survey=biometric_filter,
             out_format=out_format,
             modality="biometrics",
             lang=lang,
+            layout=layout,
         )
-        print(f"✅ Biometric derivative scoring complete: {result.written_files} file(s) written")
+        print(f"✅ Biometric recipe scoring complete: {result.written_files} file(s) written")
         if result.flat_out_path:
             print(f"   Flat output: {result.flat_out_path}")
         if result.fallback_note:
             print(f"   Note: {result.fallback_note}")
+        if result.nan_report:
+            print("   Columns with all n/a:")
+            for key, cols in result.nan_report.items():
+                joined = ", ".join(sorted(cols))
+                print(f"     - {key}: {joined}")
     except Exception as e:
         print(f"❌ Error: {e}")
         sys.exit(1)
@@ -1232,18 +1258,18 @@ def main():
         dest="action", help="Action"
     )
 
-    # Command: derivatives
-    parser_derivatives = subparsers.add_parser(
-        "derivatives",
-        help="Create derivatives from an already-valid PRISM dataset",
+    # Command: recipes
+    parser_recipes = subparsers.add_parser(
+        "recipes",
+        help="Compute scores/recipes from an already-valid PRISM dataset using recipes",
     )
-    derivatives_subparsers = parser_derivatives.add_subparsers(
-        dest="kind", help="Derivative kind"
+    recipes_subparsers = parser_recipes.add_subparsers(
+        dest="kind", help="Recipe kind"
     )
 
-    parser_deriv_surveys = derivatives_subparsers.add_parser(
+    parser_deriv_surveys = recipes_subparsers.add_parser(
         "surveys",
-        help="Compute survey derivatives (e.g., reverse coding, subscales) from TSVs",
+        help="Compute survey scores (e.g., reverse coding, subscales) from TSVs",
     )
     parser_deriv_surveys.add_argument(
         "--prism",
@@ -1251,14 +1277,22 @@ def main():
         help="Path to the PRISM dataset root (input + output target)",
     )
     parser_deriv_surveys.add_argument(
+        "--repo",
+        default=str(project_root),
+        help=(
+            "Path to the PRISM tools repository root (used to locate recipe JSONs under "
+            "recipes/surveys/*.json). Default: this script's folder."
+        ),
+    )
+    parser_deriv_surveys.add_argument(
         "--survey",
         help="Optional comma-separated recipe selection (e.g., 'ADS'). Default: run all matching recipes.",
     )
     parser_deriv_surveys.add_argument(
         "--format",
-        default="prism",
+        default="flat",
         choices=["prism", "flat", "csv", "xlsx", "save", "r"],
-        help="Output format: 'prism' (default), 'flat', 'csv', 'xlsx', 'save' (SPSS), 'r' (feather)",
+        help="Output format: 'flat' (default), 'prism', 'csv', 'xlsx', 'save' (SPSS), 'r' (feather)",
     )
     parser_deriv_surveys.add_argument(
         "--lang",
@@ -1266,9 +1300,20 @@ def main():
         choices=["en", "de"],
         help="Language for metadata labels in export formats (default: en)",
     )
+    parser_deriv_surveys.add_argument(
+        "--layout",
+        default="long",
+        choices=["long", "wide"],
+        help="Layout for repeated measures: 'long' (one row per session) or 'wide' (one row per participant)",
+    )
+    parser_deriv_surveys.add_argument(
+        "--include-raw",
+        action="store_true",
+        help="Include original raw data columns in the output",
+    )
 
     # Backwards/typo-friendly alias matching common usage in docs/notes.
-    parser_deriv_surves = derivatives_subparsers.add_parser(
+    parser_deriv_surves = recipes_subparsers.add_parser(
         "surves",
         help="Alias for 'surveys'",
     )
@@ -1278,14 +1323,22 @@ def main():
         help="Path to the PRISM dataset root (input + output target)",
     )
     parser_deriv_surves.add_argument(
+        "--repo",
+        default=str(project_root),
+        help=(
+            "Path to the PRISM tools repository root (used to locate recipe JSONs under "
+            "recipes/surveys/*.json). Default: this script's folder."
+        ),
+    )
+    parser_deriv_surves.add_argument(
         "--survey",
         help="Optional comma-separated recipe selection (e.g., 'ADS'). Default: run all matching recipes.",
     )
     parser_deriv_surves.add_argument(
         "--format",
-        default="prism",
+        default="flat",
         choices=["prism", "flat", "csv", "xlsx", "save", "r"],
-        help="Output format: 'prism' (default), 'flat', 'csv', 'xlsx', 'save' (SPSS), 'r' (feather)",
+        help="Output format: 'flat' (default), 'prism', 'csv', 'xlsx', 'save' (SPSS), 'r' (feather)",
     )
     parser_deriv_surves.add_argument(
         "--lang",
@@ -1293,10 +1346,16 @@ def main():
         choices=["en", "de"],
         help="Language for metadata labels in export formats (default: en)",
     )
+    parser_deriv_surves.add_argument(
+        "--layout",
+        default="long",
+        choices=["long", "wide"],
+        help="Layout for repeated measures: 'long' (one row per session) or 'wide' (one row per participant)",
+    )
 
-    parser_deriv_biometrics = derivatives_subparsers.add_parser(
+    parser_deriv_biometrics = recipes_subparsers.add_parser(
         "biometrics",
-        help="Compute biometric derivatives (e.g., best of trials, composite scores) from TSVs",
+        help="Compute biometric scores (e.g., best of trials, composite scores) from TSVs",
     )
     parser_deriv_biometrics.add_argument(
         "--prism",
@@ -1304,20 +1363,34 @@ def main():
         help="Path to the PRISM dataset root (input + output target)",
     )
     parser_deriv_biometrics.add_argument(
+        "--repo",
+        default=str(project_root),
+        help=(
+            "Path to the PRISM tools repository root (used to locate recipe JSONs under "
+            "recipes/biometrics/*.json). Default: this script's folder."
+        ),
+    )
+    parser_deriv_biometrics.add_argument(
         "--biometric",
         help="Optional comma-separated recipe selection (e.g., 'y_balance'). Default: run all matching recipes.",
     )
     parser_deriv_biometrics.add_argument(
         "--format",
-        default="prism",
+        default="flat",
         choices=["prism", "flat", "csv", "xlsx", "save", "r"],
-        help="Output format: 'prism', 'flat', 'csv', 'xlsx', 'save', 'r'",
+        help="Output format: 'flat' (default), 'prism', 'csv', 'xlsx', 'save' (SPSS), 'r' (feather)",
     )
     parser_deriv_biometrics.add_argument(
         "--lang",
         default="en",
         choices=["en", "de"],
         help="Language for metadata labels in export formats (default: en)",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--layout",
+        default="long",
+        choices=["long", "wide"],
+        help="Layout for repeated measures: 'long' (one row per session) or 'wide' (one row per participant)",
     )
 
     # Subcommand: biometrics import-excel
@@ -1612,13 +1685,13 @@ def main():
             cmd_dataset_build_biometrics_smoketest(args)
         else:
             parser_dataset.print_help()
-    elif args.command == "derivatives":
+    elif args.command == "recipes":
         if args.kind in {"surveys", "surves"}:
-            cmd_derivatives_surveys(args)
+            cmd_recipes_surveys(args)
         elif args.kind == "biometrics":
-            cmd_derivatives_biometrics(args)
+            cmd_recipes_biometrics(args)
         else:
-            parser_derivatives.print_help()
+            parser_recipes.print_help()
     else:
         parser.print_help()
 

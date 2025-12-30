@@ -109,22 +109,23 @@ def validate_dataset(
             if run_prism:
                 issues.append(("ERROR", f"Error processing dataset_description.json: {e}", dataset_desc_path))
 
-    # Check for derivatives (BIDS-derivatives style)
-    derivatives_dir = os.path.join(root_dir, "derivatives")
-    if os.path.exists(derivatives_dir) and os.path.isdir(derivatives_dir):
-        for sub in sorted(os.listdir(derivatives_dir)):
-            sub_path = os.path.join(derivatives_dir, sub)
-            if os.path.isdir(sub_path) and not sub.startswith("."):
-                sub_desc = os.path.join(sub_path, "dataset_description.json")
-                if not os.path.exists(sub_desc):
-                    issues.append(
-                        (
-                            "WARNING",
-                            f"Derivative dataset '{sub}' is missing dataset_description.json. "
-                            "BIDS-derivatives should have their own description file.",
-                            sub_path,
+    # Check for recipes/derivatives (BIDS-derivatives style)
+    for folder_name in ["recipes", "derivatives"]:
+        folder_dir = os.path.join(root_dir, folder_name)
+        if os.path.exists(folder_dir) and os.path.isdir(folder_dir):
+            for sub in sorted(os.listdir(folder_dir)):
+                sub_path = os.path.join(folder_dir, sub)
+                if os.path.isdir(sub_path) and not sub.startswith("."):
+                    sub_desc = os.path.join(sub_path, "dataset_description.json")
+                    if not os.path.exists(sub_desc):
+                        issues.append(
+                            (
+                                "WARNING",
+                                f"{folder_name.capitalize()} dataset '{sub}' is missing dataset_description.json. "
+                                f"BIDS-{folder_name} should have their own description file.",
+                                sub_path,
+                            )
                         )
-                    )
 
     report_progress(10, 100, "Checking BIDS compatibility...")
 

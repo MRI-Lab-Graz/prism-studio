@@ -1,16 +1,16 @@
-"""Survey-derivatives computation.
+"""Survey-recipes computation.
 
-This module implements the logic behind `prism_tools.py derivatives surveys` as a
+This module implements the logic behind `prism_tools.py recipes surveys` as a
 reusable API, so both the CLI and the Web/GUI can call the same code.
 
-It reads derivative *recipes* from the repository's `derivatives/surveys/*.json`
+It reads recipes from the repository's `recipes/surveys/*.json`
 folder and writes outputs into the target dataset under:
 
-- `derivatives/surveys/<recipe_id>/sub-*/ses-*/survey/*_desc-scores_beh.tsv` (format="prism")
-- or `derivatives/survey_derivatives.tsv` (format="flat")
+- `recipes/surveys/<recipe_id>/sub-*/ses-*/survey/*_desc-scores_beh.tsv` (format="prism")
+- or `recipes/survey_scores.tsv` (format="flat")
 
-Additionally, it creates `derivatives/surveys/dataset_description.json` in the
-output dataset (BIDS-derivatives style).
+Additionally, it creates `recipes/surveys/dataset_description.json` in the
+output dataset.
 """
 
 from __future__ import annotations
@@ -24,13 +24,14 @@ from typing import Any, Dict, List, Optional
 
 
 @dataclass(frozen=True)
-class SurveyDerivativesResult:
+class SurveyRecipesResult:
     processed_files: int
     written_files: int
     out_format: str
     out_root: Path
     flat_out_path: Path | None
     fallback_note: str | None = None
+    nan_report: dict[str, list[str]] | None = None
 
 
 def _ensure_dir(path: Path) -> Path:
@@ -333,8 +334,21 @@ def _parse_numeric_cell(val: str | None) -> float | None:
     s = str(val).strip()
     if not s or s.lower() == "n/a":
         return None
+    # Support common clock-time inputs (e.g., "22:30"), interpreted as hours.
+    # This is primarily used for PSQI time-in-bed calculations.
+    if ":" in s:
+        parts = s.split(":")
+        if 2 <= len(parts) <= 3:
+            try:
+                hh = int(parts[0])
+                mm = int(parts[1])
+                ss = int(parts[2]) if len(parts) == 3 else 0
+                if 0 <= hh <= 48 and 0 <= mm < 60 and 0 <= ss < 60:
+                    return float(hh) + float(mm) / 60.0 + float(ss) / 3600.0
+            except Exception:
+                pass
     try:
-        return float(s)
+        return float(s.replace(",", "."))
     except ValueError:
         return None
 
@@ -352,7 +366,7 @@ def _format_numeric_cell(val: Any) -> str:
 
 
 def _apply_survey_derivative_recipe_to_rows(
-    recipe: dict, rows: list[dict[str, str]]
+    recipe: dict, rows: list[dict[str, str]], include_raw: bool = False
 ) -> tuple[list[str], list[dict[str, str]]]:
     transforms = recipe.get("Transforms", {}) or {}
     invert_cfg = transforms.get("Invert") or {}
@@ -365,9 +379,16 @@ def _apply_survey_derivative_recipe_to_rows(
     derived_cfg = transforms.get("Derived") or []
 
     scores = recipe.get("Scores") or []
-    out_header = [
+    score_names = [
         str(s.get("Name", "")).strip() for s in scores if str(s.get("Name", "")).strip()
     ]
+
+    out_header = []
+    if include_raw and rows:
+        # Include all original columns from the first row
+        out_header.extend(list(rows[0].keys()))
+
+    out_header.extend(score_names)
     out_rows: list[dict[str, str]] = []
 
     for row in rows:
@@ -390,6 +411,23 @@ def _apply_survey_derivative_recipe_to_rows(
                     return v
             return v
 
+        def _map_value_to_bucket(val: float, mapping: dict) -> Any:
+            for range_str, mapped in mapping.items():
+                if "-" in str(range_str):
+                    try:
+                        low, high = map(float, str(range_str).split("-"))
+                        if low <= val <= high:
+                            return mapped
+                    except Exception:
+                        continue
+                else:
+                    try:
+                        if float(val) == float(range_str):
+                            return mapped
+                    except Exception:
+                        continue
+            return None
+
         # 1) Compute Derived variables first
         for d in derived_cfg:
             d_name = d.get("Name")
@@ -398,22 +436,50 @@ def _apply_survey_derivative_recipe_to_rows(
             d_method = str(d.get("Method", "max")).strip().lower()
             d_items = [str(i).strip() for i in (d.get("Items") or []) if str(i).strip()]
 
-            d_values = []
-            for item_id in d_items:
-                v = _get_item_value(item_id, current_row)
-                if v is not None:
-                    d_values.append(v)
-
             d_result = None
-            if d_values:
-                if d_method == "max":
-                    d_result = max(d_values)
-                elif d_method == "min":
-                    d_result = min(d_values)
-                elif d_method in ("mean", "avg"):
-                    d_result = sum(d_values) / float(len(d_values))
-                elif d_method == "sum":
-                    d_result = sum(d_values)
+            if d_method in {"max", "min", "mean", "avg", "sum"}:
+                d_values = []
+                for item_id in d_items:
+                    v = _get_item_value(item_id, current_row)
+                    if v is not None:
+                        d_values.append(v)
+
+                if d_values:
+                    if d_method == "max":
+                        d_result = max(d_values)
+                    elif d_method == "min":
+                        d_result = min(d_values)
+                    elif d_method in ("mean", "avg"):
+                        d_result = sum(d_values) / float(len(d_values))
+                    elif d_method == "sum":
+                        d_result = sum(d_values)
+
+            elif d_method == "map":
+                mapping = d.get("Mapping") or {}
+                source = d.get("Source")
+                if not source and d_items:
+                    source = d_items[0]
+                v = _get_item_value(str(source).strip(), current_row) if source else None
+                if v is not None and isinstance(mapping, dict) and mapping:
+                    d_result = _map_value_to_bucket(v, mapping)
+
+            elif d_method == "formula":
+                formula = d.get("Formula")
+                if formula:
+                    expr = str(formula)
+                    any_missing = False
+                    for item_id in d_items:
+                        v = _get_item_value(item_id, current_row)
+                        if v is None:
+                            any_missing = True
+                            break
+                        val_str = str(v)
+                        expr = expr.replace(f"{{{item_id}}}", val_str)
+                    if not any_missing:
+                        try:
+                            d_result = eval(expr, {"__builtins__": None}, {})
+                        except Exception:
+                            d_result = None
 
             current_row[d_name] = _format_numeric_cell(d_result)
 
@@ -490,15 +556,24 @@ def _apply_survey_derivative_recipe_to_rows(
                 else:
                     result = sum(values)
 
-            out[name] = _format_numeric_cell(result)
+            formatted_val = _format_numeric_cell(result)
+            out[name] = formatted_val
+            # Add to current_row so subsequent scores can reference it (e.g. for 'map' or 'formula')
+            current_row[name] = formatted_val
 
-        out_rows.append(out)
+        if include_raw:
+            # Merge original row with scores
+            final_row = row.copy()
+            final_row.update(out)
+            out_rows.append(final_row)
+        else:
+            out_rows.append(out)
 
     return out_header, out_rows
 
 
-def _write_derivatives_dataset_description(*, out_root: Path, modality: str, prism_root: Path) -> None:
-    """Create a BIDS-derivatives dataset_description.json under derivatives/<modality>/."""
+def _write_recipes_dataset_description(*, out_root: Path, modality: str, prism_root: Path) -> None:
+    """Create a dataset_description.json under recipes/<modality>/."""
 
     desc_path = out_root / "dataset_description.json"
     if desc_path.exists():
@@ -515,13 +590,13 @@ def _write_derivatives_dataset_description(*, out_root: Path, modality: str, pri
 
     modality_label = modality.capitalize()
     obj = {
-        "Name": f"{root_meta.get('Name', 'PRISM')} {modality_label} Derivatives",
+        "Name": f"{root_meta.get('Name', 'PRISM')} {modality_label} Recipes",
         "BIDSVersion": "1.8.0",
         "DatasetType": "derivative",
         "GeneratedBy": [
             {
                 "Name": "prism-tools",
-                "Description": f"{modality_label} derivative scoring (reverse coding, subscales, formulas)",
+                "Description": f"{modality_label} recipe scoring (reverse coding, subscales, formulas)",
                 "Version": "1.0.0",
                 "CodeURL": "https://github.com/MRI-Lab-Graz/prism-studio",
             }
@@ -543,23 +618,27 @@ def _write_derivatives_dataset_description(*, out_root: Path, modality: str, pri
     _write_json(desc_path, obj)
 
 
-def compute_survey_derivatives(
+def compute_survey_recipes(
     *,
     prism_root: str | Path,
     repo_root: str | Path,
     survey: str | None = None,
-    out_format: str = "prism",
+    out_format: str = "flat",
     modality: str = "survey",
     lang: str = "en",
-) -> SurveyDerivativesResult:
-    """Compute survey derivatives in a PRISM dataset.
+    layout: str = "long",
+    include_raw: bool = False,
+) -> SurveyRecipesResult:
+    """Compute survey scores in a PRISM dataset using recipes.
 
     Args:
             prism_root: Target PRISM dataset root (must exist).
             repo_root: Repository root (used to locate recipe JSONs).
             survey: Optional comma-separated recipe ids to apply.
-            out_format: "prism" or "flat".
+            out_format: "flat" (default), "prism", "csv", "xlsx", "save", "r".
             lang: Language for metadata labels (e.g., "en", "de").
+            layout: "long" (default) or "wide" for repeated measures.
+            include_raw: If True, include original columns in the output.
 
     Raises:
             ValueError: For user errors (missing paths, unknown recipes, etc.).
@@ -572,6 +651,12 @@ def compute_survey_derivatives(
     if not prism_root.exists() or not prism_root.is_dir():
         raise ValueError(f"--prism is not a directory: {prism_root}")
 
+    # If prism_root points to rawdata, we use the parent as the PRISM root for output
+    # but keep prism_root for scanning files.
+    output_prism_root = prism_root
+    if prism_root.name == "rawdata":
+        output_prism_root = prism_root.parent
+
     modality = str(modality or "survey").strip().lower()
     out_format = str(out_format or "prism").strip().lower()
     final_format = out_format
@@ -579,13 +664,17 @@ def compute_survey_derivatives(
     if out_format not in {"prism", "flat", "csv", "xlsx", "save", "r"}:
         raise ValueError("--format must be one of: prism, flat, csv, xlsx, save, r")
 
+    layout = str(layout or "long").strip().lower()
+    if layout not in {"long", "wide"}:
+        raise ValueError("--layout must be one of: long, wide")
+
     # Locate recipe folder by modality.
     if modality == "survey":
-        recipes_dir = (repo_root / "derivatives" / "surveys").resolve()
-        expected = "derivatives/surveys/*.json"
+        recipes_dir = (repo_root / "recipes" / "surveys").resolve()
+        expected = "recipes/surveys/*.json"
     elif modality == "biometrics":
-        recipes_dir = (repo_root / "derivatives" / "biometrics").resolve()
-        expected = "derivatives/biometrics/*.json"
+        recipes_dir = (repo_root / "recipes" / "biometrics").resolve()
+        expected = "recipes/biometrics/*.json"
     else:
         raise ValueError("modality must be one of: survey, biometrics")
 
@@ -648,8 +737,10 @@ def compute_survey_derivatives(
     # Scan dataset for TSV files based on modality
     tsv_files: list[Path] = []
     if modality == "survey":
-        tsv_files.extend(prism_root.glob("sub-*/ses-*/survey/*.tsv"))
-        tsv_files.extend(prism_root.glob("sub-*/survey/*.tsv"))
+        # Search in survey/ and beh/ (BIDS standard)
+        for folder in ("survey", "beh"):
+            tsv_files.extend(prism_root.glob(f"sub-*/ses-*/{folder}/*.tsv"))
+            tsv_files.extend(prism_root.glob(f"sub-*/{folder}/*.tsv"))
     elif modality == "biometrics":
         tsv_files.extend(prism_root.glob("sub-*/ses-*/biometrics/*.tsv"))
         tsv_files.extend(prism_root.glob("sub-*/biometrics/*.tsv"))
@@ -665,8 +756,8 @@ def compute_survey_derivatives(
     # Load participants.tsv if available (for merging demographic data)
     participants_df = None
     participants_meta = {}  # Column metadata from participants.json
-    participants_tsv = prism_root / "participants.tsv"
-    participants_json = prism_root / "participants.json"
+    participants_tsv = output_prism_root / "participants.tsv"
+    participants_json = output_prism_root / "participants.json"
     if participants_tsv.is_file():
         try:
             import pandas as pd
@@ -685,10 +776,11 @@ def compute_survey_derivatives(
         except Exception:
             participants_meta = {}
 
-    # Output derivatives into standard folders.
-    out_root = prism_root / "derivatives" / ("surveys" if modality == "survey" else "biometrics")
+    # Output scores into BIDS-derivatives folders; recipes remain the instruction set in the repo.
+    out_root = output_prism_root / "derivatives" / ("surveys" if modality == "survey" else "biometrics")
     flat_rows: list[dict] = []
     flat_key_to_idx: dict[tuple, int] = {}
+    nan_report: dict[str, list[str]] = {}
 
     processed_files = 0
     written_files = 0
@@ -734,7 +826,7 @@ def compute_survey_derivatives(
                     continue
 
                 out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
-                    recipe, in_rows
+                    recipe, in_rows, include_raw=include_raw
                 )
                 if not out_header:
                     continue
@@ -765,6 +857,46 @@ def compute_survey_derivatives(
                 if c in df.columns
             ]
             df = df.loc[:, cols]
+
+            if layout == "wide":
+                # Pivot so that session is in columns
+                # We keep participant_id as index
+                try:
+                    # Pivot the score columns
+                    df_wide = df.pivot(
+                        index="participant_id", columns="session", values=out_header
+                    )
+                    # Flatten multi-index columns: "ses-1_total_score"
+                    if isinstance(df_wide.columns, pd.MultiIndex):
+                        # df.pivot with multiple values returns MultiIndex (value, session)
+                        # We want (session, value)
+                        df_wide.columns = [
+                            f"{ses}_{val}" for val, ses in df_wide.columns
+                        ]
+                    else:
+                        # Only one score column
+                        df_wide.columns = [f"{ses}_{out_header[0]}" for ses in df_wide.columns]
+                    
+                    df = df_wide.reset_index().fillna("n/a")
+                    # Update out_header to reflect new columns for metadata building
+                    out_header = [c for c in df.columns if c != "participant_id"]
+                except Exception as e:
+                    # Fallback to long if pivot fails (e.g. duplicate sub/ses pairs)
+                    if fallback_note is None:
+                        fallback_note = f"Could not create wide layout: {e}"
+
+            # Detect columns with all missing values (excluding ids)
+            try:
+                df_nan = df.replace("n/a", pd.NA)
+                nan_cols = [
+                    c
+                    for c in df_nan.columns
+                    if c not in {"participant_id", "session"} and df_nan[c].isna().all()
+                ]
+                if nan_cols:
+                    nan_report[recipe_id] = nan_cols
+            except Exception:
+                pass
 
             # Merge participant variables (age, sex, etc.) if available
             if participants_df is not None:
@@ -990,7 +1122,7 @@ def compute_survey_derivatives(
                     continue
 
                 out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
-                    recipe, in_rows
+                    recipe, in_rows, include_raw=include_raw
                 )
                 if not out_header:
                     break
@@ -1018,7 +1150,7 @@ def compute_survey_derivatives(
                     out_dir = out_root / recipe_id / sub_id / ses_id / modality
                     stem = in_path.stem
                     base_stem, _in_suffix = _strip_suffix(stem)
-                    # Write derivatives with the new _survey suffix; legacy _beh inputs are upgraded.
+                    # Write recipes with the new _survey suffix; legacy _beh inputs are upgraded.
                     new_stem = f"{base_stem}_desc-scores_{modality}"
                     out_path = out_dir / f"{new_stem}.tsv"
                     _write_tsv_rows(out_path, out_header, out_rows)
@@ -1035,20 +1167,71 @@ def compute_survey_derivatives(
     if out_format == "flat":
         fixed = ["participant_id", "session", modality]
         score_cols = sorted({k for r in flat_rows for k in r.keys() if k not in fixed})
-        flat_header = fixed + score_cols
-        flat_out_path = prism_root / "derivatives" / f"{modality}_derivatives.tsv"
+        
+        if layout == "wide":
+            try:
+                import pandas as pd
+                df_flat = pd.DataFrame(flat_rows)
+                # Pivot
+                # We need to handle the case where multiple surveys exist for the same sub/ses
+                # The 'survey' column distinguishes them in long format.
+                # In wide format, we want to pivot on participant_id, and have columns like ses-1_ads_total, ses-1_pss_total
+                
+                # First, melt the score columns so we have (participant, session, survey, variable, value)
+                id_vars = ["participant_id", "session", "survey"]
+                df_melt = df_flat.melt(id_vars=id_vars, value_vars=score_cols).dropna()
+                
+                # Create a combined column name: {session}_{variable}
+                # Note: variable already contains the survey prefix (e.g. ads_total)
+                df_melt["col_name"] = df_melt["session"] + "_" + df_melt["variable"]
+                
+                # Pivot to wide
+                df_wide = df_melt.pivot(index="participant_id", columns="col_name", values="value")
+                df_flat = df_wide.reset_index().fillna("n/a")
+                
+                flat_header = ["participant_id"] + sorted([c for c in df_flat.columns if c != "participant_id"])
+                flat_out_path = output_prism_root / "derivatives" / f"{modality}_scores.tsv"
+                # Convert back to rows for _write_tsv_rows
+                flat_rows = df_flat.to_dict("records")
+            except Exception as e:
+                if fallback_note is None:
+                    fallback_note = f"Could not create wide flat layout: {e}"
+                flat_header = fixed + score_cols
+                flat_out_path = output_prism_root / "derivatives" / f"{modality}_scores.tsv"
+        else:
+            flat_header = fixed + score_cols
+            flat_out_path = output_prism_root / "derivatives" / f"{modality}_scores.tsv"
+
         _write_tsv_rows(flat_out_path, flat_header, flat_rows)
 
+        # Detect all-NA columns in flat output (long or wide)
+        try:
+            import pandas as pd
+
+            df_flat_chk = pd.DataFrame(flat_rows)
+            df_flat_chk = df_flat_chk.replace("n/a", pd.NA)
+            ignore_cols = {"participant_id", "session", modality, "survey"}
+            nan_cols = [
+                c
+                for c in df_flat_chk.columns
+                if c not in ignore_cols and df_flat_chk[c].isna().all()
+            ]
+            if nan_cols:
+                nan_report["flat_output"] = nan_cols
+        except Exception:
+            pass
+
     _ensure_dir(out_root)
-    _write_derivatives_dataset_description(
-        out_root=out_root, modality=modality, prism_root=prism_root
+    _write_recipes_dataset_description(
+        out_root=out_root, modality=modality, prism_root=output_prism_root
     )
 
-    return SurveyDerivativesResult(
+    return SurveyRecipesResult(
         processed_files=processed_files,
         written_files=written_files,
         out_format=final_format,
         out_root=out_root,
         flat_out_path=flat_out_path,
         fallback_note=fallback_note,
+        nan_report=nan_report if nan_report else None,
     )

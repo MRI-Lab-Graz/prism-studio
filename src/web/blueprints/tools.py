@@ -197,9 +197,9 @@ def converter():
         default_survey_library_path=str(default_library_path),
     )
 
-@tools_bp.route("/derivatives")
-def derivatives():
-    return render_template("derivatives.html")
+@tools_bp.route("/recipes")
+def recipes():
+    return render_template("recipes.html")
 
 
 @tools_bp.route("/template-editor")
@@ -357,15 +357,15 @@ def api_template_editor_download():
         download_name=filename,
     )
 
-@tools_bp.route("/api/derivatives-surveys", methods=["POST"])
-def api_derivatives_surveys():
-    """Run survey-derivatives generation inside an existing PRISM dataset."""
+@tools_bp.route("/api/recipes-surveys", methods=["POST"])
+def api_recipes_surveys():
+    """Run survey-recipes generation inside an existing PRISM dataset."""
     try:
-        from derivatives_surveys import compute_survey_derivatives
+        from recipes_surveys import compute_survey_recipes
     except ImportError:
-        compute_survey_derivatives = None
+        compute_survey_recipes = None
 
-    if not compute_survey_derivatives:
+    if not compute_survey_recipes:
         return jsonify({"error": "Data processing module not available"}), 500
 
     data = request.get_json(silent=True) or {}
@@ -374,6 +374,8 @@ def api_derivatives_surveys():
     out_format = (data.get("format") or "csv").strip().lower() or "csv"
     survey_filter = (data.get("survey") or "").strip() or None
     lang = (data.get("lang") or "en").strip().lower() or "en"
+    layout = (data.get("layout") or "long").strip().lower() or "long"
+    include_raw = bool(data.get("include_raw", False))
 
     if not dataset_path or not os.path.exists(dataset_path) or not os.path.isdir(dataset_path):
         return jsonify({"error": "Invalid dataset path"}), 400
@@ -391,13 +393,15 @@ def api_derivatives_surveys():
         return jsonify({"error": f"Dataset is not PRISM-valid (errors: {len(error_issues)}). First error: {first}"}), 400
 
     try:
-        result = compute_survey_derivatives(
+        result = compute_survey_recipes(
             prism_root=dataset_path,
             repo_root=current_app.root_path,
             survey=survey_filter,
             out_format=out_format,
             modality=modality,
             lang=lang,
+            layout=layout,
+            include_raw=include_raw,
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -415,6 +419,7 @@ def api_derivatives_surveys():
         "out_format": result.out_format,
         "out_root": str(result.out_root),
         "flat_out_path": str(result.flat_out_path) if result.flat_out_path else None,
+        "nan_report": result.nan_report,
     })
 
 @tools_bp.route("/api/browse-folder")

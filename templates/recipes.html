@@ -1,19 +1,19 @@
 {% extends "base.html" %}
 
-{% block title %}PRISM Studio - Data Processing{% endblock %}
+{% block title %}PRISM Studio - Recipes & Scoring{% endblock %}
 
 {% block content %}
 <div class="container">
   <div class="row mb-4">
     <div class="col-12">
-      <h2><i class="fas fa-calculator text-primary me-2"></i>Data Processing</h2>
-      <p class="text-muted">Generate analysis-ready outputs (subscales, reverse coding) from a PRISM-valid dataset.</p>
+      <h2><i class="fas fa-calculator text-primary me-2"></i>Recipes & Scoring</h2>
+      <p class="text-muted">Recipes live in the repo; outputs are written into your dataset under <code>derivatives/</code> (subscales, reverse coding).</p>
     </div>
   </div>
 
   <div class="card">
     <div class="card-header bg-light">
-      <h5 class="mb-0">Dataset Processing & Scoring</h5>
+      <h5 class="mb-0">Dataset Recipes & Scoring</h5>
     </div>
     <div class="card-body">
       <div class="row g-3 align-items-end">
@@ -63,6 +63,21 @@
         </div>
 
         <div class="col-md-4">
+          <label for="derivLayout" class="form-label">Layout</label>
+          <select class="form-select" id="derivLayout">
+            <option value="long" selected>Long (one row per session)</option>
+            <option value="wide">Wide (one row per participant)</option>
+          </select>
+          <div class="form-text">For repeated measures.</div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="derivIncludeRaw">
+            <label class="form-check-label" for="derivIncludeRaw">
+              Include Raw Data Columns
+            </label>
+          </div>
           <button class="btn btn-primary w-100" type="button" id="derivRunBtn">
             <i class="fas fa-play me-2"></i>Run Processing
           </button>
@@ -150,16 +165,19 @@ document.addEventListener('DOMContentLoaded', function() {
       format: derivFormat.value,
       survey: derivSurvey.value.trim(),
       lang: document.getElementById('derivLang').value,
+      layout: document.getElementById('derivLayout').value,
+      include_raw: document.getElementById('derivIncludeRaw').checked
     };
 
     derivRunBtn.disabled = true;
     logToTerminal(`Running processing on: ${datasetPath}`);
-    logToTerminal(`Modality: ${payload.modality}, Format: ${payload.format}, Language: ${payload.lang}`);
+    logToTerminal(`Modality: ${payload.modality}, Format: ${payload.format}, Language: ${payload.lang}, Layout: ${payload.layout}`);
+    if (payload.include_raw) logToTerminal(`Including raw data columns`);
     if (payload.survey) logToTerminal(`Recipe filter: ${payload.survey}`);
     derivInfo.textContent = 'Running processing... this may take a moment.';
     derivInfo.classList.remove('d-none');
 
-    fetch('/api/derivatives-surveys', {
+    fetch('/api/recipes-surveys', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -179,6 +197,12 @@ document.addEventListener('DOMContentLoaded', function() {
         logToTerminal(msg, 'success');
         if (data && data.out_format) {
           logToTerminal(`Output format used: ${data.out_format}`);
+        }
+        if (data && data.nan_report) {
+          logToTerminal('Columns with all n/a:', 'warning');
+          for (const [key, cols] of Object.entries(data.nan_report)) {
+            logToTerminal(`  - ${key}: ${cols.sort().join(', ')}`, 'warning');
+          }
         }
         if (data && data.details) {
           logToTerminal(`Processed: ${data.details.processed_files || 0} files`);

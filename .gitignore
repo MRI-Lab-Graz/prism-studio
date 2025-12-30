@@ -83,7 +83,7 @@ test_dataset/
 # Added by fix script
 .env
 node_modules
-derivatives/biometrics/cmj.json
+recipes/
 derivatives/
 # Harvest script
 scripts/harvest_testarchiv.py

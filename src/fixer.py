@@ -272,7 +272,7 @@ class DatasetFixer:
                 d
                 for d in dirs
                 if not d.startswith(".")
-                and d not in ["code", "derivatives", "sourcedata"]
+                and d not in ["code", "recipes", "derivatives", "sourcedata"]
             ]
 
             for filename in files:
@@ -330,7 +330,7 @@ class DatasetFixer:
         if not os.path.exists(config_path) and not os.path.exists(alt_config_path):
             config = {
                 "schemaVersion": "stable",
-                "ignorePaths": ["derivatives/**", "sourcedata/**", "code/**"],
+                "ignorePaths": ["recipes/**", "derivatives/**", "sourcedata/**", "code/**"],
                 "strictMode": False,
                 "runBids": False,
             }
