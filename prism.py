@@ -158,7 +158,9 @@ Examples:
         action="store_true",
         help="Disable plugin loading",
     )
-    parser.add_argument("--version", action="version", version="PRISM 1.6.5")
+    parser.add_argument(
+        "--version", action="version", version="PRISM 1.6.6"
+    )
 
     args = parser.parse_args()
 
