@@ -45,10 +45,18 @@ The JSON structure is divided into three main objects to organize metadata logic
 
 | Key | Requirement | Type | Description |
 | --- | --- | --- | --- |
-| `StimulusType` | **REQUIRED** | `string` | MUST be `"Biometrics"`. |
+| `Type` | **REQUIRED** | `string` | Type of assessment (`Biometrics`, `PhysicalPerformance`, `Anthropometry`, `FitnessTest`). |
 | `FileFormat` | **REQUIRED** | `string` | The format of the data file (e.g., `"tsv"`). |
+| `SoftwarePlatform` | OPTIONAL | `string` | Software used (e.g., `"My Jump Lab"`, `"Kubios"`). |
+| `SoftwareVersion` | OPTIONAL | `string` | Version of the software platform. |
+| `Language` | OPTIONAL | `string` | Primary language (e.g., `"en"`, `"de-AT"`). |
+| `Respondent` | OPTIONAL | `string` | Who performed the test (`self`, `clinician`, etc.). |
 | `Equipment` | **REQUIRED** | `string` | The device or equipment used (e.g., "Stopwatch", "Cycle Ergometer"). |
+| `EquipmentManufacturer` | OPTIONAL | `string` | Manufacturer of the equipment. |
+| `EquipmentModel` | OPTIONAL | `string` | Model name/number. |
+| `CalibrationDate` | OPTIONAL | `string` | Date of last calibration (`YYYY-MM-DD`). |
 | `Supervisor` | OPTIONAL | `string` | Who supervised the test. Allowed: `"investigator"`, `"physician"`, `"trainer"`, `"self"`. |
+| `Location` | OPTIONAL | `string` | Where it took place (`laboratory`, `clinic`, `gym`, `field`, `home`). |
 
 ### `Study` Object Fields
 
@@ -56,15 +64,22 @@ The JSON structure is divided into three main objects to organize metadata logic
 | --- | --- | --- | --- |
 | `BiometricName` | **REQUIRED** | `string` | Short alphanumeric identifier (e.g., `"ukk"`). |
 | `OriginalName` | **REQUIRED** | `string` | Full human-readable name (e.g., `"UKK Walk Test"`). |
+| `ShortName` | OPTIONAL | `string` \| `object` | Common abbreviation. |
+| `Version` | OPTIONAL | `string` | Instrument version. |
+| `Authors` | OPTIONAL | `array` | Instrument authors. |
+| `Citation` | OPTIONAL | `string` | Reference citation. |
+| `DOI` | OPTIONAL | `string` | DOI for the instrument. |
+| `License` / `LicenseID` / `LicenseURL` | OPTIONAL | `string` | Rights and license information. |
+| `Access` | OPTIONAL | `string` | High-level access classification. |
+| `CopyrightHolder` | OPTIONAL | `string` | Rights holder. |
+| `Construct` | OPTIONAL | `string` \| `object` | Psychological/physical construct measured. |
+| `Keywords` | OPTIONAL | `array` | Keywords describing the instrument. |
 | `Description` | **REQUIRED** | `string` | Detailed description of the procedure. |
 | `Instructions` | RECOMMENDED | `string` | Instructions given to the participant. |
-| `Protocol` | OPTIONAL | `string` | Reference to the specific protocol used. |
-| `Author` | OPTIONAL | `string` | Author(s) of the test protocol. |
-| `DOI` | OPTIONAL | `string` | DOI of the reference publication. |
-| `Reference` | OPTIONAL | `string` | Full citation. |
-| `EstimatedDuration` | OPTIONAL | `string` | Typical duration (e.g., `"15 min"`). |
-| `TargetPopulation` | OPTIONAL | `string` | Intended demographic (e.g., `"Adults 18-65"`). |
-| `ExclusionCriteria` | OPTIONAL | `string` | Contraindications. |
+| `Reliability` / `Validity` | OPTIONAL | `string` \| `object` | Psychometric properties. |
+| `AdministrationTime` | OPTIONAL | `string` \| `object` | Estimated time to complete. |
+| `References` | OPTIONAL | `array` | Structured list of references. |
+| `Translation` | OPTIONAL | `object` | Translation/adaptation provenance. |
 
 ### `Metadata` Object Fields
 

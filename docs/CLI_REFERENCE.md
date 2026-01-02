@@ -98,9 +98,10 @@ python prism.py /data/study-01 --fix
 
 - Import **Survey** and **Biometrics** libraries from Excel
 - Convert wide survey exports into a PRISM/BIDS-like dataset
-- Create **survey derivatives** (scores, reverse-coding) from an already valid dataset
+- Create **survey derivatives** (scores, reverse-coding) using **Recipes**
 - Convert Varioport `.raw` physio data into BIDS-like output
 - Generate manuscript-ready **Methods** boilerplate from your libraries
+- Manage and synchronize library templates
 
 ### Usage
 
@@ -110,6 +111,45 @@ python prism_tools.py <command> --help
 ```
 
 ### Command overview
+
+#### `recipes` (Derivatives)
+Compute scores and subscales based on JSON recipe files.
+
+```bash
+# Compute survey scores
+python prism_tools.py recipes surveys --prism /path/to/dataset
+
+# Compute biometrics scores
+python prism_tools.py recipes biometrics --prism /path/to/dataset
+```
+
+#### `library` (Management)
+Tools for maintaining the PRISM library.
+
+```bash
+# Generate methods boilerplate
+python prism_tools.py library generate-methods-text --output methods.md --lang en
+
+# Fill missing schema keys in library files
+python prism_tools.py library fill --modality survey --path library/survey/
+
+# Synchronize keys across library files
+python prism_tools.py library sync --modality biometrics --path library/biometrics/
+
+# Generate a CSV catalog of the library
+python prism_tools.py library catalog --input library/survey --output catalog.csv
+```
+
+#### `survey` / `biometrics` (Conversions)
+Import data from external formats.
+
+```bash
+# Import from LimeSurvey (LSA)
+python prism_tools.py survey import-limesurvey --input survey.lsa --output library/survey/
+
+# Import from Excel
+python prism_tools.py survey import-excel --input data.xlsx --output library/survey/
+```
 
 #### `convert physio`
 Convert Varioport physiological recordings (`.raw`) into BIDS-like outputs.

@@ -101,6 +101,28 @@ PRISM Studio provides a participants annotation workflow compatible with NeuroBa
 
 ---
 
+## 7) Methods Boilerplate Generator
+
+PRISM Studio can generate a draft of a scientific **Methods section** based on the metadata in your library.
+
+- **How it works**: It scans your `library/survey` and `library/biometrics` folders.
+- **Output**: A Markdown document describing the instruments used, their authors, citations, and constructs.
+- **Languages**: Supports generating text in **English** and **German**.
+
+Access it via the **Tools** menu or at `/methods-generator`.
+
+---
+
+## 8) Survey Generator & Export
+
+The Survey Export tool allows you to:
+- Select items from the library.
+- Preview response scales (levels), units, and value ranges.
+- Export a "clean" dataset structure for data collection.
+- Generate codebooks automatically.
+
+---
+
 ## 7) Tips for first-time use
 
 - Start with a small demo dataset: see [DEMO_DATA.md](DEMO_DATA.md).

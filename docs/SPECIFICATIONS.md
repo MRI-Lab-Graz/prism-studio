@@ -99,6 +99,58 @@ Many of these fields support **i18n objects** (e.g., `{"de": "...", "en": "..."}
 
 Schemas live in `schemas/<version>/`.
 
+---
+
+## 7) Detailed Schema Keys
+
+PRISM schemas are organized into logical blocks. Below are the most important keys for `survey` and `biometrics` modalities.
+
+### Technical Block
+Contains technical metadata about the data collection.
+
+- `SoftwarePlatform`: Software used (e.g., LimeSurvey, REDCap, My Jump Lab).
+- `SoftwareVersion`: Version of the collection software.
+- `Language`: Primary language of the assessment (e.g., `en`, `de-AT`).
+- `Respondent`: Who provided the data (`self`, `clinician`, `parent`, etc.).
+- `AdministrationMethod`: How it was administered (`online`, `paper`, `interview`).
+- `Equipment`: Name of the hardware used (e.g., `Stopwatch`, `Dynamometer`).
+- `Supervisor`: Who supervised the test (`investigator`, `physician`, `self`).
+- `Location`: Where it took place (`laboratory`, `clinic`, `home`).
+
+### Study Block
+Contains scientific and bibliographic metadata.
+
+- `OriginalName`: Full canonical name of the instrument.
+- `ShortName`: Common abbreviation (e.g., `BDI-II`).
+- `Authors`: List of authors.
+- `DOI` / `Citation`: Bibliographic references.
+- `License` / `LicenseID` / `CopyrightHolder`: Legal and usage information.
+- `Construct`: Psychological construct measured (e.g., `depression`).
+- `Reliability` / `Validity`: Psychometric properties.
+- `AdministrationTime`: Estimated time to complete.
+- `References`: Structured list of related papers (manuals, validations).
+
+### Scoring Block
+Defines how the data should be interpreted or scored.
+
+- `ScoringMethod`: General method (e.g., `sum`, `mean`).
+- `ScoreRange`: Possible min/max scores.
+- `Cutoffs`: Clinical thresholds and their interpretations.
+- `ReverseCodedItems`: List of items that need inversion.
+- `Subscales`: Structured definitions of sub-scores (Name, Items, Method).
+
+### Item-Level Properties (Columns)
+Each column in the TSV can have detailed metadata in the JSON sidecar.
+
+- `Description`: The exact question text or metric description.
+- `Levels`: Mapping of numeric values to labels (e.g., `{"0": "Never", "1": "Always"}`).
+- `Unit`: Unit of measurement (e.g., `ms`, `cm`, `score`).
+- `MinValue` / `MaxValue`: Hard bounds for validation.
+- `WarnMinValue` / `WarnMaxValue`: Soft bounds (triggers warnings).
+- `Relevance`: Logic for when this item is applicable (e.g., `Q01 == 1`).
+- `DataType`: Expected type (`string`, `integer`, `float`).
+- `SessionHint` / `RunHint`: Used for longitudinal/repeated data mapping.
+
 Example (Biometrics schema path):
 - `schemas/stable/biometrics.schema.json`
 
