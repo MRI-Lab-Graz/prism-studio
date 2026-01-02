@@ -117,7 +117,7 @@
           "description": "Common abbreviation (e.g., BDI-II, PHQ-9)"
         },
         "Version": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "Version of the instrument (e.g., II, 5.0, 21-item)"
         },
         "Authors": {

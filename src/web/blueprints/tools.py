@@ -100,7 +100,7 @@ def _schema_example(schema: dict) -> object:
         return None
 
     # Default string-like
-    return "example"
+    return ""
 
 
 def _deep_merge(base: object, override: object) -> object:
@@ -133,23 +133,12 @@ def _new_template_from_schema(*, modality: str, schema_version: str | None) -> d
         out["Metadata"] = md
 
     if modality == "survey":
-        # Add a sample item demonstrating all available item options.
-        if isinstance(schema.get("additionalProperties"), dict):
-            out.setdefault(
-                "Q01",
-                _schema_example(schema["additionalProperties"]),
-            )
         # Align with schema naming conventions
         if isinstance(out.get("Technical"), dict):
             out["Technical"]["StimulusType"] = out["Technical"].get("StimulusType") or "Questionnaire"
             out["Technical"]["FileFormat"] = out["Technical"].get("FileFormat") or "tsv"
 
     if modality == "biometrics":
-        if isinstance(schema.get("additionalProperties"), dict):
-            out.setdefault(
-                "metric01",
-                _schema_example(schema["additionalProperties"]),
-            )
         if isinstance(out.get("Technical"), dict):
             out["Technical"]["FileFormat"] = out["Technical"].get("FileFormat") or "tsv"
 
@@ -255,6 +244,14 @@ def api_template_editor_new():
 
     try:
         template = _new_template_from_schema(modality=modality, schema_version=schema_version)
+        
+        # Add a sample item for new templates
+        schema = _load_prism_schema(modality=modality, schema_version=schema_version)
+        if modality == "survey" and isinstance(schema.get("additionalProperties"), dict):
+            template["Q01"] = _schema_example(schema["additionalProperties"])
+        elif modality == "biometrics" and isinstance(schema.get("additionalProperties"), dict):
+            template["metric01"] = _schema_example(schema["additionalProperties"])
+            
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -356,6 +353,38 @@ def api_template_editor_download():
         as_attachment=True,
         download_name=filename,
     )
+
+
+@tools_bp.route("/api/template-editor/save", methods=["POST"])
+def api_template_editor_save():
+    payload = request.get_json(silent=True) or {}
+    modality = (payload.get("modality") or "").strip().lower()
+    filename = (payload.get("filename") or "").strip()
+    template = payload.get("template")
+    library_path = (payload.get("library_path") or "").strip() or None
+
+    if modality not in {"survey", "biometrics"}:
+        return jsonify({"error": "Invalid modality"}), 400
+    if not filename or "/" in filename or "\\" in filename:
+        return jsonify({"error": "Invalid filename"}), 400
+    if not filename.lower().endswith(".json"):
+        filename += ".json"
+    if not isinstance(template, dict):
+        return jsonify({"error": "Template must be a JSON object"}), 400
+
+    try:
+        library_root = _resolve_library_root(library_path)
+        folder = _template_dir(modality=modality, library_root=library_root)
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / filename
+        
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(template, f, indent=2, ensure_ascii=False)
+            
+        return jsonify({"ok": True, "message": f"Saved to {path}"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @tools_bp.route("/api/recipes-surveys", methods=["POST"])
 def api_recipes_surveys():
