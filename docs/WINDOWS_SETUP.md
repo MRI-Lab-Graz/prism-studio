@@ -99,6 +99,12 @@ The validator includes Windows-specific handling for:
 2. Navigate to: Computer Configuration → Administrative Templates → System → Filesystem
 3. Enable "Enable Win32 long paths"
 
+#### Issue: Antivirus (Defender, Norton, etc.) blocks the .exe
+**Solution**: This is a common "False Positive" for unsigned Python-based executables.
+1. **Windows Defender**: Click "More info" and then "Run anyway".
+2. **Norton/Other AV**: If the file is deleted or blocked, you must go to your antivirus settings and "Restore" the file from quarantine or add an "Exclusion" for the `PrismValidator.exe` file.
+3. **Why?**: Standalone `.exe` files created with PyInstaller are often flagged by heuristic scanners because they bundle a Python interpreter and many libraries into a single file, which is a pattern sometimes used by malware. Since PRISM is open-source, you can verify the code yourself.
+
 #### Issue: Antivirus blocking script execution
 **Solution**: Add the project folder to your antivirus exclusions.
 

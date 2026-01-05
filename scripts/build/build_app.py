@@ -158,8 +158,8 @@ def main() -> int:
     parser.add_argument(
         "--mode",
         choices=["onefile", "onedir"],
-        default="onefile",
-        help="Distribution mode (default: onefile)",
+        default="onedir",
+        help="Distribution mode (default: onedir)",
     )
     parser.add_argument(
         "--console",
