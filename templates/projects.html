@@ -1,0 +1,631 @@
+{% extends "base.html" %}
+
+{% block title %}PRISM Studio - Projects{% endblock %}
+
+{% block styles %}
+<style>
+    .project-card {
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    .project-card:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.15);
+        transform: translateY(-2px);
+    }
+    .project-card.active {
+        border-color: #0d6efd;
+        background-color: #f8f9ff;
+    }
+    .project-card i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+    }
+    .project-card h5 {
+        margin-bottom: 10px;
+    }
+    .project-card p {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+    .form-section {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+    .form-section.active {
+        display: block;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .modality-checkbox {
+        padding: 10px 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .modality-checkbox:hover {
+        background-color: #f8f9fa;
+    }
+    .modality-checkbox input:checked + label {
+        font-weight: 600;
+    }
+    .modality-checkbox input:checked ~ .modality-checkbox {
+        border-color: #0d6efd;
+        background-color: #e7f1ff;
+    }
+    .validation-result {
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+    .validation-result.valid {
+        background-color: #d1e7dd;
+        border: 1px solid #badbcc;
+    }
+    .validation-result.invalid {
+        background-color: #f8d7da;
+        border: 1px solid #f5c2c7;
+    }
+    .validation-result.warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffecb5;
+    }
+    .issue-item {
+        padding: 10px 15px;
+        margin-bottom: 8px;
+        border-radius: 6px;
+        background-color: #fff;
+        border-left: 4px solid;
+    }
+    .issue-item.fixable {
+        border-left-color: #ffc107;
+    }
+    .issue-item.not-fixable {
+        border-left-color: #dc3545;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    .stat-item {
+        text-align: center;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+    .stat-item .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #0d6efd;
+    }
+    .stat-item .stat-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-folder-open text-primary me-2"></i>Project Manager</h2>
+            <p class="text-muted">Create new PRISM/BIDS projects or validate existing ones.</p>
+        </div>
+    </div>
+
+    {% if current_project.path %}
+    <!-- Current Project Banner -->
+    <div class="alert alert-success d-flex align-items-center mb-4" role="alert" id="currentProjectBanner">
+        <i class="fas fa-check-circle me-3 fa-lg"></i>
+        <div class="flex-grow-1">
+            <strong>Current Working Project:</strong> {{ current_project.name }}
+            <br><code class="small">{{ current_project.path }}</code>
+        </div>
+        <a href="{{ url_for('validation.validate_dataset') }}" class="btn btn-sm btn-outline-success me-2">
+            <i class="fas fa-check-circle me-1"></i>Validate
+        </a>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearCurrentProject()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Project Type Selection -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="project-card" id="card-create" onclick="selectProjectType('create')">
+                <i class="fas fa-plus-circle text-success"></i>
+                <h5>Create New Project</h5>
+                <p>Set up a new PRISM/BIDS-compatible folder structure</p>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="project-card" id="card-open" onclick="selectProjectType('open')">
+                <i class="fas fa-folder-open text-primary"></i>
+                <h5>Open Existing Project</h5>
+                <p>Validate and repair an existing project structure</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create New Project Form -->
+    <div class="form-section" id="section-create">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success bg-opacity-10">
+                <h5 class="mb-0"><i class="fas fa-plus-circle text-success me-2"></i>Create New Project</h5>
+            </div>
+            <div class="card-body">
+                <form id="createProjectForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="projectName" class="form-label fw-bold">Project Name</label>
+                            <input type="text" class="form-control" id="projectName" placeholder="my_study" required
+                                   pattern="[a-zA-Z0-9_-]+" title="Only letters, numbers, underscores and hyphens allowed">
+                            <small class="text-muted">No spaces allowed. A folder with this name will be created.</small>
+                            <div class="invalid-feedback" id="projectNameError"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="projectPath" class="form-label fw-bold">Project Location</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="projectPath" placeholder="C:\Users\..." required>
+                                <button class="btn btn-outline-secondary" type="button" id="browseProjectPath">
+                                    <i class="fas fa-folder-open"></i> Browse
+                                </button>
+                            </div>
+                            <small class="text-muted">Parent folder where the project will be created</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="projectSessions" class="form-label fw-bold">Number of Sessions</label>
+                            <input type="number" class="form-control" id="projectSessions" min="1" max="99" value="1">
+                            <small class="text-muted">Creates ses-01, ses-02, etc. folders</small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="createExample" checked>
+                                <label class="form-check-label" for="createExample">
+                                    Create example subject folder (sub-example/)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Modalities</label>
+                            <small class="text-muted d-block mb-2">Select which data types your study will collect</small>
+                            <div class="row">
+                                <div class="col-md-4 col-lg-2">
+                                    <div class="form-check modality-checkbox">
+                                        <input class="form-check-input" type="checkbox" id="mod-survey" name="modalities" value="survey" checked>
+                                        <label class="form-check-label" for="mod-survey">survey</label>
+                                    </div>
+                                    <small class="text-muted ms-4">Questionnaires</small>
+                                </div>
+                                <div class="col-md-4 col-lg-2">
+                                    <div class="form-check modality-checkbox">
+                                        <input class="form-check-input" type="checkbox" id="mod-biometrics" name="modalities" value="biometrics" checked>
+                                        <label class="form-check-label" for="mod-biometrics">biometrics</label>
+                                    </div>
+                                    <small class="text-muted ms-4">Physical tests</small>
+                                </div>
+                                <div class="col-md-4 col-lg-2">
+                                    <div class="form-check modality-checkbox">
+                                        <input class="form-check-input" type="checkbox" id="mod-physio" name="modalities" value="physio" checked>
+                                        <label class="form-check-label" for="mod-physio">physio</label>
+                                    </div>
+                                    <small class="text-muted ms-4">ECG, EDA, etc.</small>
+                                </div>
+                                <div class="col-md-4 col-lg-2">
+                                    <div class="form-check modality-checkbox">
+                                        <input class="form-check-input" type="checkbox" id="mod-eyetracking" name="modalities" value="eyetracking" checked>
+                                        <label class="form-check-label" for="mod-eyetracking">eyetracking</label>
+                                    </div>
+                                    <small class="text-muted ms-4">Gaze data</small>
+                                </div>
+                                <div class="col-md-4 col-lg-2">
+                                    <div class="form-check modality-checkbox">
+                                        <input class="form-check-input" type="checkbox" id="mod-events" name="modalities" value="events" checked>
+                                        <label class="form-check-label" for="mod-events">events</label>
+                                    </div>
+                                    <small class="text-muted ms-4">Experiment timing</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-folder-plus me-2"></i>Create Project
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Create Result -->
+                <div id="createResult" class="mt-4" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Open Existing Project Form -->
+    <div class="form-section" id="section-open">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary bg-opacity-10">
+                <h5 class="mb-0"><i class="fas fa-folder-open text-primary me-2"></i>Open Existing Project</h5>
+            </div>
+            <div class="card-body">
+                <form id="openProjectForm">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label for="existingPath" class="form-label fw-bold">Project Path</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="existingPath"
+                                       placeholder="C:\Users\...\existing_project" required>
+                                <button class="btn btn-outline-secondary" type="button" id="browseExistingPath">
+                                    <i class="fas fa-folder-open"></i> Browse
+                                </button>
+                            </div>
+                            <small class="text-muted">Path to your existing PRISM/BIDS dataset</small>
+                        </div>
+                        <div class="col-md-5 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>Validate Structure
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Validation Result -->
+                <div id="validationResult" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Project type selection
+    function selectProjectType(type) {
+        // Update card styles
+        document.querySelectorAll('.project-card').forEach(card => {
+            card.classList.remove('active');
+        });
+        document.getElementById('card-' + type).classList.add('active');
+
+        // Show corresponding form
+        document.querySelectorAll('.form-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        document.getElementById('section-' + type).classList.add('active');
+    }
+
+    // Browse button for project location
+    document.getElementById('browseProjectPath').addEventListener('click', async function() {
+        try {
+            const response = await fetch('/api/browse-folder');
+            const data = await response.json();
+            if (data.path) {
+                document.getElementById('projectPath').value = data.path;
+            }
+        } catch (error) {
+            console.error('Browse error:', error);
+        }
+    });
+
+    // Browse button for existing project
+    document.getElementById('browseExistingPath').addEventListener('click', async function() {
+        try {
+            const response = await fetch('/api/browse-folder');
+            const data = await response.json();
+            if (data.path) {
+                document.getElementById('existingPath').value = data.path;
+            }
+        } catch (error) {
+            console.error('Browse error:', error);
+        }
+    });
+
+    // Validate project name (no spaces, valid folder name)
+    document.getElementById('projectName').addEventListener('input', function(e) {
+        const value = e.target.value;
+        const isValid = /^[a-zA-Z0-9_-]*$/.test(value);
+        const errorDiv = document.getElementById('projectNameError');
+
+        if (!isValid) {
+            e.target.classList.add('is-invalid');
+            errorDiv.textContent = 'Only letters, numbers, underscores (-) and hyphens (_) allowed. No spaces!';
+        } else {
+            e.target.classList.remove('is-invalid');
+            errorDiv.textContent = '';
+        }
+    });
+
+    // Create Project Form
+    document.getElementById('createProjectForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const projectName = document.getElementById('projectName').value.trim();
+        const projectPath = document.getElementById('projectPath').value.trim();
+
+        // Validate project name
+        if (!/^[a-zA-Z0-9_-]+$/.test(projectName)) {
+            alert('Invalid project name. Only letters, numbers, underscores and hyphens allowed.');
+            return;
+        }
+
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
+        btn.disabled = true;
+
+        // Get selected modalities
+        const modalities = [];
+        document.querySelectorAll('input[name="modalities"]:checked').forEach(cb => {
+            modalities.push(cb.value);
+        });
+
+        // Combine path and project name
+        const separator = projectPath.includes('/') ? '/' : '\\';
+        const fullPath = projectPath + separator + projectName;
+
+        const data = {
+            path: fullPath,
+            name: projectName,
+            sessions: parseInt(document.getElementById('projectSessions').value),
+            modalities: modalities,
+            create_example: document.getElementById('createExample').checked
+        };
+
+        try {
+            const response = await fetch('/api/projects/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+
+            const resultDiv = document.getElementById('createResult');
+            resultDiv.style.display = 'block';
+
+            if (result.success) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-check-circle me-2"></i>Project Created Successfully!</h5>
+                        <p class="mb-2">${result.message}</p>
+                        <p class="mb-2"><strong>Location:</strong> <code>${result.path}</code></p>
+                        <p class="mb-0 text-success"><i class="fas fa-folder-open me-1"></i>This project is now your current working project.</p>
+                        <hr>
+                        <p class="mb-1"><strong>Created files:</strong></p>
+                        <ul class="mb-2">
+                            ${result.created_files.map(f => `<li><code>${f}</code></li>`).join('')}
+                        </ul>
+                        <a href="${window.location.href}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-sync me-1"></i>Refresh Page
+                        </a>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
+                        <p class="mb-0">${result.error}</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            document.getElementById('createResult').innerHTML = `
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
+                    <p class="mb-0">${error.message}</p>
+                </div>
+            `;
+            document.getElementById('createResult').style.display = 'block';
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+
+    // Open Project Form
+    document.getElementById('openProjectForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating...';
+        btn.disabled = true;
+
+        const path = document.getElementById('existingPath').value;
+
+        try {
+            const response = await fetch('/api/projects/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: path })
+            });
+            const result = await response.json();
+
+            const resultDiv = document.getElementById('validationResult');
+            resultDiv.style.display = 'block';
+
+            if (!result.success) {
+                resultDiv.innerHTML = `
+                    <div class="validation-result invalid">
+                        <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
+                        <p class="mb-0">${result.error}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const stats = result.stats;
+            const issues = result.issues;
+            const fixableIssues = result.fixable_issues;
+
+            let statusClass = 'valid';
+            let statusIcon = 'check-circle';
+            let statusText = 'Valid PRISM Structure';
+
+            if (issues.length > 0) {
+                const hasNonFixable = issues.some(i => !i.fixable);
+                if (hasNonFixable) {
+                    statusClass = 'invalid';
+                    statusIcon = 'exclamation-circle';
+                    statusText = `${issues.length} Issue(s) Found`;
+                } else {
+                    statusClass = 'warning';
+                    statusIcon = 'exclamation-triangle';
+                    statusText = `${issues.length} Fixable Issue(s) Found`;
+                }
+            }
+
+            let html = `
+                <div class="validation-result ${statusClass}">
+                    <h5><i class="fas fa-${statusIcon} me-2"></i>${statusText}</h5>
+                    <p class="text-success mb-3"><i class="fas fa-folder-open me-1"></i>This project is now your current working project. <a href="${window.location.href}">Refresh</a> to see it in the navbar.</p>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.subjects}</div>
+                            <div class="stat-label">Subjects</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.sessions.length || 0}</div>
+                            <div class="stat-label">Sessions</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.modalities.length}</div>
+                            <div class="stat-label">Modalities</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.has_dataset_description ? '✓' : '✗'}</div>
+                            <div class="stat-label">dataset_description</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.has_participants_tsv ? '✓' : '✗'}</div>
+                            <div class="stat-label">participants.tsv</div>
+                        </div>
+                    </div>
+            `;
+
+            if (issues.length > 0) {
+                html += `
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Issues</h6>
+                        ${fixableIssues.length > 0 ? `
+                            <button class="btn btn-warning btn-sm" onclick="fixAllIssues('${path}')">
+                                <i class="fas fa-wrench me-1"></i>Fix All (${fixableIssues.length})
+                            </button>
+                        ` : ''}
+                    </div>
+                    <div id="issuesList">
+                `;
+
+                issues.forEach(issue => {
+                    html += `
+                        <div class="issue-item ${issue.fixable ? 'fixable' : 'not-fixable'}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>${issue.code}</strong>: ${issue.message}
+                                    ${issue.file_path ? `<br><small class="text-muted">${issue.file_path}</small>` : ''}
+                                </div>
+                                ${issue.fixable ? `
+                                    <button class="btn btn-sm btn-outline-warning" onclick="fixIssue('${path}', '${issue.code}')">
+                                        <i class="fas fa-wrench"></i>
+                                    </button>
+                                ` : `
+                                    <span class="badge bg-secondary">Manual fix required</span>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            }
+
+            html += '</div>';
+            resultDiv.innerHTML = html;
+
+        } catch (error) {
+            document.getElementById('validationResult').innerHTML = `
+                <div class="validation-result invalid">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
+                    <p class="mb-0">${error.message}</p>
+                </div>
+            `;
+            document.getElementById('validationResult').style.display = 'block';
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+
+    // Fix single issue
+    async function fixIssue(path, code) {
+        try {
+            const response = await fetch('/api/projects/fix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: path, fix_codes: [code] })
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                // Re-validate to refresh the view
+                document.getElementById('openProjectForm').dispatchEvent(new Event('submit'));
+            } else {
+                alert('Error applying fix: ' + result.error);
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+
+    // Fix all issues
+    async function fixAllIssues(path) {
+        try {
+            const response = await fetch('/api/projects/fix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: path })
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                // Re-validate to refresh the view
+                document.getElementById('openProjectForm').dispatchEvent(new Event('submit'));
+            } else {
+                alert('Error applying fixes: ' + result.error);
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+
+    // Clear current project
+    async function clearCurrentProject() {
+        try {
+            const response = await fetch('/api/projects/current', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: null })
+            });
+            // Refresh the page to update the UI
+            window.location.reload();
+        } catch (error) {
+            console.error('Error clearing project:', error);
+        }
+    }
+</script>
+{% endblock %}

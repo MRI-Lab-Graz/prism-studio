@@ -82,6 +82,20 @@
         </div>
     </div>
 
+    {% if current_project.path %}
+    <!-- Current Project Info -->
+    <div class="alert alert-info d-flex align-items-center mb-4" role="alert">
+        <i class="fas fa-folder-open me-3 fa-lg"></i>
+        <div class="flex-grow-1">
+            <strong>Current Project:</strong> {{ current_project.name }}
+            <br><small class="text-muted">{{ current_project.path }}</small>
+        </div>
+        <a href="{{ url_for('projects.projects_page') }}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-exchange-alt me-1"></i>Change
+        </a>
+    </div>
+    {% endif %}
+
     <div class="card">
         <div class="card-body">
             <!-- Global Renamer Helper -->

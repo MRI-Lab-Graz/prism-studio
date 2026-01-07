@@ -153,13 +153,15 @@ try:
     from src.web.blueprints.library import library_bp
     from src.web.blueprints.validation import validation_bp
     from src.web.blueprints.tools import tools_bp
+    from src.web.blueprints.projects import projects_bp
 
     app.register_blueprint(neurobagel_bp)
     app.register_blueprint(conversion_bp)
     app.register_blueprint(library_bp)
     app.register_blueprint(validation_bp)
     app.register_blueprint(tools_bp)
-    print("✓ Modular blueprints registered (neurobagel, conversion, library, validation, tools)")
+    app.register_blueprint(projects_bp)
+    print("✓ Modular blueprints registered (neurobagel, conversion, library, validation, tools, projects)")
 except ImportError as e:
     print(f"⚠️  Error importing modular blueprints: {e}")
 except Exception as e:
@@ -178,11 +180,16 @@ app.config["VALIDATION_RESULTS"] = validation_results
 @app.context_processor
 def inject_utilities():
     """Inject utility functions into all templates"""
+    from flask import session
     return {
         "get_filename_from_path": get_filename_from_path,
         "shorten_path": shorten_path,
         "get_error_description": get_error_description,
         "get_error_documentation_url": get_error_documentation_url,
+        "current_project": {
+            "path": session.get("current_project_path"),
+            "name": session.get("current_project_name")
+        },
     }
 
 

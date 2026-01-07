@@ -101,9 +101,19 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                {% if current_project.path %}
+                <div class="navbar-text me-3 d-none d-lg-block">
+                    <span class="badge bg-primary">
+                        <i class="fas fa-folder-open me-1"></i>{{ current_project.name or 'Project' }}
+                    </span>
+                </div>
+                {% endif %}
                 <div class="navbar-nav ms-auto">
                     <a class="nav-link" href="{{ url_for('index') }}">
                         <i class="fas fa-home me-1"></i>Home
+                    </a>
+                    <a class="nav-link" href="{{ url_for('projects.projects_page') }}">
+                        <i class="fas fa-folder-open me-1 text-primary"></i>Projects
                     </a>
                     <a class="nav-link" href="{{ url_for('specifications') }}">
                         <i class="fas fa-book me-1"></i>Specifications
