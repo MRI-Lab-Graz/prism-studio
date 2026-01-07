@@ -387,6 +387,8 @@ Manuscript methods boilerplate (scientific text)
 Generate a manuscript-ready Methods section snippet (Markdown) describing the instruments and measures defined in your libraries.
 The text is derived from ``Study.OriginalName``, ``Study.Description``, and (for biometrics) technical metadata such as ``Technical.Equipment``.
 
+Each summary also now surfaces the richer PRISM metadata you configured in the updated survey schema: canonical ``Study.DOI``, the declared ``Study.LicenseID`` or ``Study.License``, target ``Study.AgeRange``, ``Study.AdministrationTime`` / ``Study.ScoringTime`` estimates, reported ``Study.ItemCount``, and the declared access level (``Study.Access``). References from the structured ``Study.References`` block (primary, translation, validation, norms) continue to be woven into the narrative so the boilerplate cites the literature that underpins each instrument.
+
 .. code-block:: bash
 
     # English methods snippet

@@ -54,6 +54,22 @@ def _write_json(path: Path, obj: dict) -> None:
         json.dump(obj, f, indent=2, ensure_ascii=False)
 
 
+def _get_sidecar_for_task(dataset_path: Path, prefix: str, name: str) -> dict:
+    """Find and load sidecar JSON for a given task/biometric."""
+    candidates = [
+        dataset_path / f"{prefix}-{name}.json",
+        dataset_path / f"{prefix}s" / f"{prefix}-{name}.json",
+        dataset_path / f"{name}.json",
+    ]
+    for p in candidates:
+        if p.exists():
+            try:
+                return _read_json(p)
+            except Exception:
+                continue
+    return {}
+
+
 def _read_tsv_rows(path: Path) -> tuple[list[str], list[dict[str, str]]]:
     with open(path, "r", encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f, delimiter="\t")
@@ -85,6 +101,7 @@ def _build_variable_metadata(
     columns: list[str],
     participants_meta: dict,
     recipe: dict,
+    sidecar_meta: dict = None,
     lang: str = "en",
 ) -> tuple[dict[str, str], dict[str, dict], dict[str, dict]]:
     """Build variable labels and value labels from metadata sources.
@@ -101,6 +118,21 @@ def _build_variable_metadata(
     # Standard columns
     variable_labels["participant_id"] = "Participant identifier"
     variable_labels["session"] = "Session identifier"
+
+    # From sidecar (survey-*.json)
+    if sidecar_meta:
+        for col in columns:
+            if col in sidecar_meta:
+                col_meta = sidecar_meta[col]
+                if isinstance(col_meta, dict):
+                    desc = col_meta.get("Description") or col_meta.get("description") or ""
+                    if desc:
+                        variable_labels[col] = get_i18n_text(desc, lang)
+                    levels = col_meta.get("Levels") or col_meta.get("levels") or {}
+                    if levels and isinstance(levels, dict):
+                        value_labels[col] = {
+                            str(k): get_i18n_text(v, lang) for k, v in levels.items()
+                        }
 
     # From participants.json
     for col in columns:
@@ -146,6 +178,8 @@ def _build_variable_metadata(
                 details["note"] = get_i18n_text(score["Note"], lang)
             if score.get("Missing"):
                 details["missing_handling"] = score["Missing"]
+            if score.get("Interpretation"):
+                details["interpretation"] = score["Interpretation"]
             if details:
                 score_details[name] = details
 
@@ -974,6 +1008,7 @@ def compute_survey_recipes(
     nan_report: dict[str, list[str]] = {}
     applied_recipes_list: list[dict] = []
     boilerplate_path: Path | None = None
+    boilerplate_html_path: Path | None = None
 
     processed_files = 0
     written_files = 0
@@ -1118,10 +1153,12 @@ def compute_survey_recipes(
             final_format = out_format
 
             # Build metadata for all export formats
+            sidecar_meta = _get_sidecar_for_task(output_prism_root, modality, survey_task)
             var_labels, val_labels, score_details = _build_variable_metadata(
                 list(df.columns),
                 participants_meta,
                 recipe,
+                sidecar_meta=sidecar_meta,
                 lang=lang,
             )
             survey_meta = _build_survey_metadata(recipe, lang=lang)
@@ -1142,6 +1179,13 @@ def compute_survey_recipes(
                     var_labels,
                     val_labels,
                     score_details,
+                )
+                # Jamovi R Helper
+                _write_jamovi_r_helper(
+                    out_root / f"{recipe_id}_jamovi_helper.R",
+                    f"{recipe_id}.csv",
+                    var_labels,
+                    val_labels,
                 )
             elif out_format == "xlsx":
                 out_fname = out_root / f"{recipe_id}.xlsx"
@@ -1203,7 +1247,7 @@ def compute_survey_recipes(
                     # Fallback: just write data without codebook sheet
                     df.to_excel(out_fname, index=False)
             elif out_format == "save":
-                out_fname = out_root / f"{recipe_id}.save"
+                out_fname = out_root / f"{recipe_id}.sav"
                 try:
                     import pyreadstat
 
@@ -1301,6 +1345,12 @@ def compute_survey_recipes(
 
             if out_fname and out_fname.exists():
                 written_files += 1
+                # Point the flat_out_path to the primary data file so the UI shows it correctly
+                if written_files == 1:
+                    flat_out_path = out_fname
+                elif written_files > 1:
+                    # If we wrote multiple recipes, point to the output directory
+                    flat_out_path = out_root
 
         else:
             # legacy behaviour (prism/flat per-participant outputs)
@@ -1439,3 +1489,64 @@ def compute_survey_recipes(
         boilerplate_path=boilerplate_path,
         boilerplate_html_path=boilerplate_html_path,
     )
+
+
+def _write_jamovi_r_helper(
+    path: Path,
+    data_filename: str,
+    variable_labels: dict[str, str],
+    value_labels: dict[str, dict],
+) -> None:
+    """Generate an R script that applies factors and labels for Jamovi/R."""
+    lines = [
+        "# PRISM Jamovi/R Metadata Helper",
+        "# -------------------------------------------------------------------------",
+        "# OPTION A: Using Jamovi's 'Rj' Editor module",
+        "# 1. Install 'RjEditor' from the Jamovi library (Analyses -> jamovi library).",
+        "# 2. Paste this script into the Rj editor window.",
+        "# 3. Change 'df <- read.csv(...)' to 'df <- data' to use Jamovi's active sheet.",
+        "# -------------------------------------------------------------------------",
+        "# OPTION B: Standalone R / RStudio",
+        "# 1. Ensure the CSV and this script are in the same folder.",
+        "# 2. Run the script to create a labeled 'df' object for analysis.",
+        "# -------------------------------------------------------------------------",
+        "",
+        "# 1. Load the data",
+        f"df <- read.csv('{data_filename}', check.names=FALSE, stringsAsFactors=FALSE)",
+        "# df <- data  # Uncomment this to use the Jamovi spreadsheet directly",
+        "",
+        "# 2. Apply Value Labels (Factors)",
+    ]
+
+    for var in sorted(value_labels.keys()):
+        levels = value_labels[var]
+        if not levels:
+            continue
+        
+        # Prepare levels: if they look like numbers, we'll try to keep them flexible
+        # but in R c('0','1') is safest for CSV-imported data.
+        r_levels = ", ".join([f"'{k}'" for k in levels.keys()])
+        
+        # Avoid backslashes inside f-string expressions (Python < 3.12 compatibility)
+        processed_labels = [str(v).replace("'", "\\'") for v in levels.values()]
+        r_labels = ", ".join([f"'{v}'" for v in processed_labels])
+        
+        lines.append(f"if ('{var}' %in% colnames(df)) {{")
+        lines.append(f"  df[['{var}']] <- factor(df[['{var}']], levels=c({r_levels}), labels=c({r_labels}))")
+        lines.append(f"}}")
+
+    lines.append("")
+    lines.append("# 3. Variable Descriptions (Reference)")
+    for var, label in sorted(variable_labels.items()):
+        if label:
+            clean_label = label.replace("\n", " ").strip()
+            lines.append(f"# {var}: {clean_label}")
+
+    lines.append("")
+    lines.append("# Display structure")
+    lines.append("str(df)")
+    lines.append("head(df)")
+
+    _ensure_dir(path.parent)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")

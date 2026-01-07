@@ -128,7 +128,7 @@ Contains scientific and bibliographic metadata.
 - `Construct`: Psychological construct measured (e.g., `depression`).
 - `Reliability` / `Validity`: Psychometric properties.
 - `AdministrationTime`: Estimated time to complete.
-- `References`: Structured list of related papers (manuals, validations).
+- `References`: Structured list of related papers (manuals, validations); each entry includes `Type`, `Citation`, canonical `DOI` (`10.x/...`), optional `URL`, `Year`, and `Notes`.
 
 ### Scoring Block
 Defines how the data should be interpreted or scored.

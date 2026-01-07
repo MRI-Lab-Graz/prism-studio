@@ -310,7 +310,7 @@
     }
     let t = sch.type;
     if (Array.isArray(t)) {
-      const pref = ['object','array','string','integer','number','boolean','null'];
+      const pref = ['string', 'integer', 'number', 'boolean', 'object', 'array', 'null'];
       t = pref.find(x => t.includes(x)) || t[0];
     }
     if (t === 'object' || (!t && sch.properties)) {
@@ -362,6 +362,12 @@
   function infoHtml(fieldSchema) {
     const parts = [];
     if (fieldSchema.description) parts.push(fieldSchema.description);
+    
+    if (fieldSchema.type) {
+      const t = Array.isArray(fieldSchema.type) ? fieldSchema.type.join(' | ') : fieldSchema.type;
+      parts.push('Type: ' + t);
+    }
+
     if (Array.isArray(fieldSchema.enum)) parts.push('Allowed: ' + fieldSchema.enum.filter(v => v !== '').join(', '));
     if (fieldSchema.pattern) parts.push('Pattern: ' + fieldSchema.pattern);
     const ex = schemaExample(fieldSchema);
@@ -394,6 +400,62 @@
     return label;
   }
 
+  function normalizeValueForSchema(fieldSchema, rawValue, schemaTypesArg) {
+    if (rawValue === undefined || rawValue === null || !fieldSchema) return rawValue;
+    const schemaTypes = schemaTypesArg || (Array.isArray(fieldSchema.type) ? fieldSchema.type : (fieldSchema.type ? [fieldSchema.type] : []));
+    const prefersInteger = schemaTypes.includes('integer');
+    const prefersNumber = schemaTypes.includes('number');
+    const allowsString = schemaTypes.includes('string');
+    if (!(prefersInteger || prefersNumber) || typeof rawValue !== 'string') return rawValue;
+    const trimmed = rawValue.trim();
+    if (!trimmed || trimmed.toLowerCase() === 'null') {
+      return allowsString ? '' : null;
+    }
+    const integerPattern = /^-?\d+$/;
+    if (prefersInteger && !prefersNumber) {
+      return integerPattern.test(trimmed) ? parseInt(trimmed, 10) : rawValue;
+    }
+    if (prefersInteger && prefersNumber && integerPattern.test(trimmed)) {
+      return parseInt(trimmed, 10);
+    }
+    const floatVal = parseFloat(trimmed);
+    return Number.isNaN(floatVal) ? rawValue : floatVal;
+  }
+
+  function normalizeDataInPlace(value, schema) {
+    if (value === undefined || value === null || !schema || schema === true || schema === false) return value;
+    const schemaTypes = Array.isArray(schema.type) ? schema.type : (schema.type ? [schema.type] : []);
+    const allowsObject = schemaTypes.includes('object') || schema.properties || schema.additionalProperties;
+
+    if (allowsObject && typeof value === 'object' && !Array.isArray(value)) {
+      const props = schema.properties || {};
+      for (const key of Object.keys(value)) {
+        const propSchema = props[key] || schema.additionalProperties;
+        value[key] = normalizeDataInPlace(value[key], propSchema);
+      }
+      return value;
+    }
+
+    if (schemaTypes.includes('array') && Array.isArray(value)) {
+      const itemsSchema = schema.items;
+      for (let i = 0; i < value.length; i++) {
+        value[i] = normalizeDataInPlace(value[i], itemsSchema);
+      }
+      return value;
+    }
+
+    if (schemaTypes.includes('integer') || schemaTypes.includes('number')) {
+      return normalizeValueForSchema(schema, value);
+    }
+
+    return value;
+  }
+
+  function ensureTemplateNormalized() {
+    if (!currentSchema || !currentTemplate) return;
+    normalizeDataInPlace(currentTemplate, currentSchema);
+  }
+
   function createInput(fieldSchema, value, onChange) {
     // Enums
     if (Array.isArray(fieldSchema.enum)) {
@@ -410,8 +472,13 @@
       return sel;
     }
 
+    const schemaTypes = Array.isArray(fieldSchema.type) ? fieldSchema.type : (fieldSchema.type ? [fieldSchema.type] : []);
+    value = normalizeValueForSchema(fieldSchema, value, schemaTypes);
+    const prefersInteger = schemaTypes.includes('integer');
+    const prefersNumber = schemaTypes.includes('number');
+
     // Bool
-    if (fieldSchema.type === 'boolean') {
+    if (schemaTypes.includes('boolean')) {
       const chk = document.createElement('input');
       chk.type = 'checkbox';
       chk.className = 'form-check-input';
@@ -421,7 +488,7 @@
     }
 
     // Numeric
-    if (fieldSchema.type === 'integer' || fieldSchema.type === 'number') {
+    if (prefersInteger || prefersNumber) {
       const inp = document.createElement('input');
       inp.type = 'number';
       inp.className = 'form-control';
@@ -429,7 +496,19 @@
       inp.addEventListener('input', () => {
         const raw = inp.value;
         if (raw === '') return onChange(null);
-        onChange(fieldSchema.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw));
+        if (prefersInteger && !prefersNumber) {
+          onChange(parseInt(raw, 10));
+        } else if (!prefersInteger && prefersNumber) {
+          onChange(parseFloat(raw));
+        } else {
+          // both integer and number allowed -> keep integer when possible
+          const parsed = parseInt(raw, 10);
+          if (!Number.isNaN(parsed) && String(parsed) === raw) {
+            onChange(parsed);
+          } else {
+            onChange(parseFloat(raw));
+          }
+        }
       });
       return inp;
     }
@@ -446,7 +525,7 @@
       const items = fieldSchema.items || {};
       const itemsType = items.type;
       const isPrimitive = ['string', 'integer', 'number'].includes(itemsType);
-      const current = Array.isArray(value) ? value : (value === undefined || value === null ? [] : [value]);
+      let currentVal = Array.isArray(value) ? [...value] : (value === undefined || value === null ? [] : [value]);
 
       // Enum arrays -> multi-select
       if (isPrimitive && Array.isArray(items.enum) && items.enum.length) {
@@ -460,7 +539,7 @@
           sel.appendChild(opt);
         }
         // set selected
-        const selectedSet = new Set(current.map(x => String(x)));
+        const selectedSet = new Set(currentVal.map(x => String(x)));
         Array.from(sel.options).forEach(opt => {
           opt.selected = selectedSet.has(opt.value);
         });
@@ -500,17 +579,16 @@
           return raw;
         }
 
-        function render(arr) {
+        function render() {
           list.innerHTML = '';
-          const normalized = Array.isArray(arr) ? arr : [];
-          if (!normalized.length) {
+          if (!currentVal.length) {
             const p = document.createElement('div');
             p.className = 'text-muted small';
             p.textContent = 'No entries.';
             list.appendChild(p);
           }
 
-          normalized.forEach((val, idx) => {
+          currentVal.forEach((val, idx) => {
             const row = document.createElement('div');
             row.className = 'input-group mb-2';
 
@@ -525,21 +603,22 @@
             delBtn.textContent = 'Remove';
 
             function sync() {
-              const next = normalized.slice();
               const coerced = coerce(inp.value);
-              next[idx] = coerced;
-              // filter nulls for number/integer
-              const out = (itemsType === 'integer' || itemsType === 'number') ? next.filter(x => x !== null) : next;
-              onChange(out);
-              render(out);
+              currentVal[idx] = coerced;
+              const out = (itemsType === 'integer' || itemsType === 'number')
+                ? currentVal.filter(x => x !== null && x !== undefined)
+                : currentVal;
+              onChange([...out]);
             }
 
-            inp.addEventListener('change', sync);
+            inp.addEventListener('input', sync);
             delBtn.addEventListener('click', () => {
-              const next = normalized.slice();
-              next.splice(idx, 1);
-              onChange(next);
-              render(next);
+              currentVal.splice(idx, 1);
+              const out = (itemsType === 'integer' || itemsType === 'number')
+                ? currentVal.filter(x => x !== null && x !== undefined)
+                : currentVal;
+              onChange([...out]);
+              render();
             });
 
             row.appendChild(inp);
@@ -549,13 +628,15 @@
         }
 
         addBtn.addEventListener('click', () => {
-          const next = current.slice();
-          next.push(itemsType === 'string' ? '' : 0);
-          onChange(next);
-          render(next);
+          currentVal.push(itemsType === 'string' ? '' : 0);
+          const out = (itemsType === 'integer' || itemsType === 'number')
+            ? currentVal.filter(x => x !== null && x !== undefined)
+            : currentVal;
+          onChange([...out]);
+          render();
         });
 
-        render(current);
+        render();
         return container;
       }
     }
@@ -907,6 +988,7 @@
       if (targetObj[name] === undefined) {
         targetObj[name] = schemaExample(fieldSchema);
       }
+      targetObj[name] = normalizeValueForSchema(fieldSchema, targetObj[name]);
 
       const input = createInput(fieldSchema, targetObj[name], (v) => {
         targetObj[name] = v;
@@ -1045,7 +1127,7 @@
         if (input.type === 'checkbox') {
           bulkValues[name] = input.checked;
         } else if (input.value !== undefined) {
-          bulkValues[name] = input.value;
+          bulkValues[name] = normalizeValueForSchema(fieldSchema, input.value);
         }
       }
 
@@ -1057,6 +1139,7 @@
       applyBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Apply to Selected';
       applyBtn.addEventListener('click', () => {
         const val = bulkValues[name];
+        const normalized = normalizeValueForSchema(fieldSchema, val);
         if (val === undefined) {
           showAlert('warning', `Please enter a value for ${name} first.`);
           return;
@@ -1074,7 +1157,7 @@
 
         targetKeys.forEach(k => {
           if (typeof currentTemplate[k] !== 'object') currentTemplate[k] = {};
-          currentTemplate[k][name] = JSON.parse(JSON.stringify(val)); // deep copy
+          currentTemplate[k][name] = JSON.parse(JSON.stringify(normalized)); // deep copy
         });
 
         renderSelectedItem();
@@ -1237,6 +1320,7 @@
       return;
     }
 
+    ensureTemplateNormalized();
     const data = await apiPost('/api/template-editor/validate', {
       modality,
       schema_version,
@@ -1273,6 +1357,7 @@
     const modality = modalityEl.value;
     const library_path = (libraryPathEl.value || '').trim();
 
+    ensureTemplateNormalized();
     try {
       const data = await apiPost('/api/template-editor/save', {
         modality,
@@ -1294,6 +1379,7 @@
       return;
     }
 
+    ensureTemplateNormalized();
     const filename = (filenameEl.value || '').trim() || `${modalityEl.value}-template.json`;
 
     const res = await fetch('/api/template-editor/download', {

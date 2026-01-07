@@ -77,7 +77,7 @@ If present, `I18n` describes which languages are available in the template.
 | `Instructions` | OPTIONAL | `string` \| `object` | Instructions given to the participant. |
 | `Reliability` / `Validity` | OPTIONAL | `string` \| `object` | Psychometric properties. |
 | `AdministrationTime` | OPTIONAL | `string` \| `object` | Estimated time to complete. |
-| `References` | OPTIONAL | `array` | Structured list of references (primary paper, manual, translation, norms, etc.). |
+| `References` | OPTIONAL | `array` | Structured list of references (objects with `Type`, `Citation`, canonical `DOI`, `URL`, optional `Year`, and `Notes`). |
 | `Translation` | OPTIONAL | `object` | Translation/adaptation provenance (source/target language, validated, reference). |
 
 ### `Scoring` Object Fields (Optional)
@@ -117,6 +117,10 @@ Any top-level key that is not one of the above objects is considered a question 
 | `DataType` | OPTIONAL | `string` | Expected type (`string`, `integer`, `float`). |
 | `SessionHint` / `RunHint` | OPTIONAL | `string` | Used for longitudinal/repeated data mapping. |
 
+### `Study.References` Objects
+
+Each entry in `Study.References` must specify a `Type` from the available enum, and it may include a `Citation`, canonical `DOI` (`10.x/...`), and a `URL` (`uri` format). Additional optional metadata includes `Year` (integer) and `Notes`, which can be a string or a localized object to document translations or comments.
+
 ## Example Sidecar
 
 ```json
@@ -141,14 +145,19 @@ Any top-level key that is not one of the above objects is considered a question 
     },
     "Version": "II",
     "Authors": ["Beck"],
-    "DOI": "10.xxxx/xxxxx",
+    "DOI": "10.1007/978-3-642-34523-1",
     "License": "Permission required for reuse",
     "Access": "permission-required",
     "References": [
       {
         "Type": "manual",
         "Citation": "Beck et al. (1996). BDI-II manual.",
-        "URL": "https://example.org"
+        "DOI": "10.1007/978-3-642-34523-1",
+        "URL": "https://doi.org/10.1007/978-3-642-34523-1",
+        "Year": 1996,
+        "Notes": {
+          "en": "BDI-II manual"
+        }
       }
     ],
     "Translation": {

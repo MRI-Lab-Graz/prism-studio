@@ -140,6 +140,8 @@ python prism_tools.py library sync --modality biometrics --path library/biometri
 python prism_tools.py library catalog --input library/survey --output catalog.csv
 ```
 
+The generated Methods boilerplate now summarizes the richer PRISM schema metadata (DOIs, licenses, age ranges, administration/scoring times, item counts, and access levels) alongside the existing citations.
+
 #### `survey` / `biometrics` (Conversions)
 Import data from external formats.
 

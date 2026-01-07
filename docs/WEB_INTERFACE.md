@@ -108,6 +108,7 @@ PRISM Studio can generate a draft of a scientific **Methods section** based on t
 - **How it works**: It scans your `library/survey` and `library/biometrics` folders.
 - **Output**: A Markdown document describing the instruments used, their authors, citations, and constructs.
 - **Languages**: Supports generating text in **English** and **German**.
+- **Metadata**: The generated text now pulls canonical DOIs, licenses, target age ranges, estimated administration/scoring times, item counts, and access classifications from the tightened PRISM schema so each instrument summary reflects the richer metadata you provided.
 
 Access it via the **Tools** menu or at `/methods-generator`.
 

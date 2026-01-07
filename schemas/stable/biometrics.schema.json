@@ -157,13 +157,31 @@
           "type": "string",
           "description": "Citation or reference for the test protocol"
         },
-        "EstimatedDuration": {
-          "type": "string",
-          "description": "Estimated time to complete the assessment (e.g., '15 minutes')"
+        "AdministrationTime": {
+          "type": "object",
+          "description": "Estimated time to complete the assessment in minutes",
+          "properties": {
+            "min": { "type": "number", "description": "Minimum estimated minutes" },
+            "max": { "type": "number", "description": "Maximum estimated minutes" }
+          },
+          "required": ["min", "max"],
+          "additionalProperties": false,
+          "examples": [{ "min": 15, "max": 15 }]
+        },
+        "AgeRange": {
+          "type": "object",
+          "description": "Target age range for the assessment in years",
+          "properties": {
+            "min": { "type": "number", "description": "Minimum age in years" },
+            "max": { "type": "number", "description": "Maximum age in years" }
+          },
+          "required": ["min", "max"],
+          "additionalProperties": false,
+          "examples": [{ "min": 18, "max": 65 }]
         },
         "TargetPopulation": {
           "type": "string",
-          "description": "Intended population for the test (e.g., 'Adults 18-65', 'Children')"
+          "description": "Descriptive target population (e.g., 'Clinical', 'Athletes')"
         },
         "ExclusionCriteria": {
           "type": "string",

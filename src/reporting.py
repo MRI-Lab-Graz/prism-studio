@@ -194,6 +194,54 @@ def _pick_references(study: dict, lang: str = "en") -> dict:
     return out
 
 
+def _instrument_additional_metadata(study: dict) -> list[str]:
+    if not isinstance(study, dict):
+        return []
+
+    extras: list[str] = []
+    doi = (study.get("DOI") or "").strip()
+    if doi:
+        extras.append(f"Canonical DOI: {doi}.")
+
+    license_id = (study.get("LicenseID") or study.get("License") or "").strip()
+    if license_id:
+        extras.append(f"License: {license_id}.")
+
+    age_range = study.get("AgeRange")
+    if isinstance(age_range, dict):
+        min_age = age_range.get("min")
+        max_age = age_range.get("max")
+        if min_age is not None and max_age is not None:
+            extras.append(f"Target age range: {min_age}–{max_age} years.")
+
+    def _format_time_block(block, label):
+        if not isinstance(block, dict):
+            return None
+        min_val = block.get("min")
+        max_val = block.get("max")
+        if min_val is None or max_val is None:
+            return None
+        return f"{label} {min_val}–{max_val} minutes."
+
+    admin_time = _format_time_block(study.get("AdministrationTime"), "Administration time:")
+    if admin_time:
+        extras.append(admin_time)
+
+    scoring_time = _format_time_block(study.get("ScoringTime"), "Scoring time:")
+    if scoring_time:
+        extras.append(scoring_time)
+
+    item_count = study.get("ItemCount")
+    if isinstance(item_count, int):
+        extras.append(f"Item count: {item_count}.")
+
+    access = (study.get("Access") or "").strip()
+    if access:
+        extras.append(f"Access level: {access}.")
+
+    return extras
+
+
 def generate_methods_text(
     library_dirs_or_files,
     output_file,
@@ -267,13 +315,18 @@ def generate_methods_text(
             desc = get_i18n_text(study.get("Description"), lang)
             refs = _pick_references(study, lang)
 
-            text = f"\n### {name}\n"
+            text = f"\n### {name}\n\n"
+            sentences = []
             if desc:
-                text += f"{desc} "
+                sentences.append(desc)
             if refs["primary"]:
-                text += f"The instrument is based on {refs['primary']}. "
+                sentences.append(f"The instrument is based on {refs['primary']}.")
             if refs["translation"]:
-                text += f"The translation used is {refs['translation']}. "
+                sentences.append(f"The translation used is {refs['translation']}.")
+            sentences.extend(_instrument_additional_metadata(study))
+            if sentences:
+                paragraph = " ".join(sentences).strip()
+                text += f"{paragraph}\n"
 
             sections.append(text)
 
@@ -286,9 +339,14 @@ def generate_methods_text(
             tech = b.get("Technical", {})
             device = tech.get("Manufacturer") or tech.get("SoftwarePlatform")
 
-            text = f"\n### {name}\n"
+            text = f"\n### {name}\n\n"
+            sentences = []
             if device:
-                text += f"Data were recorded using {device}. "
+                sentences.append(f"Data were recorded using {device}.")
+            sentences.extend(_instrument_additional_metadata(study))
+            if sentences:
+                paragraph = " ".join(sentences).strip()
+                text += f"{paragraph}\n"
             sections.append(text)
 
     # Write to file

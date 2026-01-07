@@ -244,13 +244,6 @@ def api_template_editor_new():
 
     try:
         template = _new_template_from_schema(modality=modality, schema_version=schema_version)
-        
-        # Add a sample item for new templates
-        schema = _load_prism_schema(modality=modality, schema_version=schema_version)
-        if modality == "survey" and isinstance(schema.get("additionalProperties"), dict):
-            template["Q01"] = _schema_example(schema["additionalProperties"])
-        elif modality == "biometrics" and isinstance(schema.get("additionalProperties"), dict):
-            template["metric01"] = _schema_example(schema["additionalProperties"])
             
     except Exception as e:
         return jsonify({"error": str(e)}), 500
