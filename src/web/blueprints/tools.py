@@ -688,3 +688,113 @@ def generate_boilerplate_endpoint():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@tools_bp.route("/api/limesurvey-to-prism", methods=["POST"])
+def limesurvey_to_prism():
+    """Convert LimeSurvey .lss/.lsa file to PRISM JSON sidecar(s).
+
+    Supports two modes:
+    - split_by_groups=false (default): Single combined JSON
+    - split_by_groups=true: Separate JSON per questionnaire group
+    """
+    try:
+        from src.converters.limesurvey import parse_lss_xml, parse_lss_xml_by_groups
+    except ImportError:
+        try:
+            sys.path.insert(0, str(Path(current_app.root_path)))
+            from src.converters.limesurvey import parse_lss_xml, parse_lss_xml_by_groups
+        except ImportError:
+            return jsonify({"error": "LimeSurvey converter not available"}), 500
+
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    file = request.files["file"]
+    if not file.filename:
+        return jsonify({"error": "No file selected"}), 400
+
+    filename = file.filename.lower()
+    if not (filename.endswith(".lss") or filename.endswith(".lsa")):
+        return jsonify({"error": "Please upload a .lss or .lsa file"}), 400
+
+    task_name = request.form.get("task_name", "").strip()
+    split_by_groups = request.form.get("split_by_groups", "false").lower() == "true"
+
+    if not task_name:
+        task_name = Path(file.filename).stem
+
+    try:
+        xml_content = None
+
+        if filename.endswith(".lsa"):
+            import zipfile as zf_module
+            import io
+
+            file_bytes = io.BytesIO(file.read())
+            try:
+                with zf_module.ZipFile(file_bytes, "r") as zf:
+                    lss_files = [f for f in zf.namelist() if f.endswith(".lss")]
+                    if not lss_files:
+                        return jsonify({"error": "No .lss file found in the .lsa archive"}), 400
+                    with zf.open(lss_files[0]) as f:
+                        xml_content = f.read()
+            except zf_module.BadZipFile:
+                return jsonify({"error": "Invalid .lsa archive"}), 400
+        else:
+            xml_content = file.read()
+
+        if not xml_content:
+            return jsonify({"error": "Could not read file content"}), 400
+
+        from src.converters.excel_base import sanitize_task_name
+
+        if split_by_groups:
+            # Split into multiple questionnaires by group
+            questionnaires = parse_lss_xml_by_groups(xml_content)
+
+            if not questionnaires:
+                return jsonify({"error": "Failed to parse LimeSurvey structure or no groups found"}), 400
+
+            # Build response with all questionnaires
+            result = {
+                "success": True,
+                "mode": "split",
+                "questionnaires": {},
+                "questionnaire_count": len(questionnaires),
+                "total_questions": 0
+            }
+
+            for name, prism_json in questionnaires.items():
+                q_count = len([k for k in prism_json.keys()
+                              if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]])
+                result["questionnaires"][name] = {
+                    "prism_json": prism_json,
+                    "suggested_filename": f"survey-{name}.json",
+                    "question_count": q_count
+                }
+                result["total_questions"] += q_count
+
+            return jsonify(result)
+
+        else:
+            # Single combined JSON (original behavior)
+            prism_data = parse_lss_xml(xml_content, task_name=task_name)
+
+            if not prism_data:
+                return jsonify({"error": "Failed to parse LimeSurvey structure"}), 400
+
+            safe_name = sanitize_task_name(task_name)
+            suggested_filename = f"survey-{safe_name}.json"
+
+            return jsonify({
+                "success": True,
+                "mode": "combined",
+                "prism_json": prism_data,
+                "suggested_filename": suggested_filename,
+                "question_count": len([k for k in prism_data.keys()
+                                      if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]])
+            })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

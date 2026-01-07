@@ -96,6 +96,88 @@
     </div>
     {% endif %}
 
+    <!-- LimeSurvey Quick Import Card -->
+    <div class="card border-success mb-4 shadow-sm">
+        <div class="card-header bg-success bg-opacity-10 d-flex align-items-center">
+            <i class="fas fa-file-import fa-lg text-success me-2"></i>
+            <h5 class="mb-0">LimeSurvey → PRISM JSON</h5>
+            <span class="badge bg-success ms-2">Quick Import</span>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">
+                Convert a LimeSurvey structure file (.lss or .lsa) into PRISM-compatible JSON template(s).
+            </p>
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="lssFile" class="form-label">LimeSurvey File</label>
+                    <input class="form-control" type="file" id="lssFile" accept=".lss,.lsa">
+                </div>
+                <div class="col-md-3">
+                    <label for="lssTaskName" class="form-label">Survey Name (optional)</label>
+                    <input type="text" class="form-control" id="lssTaskName" placeholder="e.g. phq9">
+                    <div class="form-text">For combined mode</div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="lssSplitGroups" checked>
+                        <label class="form-check-label" for="lssSplitGroups">
+                            <strong>Split by questionnaire groups</strong>
+                        </label>
+                    </div>
+                    <div class="form-text">Creates separate JSON per group</div>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-success w-100" type="button" id="lssConvertBtn" disabled>
+                        <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
+                    </button>
+                </div>
+            </div>
+            <div id="lssError" class="alert alert-danger d-none mt-3"></div>
+
+            <!-- Single file result (combined mode) -->
+            <div id="lssResultSingle" class="mt-3 d-none">
+                <div class="alert alert-success">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Conversion successful!</strong>
+                            <span id="lssQuestionCount" class="ms-2 badge bg-secondary"></span>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-success me-2" id="lssPreviewBtn">
+                                <i class="fas fa-eye me-1"></i>Preview
+                            </button>
+                            <button class="btn btn-sm btn-success" id="lssDownloadBtn">
+                                <i class="fas fa-download me-1"></i>Download JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="lssPreview" class="d-none mt-2">
+                    <pre class="bg-light p-3 rounded border" style="max-height: 400px; overflow-y: auto;"><code id="lssPreviewContent"></code></pre>
+                </div>
+            </div>
+
+            <!-- Multiple files result (split mode) -->
+            <div id="lssResultMultiple" class="mt-3 d-none">
+                <div class="alert alert-success mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Conversion successful!</strong>
+                            <span id="lssGroupCount" class="ms-2 badge bg-primary"></span>
+                            <span id="lssTotalQuestions" class="ms-1 badge bg-secondary"></span>
+                        </div>
+                        <button class="btn btn-sm btn-success" id="lssDownloadAllBtn">
+                            <i class="fas fa-download me-1"></i>Download All as ZIP
+                        </button>
+                    </div>
+                </div>
+                <div id="lssQuestionnaireList" class="row g-2"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body">
             <!-- Global Renamer Helper -->
@@ -325,7 +407,7 @@
                                             <i class="fas fa-folder-open"></i>
                                         </button>
                                     </div>
-                                    <div class="form-text">Root library folder containing <code>survey/</code>, <code>biometrics/</code>, and <code>participants.json</code></div>
+                                    <div class="form-text">Library folder containing <code>survey/</code> and <code>biometrics/</code>. (<code>participants.json</code> can be here or in parent folder)</div>
                                 </div>
                             </div>
 
@@ -474,7 +556,7 @@
                                             <i class="fas fa-folder-open"></i>
                                         </button>
                                     </div>
-                                    <div class="form-text">Root library folder containing <code>survey/</code>, <code>biometrics/</code>, and <code>participants.json</code></div>
+                                    <div class="form-text">Library folder containing <code>survey/</code> and <code>biometrics/</code>. (<code>participants.json</code> can be here or in parent folder)</div>
                                 </div>
                             </div>
 
@@ -887,6 +969,188 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // --- LimeSurvey Quick Import ---
+    const lssFile = document.getElementById('lssFile');
+    const lssTaskName = document.getElementById('lssTaskName');
+    const lssSplitGroups = document.getElementById('lssSplitGroups');
+    const lssConvertBtn = document.getElementById('lssConvertBtn');
+    const lssError = document.getElementById('lssError');
+
+    // Single mode elements
+    const lssResultSingle = document.getElementById('lssResultSingle');
+    const lssQuestionCount = document.getElementById('lssQuestionCount');
+    const lssPreviewBtn = document.getElementById('lssPreviewBtn');
+    const lssDownloadBtn = document.getElementById('lssDownloadBtn');
+    const lssPreview = document.getElementById('lssPreview');
+    const lssPreviewContent = document.getElementById('lssPreviewContent');
+
+    // Multi mode elements
+    const lssResultMultiple = document.getElementById('lssResultMultiple');
+    const lssGroupCount = document.getElementById('lssGroupCount');
+    const lssTotalQuestions = document.getElementById('lssTotalQuestions');
+    const lssDownloadAllBtn = document.getElementById('lssDownloadAllBtn');
+    const lssQuestionnaireList = document.getElementById('lssQuestionnaireList');
+
+    let lssConvertedData = null;
+    let lssSuggestedFilename = 'survey.json';
+    let lssQuestionnaires = null; // For split mode
+
+    lssFile.addEventListener('change', function() {
+        lssConvertBtn.disabled = !lssFile.files.length;
+        // Reset results
+        lssResultSingle.classList.add('d-none');
+        lssResultMultiple.classList.add('d-none');
+        lssError.classList.add('d-none');
+        lssPreview.classList.add('d-none');
+    });
+
+    lssConvertBtn.addEventListener('click', async function() {
+        if (!lssFile.files.length) return;
+
+        const originalText = lssConvertBtn.innerHTML;
+        lssConvertBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Converting...';
+        lssConvertBtn.disabled = true;
+        lssError.classList.add('d-none');
+        lssResultSingle.classList.add('d-none');
+        lssResultMultiple.classList.add('d-none');
+
+        const formData = new FormData();
+        formData.append('file', lssFile.files[0]);
+        formData.append('task_name', lssTaskName.value || '');
+        formData.append('split_by_groups', lssSplitGroups.checked ? 'true' : 'false');
+
+        try {
+            const response = await fetch('/api/limesurvey-to-prism', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                if (data.mode === 'split') {
+                    // Multiple questionnaires
+                    lssQuestionnaires = data.questionnaires;
+                    lssGroupCount.textContent = `${data.questionnaire_count} questionnaires`;
+                    lssTotalQuestions.textContent = `${data.total_questions} total questions`;
+
+                    // Build questionnaire cards
+                    lssQuestionnaireList.innerHTML = '';
+                    for (const [name, qData] of Object.entries(data.questionnaires)) {
+                        const card = document.createElement('div');
+                        card.className = 'col-md-4';
+                        card.innerHTML = `
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title"><i class="fas fa-file-alt me-1 text-success"></i>${name}</h6>
+                                    <p class="card-text small text-muted">${qData.question_count} questions</p>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-secondary lss-preview-single" data-name="${name}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-success lss-download-single" data-name="${name}" data-filename="${qData.suggested_filename}">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        lssQuestionnaireList.appendChild(card);
+                    }
+                    lssResultMultiple.classList.remove('d-none');
+                } else {
+                    // Single combined JSON
+                    lssConvertedData = data.prism_json;
+                    lssSuggestedFilename = data.suggested_filename;
+                    lssQuestionCount.textContent = `${data.question_count} questions`;
+                    lssPreviewContent.textContent = JSON.stringify(lssConvertedData, null, 2);
+                    lssResultSingle.classList.remove('d-none');
+                }
+            } else {
+                lssError.textContent = data.error || 'Conversion failed';
+                lssError.classList.remove('d-none');
+            }
+        } catch (err) {
+            lssError.textContent = 'Error: ' + err.message;
+            lssError.classList.remove('d-none');
+        } finally {
+            lssConvertBtn.innerHTML = originalText;
+            lssConvertBtn.disabled = false;
+        }
+    });
+
+    // Event delegation for dynamic questionnaire buttons
+    lssQuestionnaireList.addEventListener('click', function(e) {
+        const previewBtn = e.target.closest('.lss-preview-single');
+        const downloadBtn = e.target.closest('.lss-download-single');
+
+        if (previewBtn) {
+            const name = previewBtn.dataset.name;
+            if (lssQuestionnaires && lssQuestionnaires[name]) {
+                alert(JSON.stringify(lssQuestionnaires[name].prism_json, null, 2).substring(0, 2000) + '...');
+            }
+        }
+
+        if (downloadBtn) {
+            const name = downloadBtn.dataset.name;
+            const filename = downloadBtn.dataset.filename;
+            if (lssQuestionnaires && lssQuestionnaires[name]) {
+                downloadJson(lssQuestionnaires[name].prism_json, filename);
+            }
+        }
+    });
+
+    lssPreviewBtn.addEventListener('click', function() {
+        lssPreview.classList.toggle('d-none');
+        const icon = lssPreviewBtn.querySelector('i');
+        icon.className = lssPreview.classList.contains('d-none') ? 'fas fa-eye me-1' : 'fas fa-eye-slash me-1';
+    });
+
+    lssDownloadBtn.addEventListener('click', function() {
+        if (lssConvertedData) downloadJson(lssConvertedData, lssSuggestedFilename);
+    });
+
+    lssDownloadAllBtn.addEventListener('click', function() {
+        if (!lssQuestionnaires) return;
+        downloadAllAsZip(lssQuestionnaires);
+    });
+
+    function downloadJson(data, filename) {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    async function downloadAllAsZip(questionnaires) {
+        // Use JSZip if available, otherwise download individually
+        if (typeof JSZip !== 'undefined') {
+            const zip = new JSZip();
+            for (const [name, qData] of Object.entries(questionnaires)) {
+                zip.file(qData.suggested_filename, JSON.stringify(qData.prism_json, null, 2));
+            }
+            const blob = await zip.generateAsync({type: 'blob'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'limesurvey_questionnaires.zip';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } else {
+            // Fallback: download each file individually
+            for (const [name, qData] of Object.entries(questionnaires)) {
+                downloadJson(qData.prism_json, qData.suggested_filename);
+                await new Promise(r => setTimeout(r, 300)); // Small delay between downloads
+            }
+        }
+    }
+
     // --- Landgig: Survey Convert ---
     const convertLibraryPathInput = document.getElementById('convertLibraryPath');
     const convertBrowseLibraryBtn = document.getElementById('convertBrowseLibraryBtn');

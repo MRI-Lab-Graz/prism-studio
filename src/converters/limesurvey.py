@@ -257,6 +257,87 @@ def parse_lss_xml(xml_content, task_name=None):
     return metadata
 
 
+def parse_lss_xml_by_groups(xml_content):
+    """Parse a LimeSurvey .lss XML blob and split into separate questionnaires by group.
+
+    Returns:
+        dict: {group_name: prism_json_dict, ...} or None on error
+    """
+    try:
+        root = ET.fromstring(xml_content)
+    except ET.ParseError as e:
+        print(f"Error parsing XML: {e}")
+        return None
+
+    def get_text(element, tag):
+        child = element.find(tag)
+        val = child.text if child is not None else ""
+        return val or ""
+
+    questions_map, groups_map = _parse_lss_structure(root, get_text)
+
+    # Parse Answers
+    answers_section = root.find("answers")
+    if answers_section is not None:
+        rows = answers_section.find("rows")
+        if rows is not None:
+            for row in rows.findall("row"):
+                qid = get_text(row, "qid")
+                code = get_text(row, "code")
+                answer = get_text(row, "answer")
+                if qid in questions_map:
+                    questions_map[qid]["levels"][code] = answer
+
+    # Group questions by their group ID
+    grouped_questions = {}
+    for qid, q_data in questions_map.items():
+        gid = q_data.get("gid", "")
+        group_name = groups_map.get(gid, f"group_{gid}") if gid else "ungrouped"
+
+        if group_name not in grouped_questions:
+            grouped_questions[group_name] = {}
+
+        key = q_data["title"]
+        entry = {"Description": q_data["question"]}
+        if q_data["levels"]:
+            entry["Levels"] = q_data["levels"]
+        grouped_questions[group_name][key] = entry
+
+    # Build separate PRISM JSONs for each group
+    result = {}
+    for group_name, questions in grouped_questions.items():
+        if not questions:
+            continue
+
+        normalized_name = sanitize_task_name(group_name)
+        prism_json = {
+            "Technical": {
+                "StimulusType": "Survey",
+                "FileFormat": "tsv",
+                "SoftwarePlatform": "LimeSurvey",
+                "Language": "en",
+                "Respondent": "self",
+                "ResponseType": ["online"],
+            },
+            "Study": {
+                "TaskName": normalized_name,
+                "OriginalName": group_name,
+                "Version": "1.0",
+                "Description": f"Imported from LimeSurvey group: {group_name}",
+                "ItemCount": len(questions),
+            },
+            "Metadata": {
+                "SchemaVersion": "1.1.1",
+                "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
+                "Creator": "limesurvey_to_prism.py",
+            },
+        }
+        prism_json.update(questions)
+        result[normalized_name] = prism_json
+
+    return result
+
+
 def convert_lsa_to_prism(lsa_path, output_path=None, task_name=None):
     """Extract .lss from .lsa/.lss and convert to a Prism JSON sidecar."""
     if not os.path.exists(lsa_path):

@@ -158,6 +158,14 @@ class ProjectManager:
             CrossPlatformFile.write_text(str(readme_path), readme_content)
             created_files.append("README.md")
 
+            # 8. Create BIDS standard folders
+            bids_folders = self._create_bids_folders(project_path)
+            created_files.extend(bids_folders)
+
+            # 9. Create library folder structure for templates
+            library_files = self._create_library_structure(project_path, modalities)
+            created_files.extend(library_files)
+
             return {
                 "success": True,
                 "path": str(project_path),
@@ -449,12 +457,55 @@ This project uses the PRISM framework for psychological research data.
 
 5. **Validate**: Run PRISM validation to check your dataset structure.
 
-## Files
+## Project Structure
 
-- `dataset_description.json` - Dataset metadata (update the Authors field!)
-- `participants.tsv` - Participant demographics
-- `participants.json` - Column descriptions for participants.tsv
-- `.bidsignore` - Excludes PRISM folders from standard BIDS validation
+```
+project/
+├── dataset_description.json   # Dataset metadata (update Authors!)
+├── participants.tsv           # Participant demographics
+├── participants.json          # Column descriptions for participants.tsv
+├── .bidsignore                # Excludes PRISM folders from BIDS validation
+├── .prismrc.json              # PRISM validation settings
+├── README.md                  # This file
+│
+├── sub-example/               # Example subject (rename to sub-001, etc.)
+│   └── ses-01/                # Session folder (if using sessions)
+│       ├── survey/            # Survey data files
+│       └── biometrics/        # Biometrics data files
+│
+├── sourcedata/                # Raw source files (before BIDS conversion)
+│   └── README                 # e.g., Excel exports, LimeSurvey archives
+│
+├── derivatives/               # Processed/derived data outputs
+│   └── README                 # e.g., scored data, analysis outputs
+│
+├── code/                      # Analysis scripts
+│   └── README                 # e.g., R scripts, Python notebooks
+│
+├── stimuli/                   # Stimulus files (if applicable)
+│
+└── library/                   # JSON templates for conversion
+    ├── survey/                # Survey JSON templates (LimeSurvey imports)
+    └── biometrics/            # Biometrics JSON templates
+```
+
+## BIDS Standard Folders
+
+- `sourcedata/` - Place original/raw data files here before converting to BIDS format
+- `derivatives/` - Processed outputs (Recipes & Scoring writes to `derivatives/recipes/`)
+- `code/` - Analysis scripts (R, Python, SPSS syntax, etc.)
+- `stimuli/` - Stimulus files used in the study (images, audio, etc.)
+
+## Library Folder
+
+The `library/` folder contains JSON templates for your questionnaires and biometrics.
+Use these with the Converter tool to process raw data into PRISM format.
+
+- `library/survey/` - Place survey JSON templates here (e.g., from LimeSurvey import)
+- `library/biometrics/` - Place biometrics JSON templates here
+
+Note: The root `participants.json` is used for both BIDS compliance and the library.
+When using the Converter, point "Template Library Root" to the `library/` folder.
 
 ## Resources
 
@@ -462,6 +513,180 @@ This project uses the PRISM framework for psychological research data.
 - BIDS Specification: https://bids-specification.readthedocs.io/
 """
         return content
+
+    def _create_bids_folders(self, project_path: Path) -> List[str]:
+        """Create standard BIDS folder structure."""
+        created = []
+
+        # sourcedata/ - for raw source files before BIDS conversion
+        sourcedata_path = project_path / "sourcedata"
+        sourcedata_path.mkdir(exist_ok=True)
+        created.append("sourcedata/")
+
+        # Add README to sourcedata
+        sourcedata_readme = sourcedata_path / "README"
+        CrossPlatformFile.write_text(
+            str(sourcedata_readme),
+            "Place original/raw data files here before converting to BIDS format.\n"
+            "Examples: Excel exports, LimeSurvey archives (.lsa), raw physio recordings.\n"
+        )
+        created.append("sourcedata/README")
+
+        # derivatives/ - for processed/derived data
+        derivatives_path = project_path / "derivatives"
+        derivatives_path.mkdir(exist_ok=True)
+        created.append("derivatives/")
+
+        # Add README to derivatives
+        derivatives_readme = derivatives_path / "README"
+        CrossPlatformFile.write_text(
+            str(derivatives_readme),
+            "Processed and derived data outputs go here.\n"
+            "Examples: Scored survey data, computed metrics, analysis outputs.\n"
+            "The 'Recipes & Scoring' feature writes outputs to derivatives/recipes/.\n"
+        )
+        created.append("derivatives/README")
+
+        # code/ - for analysis scripts
+        code_path = project_path / "code"
+        code_path.mkdir(exist_ok=True)
+        created.append("code/")
+
+        # Add README to code
+        code_readme = code_path / "README"
+        CrossPlatformFile.write_text(
+            str(code_readme),
+            "Place your analysis scripts here.\n"
+            "Examples: R scripts, Python notebooks, SPSS syntax files.\n"
+        )
+        created.append("code/README")
+
+        # stimuli/ - optional, for stimulus files
+        stimuli_path = project_path / "stimuli"
+        stimuli_path.mkdir(exist_ok=True)
+        created.append("stimuli/")
+
+        return created
+
+    def _create_library_structure(
+        self, project_path: Path, modalities: List[str]
+    ) -> List[str]:
+        """Create library folder structure for templates."""
+        created = []
+        library_path = project_path / "library"
+
+        # Create library root
+        library_path.mkdir(parents=True, exist_ok=True)
+        created.append("library/")
+
+        # Create modality subfolders
+        if "survey" in modalities:
+            survey_path = library_path / "survey"
+            survey_path.mkdir(exist_ok=True)
+            created.append("library/survey/")
+
+            # Create example survey template
+            example_survey = self._create_example_survey_template()
+            example_path = survey_path / "survey-example.json"
+            CrossPlatformFile.write_text(
+                str(example_path), json.dumps(example_survey, indent=2, ensure_ascii=False)
+            )
+            created.append("library/survey/survey-example.json")
+
+        if "biometrics" in modalities:
+            biometrics_path = library_path / "biometrics"
+            biometrics_path.mkdir(exist_ok=True)
+            created.append("library/biometrics/")
+
+            # Create example biometrics template
+            example_bio = self._create_example_biometrics_template()
+            example_path = biometrics_path / "biometrics-example.json"
+            CrossPlatformFile.write_text(
+                str(example_path), json.dumps(example_bio, indent=2, ensure_ascii=False)
+            )
+            created.append("library/biometrics/biometrics-example.json")
+
+        # Note: participants.json is NOT duplicated in library/
+        # The root-level participants.json (BIDS standard) is the single source of truth.
+        # The converter will look for it at the project root.
+
+        return created
+
+    def _create_example_survey_template(self) -> dict:
+        """Create an example survey JSON template."""
+        return {
+            "Technical": {
+                "StimulusType": "Questionnaire",
+                "FileFormat": "tsv",
+                "SoftwarePlatform": "Generic",
+                "Language": "en",
+                "Respondent": "self"
+            },
+            "Study": {
+                "TaskName": "example",
+                "OriginalName": "Example Survey",
+                "Version": "1.0",
+                "Description": "Example survey template - replace with your questionnaire"
+            },
+            "Metadata": {
+                "SchemaVersion": "1.1.1",
+                "CreationDate": date.today().isoformat(),
+                "Creator": "PRISM Project Manager"
+            },
+            "Q01": {
+                "Description": "Example question 1 - replace with your items",
+                "Levels": {
+                    "1": "Strongly disagree",
+                    "2": "Disagree",
+                    "3": "Neutral",
+                    "4": "Agree",
+                    "5": "Strongly agree"
+                }
+            },
+            "Q02": {
+                "Description": "Example question 2 - replace with your items",
+                "Levels": {
+                    "1": "Never",
+                    "2": "Rarely",
+                    "3": "Sometimes",
+                    "4": "Often",
+                    "5": "Always"
+                }
+            }
+        }
+
+    def _create_example_biometrics_template(self) -> dict:
+        """Create an example biometrics JSON template."""
+        return {
+            "Technical": {
+                "StimulusType": "Measurement",
+                "FileFormat": "tsv",
+                "SoftwarePlatform": "Generic"
+            },
+            "Study": {
+                "TaskName": "example",
+                "OriginalName": "Example Biometrics",
+                "Version": "1.0",
+                "Description": "Example biometrics template - replace with your measures"
+            },
+            "Metadata": {
+                "SchemaVersion": "1.1.1",
+                "CreationDate": date.today().isoformat(),
+                "Creator": "PRISM Project Manager"
+            },
+            "height": {
+                "Description": "Height measurement",
+                "Units": "cm"
+            },
+            "weight": {
+                "Description": "Weight measurement",
+                "Units": "kg"
+            },
+            "heart_rate": {
+                "Description": "Resting heart rate",
+                "Units": "bpm"
+            }
+        }
 
 
 def get_available_modalities() -> List[str]:
