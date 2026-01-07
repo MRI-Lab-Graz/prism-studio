@@ -658,7 +658,7 @@ def process_excel_biometrics(
                     },
                 },
                 "Metadata": {
-                    "SchemaVersion": "1.1.0",
+                    "SchemaVersion": "1.1.1",
                     "CreationDate": pd.Timestamp.now().strftime("%Y-%m-%d"),
                     "Creator": "excel_to_biometrics_library.py",
                 },

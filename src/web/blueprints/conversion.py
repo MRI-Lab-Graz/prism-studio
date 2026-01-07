@@ -158,10 +158,13 @@ def api_survey_convert():
     survey_filter = (request.form.get("survey") or "").strip() or None
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
+    session_override = (request.form.get("session") or "").strip() or None
     sheet = (request.form.get("sheet") or "0").strip() or 0
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
     language = (request.form.get("language") or "").strip() or None
+    strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
+    strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_")
     try:
@@ -196,6 +199,7 @@ def api_survey_convert():
                 survey=survey_filter,
                 id_column=id_column,
                 session_column=session_column,
+                session=session_override,
                 sheet=sheet,
                 unknown=unknown,
                 dry_run=False,
@@ -213,6 +217,7 @@ def api_survey_convert():
                 survey=survey_filter,
                 id_column=id_column,
                 session_column=session_column,
+                session=session_override,
                 unknown=unknown,
                 dry_run=False,
                 force=True,
@@ -220,6 +225,7 @@ def api_survey_convert():
                 authors=["prism-studio"],
                 language=language,
                 alias_file=alias_path,
+                strict_levels=True if strict_levels else None,
             )
 
         mem = io.BytesIO()
@@ -288,10 +294,13 @@ def api_survey_convert_validate():
     survey_filter = (request.form.get("survey") or "").strip() or None
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
+    session_override = (request.form.get("session") or "").strip() or None
     sheet = (request.form.get("sheet") or "0").strip() or 0
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
     language = (request.form.get("language") or "").strip() or None
+    strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
+    strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_validate_")
     try:
@@ -307,12 +316,16 @@ def api_survey_convert_validate():
         output_root = tmp_dir_path / "prism_dataset"
         add_log("Starting data conversion...", "info")
 
+        if strict_levels:
+            add_log("Strict Levels Validation: enabled", "info")
+
         convert_result = None
         if suffix in {".xlsx", ".csv", ".tsv"}:
             convert_result = convert_survey_xlsx_to_prism_dataset(
                 input_path=input_path, library_dir=str(effective_survey_dir),
                 output_root=output_root, survey=survey_filter, id_column=id_column,
-                session_column=session_column, sheet=sheet, unknown=unknown,
+                session_column=session_column, session=session_override,
+                sheet=sheet, unknown=unknown,
                 dry_run=False, force=True, name=dataset_name, authors=["prism-studio"],
                 language=language, alias_file=alias_path,
             )
@@ -320,9 +333,11 @@ def api_survey_convert_validate():
             convert_result = convert_survey_lsa_to_prism_dataset(
                 input_path=input_path, library_dir=str(effective_survey_dir),
                 output_root=output_root, survey=survey_filter, id_column=id_column,
-                session_column=session_column, unknown=unknown, dry_run=False,
+                session_column=session_column, session=session_override,
+                unknown=unknown, dry_run=False,
                 force=True, name=dataset_name, authors=["prism-studio"],
                 language=language, alias_file=alias_path,
+                strict_levels=True if strict_levels else None,
             )
         add_log("Conversion completed", "success")
 
@@ -340,7 +355,11 @@ def api_survey_convert_validate():
         validation_result = {"errors": [], "warnings": [], "summary": {}}
         if request.form.get("validate") == "true":
             try:
-                v_res = run_validation(str(output_root), schema_version="stable")
+                v_res = run_validation(
+                    str(output_root), 
+                    schema_version="stable",
+                    library_path=str(effective_survey_dir)
+                )
                 if v_res and isinstance(v_res, tuple):
                     issues = v_res[0]
                     stats = v_res[1]
@@ -350,17 +369,19 @@ def api_survey_convert_validate():
                     formatted = format_validation_results(issues, stats, str(output_root))
                     
                     # Include the full formatted results for the UI to display properly
-                    validation_result["formatted"] = formatted
+                    # We use a new dict to avoid circular references
+                    validation_result = {"formatted": formatted}
+                    validation_result.update(formatted)
                     
                     # Log errors to the web terminal
-                    total_err = formatted.get("total_errors", 0)
-                    total_warn = formatted.get("total_warnings", 0)
+                    total_err = formatted.get("summary", {}).get("total_errors", 0)
+                    total_warn = formatted.get("summary", {}).get("total_warnings", 0)
                     
                     if total_err > 0:
                         add_log(f"✗ Validation failed with {total_err} error(s)", "error")
                         # Log the first 20 errors specifically to the terminal
                         count = 0
-                        for group in formatted.get("error_groups", {}).values():
+                        for group in formatted.get("errors", []):
                             for f in group.get("files", []):
                                 if count < 20:
                                     # Clean up message for terminal
@@ -380,7 +401,26 @@ def api_survey_convert_validate():
             except Exception as val_err:
                 validation_result["warnings"].append(f"Validation error: {str(val_err)}")
 
-        validation_result["warnings"].extend(conversion_warnings)
+        # Add conversion warnings to the final result
+        if conversion_warnings:
+            if "warnings" not in validation_result:
+                validation_result["warnings"] = []
+            
+            # Add as a group if we have formatted results
+            if "formatted" in validation_result:
+                conv_group = {
+                    "code": "CONVERSION",
+                    "message": "Conversion Warnings",
+                    "description": "Issues encountered during data conversion",
+                    "files": [{"file": filename, "message": w} for w in conversion_warnings],
+                    "count": len(conversion_warnings)
+                }
+                validation_result["warnings"].append(conv_group)
+                if "summary" in validation_result:
+                    validation_result["summary"]["total_warnings"] += len(conversion_warnings)
+            else:
+                # Simple string list for non-formatted results
+                validation_result["warnings"].extend(conversion_warnings)
 
         # Create ZIP
         mem = io.BytesIO()
@@ -493,6 +533,7 @@ def api_biometrics_convert():
 
     id_column = (request.form.get("id_column") or "").strip() or None
     session_column = (request.form.get("session_column") or "").strip() or None
+    session_override = (request.form.get("session") or "").strip() or None
     sheet = (request.form.get("sheet") or "0").strip() or 0
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
@@ -525,6 +566,7 @@ def api_biometrics_convert():
             output_root=output_root,
             id_column=id_column,
             session_column=session_column,
+            session=session_override,
             sheet=sheet,
             unknown=unknown,
             force=True,
@@ -561,7 +603,11 @@ def api_biometrics_convert():
             validation = {"errors": [], "warnings": [], "summary": {}}
             try:
                 # Use run_validation which is already imported and handles the tuple return
-                v_res = run_validation(str(output_root), schema_version="stable")
+                v_res = run_validation(
+                    str(output_root), 
+                    schema_version="stable",
+                    library_path=str(library_root)
+                )
                 if v_res and isinstance(v_res, tuple):
                     issues = v_res[0]
                     stats = v_res[1]
@@ -581,8 +627,8 @@ def api_biometrics_convert():
                     
                     validation["summary"] = {
                         "files_created": len(list(output_root.rglob("*_biometrics.tsv"))),
-                        "total_errors": formatted.get("total_errors", 0),
-                        "total_warnings": formatted.get("total_warnings", 0)
+                        "total_errors": formatted.get("summary", {}).get("total_errors", 0),
+                        "total_warnings": formatted.get("summary", {}).get("total_warnings", 0)
                     }
                     
                     # Include the full formatted results for the UI to display properly

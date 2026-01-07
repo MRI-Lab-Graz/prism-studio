@@ -43,11 +43,6 @@
           "enum": ["online", "paper", "interview", "phone", "mixed", ""],
           "description": "How the survey was administered"
         },
-        "ResponseType": {
-          "type": "array",
-          "items": {"type": "string"},
-          "description": "Input/response modality (e.g., paper-pencil, button, slider, keyboard, voice, mixed)"
-        },
         "Equipment": {
           "type": "string",
           "description": "Equipment used for measurement (e.g., Stopwatch, Cycle Ergometer, Dynamometer)"
@@ -117,7 +112,7 @@
           "description": "Common abbreviation (e.g., BDI-II, PHQ-9)"
         },
         "Version": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "Version of the instrument (e.g., II, 5.0, 21-item)"
         },
         "Authors": {
@@ -131,7 +126,8 @@
         },
         "DOI": {
           "type": "string",
-          "description": "Digital Object Identifier (DOI) for the instrument"
+          "description": "Digital Object Identifier (DOI) for the instrument; use the canonical DOI string (10.x/...) without protocol prefixes or leave empty when unavailable",
+          "pattern": "^(?:10\\.\\d{4,9}/\\S+)?$"
         },
         "License": {
           "type": "string",
@@ -139,7 +135,24 @@
         },
         "LicenseID": {
           "type": "string",
-          "description": "Normalized license identifier when available (e.g., CC-BY-NC-ND-3.0)"
+          "description": "Normalized license identifier (prefer SPDX or Creative Commons identifiers)",
+          "enum": [
+            "CC-BY-4.0",
+            "CC-BY-SA-4.0",
+            "CC-BY-ND-4.0",
+            "CC-BY-NC-4.0",
+            "CC-BY-NC-SA-4.0",
+            "CC-BY-NC-ND-4.0",
+            "MIT",
+            "Apache-2.0",
+            "GPL-3.0-only",
+            "GPL-3.0-or-later",
+            "LGPL-3.0-only",
+            "BSD-3-Clause",
+            "Unlicense",
+            "PDDL-1.0",
+            "CC0-1.0"
+          ]
         },
         "LicenseURL": {
           "type": "string",
@@ -185,10 +198,6 @@
           "type": ["string", "object"],
           "description": "Instructions given to the participant"
         },
-        "Instruction": {
-          "type": ["string", "object"],
-          "description": "Instructions given to the participant (alias for Instructions)"
-        },
         "Reliability": {
           "type": ["string", "object"],
           "description": "Information about the reliability of the instrument"
@@ -207,16 +216,37 @@
           "description": "Number of items in the instrument"
         },
         "AgeRange": {
-          "type": ["string", "object"],
-          "description": "Target age range for the instrument"
+          "type": "object",
+          "description": "Target age range for the instrument in years",
+          "properties": {
+            "min": { "type": "number", "description": "Minimum age in years" },
+            "max": { "type": "number", "description": "Maximum age in years" }
+          },
+          "required": ["min", "max"],
+          "additionalProperties": false,
+          "examples": [{ "min": 18, "max": 99 }]
         },
         "AdministrationTime": {
-          "type": ["string", "object"],
-          "description": "Estimated time to complete the instrument"
+          "type": "object",
+          "description": "Estimated time to complete the instrument in minutes",
+          "properties": {
+            "min": { "type": "number", "description": "Minimum estimated minutes" },
+            "max": { "type": "number", "description": "Maximum estimated minutes" }
+          },
+          "required": ["min", "max"],
+          "additionalProperties": false,
+          "examples": [{ "min": 10, "max": 15 }]
         },
         "ScoringTime": {
-          "type": ["string", "object"],
-          "description": "Estimated time to score the instrument"
+          "type": "object",
+          "description": "Estimated time to score the instrument in minutes",
+          "properties": {
+            "min": { "type": "number", "description": "Minimum estimated minutes" },
+            "max": { "type": "number", "description": "Maximum estimated minutes" }
+          },
+          "required": ["min", "max"],
+          "additionalProperties": false,
+          "examples": [{ "min": 5, "max": 5 }]
         },
         "Norming": {
           "type": ["string", "object"],
@@ -239,11 +269,13 @@
               },
               "DOI": {
                 "type": "string",
-                "description": "DOI for the reference"
+                "description": "DOI for the reference (canonical 10.x/... string) or empty when unavailable",
+                "pattern": "^(?:10\\.\\d{4,9}/\\S+)?$"
               },
               "URL": {
                 "type": "string",
-                "description": "URL for the reference"
+                "description": "URL for the reference",
+                "format": "uri"
               },
               "Year": {
                 "type": ["integer", "null"],
@@ -253,7 +285,21 @@
                 "type": ["string", "object"],
                 "description": "Optional notes about the reference"
               }
-            }
+            },
+            "required": ["Type"],
+            "additionalProperties": false,
+            "examples": [
+              {
+                "Type": "primary",
+                "Citation": "Hautzinger, M., & Bailer, M. (1993). Allgemeine Depressionsskala (ADS).",
+                "DOI": "10.1007/978-3-642-34523-1",
+                "URL": "https://doi.org/10.1007/978-3-642-34523-1",
+                "Year": 1993,
+                "Notes": {
+                  "en": "Original ADS manual"
+                }
+              }
+            ]
           }
         },
         "Translation": {

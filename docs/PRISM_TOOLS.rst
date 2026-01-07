@@ -99,6 +99,39 @@ You can automatically fill missing metadata keys in your library files based on 
 
 .. code-block:: bash
 
+    ./prism_tools.py library fill --modality survey --path library/survey/
+
+You can also synchronize keys across library files or generate a CSV catalog:
+
+.. code-block:: bash
+
+    ./prism_tools.py library sync --modality biometrics --path library/biometrics/
+    ./prism_tools.py library catalog --input library/survey --output catalog.csv
+
+Methods Boilerplate Generation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Generate a scientific methods section boilerplate from your library templates:
+
+.. code-block:: bash
+
+    ./prism_tools.py library generate-methods-text --output methods.md --lang en
+
+Recipes (Derivatives)
+---------------------
+
+PRISM can automatically compute scores, subscales, and intermediate variables from your raw survey and biometric data using JSON recipe files.
+
+.. code-block:: bash
+
+    # Compute survey scores
+    ./prism_tools.py recipes surveys --prism /path/to/dataset
+
+    # Compute biometrics scores
+    ./prism_tools.py recipes biometrics --prism /path/to/dataset
+
+For more details on recipe structure, see the :doc:`RECIPES` documentation.
+
     # For surveys
     python scripts/fill_missing_metadata.py --modality survey --path library/survey
 
@@ -353,6 +386,8 @@ Manuscript methods boilerplate (scientific text)
 
 Generate a manuscript-ready Methods section snippet (Markdown) describing the instruments and measures defined in your libraries.
 The text is derived from ``Study.OriginalName``, ``Study.Description``, and (for biometrics) technical metadata such as ``Technical.Equipment``.
+
+Each summary also now surfaces the richer PRISM metadata you configured in the updated survey schema: canonical ``Study.DOI``, the declared ``Study.LicenseID`` or ``Study.License``, target ``Study.AgeRange``, ``Study.AdministrationTime`` / ``Study.ScoringTime`` estimates, reported ``Study.ItemCount``, and the declared access level (``Study.Access``). References from the structured ``Study.References`` block (primary, translation, validation, norms) continue to be woven into the narrative so the boilerplate cites the literature that underpins each instrument.
 
 .. code-block:: bash
 

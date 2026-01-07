@@ -247,7 +247,7 @@ def parse_lss_xml(xml_content, task_name=None):
             "Description": f"Imported from LimeSurvey task {normalized_task}",
         },
         "Metadata": {
-            "SchemaVersion": "1.0.0",
+            "SchemaVersion": "1.1.1",
             "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
             "Creator": "limesurvey_to_prism.py",
         },

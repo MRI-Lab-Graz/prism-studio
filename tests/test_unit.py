@@ -280,7 +280,7 @@ class TestValidatorIntegration:
                 "Respondent": "self",
             },
             "Study": {"TaskName": "test", "OriginalName": "Test Survey"},
-            "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": "2024-01-01"},
+            "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": "2024-01-01"},
         }
         with open(os.path.join(sub_dir, "sub-01_survey-test_beh.json"), "w") as f:
             json.dump(sidecar, f)

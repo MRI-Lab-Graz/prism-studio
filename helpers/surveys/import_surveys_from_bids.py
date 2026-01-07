@@ -54,7 +54,7 @@ def import_surveys(bids_root, output_dir):
                 "TrialStructure": {"TrialCount": 1},
             },
             "Metadata": {
-                "SchemaVersion": "1.0.0",
+                "SchemaVersion": "1.1.1",
                 "CreationDate": date.today().isoformat(),
                 "Creator": "Prism Importer",
             },

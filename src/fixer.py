@@ -272,7 +272,7 @@ class DatasetFixer:
                 d
                 for d in dirs
                 if not d.startswith(".")
-                and d not in ["code", "derivatives", "sourcedata"]
+                and d not in ["code", "recipes", "derivatives", "sourcedata"]
             ]
 
             for filename in files:
@@ -330,7 +330,7 @@ class DatasetFixer:
         if not os.path.exists(config_path) and not os.path.exists(alt_config_path):
             config = {
                 "schemaVersion": "stable",
-                "ignorePaths": ["derivatives/**", "sourcedata/**", "code/**"],
+                "ignorePaths": ["recipes/**", "derivatives/**", "sourcedata/**", "code/**"],
                 "strictMode": False,
                 "runBids": False,
             }
@@ -391,13 +391,13 @@ class DatasetFixer:
                     "TaskName": "TODO",
                     "OriginalName": "TODO: Full instrument name",
                 },
-                "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": today},
+                "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": today},
             }
         elif modality == "biometrics":
             return {
                 "Technical": {"StimulusType": "Assessment", "FileFormat": "tsv"},
                 "Study": {"TaskName": "TODO", "OriginalName": "TODO: Assessment name"},
-                "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": today},
+                "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": today},
             }
         elif modality == "physio":
             return {
@@ -406,7 +406,7 @@ class DatasetFixer:
                     "Columns": ["TODO: column names"],
                 },
                 "Study": {"TaskName": "TODO"},
-                "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": today},
+                "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": today},
             }
         elif modality == "eyetracking":
             return {
@@ -417,13 +417,13 @@ class DatasetFixer:
                 },
                 "Screen": {"ScreenResolution": [1920, 1080], "ScreenDistance": 60},
                 "Study": {"TaskName": "TODO"},
-                "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": today},
+                "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": today},
             }
         else:
             # Generic stub
             return {
                 "Description": f"TODO: Add description for {filename}",
-                "Metadata": {"SchemaVersion": "1.0.0", "CreationDate": today},
+                "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": today},
             }
 
 

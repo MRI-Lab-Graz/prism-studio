@@ -74,3 +74,10 @@ python prism.py --help
 ```
 
 If you see the help message, you are ready to go!
+
+## Troubleshooting
+
+### Windows Antivirus / SmartScreen
+If you are using the standalone `.exe` version on Windows, you might encounter warnings from Windows Defender or third-party antivirus software (like Norton). This is a common false positive for unsigned open-source software. 
+
+Please refer to the [Windows Setup Guide](WINDOWS_SETUP.md#issue-antivirus-defender-norton-etc-blocks-the-exe) for detailed instructions on how to handle these warnings.

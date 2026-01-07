@@ -19,6 +19,16 @@
   }
   .item-list .list-group-item {
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+  }
+  .item-list .form-check-input {
+    margin-right: 0.75rem;
+    cursor: pointer;
+  }
+  .item-list .item-name {
+    flex-grow: 1;
   }
 </style>
 {% endblock %}
@@ -36,46 +46,56 @@
 
     <div class="card feature-card mb-4">
       <div class="card-body p-4">
-        <div class="row g-3 align-items-end">
-          <div class="col-md-6">
-            <label class="form-label">Library folder</label>
-            <div class="input-group">
-              <input id="libraryPath" type="text" class="form-control" placeholder="/path/to/survey_library" />
-              <button class="btn btn-outline-secondary" id="btnBrowseLibrary" type="button">
-                <i class="fas fa-folder-open me-1"></i>Browse
+        <div class="row g-4">
+          <!-- Left Column: Library Selection -->
+          <div class="col-md-7 border-end">
+            <div class="mb-4">
+              <label class="form-label fw-bold">Library folder</label>
+              <div class="input-group">
+                <input id="libraryPath" type="text" class="form-control" placeholder="/path/to/survey_library" />
+                <button class="btn btn-outline-secondary" id="btnBrowseLibrary" type="button">
+                  <i class="fas fa-folder-open me-1"></i>Browse
+                </button>
+              </div>
+              <div class="form-text">Select the root library folder that contains a survey/ and/or biometrics/ subfolder.</div>
+            </div>
+
+            <div>
+              <label class="form-label fw-bold">Library template</label>
+              <select id="templateSelect" class="form-select">
+                <option value="">(select one)</option>
+              </select>
+              <div class="form-text" id="libraryInfo"></div>
+            </div>
+          </div>
+
+          <!-- Right Column: Configuration & Actions -->
+          <div class="col-md-5">
+            <div class="mb-3">
+              <label class="form-label fw-bold">Modality</label>
+              <select id="modality" class="form-select">
+                <option value="survey" selected>survey</option>
+                <option value="biometrics">biometrics</option>
+              </select>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label fw-bold">Schema version</label>
+              <select id="schemaVersion" class="form-select">
+                {% for v in schema_versions %}
+                <option value="{{ v }}" {% if v == default_schema_version %}selected{% endif %}>{{ v }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button class="btn btn-outline-primary" id="btnLoad" type="button">
+                <i class="fas fa-folder-open me-1"></i>Load Template
+              </button>
+              <button class="btn btn-primary" id="btnNew" type="button">
+                <i class="fas fa-plus me-1"></i>Create New
               </button>
             </div>
-            <div class="form-text">Select the root library folder that contains a survey/ and/or biometrics/ subfolder.</div>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Modality</label>
-            <select id="modality" class="form-select">
-              <option value="survey" selected>survey</option>
-              <option value="biometrics">biometrics</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Schema version</label>
-            <select id="schemaVersion" class="form-select">
-              {% for v in schema_versions %}
-              <option value="{{ v }}" {% if v == default_schema_version %}selected{% endif %}>{{ v }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Library template</label>
-            <select id="templateSelect" class="form-select">
-              <option value="">(select one)</option>
-            </select>
-            <div class="form-text" id="libraryInfo"></div>
-          </div>
-          <div class="col-md-2 d-grid gap-2">
-            <button class="btn btn-outline-primary" id="btnLoad" type="button">
-              <i class="fas fa-folder-open me-1"></i>Load
-            </button>
-            <button class="btn btn-primary" id="btnNew" type="button">
-              <i class="fas fa-plus me-1"></i>New
-            </button>
           </div>
         </div>
 
@@ -90,6 +110,9 @@
           <div class="col-md-6 d-flex gap-2 justify-content-end">
             <button class="btn btn-success" id="btnValidate" type="button">
               <i class="fas fa-check me-1"></i>Validate
+            </button>
+            <button class="btn btn-primary" id="btnSave" type="button" disabled>
+              <i class="fas fa-save me-1"></i>Save to Library
             </button>
             <button class="btn btn-outline-secondary" id="btnDownload" type="button" disabled>
               <i class="fas fa-download me-1"></i>Download JSON
@@ -113,6 +136,10 @@
                     <div>
                       <strong>Items</strong>
                       <span class="text-muted">(questions / metrics)</span>
+                    </div>
+                    <div class="form-check mb-0">
+                      <input class="form-check-input" type="checkbox" id="selectAllItems">
+                      <label class="form-check-label small" for="selectAllItems">Select All</label>
                     </div>
                   </div>
                 </div>
@@ -157,6 +184,20 @@
                     </div>
                   </div>
                 </div>
+
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="headingBulk">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBulk" aria-expanded="false" aria-controls="collapseBulk">
+                      Bulk Edit Items
+                    </button>
+                  </h2>
+                  <div id="collapseBulk" class="accordion-collapse collapse" aria-labelledby="headingBulk" data-bs-parent="#templateAccordion">
+                    <div class="accordion-body">
+                      <p class="text-muted small mb-3">Set a value here to apply it to <strong>all</strong> items in this template.</p>
+                      <div id="bulkEditForm"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -182,7 +223,9 @@
   const filenameEl = document.getElementById('filename');
   const topLevelFormEl = document.getElementById('topLevelForm');
   const itemFormEl = document.getElementById('itemForm');
+  const bulkEditFormEl = document.getElementById('bulkEditForm');
   const itemListEl = document.getElementById('itemList');
+  const selectAllItemsEl = document.getElementById('selectAllItems');
   const newItemIdEl = document.getElementById('newItemId');
   const btnAddItem = document.getElementById('btnAddItem');
   const selectedItemIdEl = document.getElementById('selectedItemId');
@@ -191,6 +234,7 @@
   const btnLoad = document.getElementById('btnLoad');
   const btnNew = document.getElementById('btnNew');
   const btnValidate = document.getElementById('btnValidate');
+  const btnSave = document.getElementById('btnSave');
   const btnDownload = document.getElementById('btnDownload');
 
   const RESERVED_TOPLEVEL = new Set([
@@ -200,6 +244,7 @@
   let currentSchema = null;
   let currentTemplate = null;
   let selectedItemId = null;
+  let checkedItemIds = new Set();
 
   function enableTooltips() {
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -265,7 +310,7 @@
     }
     let t = sch.type;
     if (Array.isArray(t)) {
-      const pref = ['object','array','string','integer','number','boolean','null'];
+      const pref = ['string', 'integer', 'number', 'boolean', 'object', 'array', 'null'];
       t = pref.find(x => t.includes(x)) || t[0];
     }
     if (t === 'object' || (!t && sch.properties)) {
@@ -284,7 +329,7 @@
     if (t === 'number') return 0;
     if (t === 'boolean') return false;
     if (t === 'null') return null;
-    return 'example';
+    return '';
   }
 
   async function refreshSchema() {
@@ -317,6 +362,12 @@
   function infoHtml(fieldSchema) {
     const parts = [];
     if (fieldSchema.description) parts.push(fieldSchema.description);
+    
+    if (fieldSchema.type) {
+      const t = Array.isArray(fieldSchema.type) ? fieldSchema.type.join(' | ') : fieldSchema.type;
+      parts.push('Type: ' + t);
+    }
+
     if (Array.isArray(fieldSchema.enum)) parts.push('Allowed: ' + fieldSchema.enum.filter(v => v !== '').join(', '));
     if (fieldSchema.pattern) parts.push('Pattern: ' + fieldSchema.pattern);
     const ex = schemaExample(fieldSchema);
@@ -349,6 +400,62 @@
     return label;
   }
 
+  function normalizeValueForSchema(fieldSchema, rawValue, schemaTypesArg) {
+    if (rawValue === undefined || rawValue === null || !fieldSchema) return rawValue;
+    const schemaTypes = schemaTypesArg || (Array.isArray(fieldSchema.type) ? fieldSchema.type : (fieldSchema.type ? [fieldSchema.type] : []));
+    const prefersInteger = schemaTypes.includes('integer');
+    const prefersNumber = schemaTypes.includes('number');
+    const allowsString = schemaTypes.includes('string');
+    if (!(prefersInteger || prefersNumber) || typeof rawValue !== 'string') return rawValue;
+    const trimmed = rawValue.trim();
+    if (!trimmed || trimmed.toLowerCase() === 'null') {
+      return allowsString ? '' : null;
+    }
+    const integerPattern = /^-?\d+$/;
+    if (prefersInteger && !prefersNumber) {
+      return integerPattern.test(trimmed) ? parseInt(trimmed, 10) : rawValue;
+    }
+    if (prefersInteger && prefersNumber && integerPattern.test(trimmed)) {
+      return parseInt(trimmed, 10);
+    }
+    const floatVal = parseFloat(trimmed);
+    return Number.isNaN(floatVal) ? rawValue : floatVal;
+  }
+
+  function normalizeDataInPlace(value, schema) {
+    if (value === undefined || value === null || !schema || schema === true || schema === false) return value;
+    const schemaTypes = Array.isArray(schema.type) ? schema.type : (schema.type ? [schema.type] : []);
+    const allowsObject = schemaTypes.includes('object') || schema.properties || schema.additionalProperties;
+
+    if (allowsObject && typeof value === 'object' && !Array.isArray(value)) {
+      const props = schema.properties || {};
+      for (const key of Object.keys(value)) {
+        const propSchema = props[key] || schema.additionalProperties;
+        value[key] = normalizeDataInPlace(value[key], propSchema);
+      }
+      return value;
+    }
+
+    if (schemaTypes.includes('array') && Array.isArray(value)) {
+      const itemsSchema = schema.items;
+      for (let i = 0; i < value.length; i++) {
+        value[i] = normalizeDataInPlace(value[i], itemsSchema);
+      }
+      return value;
+    }
+
+    if (schemaTypes.includes('integer') || schemaTypes.includes('number')) {
+      return normalizeValueForSchema(schema, value);
+    }
+
+    return value;
+  }
+
+  function ensureTemplateNormalized() {
+    if (!currentSchema || !currentTemplate) return;
+    normalizeDataInPlace(currentTemplate, currentSchema);
+  }
+
   function createInput(fieldSchema, value, onChange) {
     // Enums
     if (Array.isArray(fieldSchema.enum)) {
@@ -365,8 +472,13 @@
       return sel;
     }
 
+    const schemaTypes = Array.isArray(fieldSchema.type) ? fieldSchema.type : (fieldSchema.type ? [fieldSchema.type] : []);
+    value = normalizeValueForSchema(fieldSchema, value, schemaTypes);
+    const prefersInteger = schemaTypes.includes('integer');
+    const prefersNumber = schemaTypes.includes('number');
+
     // Bool
-    if (fieldSchema.type === 'boolean') {
+    if (schemaTypes.includes('boolean')) {
       const chk = document.createElement('input');
       chk.type = 'checkbox';
       chk.className = 'form-check-input';
@@ -376,7 +488,7 @@
     }
 
     // Numeric
-    if (fieldSchema.type === 'integer' || fieldSchema.type === 'number') {
+    if (prefersInteger || prefersNumber) {
       const inp = document.createElement('input');
       inp.type = 'number';
       inp.className = 'form-control';
@@ -384,7 +496,19 @@
       inp.addEventListener('input', () => {
         const raw = inp.value;
         if (raw === '') return onChange(null);
-        onChange(fieldSchema.type === 'integer' ? parseInt(raw, 10) : parseFloat(raw));
+        if (prefersInteger && !prefersNumber) {
+          onChange(parseInt(raw, 10));
+        } else if (!prefersInteger && prefersNumber) {
+          onChange(parseFloat(raw));
+        } else {
+          // both integer and number allowed -> keep integer when possible
+          const parsed = parseInt(raw, 10);
+          if (!Number.isNaN(parsed) && String(parsed) === raw) {
+            onChange(parsed);
+          } else {
+            onChange(parseFloat(raw));
+          }
+        }
       });
       return inp;
     }
@@ -401,7 +525,7 @@
       const items = fieldSchema.items || {};
       const itemsType = items.type;
       const isPrimitive = ['string', 'integer', 'number'].includes(itemsType);
-      const current = Array.isArray(value) ? value : (value === undefined || value === null ? [] : [value]);
+      let currentVal = Array.isArray(value) ? [...value] : (value === undefined || value === null ? [] : [value]);
 
       // Enum arrays -> multi-select
       if (isPrimitive && Array.isArray(items.enum) && items.enum.length) {
@@ -415,7 +539,7 @@
           sel.appendChild(opt);
         }
         // set selected
-        const selectedSet = new Set(current.map(x => String(x)));
+        const selectedSet = new Set(currentVal.map(x => String(x)));
         Array.from(sel.options).forEach(opt => {
           opt.selected = selectedSet.has(opt.value);
         });
@@ -455,17 +579,16 @@
           return raw;
         }
 
-        function render(arr) {
+        function render() {
           list.innerHTML = '';
-          const normalized = Array.isArray(arr) ? arr : [];
-          if (!normalized.length) {
+          if (!currentVal.length) {
             const p = document.createElement('div');
             p.className = 'text-muted small';
             p.textContent = 'No entries.';
             list.appendChild(p);
           }
 
-          normalized.forEach((val, idx) => {
+          currentVal.forEach((val, idx) => {
             const row = document.createElement('div');
             row.className = 'input-group mb-2';
 
@@ -480,21 +603,22 @@
             delBtn.textContent = 'Remove';
 
             function sync() {
-              const next = normalized.slice();
               const coerced = coerce(inp.value);
-              next[idx] = coerced;
-              // filter nulls for number/integer
-              const out = (itemsType === 'integer' || itemsType === 'number') ? next.filter(x => x !== null) : next;
-              onChange(out);
-              render(out);
+              currentVal[idx] = coerced;
+              const out = (itemsType === 'integer' || itemsType === 'number')
+                ? currentVal.filter(x => x !== null && x !== undefined)
+                : currentVal;
+              onChange([...out]);
             }
 
-            inp.addEventListener('change', sync);
+            inp.addEventListener('input', sync);
             delBtn.addEventListener('click', () => {
-              const next = normalized.slice();
-              next.splice(idx, 1);
-              onChange(next);
-              render(next);
+              currentVal.splice(idx, 1);
+              const out = (itemsType === 'integer' || itemsType === 'number')
+                ? currentVal.filter(x => x !== null && x !== undefined)
+                : currentVal;
+              onChange([...out]);
+              render();
             });
 
             row.appendChild(inp);
@@ -504,13 +628,15 @@
         }
 
         addBtn.addEventListener('click', () => {
-          const next = current.slice();
-          next.push(itemsType === 'string' ? '' : 0);
-          onChange(next);
-          render(next);
+          currentVal.push(itemsType === 'string' ? '' : 0);
+          const out = (itemsType === 'integer' || itemsType === 'number')
+            ? currentVal.filter(x => x !== null && x !== undefined)
+            : currentVal;
+          onChange([...out]);
+          render();
         });
 
-        render(current);
+        render();
         return container;
       }
     }
@@ -862,6 +988,7 @@
       if (targetObj[name] === undefined) {
         targetObj[name] = schemaExample(fieldSchema);
       }
+      targetObj[name] = normalizeValueForSchema(fieldSchema, targetObj[name]);
 
       const input = createInput(fieldSchema, targetObj[name], (v) => {
         targetObj[name] = v;
@@ -896,21 +1023,46 @@
       p.className = 'text-muted small p-2';
       p.textContent = 'No items yet.';
       itemListEl.appendChild(p);
+      selectAllItemsEl.checked = false;
       return;
     }
+
+    // Update Select All checkbox state
+    const allChecked = keys.every(k => checkedItemIds.has(k));
+    selectAllItemsEl.checked = allChecked && keys.length > 0;
+
     keys.sort().forEach(k => {
-      const a = document.createElement('button');
-      a.type = 'button';
-      a.className = 'list-group-item list-group-item-action';
-      a.textContent = k;
-      if (k === selectedItemId) a.classList.add('active');
-      a.addEventListener('click', () => {
+      const item = document.createElement('div');
+      item.className = 'list-group-item list-group-item-action' + (k === selectedItemId ? ' active' : '');
+      
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.className = 'form-check-input';
+      chk.checked = checkedItemIds.has(k);
+      chk.addEventListener('click', (e) => {
+        e.stopPropagation(); // Don't select the item for editing when checking the box
+        if (chk.checked) {
+          checkedItemIds.add(k);
+        } else {
+          checkedItemIds.delete(k);
+        }
+        renderItemList();
+      });
+
+      const name = document.createElement('span');
+      name.className = 'item-name';
+      name.textContent = k;
+
+      item.appendChild(chk);
+      item.appendChild(name);
+
+      item.addEventListener('click', () => {
         selectedItemId = k;
         renderItemList();
         renderSelectedItem();
         openSelectedItemPanel();
       });
-      itemListEl.appendChild(a);
+      itemListEl.appendChild(item);
     });
   }
 
@@ -936,6 +1088,91 @@
       currentTemplate[selectedItemId] = {};
     }
     renderSection('ITEM', currentTemplate[selectedItemId], itemSchema, itemFormEl);
+    enableTooltips();
+  }
+
+  function renderBulkEdit() {
+    bulkEditFormEl.innerHTML = '';
+    const itemSchema = getItemSchema();
+    if (!itemSchema || !itemSchema.properties) {
+      bulkEditFormEl.innerHTML = '<div class="text-muted">No item schema available.</div>';
+      return;
+    }
+
+    const props = itemSchema.properties;
+    const names = sortedFieldNames(props, []);
+    const bulkValues = {};
+
+    const row = document.createElement('div');
+    row.className = 'row g-3';
+
+    for (const name of names) {
+      const fieldSchema = props[name];
+      const col = document.createElement('div');
+      col.className = 'col-md-12 border-bottom pb-3';
+
+      const label = makeLabel(name, fieldSchema, false);
+      col.appendChild(label);
+
+      const inputGroup = document.createElement('div');
+      inputGroup.className = 'input-group';
+
+      const input = createInput(fieldSchema, undefined, (v) => {
+        bulkValues[name] = v;
+      });
+      input.classList.add('flex-grow-1');
+      
+      // Initialize bulkValues with the starting value of the input
+      if (input.tagName === 'SELECT' || input.tagName === 'INPUT') {
+        if (input.type === 'checkbox') {
+          bulkValues[name] = input.checked;
+        } else if (input.value !== undefined) {
+          bulkValues[name] = normalizeValueForSchema(fieldSchema, input.value);
+        }
+      }
+
+      inputGroup.appendChild(input);
+
+      const applyBtn = document.createElement('button');
+      applyBtn.className = 'btn btn-outline-primary';
+      applyBtn.type = 'button';
+      applyBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Apply to Selected';
+      applyBtn.addEventListener('click', () => {
+        const val = bulkValues[name];
+        const normalized = normalizeValueForSchema(fieldSchema, val);
+        if (val === undefined) {
+          showAlert('warning', `Please enter a value for ${name} first.`);
+          return;
+        }
+        
+        const allKeys = itemKeysFromTemplate(currentTemplate);
+        const targetKeys = checkedItemIds.size > 0 
+          ? allKeys.filter(k => checkedItemIds.has(k))
+          : allKeys;
+
+        if (!targetKeys.length) {
+          showAlert('warning', 'No items selected to update.');
+          return;
+        }
+
+        targetKeys.forEach(k => {
+          if (typeof currentTemplate[k] !== 'object') currentTemplate[k] = {};
+          currentTemplate[k][name] = JSON.parse(JSON.stringify(normalized)); // deep copy
+        });
+
+        renderSelectedItem();
+        btnDownload.disabled = true;
+        btnSave.disabled = true;
+        const scope = checkedItemIds.size > 0 ? 'selected' : 'all';
+        showAlert('success', `Updated ${name} for ${scope} ${targetKeys.length} items.`);
+      });
+      inputGroup.appendChild(applyBtn);
+
+      col.appendChild(inputGroup);
+      row.appendChild(col);
+    }
+
+    bulkEditFormEl.appendChild(row);
     enableTooltips();
   }
 
@@ -995,6 +1232,7 @@
     renderTopLevel();
     renderItemList();
     renderSelectedItem();
+    renderBulkEdit();
   }
 
   async function refreshTemplateList() {
@@ -1002,6 +1240,7 @@
     const library_path = (libraryPathEl.value || '').trim();
     clearAlert();
     btnDownload.disabled = true;
+    btnSave.disabled = true;
 
     const qp = new URLSearchParams({ modality });
     if (library_path) qp.set('library_path', library_path);
@@ -1026,15 +1265,17 @@
     const schema_version = schemaEl.value;
     clearAlert();
     btnDownload.disabled = true;
+    btnSave.disabled = true;
 
     await refreshSchema();
 
     const data = await apiGet(`/api/template-editor/new?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schema_version)}`);
     currentTemplate = data.template;
+    checkedItemIds.clear();
     filenameEl.value = data.suggested_filename || `${modality}-new.json`;
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     renderAll();
-    showAlert('info', 'New example template loaded. Edit values, validate, then download.');
+    await validateCurrent();
   }
 
   async function loadSelectedTemplate() {
@@ -1049,6 +1290,7 @@
 
     clearAlert();
     btnDownload.disabled = true;
+    btnSave.disabled = true;
 
     await refreshSchema();
 
@@ -1060,10 +1302,11 @@
     if (library_path) qp.set('library_path', library_path);
     const data = await apiGet(`/api/template-editor/load?${qp.toString()}`);
     currentTemplate = data.template;
+    checkedItemIds.clear();
     filenameEl.value = data.filename || filename;
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     renderAll();
-    showAlert('info', `Loaded ${filename}. Edit values, then validate.`);
+    await validateCurrent();
   }
 
   async function validateCurrent() {
@@ -1077,6 +1320,7 @@
       return;
     }
 
+    ensureTemplateNormalized();
     const data = await apiPost('/api/template-editor/validate', {
       modality,
       schema_version,
@@ -1085,13 +1329,46 @@
 
     if (data.ok) {
       btnDownload.disabled = false;
-      showAlert('success', '✅ Valid template for the selected schema. You can download it now.');
+      btnSave.disabled = false;
+      showAlert('success', '✅ Valid template for the selected schema. You can download or save it now.');
     } else {
       btnDownload.disabled = true;
+      btnSave.disabled = true;
       const errs = (data.errors || []).slice(0, 50);
       const list = errs.map(e => `<li><code>${e.path || '(root)'}</code>: ${e.message}</li>`).join('');
       const extra = (data.errors || []).length > errs.length ? `<div class="mt-2 text-muted small">(showing first ${errs.length} errors)</div>` : '';
       showAlert('danger', `❌ Validation failed.<ul class="mb-0">${list}</ul>${extra}`);
+    }
+  }
+
+  async function saveCurrent() {
+    const obj = currentTemplate;
+    if (!obj || typeof obj !== 'object') {
+      showAlert('danger', 'No template loaded');
+      return;
+    }
+
+    const filename = (filenameEl.value || '').trim();
+    if (!filename) {
+      showAlert('danger', 'Please enter an output filename');
+      return;
+    }
+
+    const modality = modalityEl.value;
+    const library_path = (libraryPathEl.value || '').trim();
+
+    ensureTemplateNormalized();
+    try {
+      const data = await apiPost('/api/template-editor/save', {
+        modality,
+        filename,
+        template: obj,
+        library_path
+      });
+      showAlert('success', `✅ ${data.message}`);
+      await refreshTemplateList();
+    } catch (e) {
+      showAlert('danger', `Save failed: ${e.message}`);
     }
   }
 
@@ -1102,6 +1379,7 @@
       return;
     }
 
+    ensureTemplateNormalized();
     const filename = (filenameEl.value || '').trim() || `${modalityEl.value}-template.json`;
 
     const res = await fetch('/api/template-editor/download', {
@@ -1144,6 +1422,16 @@
     }
   });
 
+  selectAllItemsEl.addEventListener('change', () => {
+    const keys = itemKeysFromTemplate(currentTemplate);
+    if (selectAllItemsEl.checked) {
+      keys.forEach(k => checkedItemIds.add(k));
+    } else {
+      checkedItemIds.clear();
+    }
+    renderItemList();
+  });
+
   btnBrowseLibrary.addEventListener('click', async () => {
     try {
       const data = await apiGet('/api/browse-folder');
@@ -1159,6 +1447,7 @@
   schemaEl.addEventListener('change', async () => {
     try {
       btnDownload.disabled = true;
+      btnSave.disabled = true;
       await loadNewTemplate();
     } catch (e) {
       showAlert('danger', e.message);
@@ -1184,6 +1473,14 @@
   btnValidate.addEventListener('click', async () => {
     try {
       await validateCurrent();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  btnSave.addEventListener('click', async () => {
+    try {
+      await saveCurrent();
     } catch (e) {
       showAlert('danger', e.message);
     }
@@ -1227,6 +1524,7 @@
       renderAll();
       openSelectedItemPanel();
       btnDownload.disabled = true;
+      btnSave.disabled = true;
       showAlert('success', `Added item ${id}.`);
     } catch (e) {
       showAlert('danger', e.message);

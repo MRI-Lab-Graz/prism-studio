@@ -37,6 +37,7 @@ def validate_dataset(
     schema_version=None,
     run_bids=False,
     run_prism=True,
+    library_path=None,
     progress_callback: Optional[ProgressCallback] = None,
 ):
     """Main dataset validation function (refactored from prism.py)
@@ -47,6 +48,7 @@ def validate_dataset(
         schema_version: Schema version to use (e.g., 'stable', 'v0.1', '0.1')
         run_bids: Whether to run the standard BIDS validator
         run_prism: Whether to run PRISM-specific validation
+        library_path: Optional path to a template library for sidecar resolution
         progress_callback: Optional callback for progress updates.
                            Called as callback(current, total, message, file_path)
 
@@ -76,7 +78,7 @@ def validate_dataset(
 
 
     # Initialize validator
-    validator = DatasetValidator(schemas)
+    validator = DatasetValidator(schemas, library_path=library_path)
 
     report_progress(5, 100, "Checking dataset description...")
 
@@ -109,22 +111,23 @@ def validate_dataset(
             if run_prism:
                 issues.append(("ERROR", f"Error processing dataset_description.json: {e}", dataset_desc_path))
 
-    # Check for derivatives (BIDS-derivatives style)
-    derivatives_dir = os.path.join(root_dir, "derivatives")
-    if os.path.exists(derivatives_dir) and os.path.isdir(derivatives_dir):
-        for sub in sorted(os.listdir(derivatives_dir)):
-            sub_path = os.path.join(derivatives_dir, sub)
-            if os.path.isdir(sub_path) and not sub.startswith("."):
-                sub_desc = os.path.join(sub_path, "dataset_description.json")
-                if not os.path.exists(sub_desc):
-                    issues.append(
-                        (
-                            "WARNING",
-                            f"Derivative dataset '{sub}' is missing dataset_description.json. "
-                            "BIDS-derivatives should have their own description file.",
-                            sub_path,
+    # Check for recipes/derivatives (BIDS-derivatives style)
+    for folder_name in ["recipes", "derivatives"]:
+        folder_dir = os.path.join(root_dir, folder_name)
+        if os.path.exists(folder_dir) and os.path.isdir(folder_dir):
+            for sub in sorted(os.listdir(folder_dir)):
+                sub_path = os.path.join(folder_dir, sub)
+                if os.path.isdir(sub_path) and not sub.startswith("."):
+                    sub_desc = os.path.join(sub_path, "dataset_description.json")
+                    if not os.path.exists(sub_desc):
+                        issues.append(
+                            (
+                                "WARNING",
+                                f"{folder_name.capitalize()} dataset '{sub}' is missing dataset_description.json. "
+                                f"BIDS-{folder_name} should have their own description file.",
+                                sub_path,
+                            )
                         )
-                    )
 
     report_progress(10, 100, "Checking BIDS compatibility...")
 

@@ -75,7 +75,7 @@ A complete toolset for converting external survey data (CSV/Excel) into PRISM-co
 2.  **Library Validation**: Ensure variable uniqueness and generate catalogs (via `prism_tools.py survey validate`).
 3.  **Session/Run-aware items**: In the Excel/CSV, you can add columns `session` and `run` per item; defaults are `ses-1` and no run suffix (run-1 is implicit). Use multiple rows for repeat occurrences: set `alias_of` to the canonical item_id, and set per-row `session`/`run` hints. Example header: `item_id,question,scale,group,alias_of,session,run`.
 4.  **Convert survey responses (Excel)**: Convert a wide survey export (`.xlsx`) into a PRISM/BIDS-like dataset (via `prism_tools.py survey convert`). The converter matches your column headers against the item IDs in `library/survey/survey-*.json` (e.g., `ADS01`, `ADS02`, …).
-5.  **Compute Derivatives**: Automatically calculate scores, subscales, and intermediate variables (e.g., best of 3 trials) using JSON recipes. Supports complex formulas and reverse-coding (via `prism_tools.py derivatives surveys` or `derivatives biometrics`). See [DERIVATIVES.md](docs/DERIVATIVES.md) for details.
+5.  **Compute Recipes**: Automatically calculate scores, subscales, and intermediate variables (e.g., best of 3 trials) using JSON recipes. Supports complex formulas and reverse-coding (via `./prism_tools.py recipes surveys` or `recipes biometrics`). See [RECIPES.md](docs/RECIPES.md) for details.
 
 ## 💓 Biometrics Template Workflow (Codebook → JSON)
 
@@ -293,7 +293,7 @@ Each stimulus file must be associated with metadata in a `.json` sidecar. Sideca
   "FileFormat": "tsv",
   "TaskName": "bdi",
   "OriginalName": "Beck Depression Inventory",
-  "SchemaVersion": "1.0.0"
+  "SchemaVersion": "1.1.1"
 }
 ```
 
@@ -311,7 +311,7 @@ Each stimulus file must be associated with metadata in a `.json` sidecar. Sideca
     "Protocol": "2k walk"
   },
   "Metadata": {
-    "SchemaVersion": "1.0.0",
+    "SchemaVersion": "1.1.1",
     "CreationDate": "2023-01-01"
   }
 }

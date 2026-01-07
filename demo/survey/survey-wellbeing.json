@@ -20,12 +20,15 @@
     "Citation": "Demo Questionnaire for PRISM Testing"
   },
   "Metadata": {
-    "SchemaVersion": "1.0.0",
+    "SchemaVersion": "1.1.1",
     "CreationDate": "2025-12-19",
     "Creator": "Prism Demo Generator"
   },
   "I18n": {
-    "Languages": ["de", "en"],
+    "Languages": [
+      "de",
+      "en"
+    ],
     "DefaultLanguage": "en",
     "Note": "Multilingual demo template for testing purposes"
   },

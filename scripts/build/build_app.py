@@ -31,7 +31,7 @@ def _get_version() -> str:
 
 def _generate_version_info(name: str, version: str) -> str:
     """Generates a Windows version info file for PyInstaller."""
-    # Convert version "1.6.5" to (1, 6, 5, 0)
+    # Convert version "1.6.6" to (1, 6, 6, 0)
     v_parts = version.split(".")
     while len(v_parts) < 4:
         v_parts.append("0")
@@ -158,8 +158,8 @@ def main() -> int:
     parser.add_argument(
         "--mode",
         choices=["onefile", "onedir"],
-        default="onefile",
-        help="Distribution mode (default: onefile)",
+        default="onedir",
+        help="Distribution mode (default: onedir)",
     )
     parser.add_argument(
         "--console",

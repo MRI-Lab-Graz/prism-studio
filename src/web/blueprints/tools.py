@@ -100,7 +100,7 @@ def _schema_example(schema: dict) -> object:
         return None
 
     # Default string-like
-    return "example"
+    return ""
 
 
 def _deep_merge(base: object, override: object) -> object:
@@ -133,23 +133,12 @@ def _new_template_from_schema(*, modality: str, schema_version: str | None) -> d
         out["Metadata"] = md
 
     if modality == "survey":
-        # Add a sample item demonstrating all available item options.
-        if isinstance(schema.get("additionalProperties"), dict):
-            out.setdefault(
-                "Q01",
-                _schema_example(schema["additionalProperties"]),
-            )
         # Align with schema naming conventions
         if isinstance(out.get("Technical"), dict):
             out["Technical"]["StimulusType"] = out["Technical"].get("StimulusType") or "Questionnaire"
             out["Technical"]["FileFormat"] = out["Technical"].get("FileFormat") or "tsv"
 
     if modality == "biometrics":
-        if isinstance(schema.get("additionalProperties"), dict):
-            out.setdefault(
-                "metric01",
-                _schema_example(schema["additionalProperties"]),
-            )
         if isinstance(out.get("Technical"), dict):
             out["Technical"]["FileFormat"] = out["Technical"].get("FileFormat") or "tsv"
 
@@ -197,9 +186,9 @@ def converter():
         default_survey_library_path=str(default_library_path),
     )
 
-@tools_bp.route("/derivatives")
-def derivatives():
-    return render_template("derivatives.html")
+@tools_bp.route("/recipes")
+def recipes():
+    return render_template("recipes.html")
 
 
 @tools_bp.route("/template-editor")
@@ -255,6 +244,7 @@ def api_template_editor_new():
 
     try:
         template = _new_template_from_schema(modality=modality, schema_version=schema_version)
+            
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -357,15 +347,47 @@ def api_template_editor_download():
         download_name=filename,
     )
 
-@tools_bp.route("/api/derivatives-surveys", methods=["POST"])
-def api_derivatives_surveys():
-    """Run survey-derivatives generation inside an existing PRISM dataset."""
-    try:
-        from derivatives_surveys import compute_survey_derivatives
-    except ImportError:
-        compute_survey_derivatives = None
 
-    if not compute_survey_derivatives:
+@tools_bp.route("/api/template-editor/save", methods=["POST"])
+def api_template_editor_save():
+    payload = request.get_json(silent=True) or {}
+    modality = (payload.get("modality") or "").strip().lower()
+    filename = (payload.get("filename") or "").strip()
+    template = payload.get("template")
+    library_path = (payload.get("library_path") or "").strip() or None
+
+    if modality not in {"survey", "biometrics"}:
+        return jsonify({"error": "Invalid modality"}), 400
+    if not filename or "/" in filename or "\\" in filename:
+        return jsonify({"error": "Invalid filename"}), 400
+    if not filename.lower().endswith(".json"):
+        filename += ".json"
+    if not isinstance(template, dict):
+        return jsonify({"error": "Template must be a JSON object"}), 400
+
+    try:
+        library_root = _resolve_library_root(library_path)
+        folder = _template_dir(modality=modality, library_root=library_root)
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / filename
+        
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(template, f, indent=2, ensure_ascii=False)
+            
+        return jsonify({"ok": True, "message": f"Saved to {path}"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@tools_bp.route("/api/recipes-surveys", methods=["POST"])
+def api_recipes_surveys():
+    """Run survey-recipes generation inside an existing PRISM dataset."""
+    try:
+        from recipes_surveys import compute_survey_recipes
+    except ImportError:
+        compute_survey_recipes = None
+
+    if not compute_survey_recipes:
         return jsonify({"error": "Data processing module not available"}), 500
 
     data = request.get_json(silent=True) or {}
@@ -374,11 +396,15 @@ def api_derivatives_surveys():
     out_format = (data.get("format") or "csv").strip().lower() or "csv"
     survey_filter = (data.get("survey") or "").strip() or None
     lang = (data.get("lang") or "en").strip().lower() or "en"
+    layout = (data.get("layout") or "long").strip().lower() or "long"
+    include_raw = bool(data.get("include_raw", False))
+    boilerplate = bool(data.get("boilerplate", False))
 
     if not dataset_path or not os.path.exists(dataset_path) or not os.path.isdir(dataset_path):
         return jsonify({"error": "Invalid dataset path"}), 400
 
-    # Validate that the dataset is PRISM-valid before writing outputs.
+    # Validate that the dataset is PRISM-valid. 
+    # We log errors but don't block processing unless it's a critical path issue.
     from src.web import run_validation
     issues, _stats = run_validation(
         dataset_path, verbose=False, schema_version=None, run_bids=False
@@ -386,18 +412,23 @@ def api_derivatives_surveys():
     error_issues = [
         i for i in (issues or []) if (len(i) >= 1 and str(i[0]).upper() == "ERROR")
     ]
+    
+    validation_warning = None
     if error_issues:
         first = error_issues[0][1] if len(error_issues[0]) > 1 else "Dataset has validation errors"
-        return jsonify({"error": f"Dataset is not PRISM-valid (errors: {len(error_issues)}). First error: {first}"}), 400
+        validation_warning = f"Dataset has {len(error_issues)} validation error(s). First: {first}"
 
     try:
-        result = compute_survey_derivatives(
+        result = compute_survey_recipes(
             prism_root=dataset_path,
             repo_root=current_app.root_path,
             survey=survey_filter,
             out_format=out_format,
             modality=modality,
             lang=lang,
+            layout=layout,
+            include_raw=include_raw,
+            boilerplate=boilerplate,
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -407,14 +438,19 @@ def api_derivatives_surveys():
         msg = f"✅ Data processing complete: wrote {result.flat_out_path}"
     if result.fallback_note:
         msg += f" (note: {result.fallback_note})"
+    
     return jsonify({
         "ok": True,
         "message": msg,
+        "validation_warning": validation_warning,
         "written_files": result.written_files,
         "processed_files": result.processed_files,
         "out_format": result.out_format,
         "out_root": str(result.out_root),
         "flat_out_path": str(result.flat_out_path) if result.flat_out_path else None,
+        "boilerplate_path": str(result.boilerplate_path) if result.boilerplate_path else None,
+        "boilerplate_html_path": str(result.boilerplate_html_path) if result.boilerplate_html_path else None,
+        "nan_report": result.nan_report,
     })
 
 @tools_bp.route("/api/browse-folder")
@@ -578,11 +614,11 @@ def generate_lss_endpoint():
 def generate_boilerplate_endpoint():
     """Generate Methods Boilerplate from selected JSON files"""
     try:
-        # Add root to sys.path if needed to import from scripts
+        # Add root to sys.path if needed to import from src
         root_dir = str(Path(current_app.root_path))
         if root_dir not in sys.path:
             sys.path.insert(0, root_dir)
-        from scripts.generate_methods_boilerplate import generate_methods_text
+        from src.reporting import generate_methods_text
     except ImportError:
         generate_methods_text = None
 
@@ -628,6 +664,27 @@ def generate_boilerplate_endpoint():
             schema_version=schema_version
         )
 
-        return send_file(temp_path, as_attachment=True, download_name=f"methods_boilerplate_{language}.md", mimetype="text/markdown")
+        with open(temp_path, "r", encoding="utf-8") as f:
+            md_content = f.read()
+        
+        html_path = Path(temp_path).with_suffix(".html")
+        html_content = ""
+        if html_path.exists():
+            with open(html_path, "r", encoding="utf-8") as f:
+                html_content = f.read()
+
+        # Clean up
+        try:
+            os.remove(temp_path)
+            if html_path.exists():
+                os.remove(html_path)
+        except:
+            pass
+
+        return jsonify({
+            "md": md_content,
+            "html": html_content,
+            "filename_base": f"methods_boilerplate_{language}"
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -90,10 +90,10 @@ except ImportError as e:
     print(f"⚠️  Could not import SurveyManager: {e}")
 
 try:
-    from src.derivatives_surveys import compute_survey_derivatives
+    from src.recipes_surveys import compute_survey_recipes
 except ImportError as e:
-    compute_survey_derivatives = None
-    print(f"⚠️  Could not import compute_survey_derivatives: {e}")
+    compute_survey_recipes = None
+    print(f"⚠️  Could not import compute_survey_recipes: {e}")
 
 
 if getattr(sys, "frozen", False):

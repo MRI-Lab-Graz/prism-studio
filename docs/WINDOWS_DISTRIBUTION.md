@@ -6,17 +6,32 @@ This guide covers how to build and distribute the Prism Validator as a standalon
 
 **You don't need to install anything!**
 
-1. Download `PrismValidator.exe` from the releases
-2. Double-click to run
-3. Your browser will automatically open with the validation interface
-4. When finished, close the browser and the terminal window
+1. Download `PrismValidator-Windows.zip` from the releases.
+2. Extract the ZIP file to a folder on your computer.
+3. Open the extracted folder and double-click `PrismValidator.exe`.
+4. Your browser will automatically open with the validation interface.
+5. When finished, close the browser and the terminal window.
 
 ### Troubleshooting for Users
 
 - **Windows Defender Warning**: Click "More info" → "Run anyway" (the app is unsigned).
 - **SmartScreen "Unknown Publisher"**: This is expected for unsigned open-source software. Adding version metadata (which we do) helps, but only a paid certificate removes this completely.
+- **Antivirus Blocking (Norton, Avast, etc.)**: Some aggressive antivirus software may block the `.exe` or delete it immediately (False Positive). You may need to:
+    1. Restore the file from the antivirus quarantine.
+    2. Add an exclusion/exception for `PrismValidator.exe` or the folder it resides in.
 - **Firewall Prompt**: Click "Allow" - the app runs a local web server on your computer only.
 - **Browser doesn't open**: Visit `http://localhost:5001` manually.
+
+---
+
+## How to avoid Antivirus/SmartScreen warnings
+
+If you want to prevent these warnings before they reach your users:
+
+1. **Use `onedir` mode (Default)**: The build script now defaults to `onedir` mode. Single-file executables are much more likely to be flagged as malware because they extract files to temporary directories at runtime.
+2. **Proactive Submission**: Submit your final `.exe` to [Microsoft Security Intelligence](https://www.microsoft.com/en-us/wdsi/filesubmission) for analysis before distribution.
+3. **Code Signing**: If budget allows, purchase a Code Signing Certificate. This is the only 100% effective way to remove the "Unknown Publisher" warning.
+4. **Use an Installer**: Wrap your build in an installer like Inno Setup.
 
 ---
 
@@ -175,12 +190,11 @@ Then:
 
 ### How It Works
 
-1. User runs `PrismValidator.exe`
-2. PyInstaller extracts bundled files to a temp directory
-3. Flask server starts on `localhost:5001`
-4. Default browser opens automatically
-5. User interacts via web interface
-6. On exit, temp files are cleaned up
+1. User runs `PrismValidator.exe` from the extracted folder.
+2. Flask server starts on `localhost:5001`.
+3. Default browser opens automatically.
+4. User interacts via web interface.
+5. All validation happens locally.
 
 ### Security Notes
 

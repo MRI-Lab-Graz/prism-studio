@@ -183,7 +183,7 @@ def create_demo_metadata():
         "Study": {"StudyID": "MULTI_MODAL_2024", "TaskName": "multimodal_experiment"},
         "Categories": {"StudyDomain": "cognitive"},
         "Metadata": {
-            "SchemaVersion": "1.0.0",
+            "SchemaVersion": "1.1.1",
             "Creator": "PRISM Demo Team",
             "CreationDate": "2024-09-11",
             "Institution": "University of Graz Psychology Institute",
@@ -284,7 +284,7 @@ def create_demo_metadata():
 
         # Create metadata file
         metadata_copy = metadata.copy()
-        metadata_copy["Metadata"] = {"SchemaVersion": "1.0.0"}
+        metadata_copy["Metadata"] = {"SchemaVersion": "1.1.1"}
 
         json_file = f"{base_dir}/sub-001/{modality}/sub-001_task-multimodal_experiment_run-01_stim.json"
         with open(json_file, "w") as f:

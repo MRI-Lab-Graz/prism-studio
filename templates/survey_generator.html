@@ -246,7 +246,7 @@
 
         <div class="d-flex justify-content-end mb-5 gap-2">
             <button class="btn btn-outline-info btn-lg" id="generateBoilerplateBtn" disabled title="Generate a scientific methods section boilerplate from selected templates">
-                <i class="fas fa-file-alt me-2"></i>Write Boilerplate (.md)
+                <i class="fas fa-file-alt me-2"></i>Write Boilerplate (.md / .html)
             </button>
             <button class="btn btn-info btn-lg text-white" id="generateLssBtn" disabled>
                 <i class="fas fa-file-export me-2"></i>Export to LimeSurvey (.lss)
@@ -695,22 +695,40 @@ document.addEventListener('DOMContentLoaded', function() {
             }),
         })
         .then(response => {
-            if (response.ok) return response.blob();
-            return response.json().then(err => { throw new Error(err.error || 'Generation failed'); });
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.error || 'Generation failed'); });
+            }
+            return response.json();
         })
-        .then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `methods_boilerplate_${currentLanguage}.md`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
+        .then(data => {
+            // Download MD
+            if (data.md) {
+                const blob = new Blob([data.md], { type: 'text/markdown' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${data.filename_base}.md`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
+            
+            // Download HTML
+            if (data.html) {
+                const blob = new Blob([data.html], { type: 'text/html' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${data.filename_base}.html`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
         })
         .catch(err => alert(err.message))
         .finally(() => {
             generateBoilerplateBtn.disabled = false;
-            generateBoilerplateBtn.innerHTML = '<i class="fas fa-file-alt me-2"></i>Write Boilerplate (.md)';
+            generateBoilerplateBtn.innerHTML = '<i class="fas fa-file-alt me-2"></i>Write Boilerplate (.md / .html)';
         });
     });
 

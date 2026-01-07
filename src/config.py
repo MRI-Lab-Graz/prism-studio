@@ -15,7 +15,7 @@ Configuration Options:
 Example .prismrc.json:
 {
     "schemaVersion": "stable",
-    "ignorePaths": ["derivatives/**", "sourcedata/**"],
+    "ignorePaths": ["recipes/**", "derivatives/**", "sourcedata/**"],
     "strictMode": false,
     "runBids": false,
     "customModalities": {}
@@ -32,6 +32,7 @@ from typing import Dict, List, Optional, Any
 CONFIG_FILENAMES = [".prismrc.json", "prism.config.json"]
 
 DEFAULT_IGNORE_PATTERNS = [
+    "recipes/**",
     "derivatives/**",
     "sourcedata/**",
     "code/**",

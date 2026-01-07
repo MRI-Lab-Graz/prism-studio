@@ -155,6 +155,7 @@ def convert_biometrics_table_to_prism_dataset(
     output_root: str | Path,
     id_column: str | None = None,
     session_column: str | None = None,
+    session: str | None = None,
     sheet: str | int | None = None,
     unknown: str = "warn",
     force: bool = False,
@@ -287,9 +288,12 @@ def convert_biometrics_table_to_prism_dataset(
         if not sub_id:
             continue
 
-        ses_id = _normalize_ses_id(
-            row.get(col_ses) if col_ses else None, default_session=default_session
-        )
+        if session:
+            ses_id = _normalize_ses_id(session)
+        else:
+            ses_id = _normalize_ses_id(
+                row.get(col_ses) if col_ses else None, default_session=default_session
+            )
 
         # Map dataframe columns to normalized names for easier lookup
         df_col_map = {_norm_col(c): c for c in df.columns}

@@ -6,6 +6,7 @@ import os
 import re
 import json
 import csv
+from pathlib import Path
 from datetime import datetime
 from jsonschema import validate, ValidationError
 from schema_manager import validate_schema_version
@@ -78,7 +79,7 @@ def _extract_entity_value(stem, key):
     return None
 
 
-def resolve_sidecar_path(file_path, root_dir):
+def resolve_sidecar_path(file_path, root_dir, library_path=None):
     """Return best-matching sidecar path, supporting dataset-level survey sidecars."""
     candidate = derive_sidecar_path(file_path)
     if os.path.exists(candidate):
@@ -110,6 +111,13 @@ def resolve_sidecar_path(file_path, root_dir):
         safe_path_join(root_dir, "biometrics"),
     ]
 
+    # Add library paths if provided
+    if library_path:
+        library_root = Path(library_path)
+        search_dirs.append(str(library_root))
+        search_dirs.append(str(library_root / "survey"))
+        search_dirs.append(str(library_root / "biometrics"))
+
     for prefix, value in label_candidates:
         base_name = f"{prefix}-{value}"
         suffix_part = f"_{suffix}" if suffix and suffix != base_name else ""
@@ -127,8 +135,9 @@ def resolve_sidecar_path(file_path, root_dir):
 class DatasetValidator:
     """Main dataset validation class"""
 
-    def __init__(self, schemas=None):
+    def __init__(self, schemas=None, library_path=None):
         self.schemas = schemas or {}
+        self.library_path = library_path
 
     def validate_data_content(self, file_path, modality, root_dir):
         """Validate data content against constraints in sidecar"""
@@ -138,7 +147,7 @@ class DatasetValidator:
         if modality not in ["survey", "biometrics"]:
             return issues
 
-        sidecar_path = resolve_sidecar_path(file_path, root_dir)
+        sidecar_path = resolve_sidecar_path(file_path, root_dir, self.library_path)
         if not os.path.exists(sidecar_path):
             # Missing sidecar is already reported by validate_sidecar
             return issues
@@ -190,10 +199,10 @@ class DatasetValidator:
                             col_def = sidecar_data[col_name]
 
                             # Skip empty values
-                            if value is None or value.strip() == "" or value == "n/a":
+                            if value is None or value.strip() == "" or value.lower() in ("n/a", "na"):
                                 continue
 
-                            # Check AllowedValues or Levels
+                            # Check AllowedValues, Levels, or Min/Max range
                             allowed = None
                             if "AllowedValues" in col_def and isinstance(col_def["AllowedValues"], list):
                                 allowed = [str(x) for x in col_def["AllowedValues"]]
@@ -201,31 +210,43 @@ class DatasetValidator:
                                 levels = col_def["Levels"]
                                 level_keys = list(levels.keys())
 
-                                # If level keys are numeric endpoints (e.g., {"0": "...", "5": "..."})
-                                # allow the full inclusive integer range to avoid over-rejecting mid-scale values.
-                                numeric_level_keys = []
-                                try:
-                                    numeric_level_keys = [
-                                        int(float(k)) for k in level_keys
-                                    ]
-                                except ValueError:
-                                    numeric_level_keys = []
-
-                                if numeric_level_keys:
-                                    min_level = min(numeric_level_keys)
-                                    max_level = max(numeric_level_keys)
-
-                                    # Only expand when we clearly have an ordinal numeric scale that might omit midpoints.
-                                    # If the provided keys already cover every integer in the range, keep them as-is.
-                                    full_range = [
-                                        str(i) for i in range(min_level, max_level + 1)
-                                    ]
-                                    if set(full_range).issuperset(set(level_keys)):
-                                        allowed = full_range
-                                    else:
+                                # If explicit MinValue/MaxValue are provided, use them to define the range
+                                min_val = col_def.get("MinValue")
+                                max_val = col_def.get("MaxValue")
+                                
+                                if min_val is not None and max_val is not None:
+                                    try:
+                                        min_i = int(float(min_val))
+                                        max_i = int(float(max_val))
+                                        allowed = [str(i) for i in range(min_i, max_i + 1)]
+                                    except (ValueError, TypeError):
                                         allowed = level_keys
                                 else:
-                                    allowed = level_keys
+                                    # Fallback: If level keys are numeric endpoints (e.g., {"0": "...", "5": "..."})
+                                    # allow the full inclusive integer range to avoid over-rejecting mid-scale values.
+                                    numeric_level_keys = []
+                                    try:
+                                        numeric_level_keys = [
+                                            int(float(k)) for k in level_keys
+                                        ]
+                                    except ValueError:
+                                        numeric_level_keys = []
+
+                                    if numeric_level_keys:
+                                        min_level = min(numeric_level_keys)
+                                        max_level = max(numeric_level_keys)
+
+                                        # Only expand when we clearly have an ordinal numeric scale that might omit midpoints.
+                                        # If the provided keys already cover every integer in the range, keep them as-is.
+                                        full_range = [
+                                            str(i) for i in range(min_level, max_level + 1)
+                                        ]
+                                        if set(full_range).issuperset(set(level_keys)):
+                                            allowed = full_range
+                                        else:
+                                            allowed = level_keys
+                                    else:
+                                        allowed = level_keys
 
                             if allowed:
                                 if value not in allowed:
@@ -535,7 +556,7 @@ class DatasetValidator:
         if modality in BIDS_MODALITIES:
             return []
         
-        sidecar_path = resolve_sidecar_path(file_path, root_dir)
+        sidecar_path = resolve_sidecar_path(file_path, root_dir, self.library_path)
         issues = []
 
         if not os.path.exists(sidecar_path):

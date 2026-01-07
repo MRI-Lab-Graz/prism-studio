@@ -362,12 +362,24 @@
                                             <div class="form-text">Only needed if item IDs changed over time.</div>
                                         </div>
                                         <div class="col-md-6">
+                                            <label for="convertSession" class="form-label">Session ID (optional)</label>
+                                            <input type="text" class="form-control" id="convertSession" placeholder="e.g. 1">
+                                            <div class="form-text">Force a specific session ID (e.g. '1' becomes 'ses-1').</div>
+                                        </div>
+                                        <div class="col-md-6">
                                             <label for="convertUnknown" class="form-label">Unknown Items</label>
                                             <select class="form-select" id="convertUnknown">
                                                 <option value="warn" selected>Show warnings</option>
                                                 <option value="ignore">Skip silently</option>
                                                 <option value="error">Stop on unknown</option>
                                             </select>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="convertStrictLevels">
+                                                <label class="form-check-label" for="convertStrictLevels">Strict Levels Validation</label>
+                                            </div>
+                                            <div class="form-text">If enabled, values must match the template's enumerated Levels exactly. For .lsa inputs, leave this off to allow numeric scale values (e.g., 1) with detailed warnings.</div>
                                         </div>
                                     </div>
                                 </div>
@@ -484,6 +496,11 @@
                                         <div class="col-md-6">
                                             <label for="biometricsSheet" class="form-label">Excel Sheet (name or index)</label>
                                             <input type="text" class="form-control" id="biometricsSheet" placeholder="0" value="0">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="biometricsSession" class="form-label">Session ID (optional)</label>
+                                            <input type="text" class="form-control" id="biometricsSession" placeholder="e.g. 1">
+                                            <div class="form-text">Force a specific session ID (e.g. '1' becomes 'ses-1').</div>
                                         </div>
                                         <div class="col-md-6">
                                             <label for="biometricsUnknown" class="form-label">Unknown Items</label>
@@ -1253,7 +1270,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <small class="text-muted">Warnings</small>
                 </div>
                 <div class="col-4">
-                    <div class="h4 mb-0 text-info">${summary.files_created || 'n/a'}</div>
+                    <div class="h4 mb-0 text-info">${summary.total_files || summary.files_created || 'n/a'}</div>
                     <small class="text-muted">Files</small>
                 </div>
             </div>
@@ -1445,8 +1462,21 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('library_path', libraryPath);
         formData.append('dataset_name', convertDatasetName.value.trim());
         formData.append('unknown', convertUnknown.value);
+
+        const sessionVal = document.getElementById('convertSession') ? document.getElementById('convertSession').value.trim() : '';
+        if (sessionVal) {
+            formData.append('session', sessionVal);
+            appendLog(`Forcing session ID: ${sessionVal}`, 'step');
+        }
+
         formData.append('language', convertLanguage ? convertLanguage.value : 'auto');
         formData.append('validate', 'true');  // Request validation
+
+        const strictLevelsEl = document.getElementById('convertStrictLevels');
+        if (strictLevelsEl && strictLevelsEl.checked) {
+            formData.append('strict_levels', 'true');
+            appendLog('Strict Levels Validation: enabled', 'step');
+        }
 
         convertBtn.disabled = true;
         appendLog('Uploading file and starting conversion...', 'info');
@@ -1705,6 +1735,13 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('library_path', libraryPath);
             formData.append('dataset_name', biometricsDatasetName.value.trim());
             formData.append('unknown', biometricsUnknown.value);
+
+            const sessionVal = document.getElementById('biometricsSession') ? document.getElementById('biometricsSession').value.trim() : '';
+            if (sessionVal) {
+                formData.append('session', sessionVal);
+                appendLog(`Forcing session ID: ${sessionVal}`, 'step', biometricsLog);
+            }
+
             formData.append('validate', 'true');
             selectedTasks.forEach(t => formData.append('tasks[]', t));
 

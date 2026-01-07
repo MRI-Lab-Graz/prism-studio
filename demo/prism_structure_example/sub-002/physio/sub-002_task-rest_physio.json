@@ -2,7 +2,12 @@
   "Technical": {
     "SamplingFrequency": 250,
     "StartTime": 0,
-    "Columns": ["time", "ecg", "eda", "resp"],
+    "Columns": [
+      "time",
+      "ecg",
+      "eda",
+      "resp"
+    ],
     "FileFormat": "tsv",
     "RecordingDevice": "Biopac MP160",
     "RecordingSoftware": "AcqKnowledge",
@@ -37,7 +42,7 @@
     "TaskDescription": "5-minute eyes-closed resting state recording"
   },
   "Metadata": {
-    "SchemaVersion": "1.0.0",
+    "SchemaVersion": "1.1.1",
     "CreationDate": "2025-12-19",
     "Creator": "Prism Demo Generator"
   }

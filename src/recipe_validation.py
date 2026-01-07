@@ -1,8 +1,8 @@
 """Derivative recipe validation (surveys + biometrics).
 
 Recipes live in the repo under:
-- derivatives/surveys/*.json
-- derivatives/biometrics/*.json
+- recipes/surveys/*.json
+- recipes/biometrics/*.json
 
 They are *not* part of a PRISM dataset; therefore they are validated by PRISM tools
 before execution.
@@ -14,7 +14,7 @@ import re
 from typing import Any
 
 
-ALLOWED_DERIVED_METHODS = {"max", "min", "mean", "avg", "sum"}
+ALLOWED_DERIVED_METHODS = {"max", "min", "mean", "avg", "sum", "map", "formula"}
 ALLOWED_SCORE_METHODS = {"sum", "mean", "formula", "map"}
 ALLOWED_MISSING = {"ignore", "require_all", "all", "strict"}
 
@@ -36,7 +36,7 @@ def _as_list_of_str(x: Any) -> list[str]:
     return out
 
 
-def validate_derivative_recipe(recipe: dict[str, Any], *, recipe_id: str | None = None) -> list[str]:
+def validate_recipe(recipe: dict[str, Any], *, recipe_id: str | None = None) -> list[str]:
     """Return a list of human-readable validation errors for a recipe."""
 
     errors: list[str] = []
@@ -113,8 +113,33 @@ def validate_derivative_recipe(recipe: dict[str, Any], *, recipe_id: str | None 
                     errors.append(prefix + f"Transforms.Derived[{idx}].Method must be one of {sorted(ALLOWED_DERIVED_METHODS)}")
 
                 items = _as_list_of_str(d.get("Items"))
-                if not items:
-                    errors.append(prefix + f"Transforms.Derived[{idx}].Items must be a non-empty list of strings")
+
+                if method == "map":
+                    # Allow either explicit Source or implicit first Items entry.
+                    source = d.get("Source")
+                    if not _is_nonempty_str(source) and not items:
+                        errors.append(prefix + f"Transforms.Derived[{idx}] uses Method='map' but has no non-empty Source and no Items")
+                    mapping = d.get("Mapping")
+                    if not isinstance(mapping, dict) or not mapping:
+                        errors.append(prefix + f"Transforms.Derived[{idx}] uses Method='map' but has no non-empty Mapping object")
+                elif method == "formula":
+                    formula = d.get("Formula")
+                    if not _is_nonempty_str(formula):
+                        errors.append(prefix + f"Transforms.Derived[{idx}] uses Method='formula' but has no non-empty Formula")
+                    if not items:
+                        errors.append(prefix + f"Transforms.Derived[{idx}].Items must be a non-empty list of strings")
+                    else:
+                        placeholders = [m.group(1).strip() for m in _PLACEHOLDER_RE.finditer(str(formula or ""))]
+                        if placeholders:
+                            missing_refs = sorted({p for p in placeholders if p not in items})
+                            if missing_refs:
+                                errors.append(
+                                    prefix
+                                    + f"Transforms.Derived[{idx}].Formula references {missing_refs} but they are not listed in Items (they would not be substituted)"
+                                )
+                else:
+                    if not items:
+                        errors.append(prefix + f"Transforms.Derived[{idx}].Items must be a non-empty list of strings")
 
     # Scores
     scores = recipe.get("Scores")

@@ -97,6 +97,11 @@ Examples:
         help="Show warnings from the BIDS validator (default: hidden)",
     )
     parser.add_argument(
+        "--library",
+        metavar="PATH",
+        help="Path to a template library for sidecar resolution",
+    )
+    parser.add_argument(
         "--no-prism",
         action="store_true",
         help="Skip PRISM-specific validation (only run BIDS validator if --bids is set)",
@@ -153,7 +158,9 @@ Examples:
         action="store_true",
         help="Disable plugin loading",
     )
-    parser.add_argument("--version", action="version", version="PRISM 1.6.5")
+    parser.add_argument(
+        "--version", action="version", version="PRISM 1.6.6"
+    )
 
     args = parser.parse_args()
 
@@ -305,6 +312,7 @@ Examples:
             schema_version=schema_version,
             run_bids=run_bids,
             run_prism=not args.no_prism,
+            library_path=args.library,
         )
 
         # Convert legacy tuples to Issue objects for structured output

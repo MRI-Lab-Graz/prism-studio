@@ -32,7 +32,7 @@ try:
     from schema_manager import get_available_schema_versions
     from limesurvey_exporter import generate_lss
     from src.converters.survey import convert_survey_xlsx_to_prism_dataset
-    from derivatives_surveys import compute_survey_derivatives
+    from recipes_surveys import compute_survey_recipes
     from reporting import print_dataset_summary, print_validation_results
     from theme import apply_prism_theme
 except ImportError as e:
@@ -42,7 +42,7 @@ except ImportError as e:
     get_available_schema_versions = lambda x: ["stable"]
     generate_lss = None
     convert_survey_xlsx_to_prism_dataset = None
-    compute_survey_derivatives = None
+    compute_survey_recipes = None
     print_dataset_summary = None
     print_validation_results = None
     apply_prism_theme = None
@@ -220,10 +220,10 @@ class PrismValidatorGUI:
         self.setup_convert_tab()
         self.setup_survey_tab()
 
-        # Tab 3: Derivatives
-        self.derivatives_tab = ttk.Frame(self.notebook, padding="20")
-        self.notebook.add(self.derivatives_tab, text="Derivatives")
-        self.setup_derivatives_tab()
+        # Tab 3: Recipes
+        self.recipes_tab = ttk.Frame(self.notebook, padding="20")
+        self.notebook.add(self.recipes_tab, text="Recipes")
+        self.setup_recipes_tab()
 
     def setup_validator_tab(self):
         # Configuration Section
@@ -625,9 +625,9 @@ class PrismValidatorGUI:
             row=5, column=1, sticky="e", padx=10, pady=(12, 0), ipadx=20, ipady=5
         )
 
-    def setup_derivatives_tab(self):
+    def setup_recipes_tab(self):
         frame = ttk.LabelFrame(
-            self.derivatives_tab, text="  Survey Derivatives  ", padding="20"
+            self.recipes_tab, text="  Survey Recipes  ", padding="20"
         )
         frame.pack(fill="x")
 
@@ -682,14 +682,36 @@ class PrismValidatorGUI:
         )
         lang_combo.grid(row=4, column=1, sticky="w", padx=10)
 
-        self.deriv_run_btn = ttk.Button(
-            frame, text="Run Derivatives", command=self.start_derivatives
+        ttk.Label(frame, text="Layout:").grid(row=5, column=0, sticky="w", pady=6)
+        self.deriv_layout_var = tk.StringVar(value="long")
+        layout_combo = ttk.Combobox(
+            frame,
+            textvariable=self.deriv_layout_var,
+            values=("long", "wide"),
+            state="readonly",
         )
-        self.deriv_run_btn.grid(row=5, column=1, sticky="e", padx=10, pady=(12, 0))
+        layout_combo.grid(row=5, column=1, sticky="w", padx=10)
+
+        self.deriv_raw_var = tk.BooleanVar(value=False)
+        raw_check = ttk.Checkbutton(
+            frame, text="Include Raw Data Columns", variable=self.deriv_raw_var
+        )
+        raw_check.grid(row=6, column=1, sticky="w", padx=10, pady=5)
+
+        self.deriv_boilerplate_var = tk.BooleanVar(value=False)
+        boilerplate_check = ttk.Checkbutton(
+            frame, text="Generate Methods Boilerplate", variable=self.deriv_boilerplate_var
+        )
+        boilerplate_check.grid(row=7, column=1, sticky="w", padx=10, pady=5)
+
+        self.deriv_run_btn = ttk.Button(
+            frame, text="Run Recipes", command=self.start_recipes
+        )
+        self.deriv_run_btn.grid(row=8, column=1, sticky="e", padx=10, pady=(12, 0))
 
         # Status
         self.deriv_status = ttk.Label(frame, text="")
-        self.deriv_status.grid(row=5, column=0, columnspan=3, sticky="w", pady=(10, 0))
+        self.deriv_status.grid(row=8, column=0, columnspan=3, sticky="w", pady=(10, 0))
         self.current_survey_filename = None
 
     # --- Validator Methods ---
@@ -1007,9 +1029,9 @@ class PrismValidatorGUI:
         if folder:
             self.deriv_path_var.set(folder)
 
-    def start_derivatives(self):
-        if not compute_survey_derivatives:
-            messagebox.showerror("Error", "Derivatives module not loaded")
+    def start_recipes(self):
+        if not compute_survey_recipes:
+            messagebox.showerror("Error", "Recipes module not loaded")
             return
 
         dataset_path = self.deriv_path_var.get().strip()
@@ -1017,22 +1039,25 @@ class PrismValidatorGUI:
         out_format = self.deriv_format_var.get().strip()
         survey_filter = self.deriv_survey_var.get().strip() or None
         lang = self.deriv_lang_var.get().strip()
+        layout = self.deriv_layout_var.get().strip()
+        include_raw = self.deriv_raw_var.get()
+        boilerplate = self.deriv_boilerplate_var.get()
 
         if not dataset_path or not os.path.isdir(dataset_path):
             messagebox.showerror("Error", "Please select a valid PRISM dataset folder")
             return
 
         self.deriv_run_btn.config(state="disabled")
-        self.deriv_status.config(text="Running derivatives...")
+        self.deriv_status.config(text="Running recipes...")
 
         thread = threading.Thread(
-            target=self._derivatives_thread,
-            args=(dataset_path, modality, out_format, survey_filter, lang),
+            target=self._recipes_thread,
+            args=(dataset_path, modality, out_format, survey_filter, lang, layout, include_raw, boilerplate),
         )
         thread.daemon = True
         thread.start()
 
-    def _derivatives_thread(self, dataset_path, modality, out_format, survey_filter, lang):
+    def _recipes_thread(self, dataset_path, modality, out_format, survey_filter, lang, layout, include_raw, boilerplate):
         try:
             # Validate dataset first (block on ERROR-level issues)
             if validate_dataset:
@@ -1058,27 +1083,35 @@ class PrismValidatorGUI:
                         f"Dataset is not PRISM-valid (errors: {len(error_issues)}). First error: {first}"
                     )
 
-            result = compute_survey_derivatives(
+            result = compute_survey_recipes(
                 prism_root=dataset_path,
                 repo_root=BASE_DIR,
                 survey=survey_filter,
                 out_format=out_format,
                 modality=modality,
                 lang=lang,
+                layout=layout,
+                include_raw=include_raw,
+                boilerplate=boilerplate,
             )
             msg = f"Wrote {result.written_files} file(s) to {result.out_root}"
-            self.root.after(0, lambda: self._deriv_finished(msg))
+            self.root.after(0, lambda: self._deriv_finished(msg, result))
         except Exception as e:
             self.root.after(
-                0, lambda e=e: messagebox.showerror("Derivatives Error", str(e))
+                0, lambda e=e: messagebox.showerror("Recipes Error", str(e))
             )
             self.root.after(0, lambda: self.deriv_status.config(text="Error"))
         finally:
             self.root.after(0, lambda: self.deriv_run_btn.config(state="normal"))
 
-    def _deriv_finished(self, msg: str):
+    def _deriv_finished(self, msg: str, result=None):
         self.deriv_status.config(text=msg)
-        messagebox.showinfo("Derivatives Complete", msg)
+        if result and result.nan_report:
+            report_msg = "\n\nColumns with all n/a:\n"
+            for key, cols in result.nan_report.items():
+                report_msg += f"- {key}: {', '.join(sorted(cols))}\n"
+            msg += report_msg
+        messagebox.showinfo("Recipes Complete", msg)
 
     def on_survey_select(self, event):
         selected_items = self.survey_tree.selection()

@@ -5,6 +5,12 @@ All notable changes to the PRISM project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.6] - 2026-01-02
+
+### Changed
+- **Documentation**: Updated ReadTheDocs specifications with new schema keys and features.
+- **Consistency**: Synchronized version numbers across all project files (`codemeta.json`, `CITATION.cff`, etc.).
+
 ## [1.6.5] - 2025-12-25
 
 ### Added
