@@ -1,0 +1,7 @@
+{
+  "globalTemplateLibraryPath": "/Volumes/Evo/software/psycho-validator/library/",
+  "defaultModalities": [
+    "survey",
+    "biometrics"
+  ]
+}

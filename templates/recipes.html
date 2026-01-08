@@ -20,7 +20,7 @@
         <div class="col-md-8">
           <label for="derivDatasetPath" class="form-label">PRISM Dataset Folder</label>
           <div class="input-group">
-            <input type="text" class="form-control" id="derivDatasetPath" placeholder="/path/to/prism_dataset">
+            <input type="text" class="form-control" id="derivDatasetPath" placeholder="/path/to/prism_dataset" value="{{ current_project.path | default('') }}">
             <button class="btn btn-outline-secondary" type="button" id="derivBrowseBtn" title="Browse Folder">
               <i class="fas fa-folder-open"></i>
             </button>
