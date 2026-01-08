@@ -65,6 +65,9 @@ LIMESURVEY_QUESTION_TYPES = {
     "|": "File Upload",
 }
 
+# Question types that accept free-text input (should NOT have Levels restrictions)
+FREE_TEXT_QUESTION_TYPES = {"S", "T", "U", "Q", ";", ":", "O", "P"}
+
 
 def _get_question_type_name(type_code):
     """Convert LimeSurvey type code to human-readable name."""
@@ -72,14 +75,59 @@ def _get_question_type_name(type_code):
 
 
 def _map_field_to_code(fieldname, qid_to_title):
-    m = re.match(r"(\d+)X(\d+)X(\d+)([A-Za-z0-9_]+)?", fieldname)
+    """Map LimeSurvey internal field names to human-readable codes.
+
+    LimeSurvey fields are like:
+    - 123X456X789 (simple question)
+    - 123X456X789SQ001 (with SQ prefix for subquestion)
+    - 123X456X78901 (qid concatenated with subquestion code - NO separator!)
+    - 123X456X789suffix (qid + text suffix like 'palestrina')
+
+    Returns: question_code (if no suffix) or question_code_suffix (if suffix exists)
+    This ensures unique item IDs across questionnaires.
+    """
+    # Handle optional leading underscore
+    field = fieldname.lstrip("_")
+    m = re.match(r"(\d+)X(\d+)X(.+)", field)
     if not m:
         return fieldname
-    qid = m.group(3)
-    suffix = m.group(4)
-    if suffix:
-        return suffix
-    return qid_to_title.get(qid, fieldname)
+
+    qid_part = m.group(3)  # This might be qid alone, or qid+suffix concatenated
+
+    # First, try exact match
+    if qid_part in qid_to_title:
+        return qid_to_title[qid_part]
+
+    # Check if there's an alphabetic suffix (like 'palestrina', 'bach')
+    alpha_match = re.match(r"(\d+)([a-zA-Z][a-zA-Z0-9_]*)", qid_part)
+    if alpha_match:
+        qid = alpha_match.group(1)
+        suffix = alpha_match.group(2)
+        if qid in qid_to_title:
+            question_code = qid_to_title[qid]
+            return f"{question_code}_{suffix}"
+
+    # Check for SQ prefix format (123X456X789SQ001)
+    sq_match = re.match(r"(\d+)(SQ\d+)", qid_part, re.IGNORECASE)
+    if sq_match:
+        qid = sq_match.group(1)
+        suffix = sq_match.group(2)
+        if qid in qid_to_title:
+            question_code = qid_to_title[qid]
+            return f"{question_code}_{suffix}"
+
+    # LimeSurvey concatenates qid + numeric subquestion code WITHOUT separator
+    # Try progressively shorter prefixes to find a valid qid
+    # e.g., "67998001" -> try "6799800", "679980", "67998", etc.
+    for i in range(len(qid_part) - 1, 0, -1):
+        potential_qid = qid_part[:i]
+        suffix = qid_part[i:]
+        if potential_qid in qid_to_title:
+            question_code = qid_to_title[potential_qid]
+            return f"{question_code}_{suffix}"
+
+    # Fallback: return original
+    return fieldname
 
 
 def parse_lsa_responses(lsa_path):
@@ -472,14 +520,14 @@ def parse_lss_xml(xml_content, task_name=None):
     )
 
     for qid, q_data in sorted_questions:
-        key = q_data["title"]
+        question_code = q_data["title"]
         gid = q_data["gid"]
 
         # Get group info
         group_info = groups_map.get(gid, {"name": "", "order": 0, "description": ""})
 
-        entry = {
-            "Description": q_data["question"],
+        # Base entry properties (shared by question and subquestions)
+        base_props = {
             "QuestionType": q_data["type_name"],
             "Mandatory": q_data["mandatory"],
             "Position": {
@@ -489,17 +537,25 @@ def parse_lss_xml(xml_content, task_name=None):
             }
         }
 
-        # Add answer levels if present
-        if q_data["levels"]:
-            entry["Levels"] = q_data["levels"]
+        # Add answer levels if present (skip for free-text question types)
+        q_type = q_data.get("type", "")
+        if q_data["levels"] and q_type not in FREE_TEXT_QUESTION_TYPES:
+            base_props["Levels"] = q_data["levels"]
 
-        # Add subquestions/items for array-type questions
+        # For questions WITH subquestions: flatten each subquestion to root level
+        # Use {question_code}_{subquestion_code} for unique IDs across questionnaires
+        # This matches how data columns are renamed in _map_field_to_code()
         if q_data["subquestions"]:
-            items = {}
             for sq in q_data["subquestions"]:
+                # Combine parent question code with subquestion code for uniqueness
+                item_key = f"{question_code}_{sq['code']}"  # e.g., "placingintense_0"
                 item_entry = {
                     "Description": sq["text"],
                     "Order": sq["order"],
+                    "ParentQuestion": question_code,
+                    "ParentQuestionText": q_data["question"],
+                    "SubquestionCode": sq["code"],  # Keep original code for reference
+                    **base_props
                 }
                 # Only include ScaleId if not 0 (dual-scale arrays)
                 if sq["scale_id"] != 0:
@@ -507,33 +563,37 @@ def parse_lss_xml(xml_content, task_name=None):
                 # Include media URLs if present
                 if sq.get("media_urls"):
                     item_entry["MediaUrls"] = sq["media_urls"]
-                items[sq["code"]] = item_entry
-            entry["Items"] = items
+                prism_json[item_key] = item_entry
+        else:
+            # For questions WITHOUT subquestions: use question code as key
+            entry = {
+                "Description": q_data["question"],
+                **base_props
+            }
 
-        # Add "Other" option flag
-        if q_data["other"]:
-            entry["HasOtherOption"] = True
+            # Add "Other" option flag
+            if q_data["other"]:
+                entry["HasOtherOption"] = True
 
-        # Add help text if present
-        if q_data["help"]:
-            entry["HelpText"] = q_data["help"]
+            # Add help text if present
+            if q_data["help"]:
+                entry["HelpText"] = q_data["help"]
 
-        # Add validation regex if present
-        if q_data["validation_regex"]:
-            entry["ValidationRegex"] = q_data["validation_regex"]
+            # Add validation regex if present
+            if q_data["validation_regex"]:
+                entry["ValidationRegex"] = q_data["validation_regex"]
 
-        # Add relevance/condition if present (conditional display)
-        if q_data["relevance"]:
-            entry["Condition"] = q_data["relevance"]
+            # Add relevance/condition if present (conditional display)
+            if q_data["relevance"]:
+                entry["Condition"] = q_data["relevance"]
 
-        # Add question attributes (design options, etc.)
-        if q_data["attributes"]:
-            # Filter out empty values and organize attributes
-            attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
-            if attrs:
-                entry["Attributes"] = attrs
+            # Add question attributes (design options, etc.)
+            if q_data["attributes"]:
+                attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
+                if attrs:
+                    entry["Attributes"] = attrs
 
-        prism_json[key] = entry
+            prism_json[question_code] = entry
 
     # Use survey title if available, otherwise use task_name
     survey_title = survey_meta.get("title") or task_name or "survey"
@@ -642,12 +702,13 @@ def parse_lss_xml_by_groups(xml_content):
         # Sort questions by question_order within the group
         sorted_questions = sorted(questions_list, key=lambda x: x[1]["question_order"])
 
-        # Build question entries
+        # Build question entries - flatten subquestions to root level for data conversion
         questions_dict = {}
         for qid, q_data in sorted_questions:
-            key = q_data["title"]
-            entry = {
-                "Description": q_data["question"],
+            question_code = q_data["title"]
+
+            # Base properties shared by question and subquestions
+            base_props = {
                 "QuestionType": q_data["type_name"],
                 "Mandatory": q_data["mandatory"],
                 "Position": {
@@ -657,48 +718,59 @@ def parse_lss_xml_by_groups(xml_content):
                 }
             }
 
-            # Add answer levels if present
-            if q_data["levels"]:
-                entry["Levels"] = q_data["levels"]
+            # Add answer levels if present (skip for free-text question types)
+            q_type = q_data.get("type", "")
+            if q_data["levels"] and q_type not in FREE_TEXT_QUESTION_TYPES:
+                base_props["Levels"] = q_data["levels"]
 
-            # Add subquestions/items for array-type questions
+            # For questions WITH subquestions: flatten each subquestion to root level
+            # Use {question_code}_{subquestion_code} for unique IDs across questionnaires
             if q_data["subquestions"]:
-                items = {}
                 for sq in q_data["subquestions"]:
+                    item_key = f"{question_code}_{sq['code']}"  # e.g., "placingintense_0"
                     item_entry = {
                         "Description": sq["text"],
                         "Order": sq["order"],
+                        "ParentQuestion": question_code,
+                        "ParentQuestionText": q_data["question"],
+                        "SubquestionCode": sq["code"],
+                        **base_props
                     }
                     if sq["scale_id"] != 0:
                         item_entry["ScaleId"] = sq["scale_id"]
                     if sq.get("media_urls"):
                         item_entry["MediaUrls"] = sq["media_urls"]
-                    items[sq["code"]] = item_entry
-                entry["Items"] = items
+                    questions_dict[item_key] = item_entry
+            else:
+                # For questions WITHOUT subquestions: use question code as key
+                entry = {
+                    "Description": q_data["question"],
+                    **base_props
+                }
 
-            # Add "Other" option flag
-            if q_data["other"]:
-                entry["HasOtherOption"] = True
+                # Add "Other" option flag
+                if q_data["other"]:
+                    entry["HasOtherOption"] = True
 
-            # Add help text if present
-            if q_data["help"]:
-                entry["HelpText"] = q_data["help"]
+                # Add help text if present
+                if q_data["help"]:
+                    entry["HelpText"] = q_data["help"]
 
-            # Add validation regex if present
-            if q_data["validation_regex"]:
-                entry["ValidationRegex"] = q_data["validation_regex"]
+                # Add validation regex if present
+                if q_data["validation_regex"]:
+                    entry["ValidationRegex"] = q_data["validation_regex"]
 
-            # Add relevance/condition if present
-            if q_data["relevance"]:
-                entry["Condition"] = q_data["relevance"]
+                # Add relevance/condition if present
+                if q_data["relevance"]:
+                    entry["Condition"] = q_data["relevance"]
 
-            # Add question attributes (design options, etc.)
-            if q_data["attributes"]:
-                attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
-                if attrs:
-                    entry["Attributes"] = attrs
+                # Add question attributes (design options, etc.)
+                if q_data["attributes"]:
+                    attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
+                    if attrs:
+                        entry["Attributes"] = attrs
 
-            questions_dict[key] = entry
+                questions_dict[question_code] = entry
 
         normalized_name = sanitize_task_name(group_name)
 
@@ -812,11 +884,10 @@ def parse_lss_xml_by_questions(xml_content):
         group_name = group_info["name"] if group_info["name"] else f"group_{gid}"
         group_order = group_info["order"]
 
-        # Build the question entry
-        entry = {
-            "Description": q_data["question"],
+        # Base properties shared by question and subquestions
+        base_props = {
             "QuestionType": q_data["type_name"],
-            "LimeSurveyType": q_data["type"],  # Original LS type code for re-export
+            "LimeSurveyType": q_data["type"],
             "Mandatory": q_data["mandatory"],
             "Position": {
                 "Group": group_name,
@@ -825,47 +896,14 @@ def parse_lss_xml_by_questions(xml_content):
             }
         }
 
-        # Add answer levels if present
-        if q_data.get("levels"):
-            # Filter out empty labels but keep the scale structure
+        # Add answer levels if present (skip for free-text question types)
+        q_type = q_data.get("type", "")
+        if q_data.get("levels") and q_type not in FREE_TEXT_QUESTION_TYPES:
             levels = {k: v for k, v in q_data["levels"].items()}
             if levels:
-                entry["Levels"] = levels
+                base_props["Levels"] = levels
 
-        # Add subquestions/items for array-type questions
-        if q_data.get("subquestions"):
-            items = {}
-            for sq in q_data["subquestions"]:
-                item_entry = {
-                    "Description": sq["text"],
-                    "Order": sq["order"],
-                }
-                if sq["scale_id"] != 0:
-                    item_entry["ScaleId"] = sq["scale_id"]
-                if sq.get("media_urls"):
-                    item_entry["MediaUrls"] = sq["media_urls"]
-                items[sq["code"]] = item_entry
-            entry["Items"] = items
-
-        # Add optional fields
-        if q_data.get("other"):
-            entry["HasOtherOption"] = True
-
-        if q_data.get("help"):
-            entry["HelpText"] = q_data["help"]
-
-        if q_data.get("validation_regex"):
-            entry["ValidationRegex"] = q_data["validation_regex"]
-
-        if q_data.get("relevance"):
-            entry["Condition"] = q_data["relevance"]
-
-        if q_data.get("attributes"):
-            attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
-            if attrs:
-                entry["Attributes"] = attrs
-
-        # Build complete question JSON template
+        # Build question JSON with items flattened to root level for data conversion
         question_json = {
             "Technical": {
                 "StimulusType": "Questionnaire",
@@ -890,8 +928,54 @@ def parse_lss_xml_by_questions(xml_content):
                 "Creator": "limesurvey_to_prism.py",
                 "SourceSurvey": survey_meta.get("title", ""),
             },
-            question_code: entry
         }
+
+        # For questions WITH subquestions: flatten each subquestion to root level
+        # Use {question_code}_{subquestion_code} for unique IDs across questionnaires
+        if q_data.get("subquestions"):
+            for sq in q_data["subquestions"]:
+                item_key = f"{question_code}_{sq['code']}"  # e.g., "placingintense_0"
+                item_entry = {
+                    "Description": sq["text"],
+                    "Order": sq["order"],
+                    "ParentQuestion": question_code,
+                    "ParentQuestionText": q_data["question"],
+                    "SubquestionCode": sq["code"],
+                    **base_props
+                }
+                if sq["scale_id"] != 0:
+                    item_entry["ScaleId"] = sq["scale_id"]
+                if sq.get("media_urls"):
+                    item_entry["MediaUrls"] = sq["media_urls"]
+                question_json[item_key] = item_entry
+            item_count = len(q_data["subquestions"])
+        else:
+            # For questions WITHOUT subquestions: use question code as key
+            entry = {
+                "Description": q_data["question"],
+                **base_props
+            }
+
+            # Add optional fields
+            if q_data.get("other"):
+                entry["HasOtherOption"] = True
+
+            if q_data.get("help"):
+                entry["HelpText"] = q_data["help"]
+
+            if q_data.get("validation_regex"):
+                entry["ValidationRegex"] = q_data["validation_regex"]
+
+            if q_data.get("relevance"):
+                entry["Condition"] = q_data["relevance"]
+
+            if q_data.get("attributes"):
+                attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
+                if attrs:
+                    entry["Attributes"] = attrs
+
+            question_json[question_code] = entry
+            item_count = 1
 
         # Add survey-level author info
         if survey_meta.get("admin"):
@@ -899,8 +983,6 @@ def parse_lss_xml_by_questions(xml_content):
         if survey_meta.get("admin_email"):
             question_json["Study"]["ContactEmail"] = survey_meta["admin_email"]
 
-        # Calculate item count
-        item_count = len(entry.get("Items", {})) if entry.get("Items") else 1
         question_json["Study"]["ItemCount"] = item_count
 
         # Store result with metadata for UI

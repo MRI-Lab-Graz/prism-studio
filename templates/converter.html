@@ -453,11 +453,8 @@
                                     <!-- Quick switch buttons for library paths -->
                                     <div class="mt-2" id="convertLibraryQuickSwitch">
                                         <small class="text-muted me-2">Quick switch:</small>
-                                        <button type="button" class="btn btn-sm btn-outline-info me-1" id="convertUseGlobalLibraryBtn" disabled title="No global library configured">
-                                            <i class="fas fa-globe me-1"></i>Global
-                                        </button>
                                         <button type="button" class="btn btn-sm btn-outline-success me-1" id="convertUseProjectLibraryBtn" disabled title="No project selected">
-                                            <i class="fas fa-folder me-1"></i>Project
+                                            <i class="fas fa-folder me-1"></i>Project Library
                                         </button>
                                         <span class="badge bg-secondary ms-2" id="convertLibrarySourceBadge" style="display: none;">
                                             <i class="fas fa-info-circle me-1"></i><span id="convertLibrarySourceText">-</span>
@@ -499,10 +496,23 @@
 
                             <div class="row g-3 align-items-end">
                                 <div class="col-md-4">
-                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa, .lss)</label>
-                                    <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv,.lss">
+                                    <label for="convertFileDisplay" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa, .lss)</label>
+                                    <!-- Display selected file with browse button -->
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="convertFileDisplay" readonly placeholder="Click to select file..." style="cursor: pointer;">
+                                        <button class="btn btn-outline-success" type="button" id="convertBrowseFileBtn" title="Browse for file (starts in sourcedata)">
+                                            <i class="fas fa-folder-open"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger d-none" type="button" id="convertClearFileBtn" title="Clear selection">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <!-- Hidden inputs -->
+                                    <input class="d-none" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv,.lss">
+                                    <input type="hidden" id="convertSelectedFilePath" value="">
+                                    <input type="hidden" id="convertFileSource" value="">
                                     <div class="form-text" id="convertFileHint">
-                                        <span class="text-info"><i class="fas fa-info-circle me-1"></i>.lss/.lsa for LimeSurvey, .xlsx/.csv for other sources</span>
+                                        <span class="text-muted"><i class="fas fa-folder-open me-1"></i>Opens in project's sourcedata folder</span>
                                     </div>
                                 </div>
                                 <div class="col-md-4" id="convertDatasetNameGroup">
@@ -561,8 +571,8 @@
                                         </div>
                                         <div class="col-md-6">
                                             <label for="convertSession" class="form-label">Session ID (optional)</label>
-                                            <input type="text" class="form-control" id="convertSession" placeholder="e.g. 1">
-                                            <div class="form-text">Force a specific session ID (e.g. '1' becomes 'ses-1').</div>
+                                            <input type="text" class="form-control" id="convertSession" placeholder="e.g. 01">
+                                            <div class="form-text">Force a specific session ID (e.g. '01' becomes 'ses-01'). Default: ses-01</div>
                                         </div>
                                         <div class="col-md-6">
                                             <label for="convertUnknown" class="form-label">Unknown Items</label>
@@ -579,6 +589,17 @@
                                             </div>
                                             <div class="form-text">If enabled, values must match the template's enumerated Levels exactly. For .lsa inputs, leave this off to allow numeric scale values (e.g., 1) with detailed warnings.</div>
                                         </div>
+                                        {% if current_project.path %}
+                                        <div class="col-md-12 mt-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="convertSaveToProject" checked>
+                                                <label class="form-check-label" for="convertSaveToProject">
+                                                    <i class="fas fa-folder-plus me-1"></i>Save to Project
+                                                </label>
+                                            </div>
+                                            <div class="form-text">Save converted BIDS data directly to: <code>{{ current_project.path }}</code></div>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -1590,9 +1611,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Landgig: Survey Convert ---
+    // --- Survey Convert ---
     const convertLibraryPathInput = document.getElementById('convertLibraryPath');
     const convertBrowseLibraryBtn = document.getElementById('convertBrowseLibraryBtn');
+    const convertBrowseFileBtn = document.getElementById('convertBrowseFileBtn');
+    const convertClearFileBtn = document.getElementById('convertClearFileBtn');
+    const convertFileDisplay = document.getElementById('convertFileDisplay');
+    const convertFileSource = document.getElementById('convertFileSource');
+    const convertSelectedFilePath = document.getElementById('convertSelectedFilePath');
     const convertExcelFile = document.getElementById('convertExcelFile');
     const convertAliasFile = document.getElementById('convertAliasFile');
     const convertBtn = document.getElementById('convertBtn');
@@ -1701,6 +1727,140 @@ document.addEventListener('DOMContentLoaded', function() {
                         biometricsLibraryPathInput.value = data.path;
                     }
                 });
+        });
+    }
+
+    // Helper function to update file display and state
+    function updateFileSelection(filename, source, fullPath = null) {
+        if (convertFileDisplay) {
+            convertFileDisplay.value = filename || '';
+            convertFileDisplay.placeholder = filename ? '' : 'No file selected';
+        }
+        if (convertFileSource) {
+            convertFileSource.value = source || '';
+        }
+        if (convertSelectedFilePath) {
+            convertSelectedFilePath.value = fullPath || '';
+        }
+        if (convertClearFileBtn) {
+            if (filename) {
+                convertClearFileBtn.classList.remove('d-none');
+            } else {
+                convertClearFileBtn.classList.add('d-none');
+            }
+        }
+        // Update hint based on source
+        const fileHint = document.getElementById('convertFileHint');
+        if (fileHint) {
+            if (filename && source === 'browse') {
+                fileHint.innerHTML = `<span class="text-success"><i class="fas fa-server me-1"></i>Server file: <code>${filename}</code></span>`;
+            } else if (filename && source === 'upload') {
+                fileHint.innerHTML = `<span class="text-primary"><i class="fas fa-upload me-1"></i>Uploaded: <code>${filename}</code></span>`;
+            } else {
+                fileHint.innerHTML = `<span class="text-muted"><i class="fas fa-info-circle me-1"></i>.lss/.lsa for LimeSurvey, .xlsx/.csv for other sources</span>`;
+            }
+        }
+        updateConvertBtn();
+    }
+
+    // Clear file selection
+    function clearFileSelection() {
+        if (convertExcelFile) convertExcelFile.value = '';
+        updateFileSelection('', '', '');
+    }
+
+    // Display field click - trigger browse function (same as browse button)
+    if (convertFileDisplay && convertBrowseFileBtn) {
+        convertFileDisplay.addEventListener('click', function() {
+            convertBrowseFileBtn.click();
+        });
+    }
+
+    // File input change handler (for uploads)
+    if (convertExcelFile) {
+        convertExcelFile.addEventListener('change', async function() {
+            const file = this.files?.[0];
+            if (file) {
+                updateFileSelection(file.name, 'upload');
+
+                const filename = file.name.toLowerCase();
+                // Auto-switch to template mode for .lss files
+                if (filename.endsWith('.lss')) {
+                    if (convertModeTemplate) {
+                        convertModeTemplate.checked = true;
+                        handleModeSwitch();
+                    }
+                    convertInfo.innerHTML = '<i class="fas fa-info-circle me-1"></i>.lss files contain structure only (no response data). Using Template Generation mode.';
+                    convertInfo.classList.remove('d-none');
+                } else {
+                    convertInfo.classList.add('d-none');
+                }
+                // Detect columns for ID selection
+                await detectFileColumns(file);
+            } else {
+                clearFileSelection();
+            }
+        });
+    }
+
+    // Clear button
+    if (convertClearFileBtn) {
+        convertClearFileBtn.addEventListener('click', function() {
+            clearFileSelection();
+        });
+    }
+
+    // Browse for survey file - defaults to project's sourcedata folder
+    if (convertBrowseFileBtn) {
+        convertBrowseFileBtn.addEventListener('click', async function() {
+            // Get the project's sourcedata path from API
+            let initialPath = '';
+            try {
+                const projResponse = await fetch('/api/projects/library-path');
+                const projData = await projResponse.json();
+                if (projData.sourcedata_path) {
+                    // Use the server-provided sourcedata path (correct OS path separators)
+                    initialPath = projData.sourcedata_path;
+                    console.log('Browse file initial path:', initialPath);
+                } else if (projData.project_path) {
+                    // Fallback to project root
+                    initialPath = projData.project_path;
+                    console.log('No sourcedata, using project path:', initialPath);
+                } else {
+                    console.warn('No project selected - using default browse location');
+                    convertInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>No project selected. Select a project first to browse from sourcedata folder.';
+                    convertInfo.classList.remove('d-none');
+                }
+            } catch (e) {
+                console.warn('Could not get project path:', e);
+            }
+
+            const fileTypes = '*.xlsx,*.lsa,*.csv,*.tsv,*.lss';
+            const url = `/api/browse-file?initial_path=${encodeURIComponent(initialPath)}&file_types=${encodeURIComponent(fileTypes)}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.path) {
+                    // Clear any uploaded file first
+                    if (convertExcelFile) convertExcelFile.value = '';
+
+                    const fileName = data.path.split(/[\\/]/).pop();
+                    updateFileSelection(fileName, 'browse', data.path);
+
+                    // Auto-switch to template mode for .lss files
+                    if (fileName.toLowerCase().endsWith('.lss')) {
+                        if (convertModeTemplate) {
+                            convertModeTemplate.checked = true;
+                            handleModeSwitch();
+                        }
+                        convertInfo.innerHTML = '<i class="fas fa-info-circle me-1"></i>.lss files contain structure only (no response data). Using Template Generation mode.';
+                        convertInfo.classList.remove('d-none');
+                    }
+                }
+            } catch (err) {
+                console.error('Error browsing for file:', err);
+            }
         });
     }
 
@@ -1948,7 +2108,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateConvertBtn() {
-        const hasFile = convertExcelFile.files && convertExcelFile.files.length === 1;
+        const hasUploadedFile = convertExcelFile.files && convertExcelFile.files.length === 1;
+        const hasBrowsedFile = convertSelectedFilePath && convertSelectedFilePath.value.trim() !== '';
+        const hasFile = hasUploadedFile || hasBrowsedFile;
         const mode = getConvertMode();
 
         if (mode === 'template') {
@@ -1973,30 +2135,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-
-    convertExcelFile.addEventListener('change', async function() {
-        const file = this.files?.[0];
-        if (file) {
-            const filename = file.name.toLowerCase();
-
-            // Auto-switch to template mode for .lss files (structure only, no data)
-            if (filename.endsWith('.lss')) {
-                if (convertModeTemplate) {
-                    convertModeTemplate.checked = true;
-                    handleModeSwitch();
-                }
-                // Show info message
-                convertInfo.innerHTML = '<i class="fas fa-info-circle me-1"></i>.lss files contain structure only (no response data). Using Template Generation mode.';
-                convertInfo.classList.remove('d-none');
-            } else {
-                convertInfo.classList.add('d-none');
-            }
-
-            // Detect columns for ID selection
-            await detectFileColumns(file);
-        }
-        updateConvertBtn();
-    });
 
     // Initialize mode on page load
     handleModeSwitch();
@@ -2319,7 +2457,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentTemplateData = null;
 
     // Handle template generation (structure only, no data)
-    async function handleTemplateGeneration(file) {
+    // Accepts either a File object OR a file path string
+    async function handleTemplateGeneration(fileOrPath) {
         const exportMode = document.getElementById('convertTemplateExport')?.value || 'groups';
         const taskName = document.getElementById('convertDatasetName')?.value.trim() || '';
 
@@ -2329,7 +2468,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const formData = new FormData();
-            formData.append('file', file);
+            // Support both file upload and file path
+            if (typeof fileOrPath === 'string') {
+                formData.append('file_path', fileOrPath);
+            } else {
+                formData.append('file', fileOrPath);
+            }
             formData.append('mode', exportMode);
             if (taskName) {
                 formData.append('task_name', taskName);
@@ -2922,19 +3066,35 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('participantMetadataSection')?.classList.add('d-none');
         }
 
-        const file = convertExcelFile.files && convertExcelFile.files[0];
-        if (!file) {
+        // Check for uploaded file OR browsed file path
+        const uploadedFile = convertExcelFile.files && convertExcelFile.files[0];
+        const browsedFilePath = convertSelectedFilePath ? convertSelectedFilePath.value.trim() : '';
+
+        if (!uploadedFile && !browsedFilePath) {
             return;
         }
 
+        // Get filename from either source
+        let filename;
+        const usingFilePath = !uploadedFile && browsedFilePath;
+        if (usingFilePath) {
+            filename = browsedFilePath.split(/[\\/]/).pop().toLowerCase();
+        } else {
+            filename = uploadedFile.name.toLowerCase();
+        }
+
         const mode = getConvertMode();
-        const filename = file.name.toLowerCase();
         const isLssFile = filename.endsWith('.lss');
         const isLimeSurveyFile = filename.endsWith('.lss') || filename.endsWith('.lsa');
 
         // TEMPLATE GENERATION MODE
         if (mode === 'template') {
-            handleTemplateGeneration(file);
+            // Pass file path or file object to template generation
+            if (usingFilePath) {
+                handleTemplateGeneration(browsedFilePath);
+            } else {
+                handleTemplateGeneration(uploadedFile);
+            }
             return;
         }
 
@@ -2961,11 +3121,17 @@ document.addEventListener('DOMContentLoaded', function() {
         icon.classList.remove('fa-chevron-right');
         icon.classList.add('fa-chevron-down');
 
-        appendLog(`Starting conversion of: ${file.name}`, 'info');
+        const displayName = usingFilePath ? browsedFilePath.split(/[\\/]/).pop() : uploadedFile.name;
+        appendLog(`Starting conversion of: ${displayName}`, 'info');
         appendLog(`Using library: ${libraryPath}`, 'step');
 
         const formData = new FormData();
-        formData.append('excel', file);
+        if (usingFilePath) {
+            // Send file path instead of uploading
+            formData.append('file_path', browsedFilePath);
+        } else {
+            formData.append('excel', uploadedFile);
+        }
 
         const alias = convertAliasFile && convertAliasFile.files && convertAliasFile.files[0];
         if (alias) {
@@ -2997,6 +3163,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (strictLevelsEl && strictLevelsEl.checked) {
             formData.append('strict_levels', 'true');
             appendLog('Strict Levels Validation: enabled', 'step');
+        }
+
+        // Save to project option
+        const saveToProjectEl = document.getElementById('convertSaveToProject');
+        if (saveToProjectEl && saveToProjectEl.checked) {
+            formData.append('save_to_project', 'true');
+            appendLog('Save to Project: enabled', 'step');
         }
 
         convertBtn.disabled = true;
@@ -3062,7 +3235,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 appendLog('Dataset ready for download', 'success');
             }
 
-            convertInfo.textContent = 'Conversion complete. See results below.';
+            // Show save-to-project success message
+            if (data.saved_to_project) {
+                appendLog(`Saved ${data.saved_file_count || 0} files to project: ${data.saved_to_project}`, 'success');
+                convertInfo.innerHTML = `Conversion complete. <strong>${data.saved_file_count || 0} files saved to project.</strong> See results below.`;
+            } else {
+                convertInfo.textContent = 'Conversion complete. See results below.';
+            }
             convertInfo.classList.remove('d-none');
         })
         .catch(err => {
@@ -4065,27 +4244,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function initializeLibraryPathsFromProject() {
-        const globalBtn = document.getElementById('convertUseGlobalLibraryBtn');
         const projectBtn = document.getElementById('convertUseProjectLibraryBtn');
 
         try {
             const response = await fetch('/api/projects/library-path');
             const data = await response.json();
 
-            // Store available paths
-            availableConvertPaths.global = data.global_library_path || null;
+            // Store available paths (project only - global removed)
             availableConvertPaths.project = data.project_library_path || null;
-
-            // Enable/disable quick switch buttons based on availability
-            if (globalBtn) {
-                if (availableConvertPaths.global) {
-                    globalBtn.disabled = false;
-                    globalBtn.title = availableConvertPaths.global;
-                } else {
-                    globalBtn.disabled = true;
-                    globalBtn.title = 'No global library configured';
-                }
-            }
 
             if (projectBtn) {
                 if (availableConvertPaths.project) {
@@ -4097,15 +4263,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Auto-fill with best available path (prefer global for templates)
+            // Auto-fill with project library path
             if (convertLibraryPathInput && !convertLibraryPathInput.value) {
                 let selectedPath = null;
                 let selectedSource = null;
 
-                if (availableConvertPaths.global) {
-                    selectedPath = availableConvertPaths.global;
-                    selectedSource = 'global';
-                } else if (availableConvertPaths.project) {
+                if (availableConvertPaths.project) {
                     selectedPath = availableConvertPaths.project;
                     selectedSource = 'project';
                 } else if (data.library_path) {
@@ -4124,34 +4287,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateConvertLibrarySourceBadge(detectConvertLibrarySource());
             }
 
-            // Auto-fill Biometrics library path
+            // Auto-fill Biometrics library path from project
             if (biometricsLibraryPathInput && !biometricsLibraryPathInput.value) {
-                if (availableConvertPaths.global) {
-                    biometricsLibraryPathInput.value = availableConvertPaths.global;
+                if (availableConvertPaths.project) {
+                    biometricsLibraryPathInput.value = availableConvertPaths.project;
                 } else if (data.library_path) {
                     biometricsLibraryPathInput.value = data.library_path;
                 }
             }
 
             console.log('Library paths initialized:', {
-                global: availableConvertPaths.global,
                 project: availableConvertPaths.project
             });
         } catch (err) {
             console.warn('Could not load project library path:', err);
         }
 
-        // Set up click handlers for quick switch buttons
-        if (globalBtn) {
-            globalBtn.addEventListener('click', function() {
-                if (availableConvertPaths.global && convertLibraryPathInput) {
-                    convertLibraryPathInput.value = availableConvertPaths.global;
-                    updateConvertLibrarySourceBadge('global');
-                    refreshConvertLanguages();
-                }
-            });
-        }
-
+        // Set up click handler for project button
         if (projectBtn) {
             projectBtn.addEventListener('click', function() {
                 if (availableConvertPaths.project && convertLibraryPathInput) {

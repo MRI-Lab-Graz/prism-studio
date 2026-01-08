@@ -193,6 +193,15 @@ def inject_utilities():
     }
 
 
+@app.route("/favicon.ico")
+def favicon():
+    """Serve favicon from static folder"""
+    return send_file(
+        os.path.join(app.static_folder, "img", "favicon.png"),
+        mimetype="image/png"
+    )
+
+
 @app.route("/")
 def index():
     """Home page with tool selection"""

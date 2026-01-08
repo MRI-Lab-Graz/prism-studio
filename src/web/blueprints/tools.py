@@ -548,11 +548,15 @@ def api_recipes_surveys():
 @tools_bp.route("/api/browse-folder")
 def api_browse_folder():
     """Open a system dialog to select a folder"""
+    initial_path = request.args.get("initial_path", "")
     folder_path = ""
     try:
         if sys.platform == "darwin":
             try:
-                script = "POSIX path of (choose folder)"
+                if initial_path and os.path.isdir(initial_path):
+                    script = f'POSIX path of (choose folder default location POSIX file "{initial_path}")'
+                else:
+                    script = "POSIX path of (choose folder)"
                 result = subprocess.check_output(["osascript", "-e", script], stderr=subprocess.STDOUT)
                 folder_path = result.decode("utf-8").strip()
             except subprocess.CalledProcessError:
@@ -563,13 +567,78 @@ def api_browse_folder():
             root = tk.Tk()
             root.withdraw()
             root.attributes("-topmost", True)
-            folder_path = filedialog.askdirectory()
+            init_dir = initial_path if initial_path and os.path.isdir(initial_path) else None
+            folder_path = filedialog.askdirectory(initialdir=init_dir)
             root.destroy()
 
         return jsonify({"path": folder_path})
     except Exception as e:
         print(f"Error opening file dialog: {e}")
         return jsonify({"error": "Could not open file dialog. Please enter path manually."}), 500
+
+
+@tools_bp.route("/api/browse-file")
+def api_browse_file():
+    """Open a system dialog to select a file with optional initial directory and file types"""
+    initial_path = request.args.get("initial_path", "")
+    file_types = request.args.get("file_types", "")  # e.g., "*.xlsx,*.lsa,*.csv"
+    file_path = ""
+
+    # Normalize the path for the current OS
+    if initial_path:
+        initial_path = os.path.normpath(initial_path)
+        print(f"[browse-file] Initial path: {initial_path}")
+        print(f"[browse-file] Path exists: {os.path.isdir(initial_path)}")
+
+    try:
+        if sys.platform == "darwin":
+            try:
+                # Build osascript for file selection
+                if initial_path and os.path.isdir(initial_path):
+                    script = f'POSIX path of (choose file default location POSIX file "{initial_path}"'
+                else:
+                    script = 'POSIX path of (choose file'
+                if file_types:
+                    # Convert *.xlsx,*.lsa to {"xlsx", "lsa"}
+                    exts = [t.replace("*.", "").strip() for t in file_types.split(",") if t.strip()]
+                    if exts:
+                        ext_list = ", ".join(f'"{e}"' for e in exts)
+                        script += f' of type {{{ext_list}}}'
+                script += ')'
+                result = subprocess.check_output(["osascript", "-e", script], stderr=subprocess.STDOUT)
+                file_path = result.decode("utf-8").strip()
+            except subprocess.CalledProcessError:
+                file_path = ""
+        else:
+            import tkinter as tk
+            from tkinter import filedialog
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes("-topmost", True)
+
+            # Check if initial path exists, otherwise try parent directories
+            init_dir = None
+            if initial_path:
+                if os.path.isdir(initial_path):
+                    init_dir = initial_path
+                elif os.path.isdir(os.path.dirname(initial_path)):
+                    # If sourcedata doesn't exist, use project root
+                    init_dir = os.path.dirname(initial_path)
+
+            # Build file type filter
+            filetypes = [("All files", "*.*")]
+            if file_types:
+                exts = [t.strip() for t in file_types.split(",") if t.strip()]
+                if exts:
+                    desc = "Survey files"
+                    filetypes = [(desc, " ".join(exts)), ("All files", "*.*")]
+            file_path = filedialog.askopenfilename(initialdir=init_dir, filetypes=filetypes)
+            root.destroy()
+
+        return jsonify({"path": file_path})
+    except Exception as e:
+        print(f"Error opening file dialog: {e}")
+        return jsonify({"error": "Could not open file dialog. Please select file manually."}), 500
 
 def _extract_template_info(full_path, filename):
     """Helper to extract metadata and questions from a PRISM JSON template"""
@@ -889,16 +958,30 @@ def limesurvey_to_prism():
         except ImportError:
             return jsonify({"error": "LimeSurvey converter not available"}), 500
 
-    if "file" not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+    # Support both file upload and file path
+    file_path = (request.form.get("file_path") or "").strip()
+    using_file_path = False
+    filename = None
+    file_content = None
 
-    file = request.files["file"]
-    if not file.filename:
-        return jsonify({"error": "No file selected"}), 400
+    if file_path and os.path.isfile(file_path):
+        using_file_path = True
+        filename = os.path.basename(file_path).lower()
+        if not (filename.endswith(".lss") or filename.endswith(".lsa")):
+            return jsonify({"error": "Please select a .lss or .lsa file"}), 400
+        # Read the file content
+        with open(file_path, "rb") as f:
+            file_content = f.read()
+    elif "file" in request.files:
+        file = request.files["file"]
+        if file.filename:
+            filename = file.filename.lower()
+            if not (filename.endswith(".lss") or filename.endswith(".lsa")):
+                return jsonify({"error": "Please upload a .lss or .lsa file"}), 400
+            file_content = file.read()
 
-    filename = file.filename.lower()
-    if not (filename.endswith(".lss") or filename.endswith(".lsa")):
-        return jsonify({"error": "Please upload a .lss or .lsa file"}), 400
+    if not filename or not file_content:
+        return jsonify({"error": "No file provided. Use file upload or file_path parameter."}), 400
 
     task_name = request.form.get("task_name", "").strip()
 
@@ -913,7 +996,7 @@ def limesurvey_to_prism():
         return jsonify({"error": f"Invalid mode '{mode}'. Use: combined, groups, or questions"}), 400
 
     if not task_name:
-        task_name = Path(file.filename).stem
+        task_name = Path(filename).stem
 
     try:
         xml_content = None
@@ -922,7 +1005,7 @@ def limesurvey_to_prism():
             import zipfile as zf_module
             import io
 
-            file_bytes = io.BytesIO(file.read())
+            file_bytes = io.BytesIO(file_content)
             try:
                 with zf_module.ZipFile(file_bytes, "r") as zf:
                     lss_files = [f for f in zf.namelist() if f.endswith(".lss")]
@@ -933,7 +1016,7 @@ def limesurvey_to_prism():
             except zf_module.BadZipFile:
                 return jsonify({"error": "Invalid .lsa archive"}), 400
         else:
-            xml_content = file.read()
+            xml_content = file_content
 
         if not xml_content:
             return jsonify({"error": "Could not read file content"}), 400

@@ -323,6 +323,7 @@ def get_library_path():
         return jsonify({
             "success": False,
             "message": "No project selected",
+            "project_path": None,
             "project_library_path": None,
             "global_library_path": effective_global_path,
             "library_path": effective_global_path,  # Legacy compatibility
@@ -350,10 +351,14 @@ def get_library_path():
     else:
         legacy_library_path = str(project_path)
 
+    # Sourcedata folder path (for file browsing)
+    sourcedata_path = project_path / "sourcedata"
+
     return jsonify({
         "success": True,
         "project_path": str(project_path),
         "project_name": current.get("name"),
+        "sourcedata_path": str(sourcedata_path) if sourcedata_path.exists() else str(project_path),
 
         # Dual library system
         "project_library_path": str(project_library) if project_library.exists() else None,
@@ -367,6 +372,7 @@ def get_library_path():
         # Structure info
         "structure": {
             "has_project_library": project_library.exists(),
+            "has_sourcedata": sourcedata_path.exists(),
             "has_survey": (project_library / "survey").exists() if project_library.exists() else False,
             "has_biometrics": (project_library / "biometrics").exists() if project_library.exists() else False,
             "has_participants": (project_path / "participants.json").exists(),

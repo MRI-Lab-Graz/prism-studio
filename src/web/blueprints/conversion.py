@@ -13,7 +13,7 @@ import tempfile
 import zipfile
 import base64
 from pathlib import Path
-from flask import Blueprint, request, jsonify, send_file, render_template, current_app
+from flask import Blueprint, request, jsonify, send_file, render_template, current_app, session
 from werkzeug.utils import secure_filename
 from src.web.utils import list_survey_template_languages, sanitize_jsonable
 from src.web import run_validation
@@ -127,14 +127,22 @@ def api_survey_convert():
     ):
         return jsonify({"error": "Survey conversion module not available"}), 500
 
+    # Support both uploaded files and file paths from browse dialog
     uploaded_file = request.files.get("excel") or request.files.get("file")
+    file_path = (request.form.get("file_path") or "").strip()
     alias_upload = request.files.get("alias") or request.files.get("alias_file")
     library_path = (request.form.get("library_path") or "").strip()
 
-    if not uploaded_file or not getattr(uploaded_file, "filename", ""):
+    # Determine if we're using a file path or uploaded file
+    using_file_path = False
+    if file_path and os.path.isfile(file_path):
+        using_file_path = True
+        filename = os.path.basename(file_path)
+    elif uploaded_file and getattr(uploaded_file, "filename", ""):
+        filename = secure_filename(uploaded_file.filename)
+    else:
         return jsonify({"error": "Missing input file"}), 400
 
-    filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
     if suffix not in {".xlsx", ".lsa", ".csv", ".tsv"}:
         return jsonify({"error": "Supported formats: .xlsx, .lsa, .csv, .tsv"}), 400
@@ -174,8 +182,13 @@ def api_survey_convert():
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_")
     try:
         tmp_dir_path = Path(tmp_dir)
-        input_path = tmp_dir_path / filename
-        uploaded_file.save(str(input_path))
+        if using_file_path:
+            # Use the file directly from its path
+            input_path = Path(file_path)
+        else:
+            # Save uploaded file to temp directory
+            input_path = tmp_dir_path / filename
+            uploaded_file.save(str(input_path))
 
         alias_path = None
         if alias_filename:
@@ -273,14 +286,22 @@ def api_survey_convert_validate():
     def add_log(message, level="info"):
         log_messages.append({"message": message, "level": level})
 
+    # Support both uploaded files and file paths from browse dialog
     uploaded_file = request.files.get("excel") or request.files.get("file")
+    file_path = (request.form.get("file_path") or "").strip()
     alias_upload = request.files.get("alias") or request.files.get("alias_file")
     library_path = (request.form.get("library_path") or "").strip()
 
-    if not uploaded_file or not getattr(uploaded_file, "filename", ""):
+    # Determine if we're using a file path or uploaded file
+    using_file_path = False
+    if file_path and os.path.isfile(file_path):
+        using_file_path = True
+        filename = os.path.basename(file_path)
+    elif uploaded_file and getattr(uploaded_file, "filename", ""):
+        filename = secure_filename(uploaded_file.filename)
+    else:
         return jsonify({"error": "Missing input file", "log": log_messages}), 400
 
-    filename = secure_filename(uploaded_file.filename)
     suffix = Path(filename).suffix.lower()
     if suffix not in {".xlsx", ".lsa", ".csv", ".tsv"}:
         return jsonify({"error": "Supported formats: .xlsx, .lsa, .csv, .tsv", "log": log_messages}), 400
@@ -307,11 +328,21 @@ def api_survey_convert_validate():
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
 
+    # Save to project folder option
+    save_to_project_raw = (request.form.get("save_to_project") or "").strip().lower()
+    save_to_project = save_to_project_raw in {"1", "true", "yes", "on"}
+    project_path = session.get("current_project_path", "")
+
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_validate_")
     try:
         tmp_dir_path = Path(tmp_dir)
-        input_path = tmp_dir_path / filename
-        uploaded_file.save(str(input_path))
+        if using_file_path:
+            # Use the file directly from its path
+            input_path = Path(file_path)
+        else:
+            # Save uploaded file to temp directory
+            input_path = tmp_dir_path / filename
+            uploaded_file.save(str(input_path))
 
         alias_path = None
         if alias_upload and getattr(alias_upload, "filename", ""):
@@ -435,10 +466,61 @@ def api_survey_convert_validate():
         mem.seek(0)
         zip_base64 = base64.b64encode(mem.read()).decode("utf-8")
 
-        return jsonify(sanitize_jsonable({
+        # Save to project folder if requested
+        saved_to_project = None
+        saved_file_count = 0
+        source_file_archived = None
+        if save_to_project and project_path and os.path.isdir(project_path):
+            try:
+                project_root = Path(project_path)
+                add_log(f"Saving converted data to project: {project_path}", "info")
+
+                # Copy all converted files to project root (merge, don't replace)
+                for item in output_root.iterdir():
+                    dest = project_root / item.name
+                    if item.is_dir():
+                        # Copy directory tree, merging with existing
+                        if dest.exists():
+                            # Merge: copy files from source to dest
+                            for src_file in item.rglob("*"):
+                                if src_file.is_file():
+                                    rel_path = src_file.relative_to(item)
+                                    dest_file = dest / rel_path
+                                    dest_file.parent.mkdir(parents=True, exist_ok=True)
+                                    shutil.copy2(src_file, dest_file)
+                                    saved_file_count += 1
+                        else:
+                            shutil.copytree(item, dest)
+                            saved_file_count += sum(1 for _ in dest.rglob("*") if _.is_file())
+                    else:
+                        # Copy single file
+                        shutil.copy2(item, dest)
+                        saved_file_count += 1
+
+                # Archive raw source file to sourcedata/ folder
+                sourcedata_dir = project_root / "sourcedata"
+                if sourcedata_dir.exists() and input_path.exists():
+                    source_dest = sourcedata_dir / input_path.name
+                    # Don't overwrite if already exists (might be same file)
+                    if not source_dest.exists() or source_dest.resolve() != input_path.resolve():
+                        shutil.copy2(input_path, source_dest)
+                        source_file_archived = str(source_dest)
+                        add_log(f"Archived source file to: sourcedata/{input_path.name}", "info")
+
+                saved_to_project = str(project_root)
+                add_log(f"Saved {saved_file_count} files to project folder", "success")
+            except Exception as save_err:
+                add_log(f"Failed to save to project: {save_err}", "error")
+
+        response_data = {
             "success": True, "log": log_messages,
             "validation": validation_result, "zip_base64": zip_base64,
-        }))
+        }
+        if saved_to_project:
+            response_data["saved_to_project"] = saved_to_project
+            response_data["saved_file_count"] = saved_file_count
+
+        return jsonify(sanitize_jsonable(response_data))
     except Exception as e:
         return jsonify({"error": str(e), "log": log_messages}), 500
     finally:

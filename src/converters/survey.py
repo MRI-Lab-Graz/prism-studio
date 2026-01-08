@@ -321,75 +321,20 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
         return df.rename(columns={c: str(c).strip() for c in df.columns})
 
     if kind == "lsa":
-        def _normalize_lsa_columns(cols: list[str]) -> list[str]:
-            """Normalize LimeSurvey export column names.
-
-            LimeSurvey often uses SGQA-like identifiers in exports.
-            In our test dataset we see names like:
-              _569818X43541X590135ADS01
-            where the trailing part is the question code used in templates.
-            We strip the leading '_<digits>X<digits>X<digits>' prefix when a
-            non-empty suffix exists.
-            """
-
-            pattern = re.compile(r"^_\d+X\d+X\d+(.*)$")
-            used: set[str] = set()
-            out_cols: list[str] = []
-            for c in cols:
-                s = str(c).strip()
-                m = pattern.match(s)
-                candidate = s
-                if m:
-                    suffix = (m.group(1) or "").strip()
-                    if suffix:
-                        candidate = suffix
-                # avoid collisions
-                if candidate in used:
-                    candidate = s
-                used.add(candidate)
-                out_cols.append(candidate)
-            return out_cols
-
-        def _find_responses_member(zf: zipfile.ZipFile) -> str:
-            matches = [name for name in zf.namelist() if name.endswith("_responses.lsr")]
-            if not matches:
-                raise ValueError("No *_responses.lsr found inside the .lsa archive")
-            matches.sort()
-            return matches[0]
-
-        def _parse_rows(xml_bytes: bytes) -> list[dict[str, str]]:
-            root = ET.fromstring(xml_bytes)
-            rows: list[dict[str, str]] = []
-            for row in root.findall(".//row"):
-                record: dict[str, str] = {}
-                for child in row:
-                    tag = child.tag
-                    if "}" in tag:
-                        tag = tag.split("}", 1)[1]
-                    record[tag] = child.text or ""
-                rows.append(record)
-            return rows
+        # Use the proper LimeSurvey parser that correctly maps qid+suffix to question_code+suffix
+        try:
+            from .limesurvey import parse_lsa_responses
+        except ImportError:
+            from src.converters.limesurvey import parse_lsa_responses
 
         try:
-            with zipfile.ZipFile(input_path) as zf:
-                member = _find_responses_member(zf)
-                xml_bytes = zf.read(member)
-        except zipfile.BadZipFile as e:
-            raise ValueError(f"Invalid .lsa archive: {e}") from e
+            df, questions_map, groups_map = parse_lsa_responses(input_path)
         except Exception as e:
-            raise ValueError(f"Failed to read .lsa archive: {e}") from e
+            raise ValueError(f"Failed to parse .lsa archive: {e}") from e
 
-        try:
-            rows = _parse_rows(xml_bytes)
-        except ET.ParseError as e:
-            raise ValueError(f"Failed to parse LimeSurvey responses XML: {e}") from e
-
-        df = pd.DataFrame(rows)
         if df is None or df.empty:
             raise ValueError("No response rows found inside the .lsa archive")
 
-        df = df.rename(columns={c: str(c).strip() for c in df.columns})
-        df.columns = _normalize_lsa_columns([str(c) for c in df.columns])
         return df
 
     raise ValueError(f"Unsupported table kind: {kind}")
@@ -521,8 +466,15 @@ def _convert_survey_dataframe_to_prism_dataset(
                 f"id_column '{resolved_id_col}' not found. Columns: {', '.join([str(c) for c in df.columns])}"
             )
     else:
-        # LimeSurvey response archives commonly use `token`.
-        resolved_id_col = _find_col({"participant_id", "subject", "id", "sub_id", "participant", "code", "token"})
+        # Auto-detect ID column in order of preference
+        # LimeSurvey: 'id' is response ID (always unique), 'token' is participant token
+        # Standard: 'participant_id', 'subject' are common in BIDS
+        id_candidates = ["participant_id", "subject", "id", "sub_id", "participant", "token", "code"]
+        for candidate in id_candidates:
+            lower_map = {str(c).strip().lower(): str(c).strip() for c in df.columns}
+            if candidate in lower_map:
+                resolved_id_col = lower_map[candidate]
+                break
         if not resolved_id_col:
             raise ValueError(
                 "Could not determine participant id column. Provide id_column explicitly (e.g., participant_id, CODE)."
@@ -554,9 +506,12 @@ def _convert_survey_dataframe_to_prism_dataset(
     def _normalize_ses_id(val) -> str:
         s = sanitize_id(str(val).strip())
         if not s:
-            return "ses-1"
+            return "ses-01"
         if s.startswith("ses-"):
             return s
+        # Zero-pad numeric sessions to 2 digits (ses-01, ses-02, etc.)
+        if s.isdigit() and len(s) < 2:
+            s = s.zfill(2)
         return f"ses-{s}"
 
     def _is_missing_value(val) -> bool:
@@ -573,9 +528,26 @@ def _convert_survey_dataframe_to_prism_dataset(
         dup_ids = sorted(set(normalized_ids[dup_mask]))
         preview = ", ".join(dup_ids[:5])
         suffix = "" if len(dup_ids) <= 5 else " ..."
+        dup_count = dup_mask.sum()
+
+        # Find alternative columns that might be unique
+        potential_id_cols = []
+        for col in df.columns:
+            col_lower = str(col).lower()
+            if col_lower in ["id", "response_id", "responseid", "token", "participant_id", "subject"]:
+                if not df[col].duplicated().any():
+                    potential_id_cols.append(col)
+
+        suggestion = ""
+        if potential_id_cols:
+            suggestion = f"\nTry using one of these unique columns: {', '.join(potential_id_cols)}"
+        else:
+            suggestion = "\nYour data may contain duplicate survey submissions. Remove duplicates first or use a unique ID column."
+
         raise ValueError(
-            f"Duplicate participant_id values after normalization: {preview}{suffix}. "
-            "Please resolve duplicates before conversion."
+            f"Duplicate participant IDs found using column '{resolved_id_col}' ({dup_count} duplicate rows).\n"
+            f"Duplicated values: {preview}{suffix}"
+            f"{suggestion}"
         )
 
     # --- Determine which columns map to which surveys ---
@@ -618,7 +590,15 @@ def _convert_survey_dataframe_to_prism_dataset(
         tasks_with_data = tasks_with_data.intersection(selected_tasks)
 
     if not tasks_with_data:
-        raise ValueError("No survey item columns matched the selected templates.")
+        # Debug info to help diagnose the mismatch
+        sample_cols = list(df.columns)[:20]
+        sample_items = list(item_to_task.keys())[:20]
+        debug_msg = (
+            f"No survey item columns matched the selected templates.\n"
+            f"Sample data columns ({len(df.columns)} total): {sample_cols}\n"
+            f"Sample template items ({len(item_to_task)} total): {sample_items}"
+        )
+        raise ValueError(debug_msg)
 
     # Missing-items report
     missing_items_by_task: dict[str, int] = {}
@@ -806,7 +786,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         elif resolved_session_col:
             ses_id = _normalize_ses_id(row[resolved_session_col])
         else:
-            ses_id = "ses-1"
+            ses_id = "ses-01"
 
         modality_dir = _ensure_dir(output_root / sub_id / ses_id / "survey")
 
