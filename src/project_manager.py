@@ -118,19 +118,13 @@ class ProjectManager:
             CrossPlatformFile.write_text(str(tsv_path), tsv_content)
             created_files.append("participants.tsv")
 
-            # 3. Copy participants.json template
+            # 3. Create minimal participants.json (only required field)
+            # Users add fields via Template Generation in Converter
             json_path = project_path / "participants.json"
-            template_json = self.template_dir / "participants.json"
-            if template_json.exists():
-                shutil.copy(str(template_json), str(json_path))
-            else:
-                # Create minimal template if demo file doesn't exist
-                minimal = {
-                    "participant_id": {"Description": "Unique participant identifier"},
-                    "age": {"Description": "Age of participant", "Units": "years"},
-                    "sex": {"Description": "Biological sex", "Levels": {"M": "Male", "F": "Female"}}
-                }
-                CrossPlatformFile.write_text(str(json_path), json.dumps(minimal, indent=2))
+            minimal = {
+                "participant_id": {"Description": "Unique participant identifier"}
+            }
+            CrossPlatformFile.write_text(str(json_path), json.dumps(minimal, indent=2))
             created_files.append("participants.json")
 
             # 4. Create .bidsignore

@@ -2662,6 +2662,10 @@ document.addEventListener('DOMContentLoaded', function() {
         let html = '<div class="list-group list-group-flush">';
         for (const field of allFields) {
             const suggestedMapping = suggestBidsMapping(field.code);
+            // Build BIDS field options - avoid duplicates
+            const bidsOptions = ['participant_id', 'age', 'sex', 'handedness', 'education_years', 'native_language'];
+            const filteredOptions = bidsOptions.filter(opt => opt !== suggestedMapping);
+
             html += `
                 <label class="list-group-item list-group-item-action py-2 d-flex align-items-center">
                     <input type="checkbox" class="form-check-input me-2 participant-field-checkbox"
@@ -2672,27 +2676,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <small class="text-muted">${field.description || field.type || ''}</small>
                         ${field.group ? `<span class="badge bg-light text-dark ms-2">${field.group}</span>` : ''}
                     </div>
-                    ${suggestedMapping ? `
-                        <select class="form-select form-select-sm bids-mapping-select" style="width: 140px;" data-code="${field.code}">
-                            <option value="">Map to...</option>
-                            <option value="${suggestedMapping}" selected>${suggestedMapping}</option>
-                            <option value="participant_id">participant_id</option>
-                            <option value="age">age</option>
-                            <option value="sex">sex</option>
-                            <option value="handedness">handedness</option>
-                            <option value="custom">Custom name</option>
-                        </select>
-                    ` : `
-                        <select class="form-select form-select-sm bids-mapping-select" style="width: 140px;" data-code="${field.code}">
-                            <option value="">Map to...</option>
-                            <option value="participant_id">participant_id</option>
-                            <option value="age">age</option>
-                            <option value="sex">sex</option>
-                            <option value="handedness">handedness</option>
-                            <option value="education_years">education_years</option>
-                            <option value="custom">Custom name</option>
-                        </select>
-                    `}
+                    <select class="form-select form-select-sm bids-mapping-select" style="width: 160px;" data-code="${field.code}">
+                        <option value="${field.code}">Keep: ${field.code}</option>
+                        ${suggestedMapping ? `<option value="${suggestedMapping}" selected>→ ${suggestedMapping} (suggested)</option>` : ''}
+                        ${filteredOptions.map(opt => `<option value="${opt}">→ ${opt}</option>`).join('')}
+                    </select>
                 </label>
             `;
         }

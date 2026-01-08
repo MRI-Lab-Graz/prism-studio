@@ -386,14 +386,35 @@
                     <span class="text-muted">No fields defined yet</span>
                 </div>
             </div>
+
+            <!-- Quick Add Default Fields -->
+            <div class="mb-3" id="quickAddDefaultsSection">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <small class="text-muted">Quick add:</small>
+                    <button type="button" class="btn btn-sm btn-outline-secondary quick-add-field" data-field="age" data-desc="Age of participant" data-units="years">
+                        + age
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary quick-add-field" data-field="sex" data-desc="Biological sex" data-levels='{"M":"Male","F":"Female","O":"Other"}'>
+                        + sex
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary quick-add-field" data-field="handedness" data-desc="Handedness" data-levels='{"R":"Right","L":"Left","A":"Ambidextrous"}'>
+                        + handedness
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary quick-add-field" data-field="education_years" data-desc="Years of formal education" data-units="years">
+                        + education
+                    </button>
+                    <span id="quickAddStatus" class="small ms-2"></span>
+                </div>
+            </div>
+
             <div class="alert alert-light border mb-0">
                 <i class="fas fa-info-circle text-info me-2"></i>
-                <strong>How to add participant fields:</strong>
+                <strong>Add fields from survey data:</strong>
                 <ol class="mb-0 mt-2 small">
                     <li>Go to <a href="/converter">Converter</a> → Survey tab → <strong>Template Generation</strong> mode</li>
-                    <li>Upload a LimeSurvey file (.lss/.lsa) or Excel/CSV with your data</li>
-                    <li>Mark questions as <strong>Participant Metadata</strong> (age, sex, etc.)</li>
-                    <li>Generate templates - participant fields will be added to <code>participants.json</code></li>
+                    <li>Upload a LimeSurvey file (.lss/.lsa) or Excel/CSV</li>
+                    <li>Mark questions as <strong>Participant Metadata</strong></li>
+                    <li>Fields will be added to <code>participants.json</code></li>
                 </ol>
             </div>
         </div>
@@ -980,6 +1001,9 @@
         {% endif %}
     }
 
+    // Store current schema for quick add checks
+    let currentParticipantsSchema = {};
+
     // Load and display current participants.json fields
     async function loadParticipantsStatus() {
         try {
@@ -990,6 +1014,7 @@
             const countBadge = document.getElementById('participantsFieldCount');
 
             if (data.success && data.schema) {
+                currentParticipantsSchema = data.schema;
                 const fields = Object.keys(data.schema);
                 countBadge.textContent = `${fields.length} fields`;
 
@@ -1002,7 +1027,11 @@
                         return `<span class="badge ${badgeClass}">${field}</span>`;
                     }).join(' ');
                 }
+
+                // Update quick add buttons (hide if field already exists)
+                updateQuickAddButtons();
             } else {
+                currentParticipantsSchema = {};
                 container.innerHTML = '<span class="text-muted">No participants.json found</span>';
                 countBadge.textContent = '0 fields';
             }
@@ -1010,6 +1039,62 @@
             console.error('Error loading participants status:', error);
         }
     }
+
+    // Update quick add buttons based on existing fields
+    function updateQuickAddButtons() {
+        document.querySelectorAll('.quick-add-field').forEach(btn => {
+            const field = btn.dataset.field;
+            if (currentParticipantsSchema[field]) {
+                btn.classList.add('d-none');
+            } else {
+                btn.classList.remove('d-none');
+            }
+        });
+    }
+
+    // Handle quick add button clicks
+    document.querySelectorAll('.quick-add-field').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const field = this.dataset.field;
+            const desc = this.dataset.desc;
+            const units = this.dataset.units;
+            const levelsStr = this.dataset.levels;
+
+            const statusEl = document.getElementById('quickAddStatus');
+
+            // Build field definition
+            const fieldDef = { Description: desc };
+            if (units) fieldDef.Units = units;
+            if (levelsStr) {
+                try {
+                    fieldDef.Levels = JSON.parse(levelsStr);
+                } catch (e) {}
+            }
+
+            // Merge with existing schema
+            const newSchema = { ...currentParticipantsSchema, [field]: fieldDef };
+
+            try {
+                const response = await fetch('/api/projects/participants', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ schema: newSchema })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    statusEl.innerHTML = `<span class="text-success"><i class="fas fa-check me-1"></i>Added ${field}</span>`;
+                    setTimeout(() => { statusEl.innerHTML = ''; }, 2000);
+                    // Reload to update display
+                    await loadParticipantsStatus();
+                } else {
+                    statusEl.innerHTML = `<span class="text-danger">${result.error}</span>`;
+                }
+            } catch (e) {
+                statusEl.innerHTML = `<span class="text-danger">${e.message}</span>`;
+            }
+        });
+    });
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', initParticipantsStatus);
