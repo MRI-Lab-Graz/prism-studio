@@ -82,6 +82,144 @@
         </div>
     </div>
 
+    <!-- Project Context Banner -->
+    {% include 'includes/project_banner.html' %}
+
+    <!-- LimeSurvey Quick Import Card (Legacy - now integrated into Survey tab) -->
+    <div class="card border-success mb-4 shadow-sm d-none" id="legacyLimeSurveyCard">
+        <div class="card-header bg-success bg-opacity-10 d-flex align-items-center">
+            <i class="fas fa-file-import fa-lg text-success me-2"></i>
+            <h5 class="mb-0">LimeSurvey → PRISM JSON</h5>
+            <span class="badge bg-success ms-2">Quick Import</span>
+            <span class="badge bg-secondary ms-2">Moved to Survey Tab</span>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-3">
+                Convert a LimeSurvey structure file (.lss or .lsa) into PRISM-compatible JSON template(s).
+            </p>
+            <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="lssFile" class="form-label">LimeSurvey File</label>
+                    <input class="form-control" type="file" id="lssFile" accept=".lss,.lsa">
+                </div>
+                <div class="col-md-3">
+                    <label for="lssTaskName" class="form-label">Survey Name (optional)</label>
+                    <input type="text" class="form-control" id="lssTaskName" placeholder="e.g. phq9">
+                    <div class="form-text">For combined mode</div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Export Mode</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="lssMode" id="lssModeGroups" value="groups" checked>
+                        <label class="form-check-label" for="lssModeGroups">By questionnaire group</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="lssMode" id="lssModeQuestions" value="questions">
+                        <label class="form-check-label" for="lssModeQuestions">Individual questions</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="lssMode" id="lssModeCombined" value="combined">
+                        <label class="form-check-label" for="lssModeCombined">Combined (single file)</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-success w-100" type="button" id="lssConvertBtn" disabled>
+                        <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
+                    </button>
+                </div>
+            </div>
+            <div id="lssError" class="alert alert-danger d-none mt-3"></div>
+
+            <!-- Single file result (combined mode) -->
+            <div id="lssResultSingle" class="mt-3 d-none">
+                <div class="alert alert-success">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Conversion successful!</strong>
+                            <span id="lssQuestionCount" class="ms-2 badge bg-secondary"></span>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-success me-2" id="lssPreviewBtn">
+                                <i class="fas fa-eye me-1"></i>Preview
+                            </button>
+                            <button class="btn btn-sm btn-success" id="lssDownloadBtn">
+                                <i class="fas fa-download me-1"></i>Download JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="lssPreview" class="d-none mt-2">
+                    <pre class="bg-light p-3 rounded border" style="max-height: 400px; overflow-y: auto;"><code id="lssPreviewContent"></code></pre>
+                </div>
+            </div>
+
+            <!-- Multiple files result (groups mode) -->
+            <div id="lssResultMultiple" class="mt-3 d-none">
+                <div class="alert alert-success mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Conversion successful!</strong>
+                            <span id="lssGroupCount" class="ms-2 badge bg-primary"></span>
+                            <span id="lssTotalQuestions" class="ms-1 badge bg-secondary"></span>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-success" id="lssDownloadAllBtn">
+                                <i class="fas fa-download me-1"></i>Download ZIP
+                            </button>
+                            {% if current_project.path %}
+                            <button class="btn btn-sm btn-primary" id="lssSaveGroupsToProjectBtn">
+                                <i class="fas fa-folder-plus me-1"></i>Save to Project
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div id="lssQuestionnaireList" class="row g-2"></div>
+            </div>
+
+            <!-- Individual questions result (questions mode) -->
+            <div id="lssResultQuestions" class="mt-3 d-none">
+                <div class="alert alert-success mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Question templates extracted!</strong>
+                            <span id="lssIndividualCount" class="ms-2 badge bg-info"></span>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-success" id="lssDownloadAllQuestionsBtn">
+                                <i class="fas fa-download me-1"></i>Download ZIP
+                            </button>
+                            {% if current_project.path %}
+                            <button class="btn btn-sm btn-primary" id="lssSaveQuestionsToProjectBtn">
+                                <i class="fas fa-folder-plus me-1"></i>Save to Project
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <p class="text-muted small mb-2">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Each question is a reusable template. Array questions include all their subquestions.
+                </p>
+                <div id="lssQuestionsList" class="row g-2"></div>
+            </div>
+
+            <!-- Save to Project Success Message -->
+            <div id="lssSaveSuccess" class="alert alert-success d-none mt-3">
+                <i class="fas fa-check-circle me-2"></i>
+                <span id="lssSaveSuccessMessage"></span>
+                <div class="mt-2">
+                    <a href="{{ url_for('tools.survey_generator') }}" class="btn btn-sm btn-info">
+                        <i class="fas fa-arrow-right me-1"></i>Go to Survey & Boilerplate
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body">
             <!-- Global Renamer Helper -->
@@ -311,7 +449,20 @@
                                             <i class="fas fa-folder-open"></i>
                                         </button>
                                     </div>
-                                    <div class="form-text">Root library folder containing <code>survey/</code>, <code>biometrics/</code>, and <code>participants.json</code></div>
+                                    <div class="form-text">Library folder containing <code>survey/</code> and <code>biometrics/</code>. (<code>participants.json</code> can be here or in parent folder)</div>
+                                    <!-- Quick switch buttons for library paths -->
+                                    <div class="mt-2" id="convertLibraryQuickSwitch">
+                                        <small class="text-muted me-2">Quick switch:</small>
+                                        <button type="button" class="btn btn-sm btn-outline-info me-1" id="convertUseGlobalLibraryBtn" disabled title="No global library configured">
+                                            <i class="fas fa-globe me-1"></i>Global
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-success me-1" id="convertUseProjectLibraryBtn" disabled title="No project selected">
+                                            <i class="fas fa-folder me-1"></i>Project
+                                        </button>
+                                        <span class="badge bg-secondary ms-2" id="convertLibrarySourceBadge" style="display: none;">
+                                            <i class="fas fa-info-circle me-1"></i><span id="convertLibrarySourceText">-</span>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -327,21 +478,68 @@
                                 <strong>Multilanguage Notice:</strong> <span id="surveyI18nMessage">Some templates do not have multilanguage (I18n) configuration.</span>
                             </div>
 
+                            <!-- Conversion Mode Toggle -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Conversion Mode</label>
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="convertMode" id="convertModeData" value="data" checked>
+                                        <label class="btn btn-outline-warning" for="convertModeData">
+                                            <i class="fas fa-table me-1"></i>Data Conversion
+                                            <small class="d-block text-muted">Convert responses to BIDS format</small>
+                                        </label>
+                                        <input type="radio" class="btn-check" name="convertMode" id="convertModeTemplate" value="template">
+                                        <label class="btn btn-outline-success" for="convertModeTemplate">
+                                            <i class="fas fa-file-code me-1"></i>Template Generation
+                                            <small class="d-block text-muted">Extract structure only (no data)</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="row g-3 align-items-end">
                                 <div class="col-md-4">
-                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa)</label>
-                                    <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv">
+                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa, .lss)</label>
+                                    <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv,.lss">
+                                    <div class="form-text" id="convertFileHint">
+                                        <span class="text-info"><i class="fas fa-info-circle me-1"></i>.lss/.lsa for LimeSurvey, .xlsx/.csv for other sources</span>
+                                    </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <label for="convertDatasetName" class="form-label">Dataset Name (optional)</label>
-                                    <input type="text" class="form-control" id="convertDatasetName" placeholder="PRISM Survey Dataset">
+                                <div class="col-md-4" id="convertDatasetNameGroup">
+                                    <label for="convertDatasetName" class="form-label">Dataset/Survey Name (optional)</label>
+                                    <input type="text" class="form-control" id="convertDatasetName" placeholder="e.g. phq9">
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-4" id="convertLanguageGroup">
                                     <label for="convertLanguage" class="form-label">Language</label>
                                     <select class="form-select" id="convertLanguage">
                                         <option value="auto" selected>Auto (template default)</option>
                                     </select>
                                 </div>
+
+                                <!-- Participant ID selector (for data conversion) -->
+                                <div class="col-md-4" id="convertIdColumnGroup">
+                                    <label for="convertIdColumn" class="form-label">
+                                        Participant ID Column
+                                        <span id="idColumnStatus" class="ms-2 small"></span>
+                                    </label>
+                                    <select class="form-select" id="convertIdColumn">
+                                        <option value="auto" selected>Auto-detect</option>
+                                    </select>
+                                    <div class="form-text" id="idColumnHelp">
+                                        <i class="fas fa-info-circle me-1"></i>Upload a file to detect available columns
+                                    </div>
+                                </div>
+
+                                <!-- Template export mode (for template generation) -->
+                                <div class="col-md-4 d-none" id="convertTemplateExportGroup">
+                                    <label class="form-label">Template Export</label>
+                                    <select class="form-select" id="convertTemplateExport">
+                                        <option value="groups" selected>By questionnaire group</option>
+                                        <option value="questions">Individual questions</option>
+                                        <option value="combined">Combined (single file)</option>
+                                    </select>
+                                </div>
+
                                 <div class="col-md-4">
                                     <button class="btn btn-warning text-white w-100" type="button" id="convertBtn" disabled>
                                         <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
@@ -432,6 +630,139 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Template Generation Results -->
+                            <div id="templateResultsContainer" class="d-none mt-3">
+                                <!-- Single template result -->
+                                <div id="templateResultSingle" class="d-none">
+                                    <div class="alert alert-success">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-check-circle me-2"></i>
+                                                <strong>Template generated!</strong>
+                                                <span id="templateQuestionCount" class="ms-2 badge bg-secondary"></span>
+                                            </div>
+                                            <div>
+                                                <button class="btn btn-sm btn-outline-success me-2" id="templatePreviewBtn">
+                                                    <i class="fas fa-eye me-1"></i>Preview
+                                                </button>
+                                                <button class="btn btn-sm btn-success" id="templateDownloadBtn">
+                                                    <i class="fas fa-download me-1"></i>Download JSON
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="templatePreview" class="d-none mt-2">
+                                        <pre class="bg-light p-3 rounded border" style="max-height: 400px; overflow-y: auto;"><code id="templatePreviewContent"></code></pre>
+                                    </div>
+                                </div>
+
+                                <!-- Multiple templates result (groups mode) -->
+                                <div id="templateResultGroups" class="d-none">
+                                    <div class="alert alert-success mb-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-check-circle me-2"></i>
+                                                <strong>Templates generated!</strong>
+                                                <span id="templateGroupCount" class="ms-2 badge bg-primary"></span>
+                                                <span id="templateTotalQuestions" class="ms-1 badge bg-secondary"></span>
+                                            </div>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-success" id="templateDownloadAllBtn">
+                                                    <i class="fas fa-download me-1"></i>Download ZIP
+                                                </button>
+                                                {% if current_project.path %}
+                                                <button class="btn btn-sm btn-primary" id="templateSaveToProjectBtn">
+                                                    <i class="fas fa-folder-plus me-1"></i>Save to Project
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="templateGroupList" class="row g-2"></div>
+                                </div>
+
+                                <!-- Individual questions result -->
+                                <div id="templateResultQuestions" class="d-none">
+                                    <div class="alert alert-success mb-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-check-circle me-2"></i>
+                                                <strong>Question templates extracted!</strong>
+                                                <span id="templateIndividualCount" class="ms-2 badge bg-info"></span>
+                                            </div>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-success" id="templateDownloadQuestionsBtn">
+                                                    <i class="fas fa-download me-1"></i>Download ZIP
+                                                </button>
+                                                {% if current_project.path %}
+                                                <button class="btn btn-sm btn-primary" id="templateSaveQuestionsToProjectBtn">
+                                                    <i class="fas fa-folder-plus me-1"></i>Save to Project
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="templateQuestionsList" class="row g-2"></div>
+                                </div>
+
+                                <!-- Save to Project Success -->
+                                <div id="templateSaveSuccess" class="alert alert-success d-none mt-3">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <span id="templateSaveSuccessMessage"></span>
+                                </div>
+
+                                <!-- Participant Metadata Section -->
+                                <div id="participantMetadataSection" class="d-none mt-4 border-top pt-3">
+                                    <h6 class="mb-3">
+                                        <i class="fas fa-users text-info me-2"></i>
+                                        Mark Participant Metadata Fields
+                                        <small class="text-muted ms-2">(fields that go into participants.tsv)</small>
+                                    </h6>
+
+                                    <div class="alert alert-info py-2 mb-3">
+                                        <small>
+                                            <i class="fas fa-lightbulb me-1"></i>
+                                            <strong>BIDS Tip:</strong> Mark demographic questions (age, sex, ID) as participant metadata.
+                                            These will be saved to <code>participants.json</code> instead of per-subject survey files.
+                                        </small>
+                                    </div>
+
+                                    <!-- Question list with checkboxes -->
+                                    <div id="participantFieldsList" class="mb-3" style="max-height: 300px; overflow-y: auto;">
+                                        <div class="text-muted">Loading extracted fields...</div>
+                                    </div>
+
+                                    <!-- BIDS field mapping suggestions -->
+                                    <div id="bidsFieldSuggestions" class="mb-3 d-none">
+                                        <h6 class="small text-muted mb-2">Suggested BIDS Mappings</h6>
+                                        <div id="bidsFieldSuggestionsList" class="d-flex flex-wrap gap-2"></div>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="text-muted me-2">
+                                                <span id="selectedParticipantFieldsCount">0</span> fields selected
+                                            </span>
+                                        </div>
+                                        <div>
+                                            {% if current_project.path %}
+                                            <button type="button" class="btn btn-primary btn-sm" id="saveParticipantsJsonBtn" disabled>
+                                                <i class="fas fa-save me-1"></i>Save to participants.json
+                                            </button>
+                                            {% else %}
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="downloadParticipantsJsonBtn" disabled>
+                                                <i class="fas fa-download me-1"></i>Download participants.json
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Save status -->
+                                    <div id="participantsSaveStatus" class="mt-2"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -460,7 +791,7 @@
                                             <i class="fas fa-folder-open"></i>
                                         </button>
                                     </div>
-                                    <div class="form-text">Root library folder containing <code>survey/</code>, <code>biometrics/</code>, and <code>participants.json</code></div>
+                                    <div class="form-text">Library folder containing <code>survey/</code> and <code>biometrics/</code>. (<code>participants.json</code> can be here or in parent folder)</div>
                                 </div>
                             </div>
 
@@ -873,6 +1204,392 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // --- LimeSurvey Quick Import ---
+    const lssFile = document.getElementById('lssFile');
+    const lssTaskName = document.getElementById('lssTaskName');
+    const lssConvertBtn = document.getElementById('lssConvertBtn');
+    const lssError = document.getElementById('lssError');
+
+    // Single mode elements (combined)
+    const lssResultSingle = document.getElementById('lssResultSingle');
+    const lssQuestionCount = document.getElementById('lssQuestionCount');
+    const lssPreviewBtn = document.getElementById('lssPreviewBtn');
+    const lssDownloadBtn = document.getElementById('lssDownloadBtn');
+    const lssPreview = document.getElementById('lssPreview');
+    const lssPreviewContent = document.getElementById('lssPreviewContent');
+
+    // Groups mode elements
+    const lssResultMultiple = document.getElementById('lssResultMultiple');
+    const lssGroupCount = document.getElementById('lssGroupCount');
+    const lssTotalQuestions = document.getElementById('lssTotalQuestions');
+    const lssDownloadAllBtn = document.getElementById('lssDownloadAllBtn');
+    const lssQuestionnaireList = document.getElementById('lssQuestionnaireList');
+
+    // Questions mode elements
+    const lssResultQuestions = document.getElementById('lssResultQuestions');
+    const lssIndividualCount = document.getElementById('lssIndividualCount');
+    const lssDownloadAllQuestionsBtn = document.getElementById('lssDownloadAllQuestionsBtn');
+    const lssQuestionsList = document.getElementById('lssQuestionsList');
+
+    // Save to project elements
+    const lssSaveGroupsToProjectBtn = document.getElementById('lssSaveGroupsToProjectBtn');
+    const lssSaveQuestionsToProjectBtn = document.getElementById('lssSaveQuestionsToProjectBtn');
+    const lssSaveSuccess = document.getElementById('lssSaveSuccess');
+    const lssSaveSuccessMessage = document.getElementById('lssSaveSuccessMessage');
+
+    let lssConvertedData = null;
+    let lssSuggestedFilename = 'survey.json';
+    let lssQuestionnaires = null; // For groups mode
+    let lssIndividualQuestions = null; // For questions mode
+
+    function getSelectedLssMode() {
+        const checked = document.querySelector('input[name="lssMode"]:checked');
+        return checked ? checked.value : 'groups';
+    }
+
+    lssFile.addEventListener('change', function() {
+        lssConvertBtn.disabled = !lssFile.files.length;
+        // Reset all results
+        lssResultSingle.classList.add('d-none');
+        lssResultMultiple.classList.add('d-none');
+        lssResultQuestions.classList.add('d-none');
+        lssError.classList.add('d-none');
+        lssPreview.classList.add('d-none');
+    });
+
+    lssConvertBtn.addEventListener('click', async function() {
+        if (!lssFile.files.length) return;
+
+        const originalText = lssConvertBtn.innerHTML;
+        lssConvertBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Converting...';
+        lssConvertBtn.disabled = true;
+        lssError.classList.add('d-none');
+        lssResultSingle.classList.add('d-none');
+        lssResultMultiple.classList.add('d-none');
+        lssResultQuestions.classList.add('d-none');
+
+        const formData = new FormData();
+        formData.append('file', lssFile.files[0]);
+        formData.append('task_name', lssTaskName.value || '');
+        formData.append('mode', getSelectedLssMode());
+
+        try {
+            const response = await fetch('/api/limesurvey-to-prism', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                if (data.mode === 'questions') {
+                    // Individual questions mode
+                    lssIndividualQuestions = data.questions;
+                    lssIndividualCount.textContent = `${data.question_count} question templates`;
+
+                    // Build question cards grouped by questionnaire
+                    lssQuestionsList.innerHTML = '';
+
+                    // Group questions by their group_name
+                    const grouped = {};
+                    for (const [code, qData] of Object.entries(data.questions)) {
+                        const groupName = qData.group_name || 'Ungrouped';
+                        if (!grouped[groupName]) grouped[groupName] = [];
+                        grouped[groupName].push({code, ...qData});
+                    }
+
+                    // Sort groups by group_order
+                    const sortedGroups = Object.entries(grouped).sort((a, b) => {
+                        const orderA = a[1][0]?.group_order || 0;
+                        const orderB = b[1][0]?.group_order || 0;
+                        return orderA - orderB;
+                    });
+
+                    for (const [groupName, questions] of sortedGroups) {
+                        // Group header
+                        const groupHeader = document.createElement('div');
+                        groupHeader.className = 'col-12 mt-2';
+                        groupHeader.innerHTML = `<h6 class="text-muted border-bottom pb-1"><i class="fas fa-folder me-1"></i>${groupName}</h6>`;
+                        lssQuestionsList.appendChild(groupHeader);
+
+                        // Sort questions by question_order
+                        questions.sort((a, b) => (a.question_order || 0) - (b.question_order || 0));
+
+                        for (const q of questions) {
+                            const card = document.createElement('div');
+                            card.className = 'col-md-3';
+                            const questionType = q.question_type || '';
+                            const itemCount = q.item_count || 1;
+                            const itemBadge = itemCount > 1 ? `<span class="badge bg-secondary ms-1">${itemCount} items</span>` : '';
+                            // Get description from prism_json if available
+                            const questionText = q.prism_json?.Study?.Description || '';
+                            card.innerHTML = `
+                                <div class="card h-100 card-hover">
+                                    <div class="card-body py-2">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="small fw-bold text-truncate" title="${q.code}">${q.code}</div>
+                                            <span class="badge bg-info small">${questionType}</span>
+                                        </div>
+                                        <div class="text-muted x-small text-truncate" title="${questionText}">${questionText}</div>
+                                        ${itemBadge}
+                                        <div class="mt-1">
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-secondary btn-sm lss-preview-question" data-code="${q.code}" title="Preview">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-success btn-sm lss-download-question" data-code="${q.code}" data-filename="${q.suggested_filename}" title="Download">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            lssQuestionsList.appendChild(card);
+                        }
+                    }
+                    lssResultQuestions.classList.remove('d-none');
+
+                } else if (data.mode === 'groups') {
+                    // Multiple questionnaires (groups mode)
+                    lssQuestionnaires = data.questionnaires;
+                    lssGroupCount.textContent = `${data.questionnaire_count} questionnaires`;
+                    lssTotalQuestions.textContent = `${data.total_questions} total questions`;
+
+                    // Build questionnaire cards
+                    lssQuestionnaireList.innerHTML = '';
+                    for (const [name, qData] of Object.entries(data.questionnaires)) {
+                        const card = document.createElement('div');
+                        card.className = 'col-md-4';
+                        card.innerHTML = `
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title"><i class="fas fa-file-alt me-1 text-success"></i>${name}</h6>
+                                    <p class="card-text small text-muted">${qData.question_count} questions</p>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-secondary lss-preview-single" data-name="${name}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-success lss-download-single" data-name="${name}" data-filename="${qData.suggested_filename}">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        lssQuestionnaireList.appendChild(card);
+                    }
+                    lssResultMultiple.classList.remove('d-none');
+                } else {
+                    // Single combined JSON
+                    lssConvertedData = data.prism_json;
+                    lssSuggestedFilename = data.suggested_filename;
+                    lssQuestionCount.textContent = `${data.question_count} questions`;
+                    lssPreviewContent.textContent = JSON.stringify(lssConvertedData, null, 2);
+                    lssResultSingle.classList.remove('d-none');
+                }
+            } else {
+                lssError.textContent = data.error || 'Conversion failed';
+                lssError.classList.remove('d-none');
+            }
+        } catch (err) {
+            lssError.textContent = 'Error: ' + err.message;
+            lssError.classList.remove('d-none');
+        } finally {
+            lssConvertBtn.innerHTML = originalText;
+            lssConvertBtn.disabled = false;
+        }
+    });
+
+    // Event delegation for dynamic questionnaire buttons
+    lssQuestionnaireList.addEventListener('click', function(e) {
+        const previewBtn = e.target.closest('.lss-preview-single');
+        const downloadBtn = e.target.closest('.lss-download-single');
+
+        if (previewBtn) {
+            const name = previewBtn.dataset.name;
+            if (lssQuestionnaires && lssQuestionnaires[name]) {
+                alert(JSON.stringify(lssQuestionnaires[name].prism_json, null, 2).substring(0, 2000) + '...');
+            }
+        }
+
+        if (downloadBtn) {
+            const name = downloadBtn.dataset.name;
+            const filename = downloadBtn.dataset.filename;
+            if (lssQuestionnaires && lssQuestionnaires[name]) {
+                downloadJson(lssQuestionnaires[name].prism_json, filename);
+            }
+        }
+    });
+
+    lssPreviewBtn.addEventListener('click', function() {
+        lssPreview.classList.toggle('d-none');
+        const icon = lssPreviewBtn.querySelector('i');
+        icon.className = lssPreview.classList.contains('d-none') ? 'fas fa-eye me-1' : 'fas fa-eye-slash me-1';
+    });
+
+    lssDownloadBtn.addEventListener('click', function() {
+        if (lssConvertedData) downloadJson(lssConvertedData, lssSuggestedFilename);
+    });
+
+    lssDownloadAllBtn.addEventListener('click', function() {
+        if (!lssQuestionnaires) return;
+        downloadAllAsZip(lssQuestionnaires);
+    });
+
+    // Event delegation for individual question buttons
+    lssQuestionsList.addEventListener('click', function(e) {
+        const previewBtn = e.target.closest('.lss-preview-question');
+        const downloadBtn = e.target.closest('.lss-download-question');
+
+        if (previewBtn) {
+            const code = previewBtn.dataset.code;
+            if (lssIndividualQuestions && lssIndividualQuestions[code]) {
+                const json = JSON.stringify(lssIndividualQuestions[code].prism_json, null, 2);
+                // Use a modal or better preview in the future
+                alert(json.substring(0, 3000) + (json.length > 3000 ? '\n...(truncated)' : ''));
+            }
+        }
+
+        if (downloadBtn) {
+            const code = downloadBtn.dataset.code;
+            const filename = downloadBtn.dataset.filename;
+            if (lssIndividualQuestions && lssIndividualQuestions[code]) {
+                downloadJson(lssIndividualQuestions[code].prism_json, filename);
+            }
+        }
+    });
+
+    lssDownloadAllQuestionsBtn.addEventListener('click', function() {
+        if (!lssIndividualQuestions) return;
+        downloadAllQuestionsAsZip(lssIndividualQuestions);
+    });
+
+    function downloadJson(data, filename) {
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    async function downloadAllAsZip(questionnaires) {
+        // Use JSZip if available, otherwise download individually
+        if (typeof JSZip !== 'undefined') {
+            const zip = new JSZip();
+            for (const [name, qData] of Object.entries(questionnaires)) {
+                zip.file(qData.suggested_filename, JSON.stringify(qData.prism_json, null, 2));
+            }
+            const blob = await zip.generateAsync({type: 'blob'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'limesurvey_questionnaires.zip';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } else {
+            // Fallback: download each file individually
+            for (const [name, qData] of Object.entries(questionnaires)) {
+                downloadJson(qData.prism_json, qData.suggested_filename);
+                await new Promise(r => setTimeout(r, 300)); // Small delay between downloads
+            }
+        }
+    }
+
+    async function downloadAllQuestionsAsZip(questions) {
+        // Use JSZip if available, otherwise download individually
+        if (typeof JSZip !== 'undefined') {
+            const zip = new JSZip();
+            for (const [code, qData] of Object.entries(questions)) {
+                zip.file(qData.suggested_filename, JSON.stringify(qData.prism_json, null, 2));
+            }
+            const blob = await zip.generateAsync({type: 'blob'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'limesurvey_question_templates.zip';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } else {
+            // Fallback: download each file individually
+            for (const [code, qData] of Object.entries(questions)) {
+                downloadJson(qData.prism_json, qData.suggested_filename);
+                await new Promise(r => setTimeout(r, 300)); // Small delay between downloads
+            }
+        }
+    }
+
+    // --- Save to Project handlers ---
+    async function saveTemplatesToProject(templates) {
+        try {
+            const response = await fetch('/api/limesurvey-save-to-project', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ templates })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                lssSaveSuccessMessage.textContent = `Saved ${data.saved_count} template(s) to ${data.library_path}`;
+                lssSaveSuccess.classList.remove('d-none');
+                return true;
+            } else {
+                alert('Error: ' + (data.error || 'Failed to save templates'));
+                return false;
+            }
+        } catch (err) {
+            alert('Error saving to project: ' + err.message);
+            return false;
+        }
+    }
+
+    // Save groups to project
+    if (lssSaveGroupsToProjectBtn) {
+        lssSaveGroupsToProjectBtn.addEventListener('click', async function() {
+            if (!lssQuestionnaires) return;
+
+            const templates = Object.entries(lssQuestionnaires).map(([name, qData]) => ({
+                filename: qData.suggested_filename,
+                content: qData.prism_json
+            }));
+
+            lssSaveGroupsToProjectBtn.disabled = true;
+            lssSaveGroupsToProjectBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+            await saveTemplatesToProject(templates);
+
+            lssSaveGroupsToProjectBtn.disabled = false;
+            lssSaveGroupsToProjectBtn.innerHTML = '<i class="fas fa-folder-plus me-1"></i>Save to Project';
+        });
+    }
+
+    // Save individual questions to project
+    if (lssSaveQuestionsToProjectBtn) {
+        lssSaveQuestionsToProjectBtn.addEventListener('click', async function() {
+            if (!lssIndividualQuestions) return;
+
+            const templates = Object.entries(lssIndividualQuestions).map(([code, qData]) => ({
+                filename: qData.suggested_filename,
+                content: qData.prism_json
+            }));
+
+            lssSaveQuestionsToProjectBtn.disabled = true;
+            lssSaveQuestionsToProjectBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+            await saveTemplatesToProject(templates);
+
+            lssSaveQuestionsToProjectBtn.disabled = false;
+            lssSaveQuestionsToProjectBtn.innerHTML = '<i class="fas fa-folder-plus me-1"></i>Save to Project';
+        });
+    }
+
     // --- Landgig: Survey Convert ---
     const convertLibraryPathInput = document.getElementById('convertLibraryPath');
     const convertBrowseLibraryBtn = document.getElementById('convertBrowseLibraryBtn');
@@ -1099,13 +1816,190 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function updateConvertBtn() {
-        const hasFile = convertExcelFile.files && convertExcelFile.files.length === 1;
-        const hasLibraryPath = convertLibraryPathInput && convertLibraryPathInput.value.trim() !== '';
-        convertBtn.disabled = !(hasFile && hasLibraryPath);
+    // --- Conversion Mode Elements ---
+    const convertModeData = document.getElementById('convertModeData');
+    const convertModeTemplate = document.getElementById('convertModeTemplate');
+    const convertIdColumnGroup = document.getElementById('convertIdColumnGroup');
+    const convertIdColumn = document.getElementById('convertIdColumn');
+    const convertTemplateExportGroup = document.getElementById('convertTemplateExportGroup');
+    const convertTemplateExport = document.getElementById('convertTemplateExport');
+    const convertLanguageGroup = document.getElementById('convertLanguageGroup');
+    const templateResultsContainer = document.getElementById('templateResultsContainer');
+
+    // Get current conversion mode
+    function getConvertMode() {
+        return document.querySelector('input[name="convertMode"]:checked')?.value || 'data';
     }
 
-    convertExcelFile.addEventListener('change', updateConvertBtn);
+    // Handle mode switching
+    function handleModeSwitch() {
+        const mode = getConvertMode();
+        const filename = convertExcelFile.files?.[0]?.name?.toLowerCase() || '';
+        const isLimeSurvey = filename.endsWith('.lss') || filename.endsWith('.lsa');
+
+        if (mode === 'template') {
+            // Template generation mode
+            convertIdColumnGroup?.classList.add('d-none');
+            convertTemplateExportGroup?.classList.remove('d-none');
+            convertLanguageGroup?.classList.add('d-none');
+
+            // Hide library path requirement for template mode (not needed for structure)
+            const libPathLabel = convertLibraryPathInput?.closest('.col-12')?.querySelector('.form-label');
+            if (libPathLabel) {
+                libPathLabel.innerHTML = 'Template Library Root <span class="text-muted">(optional)</span>';
+            }
+        } else {
+            // Data conversion mode
+            convertIdColumnGroup?.classList.remove('d-none');
+            convertTemplateExportGroup?.classList.add('d-none');
+            convertLanguageGroup?.classList.remove('d-none');
+
+            // Show library path as required
+            const libPathLabel = convertLibraryPathInput?.closest('.col-12')?.querySelector('.form-label');
+            if (libPathLabel) {
+                libPathLabel.innerHTML = 'Template Library Root <span class="text-danger">*</span>';
+            }
+        }
+
+        updateConvertBtn();
+    }
+
+    // Mode switch listeners
+    if (convertModeData) {
+        convertModeData.addEventListener('change', handleModeSwitch);
+    }
+    if (convertModeTemplate) {
+        convertModeTemplate.addEventListener('change', handleModeSwitch);
+    }
+
+    // Detect columns from file for ID column selector
+    async function detectFileColumns(file) {
+        const filename = file.name.toLowerCase();
+        const idColumnSelect = document.getElementById('convertIdColumn');
+        const idColumnStatus = document.getElementById('idColumnStatus');
+        const idColumnHelp = document.getElementById('idColumnHelp');
+        if (!idColumnSelect) return;
+
+        // Reset to auto-detect
+        idColumnSelect.innerHTML = '<option value="auto" selected>Auto-detect</option>';
+
+        // For .lss files, no columns to detect (structure only)
+        if (filename.endsWith('.lss')) {
+            if (idColumnStatus) idColumnStatus.innerHTML = '<span class="text-muted">(structure only)</span>';
+            if (idColumnHelp) idColumnHelp.innerHTML = '<i class="fas fa-info-circle me-1"></i>.lss files have no response data';
+            return;
+        }
+
+        // Show loading status
+        if (idColumnStatus) idColumnStatus.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin me-1"></i>Loading...</span>';
+
+        // For .lsa and other files, try to detect columns
+        if (filename.endsWith('.lsa') || filename.endsWith('.xlsx') || filename.endsWith('.csv') || filename.endsWith('.tsv')) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/detect-columns', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.columns && data.columns.length > 0) {
+                        // Add detected columns
+                        data.columns.forEach(col => {
+                            const opt = document.createElement('option');
+                            opt.value = col;
+                            opt.textContent = col;
+                            // Pre-select likely ID columns
+                            if (['participant_id', 'id', 'code', 'token', 'subject'].includes(col.toLowerCase())) {
+                                opt.textContent += ' ★';
+                            }
+                            idColumnSelect.appendChild(opt);
+                        });
+
+                        // If suggested column exists, pre-select it
+                        if (data.suggested_id_column) {
+                            idColumnSelect.value = data.suggested_id_column;
+                        }
+
+                        // Update status
+                        if (idColumnStatus) {
+                            idColumnStatus.innerHTML = `<span class="text-success"><i class="fas fa-check me-1"></i>${data.columns.length} columns</span>`;
+                        }
+                        if (idColumnHelp) {
+                            idColumnHelp.innerHTML = data.suggested_id_column
+                                ? `<i class="fas fa-lightbulb me-1 text-warning"></i>Suggested: <strong>${data.suggested_id_column}</strong> (★ = likely ID columns)`
+                                : '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>No common ID column found. Please select manually.';
+                        }
+                    } else {
+                        if (idColumnStatus) idColumnStatus.innerHTML = '<span class="text-warning">No columns found</span>';
+                    }
+                } else {
+                    const err = await response.json();
+                    if (idColumnStatus) idColumnStatus.innerHTML = `<span class="text-danger">${err.error || 'Error'}</span>`;
+                }
+            } catch (e) {
+                console.warn('Could not detect columns:', e);
+                if (idColumnStatus) idColumnStatus.innerHTML = '<span class="text-danger">Failed to load</span>';
+            }
+        }
+    }
+
+    function updateConvertBtn() {
+        const hasFile = convertExcelFile.files && convertExcelFile.files.length === 1;
+        const mode = getConvertMode();
+
+        if (mode === 'template') {
+            // Template mode only needs a file
+            convertBtn.disabled = !hasFile;
+        } else {
+            // Data mode needs file + library path
+            const hasLibraryPath = convertLibraryPathInput && convertLibraryPathInput.value.trim() !== '';
+            convertBtn.disabled = !(hasFile && hasLibraryPath);
+        }
+
+        // Update button text based on mode
+        if (convertBtn) {
+            if (mode === 'template') {
+                convertBtn.innerHTML = '<i class="fas fa-file-code me-2"></i>Generate Template';
+                convertBtn.classList.remove('btn-warning');
+                convertBtn.classList.add('btn-success');
+            } else {
+                convertBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Convert';
+                convertBtn.classList.remove('btn-success');
+                convertBtn.classList.add('btn-warning');
+            }
+        }
+    }
+
+    convertExcelFile.addEventListener('change', async function() {
+        const file = this.files?.[0];
+        if (file) {
+            const filename = file.name.toLowerCase();
+
+            // Auto-switch to template mode for .lss files (structure only, no data)
+            if (filename.endsWith('.lss')) {
+                if (convertModeTemplate) {
+                    convertModeTemplate.checked = true;
+                    handleModeSwitch();
+                }
+                // Show info message
+                convertInfo.innerHTML = '<i class="fas fa-info-circle me-1"></i>.lss files contain structure only (no response data). Using Template Generation mode.';
+                convertInfo.classList.remove('d-none');
+            } else {
+                convertInfo.classList.add('d-none');
+            }
+
+            // Detect columns for ID selection
+            await detectFileColumns(file);
+        }
+        updateConvertBtn();
+    });
+
+    // Initialize mode on page load
+    handleModeSwitch();
     updateConvertBtn();
 
     // Terminal log elements
@@ -1421,6 +2315,609 @@ document.addEventListener('DOMContentLoaded', function() {
         downloadZipWarningBtn.addEventListener('click', downloadCurrentZip);
     }
 
+    // Store template results for download
+    let currentTemplateData = null;
+
+    // Handle template generation (structure only, no data)
+    async function handleTemplateGeneration(file) {
+        const exportMode = document.getElementById('convertTemplateExport')?.value || 'groups';
+        const taskName = document.getElementById('convertDatasetName')?.value.trim() || '';
+
+        convertBtn.disabled = true;
+        convertError.classList.add('d-none');
+        convertInfo.classList.add('d-none');
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('mode', exportMode);
+            if (taskName) {
+                formData.append('task_name', taskName);
+            }
+
+            const response = await fetch('/api/limesurvey-to-prism', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || data.error) {
+                throw new Error(data.error || 'Template generation failed');
+            }
+
+            currentTemplateData = data;
+
+            // Show results container
+            if (templateResultsContainer) {
+                templateResultsContainer.classList.remove('d-none');
+            }
+
+            // Display results based on mode
+            if (data.mode === 'combined') {
+                displayTemplateSingle(data);
+            } else if (data.mode === 'groups') {
+                displayTemplateGroups(data);
+            } else if (data.mode === 'questions') {
+                displayTemplateQuestions(data);
+            }
+
+            // Show participant metadata section for marking fields
+            displayParticipantMetadataSection(data);
+
+            convertInfo.textContent = 'Template generation complete!';
+            convertInfo.classList.remove('d-none');
+
+        } catch (err) {
+            convertError.textContent = err.message;
+            convertError.classList.remove('d-none');
+        } finally {
+            updateConvertBtn();
+        }
+    }
+
+    function displayTemplateSingle(data) {
+        const container = document.getElementById('templateResultSingle');
+        if (!container) return;
+
+        container.classList.remove('d-none');
+        document.getElementById('templateQuestionCount').textContent = `${data.question_count} questions`;
+
+        // Setup preview button
+        const previewBtn = document.getElementById('templatePreviewBtn');
+        const previewDiv = document.getElementById('templatePreview');
+        const previewContent = document.getElementById('templatePreviewContent');
+
+        if (previewBtn && previewDiv && previewContent) {
+            previewBtn.onclick = () => {
+                previewDiv.classList.toggle('d-none');
+                previewContent.textContent = JSON.stringify(data.prism_json, null, 2);
+            };
+        }
+
+        // Setup download button
+        const downloadBtn = document.getElementById('templateDownloadBtn');
+        if (downloadBtn) {
+            downloadBtn.onclick = () => {
+                const blob = new Blob([JSON.stringify(data.prism_json, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = data.suggested_filename || 'survey-template.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+        }
+    }
+
+    function displayTemplateGroups(data) {
+        const container = document.getElementById('templateResultGroups');
+        if (!container) return;
+
+        container.classList.remove('d-none');
+        document.getElementById('templateGroupCount').textContent = `${data.questionnaire_count} groups`;
+        document.getElementById('templateTotalQuestions').textContent = `${data.total_questions} questions`;
+
+        const listEl = document.getElementById('templateGroupList');
+        if (listEl) {
+            listEl.innerHTML = '';
+            for (const [name, info] of Object.entries(data.questionnaires || {})) {
+                const card = document.createElement('div');
+                card.className = 'col-md-4';
+                card.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>${name}</strong>
+                                    <small class="d-block text-muted">${info.question_count} questions</small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-success download-template-btn" data-name="${name}">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            }
+
+            // Add download handlers
+            listEl.querySelectorAll('.download-template-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const name = btn.dataset.name;
+                    const info = data.questionnaires[name];
+                    if (info) {
+                        const blob = new Blob([JSON.stringify(info.prism_json, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = info.suggested_filename || `survey-${name}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    }
+                };
+            });
+        }
+
+        // Download all as ZIP
+        const downloadAllBtn = document.getElementById('templateDownloadAllBtn');
+        if (downloadAllBtn) {
+            downloadAllBtn.onclick = async () => {
+                const JSZip = window.JSZip;
+                if (!JSZip) {
+                    alert('JSZip not loaded');
+                    return;
+                }
+                const zip = new JSZip();
+                for (const [name, info] of Object.entries(data.questionnaires || {})) {
+                    zip.file(info.suggested_filename || `survey-${name}.json`, JSON.stringify(info.prism_json, null, 2));
+                }
+                const blob = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'survey-templates.zip';
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+        }
+
+        // Save to project button
+        setupTemplateSaveToProject(data, 'groups');
+    }
+
+    function displayTemplateQuestions(data) {
+        const container = document.getElementById('templateResultQuestions');
+        if (!container) return;
+
+        container.classList.remove('d-none');
+        document.getElementById('templateIndividualCount').textContent = `${data.question_count} templates`;
+
+        const listEl = document.getElementById('templateQuestionsList');
+        if (listEl) {
+            listEl.innerHTML = '';
+            for (const [groupName, groupInfo] of Object.entries(data.by_group || {})) {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'col-12 mb-2';
+                groupDiv.innerHTML = `<h6 class="text-muted">${groupName}</h6>`;
+                listEl.appendChild(groupDiv);
+
+                for (const q of groupInfo.questions || []) {
+                    const qData = data.questions[q.code];
+                    if (!qData) continue;
+
+                    const card = document.createElement('div');
+                    card.className = 'col-md-3';
+                    card.innerHTML = `
+                        <div class="card h-100">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>${q.code}</strong>
+                                        <small class="d-block text-muted">${q.type} (${q.item_count} items)</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-success download-q-btn" data-code="${q.code}">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    listEl.appendChild(card);
+                }
+            }
+
+            // Add download handlers
+            listEl.querySelectorAll('.download-q-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const code = btn.dataset.code;
+                    const qData = data.questions[code];
+                    if (qData && qData.prism_json) {
+                        const blob = new Blob([JSON.stringify(qData.prism_json, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = qData.suggested_filename || `survey-${code}.json`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    }
+                };
+            });
+        }
+
+        // Download all as ZIP
+        const downloadBtn = document.getElementById('templateDownloadQuestionsBtn');
+        if (downloadBtn) {
+            downloadBtn.onclick = async () => {
+                const JSZip = window.JSZip;
+                if (!JSZip) {
+                    alert('JSZip not loaded');
+                    return;
+                }
+                const zip = new JSZip();
+                for (const [code, qData] of Object.entries(data.questions || {})) {
+                    if (qData.prism_json) {
+                        zip.file(qData.suggested_filename || `survey-${code}.json`, JSON.stringify(qData.prism_json, null, 2));
+                    }
+                }
+                const blob = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'survey-question-templates.zip';
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+        }
+
+        // Save to project button
+        setupTemplateSaveToProject(data, 'questions');
+    }
+
+    function setupTemplateSaveToProject(data, mode) {
+        const saveBtn = mode === 'groups'
+            ? document.getElementById('templateSaveToProjectBtn')
+            : document.getElementById('templateSaveQuestionsToProjectBtn');
+
+        if (!saveBtn) return;
+
+        saveBtn.onclick = async () => {
+            const templates = [];
+
+            if (mode === 'groups') {
+                for (const [name, info] of Object.entries(data.questionnaires || {})) {
+                    templates.push({
+                        filename: info.suggested_filename || `survey-${name}.json`,
+                        content: info.prism_json
+                    });
+                }
+            } else {
+                for (const [code, qData] of Object.entries(data.questions || {})) {
+                    if (qData.prism_json) {
+                        templates.push({
+                            filename: qData.suggested_filename || `survey-${code}.json`,
+                            content: qData.prism_json
+                        });
+                    }
+                }
+            }
+
+            try {
+                const response = await fetch('/api/limesurvey-save-to-project', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ templates })
+                });
+                const result = await response.json();
+
+                const successDiv = document.getElementById('templateSaveSuccess');
+                const msgSpan = document.getElementById('templateSaveSuccessMessage');
+                if (result.success) {
+                    successDiv?.classList.remove('d-none');
+                    msgSpan.textContent = `Saved ${result.saved_files?.length || templates.length} templates to project library!`;
+                } else {
+                    alert('Error: ' + (result.error || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Error saving: ' + e.message);
+            }
+        };
+    }
+
+    // ===== PARTICIPANT METADATA MARKING =====
+
+    // Store selected participant fields
+    let selectedParticipantFields = {};
+
+    // BIDS standard field suggestions for auto-mapping
+    const bidsFieldMappings = {
+        // Common patterns -> BIDS field names
+        'participant_id': ['token', 'id', 'participant', 'subject', 'subj', 'respondent'],
+        'age': ['age', 'alter', 'years_old'],
+        'sex': ['sex', 'gender', 'geschlecht', 'm_f', 'male_female'],
+        'handedness': ['hand', 'handed', 'handedness', 'dominant_hand'],
+        'education_years': ['education', 'school', 'study_years', 'ausbildung'],
+        'native_language': ['language', 'native', 'mother_tongue', 'muttersprache']
+    };
+
+    // Display participant metadata section with extracted fields
+    function displayParticipantMetadataSection(data) {
+        const section = document.getElementById('participantMetadataSection');
+        const fieldsList = document.getElementById('participantFieldsList');
+        if (!section || !fieldsList) return;
+
+        // Extract all question codes/fields from the template data
+        const allFields = extractAllFields(data);
+
+        if (allFields.length === 0) {
+            section.classList.add('d-none');
+            return;
+        }
+
+        section.classList.remove('d-none');
+        selectedParticipantFields = {};
+
+        // Render field checkboxes
+        let html = '<div class="list-group list-group-flush">';
+        for (const field of allFields) {
+            const suggestedMapping = suggestBidsMapping(field.code);
+            html += `
+                <label class="list-group-item list-group-item-action py-2 d-flex align-items-center">
+                    <input type="checkbox" class="form-check-input me-2 participant-field-checkbox"
+                           data-code="${field.code}" data-description="${field.description || ''}"
+                           data-type="${field.type || 'text'}">
+                    <div class="flex-grow-1">
+                        <code class="me-2">${field.code}</code>
+                        <small class="text-muted">${field.description || field.type || ''}</small>
+                        ${field.group ? `<span class="badge bg-light text-dark ms-2">${field.group}</span>` : ''}
+                    </div>
+                    ${suggestedMapping ? `
+                        <select class="form-select form-select-sm bids-mapping-select" style="width: 140px;" data-code="${field.code}">
+                            <option value="">Map to...</option>
+                            <option value="${suggestedMapping}" selected>${suggestedMapping}</option>
+                            <option value="participant_id">participant_id</option>
+                            <option value="age">age</option>
+                            <option value="sex">sex</option>
+                            <option value="handedness">handedness</option>
+                            <option value="custom">Custom name</option>
+                        </select>
+                    ` : `
+                        <select class="form-select form-select-sm bids-mapping-select" style="width: 140px;" data-code="${field.code}">
+                            <option value="">Map to...</option>
+                            <option value="participant_id">participant_id</option>
+                            <option value="age">age</option>
+                            <option value="sex">sex</option>
+                            <option value="handedness">handedness</option>
+                            <option value="education_years">education_years</option>
+                            <option value="custom">Custom name</option>
+                        </select>
+                    `}
+                </label>
+            `;
+        }
+        html += '</div>';
+        fieldsList.innerHTML = html;
+
+        // Add event listeners
+        fieldsList.querySelectorAll('.participant-field-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateParticipantFieldSelection);
+        });
+
+        fieldsList.querySelectorAll('.bids-mapping-select').forEach(sel => {
+            sel.addEventListener('change', function() {
+                const code = this.dataset.code;
+                const checkbox = fieldsList.querySelector(`.participant-field-checkbox[data-code="${code}"]`);
+                if (this.value && checkbox && !checkbox.checked) {
+                    checkbox.checked = true;
+                    updateParticipantFieldSelection();
+                }
+            });
+        });
+
+        // Setup save/download button
+        setupParticipantsSaveButton();
+    }
+
+    // Extract all fields from template data (works for all modes)
+    function extractAllFields(data) {
+        const fields = [];
+
+        if (data.mode === 'combined' || data.mode === 'groups') {
+            // Extract from prism_json Items
+            const sources = data.mode === 'combined'
+                ? [{ json: data.prism_json, group: null }]
+                : Object.entries(data.questionnaires || {}).map(([name, info]) => ({ json: info.prism_json, group: name }));
+
+            for (const source of sources) {
+                const items = source.json?.Items || [];
+                for (const item of items) {
+                    if (item.SurveyItemID) {
+                        fields.push({
+                            code: item.SurveyItemID,
+                            description: item.Prompt || item.Description || '',
+                            type: item.ResponseType || 'text',
+                            group: source.group
+                        });
+                    }
+                }
+            }
+        } else if (data.mode === 'questions') {
+            // Extract from by_group structure
+            for (const [groupName, groupInfo] of Object.entries(data.by_group || {})) {
+                for (const q of groupInfo.questions || []) {
+                    fields.push({
+                        code: q.code,
+                        description: q.title || '',
+                        type: q.type || 'text',
+                        group: groupName
+                    });
+                }
+            }
+        }
+
+        return fields;
+    }
+
+    // Suggest BIDS field mapping based on field code
+    function suggestBidsMapping(code) {
+        const lowerCode = code.toLowerCase();
+        for (const [bidsField, patterns] of Object.entries(bidsFieldMappings)) {
+            for (const pattern of patterns) {
+                if (lowerCode.includes(pattern)) {
+                    return bidsField;
+                }
+            }
+        }
+        return null;
+    }
+
+    // Update selection state and count
+    function updateParticipantFieldSelection() {
+        selectedParticipantFields = {};
+        const checkboxes = document.querySelectorAll('.participant-field-checkbox:checked');
+
+        checkboxes.forEach(cb => {
+            const code = cb.dataset.code;
+            const description = cb.dataset.description;
+            const mappingSelect = document.querySelector(`.bids-mapping-select[data-code="${code}"]`);
+            const bidsName = mappingSelect?.value || code;
+
+            selectedParticipantFields[code] = {
+                originalCode: code,
+                bidsFieldName: bidsName || code,
+                description: description
+            };
+        });
+
+        // Update count
+        const countEl = document.getElementById('selectedParticipantFieldsCount');
+        if (countEl) {
+            countEl.textContent = Object.keys(selectedParticipantFields).length;
+        }
+
+        // Enable/disable save button
+        const saveBtn = document.getElementById('saveParticipantsJsonBtn') || document.getElementById('downloadParticipantsJsonBtn');
+        if (saveBtn) {
+            saveBtn.disabled = Object.keys(selectedParticipantFields).length === 0;
+        }
+    }
+
+    // Build participants.json schema from selections
+    function buildParticipantsJsonSchema() {
+        const schema = {};
+
+        for (const [code, info] of Object.entries(selectedParticipantFields)) {
+            const fieldName = info.bidsFieldName || code;
+
+            // Get description from original data
+            schema[fieldName] = {
+                Description: info.description || `Extracted from survey field: ${code}`
+            };
+
+            // Add standard properties for known BIDS fields
+            if (fieldName === 'age') {
+                schema[fieldName].Units = 'years';
+            } else if (fieldName === 'sex') {
+                schema[fieldName].Levels = {
+                    'M': 'Male',
+                    'F': 'Female',
+                    'O': 'Other'
+                };
+            } else if (fieldName === 'handedness') {
+                schema[fieldName].Levels = {
+                    'R': 'Right',
+                    'L': 'Left',
+                    'A': 'Ambidextrous'
+                };
+            }
+
+            // Store source info for data conversion
+            if (code !== fieldName) {
+                schema[fieldName]._sourceField = code;
+            }
+        }
+
+        return schema;
+    }
+
+    // Setup save/download button
+    function setupParticipantsSaveButton() {
+        const saveBtn = document.getElementById('saveParticipantsJsonBtn');
+        const downloadBtn = document.getElementById('downloadParticipantsJsonBtn');
+        const statusDiv = document.getElementById('participantsSaveStatus');
+
+        if (saveBtn) {
+            saveBtn.onclick = async () => {
+                const schema = buildParticipantsJsonSchema();
+                if (Object.keys(schema).length === 0) {
+                    alert('No fields selected');
+                    return;
+                }
+
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+                try {
+                    // First get existing schema to merge
+                    const existingRes = await fetch('/api/projects/participants');
+                    const existingData = await existingRes.json();
+                    const existingSchema = existingData.success ? (existingData.schema || {}) : {};
+
+                    // Merge new fields into existing schema
+                    const mergedSchema = { ...existingSchema, ...schema };
+
+                    // Ensure participant_id is present
+                    if (!mergedSchema.participant_id) {
+                        mergedSchema.participant_id = { Description: 'Unique participant identifier' };
+                    }
+
+                    // Save merged schema
+                    const response = await fetch('/api/projects/participants', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ schema: mergedSchema })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        statusDiv.innerHTML = `<span class="text-success"><i class="fas fa-check-circle me-1"></i>Saved ${Object.keys(schema).length} fields to participants.json!</span>`;
+                    } else {
+                        statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>${result.error}</span>`;
+                    }
+                } catch (e) {
+                    statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>${e.message}</span>`;
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save to participants.json';
+                }
+            };
+        }
+
+        if (downloadBtn) {
+            downloadBtn.onclick = () => {
+                const schema = buildParticipantsJsonSchema();
+                if (Object.keys(schema).length === 0) {
+                    alert('No fields selected');
+                    return;
+                }
+
+                // Ensure participant_id is present
+                if (!schema.participant_id) {
+                    schema.participant_id = { Description: 'Unique participant identifier' };
+                }
+
+                const blob = new Blob([JSON.stringify(schema, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'participants.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+        }
+    }
+
     convertBtn.addEventListener('click', function() {
         convertError.classList.add('d-none');
         convertInfo.classList.add('d-none');
@@ -1428,15 +2925,44 @@ document.addEventListener('DOMContentLoaded', function() {
         convertInfo.textContent = '';
         resetConversionUI();
 
-        const libraryPath = convertLibraryPathInput ? convertLibraryPathInput.value.trim() : '';
-        if (!libraryPath) {
-            convertError.textContent = 'Please select a survey template library folder first.';
-            convertError.classList.remove('d-none');
-            return;
+        // Hide template results and participant metadata section
+        if (templateResultsContainer) {
+            templateResultsContainer.classList.add('d-none');
+            document.getElementById('templateResultSingle')?.classList.add('d-none');
+            document.getElementById('templateResultGroups')?.classList.add('d-none');
+            document.getElementById('templateResultQuestions')?.classList.add('d-none');
+            document.getElementById('participantMetadataSection')?.classList.add('d-none');
         }
 
         const file = convertExcelFile.files && convertExcelFile.files[0];
         if (!file) {
+            return;
+        }
+
+        const mode = getConvertMode();
+        const filename = file.name.toLowerCase();
+        const isLssFile = filename.endsWith('.lss');
+        const isLimeSurveyFile = filename.endsWith('.lss') || filename.endsWith('.lsa');
+
+        // TEMPLATE GENERATION MODE
+        if (mode === 'template') {
+            handleTemplateGeneration(file);
+            return;
+        }
+
+        // DATA CONVERSION MODE
+
+        // Prevent .lss files in data mode (they don't contain response data)
+        if (isLssFile) {
+            convertError.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i><strong>.lss files contain structure only</strong> (no response data). Please use <strong>Template Generation</strong> mode, or upload a <strong>.lsa</strong> file (archive with responses).';
+            convertError.classList.remove('d-none');
+            return;
+        }
+
+        const libraryPath = convertLibraryPathInput ? convertLibraryPathInput.value.trim() : '';
+        if (!libraryPath) {
+            convertError.textContent = 'Please select a survey template library folder first.';
+            convertError.classList.remove('d-none');
             return;
         }
 
@@ -1462,6 +2988,13 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('library_path', libraryPath);
         formData.append('dataset_name', convertDatasetName.value.trim());
         formData.append('unknown', convertUnknown.value);
+
+        // Add ID column if selected
+        const idColumn = document.getElementById('convertIdColumn')?.value;
+        if (idColumn && idColumn !== 'auto') {
+            formData.append('id_column', idColumn);
+            appendLog(`Using ID column: ${idColumn}`, 'step');
+        }
 
         const sessionVal = document.getElementById('convertSession') ? document.getElementById('convertSession').value.trim() : '';
         if (sessionVal) {
@@ -2494,8 +4027,166 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // --- Auto-fill library paths from current project ---
+    // Store available library paths for quick switching
+    const availableConvertPaths = {
+        global: null,
+        project: null
+    };
+
+    // Update source badge display
+    function updateConvertLibrarySourceBadge(source) {
+        const badge = document.getElementById('convertLibrarySourceBadge');
+        const text = document.getElementById('convertLibrarySourceText');
+        if (!badge || !text) return;
+
+        if (source) {
+            badge.style.display = 'inline-block';
+            if (source === 'global') {
+                badge.className = 'badge bg-info ms-2';
+                text.textContent = 'Global Library';
+            } else if (source === 'project') {
+                badge.className = 'badge bg-success ms-2';
+                text.textContent = 'Project Library';
+            } else {
+                badge.className = 'badge bg-secondary ms-2';
+                text.textContent = 'Custom Path';
+            }
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    // Determine current source based on path
+    function detectConvertLibrarySource() {
+        if (!convertLibraryPathInput) return null;
+        const currentPath = convertLibraryPathInput.value.trim();
+        if (!currentPath) return null;
+
+        // Normalize paths for comparison
+        const normalize = p => p.replace(/\\/g, '/').replace(/\/$/, '').toLowerCase();
+        const normalizedCurrent = normalize(currentPath);
+
+        if (availableConvertPaths.project && normalize(availableConvertPaths.project) === normalizedCurrent) {
+            return 'project';
+        }
+        if (availableConvertPaths.global && normalize(availableConvertPaths.global) === normalizedCurrent) {
+            return 'global';
+        }
+        return 'custom';
+    }
+
+    async function initializeLibraryPathsFromProject() {
+        const globalBtn = document.getElementById('convertUseGlobalLibraryBtn');
+        const projectBtn = document.getElementById('convertUseProjectLibraryBtn');
+
+        try {
+            const response = await fetch('/api/projects/library-path');
+            const data = await response.json();
+
+            // Store available paths
+            availableConvertPaths.global = data.global_library_path || null;
+            availableConvertPaths.project = data.project_library_path || null;
+
+            // Enable/disable quick switch buttons based on availability
+            if (globalBtn) {
+                if (availableConvertPaths.global) {
+                    globalBtn.disabled = false;
+                    globalBtn.title = availableConvertPaths.global;
+                } else {
+                    globalBtn.disabled = true;
+                    globalBtn.title = 'No global library configured';
+                }
+            }
+
+            if (projectBtn) {
+                if (availableConvertPaths.project) {
+                    projectBtn.disabled = false;
+                    projectBtn.title = availableConvertPaths.project;
+                } else {
+                    projectBtn.disabled = true;
+                    projectBtn.title = data.project_path ? 'Project has no library folder' : 'No project selected';
+                }
+            }
+
+            // Auto-fill with best available path (prefer global for templates)
+            if (convertLibraryPathInput && !convertLibraryPathInput.value) {
+                let selectedPath = null;
+                let selectedSource = null;
+
+                if (availableConvertPaths.global) {
+                    selectedPath = availableConvertPaths.global;
+                    selectedSource = 'global';
+                } else if (availableConvertPaths.project) {
+                    selectedPath = availableConvertPaths.project;
+                    selectedSource = 'project';
+                } else if (data.library_path) {
+                    selectedPath = data.library_path;
+                    selectedSource = 'custom';
+                }
+
+                if (selectedPath) {
+                    convertLibraryPathInput.value = selectedPath;
+                    updateConvertLibrarySourceBadge(selectedSource);
+                    // Trigger language detection
+                    refreshConvertLanguages();
+                }
+            } else {
+                // Path already set, detect source
+                updateConvertLibrarySourceBadge(detectConvertLibrarySource());
+            }
+
+            // Auto-fill Biometrics library path
+            if (biometricsLibraryPathInput && !biometricsLibraryPathInput.value) {
+                if (availableConvertPaths.global) {
+                    biometricsLibraryPathInput.value = availableConvertPaths.global;
+                } else if (data.library_path) {
+                    biometricsLibraryPathInput.value = data.library_path;
+                }
+            }
+
+            console.log('Library paths initialized:', {
+                global: availableConvertPaths.global,
+                project: availableConvertPaths.project
+            });
+        } catch (err) {
+            console.warn('Could not load project library path:', err);
+        }
+
+        // Set up click handlers for quick switch buttons
+        if (globalBtn) {
+            globalBtn.addEventListener('click', function() {
+                if (availableConvertPaths.global && convertLibraryPathInput) {
+                    convertLibraryPathInput.value = availableConvertPaths.global;
+                    updateConvertLibrarySourceBadge('global');
+                    refreshConvertLanguages();
+                }
+            });
+        }
+
+        if (projectBtn) {
+            projectBtn.addEventListener('click', function() {
+                if (availableConvertPaths.project && convertLibraryPathInput) {
+                    convertLibraryPathInput.value = availableConvertPaths.project;
+                    updateConvertLibrarySourceBadge('project');
+                    refreshConvertLanguages();
+                }
+            });
+        }
+
+        // Update source badge when path changes manually
+        if (convertLibraryPathInput) {
+            convertLibraryPathInput.addEventListener('input', function() {
+                updateConvertLibrarySourceBadge(detectConvertLibrarySource());
+            });
+        }
+    }
+
     // Initial populate
     refreshConvertLanguages();
+
+    // Auto-fill from project (async, doesn't block)
+    initializeLibraryPathsFromProject();
 });
 </script>
 {% endblock %}

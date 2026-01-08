@@ -82,16 +82,21 @@ def api_survey_languages():
     survey_dir = library_root / "survey"
     biometrics_dir = library_root / "biometrics"
     participants_json = library_root / "participants.json"
+    # Also check parent directory for participants.json (for project/library/ structure)
+    parent_participants_json = library_root.parent / "participants.json"
 
     structure_info["has_survey_folder"] = survey_dir.is_dir()
     structure_info["has_biometrics_folder"] = biometrics_dir.is_dir()
-    structure_info["has_participants_json"] = participants_json.is_file()
+    # Accept participants.json from library folder OR parent (project root)
+    structure_info["has_participants_json"] = (
+        participants_json.is_file() or parent_participants_json.is_file()
+    )
 
     # Build missing items list for survey conversion
     if not structure_info["has_survey_folder"]:
         structure_info["missing_items"].append("survey/")
     if not structure_info["has_participants_json"]:
-        structure_info["missing_items"].append("participants.json")
+        structure_info["missing_items"].append("participants.json (or ../participants.json)")
 
     # Determine effective survey directory
     if survey_dir.is_dir():
@@ -447,17 +452,22 @@ def api_biometrics_check_library():
 
     library_root = Path(library_path)
     biometrics_dir = library_root / "biometrics"
-    
+    # Also check parent directory for participants.json (for project/library/ structure)
+    has_participants = (
+        (library_root / "participants.json").is_file() or
+        (library_root.parent / "participants.json").is_file()
+    )
+
     structure_info = {
         "has_survey_folder": (library_root / "survey").is_dir(),
         "has_biometrics_folder": biometrics_dir.is_dir(),
-        "has_participants_json": (library_root / "participants.json").is_file(),
+        "has_participants_json": has_participants,
         "missing_items": [],
         "template_count": 0,
     }
 
     if not structure_info["has_biometrics_folder"]: structure_info["missing_items"].append("biometrics/")
-    if not structure_info["has_participants_json"]: structure_info["missing_items"].append("participants.json")
+    if not structure_info["has_participants_json"]: structure_info["missing_items"].append("participants.json (or ../participants.json)")
     if biometrics_dir.is_dir():
         structure_info["template_count"] = len(list(biometrics_dir.glob("biometrics-*.json")))
 

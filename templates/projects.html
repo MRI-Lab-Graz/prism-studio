@@ -1,0 +1,1017 @@
+{% extends "base.html" %}
+
+{% block title %}PRISM Studio - Projects{% endblock %}
+
+{% block styles %}
+<style>
+    .project-card {
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    .project-card:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.15);
+        transform: translateY(-2px);
+    }
+    .project-card.active {
+        border-color: #0d6efd;
+        background-color: #f8f9ff;
+    }
+    .project-card i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+    }
+    .project-card h5 {
+        margin-bottom: 10px;
+    }
+    .project-card p {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+    .form-section {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+    .form-section.active {
+        display: block;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .modality-checkbox {
+        padding: 10px 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .modality-checkbox:hover {
+        background-color: #f8f9fa;
+    }
+    .modality-checkbox input:checked + label {
+        font-weight: 600;
+    }
+    .modality-checkbox input:checked ~ .modality-checkbox {
+        border-color: #0d6efd;
+        background-color: #e7f1ff;
+    }
+    .validation-result {
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+    .validation-result.valid {
+        background-color: #d1e7dd;
+        border: 1px solid #badbcc;
+    }
+    .validation-result.invalid {
+        background-color: #f8d7da;
+        border: 1px solid #f5c2c7;
+    }
+    .validation-result.warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffecb5;
+    }
+    .issue-item {
+        padding: 10px 15px;
+        margin-bottom: 8px;
+        border-radius: 6px;
+        background-color: #fff;
+        border-left: 4px solid;
+    }
+    .issue-item.fixable {
+        border-left-color: #ffc107;
+    }
+    .issue-item.not-fixable {
+        border-left-color: #dc3545;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    .stat-item {
+        text-align: center;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+    .stat-item .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #0d6efd;
+    }
+    .stat-item .stat-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-folder-open text-primary me-2"></i>Project Manager</h2>
+            <p class="text-muted">Create new PRISM/BIDS projects or validate existing ones.</p>
+        </div>
+    </div>
+
+    {% if current_project.path %}
+    <!-- Current Project Banner -->
+    <div class="alert alert-success d-flex align-items-center mb-4" role="alert" id="currentProjectBanner">
+        <i class="fas fa-check-circle me-3 fa-lg"></i>
+        <div class="flex-grow-1">
+            <strong>Current Working Project:</strong> {{ current_project.name }}
+            <br><code class="small">{{ current_project.path }}</code>
+        </div>
+        <a href="{{ url_for('validation.validate_dataset') }}" class="btn btn-sm btn-outline-success me-2">
+            <i class="fas fa-check-circle me-1"></i>Validate
+        </a>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearCurrentProject()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Project Type Selection -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="project-card" id="card-create" onclick="selectProjectType('create')">
+                <i class="fas fa-plus-circle text-success"></i>
+                <h5>Create New Project</h5>
+                <p>Set up a new PRISM/BIDS-compatible folder structure</p>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="project-card" id="card-open" onclick="selectProjectType('open')">
+                <i class="fas fa-folder-open text-primary"></i>
+                <h5>Open Existing Project</h5>
+                <p>Validate and repair an existing project structure</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create New Project Form -->
+    <div class="form-section" id="section-create">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success bg-opacity-10">
+                <h5 class="mb-0"><i class="fas fa-plus-circle text-success me-2"></i>Create New Project</h5>
+            </div>
+            <div class="card-body">
+                <form id="createProjectForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="projectName" class="form-label fw-bold">Project Name</label>
+                            <input type="text" class="form-control" id="projectName" placeholder="my_study" required
+                                   pattern="[a-zA-Z0-9_-]+" title="Only letters, numbers, underscores and hyphens allowed">
+                            <small class="text-muted">No spaces allowed. A folder with this name will be created.</small>
+                            <div class="invalid-feedback" id="projectNameError"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="projectPath" class="form-label fw-bold">Project Location</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="projectPath" placeholder="C:\Users\..." required>
+                                <button class="btn btn-outline-secondary" type="button" id="browseProjectPath">
+                                    <i class="fas fa-folder-open"></i> Browse
+                                </button>
+                            </div>
+                            <small class="text-muted">Parent folder where the project will be created</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="projectSessions" class="form-label fw-bold">Number of Sessions</label>
+                            <input type="number" class="form-control" id="projectSessions" min="1" max="99" value="1">
+                            <small class="text-muted">Creates ses-01, ses-02, etc. folders</small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="createExample" checked>
+                                <label class="form-check-label" for="createExample">
+                                    Create example subject folder (sub-example/)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Modalities</label>
+                            <small class="text-muted d-block mb-2">Select which data types your study will collect</small>
+                            <div class="row">
+                                <div class="col-md-4 col-lg-2">
+                                    <div class="form-check modality-checkbox">
+                                        <input class="form-check-input" type="checkbox" id="mod-survey" name="modalities" value="survey" checked>
+                                        <label class="form-check-label" for="mod-survey">survey</label>
+                                    </div>
+                                    <small class="text-muted ms-4">Questionnaires</small>
+                                </div>
+                                <div class="col-md-4 col-lg-2">
+                                    <div class="form-check modality-checkbox">
+                                        <input class="form-check-input" type="checkbox" id="mod-biometrics" name="modalities" value="biometrics" checked>
+                                        <label class="form-check-label" for="mod-biometrics">biometrics</label>
+                                    </div>
+                                    <small class="text-muted ms-4">Physical tests</small>
+                                </div>
+                                <div class="col-md-4 col-lg-2">
+                                    <div class="form-check modality-checkbox">
+                                        <input class="form-check-input" type="checkbox" id="mod-physio" name="modalities" value="physio" checked>
+                                        <label class="form-check-label" for="mod-physio">physio</label>
+                                    </div>
+                                    <small class="text-muted ms-4">ECG, EDA, etc.</small>
+                                </div>
+                                <div class="col-md-4 col-lg-2">
+                                    <div class="form-check modality-checkbox">
+                                        <input class="form-check-input" type="checkbox" id="mod-eyetracking" name="modalities" value="eyetracking" checked>
+                                        <label class="form-check-label" for="mod-eyetracking">eyetracking</label>
+                                    </div>
+                                    <small class="text-muted ms-4">Gaze data</small>
+                                </div>
+                                <div class="col-md-4 col-lg-2">
+                                    <div class="form-check modality-checkbox">
+                                        <input class="form-check-input" type="checkbox" id="mod-events" name="modalities" value="events" checked>
+                                        <label class="form-check-label" for="mod-events">events</label>
+                                    </div>
+                                    <small class="text-muted ms-4">Experiment timing</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-folder-plus me-2"></i>Create Project
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Create Result -->
+                <div id="createResult" class="mt-4" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Open Existing Project Form -->
+    <div class="form-section" id="section-open">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary bg-opacity-10">
+                <h5 class="mb-0"><i class="fas fa-folder-open text-primary me-2"></i>Open Existing Project</h5>
+            </div>
+            <div class="card-body">
+                <form id="openProjectForm">
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label for="existingPath" class="form-label fw-bold">Project Path</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="existingPath"
+                                       placeholder="C:\Users\...\existing_project" required>
+                                <button class="btn btn-outline-secondary" type="button" id="browseExistingPath">
+                                    <i class="fas fa-folder-open"></i> Browse
+                                </button>
+                            </div>
+                            <small class="text-muted">Path to your existing PRISM/BIDS dataset</small>
+                        </div>
+                        <div class="col-md-5 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>Validate Structure
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Validation Result -->
+                <div id="validationResult" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Settings Card -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-secondary bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#settingsSection"
+             role="button" aria-expanded="false" aria-controls="settingsSection">
+            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-cog text-secondary me-2"></i>Global Settings</span>
+                <i class="fas fa-chevron-down text-muted" id="settingsChevron"></i>
+            </h5>
+        </div>
+        <div class="collapse" id="settingsSection">
+            <div class="card-body">
+                <form id="globalSettingsForm">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="globalLibraryPath" class="form-label fw-bold">
+                                <i class="fas fa-database me-1"></i>Global Survey Template Library
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="globalLibraryPath"
+                                       placeholder="Path to folder containing survey/ subfolder">
+                                <button class="btn btn-outline-secondary" type="button" id="browseGlobalLibrary">
+                                    <i class="fas fa-folder-open"></i> Browse
+                                </button>
+                            </div>
+                            <small class="text-muted">
+                                Root folder for survey templates. Must contain a <code>survey/</code> subfolder with JSON templates.
+                                <br>Default: App's built-in <code>survey_library/</code> folder. Can be changed to a shared location (Nextcloud, GitLab, etc.).
+                                <br>Projects can override this with <code>templateLibraryPath</code> in <code>.prismrc.json</code>.
+                            </small>
+                        </div>
+                        <div class="col-12">
+                            <div id="libraryStatusMessage"></div>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="fas fa-save me-2"></i>Save Settings
+                            </button>
+                            <button type="button" class="btn btn-outline-info ms-2" onclick="useDefaultLibrary()">
+                                <i class="fas fa-undo me-1"></i>Use Default
+                            </button>
+                            <button type="button" class="btn btn-outline-danger ms-2" onclick="clearGlobalLibrary()">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Library Info Panel -->
+                <div id="libraryInfoPanel" class="mt-4 p-3 bg-light rounded" style="display: none;">
+                    <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Survey Template Locations</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-2">
+                                <div class="card-body py-2">
+                                    <small class="text-muted">Global Survey Templates (Read-only)</small>
+                                    <div id="globalLibraryInfo" class="text-truncate">
+                                        <span class="text-muted">Not configured</span>
+                                    </div>
+                                    <small class="text-muted">Path: <code>*/survey/*.json</code></small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-2">
+                                <div class="card-body py-2">
+                                    <small class="text-muted">Project Survey Templates (Editable)</small>
+                                    <div id="projectLibraryInfo" class="text-truncate">
+                                        <span class="text-muted">Select a project</span>
+                                    </div>
+                                    <small class="text-muted">Path: <code>project/library/survey/*.json</code></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        Survey templates from both locations are merged. Project templates take priority over global templates with the same name.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Participants Status Card (simplified - editing happens in Converter) -->
+    <div class="card shadow-sm mt-4" id="participantsStatusCard" style="display: none;">
+        <div class="card-header bg-info bg-opacity-10">
+            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-users text-info me-2"></i>Participants Schema</span>
+                <span class="badge bg-info" id="participantsFieldCount">0 fields</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <div id="currentFieldsList" class="d-flex flex-wrap gap-1">
+                    <span class="text-muted">No fields defined yet</span>
+                </div>
+            </div>
+            <div class="alert alert-light border mb-0">
+                <i class="fas fa-info-circle text-info me-2"></i>
+                <strong>How to add participant fields:</strong>
+                <ol class="mb-0 mt-2 small">
+                    <li>Go to <a href="/converter">Converter</a> → Survey tab → <strong>Template Generation</strong> mode</li>
+                    <li>Upload a LimeSurvey file (.lss/.lsa) or Excel/CSV with your data</li>
+                    <li>Mark questions as <strong>Participant Metadata</strong> (age, sex, etc.)</li>
+                    <li>Generate templates - participant fields will be added to <code>participants.json</code></li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Load global settings on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadGlobalSettings();
+        loadLibraryInfo();
+
+        // Update chevron icon on collapse toggle
+        const settingsSection = document.getElementById('settingsSection');
+        if (settingsSection) {
+            settingsSection.addEventListener('shown.bs.collapse', function() {
+                document.getElementById('settingsChevron').classList.replace('fa-chevron-down', 'fa-chevron-up');
+            });
+            settingsSection.addEventListener('hidden.bs.collapse', function() {
+                document.getElementById('settingsChevron').classList.replace('fa-chevron-up', 'fa-chevron-down');
+            });
+        }
+    });
+
+    // Load global library settings
+    async function loadGlobalSettings() {
+        try {
+            const response = await fetch('/api/settings/global-library');
+            const data = await response.json();
+            if (data.success) {
+                const input = document.getElementById('globalLibraryPath');
+                input.value = data.global_template_library_path || '';
+                // Show default path as placeholder
+                if (data.default_library_path) {
+                    input.placeholder = `Default: ${data.default_library_path}`;
+                }
+                updateLibraryInfoPanel(data.global_template_library_path || data.default_library_path, null);
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+        }
+    }
+
+    // Load library info (both global and project)
+    async function loadLibraryInfo() {
+        try {
+            const response = await fetch('/api/projects/library-path');
+            const data = await response.json();
+
+            const infoPanel = document.getElementById('libraryInfoPanel');
+            infoPanel.style.display = 'block';
+
+            // Update global library info
+            const globalInfo = document.getElementById('globalLibraryInfo');
+            if (data.global_library_path) {
+                globalInfo.innerHTML = `<code class="small">${data.global_library_path}</code>`;
+            } else {
+                globalInfo.innerHTML = '<span class="text-muted">Not configured</span>';
+            }
+
+            // Update project library info
+            const projectInfo = document.getElementById('projectLibraryInfo');
+            if (data.success && data.project_library_path) {
+                projectInfo.innerHTML = `<code class="small">${data.project_library_path}</code>`;
+            } else if (data.project_path) {
+                projectInfo.innerHTML = `<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>No library folder</span>`;
+            } else {
+                projectInfo.innerHTML = '<span class="text-muted">Select a project</span>';
+            }
+        } catch (error) {
+            console.error('Error loading library info:', error);
+        }
+    }
+
+    // Update library info panel
+    function updateLibraryInfoPanel(globalPath, projectPath) {
+        const infoPanel = document.getElementById('libraryInfoPanel');
+        infoPanel.style.display = 'block';
+
+        const globalInfo = document.getElementById('globalLibraryInfo');
+        if (globalPath) {
+            globalInfo.innerHTML = `<code class="small">${globalPath}</code>`;
+        } else {
+            globalInfo.innerHTML = '<span class="text-muted">Not configured</span>';
+        }
+    }
+
+    // Browse button for global library
+    document.getElementById('browseGlobalLibrary').addEventListener('click', async function() {
+        try {
+            const response = await fetch('/api/browse-folder');
+            const data = await response.json();
+            if (data.path) {
+                document.getElementById('globalLibraryPath').value = data.path;
+            }
+        } catch (error) {
+            console.error('Browse error:', error);
+        }
+    });
+
+    // Save global settings
+    document.getElementById('globalSettingsForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+        btn.disabled = true;
+
+        const path = document.getElementById('globalLibraryPath').value.trim();
+
+        try {
+            const response = await fetch('/api/settings/global-library', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ global_template_library_path: path })
+            });
+            const result = await response.json();
+
+            const statusDiv = document.getElementById('libraryStatusMessage');
+            if (result.success) {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-success py-2">
+                        <i class="fas fa-check-circle me-2"></i>Settings saved successfully!
+                    </div>
+                `;
+                updateLibraryInfoPanel(result.global_template_library_path, null);
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-danger py-2">
+                        <i class="fas fa-exclamation-circle me-2"></i>${result.error}
+                    </div>
+                `;
+            }
+
+            // Auto-hide success message after 3 seconds
+            setTimeout(() => {
+                if (result.success) {
+                    statusDiv.innerHTML = '';
+                }
+            }, 3000);
+
+        } catch (error) {
+            document.getElementById('libraryStatusMessage').innerHTML = `
+                <div class="alert alert-danger py-2">
+                    <i class="fas fa-exclamation-circle me-2"></i>${error.message}
+                </div>
+            `;
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+
+    // Use default library path (app's survey_library folder)
+    async function useDefaultLibrary() {
+        try {
+            const response = await fetch('/api/settings/global-library');
+            const data = await response.json();
+            if (data.default_library_path) {
+                document.getElementById('globalLibraryPath').value = data.default_library_path;
+                document.getElementById('libraryStatusMessage').innerHTML = `
+                    <div class="alert alert-info py-2">
+                        <i class="fas fa-info-circle me-2"></i>Default path set. Click "Save Settings" to apply.
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error getting default path:', error);
+        }
+    }
+
+    // Clear global library setting
+    async function clearGlobalLibrary() {
+        if (!confirm('Clear the global template library path?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/settings/global-library', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ global_template_library_path: '' })
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                document.getElementById('globalLibraryPath').value = '';
+                document.getElementById('libraryStatusMessage').innerHTML = `
+                    <div class="alert alert-info py-2">
+                        <i class="fas fa-info-circle me-2"></i>Global library path cleared.
+                    </div>
+                `;
+                updateLibraryInfoPanel(null, null);
+
+                setTimeout(() => {
+                    document.getElementById('libraryStatusMessage').innerHTML = '';
+                }, 3000);
+            }
+        } catch (error) {
+            console.error('Error clearing library:', error);
+        }
+    }
+
+    // Project type selection
+    function selectProjectType(type) {
+        // Update card styles
+        document.querySelectorAll('.project-card').forEach(card => {
+            card.classList.remove('active');
+        });
+        document.getElementById('card-' + type).classList.add('active');
+
+        // Show corresponding form
+        document.querySelectorAll('.form-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        document.getElementById('section-' + type).classList.add('active');
+    }
+
+    // Browse button for project location
+    document.getElementById('browseProjectPath').addEventListener('click', async function() {
+        try {
+            const response = await fetch('/api/browse-folder');
+            const data = await response.json();
+            if (data.path) {
+                document.getElementById('projectPath').value = data.path;
+            }
+        } catch (error) {
+            console.error('Browse error:', error);
+        }
+    });
+
+    // Browse button for existing project
+    document.getElementById('browseExistingPath').addEventListener('click', async function() {
+        try {
+            const response = await fetch('/api/browse-folder');
+            const data = await response.json();
+            if (data.path) {
+                document.getElementById('existingPath').value = data.path;
+            }
+        } catch (error) {
+            console.error('Browse error:', error);
+        }
+    });
+
+    // Validate project name (no spaces, valid folder name)
+    document.getElementById('projectName').addEventListener('input', function(e) {
+        const value = e.target.value;
+        const isValid = /^[a-zA-Z0-9_-]*$/.test(value);
+        const errorDiv = document.getElementById('projectNameError');
+
+        if (!isValid) {
+            e.target.classList.add('is-invalid');
+            errorDiv.textContent = 'Only letters, numbers, underscores (-) and hyphens (_) allowed. No spaces!';
+        } else {
+            e.target.classList.remove('is-invalid');
+            errorDiv.textContent = '';
+        }
+    });
+
+    // Create Project Form
+    document.getElementById('createProjectForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const projectName = document.getElementById('projectName').value.trim();
+        const projectPath = document.getElementById('projectPath').value.trim();
+
+        // Validate project name
+        if (!/^[a-zA-Z0-9_-]+$/.test(projectName)) {
+            alert('Invalid project name. Only letters, numbers, underscores and hyphens allowed.');
+            return;
+        }
+
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
+        btn.disabled = true;
+
+        // Get selected modalities
+        const modalities = [];
+        document.querySelectorAll('input[name="modalities"]:checked').forEach(cb => {
+            modalities.push(cb.value);
+        });
+
+        // Combine path and project name
+        const separator = projectPath.includes('/') ? '/' : '\\';
+        const fullPath = projectPath + separator + projectName;
+
+        const data = {
+            path: fullPath,
+            name: projectName,
+            sessions: parseInt(document.getElementById('projectSessions').value),
+            modalities: modalities,
+            create_example: document.getElementById('createExample').checked
+        };
+
+        try {
+            const response = await fetch('/api/projects/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+
+            const resultDiv = document.getElementById('createResult');
+            resultDiv.style.display = 'block';
+
+            if (result.success) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-check-circle me-2"></i>Project Created Successfully!</h5>
+                        <p class="mb-2">${result.message}</p>
+                        <p class="mb-2"><strong>Location:</strong> <code>${result.path}</code></p>
+                        <p class="mb-0 text-success"><i class="fas fa-folder-open me-1"></i>This project is now your current working project.</p>
+                        <hr>
+                        <p class="mb-1"><strong>Created files:</strong></p>
+                        <ul class="mb-2">
+                            ${result.created_files.map(f => `<li><code>${f}</code></li>`).join('')}
+                        </ul>
+                        <div class="mt-3 pt-3 border-top">
+                            <h6 class="text-muted mb-2">Next Steps:</h6>
+                            <div class="btn-group" role="group">
+                                <a href="/converter" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-file-import me-1"></i>Import LimeSurvey Templates
+                                </a>
+                                <a href="/survey-generator" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-poll-h me-1"></i>Survey & Boilerplate
+                                </a>
+                                <a href="/" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-check-circle me-1"></i>Validate Dataset
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
+                        <p class="mb-0">${result.error}</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            document.getElementById('createResult').innerHTML = `
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
+                    <p class="mb-0">${error.message}</p>
+                </div>
+            `;
+            document.getElementById('createResult').style.display = 'block';
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+
+    // Open Project Form
+    document.getElementById('openProjectForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating...';
+        btn.disabled = true;
+
+        const path = document.getElementById('existingPath').value;
+
+        try {
+            const response = await fetch('/api/projects/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: path })
+            });
+            const result = await response.json();
+
+            const resultDiv = document.getElementById('validationResult');
+            resultDiv.style.display = 'block';
+
+            if (!result.success) {
+                resultDiv.innerHTML = `
+                    <div class="validation-result invalid">
+                        <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
+                        <p class="mb-0">${result.error}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const stats = result.stats;
+            const issues = result.issues;
+            const fixableIssues = result.fixable_issues;
+
+            let statusClass = 'valid';
+            let statusIcon = 'check-circle';
+            let statusText = 'Valid PRISM Structure';
+
+            if (issues.length > 0) {
+                const hasNonFixable = issues.some(i => !i.fixable);
+                if (hasNonFixable) {
+                    statusClass = 'invalid';
+                    statusIcon = 'exclamation-circle';
+                    statusText = `${issues.length} Issue(s) Found`;
+                } else {
+                    statusClass = 'warning';
+                    statusIcon = 'exclamation-triangle';
+                    statusText = `${issues.length} Fixable Issue(s) Found`;
+                }
+            }
+
+            let html = `
+                <div class="validation-result ${statusClass}">
+                    <h5><i class="fas fa-${statusIcon} me-2"></i>${statusText}</h5>
+                    <p class="text-success mb-3"><i class="fas fa-folder-open me-1"></i>This project is now your current working project. <a href="${window.location.href}">Refresh</a> to see it in the navbar.</p>
+
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.subjects}</div>
+                            <div class="stat-label">Subjects</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.sessions.length || 0}</div>
+                            <div class="stat-label">Sessions</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.modalities.length}</div>
+                            <div class="stat-label">Modalities</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.has_dataset_description ? '✓' : '✗'}</div>
+                            <div class="stat-label">dataset_description</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${stats.has_participants_tsv ? '✓' : '✗'}</div>
+                            <div class="stat-label">participants.tsv</div>
+                        </div>
+                    </div>
+            `;
+
+            if (issues.length > 0) {
+                html += `
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Issues</h6>
+                        ${fixableIssues.length > 0 ? `
+                            <button class="btn btn-warning btn-sm" onclick="fixAllIssues('${path}')">
+                                <i class="fas fa-wrench me-1"></i>Fix All (${fixableIssues.length})
+                            </button>
+                        ` : ''}
+                    </div>
+                    <div id="issuesList">
+                `;
+
+                issues.forEach(issue => {
+                    html += `
+                        <div class="issue-item ${issue.fixable ? 'fixable' : 'not-fixable'}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>${issue.code}</strong>: ${issue.message}
+                                    ${issue.file_path ? `<br><small class="text-muted">${issue.file_path}</small>` : ''}
+                                </div>
+                                ${issue.fixable ? `
+                                    <button class="btn btn-sm btn-outline-warning" onclick="fixIssue('${path}', '${issue.code}')">
+                                        <i class="fas fa-wrench"></i>
+                                    </button>
+                                ` : `
+                                    <span class="badge bg-secondary">Manual fix required</span>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            }
+
+            // Add workflow links
+            html += `
+                <hr>
+                <div class="mt-3">
+                    <h6 class="text-muted mb-2">Next Steps:</h6>
+                    <div class="btn-group" role="group">
+                        <a href="/converter" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-file-import me-1"></i>Import Templates
+                        </a>
+                        <a href="/survey-generator" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-poll-h me-1"></i>Survey & Boilerplate
+                        </a>
+                        <a href="/" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-check-circle me-1"></i>Validate Dataset
+                        </a>
+                    </div>
+                </div>
+            `;
+
+            html += '</div>';
+            resultDiv.innerHTML = html;
+
+        } catch (error) {
+            document.getElementById('validationResult').innerHTML = `
+                <div class="validation-result invalid">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>Error</h5>
+                    <p class="mb-0">${error.message}</p>
+                </div>
+            `;
+            document.getElementById('validationResult').style.display = 'block';
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+
+    // Fix single issue
+    async function fixIssue(path, code) {
+        try {
+            const response = await fetch('/api/projects/fix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: path, fix_codes: [code] })
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                // Re-validate to refresh the view
+                document.getElementById('openProjectForm').dispatchEvent(new Event('submit'));
+            } else {
+                alert('Error applying fix: ' + result.error);
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+
+    // Fix all issues
+    async function fixAllIssues(path) {
+        try {
+            const response = await fetch('/api/projects/fix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: path })
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                // Re-validate to refresh the view
+                document.getElementById('openProjectForm').dispatchEvent(new Event('submit'));
+            } else {
+                alert('Error applying fixes: ' + result.error);
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+
+    // Clear current project
+    async function clearCurrentProject() {
+        try {
+            const response = await fetch('/api/projects/current', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: null })
+            });
+            // Refresh the page to update the UI
+            window.location.reload();
+        } catch (error) {
+            console.error('Error clearing project:', error);
+        }
+    }
+
+    // ===== PARTICIPANTS STATUS (read-only display) =====
+
+    // Initialize participants status display when project is selected
+    async function initParticipantsStatus() {
+        const statusCard = document.getElementById('participantsStatusCard');
+
+        // Check if project is selected
+        {% if current_project.path %}
+            statusCard.style.display = 'block';
+            await loadParticipantsStatus();
+        {% else %}
+            statusCard.style.display = 'none';
+        {% endif %}
+    }
+
+    // Load and display current participants.json fields
+    async function loadParticipantsStatus() {
+        try {
+            const response = await fetch('/api/projects/participants');
+            const data = await response.json();
+
+            const container = document.getElementById('currentFieldsList');
+            const countBadge = document.getElementById('participantsFieldCount');
+
+            if (data.success && data.schema) {
+                const fields = Object.keys(data.schema);
+                countBadge.textContent = `${fields.length} fields`;
+
+                if (fields.length === 0) {
+                    container.innerHTML = '<span class="text-muted">No fields defined yet</span>';
+                } else {
+                    container.innerHTML = fields.map(field => {
+                        const isRequired = field === 'participant_id';
+                        const badgeClass = isRequired ? 'bg-danger' : 'bg-primary';
+                        return `<span class="badge ${badgeClass}">${field}</span>`;
+                    }).join(' ');
+                }
+            } else {
+                container.innerHTML = '<span class="text-muted">No participants.json found</span>';
+                countBadge.textContent = '0 fields';
+            }
+        } catch (error) {
+            console.error('Error loading participants status:', error);
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', initParticipantsStatus);
+</script>
+{% endblock %}
