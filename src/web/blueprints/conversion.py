@@ -321,6 +321,21 @@ def api_survey_convert_validate():
         output_root = tmp_dir_path / "prism_dataset"
         add_log("Starting data conversion...", "info")
 
+        # For text files, log the head to help debug delimiter issues
+        if suffix in {".csv", ".tsv"}:
+            try:
+                with open(input_path, "r", encoding="utf-8", errors="replace") as f:
+                    head_lines = []
+                    for i in range(4):
+                        line = f.readline()
+                        if not line:
+                            break
+                        head_lines.append(f"  [{i+1}] {line.strip()}")
+                    if head_lines:
+                        add_log("File head (first 4 lines):\n" + "\n".join(head_lines), "info")
+            except Exception:
+                pass
+
         if strict_levels:
             add_log("Strict Levels Validation: enabled", "info")
 
@@ -567,6 +582,22 @@ def api_biometrics_convert():
         output_root = tmp_dir_path / "prism_dataset"
 
         log_msg(f"Starting biometrics conversion for {filename}", "info")
+        
+        # For text files, log the head to help debug delimiter issues
+        if suffix in {".csv", ".tsv"}:
+            try:
+                with open(input_path, "r", encoding="utf-8", errors="replace") as f:
+                    head_lines = []
+                    for i in range(4):
+                        line = f.readline()
+                        if not line:
+                            break
+                        head_lines.append(f"  [{i+1}] {line.strip()}")
+                    if head_lines:
+                        log_msg("File head (first 4 lines):\n" + "\n".join(head_lines), "info")
+            except Exception:
+                pass
+
         if tasks_to_export:
             log_msg(f"Exporting tasks: {', '.join(tasks_to_export)}", "step")
 

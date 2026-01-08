@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://prism.org/schemas/biometrics/v1.1.0",
-  "version": "1.1.0",
+  "$id": "https://prism.org/schemas/biometrics/v1.1.1",
+  "version": "1.1.1",
   "title": "Biometrics Metadata",
   "description": "Schema for biometric and physical performance assessment data (e.g., VO2max, planks, balance, grip strength). Files should be named: sub-<label>[_ses-<label>]_biometrics-<label>[_run-<index>]_biometrics.<tsv|json>",
   "type": "object",
@@ -39,7 +39,7 @@
           "description": "Who provided the responses/performed the test"
         },
         "Equipment": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "Equipment used for measurement (e.g., Stopwatch, Cycle Ergometer, Dynamometer)"
         },
         "EquipmentManufacturer": {
@@ -180,15 +180,15 @@
           "examples": [{ "min": 18, "max": 65 }]
         },
         "TargetPopulation": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "Descriptive target population (e.g., 'Clinical', 'Athletes')"
         },
         "ExclusionCriteria": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "Conditions under which the test should not be performed"
         },
         "WarmupProtocol": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "Warmup procedure before the test (if required)"
         }
       },
@@ -199,7 +199,7 @@
       "description": "Scoring and interpretation information",
       "properties": {
         "ScoringMethod": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "How items are scored (e.g., sum, mean, weighted, best-of-trial)"
         },
         "ScoreRange": {
@@ -264,7 +264,7 @@
       "description": "Normative data and reference values",
       "properties": {
         "ReferencePopulation": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "Population on which normative data is based"
         },
         "ReferenceSource": {

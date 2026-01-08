@@ -1,6 +1,6 @@
 {
   "Technical": {
-    "StimulusType": "Biometrics",
+    "Type": "Biometrics",
     "FileFormat": "tsv",
     "Equipment": {
       "de": "Stoppuhr, Maßband, Herzfrequenzmesser, Dynamometer",
@@ -23,11 +23,11 @@
       "de": "Führen Sie alle Tests der Reihe nach durch. Pausieren Sie 2 Minuten zwischen den Tests. Sorgen Sie für ein ordentliches Aufwärmen vor Beginn.",
       "en": "Complete all tests in order. Rest 2 minutes between tests. Ensure proper warm-up before starting."
     },
-    "Author": "Demo Protocol",
+    "Authors": ["Demo Protocol"],
     "Reference": "Demo Reference for PRISM Testing",
-    "EstimatedDuration": {
-      "de": "30 Minuten",
-      "en": "30 minutes"
+    "AdministrationTime": {
+      "min": 30,
+      "max": 30
     },
     "TargetPopulation": {
       "de": "Erwachsene 18-65 Jahre",

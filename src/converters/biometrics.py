@@ -75,9 +75,33 @@ def _normalize_ses_id(value: Any, *, default_session: str = "ses-1") -> str:
     return f"ses-{ses}"
 
 
+def _debug_print_file_head(input_path: Path, num_lines: int = 4):
+    """Print the first few lines of a text file for debugging/visibility in terminal."""
+    try:
+        # Avoid binary files
+        if input_path.suffix.lower() in {".xlsx", ".xls", ".lsa", ".zip", ".gz"}:
+            return
+
+        with open(input_path, "r", encoding="utf-8", errors="replace") as f:
+            print(f"\n[DEBUG] --- First {num_lines} lines of {input_path.name} ---")
+            for i in range(num_lines):
+                line = f.readline()
+                if not line:
+                    break
+                print(f"L{i+1}: {line.rstrip()}")
+            header_len = 26 + len(input_path.name)
+            print("-" * header_len + "\n")
+    except Exception:
+        # Silently fail if we can't read/print
+        pass
+
+
 def _read_table_as_dataframe(
     *, input_path: Path, sheet: str | int | None = None
 ) -> "Any":
+    # Print head for visibility in terminal
+    _debug_print_file_head(input_path)
+
     try:
         import pandas as pd
     except Exception as e:  # pragma: no cover
