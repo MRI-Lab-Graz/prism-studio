@@ -711,6 +711,57 @@
                                     <i class="fas fa-check-circle me-2"></i>
                                     <span id="templateSaveSuccessMessage"></span>
                                 </div>
+
+                                <!-- Participant Metadata Section -->
+                                <div id="participantMetadataSection" class="d-none mt-4 border-top pt-3">
+                                    <h6 class="mb-3">
+                                        <i class="fas fa-users text-info me-2"></i>
+                                        Mark Participant Metadata Fields
+                                        <small class="text-muted ms-2">(fields that go into participants.tsv)</small>
+                                    </h6>
+
+                                    <div class="alert alert-info py-2 mb-3">
+                                        <small>
+                                            <i class="fas fa-lightbulb me-1"></i>
+                                            <strong>BIDS Tip:</strong> Mark demographic questions (age, sex, ID) as participant metadata.
+                                            These will be saved to <code>participants.json</code> instead of per-subject survey files.
+                                        </small>
+                                    </div>
+
+                                    <!-- Question list with checkboxes -->
+                                    <div id="participantFieldsList" class="mb-3" style="max-height: 300px; overflow-y: auto;">
+                                        <div class="text-muted">Loading extracted fields...</div>
+                                    </div>
+
+                                    <!-- BIDS field mapping suggestions -->
+                                    <div id="bidsFieldSuggestions" class="mb-3 d-none">
+                                        <h6 class="small text-muted mb-2">Suggested BIDS Mappings</h6>
+                                        <div id="bidsFieldSuggestionsList" class="d-flex flex-wrap gap-2"></div>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="text-muted me-2">
+                                                <span id="selectedParticipantFieldsCount">0</span> fields selected
+                                            </span>
+                                        </div>
+                                        <div>
+                                            {% if current_project.path %}
+                                            <button type="button" class="btn btn-primary btn-sm" id="saveParticipantsJsonBtn" disabled>
+                                                <i class="fas fa-save me-1"></i>Save to participants.json
+                                            </button>
+                                            {% else %}
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="downloadParticipantsJsonBtn" disabled>
+                                                <i class="fas fa-download me-1"></i>Download participants.json
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Save status -->
+                                    <div id="participantsSaveStatus" class="mt-2"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2311,6 +2362,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 displayTemplateQuestions(data);
             }
 
+            // Show participant metadata section for marking fields
+            displayParticipantMetadataSection(data);
+
             convertInfo.textContent = 'Template generation complete!';
             convertInfo.classList.remove('d-none');
 
@@ -2571,6 +2625,299 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
+    // ===== PARTICIPANT METADATA MARKING =====
+
+    // Store selected participant fields
+    let selectedParticipantFields = {};
+
+    // BIDS standard field suggestions for auto-mapping
+    const bidsFieldMappings = {
+        // Common patterns -> BIDS field names
+        'participant_id': ['token', 'id', 'participant', 'subject', 'subj', 'respondent'],
+        'age': ['age', 'alter', 'years_old'],
+        'sex': ['sex', 'gender', 'geschlecht', 'm_f', 'male_female'],
+        'handedness': ['hand', 'handed', 'handedness', 'dominant_hand'],
+        'education_years': ['education', 'school', 'study_years', 'ausbildung'],
+        'native_language': ['language', 'native', 'mother_tongue', 'muttersprache']
+    };
+
+    // Display participant metadata section with extracted fields
+    function displayParticipantMetadataSection(data) {
+        const section = document.getElementById('participantMetadataSection');
+        const fieldsList = document.getElementById('participantFieldsList');
+        if (!section || !fieldsList) return;
+
+        // Extract all question codes/fields from the template data
+        const allFields = extractAllFields(data);
+
+        if (allFields.length === 0) {
+            section.classList.add('d-none');
+            return;
+        }
+
+        section.classList.remove('d-none');
+        selectedParticipantFields = {};
+
+        // Render field checkboxes
+        let html = '<div class="list-group list-group-flush">';
+        for (const field of allFields) {
+            const suggestedMapping = suggestBidsMapping(field.code);
+            html += `
+                <label class="list-group-item list-group-item-action py-2 d-flex align-items-center">
+                    <input type="checkbox" class="form-check-input me-2 participant-field-checkbox"
+                           data-code="${field.code}" data-description="${field.description || ''}"
+                           data-type="${field.type || 'text'}">
+                    <div class="flex-grow-1">
+                        <code class="me-2">${field.code}</code>
+                        <small class="text-muted">${field.description || field.type || ''}</small>
+                        ${field.group ? `<span class="badge bg-light text-dark ms-2">${field.group}</span>` : ''}
+                    </div>
+                    ${suggestedMapping ? `
+                        <select class="form-select form-select-sm bids-mapping-select" style="width: 140px;" data-code="${field.code}">
+                            <option value="">Map to...</option>
+                            <option value="${suggestedMapping}" selected>${suggestedMapping}</option>
+                            <option value="participant_id">participant_id</option>
+                            <option value="age">age</option>
+                            <option value="sex">sex</option>
+                            <option value="handedness">handedness</option>
+                            <option value="custom">Custom name</option>
+                        </select>
+                    ` : `
+                        <select class="form-select form-select-sm bids-mapping-select" style="width: 140px;" data-code="${field.code}">
+                            <option value="">Map to...</option>
+                            <option value="participant_id">participant_id</option>
+                            <option value="age">age</option>
+                            <option value="sex">sex</option>
+                            <option value="handedness">handedness</option>
+                            <option value="education_years">education_years</option>
+                            <option value="custom">Custom name</option>
+                        </select>
+                    `}
+                </label>
+            `;
+        }
+        html += '</div>';
+        fieldsList.innerHTML = html;
+
+        // Add event listeners
+        fieldsList.querySelectorAll('.participant-field-checkbox').forEach(cb => {
+            cb.addEventListener('change', updateParticipantFieldSelection);
+        });
+
+        fieldsList.querySelectorAll('.bids-mapping-select').forEach(sel => {
+            sel.addEventListener('change', function() {
+                const code = this.dataset.code;
+                const checkbox = fieldsList.querySelector(`.participant-field-checkbox[data-code="${code}"]`);
+                if (this.value && checkbox && !checkbox.checked) {
+                    checkbox.checked = true;
+                    updateParticipantFieldSelection();
+                }
+            });
+        });
+
+        // Setup save/download button
+        setupParticipantsSaveButton();
+    }
+
+    // Extract all fields from template data (works for all modes)
+    function extractAllFields(data) {
+        const fields = [];
+
+        if (data.mode === 'combined' || data.mode === 'groups') {
+            // Extract from prism_json Items
+            const sources = data.mode === 'combined'
+                ? [{ json: data.prism_json, group: null }]
+                : Object.entries(data.questionnaires || {}).map(([name, info]) => ({ json: info.prism_json, group: name }));
+
+            for (const source of sources) {
+                const items = source.json?.Items || [];
+                for (const item of items) {
+                    if (item.SurveyItemID) {
+                        fields.push({
+                            code: item.SurveyItemID,
+                            description: item.Prompt || item.Description || '',
+                            type: item.ResponseType || 'text',
+                            group: source.group
+                        });
+                    }
+                }
+            }
+        } else if (data.mode === 'questions') {
+            // Extract from by_group structure
+            for (const [groupName, groupInfo] of Object.entries(data.by_group || {})) {
+                for (const q of groupInfo.questions || []) {
+                    fields.push({
+                        code: q.code,
+                        description: q.title || '',
+                        type: q.type || 'text',
+                        group: groupName
+                    });
+                }
+            }
+        }
+
+        return fields;
+    }
+
+    // Suggest BIDS field mapping based on field code
+    function suggestBidsMapping(code) {
+        const lowerCode = code.toLowerCase();
+        for (const [bidsField, patterns] of Object.entries(bidsFieldMappings)) {
+            for (const pattern of patterns) {
+                if (lowerCode.includes(pattern)) {
+                    return bidsField;
+                }
+            }
+        }
+        return null;
+    }
+
+    // Update selection state and count
+    function updateParticipantFieldSelection() {
+        selectedParticipantFields = {};
+        const checkboxes = document.querySelectorAll('.participant-field-checkbox:checked');
+
+        checkboxes.forEach(cb => {
+            const code = cb.dataset.code;
+            const description = cb.dataset.description;
+            const mappingSelect = document.querySelector(`.bids-mapping-select[data-code="${code}"]`);
+            const bidsName = mappingSelect?.value || code;
+
+            selectedParticipantFields[code] = {
+                originalCode: code,
+                bidsFieldName: bidsName || code,
+                description: description
+            };
+        });
+
+        // Update count
+        const countEl = document.getElementById('selectedParticipantFieldsCount');
+        if (countEl) {
+            countEl.textContent = Object.keys(selectedParticipantFields).length;
+        }
+
+        // Enable/disable save button
+        const saveBtn = document.getElementById('saveParticipantsJsonBtn') || document.getElementById('downloadParticipantsJsonBtn');
+        if (saveBtn) {
+            saveBtn.disabled = Object.keys(selectedParticipantFields).length === 0;
+        }
+    }
+
+    // Build participants.json schema from selections
+    function buildParticipantsJsonSchema() {
+        const schema = {};
+
+        for (const [code, info] of Object.entries(selectedParticipantFields)) {
+            const fieldName = info.bidsFieldName || code;
+
+            // Get description from original data
+            schema[fieldName] = {
+                Description: info.description || `Extracted from survey field: ${code}`
+            };
+
+            // Add standard properties for known BIDS fields
+            if (fieldName === 'age') {
+                schema[fieldName].Units = 'years';
+            } else if (fieldName === 'sex') {
+                schema[fieldName].Levels = {
+                    'M': 'Male',
+                    'F': 'Female',
+                    'O': 'Other'
+                };
+            } else if (fieldName === 'handedness') {
+                schema[fieldName].Levels = {
+                    'R': 'Right',
+                    'L': 'Left',
+                    'A': 'Ambidextrous'
+                };
+            }
+
+            // Store source info for data conversion
+            if (code !== fieldName) {
+                schema[fieldName]._sourceField = code;
+            }
+        }
+
+        return schema;
+    }
+
+    // Setup save/download button
+    function setupParticipantsSaveButton() {
+        const saveBtn = document.getElementById('saveParticipantsJsonBtn');
+        const downloadBtn = document.getElementById('downloadParticipantsJsonBtn');
+        const statusDiv = document.getElementById('participantsSaveStatus');
+
+        if (saveBtn) {
+            saveBtn.onclick = async () => {
+                const schema = buildParticipantsJsonSchema();
+                if (Object.keys(schema).length === 0) {
+                    alert('No fields selected');
+                    return;
+                }
+
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+                try {
+                    // First get existing schema to merge
+                    const existingRes = await fetch('/api/projects/participants');
+                    const existingData = await existingRes.json();
+                    const existingSchema = existingData.success ? (existingData.schema || {}) : {};
+
+                    // Merge new fields into existing schema
+                    const mergedSchema = { ...existingSchema, ...schema };
+
+                    // Ensure participant_id is present
+                    if (!mergedSchema.participant_id) {
+                        mergedSchema.participant_id = { Description: 'Unique participant identifier' };
+                    }
+
+                    // Save merged schema
+                    const response = await fetch('/api/projects/participants', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ schema: mergedSchema })
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        statusDiv.innerHTML = `<span class="text-success"><i class="fas fa-check-circle me-1"></i>Saved ${Object.keys(schema).length} fields to participants.json!</span>`;
+                    } else {
+                        statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>${result.error}</span>`;
+                    }
+                } catch (e) {
+                    statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>${e.message}</span>`;
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save to participants.json';
+                }
+            };
+        }
+
+        if (downloadBtn) {
+            downloadBtn.onclick = () => {
+                const schema = buildParticipantsJsonSchema();
+                if (Object.keys(schema).length === 0) {
+                    alert('No fields selected');
+                    return;
+                }
+
+                // Ensure participant_id is present
+                if (!schema.participant_id) {
+                    schema.participant_id = { Description: 'Unique participant identifier' };
+                }
+
+                const blob = new Blob([JSON.stringify(schema, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'participants.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+        }
+    }
+
     convertBtn.addEventListener('click', function() {
         convertError.classList.add('d-none');
         convertInfo.classList.add('d-none');
@@ -2578,12 +2925,13 @@ document.addEventListener('DOMContentLoaded', function() {
         convertInfo.textContent = '';
         resetConversionUI();
 
-        // Hide template results
+        // Hide template results and participant metadata section
         if (templateResultsContainer) {
             templateResultsContainer.classList.add('d-none');
             document.getElementById('templateResultSingle')?.classList.add('d-none');
             document.getElementById('templateResultGroups')?.classList.add('d-none');
             document.getElementById('templateResultQuestions')?.classList.add('d-none');
+            document.getElementById('participantMetadataSection')?.classList.add('d-none');
         }
 
         const file = convertExcelFile.files && convertExcelFile.files[0];

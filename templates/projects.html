@@ -372,151 +372,29 @@
         </div>
     </div>
 
-    <!-- Participants Editor Card -->
-    <div class="card shadow-sm mt-4" id="participantsEditorCard" style="display: none;">
-        <div class="card-header bg-info bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#participantsSection"
-             role="button" aria-expanded="false" aria-controls="participantsSection">
+    <!-- Participants Status Card (simplified - editing happens in Converter) -->
+    <div class="card shadow-sm mt-4" id="participantsStatusCard" style="display: none;">
+        <div class="card-header bg-info bg-opacity-10">
             <h5 class="mb-0 d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-users text-info me-2"></i>Participants Schema Editor</span>
-                <span>
-                    <span class="badge bg-info" id="participantsFieldCount">0 fields</span>
-                    <i class="fas fa-chevron-down text-muted ms-2" id="participantsChevron"></i>
-                </span>
+                <span><i class="fas fa-users text-info me-2"></i>Participants Schema</span>
+                <span class="badge bg-info" id="participantsFieldCount">0 fields</span>
             </h5>
         </div>
-        <div class="collapse" id="participantsSection">
-            <div class="card-body">
-                <!-- BIDS Compliance Tips -->
-                <div class="alert alert-info mb-3" id="bidsComplianceTips">
-                    <h6><i class="fas fa-lightbulb me-2"></i>BIDS Compliance Tips</h6>
-                    <ul class="mb-0 small" id="tipsList">
-                        <li><strong>participant_id</strong> is required by BIDS specification</li>
-                        <li>Recommended fields: age, sex, handedness</li>
-                        <li>Use standard units (years, cm, kg) and ISO codes</li>
-                    </ul>
+        <div class="card-body">
+            <div class="mb-3">
+                <div id="currentFieldsList" class="d-flex flex-wrap gap-1">
+                    <span class="text-muted">No fields defined yet</span>
                 </div>
-
-                <!-- Current Schema Display -->
-                <div class="mb-3">
-                    <h6>Current Fields <small class="text-muted">(participants.json)</small></h6>
-                    <div id="currentFieldsList" class="border rounded p-2 bg-light">
-                        <span class="text-muted">No fields defined yet</span>
-                    </div>
-                </div>
-
-                <!-- Add from Templates -->
-                <div class="mb-3">
-                    <h6>Add Fields from Templates</h6>
-                    <div class="accordion" id="templateAccordion">
-                        <!-- Demographics -->
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#demographicsFields">
-                                    <i class="fas fa-user me-2 text-primary"></i>Demographics
-                                    <span class="badge bg-secondary ms-2" id="demographicsCount">0</span>
-                                </button>
-                            </h2>
-                            <div id="demographicsFields" class="accordion-collapse collapse" data-bs-parent="#templateAccordion">
-                                <div class="accordion-body py-2" id="demographicsFieldsBody"></div>
-                            </div>
-                        </div>
-                        <!-- Education -->
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#educationFields">
-                                    <i class="fas fa-graduation-cap me-2 text-success"></i>Education
-                                    <span class="badge bg-secondary ms-2" id="educationCount">0</span>
-                                </button>
-                            </h2>
-                            <div id="educationFields" class="accordion-collapse collapse" data-bs-parent="#templateAccordion">
-                                <div class="accordion-body py-2" id="educationFieldsBody"></div>
-                            </div>
-                        </div>
-                        <!-- Socioeconomic -->
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#socioeconomicFields">
-                                    <i class="fas fa-briefcase me-2 text-warning"></i>Socioeconomic
-                                    <span class="badge bg-secondary ms-2" id="socioeconomicCount">0</span>
-                                </button>
-                            </h2>
-                            <div id="socioeconomicFields" class="accordion-collapse collapse" data-bs-parent="#templateAccordion">
-                                <div class="accordion-body py-2" id="socioeconomicFieldsBody"></div>
-                            </div>
-                        </div>
-                        <!-- Health -->
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#healthFields">
-                                    <i class="fas fa-heartbeat me-2 text-danger"></i>Health
-                                    <span class="badge bg-secondary ms-2" id="healthCount">0</span>
-                                </button>
-                            </h2>
-                            <div id="healthFields" class="accordion-collapse collapse" data-bs-parent="#templateAccordion">
-                                <div class="accordion-body py-2" id="healthFieldsBody"></div>
-                            </div>
-                        </div>
-                        <!-- Geographic -->
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#geographicFields">
-                                    <i class="fas fa-globe me-2 text-info"></i>Geographic
-                                    <span class="badge bg-secondary ms-2" id="geographicCount">0</span>
-                                </button>
-                            </h2>
-                            <div id="geographicFields" class="accordion-collapse collapse" data-bs-parent="#templateAccordion">
-                                <div class="accordion-body py-2" id="geographicFieldsBody"></div>
-                            </div>
-                        </div>
-                        <!-- Study -->
-                        <div class="accordion-item">
-                            <h2 class="accordion-header">
-                                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#studyFields">
-                                    <i class="fas fa-flask me-2 text-purple"></i>Study-Specific
-                                    <span class="badge bg-secondary ms-2" id="studyCount">0</span>
-                                </button>
-                            </h2>
-                            <div id="studyFields" class="accordion-collapse collapse" data-bs-parent="#templateAccordion">
-                                <div class="accordion-body py-2" id="studyFieldsBody"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Add Custom Field -->
-                <div class="mb-3">
-                    <h6>Add Custom Field</h6>
-                    <div class="row g-2">
-                        <div class="col-md-3">
-                            <input type="text" class="form-control form-control-sm" id="customFieldName" placeholder="field_name">
-                        </div>
-                        <div class="col-md-4">
-                            <input type="text" class="form-control form-control-sm" id="customFieldDescription" placeholder="Description">
-                        </div>
-                        <div class="col-md-3">
-                            <input type="text" class="form-control form-control-sm" id="customFieldUnits" placeholder="Units (optional)">
-                        </div>
-                        <div class="col-md-2">
-                            <button type="button" class="btn btn-sm btn-outline-primary w-100" id="addCustomFieldBtn">
-                                <i class="fas fa-plus me-1"></i>Add
-                            </button>
-                        </div>
-                    </div>
-                    <small class="text-muted">Use snake_case for field names (e.g., music_experience)</small>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                    <div>
-                        <button type="button" class="btn btn-primary" id="saveParticipantsBtn">
-                            <i class="fas fa-save me-2"></i>Save participants.json
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary ms-2" id="resetParticipantsBtn">
-                            <i class="fas fa-undo me-1"></i>Reset
-                        </button>
-                    </div>
-                    <div id="participantsSaveStatus"></div>
-                </div>
+            </div>
+            <div class="alert alert-light border mb-0">
+                <i class="fas fa-info-circle text-info me-2"></i>
+                <strong>How to add participant fields:</strong>
+                <ol class="mb-0 mt-2 small">
+                    <li>Go to <a href="/converter">Converter</a> → Survey tab → <strong>Template Generation</strong> mode</li>
+                    <li>Upload a LimeSurvey file (.lss/.lsa) or Excel/CSV with your data</li>
+                    <li>Mark questions as <strong>Participant Metadata</strong> (age, sex, etc.)</li>
+                    <li>Generate templates - participant fields will be added to <code>participants.json</code></li>
+                </ol>
             </div>
         </div>
     </div>
@@ -1087,292 +965,53 @@
         }
     }
 
-    // ===== PARTICIPANTS EDITOR =====
+    // ===== PARTICIPANTS STATUS (read-only display) =====
 
-    // Store current schema and templates
-    let currentParticipantsSchema = {};
-    let participantsTemplates = {};
-
-    // Category icons mapping
-    const categoryIcons = {
-        required: 'fa-asterisk text-danger',
-        demographics: 'fa-user text-primary',
-        education: 'fa-graduation-cap text-success',
-        socioeconomic: 'fa-briefcase text-warning',
-        geographic: 'fa-globe text-info',
-        health: 'fa-heartbeat text-danger',
-        study: 'fa-flask text-purple'
-    };
-
-    // Initialize participants editor when project is selected
-    async function initParticipantsEditor() {
-        const editorCard = document.getElementById('participantsEditorCard');
+    // Initialize participants status display when project is selected
+    async function initParticipantsStatus() {
+        const statusCard = document.getElementById('participantsStatusCard');
 
         // Check if project is selected
         {% if current_project.path %}
-            editorCard.style.display = 'block';
-            await loadParticipantsSchema();
-            await loadParticipantsTemplates();
+            statusCard.style.display = 'block';
+            await loadParticipantsStatus();
         {% else %}
-            editorCard.style.display = 'none';
+            statusCard.style.display = 'none';
         {% endif %}
-
-        // Setup collapse chevron
-        const participantsSection = document.getElementById('participantsSection');
-        if (participantsSection) {
-            participantsSection.addEventListener('shown.bs.collapse', function() {
-                document.getElementById('participantsChevron').classList.replace('fa-chevron-down', 'fa-chevron-up');
-            });
-            participantsSection.addEventListener('hidden.bs.collapse', function() {
-                document.getElementById('participantsChevron').classList.replace('fa-chevron-up', 'fa-chevron-down');
-            });
-        }
     }
 
-    // Load current participants.json from project
-    async function loadParticipantsSchema() {
+    // Load and display current participants.json fields
+    async function loadParticipantsStatus() {
         try {
             const response = await fetch('/api/projects/participants');
             const data = await response.json();
 
-            if (data.success) {
-                currentParticipantsSchema = data.schema || {};
-                updateCurrentFieldsList();
-                updateFieldCount();
-            }
-        } catch (error) {
-            console.error('Error loading participants schema:', error);
-        }
-    }
+            const container = document.getElementById('currentFieldsList');
+            const countBadge = document.getElementById('participantsFieldCount');
 
-    // Load predefined templates
-    async function loadParticipantsTemplates() {
-        try {
-            const response = await fetch('/api/projects/participants/templates');
-            const data = await response.json();
+            if (data.success && data.schema) {
+                const fields = Object.keys(data.schema);
+                countBadge.textContent = `${fields.length} fields`;
 
-            if (data.success) {
-                participantsTemplates = data.templates;
-                renderTemplateFields();
-            }
-        } catch (error) {
-            console.error('Error loading participants templates:', error);
-        }
-    }
-
-    // Render template fields in accordion sections
-    function renderTemplateFields() {
-        const categories = ['demographics', 'education', 'socioeconomic', 'geographic', 'health', 'study'];
-
-        categories.forEach(category => {
-            const container = document.getElementById(`${category}FieldsBody`);
-            const countBadge = document.getElementById(`${category}Count`);
-            const fields = participantsTemplates[category] || {};
-
-            if (!container) return;
-
-            let html = '';
-            let count = 0;
-
-            for (const [fieldName, fieldDef] of Object.entries(fields)) {
-                const isSelected = currentParticipantsSchema.hasOwnProperty(fieldName);
-                const help = fieldDef._help || '';
-                const description = fieldDef.Description || '';
-
-                html += `
-                    <div class="form-check mb-2 p-2 rounded ${isSelected ? 'bg-success bg-opacity-10' : ''}">
-                        <input class="form-check-input template-field-checkbox" type="checkbox"
-                               id="field_${fieldName}" data-field="${fieldName}" data-category="${category}"
-                               ${isSelected ? 'checked' : ''}>
-                        <label class="form-check-label" for="field_${fieldName}">
-                            <code>${fieldName}</code>
-                            <span class="text-muted ms-2">${description}</span>
-                            ${help ? `<br><small class="text-info"><i class="fas fa-info-circle me-1"></i>${help}</small>` : ''}
-                        </label>
-                    </div>
-                `;
-                count++;
-            }
-
-            container.innerHTML = html || '<span class="text-muted">No fields in this category</span>';
-            if (countBadge) countBadge.textContent = count;
-
-            // Add event listeners to checkboxes
-            container.querySelectorAll('.template-field-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', handleTemplateFieldChange);
-            });
-        });
-    }
-
-    // Handle checkbox change for template fields
-    function handleTemplateFieldChange(e) {
-        const fieldName = e.target.dataset.field;
-        const category = e.target.dataset.category;
-
-        if (e.target.checked) {
-            // Add field from template
-            const fieldDef = participantsTemplates[category]?.[fieldName];
-            if (fieldDef) {
-                // Clone without internal properties
-                const cleanDef = {};
-                for (const [key, value] of Object.entries(fieldDef)) {
-                    if (!key.startsWith('_')) {
-                        cleanDef[key] = value;
-                    }
+                if (fields.length === 0) {
+                    container.innerHTML = '<span class="text-muted">No fields defined yet</span>';
+                } else {
+                    container.innerHTML = fields.map(field => {
+                        const isRequired = field === 'participant_id';
+                        const badgeClass = isRequired ? 'bg-danger' : 'bg-primary';
+                        return `<span class="badge ${badgeClass}">${field}</span>`;
+                    }).join(' ');
                 }
-                currentParticipantsSchema[fieldName] = cleanDef;
-            }
-        } else {
-            // Remove field
-            delete currentParticipantsSchema[fieldName];
-        }
-
-        updateCurrentFieldsList();
-        updateFieldCount();
-        updateCheckboxStyles();
-    }
-
-    // Update checkbox background styles
-    function updateCheckboxStyles() {
-        document.querySelectorAll('.template-field-checkbox').forEach(checkbox => {
-            const fieldName = checkbox.dataset.field;
-            const container = checkbox.closest('.form-check');
-            if (currentParticipantsSchema.hasOwnProperty(fieldName)) {
-                container.classList.add('bg-success', 'bg-opacity-10');
             } else {
-                container.classList.remove('bg-success', 'bg-opacity-10');
-            }
-        });
-    }
-
-    // Update the current fields display
-    function updateCurrentFieldsList() {
-        const container = document.getElementById('currentFieldsList');
-        const fields = Object.keys(currentParticipantsSchema);
-
-        if (fields.length === 0) {
-            container.innerHTML = '<span class="text-muted">No fields defined yet</span>';
-            return;
-        }
-
-        let html = '<div class="d-flex flex-wrap gap-1">';
-        fields.forEach(field => {
-            const def = currentParticipantsSchema[field];
-            const isRequired = field === 'participant_id';
-            const badgeClass = isRequired ? 'bg-danger' : 'bg-primary';
-
-            html += `
-                <span class="badge ${badgeClass} d-flex align-items-center">
-                    ${field}
-                    ${!isRequired ? `<button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.5rem;" onclick="removeField('${field}')"></button>` : ''}
-                </span>
-            `;
-        });
-        html += '</div>';
-
-        container.innerHTML = html;
-    }
-
-    // Update field count badge
-    function updateFieldCount() {
-        const count = Object.keys(currentParticipantsSchema).length;
-        document.getElementById('participantsFieldCount').textContent = `${count} fields`;
-    }
-
-    // Remove a field from schema
-    function removeField(fieldName) {
-        if (fieldName === 'participant_id') return; // Cannot remove required field
-
-        delete currentParticipantsSchema[fieldName];
-        updateCurrentFieldsList();
-        updateFieldCount();
-
-        // Uncheck corresponding checkbox if exists
-        const checkbox = document.getElementById(`field_${fieldName}`);
-        if (checkbox) {
-            checkbox.checked = false;
-            updateCheckboxStyles();
-        }
-    }
-
-    // Add custom field
-    document.getElementById('addCustomFieldBtn')?.addEventListener('click', function() {
-        const nameInput = document.getElementById('customFieldName');
-        const descInput = document.getElementById('customFieldDescription');
-        const unitsInput = document.getElementById('customFieldUnits');
-
-        const name = nameInput.value.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-        const description = descInput.value.trim();
-        const units = unitsInput.value.trim();
-
-        if (!name) {
-            alert('Please enter a field name');
-            return;
-        }
-
-        if (!description) {
-            alert('Please enter a description');
-            return;
-        }
-
-        if (currentParticipantsSchema.hasOwnProperty(name)) {
-            alert('Field already exists');
-            return;
-        }
-
-        const fieldDef = { Description: description };
-        if (units) fieldDef.Units = units;
-
-        currentParticipantsSchema[name] = fieldDef;
-        updateCurrentFieldsList();
-        updateFieldCount();
-
-        // Clear inputs
-        nameInput.value = '';
-        descInput.value = '';
-        unitsInput.value = '';
-    });
-
-    // Save participants.json
-    document.getElementById('saveParticipantsBtn')?.addEventListener('click', async function() {
-        const btn = this;
-        const statusDiv = document.getElementById('participantsSaveStatus');
-        const originalText = btn.innerHTML;
-
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
-        btn.disabled = true;
-
-        try {
-            const response = await fetch('/api/projects/participants', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ schema: currentParticipantsSchema })
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                statusDiv.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Saved!</span>';
-                setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
-            } else {
-                statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>${data.error}</span>`;
+                container.innerHTML = '<span class="text-muted">No participants.json found</span>';
+                countBadge.textContent = '0 fields';
             }
         } catch (error) {
-            statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>${error.message}</span>`;
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            console.error('Error loading participants status:', error);
         }
-    });
+    }
 
-    // Reset to loaded state
-    document.getElementById('resetParticipantsBtn')?.addEventListener('click', async function() {
-        if (confirm('Reset to last saved state?')) {
-            await loadParticipantsSchema();
-            renderTemplateFields();
-        }
-    });
-
-    // Initialize participants editor on page load
-    document.addEventListener('DOMContentLoaded', initParticipantsEditor);
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', initParticipantsStatus);
 </script>
 {% endblock %}
