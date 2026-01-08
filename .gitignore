@@ -16,6 +16,7 @@ survey_library/*
 # Demo datasets
 demo/prism_demo/
 demo/comprehensive_demo_dataset/
+demo/*.lss
 archive/prism_demo_copy/
 archive/PK01/
 
