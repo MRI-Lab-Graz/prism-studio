@@ -544,7 +544,7 @@ def parse_lss_xml(xml_content, task_name=None):
 
     metadata = {
         "Technical": {
-            "StimulusType": "Survey",
+            "StimulusType": "Questionnaire",
             "FileFormat": "tsv",
             "SoftwarePlatform": "LimeSurvey",
             "Language": survey_meta.get("language", "en"),
@@ -707,7 +707,7 @@ def parse_lss_xml_by_groups(xml_content):
 
         prism_json = {
             "Technical": {
-                "StimulusType": "Survey",
+                "StimulusType": "Questionnaire",
                 "FileFormat": "tsv",
                 "SoftwarePlatform": "LimeSurvey",
                 "Language": survey_meta.get("language", "en"),
