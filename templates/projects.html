@@ -288,11 +288,291 @@
             </div>
         </div>
     </div>
+
+    <!-- Global Settings Card -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-secondary bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#settingsSection"
+             role="button" aria-expanded="false" aria-controls="settingsSection">
+            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-cog text-secondary me-2"></i>Global Settings</span>
+                <i class="fas fa-chevron-down text-muted" id="settingsChevron"></i>
+            </h5>
+        </div>
+        <div class="collapse" id="settingsSection">
+            <div class="card-body">
+                <form id="globalSettingsForm">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="globalLibraryPath" class="form-label fw-bold">
+                                <i class="fas fa-database me-1"></i>Global Survey Template Library
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="globalLibraryPath"
+                                       placeholder="Path to folder containing survey/ subfolder">
+                                <button class="btn btn-outline-secondary" type="button" id="browseGlobalLibrary">
+                                    <i class="fas fa-folder-open"></i> Browse
+                                </button>
+                            </div>
+                            <small class="text-muted">
+                                Root folder for survey templates. Must contain a <code>survey/</code> subfolder with JSON templates.
+                                <br>Default: App's built-in <code>survey_library/</code> folder. Can be changed to a shared location (Nextcloud, GitLab, etc.).
+                                <br>Projects can override this with <code>templateLibraryPath</code> in <code>.prismrc.json</code>.
+                            </small>
+                        </div>
+                        <div class="col-12">
+                            <div id="libraryStatusMessage"></div>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="fas fa-save me-2"></i>Save Settings
+                            </button>
+                            <button type="button" class="btn btn-outline-info ms-2" onclick="useDefaultLibrary()">
+                                <i class="fas fa-undo me-1"></i>Use Default
+                            </button>
+                            <button type="button" class="btn btn-outline-danger ms-2" onclick="clearGlobalLibrary()">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Library Info Panel -->
+                <div id="libraryInfoPanel" class="mt-4 p-3 bg-light rounded" style="display: none;">
+                    <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Survey Template Locations</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-2">
+                                <div class="card-body py-2">
+                                    <small class="text-muted">Global Survey Templates (Read-only)</small>
+                                    <div id="globalLibraryInfo" class="text-truncate">
+                                        <span class="text-muted">Not configured</span>
+                                    </div>
+                                    <small class="text-muted">Path: <code>*/survey/*.json</code></small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-2">
+                                <div class="card-body py-2">
+                                    <small class="text-muted">Project Survey Templates (Editable)</small>
+                                    <div id="projectLibraryInfo" class="text-truncate">
+                                        <span class="text-muted">Select a project</span>
+                                    </div>
+                                    <small class="text-muted">Path: <code>project/library/survey/*.json</code></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        Survey templates from both locations are merged. Project templates take priority over global templates with the same name.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+    // Load global settings on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadGlobalSettings();
+        loadLibraryInfo();
+
+        // Update chevron icon on collapse toggle
+        const settingsSection = document.getElementById('settingsSection');
+        if (settingsSection) {
+            settingsSection.addEventListener('shown.bs.collapse', function() {
+                document.getElementById('settingsChevron').classList.replace('fa-chevron-down', 'fa-chevron-up');
+            });
+            settingsSection.addEventListener('hidden.bs.collapse', function() {
+                document.getElementById('settingsChevron').classList.replace('fa-chevron-up', 'fa-chevron-down');
+            });
+        }
+    });
+
+    // Load global library settings
+    async function loadGlobalSettings() {
+        try {
+            const response = await fetch('/api/settings/global-library');
+            const data = await response.json();
+            if (data.success) {
+                const input = document.getElementById('globalLibraryPath');
+                input.value = data.global_template_library_path || '';
+                // Show default path as placeholder
+                if (data.default_library_path) {
+                    input.placeholder = `Default: ${data.default_library_path}`;
+                }
+                updateLibraryInfoPanel(data.global_template_library_path || data.default_library_path, null);
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+        }
+    }
+
+    // Load library info (both global and project)
+    async function loadLibraryInfo() {
+        try {
+            const response = await fetch('/api/projects/library-path');
+            const data = await response.json();
+
+            const infoPanel = document.getElementById('libraryInfoPanel');
+            infoPanel.style.display = 'block';
+
+            // Update global library info
+            const globalInfo = document.getElementById('globalLibraryInfo');
+            if (data.global_library_path) {
+                globalInfo.innerHTML = `<code class="small">${data.global_library_path}</code>`;
+            } else {
+                globalInfo.innerHTML = '<span class="text-muted">Not configured</span>';
+            }
+
+            // Update project library info
+            const projectInfo = document.getElementById('projectLibraryInfo');
+            if (data.success && data.project_library_path) {
+                projectInfo.innerHTML = `<code class="small">${data.project_library_path}</code>`;
+            } else if (data.project_path) {
+                projectInfo.innerHTML = `<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>No library folder</span>`;
+            } else {
+                projectInfo.innerHTML = '<span class="text-muted">Select a project</span>';
+            }
+        } catch (error) {
+            console.error('Error loading library info:', error);
+        }
+    }
+
+    // Update library info panel
+    function updateLibraryInfoPanel(globalPath, projectPath) {
+        const infoPanel = document.getElementById('libraryInfoPanel');
+        infoPanel.style.display = 'block';
+
+        const globalInfo = document.getElementById('globalLibraryInfo');
+        if (globalPath) {
+            globalInfo.innerHTML = `<code class="small">${globalPath}</code>`;
+        } else {
+            globalInfo.innerHTML = '<span class="text-muted">Not configured</span>';
+        }
+    }
+
+    // Browse button for global library
+    document.getElementById('browseGlobalLibrary').addEventListener('click', async function() {
+        try {
+            const response = await fetch('/api/browse-folder');
+            const data = await response.json();
+            if (data.path) {
+                document.getElementById('globalLibraryPath').value = data.path;
+            }
+        } catch (error) {
+            console.error('Browse error:', error);
+        }
+    });
+
+    // Save global settings
+    document.getElementById('globalSettingsForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+        btn.disabled = true;
+
+        const path = document.getElementById('globalLibraryPath').value.trim();
+
+        try {
+            const response = await fetch('/api/settings/global-library', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ global_template_library_path: path })
+            });
+            const result = await response.json();
+
+            const statusDiv = document.getElementById('libraryStatusMessage');
+            if (result.success) {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-success py-2">
+                        <i class="fas fa-check-circle me-2"></i>Settings saved successfully!
+                    </div>
+                `;
+                updateLibraryInfoPanel(result.global_template_library_path, null);
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-danger py-2">
+                        <i class="fas fa-exclamation-circle me-2"></i>${result.error}
+                    </div>
+                `;
+            }
+
+            // Auto-hide success message after 3 seconds
+            setTimeout(() => {
+                if (result.success) {
+                    statusDiv.innerHTML = '';
+                }
+            }, 3000);
+
+        } catch (error) {
+            document.getElementById('libraryStatusMessage').innerHTML = `
+                <div class="alert alert-danger py-2">
+                    <i class="fas fa-exclamation-circle me-2"></i>${error.message}
+                </div>
+            `;
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
+
+    // Use default library path (app's survey_library folder)
+    async function useDefaultLibrary() {
+        try {
+            const response = await fetch('/api/settings/global-library');
+            const data = await response.json();
+            if (data.default_library_path) {
+                document.getElementById('globalLibraryPath').value = data.default_library_path;
+                document.getElementById('libraryStatusMessage').innerHTML = `
+                    <div class="alert alert-info py-2">
+                        <i class="fas fa-info-circle me-2"></i>Default path set. Click "Save Settings" to apply.
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error getting default path:', error);
+        }
+    }
+
+    // Clear global library setting
+    async function clearGlobalLibrary() {
+        if (!confirm('Clear the global template library path?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/settings/global-library', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ global_template_library_path: '' })
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                document.getElementById('globalLibraryPath').value = '';
+                document.getElementById('libraryStatusMessage').innerHTML = `
+                    <div class="alert alert-info py-2">
+                        <i class="fas fa-info-circle me-2"></i>Global library path cleared.
+                    </div>
+                `;
+                updateLibraryInfoPanel(null, null);
+
+                setTimeout(() => {
+                    document.getElementById('libraryStatusMessage').innerHTML = '';
+                }, 3000);
+            }
+        } catch (error) {
+            console.error('Error clearing library:', error);
+        }
+    }
+
     // Project type selection
     function selectProjectType(type) {
         // Update card styles
@@ -408,9 +688,20 @@
                         <ul class="mb-2">
                             ${result.created_files.map(f => `<li><code>${f}</code></li>`).join('')}
                         </ul>
-                        <a href="${window.location.href}" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-sync me-1"></i>Refresh Page
-                        </a>
+                        <div class="mt-3 pt-3 border-top">
+                            <h6 class="text-muted mb-2">Next Steps:</h6>
+                            <div class="btn-group" role="group">
+                                <a href="/converter" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-file-import me-1"></i>Import LimeSurvey Templates
+                                </a>
+                                <a href="/survey-generator" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-poll-h me-1"></i>Survey & Boilerplate
+                                </a>
+                                <a href="/" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-check-circle me-1"></i>Validate Dataset
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 `;
             } else {
@@ -553,6 +844,25 @@
 
                 html += '</div>';
             }
+
+            // Add workflow links
+            html += `
+                <hr>
+                <div class="mt-3">
+                    <h6 class="text-muted mb-2">Next Steps:</h6>
+                    <div class="btn-group" role="group">
+                        <a href="/converter" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-file-import me-1"></i>Import Templates
+                        </a>
+                        <a href="/survey-generator" class="btn btn-sm btn-outline-info">
+                            <i class="fas fa-poll-h me-1"></i>Survey & Boilerplate
+                        </a>
+                        <a href="/" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-check-circle me-1"></i>Validate Dataset
+                        </a>
+                    </div>
+                </div>
+            `;
 
             html += '</div>';
             resultDiv.innerHTML = html;

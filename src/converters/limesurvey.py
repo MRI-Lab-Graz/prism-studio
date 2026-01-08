@@ -744,6 +744,182 @@ def parse_lss_xml_by_groups(xml_content):
     return result
 
 
+def parse_lss_xml_by_questions(xml_content):
+    """Parse a LimeSurvey .lss XML blob and return each question as a separate JSON template.
+
+    Each question (including arrays with subquestions) becomes its own JSON file,
+    suitable for use as a reusable template in the Survey & Boilerplate editor.
+
+    Returns:
+        dict: {question_code: {prism_json, group_name, group_order, ...}, ...} or None on error
+    """
+    try:
+        root = ET.fromstring(xml_content)
+    except ET.ParseError as e:
+        print(f"Error parsing XML: {e}")
+        return None
+
+    def get_text(element, tag):
+        child = element.find(tag)
+        val = child.text if child is not None else ""
+        return val or ""
+
+    # Get survey-level metadata
+    survey_meta = _parse_survey_metadata(root, get_text)
+
+    questions_map, groups_map = _parse_lss_structure(root, get_text)
+
+    # Parse Answers
+    answers_section = root.find("answers")
+    if answers_section is not None:
+        rows = answers_section.find("rows")
+        if rows is not None:
+            for row in rows.findall("row"):
+                qid = get_text(row, "qid")
+                code = get_text(row, "code")
+                answer = get_text(row, "answer")
+                scale_id = get_text(row, "scale_id") or "0"
+
+                # Handle "None" text from LimeSurvey (unlabeled scale points)
+                if answer and answer.lower() == "none":
+                    answer = ""
+
+                if qid in questions_map:
+                    # Support multiple scales (for dual-scale arrays)
+                    if "levels" not in questions_map[qid]:
+                        questions_map[qid]["levels"] = {}
+                    if scale_id not in questions_map[qid].get("levels_by_scale", {}):
+                        if "levels_by_scale" not in questions_map[qid]:
+                            questions_map[qid]["levels_by_scale"] = {}
+                        questions_map[qid]["levels_by_scale"][scale_id] = {}
+
+                    questions_map[qid]["levels"][code] = answer
+                    questions_map[qid]["levels_by_scale"][scale_id][code] = answer
+
+    # Build individual question JSONs
+    result = {}
+
+    for qid, q_data in questions_map.items():
+        # Skip subquestions (they're included in their parent)
+        if q_data.get("parent_qid") and q_data["parent_qid"] != "0":
+            continue
+
+        question_code = q_data["title"]
+        gid = q_data["gid"]
+
+        # Get group info
+        group_info = groups_map.get(gid, {"name": "", "order": 0, "description": ""})
+        group_name = group_info["name"] if group_info["name"] else f"group_{gid}"
+        group_order = group_info["order"]
+
+        # Build the question entry
+        entry = {
+            "Description": q_data["question"],
+            "QuestionType": q_data["type_name"],
+            "LimeSurveyType": q_data["type"],  # Original LS type code for re-export
+            "Mandatory": q_data["mandatory"],
+            "Position": {
+                "Group": group_name,
+                "GroupOrder": group_order,
+                "QuestionOrder": q_data["question_order"]
+            }
+        }
+
+        # Add answer levels if present
+        if q_data.get("levels"):
+            # Filter out empty labels but keep the scale structure
+            levels = {k: v for k, v in q_data["levels"].items()}
+            if levels:
+                entry["Levels"] = levels
+
+        # Add subquestions/items for array-type questions
+        if q_data.get("subquestions"):
+            items = {}
+            for sq in q_data["subquestions"]:
+                item_entry = {
+                    "Description": sq["text"],
+                    "Order": sq["order"],
+                }
+                if sq["scale_id"] != 0:
+                    item_entry["ScaleId"] = sq["scale_id"]
+                if sq.get("media_urls"):
+                    item_entry["MediaUrls"] = sq["media_urls"]
+                items[sq["code"]] = item_entry
+            entry["Items"] = items
+
+        # Add optional fields
+        if q_data.get("other"):
+            entry["HasOtherOption"] = True
+
+        if q_data.get("help"):
+            entry["HelpText"] = q_data["help"]
+
+        if q_data.get("validation_regex"):
+            entry["ValidationRegex"] = q_data["validation_regex"]
+
+        if q_data.get("relevance"):
+            entry["Condition"] = q_data["relevance"]
+
+        if q_data.get("attributes"):
+            attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
+            if attrs:
+                entry["Attributes"] = attrs
+
+        # Build complete question JSON template
+        question_json = {
+            "Technical": {
+                "StimulusType": "Questionnaire",
+                "FileFormat": "tsv",
+                "SoftwarePlatform": "LimeSurvey",
+                "Language": survey_meta.get("language", "en"),
+                "Respondent": "self",
+                "ResponseType": ["online"],
+            },
+            "Study": {
+                "TaskName": sanitize_task_name(question_code),
+                "OriginalName": question_code,
+                "QuestionCode": question_code,
+                "GroupName": group_name,
+                "GroupOrder": group_order,
+                "Version": "1.0",
+                "Description": q_data["question"][:200] if q_data["question"] else "",
+            },
+            "Metadata": {
+                "SchemaVersion": "1.1.1",
+                "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
+                "Creator": "limesurvey_to_prism.py",
+                "SourceSurvey": survey_meta.get("title", ""),
+            },
+            question_code: entry
+        }
+
+        # Add survey-level author info
+        if survey_meta.get("admin"):
+            question_json["Study"]["Author"] = survey_meta["admin"]
+        if survey_meta.get("admin_email"):
+            question_json["Study"]["ContactEmail"] = survey_meta["admin_email"]
+
+        # Calculate item count
+        item_count = len(entry.get("Items", {})) if entry.get("Items") else 1
+        question_json["Study"]["ItemCount"] = item_count
+
+        # Store result with metadata for UI
+        result[question_code] = {
+            "prism_json": question_json,
+            "question_code": question_code,
+            "question_type": q_data["type_name"],
+            "limesurvey_type": q_data["type"],
+            "group_name": group_name,
+            "group_order": group_order,
+            "question_order": q_data["question_order"],
+            "item_count": item_count,
+            "mandatory": q_data["mandatory"],
+            "suggested_filename": f"survey-{sanitize_task_name(question_code)}.json"
+        }
+
+    return result
+
+
 def convert_lsa_to_prism(lsa_path, output_path=None, task_name=None):
     """Extract .lss from .lsa/.lss and convert to a Prism JSON sidecar."""
     if not os.path.exists(lsa_path):

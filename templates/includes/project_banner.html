@@ -1,0 +1,31 @@
+{# Reusable project context banner - include in pages that use project paths #}
+{% if current_project.path %}
+<div class="alert alert-info d-flex align-items-center mb-4" role="alert" id="projectContextBanner">
+    <i class="fas fa-folder-open me-3 fa-lg"></i>
+    <div class="flex-grow-1">
+        <strong>Current Project:</strong> {{ current_project.name }}
+        <br><small class="text-muted">{{ current_project.path }}</small>
+        <br>
+        <small>
+            <span class="badge bg-secondary me-1">Library:</span>
+            <code id="projectLibraryPath">{{ current_project.path }}/library</code>
+        </small>
+    </div>
+    <div class="d-flex flex-column gap-1">
+        <a href="{{ url_for('projects.projects_page') }}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-exchange-alt me-1"></i>Change
+        </a>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning d-flex align-items-center mb-4" role="alert" id="noProjectBanner">
+    <i class="fas fa-exclamation-triangle me-3 fa-lg"></i>
+    <div class="flex-grow-1">
+        <strong>No Project Selected</strong>
+        <br><small class="text-muted">Select a project to enable auto-fill and direct save features.</small>
+    </div>
+    <a href="{{ url_for('projects.projects_page') }}" class="btn btn-sm btn-outline-warning">
+        <i class="fas fa-folder-open me-1"></i>Select Project
+    </a>
+</div>
+{% endif %}

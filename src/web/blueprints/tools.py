@@ -6,7 +6,7 @@ import tempfile
 import subprocess
 from pathlib import Path
 from datetime import date
-from flask import Blueprint, render_template, request, jsonify, send_file, current_app
+from flask import Blueprint, render_template, request, jsonify, send_file, current_app, session
 
 tools_bp = Blueprint("tools", __name__)
 
@@ -233,6 +233,98 @@ def api_template_editor_list():
         out.append(p.name)
 
     return jsonify({"templates": out, "library_dir": str(folder)}), 200
+
+
+@tools_bp.route("/api/template-editor/list-merged", methods=["GET"])
+def api_template_editor_list_merged():
+    """List templates from both global and project libraries with source indicators.
+
+    Returns templates from both:
+    - Global template library (read-only, admin-managed)
+    - Project template library (user's own templates)
+
+    Project templates take priority over global templates with the same name.
+    """
+    from src.config import load_app_settings, load_config
+
+    modality = (request.args.get("modality") or "").strip().lower()
+    if modality not in {"survey", "biometrics"}:
+        return jsonify({"error": "Invalid modality"}), 400
+
+    # Get current project from session
+    project_path = session.get("current_project_path")
+    app_settings = load_app_settings()
+
+    templates = {}  # filename -> {name, source, path}
+    sources_info = {
+        "global_library_path": None,
+        "project_library_path": None,
+    }
+
+    # 1. Load templates from global library (configured or default survey_library)
+    global_lib_path = app_settings.global_template_library_path
+    if not global_lib_path:
+        # Use default: app's survey_library folder
+        global_lib_path = str(Path(current_app.root_path) / "survey_library")
+
+    if global_lib_path and Path(global_lib_path).exists():
+        sources_info["global_library_path"] = global_lib_path
+        global_folder = Path(global_lib_path) / modality
+        if global_folder.exists() and global_folder.is_dir():
+            for p in sorted(global_folder.glob("*.json")):
+                if p.name.startswith("."):
+                    continue
+                templates[p.name] = {
+                    "filename": p.name,
+                    "source": "global",
+                    "path": str(p),
+                    "readonly": True,
+                }
+
+    # 2. Load templates from project library (if project selected)
+    if project_path and Path(project_path).exists():
+        # Check for project-level template library override
+        project_config = load_config(project_path)
+        if project_config.template_library_path:
+            external_lib = Path(project_config.template_library_path)
+            if external_lib.exists():
+                external_folder = external_lib / modality
+                if external_folder.exists() and external_folder.is_dir():
+                    for p in sorted(external_folder.glob("*.json")):
+                        if p.name.startswith("."):
+                            continue
+                        # Project override takes priority over global
+                        templates[p.name] = {
+                            "filename": p.name,
+                            "source": "project-external",
+                            "path": str(p),
+                            "readonly": True,  # External library is read-only
+                        }
+
+        # Project's own library folder (always writable)
+        project_lib = Path(project_path) / "library" / modality
+        sources_info["project_library_path"] = str(Path(project_path) / "library")
+        if project_lib.exists() and project_lib.is_dir():
+            for p in sorted(project_lib.glob("*.json")):
+                if p.name.startswith("."):
+                    continue
+                # Project templates always take priority
+                templates[p.name] = {
+                    "filename": p.name,
+                    "source": "project",
+                    "path": str(p),
+                    "readonly": False,
+                }
+
+    # Convert to sorted list
+    template_list = sorted(templates.values(), key=lambda x: x["filename"].lower())
+
+    return jsonify({
+        "templates": template_list,
+        "sources": sources_info,
+        "has_global": sources_info["global_library_path"] is not None,
+        "has_project": project_path is not None,
+    }), 200
 
 
 @tools_bp.route("/api/template-editor/new", methods=["GET"])
@@ -690,20 +782,110 @@ def generate_boilerplate_endpoint():
         return jsonify({"error": str(e)}), 500
 
 
+@tools_bp.route("/api/detect-columns", methods=["POST"])
+def detect_columns():
+    """Detect column names from uploaded file for ID column selection.
+
+    Supports .lsa, .xlsx, .csv, .tsv files.
+    Returns list of columns and suggests likely ID column.
+    """
+    import pandas as pd
+
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    file = request.files["file"]
+    if not file.filename:
+        return jsonify({"error": "No file selected"}), 400
+
+    filename = file.filename.lower()
+
+    try:
+        columns = []
+
+        if filename.endswith(".lsa"):
+            # Extract response data from LimeSurvey archive
+            import zipfile as zf_module
+            import io
+
+            file_bytes = io.BytesIO(file.read())
+            try:
+                with zf_module.ZipFile(file_bytes, "r") as zf:
+                    # Look for response data files
+                    response_files = [f for f in zf.namelist()
+                                     if f.endswith(('.txt', '.csv')) and 'response' in f.lower()]
+                    if not response_files:
+                        # Try any txt/csv file
+                        response_files = [f for f in zf.namelist()
+                                         if f.endswith(('.txt', '.csv'))]
+
+                    if response_files:
+                        with zf.open(response_files[0]) as f:
+                            # Try to detect delimiter
+                            content = f.read().decode('utf-8', errors='replace')
+                            if '\t' in content.split('\n')[0]:
+                                df = pd.read_csv(io.StringIO(content), sep='\t', nrows=1)
+                            else:
+                                df = pd.read_csv(io.StringIO(content), nrows=1)
+                            columns = list(df.columns)
+            except zf_module.BadZipFile:
+                return jsonify({"error": "Invalid .lsa archive"}), 400
+
+        elif filename.endswith(".xlsx"):
+            df = pd.read_excel(file, nrows=1)
+            columns = list(df.columns)
+
+        elif filename.endswith(".csv"):
+            df = pd.read_csv(file, nrows=1)
+            columns = list(df.columns)
+
+        elif filename.endswith(".tsv"):
+            df = pd.read_csv(file, sep='\t', nrows=1)
+            columns = list(df.columns)
+
+        else:
+            return jsonify({"columns": [], "suggested_id_column": None})
+
+        # Suggest likely ID column
+        id_candidates = ["participant_id", "id", "code", "token", "subject", "sub_id", "participant"]
+        suggested = None
+        for col in columns:
+            if col.lower() in id_candidates:
+                suggested = col
+                break
+
+        return jsonify({
+            "columns": columns,
+            "suggested_id_column": suggested
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @tools_bp.route("/api/limesurvey-to-prism", methods=["POST"])
 def limesurvey_to_prism():
     """Convert LimeSurvey .lss/.lsa file to PRISM JSON sidecar(s).
 
-    Supports two modes:
-    - split_by_groups=false (default): Single combined JSON
-    - split_by_groups=true: Separate JSON per questionnaire group
+    Supports three modes (via 'mode' parameter or legacy 'split_by_groups'):
+    - mode=combined (default): Single combined JSON with all questions
+    - mode=groups: Separate JSON per questionnaire group
+    - mode=questions: Separate JSON per individual question (for template library)
     """
     try:
-        from src.converters.limesurvey import parse_lss_xml, parse_lss_xml_by_groups
+        from src.converters.limesurvey import (
+            parse_lss_xml,
+            parse_lss_xml_by_groups,
+            parse_lss_xml_by_questions
+        )
     except ImportError:
         try:
             sys.path.insert(0, str(Path(current_app.root_path)))
-            from src.converters.limesurvey import parse_lss_xml, parse_lss_xml_by_groups
+            from src.converters.limesurvey import (
+                parse_lss_xml,
+                parse_lss_xml_by_groups,
+                parse_lss_xml_by_questions
+            )
         except ImportError:
             return jsonify({"error": "LimeSurvey converter not available"}), 500
 
@@ -719,7 +901,16 @@ def limesurvey_to_prism():
         return jsonify({"error": "Please upload a .lss or .lsa file"}), 400
 
     task_name = request.form.get("task_name", "").strip()
-    split_by_groups = request.form.get("split_by_groups", "false").lower() == "true"
+
+    # Support both new 'mode' parameter and legacy 'split_by_groups'
+    mode = request.form.get("mode", "").strip().lower()
+    if not mode:
+        # Legacy support
+        split_by_groups = request.form.get("split_by_groups", "false").lower() == "true"
+        mode = "groups" if split_by_groups else "combined"
+
+    if mode not in ("combined", "groups", "questions"):
+        return jsonify({"error": f"Invalid mode '{mode}'. Use: combined, groups, or questions"}), 400
 
     if not task_name:
         task_name = Path(file.filename).stem
@@ -749,7 +940,45 @@ def limesurvey_to_prism():
 
         from src.converters.excel_base import sanitize_task_name
 
-        if split_by_groups:
+        if mode == "questions":
+            # Individual question templates (for Survey & Boilerplate)
+            questions = parse_lss_xml_by_questions(xml_content)
+
+            if not questions:
+                return jsonify({"error": "Failed to parse LimeSurvey structure or no questions found"}), 400
+
+            # Organize questions by group for UI display
+            by_group = {}
+            for code, q_data in questions.items():
+                g = q_data["group_name"]
+                if g not in by_group:
+                    by_group[g] = {
+                        "group_order": q_data["group_order"],
+                        "questions": []
+                    }
+                by_group[g]["questions"].append({
+                    "code": code,
+                    "type": q_data["question_type"],
+                    "limesurvey_type": q_data["limesurvey_type"],
+                    "item_count": q_data["item_count"],
+                    "mandatory": q_data["mandatory"],
+                    "order": q_data["question_order"]
+                })
+
+            # Sort questions within each group
+            for g in by_group.values():
+                g["questions"].sort(key=lambda x: x["order"])
+
+            return jsonify({
+                "success": True,
+                "mode": "questions",
+                "questions": questions,
+                "by_group": by_group,
+                "question_count": len(questions),
+                "group_count": len(by_group)
+            })
+
+        elif mode == "groups":
             # Split into multiple questionnaires by group
             questionnaires = parse_lss_xml_by_groups(xml_content)
 
@@ -759,7 +988,7 @@ def limesurvey_to_prism():
             # Build response with all questionnaires
             result = {
                 "success": True,
-                "mode": "split",
+                "mode": "groups",
                 "questionnaires": {},
                 "questionnaire_count": len(questionnaires),
                 "total_questions": 0
@@ -778,7 +1007,7 @@ def limesurvey_to_prism():
             return jsonify(result)
 
         else:
-            # Single combined JSON (original behavior)
+            # Single combined JSON (default)
             prism_data = parse_lss_xml(xml_content, task_name=task_name)
 
             if not prism_data:
@@ -798,3 +1027,83 @@ def limesurvey_to_prism():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@tools_bp.route("/api/limesurvey-save-to-project", methods=["POST"])
+def limesurvey_save_to_project():
+    """Save converted LimeSurvey JSON templates directly to project's library folder.
+
+    Expects JSON body with:
+    {
+        "templates": [
+            {"filename": "survey-name.json", "content": {...json object...}},
+            ...
+        ]
+    }
+
+    Templates are saved to: {project_path}/library/survey/
+    """
+    from src.cross_platform import CrossPlatformFile
+    from werkzeug.utils import secure_filename
+
+    project_path = session.get("current_project_path")
+    if not project_path:
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    project_path = Path(project_path)
+    if not project_path.exists():
+        return jsonify({"success": False, "error": "Project path does not exist"}), 400
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "error": "No data provided"}), 400
+
+    templates = data.get("templates", [])
+    if not templates:
+        return jsonify({"success": False, "error": "No templates provided"}), 400
+
+    # Create library/survey folder if it doesn't exist
+    library_survey_path = project_path / "library" / "survey"
+    library_survey_path.mkdir(parents=True, exist_ok=True)
+
+    saved_files = []
+    errors = []
+
+    for template in templates:
+        filename = template.get("filename")
+        content = template.get("content")
+
+        if not filename or content is None:
+            errors.append("Invalid template entry: missing filename or content")
+            continue
+
+        # Sanitize filename
+        safe_filename = secure_filename(filename)
+        if not safe_filename:
+            errors.append(f"Invalid filename: {filename}")
+            continue
+
+        # Ensure .json extension
+        if not safe_filename.endswith(".json"):
+            safe_filename += ".json"
+
+        file_path = library_survey_path / safe_filename
+
+        try:
+            # Write the JSON file
+            json_content = json.dumps(content, indent=2, ensure_ascii=False)
+            CrossPlatformFile.write_text(str(file_path), json_content)
+            saved_files.append({
+                "filename": safe_filename,
+                "path": str(file_path)
+            })
+        except Exception as e:
+            errors.append(f"Failed to save {safe_filename}: {str(e)}")
+
+    return jsonify({
+        "success": len(saved_files) > 0,
+        "saved_files": saved_files,
+        "saved_count": len(saved_files),
+        "library_path": str(library_survey_path),
+        "errors": errors if errors else None
+    })
