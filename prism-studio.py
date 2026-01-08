@@ -18,6 +18,7 @@ import shutil
 import webbrowser
 import threading
 import socket
+import uuid
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, Callable, Any, Dict
@@ -30,6 +31,7 @@ from flask import (
     flash,
     redirect,
     url_for,
+    session,
 )
 from werkzeug.utils import secure_filename
 import zipfile
@@ -113,6 +115,10 @@ app.config["MAX_CONTENT_LENGTH"] = (
 )  # 1GB max file size (metadata only)
 app.config["MAX_FORM_PARTS"] = 20000  # Allow up to 20000 files/fields in upload
 
+# Reset current project on each app start (per browser session cookie).
+# This keeps the initial landing page empty, even if an old session cookie exists.
+app.config["PRISM_STARTUP_ID"] = uuid.uuid4().hex
+
 # Initialize Survey Manager
 survey_library_path = BASE_DIR / "survey_library"
 survey_manager = None
@@ -193,9 +199,56 @@ def inject_utilities():
     }
 
 
+@app.before_request
+def ensure_project_selected_first():
+    """Force users to pick a project first in Prism Studio.
+
+    This keeps all features consistently anchored to the active project path
+    (stored in session as current_project_path/current_project_name).
+    """
+    # If this is a new Prism Studio process start, clear any persisted project selection.
+    if session.get("_prism_startup_id") != app.config.get("PRISM_STARTUP_ID"):
+        session.pop("current_project_path", None)
+        session.pop("current_project_name", None)
+        session["_prism_startup_id"] = app.config.get("PRISM_STARTUP_ID")
+
+    if session.get("current_project_path"):
+        return None
+
+    path = request.path or "/"
+
+    # Always allow static assets and the project manager itself.
+    if path.startswith("/static/"):
+        return None
+    if path == "/projects" or path.startswith("/api/projects/"):
+        return None
+
+    # Allow utility endpoints needed before a project is selected (used on /projects).
+    if path == "/api/browse-folder":
+        return None
+    if path.startswith("/api/settings/"):
+        return None
+
+    # Allow documentation/specs and embedded editor/API tools without a project.
+    if path == "/specifications":
+        return None
+    if path.startswith("/api/v1/"):
+        return None
+    if path.startswith("/editor"):
+        return None
+
+    # For pages, redirect to the project selector.
+    if request.method == "GET":
+        return redirect(url_for("projects.projects_page"))
+
+    # For non-GET requests, return a structured error.
+    return jsonify({"success": False, "error": "No current project selected"}), 400
+
+
 @app.route("/")
 def index():
     """Home page with tool selection"""
+    # With the global guard, we only get here if a project is already selected.
     return render_template("home.html")
 
 

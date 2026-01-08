@@ -115,7 +115,7 @@
                                 2b. Template Library Root (Optional)
                             </h5>
                             <div class="input-group">
-                                <input type="text" class="form-control border-success" id="library_path" name="library_path" placeholder="/path/to/library">
+                                <input type="text" class="form-control border-success" id="library_path" name="library_path" placeholder="/path/to/library" value="{{ default_library_path | default('') }}">
                                 <button class="btn btn-outline-success" type="button" id="browseLibraryBtn" title="Browse Folder">
                                     <i class="fas fa-folder-open"></i>
                                 </button>

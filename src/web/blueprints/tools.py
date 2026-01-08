@@ -7,19 +7,33 @@ import subprocess
 from pathlib import Path
 from datetime import date
 from flask import Blueprint, render_template, request, jsonify, send_file, current_app, session
+from src.config import load_app_settings, load_config
 
 tools_bp = Blueprint("tools", __name__)
 
 
 def _default_library_root_for_templates(*, modality: str) -> Path:
+    candidate = _global_survey_library_root()
+    if candidate:
+        return candidate
+    return (Path(current_app.root_path) / "survey_library").resolve()
+
+
+def _global_survey_library_root() -> Path | None:
     base_dir = Path(current_app.root_path)
+    app_settings = load_app_settings(app_root=str(base_dir))
+
+    if app_settings.global_template_library_path:
+        candidate = Path(app_settings.global_template_library_path).expanduser()
+        if candidate.exists() and candidate.is_dir():
+            return candidate
 
     preferred = (base_dir / "library" / "survey_i18n").resolve()
-    if modality == "survey":
-        if preferred.exists() and any(preferred.glob("survey-*.json")):
-            return preferred
+    if preferred.exists() and any(preferred.glob("survey-*.json")):
+        return preferred
 
-    return (base_dir / "survey_library").resolve()
+    fallback = (base_dir / "survey_library").resolve()
+    return fallback if fallback.exists() else None
 
 
 def _resolve_library_root(library_path: str | None) -> Path:
@@ -28,7 +42,10 @@ def _resolve_library_root(library_path: str | None) -> Path:
         if p.exists() and p.is_dir():
             return p
         raise FileNotFoundError(f"Invalid library folder: {library_path}")
-    return Path(_default_library_root_for_templates(modality="survey")).resolve()
+    default_root = _default_library_root_for_templates(modality="survey")
+    if default_root:
+        return default_root.resolve()
+    raise FileNotFoundError("No default library root found")
 
 
 def _template_dir(*, modality: str, library_root: Path) -> Path:
@@ -163,27 +180,37 @@ def _validate_against_schema(*, instance: object, schema: dict) -> list[dict]:
 @tools_bp.route("/survey-generator")
 def survey_generator():
     """Survey generator page"""
-    base_dir = Path(current_app.root_path)
-    preferred = (base_dir / "library" / "survey_i18n").resolve()
-    default_library_path = preferred
-    if not (preferred.exists() and any(preferred.glob("survey-*.json"))):
-        default_library_path = (base_dir / "survey_library").resolve()
+    project_path = session.get("current_project_path")
+    default_library_path = None
+    if project_path:
+        candidate = (Path(project_path) / "library").expanduser()
+        if candidate.exists() and candidate.is_dir():
+            default_library_path = candidate
+
+    if default_library_path is None:
+        default_library_path = _default_library_root_for_templates(modality="survey")
+
     return render_template(
         "survey_generator.html",
-        default_survey_library_path=str(default_library_path),
+        default_survey_library_path=str(default_library_path or ""),
     )
 
 @tools_bp.route("/converter")
 def converter():
     """Converter page"""
-    base_dir = Path(current_app.root_path)
-    preferred = (base_dir / "library" / "survey_i18n").resolve()
-    default_library_path = preferred
-    if not (preferred.exists() and any(preferred.glob("survey-*.json"))):
-        default_library_path = (base_dir / "survey_library").resolve()
+    project_path = session.get("current_project_path")
+    default_library_path = None
+    if project_path:
+        candidate = (Path(project_path) / "library").expanduser()
+        if candidate.exists() and candidate.is_dir():
+            default_library_path = candidate
+
+    if default_library_path is None:
+        default_library_path = _default_library_root_for_templates(modality="survey")
+
     return render_template(
         "converter.html",
-        default_survey_library_path=str(default_library_path),
+        default_survey_library_path=str(default_library_path or ""),
     )
 
 @tools_bp.route("/recipes")
@@ -245,15 +272,13 @@ def api_template_editor_list_merged():
 
     Project templates take priority over global templates with the same name.
     """
-    from src.config import load_app_settings, load_config
-
     modality = (request.args.get("modality") or "").strip().lower()
     if modality not in {"survey", "biometrics"}:
         return jsonify({"error": "Invalid modality"}), 400
 
     # Get current project from session
     project_path = session.get("current_project_path")
-    app_settings = load_app_settings()
+    app_settings = load_app_settings(app_root=str(Path(current_app.root_path)))
 
     templates = {}  # filename -> {name, source, path}
     sources_info = {
@@ -262,10 +287,8 @@ def api_template_editor_list_merged():
     }
 
     # 1. Load templates from global library (configured or default survey_library)
-    global_lib_path = app_settings.global_template_library_path
-    if not global_lib_path:
-        # Use default: app's survey_library folder
-        global_lib_path = str(Path(current_app.root_path) / "survey_library")
+    global_lib_candidate = _global_survey_library_root()
+    global_lib_path = str(global_lib_candidate) if global_lib_candidate else None
 
     if global_lib_path and Path(global_lib_path).exists():
         sources_info["global_library_path"] = global_lib_path

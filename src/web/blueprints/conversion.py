@@ -13,7 +13,7 @@ import tempfile
 import zipfile
 import base64
 from pathlib import Path
-from flask import Blueprint, request, jsonify, send_file, render_template, current_app
+from flask import Blueprint, request, jsonify, send_file, render_template, current_app, session
 from werkzeug.utils import secure_filename
 from src.web.utils import list_survey_template_languages, sanitize_jsonable
 from src.web import run_validation
@@ -61,6 +61,13 @@ def api_survey_languages():
     """List available languages for the selected survey template library folder."""
     library_path = (request.args.get("library_path") or "").strip()
     base_dir = Path(current_app.root_path)
+    if not library_path:
+        project_path = (session.get("current_project_path") or "").strip()
+        if project_path:
+            candidate = (Path(project_path) / "library").expanduser()
+            if candidate.exists() and candidate.is_dir():
+                library_path = str(candidate)
+
     if not library_path:
         preferred = (base_dir / "library" / "survey_i18n").resolve()
         fallback = (base_dir / "survey_library").resolve()

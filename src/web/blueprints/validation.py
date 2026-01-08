@@ -4,7 +4,9 @@ import tempfile
 import shutil
 import uuid
 from datetime import datetime
-from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app, send_file
+from pathlib import Path
+
+from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app, send_file, session
 from werkzeug.utils import secure_filename
 
 from src.web import (
@@ -37,7 +39,18 @@ def validate_dataset():
         print(f"Warning: Could not load schema versions: {e}")
         available_versions = ["stable"]
 
-    return render_template("index.html", schema_versions=available_versions)
+    default_library_path = ""
+    project_path = session.get("current_project_path")
+    if project_path:
+        candidate = Path(project_path) / "library"
+        if candidate.exists() and candidate.is_dir():
+            default_library_path = str(candidate)
+
+    return render_template(
+        "index.html",
+        schema_versions=available_versions,
+        default_library_path=default_library_path,
+    )
 
 @validation_bp.route("/upload", methods=["POST"])
 def upload_dataset():
@@ -146,6 +159,8 @@ def validate_folder():
     """Handle local folder validation"""
     validation_results = current_app.config.get("VALIDATION_RESULTS", {})
     folder_path = request.form.get("folder_path", "").strip()
+    if not folder_path:
+        folder_path = (session.get("current_project_path") or "").strip()
 
     if not folder_path or not os.path.exists(folder_path) or not os.path.isdir(folder_path):
         flash("Invalid folder path", "error")
