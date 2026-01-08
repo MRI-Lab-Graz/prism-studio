@@ -16,6 +16,32 @@
             </p>
         </div>
 
+        {% if current_project.path %}
+        <!-- Current Project Quick Action -->
+        <div class="card feature-card mb-4 border-primary">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-3">
+                    <i class="fas fa-folder-open text-primary me-2"></i>
+                    Current Project: {{ current_project.name }}
+                </h5>
+                <p class="text-muted small mb-3">
+                    <code>{{ current_project.path }}</code>
+                </p>
+                <form action="{{ url_for('validation.validate_folder') }}" method="post" class="d-inline">
+                    <input type="hidden" name="folder_path" value="{{ current_project.path }}">
+                    <input type="hidden" name="schema_version" value="stable">
+                    <input type="hidden" name="validation_mode" value="both">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check-circle me-2"></i>Validate Current Project
+                    </button>
+                </form>
+                <a href="{{ url_for('projects.projects_page') }}" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-exchange-alt me-1"></i>Change Project
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Main Upload Card -->
         <div class="card feature-card mb-4 border-success">
             <div class="card-body p-5">
@@ -25,10 +51,10 @@
                 </h3>
 
                 <p class="text-center text-muted mb-4">
-                    The PRISM Validator ensures your dataset follows the PRISM structure and BIDS standards. 
+                    The PRISM Validator ensures your dataset follows the PRISM structure and BIDS standards.
                     It checks for required files, naming conventions, and validates metadata against JSON schemas.
                 </p>
-                
+
                 <!-- File Upload Section -->
                 <div class="mb-4">
                     <form action="{{ url_for('validation.upload_dataset') }}" method="post" enctype="multipart/form-data">

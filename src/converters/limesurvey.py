@@ -25,6 +25,52 @@ except (ImportError, ValueError):
 from .csv import process_dataframe
 
 
+# LimeSurvey question type codes mapped to human-readable names
+LIMESURVEY_QUESTION_TYPES = {
+    # Single choice
+    "L": "List (Radio)",
+    "!": "List (Dropdown)",
+    "O": "List with Comment",
+    "G": "Gender",
+    "Y": "Yes/No",
+    "I": "Language Switch",
+    # Multiple choice
+    "M": "Multiple Choice",
+    "P": "Multiple Choice with Comments",
+    # Free text
+    "S": "Short Free Text",
+    "T": "Long Free Text",
+    "U": "Huge Free Text",
+    "Q": "Multiple Short Text",
+    # Numerical
+    "N": "Numerical Input",
+    "K": "Multiple Numerical Input",
+    # Date/Time
+    "D": "Date/Time",
+    # Arrays/Matrices
+    "A": "Array (5 Point Choice)",
+    "B": "Array (10 Point Choice)",
+    "C": "Array (Yes/Uncertain/No)",
+    "E": "Array (Increase/Same/Decrease)",
+    "F": "Array (Flexible Labels)",
+    "H": "Array by Column",
+    ";": "Array (Texts)",
+    ":": "Array (Numbers)",
+    "1": "Array Dual Scale",
+    # Ranking
+    "R": "Ranking",
+    # Special
+    "X": "Text Display (Boilerplate)",
+    "*": "Equation",
+    "|": "File Upload",
+}
+
+
+def _get_question_type_name(type_code):
+    """Convert LimeSurvey type code to human-readable name."""
+    return LIMESURVEY_QUESTION_TYPES.get(type_code, f"Unknown ({type_code})")
+
+
 def _map_field_to_code(fieldname, qid_to_title):
     m = re.match(r"(\d+)X(\d+)X(\d+)([A-Za-z0-9_]+)?", fieldname)
     if not m:
@@ -123,14 +169,107 @@ def parse_lsa_timings(lsa_path):
         return None
 
 
+def _extract_media_urls(html_content):
+    """Extract media URLs from HTML content (audio, video, img sources)."""
+    if not html_content:
+        return []
+    urls = []
+    # Find src attributes in video, audio, img tags
+    src_pattern = r'src=["\']([^"\']+)["\']'
+    matches = re.findall(src_pattern, html_content)
+    urls.extend(matches)
+    return urls
+
+
+def _clean_html_preserve_info(html_content):
+    """Clean HTML but preserve useful information like media URLs."""
+    if not html_content:
+        return "", []
+
+    media_urls = _extract_media_urls(html_content)
+
+    # Remove HTML tags
+    clean_text = re.sub("<[^<]+?>", "", html_content).strip()
+    # Clean up whitespace
+    clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+
+    return clean_text, media_urls
+
+
+def _parse_survey_metadata(root, get_text):
+    """Extract survey-level metadata from surveys and surveys_languagesettings sections."""
+    metadata = {
+        "title": "",
+        "admin": "",
+        "admin_email": "",
+        "language": "en",
+        "anonymized": False,
+        "format": "G",  # G=group, S=single, A=all
+        "template": "",
+        "datestamp": False,
+        "welcome_message": "",
+        "end_message": "",
+        "description": ""
+    }
+
+    # Parse surveys section
+    surveys_section = root.find("surveys")
+    if surveys_section is not None:
+        rows = surveys_section.find("rows")
+        if rows is not None:
+            for row in rows.findall("row"):
+                metadata["admin"] = get_text(row, "admin")
+                metadata["admin_email"] = get_text(row, "adminemail")
+                metadata["language"] = get_text(row, "language") or "en"
+                metadata["anonymized"] = get_text(row, "anonymized") == "Y"
+                metadata["format"] = get_text(row, "format") or "G"
+                metadata["template"] = get_text(row, "template")
+                metadata["datestamp"] = get_text(row, "datestamp") == "Y"
+                break  # Only first survey row
+
+    # Parse surveys_languagesettings for title and messages
+    lang_section = root.find("surveys_languagesettings")
+    if lang_section is not None:
+        rows = lang_section.find("rows")
+        if rows is not None:
+            for row in rows.findall("row"):
+                title = get_text(row, "surveyls_title")
+                welcome = get_text(row, "surveyls_welcometext")
+                end = get_text(row, "surveyls_endtext")
+                desc = get_text(row, "surveyls_description")
+
+                if title:
+                    metadata["title"] = re.sub("<[^<]+?>", "", title).strip()
+                if welcome:
+                    metadata["welcome_message"] = re.sub("<[^<]+?>", "", welcome).strip()
+                if end:
+                    metadata["end_message"] = re.sub("<[^<]+?>", "", end).strip()
+                if desc:
+                    metadata["description"] = re.sub("<[^<]+?>", "", desc).strip()
+                break  # Take first language settings
+
+    return metadata
+
+
 def _parse_lss_structure(root, get_text):
-    # 1. Parse Questions
+    """Parse LimeSurvey XML structure to extract questions, groups, subquestions, and attributes.
+
+    Returns:
+        questions_map: dict mapping qid -> {title, question, type, type_name, mandatory,
+                                            question_order, parent_qid, gid, levels,
+                                            subquestions, attributes, other, help, preg}
+        groups_map: dict mapping gid -> {name, order, description}
+    """
     # Map qid -> {title, question, type, ...}
     questions_map = {}
-    # Map gid -> title string (Group info)
+    # Map gid -> {name, order, description}
     groups_map = {}
+    # Temporary map for subquestions: parent_qid -> list of subquestion dicts
+    subquestions_map = {}
+    # Temporary map for question attributes: qid -> {attribute_name: value}
+    attributes_map = {}
 
-    # Find the <groups> section to map Group ID -> Group Name (if available)
+    # 1. Parse Groups
     groups_section = root.find("groups")
     if groups_section is not None:
         rows = groups_section.find("rows")
@@ -138,9 +277,99 @@ def _parse_lss_structure(root, get_text):
             for row in rows.findall("row"):
                 gid = get_text(row, "gid")
                 name = get_text(row, "group_name")
-                groups_map[gid] = name if name else ""
+                group_order = get_text(row, "group_order")
+                description = get_text(row, "description")
+                randomization_group = get_text(row, "randomization_group")
+                grelevance = get_text(row, "grelevance")  # Group relevance equation
 
-    # Find the <questions> section
+                try:
+                    order_int = int(group_order) if group_order else 0
+                except ValueError:
+                    order_int = 0
+
+                # Clean HTML from description
+                clean_desc = re.sub("<[^<]+?>", "", description or "").strip()
+
+                groups_map[gid] = {
+                    "name": name if name else "",
+                    "order": order_int,
+                    "description": clean_desc,
+                    "randomization_group": randomization_group if randomization_group else None,
+                    "relevance": grelevance if grelevance and grelevance != "1" else None
+                }
+
+    # 2. Parse Subquestions first (so we can attach them to parent questions)
+    subquestions_section = root.find("subquestions")
+    if subquestions_section is not None:
+        rows = subquestions_section.find("rows")
+        if rows is not None:
+            for row in rows.findall("row"):
+                qid = get_text(row, "qid")
+                parent_qid = get_text(row, "parent_qid")
+                title = get_text(row, "title")  # Subquestion code (e.g., SQ001)
+                question_text = get_text(row, "question")
+                question_order = get_text(row, "question_order")
+                scale_id = get_text(row, "scale_id")  # 0 or 1 for dual-scale arrays
+
+                try:
+                    sq_order = int(question_order) if question_order else 0
+                except ValueError:
+                    sq_order = 0
+
+                try:
+                    scale = int(scale_id) if scale_id else 0
+                except ValueError:
+                    scale = 0
+
+                # Clean text but preserve media URLs
+                clean_text, media_urls = _clean_html_preserve_info(question_text)
+
+                subq = {
+                    "qid": qid,
+                    "code": title,
+                    "text": clean_text,
+                    "order": sq_order,
+                    "scale_id": scale,
+                    "media_urls": media_urls if media_urls else None
+                }
+
+                if parent_qid not in subquestions_map:
+                    subquestions_map[parent_qid] = []
+                subquestions_map[parent_qid].append(subq)
+
+    # Sort subquestions by order within each parent
+    for parent_qid in subquestions_map:
+        subquestions_map[parent_qid].sort(key=lambda x: (x["scale_id"], x["order"]))
+
+    # 3. Parse Question Attributes
+    attributes_section = root.find("question_attributes")
+    if attributes_section is not None:
+        rows = attributes_section.find("rows")
+        if rows is not None:
+            for row in rows.findall("row"):
+                qid = get_text(row, "qid")
+                attribute = get_text(row, "attribute")
+                value = get_text(row, "value")
+                language = get_text(row, "language")  # Empty for non-language-specific
+
+                if qid not in attributes_map:
+                    attributes_map[qid] = {}
+
+                # Store attribute (use language suffix if language-specific)
+                if language and language.strip():
+                    attr_key = f"{attribute}_{language}"
+                else:
+                    attr_key = attribute
+
+                # Parse numeric values
+                if value and value.isdigit():
+                    value = int(value)
+                elif value and value.lower() in ("true", "false"):
+                    value = value.lower() == "true"
+
+                attributes_map[qid][attr_key] = value
+
+    # 4. Parse Main Questions
     questions_section = root.find("questions")
     if questions_section is not None:
         rows = questions_section.find("rows")
@@ -148,36 +377,51 @@ def _parse_lss_structure(root, get_text):
             for row in rows.findall("row"):
                 qid = get_text(row, "qid")
                 gid = get_text(row, "gid")
-                title = get_text(
-                    row, "title"
-                )  # This is usually the variable name (e.g. 'age', 'gender')
+                title = get_text(row, "title")  # Variable name (e.g. 'ADS01')
                 question_text = get_text(row, "question")
                 q_type = get_text(row, "type")
                 parent_qid = get_text(row, "parent_qid")
+                mandatory = get_text(row, "mandatory")  # Y or N
+                question_order = get_text(row, "question_order")
+                other = get_text(row, "other")  # Y or N - has "Other" option
+                help_text = get_text(row, "help")  # Help text shown to user
+                preg = get_text(row, "preg")  # Validation regex
+                relevance = get_text(row, "relevance")  # Relevance equation
 
-                # Clean up CDATA or HTML tags from question text if necessary
+                try:
+                    q_order_int = int(question_order) if question_order else 0
+                except ValueError:
+                    q_order_int = 0
+
+                # Clean up HTML tags from text fields
                 clean_question = re.sub("<[^<]+?>", "", question_text or "").strip()
+                clean_help = re.sub("<[^<]+?>", "", help_text or "").strip()
 
                 questions_map[qid] = {
                     "title": title,
                     "question": clean_question,
                     "type": q_type,
+                    "type_name": _get_question_type_name(q_type),
+                    "mandatory": mandatory.upper() == "Y" if mandatory else False,
+                    "question_order": q_order_int,
                     "parent_qid": parent_qid,
                     "gid": gid,
                     "levels": {},
+                    "subquestions": subquestions_map.get(qid, []),
+                    "attributes": attributes_map.get(qid, {}),
+                    "other": other.upper() == "Y" if other else False,
+                    "help": clean_help if clean_help else None,
+                    "validation_regex": preg if preg else None,
+                    "relevance": relevance if relevance and relevance != "1" else None
                 }
 
-                # Update group map with a representative title if not set
-                if gid in groups_map and not groups_map[gid]:
-                    # Heuristic: use the first question's variable name prefix?
-                    # Or just the variable name.
-                    # If we have ADS01, ADS02, usually the group is ADS.
-                    # Let's try to strip digits.
+                # Update group name with a representative title if not set
+                if gid in groups_map and not groups_map[gid]["name"]:
                     prefix = re.match(r"([a-zA-Z]+)", title)
                     if prefix:
-                        groups_map[gid] = prefix.group(1)
+                        groups_map[gid]["name"] = prefix.group(1)
                     else:
-                        groups_map[gid] = title
+                        groups_map[gid]["name"] = title
 
     return questions_map, groups_map
 
@@ -195,6 +439,9 @@ def parse_lss_xml(xml_content, task_name=None):
         child = element.find(tag)
         val = child.text if child is not None else ""
         return val or ""
+
+    # Get survey-level metadata
+    survey_meta = _parse_survey_metadata(root, get_text)
 
     questions_map, groups_map = _parse_lss_structure(root, get_text)
 
@@ -215,36 +462,101 @@ def parse_lss_xml(xml_content, task_name=None):
     # 3. Construct Prism JSON
     prism_json = {}
 
-    # We need to handle subquestions (if any).
-    # In LimeSurvey, subquestions have a parent_qid != 0.
-    # For now, let's treat them as separate entries or try to group them.
-    # Prism usually expects a flat list of columns (keys) in the sidecar.
+    # Sort questions by group order, then question order for proper sequencing
+    sorted_questions = sorted(
+        questions_map.items(),
+        key=lambda x: (
+            groups_map.get(x[1]["gid"], {}).get("order", 0),
+            x[1]["question_order"]
+        )
+    )
 
-    for qid, q_data in questions_map.items():
+    for qid, q_data in sorted_questions:
         key = q_data["title"]
+        gid = q_data["gid"]
 
-        entry = {"Description": q_data["question"]}
+        # Get group info
+        group_info = groups_map.get(gid, {"name": "", "order": 0, "description": ""})
 
+        entry = {
+            "Description": q_data["question"],
+            "QuestionType": q_data["type_name"],
+            "Mandatory": q_data["mandatory"],
+            "Position": {
+                "Group": group_info["name"],
+                "GroupOrder": group_info["order"],
+                "QuestionOrder": q_data["question_order"]
+            }
+        }
+
+        # Add answer levels if present
         if q_data["levels"]:
             entry["Levels"] = q_data["levels"]
 
+        # Add subquestions/items for array-type questions
+        if q_data["subquestions"]:
+            items = {}
+            for sq in q_data["subquestions"]:
+                item_entry = {
+                    "Description": sq["text"],
+                    "Order": sq["order"],
+                }
+                # Only include ScaleId if not 0 (dual-scale arrays)
+                if sq["scale_id"] != 0:
+                    item_entry["ScaleId"] = sq["scale_id"]
+                # Include media URLs if present
+                if sq.get("media_urls"):
+                    item_entry["MediaUrls"] = sq["media_urls"]
+                items[sq["code"]] = item_entry
+            entry["Items"] = items
+
+        # Add "Other" option flag
+        if q_data["other"]:
+            entry["HasOtherOption"] = True
+
+        # Add help text if present
+        if q_data["help"]:
+            entry["HelpText"] = q_data["help"]
+
+        # Add validation regex if present
+        if q_data["validation_regex"]:
+            entry["ValidationRegex"] = q_data["validation_regex"]
+
+        # Add relevance/condition if present (conditional display)
+        if q_data["relevance"]:
+            entry["Condition"] = q_data["relevance"]
+
+        # Add question attributes (design options, etc.)
+        if q_data["attributes"]:
+            # Filter out empty values and organize attributes
+            attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
+            if attrs:
+                entry["Attributes"] = attrs
+
         prism_json[key] = entry
 
-    normalized_task = sanitize_task_name(task_name or "survey")
+    # Use survey title if available, otherwise use task_name
+    survey_title = survey_meta.get("title") or task_name or "survey"
+    normalized_task = sanitize_task_name(survey_title)
+
+    # Build description from survey metadata
+    description = survey_meta.get("description") or f"Imported from LimeSurvey: {survey_title}"
+
     metadata = {
         "Technical": {
-            "StimulusType": "Survey",
+            "StimulusType": "Questionnaire",
             "FileFormat": "tsv",
             "SoftwarePlatform": "LimeSurvey",
-            "Language": "en",
+            "Language": survey_meta.get("language", "en"),
             "Respondent": "self",
             "ResponseType": ["online"],
         },
         "Study": {
             "TaskName": normalized_task,
-            "OriginalName": normalized_task,
+            "OriginalName": survey_title,
             "Version": "1.0",
-            "Description": f"Imported from LimeSurvey task {normalized_task}",
+            "Description": description,
+            "ItemCount": len(prism_json),
         },
         "Metadata": {
             "SchemaVersion": "1.1.1",
@@ -253,8 +565,359 @@ def parse_lss_xml(xml_content, task_name=None):
         },
     }
 
+    # Add survey-level settings if present
+    if survey_meta.get("admin"):
+        metadata["Study"]["Author"] = survey_meta["admin"]
+    if survey_meta.get("admin_email"):
+        metadata["Study"]["ContactEmail"] = survey_meta["admin_email"]
+    if survey_meta.get("anonymized"):
+        metadata["Technical"]["Anonymized"] = survey_meta["anonymized"]
+    if survey_meta.get("template"):
+        metadata["Technical"]["Template"] = survey_meta["template"]
+
     metadata.update(prism_json)
     return metadata
+
+
+def parse_lss_xml_by_groups(xml_content):
+    """Parse a LimeSurvey .lss XML blob and split into separate questionnaires by group.
+
+    Returns:
+        dict: {group_name: prism_json_dict, ...} or None on error
+    """
+    try:
+        root = ET.fromstring(xml_content)
+    except ET.ParseError as e:
+        print(f"Error parsing XML: {e}")
+        return None
+
+    def get_text(element, tag):
+        child = element.find(tag)
+        val = child.text if child is not None else ""
+        return val or ""
+
+    # Get survey-level metadata
+    survey_meta = _parse_survey_metadata(root, get_text)
+
+    questions_map, groups_map = _parse_lss_structure(root, get_text)
+
+    # Parse Answers
+    answers_section = root.find("answers")
+    if answers_section is not None:
+        rows = answers_section.find("rows")
+        if rows is not None:
+            for row in rows.findall("row"):
+                qid = get_text(row, "qid")
+                code = get_text(row, "code")
+                answer = get_text(row, "answer")
+                if qid in questions_map:
+                    questions_map[qid]["levels"][code] = answer
+
+    # Group questions by their group ID, preserving full question data
+    grouped_questions = {}  # gid -> list of (qid, q_data)
+    for qid, q_data in questions_map.items():
+        gid = q_data.get("gid", "")
+        if gid not in grouped_questions:
+            grouped_questions[gid] = []
+        grouped_questions[gid].append((qid, q_data))
+
+    # Sort groups by group order, then sort questions within each group
+    sorted_groups = sorted(
+        grouped_questions.items(),
+        key=lambda x: groups_map.get(x[0], {}).get("order", 0)
+    )
+
+    # Build separate PRISM JSONs for each group
+    result = {}
+    for gid, questions_list in sorted_groups:
+        if not questions_list:
+            continue
+
+        # Get group info
+        group_info = groups_map.get(gid, {"name": f"group_{gid}", "order": 0, "description": ""})
+        group_name = group_info["name"] if group_info["name"] else f"group_{gid}"
+        group_order = group_info["order"]
+        group_description = group_info.get("description", "")
+
+        # Sort questions by question_order within the group
+        sorted_questions = sorted(questions_list, key=lambda x: x[1]["question_order"])
+
+        # Build question entries
+        questions_dict = {}
+        for qid, q_data in sorted_questions:
+            key = q_data["title"]
+            entry = {
+                "Description": q_data["question"],
+                "QuestionType": q_data["type_name"],
+                "Mandatory": q_data["mandatory"],
+                "Position": {
+                    "Group": group_name,
+                    "GroupOrder": group_order,
+                    "QuestionOrder": q_data["question_order"]
+                }
+            }
+
+            # Add answer levels if present
+            if q_data["levels"]:
+                entry["Levels"] = q_data["levels"]
+
+            # Add subquestions/items for array-type questions
+            if q_data["subquestions"]:
+                items = {}
+                for sq in q_data["subquestions"]:
+                    item_entry = {
+                        "Description": sq["text"],
+                        "Order": sq["order"],
+                    }
+                    if sq["scale_id"] != 0:
+                        item_entry["ScaleId"] = sq["scale_id"]
+                    if sq.get("media_urls"):
+                        item_entry["MediaUrls"] = sq["media_urls"]
+                    items[sq["code"]] = item_entry
+                entry["Items"] = items
+
+            # Add "Other" option flag
+            if q_data["other"]:
+                entry["HasOtherOption"] = True
+
+            # Add help text if present
+            if q_data["help"]:
+                entry["HelpText"] = q_data["help"]
+
+            # Add validation regex if present
+            if q_data["validation_regex"]:
+                entry["ValidationRegex"] = q_data["validation_regex"]
+
+            # Add relevance/condition if present
+            if q_data["relevance"]:
+                entry["Condition"] = q_data["relevance"]
+
+            # Add question attributes (design options, etc.)
+            if q_data["attributes"]:
+                attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
+                if attrs:
+                    entry["Attributes"] = attrs
+
+            questions_dict[key] = entry
+
+        normalized_name = sanitize_task_name(group_name)
+
+        # Use group description if available, otherwise generate one
+        study_description = group_description if group_description else f"Imported from LimeSurvey group: {group_name}"
+
+        prism_json = {
+            "Technical": {
+                "StimulusType": "Questionnaire",
+                "FileFormat": "tsv",
+                "SoftwarePlatform": "LimeSurvey",
+                "Language": survey_meta.get("language", "en"),
+                "Respondent": "self",
+                "ResponseType": ["online"],
+            },
+            "Study": {
+                "TaskName": normalized_name,
+                "OriginalName": group_name,
+                "SurveyTitle": survey_meta.get("title", ""),
+                "Version": "1.0",
+                "Description": study_description,
+                "GroupOrder": group_order,
+                "ItemCount": len(questions_dict),
+            },
+            "Metadata": {
+                "SchemaVersion": "1.1.1",
+                "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
+                "Creator": "limesurvey_to_prism.py",
+            },
+        }
+
+        # Add survey-level settings if present
+        if survey_meta.get("admin"):
+            prism_json["Study"]["Author"] = survey_meta["admin"]
+        if survey_meta.get("admin_email"):
+            prism_json["Study"]["ContactEmail"] = survey_meta["admin_email"]
+        if survey_meta.get("anonymized"):
+            prism_json["Technical"]["Anonymized"] = survey_meta["anonymized"]
+
+        prism_json.update(questions_dict)
+        result[normalized_name] = prism_json
+
+    return result
+
+
+def parse_lss_xml_by_questions(xml_content):
+    """Parse a LimeSurvey .lss XML blob and return each question as a separate JSON template.
+
+    Each question (including arrays with subquestions) becomes its own JSON file,
+    suitable for use as a reusable template in the Survey & Boilerplate editor.
+
+    Returns:
+        dict: {question_code: {prism_json, group_name, group_order, ...}, ...} or None on error
+    """
+    try:
+        root = ET.fromstring(xml_content)
+    except ET.ParseError as e:
+        print(f"Error parsing XML: {e}")
+        return None
+
+    def get_text(element, tag):
+        child = element.find(tag)
+        val = child.text if child is not None else ""
+        return val or ""
+
+    # Get survey-level metadata
+    survey_meta = _parse_survey_metadata(root, get_text)
+
+    questions_map, groups_map = _parse_lss_structure(root, get_text)
+
+    # Parse Answers
+    answers_section = root.find("answers")
+    if answers_section is not None:
+        rows = answers_section.find("rows")
+        if rows is not None:
+            for row in rows.findall("row"):
+                qid = get_text(row, "qid")
+                code = get_text(row, "code")
+                answer = get_text(row, "answer")
+                scale_id = get_text(row, "scale_id") or "0"
+
+                # Handle "None" text from LimeSurvey (unlabeled scale points)
+                if answer and answer.lower() == "none":
+                    answer = ""
+
+                if qid in questions_map:
+                    # Support multiple scales (for dual-scale arrays)
+                    if "levels" not in questions_map[qid]:
+                        questions_map[qid]["levels"] = {}
+                    if scale_id not in questions_map[qid].get("levels_by_scale", {}):
+                        if "levels_by_scale" not in questions_map[qid]:
+                            questions_map[qid]["levels_by_scale"] = {}
+                        questions_map[qid]["levels_by_scale"][scale_id] = {}
+
+                    questions_map[qid]["levels"][code] = answer
+                    questions_map[qid]["levels_by_scale"][scale_id][code] = answer
+
+    # Build individual question JSONs
+    result = {}
+
+    for qid, q_data in questions_map.items():
+        # Skip subquestions (they're included in their parent)
+        if q_data.get("parent_qid") and q_data["parent_qid"] != "0":
+            continue
+
+        question_code = q_data["title"]
+        gid = q_data["gid"]
+
+        # Get group info
+        group_info = groups_map.get(gid, {"name": "", "order": 0, "description": ""})
+        group_name = group_info["name"] if group_info["name"] else f"group_{gid}"
+        group_order = group_info["order"]
+
+        # Build the question entry
+        entry = {
+            "Description": q_data["question"],
+            "QuestionType": q_data["type_name"],
+            "LimeSurveyType": q_data["type"],  # Original LS type code for re-export
+            "Mandatory": q_data["mandatory"],
+            "Position": {
+                "Group": group_name,
+                "GroupOrder": group_order,
+                "QuestionOrder": q_data["question_order"]
+            }
+        }
+
+        # Add answer levels if present
+        if q_data.get("levels"):
+            # Filter out empty labels but keep the scale structure
+            levels = {k: v for k, v in q_data["levels"].items()}
+            if levels:
+                entry["Levels"] = levels
+
+        # Add subquestions/items for array-type questions
+        if q_data.get("subquestions"):
+            items = {}
+            for sq in q_data["subquestions"]:
+                item_entry = {
+                    "Description": sq["text"],
+                    "Order": sq["order"],
+                }
+                if sq["scale_id"] != 0:
+                    item_entry["ScaleId"] = sq["scale_id"]
+                if sq.get("media_urls"):
+                    item_entry["MediaUrls"] = sq["media_urls"]
+                items[sq["code"]] = item_entry
+            entry["Items"] = items
+
+        # Add optional fields
+        if q_data.get("other"):
+            entry["HasOtherOption"] = True
+
+        if q_data.get("help"):
+            entry["HelpText"] = q_data["help"]
+
+        if q_data.get("validation_regex"):
+            entry["ValidationRegex"] = q_data["validation_regex"]
+
+        if q_data.get("relevance"):
+            entry["Condition"] = q_data["relevance"]
+
+        if q_data.get("attributes"):
+            attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
+            if attrs:
+                entry["Attributes"] = attrs
+
+        # Build complete question JSON template
+        question_json = {
+            "Technical": {
+                "StimulusType": "Questionnaire",
+                "FileFormat": "tsv",
+                "SoftwarePlatform": "LimeSurvey",
+                "Language": survey_meta.get("language", "en"),
+                "Respondent": "self",
+                "ResponseType": ["online"],
+            },
+            "Study": {
+                "TaskName": sanitize_task_name(question_code),
+                "OriginalName": question_code,
+                "QuestionCode": question_code,
+                "GroupName": group_name,
+                "GroupOrder": group_order,
+                "Version": "1.0",
+                "Description": q_data["question"][:200] if q_data["question"] else "",
+            },
+            "Metadata": {
+                "SchemaVersion": "1.1.1",
+                "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
+                "Creator": "limesurvey_to_prism.py",
+                "SourceSurvey": survey_meta.get("title", ""),
+            },
+            question_code: entry
+        }
+
+        # Add survey-level author info
+        if survey_meta.get("admin"):
+            question_json["Study"]["Author"] = survey_meta["admin"]
+        if survey_meta.get("admin_email"):
+            question_json["Study"]["ContactEmail"] = survey_meta["admin_email"]
+
+        # Calculate item count
+        item_count = len(entry.get("Items", {})) if entry.get("Items") else 1
+        question_json["Study"]["ItemCount"] = item_count
+
+        # Store result with metadata for UI
+        result[question_code] = {
+            "prism_json": question_json,
+            "question_code": question_code,
+            "question_type": q_data["type_name"],
+            "limesurvey_type": q_data["type"],
+            "group_name": group_name,
+            "group_order": group_order,
+            "question_order": q_data["question_order"],
+            "item_count": item_count,
+            "mandatory": q_data["mandatory"],
+            "suggested_filename": f"survey-{sanitize_task_name(question_code)}.json"
+        }
+
+    return result
 
 
 def convert_lsa_to_prism(lsa_path, output_path=None, task_name=None):
@@ -406,7 +1069,7 @@ def convert_lsa_to_dataset(
                 if m:
                     gid = m.group(1)
                     if gid in groups_map:
-                        title = groups_map[gid]
+                        title = groups_map[gid]["name"]
                         # Sanitize title for column name
                         safe_title = "".join(c if c.isalnum() else "_" for c in title)
                         col_name = f"Duration_{safe_title}"
@@ -505,7 +1168,7 @@ def convert_lsa_to_dataset(
 
             most_common_gid = Counter(gids).most_common(1)[0][0]
             if most_common_gid in groups_map:
-                group_title = groups_map[most_common_gid]
+                group_title = groups_map[most_common_gid]["name"]
                 safe_title = "".join(c if c.isalnum() else "_" for c in group_title)
                 candidate = f"Duration_{safe_title}"
                 if candidate in task_df.columns:

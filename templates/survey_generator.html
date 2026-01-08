@@ -52,6 +52,9 @@
         </div>
     </div>
 
+    <!-- Project Context Banner -->
+    {% include 'includes/project_banner.html' %}
+
     <div class="card mb-4">
         <div class="card-header bg-light">
             <h5 class="mb-0">1. Load Survey Library</h5>
@@ -59,7 +62,10 @@
         <div class="card-body">
             <div class="row mb-3">
                 <div class="col-md-8">
-                    <label for="libraryPath" class="form-label">Library Path</label>
+                    <label for="libraryPath" class="form-label">
+                        Library Path
+                        <span id="librarySourceBadge" class="ms-2 badge bg-secondary">Manual</span>
+                    </label>
                     <div class="input-group">
                         <input type="text" class="form-control" id="libraryPath" placeholder="/path/to/survey_library" value="{{ default_survey_library_path | default('survey_library') }}">
                         <button class="btn btn-outline-secondary" type="button" id="browseBtn" title="Browse Folder">
@@ -67,6 +73,16 @@
                         </button>
                         <button class="btn btn-info text-white" type="button" id="loadLibraryBtn">
                             <i class="fas fa-sync-alt me-2"></i>Load Files
+                        </button>
+                    </div>
+                    <!-- Quick switch buttons -->
+                    <div class="mt-2" id="libraryQuickSwitch">
+                        <small class="text-muted me-2">Quick switch:</small>
+                        <button type="button" class="btn btn-sm btn-outline-info me-1" id="useGlobalLibraryBtn" title="Use global template library" disabled>
+                            <i class="fas fa-globe me-1"></i>Global
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-success me-1" id="useProjectLibraryBtn" title="Use project library" disabled>
+                            <i class="fas fa-folder me-1"></i>Project
                         </button>
                     </div>
                     <div class="form-text">Select the template folder where your PRISM survey templates are stored.</div>
@@ -799,6 +815,119 @@ document.addEventListener('DOMContentLoaded', function() {
             generateLssBtn.innerHTML = '<i class="fas fa-file-export me-2"></i>Export to LimeSurvey (.lss)';
         });
     });
+
+    // --- Library path management ---
+    const useGlobalLibraryBtn = document.getElementById('useGlobalLibraryBtn');
+    const useProjectLibraryBtn = document.getElementById('useProjectLibraryBtn');
+    const librarySourceBadge = document.getElementById('librarySourceBadge');
+
+    // Store available paths
+    let availablePaths = {
+        global: null,
+        project: null
+    };
+
+    function updateLibraryBadge(source) {
+        if (!librarySourceBadge) return;
+        switch (source) {
+            case 'global':
+                librarySourceBadge.className = 'ms-2 badge bg-info';
+                librarySourceBadge.textContent = 'Global';
+                break;
+            case 'project':
+                librarySourceBadge.className = 'ms-2 badge bg-success';
+                librarySourceBadge.textContent = 'Project';
+                break;
+            default:
+                librarySourceBadge.className = 'ms-2 badge bg-secondary';
+                librarySourceBadge.textContent = 'Manual';
+        }
+    }
+
+    function switchToLibrary(path, source) {
+        if (path) {
+            libraryPathInput.value = path;
+            updateLibraryBadge(source);
+            loadLibraryBtn.click();
+        }
+    }
+
+    // Quick switch button handlers
+    if (useGlobalLibraryBtn) {
+        useGlobalLibraryBtn.addEventListener('click', () => {
+            if (availablePaths.global) {
+                switchToLibrary(availablePaths.global, 'global');
+            }
+        });
+    }
+
+    if (useProjectLibraryBtn) {
+        useProjectLibraryBtn.addEventListener('click', () => {
+            if (availablePaths.project) {
+                switchToLibrary(availablePaths.project, 'project');
+            }
+        });
+    }
+
+    // Auto-fill library path from current project or global settings
+    async function initializeLibraryPaths() {
+        try {
+            const response = await fetch('/api/projects/library-path');
+            const data = await response.json();
+
+            // Store available paths
+            availablePaths.global = data.global_library_path || null;
+            availablePaths.project = data.project_library_path || null;
+
+            // Enable/disable quick switch buttons
+            if (useGlobalLibraryBtn) {
+                useGlobalLibraryBtn.disabled = !availablePaths.global;
+                if (availablePaths.global) {
+                    useGlobalLibraryBtn.title = availablePaths.global;
+                }
+            }
+            if (useProjectLibraryBtn) {
+                useProjectLibraryBtn.disabled = !availablePaths.project;
+                if (availablePaths.project) {
+                    useProjectLibraryBtn.title = availablePaths.project;
+                }
+            }
+
+            // Auto-fill with best available path
+            const currentValue = libraryPathInput.value;
+            if (!currentValue || currentValue === 'survey_library') {
+                // Prefer global library, then project library
+                if (availablePaths.global) {
+                    libraryPathInput.value = availablePaths.global;
+                    updateLibraryBadge('global');
+                    loadLibraryBtn.click();
+                    console.log('Library path auto-filled from global settings');
+                } else if (availablePaths.project) {
+                    libraryPathInput.value = availablePaths.project;
+                    updateLibraryBadge('project');
+                    loadLibraryBtn.click();
+                    console.log('Library path auto-filled from project:', data.project_name);
+                }
+            }
+        } catch (err) {
+            console.warn('Could not auto-load library paths:', err);
+        }
+    }
+
+    // Track manual changes to library path
+    libraryPathInput.addEventListener('change', () => {
+        const val = libraryPathInput.value.trim();
+        if (val === availablePaths.global) {
+            updateLibraryBadge('global');
+        } else if (val === availablePaths.project) {
+            updateLibraryBadge('project');
+        } else {
+            updateLibraryBadge('manual');
+        }
+    });
+
+    // Initialize on page load
+    initializeLibraryPaths();
 });
 </script>
 {% endblock %}
