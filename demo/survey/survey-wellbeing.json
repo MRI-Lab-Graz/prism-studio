@@ -1,36 +1,141 @@
 {
-  "Technical": {
-    "StimulusType": "Questionnaire",
-    "FileFormat": "tsv",
-    "SoftwarePlatform": "Generic",
-    "Language": "en",
-    "Respondent": "self"
-  },
-  "Study": {
-    "TaskName": "wellbeing",
-    "OriginalName": {
-      "de": "Wohlbefindens-Kurzskala",
-      "en": "Well-Being Short Scale"
-    },
-    "Version": "Demo 1.0",
-    "Description": {
-      "de": "5-Item Fragebogen zur Erfassung des allgemeinen Wohlbefindens (Demo-Daten)",
-      "en": "5-item questionnaire measuring general well-being (demo data)"
-    },
-    "Citation": "Demo Questionnaire for PRISM Testing"
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2025-12-19",
-    "Creator": "Prism Demo Generator"
-  },
   "I18n": {
+    "DefaultLanguage": "en",
     "Languages": [
       "de",
       "en"
     ],
-    "DefaultLanguage": "en",
-    "Note": "Multilingual demo template for testing purposes"
+    "Note": "Multilingual demo template for testing purposes",
+    "TranslationMethod": "forward-backward"
+  },
+  "Metadata": {
+    "CreationDate": "2025-12-19",
+    "Creator": "Prism Demo Generator",
+    "SchemaVersion": "1.1.1"
+  },
+  "Normative": {
+    "Percentiles": {},
+    "ReferencePopulation": "",
+    "ReferenceSource": ""
+  },
+  "Scoring": {
+    "Cutoffs": {},
+    "CutoffsSource": {},
+    "NormsSource": {},
+    "ReverseCodedItems": [
+      ""
+    ],
+    "ReverseCodingScale": {
+      "max": 0,
+      "min": 0
+    },
+    "ScoreRange": {
+      "max": 0,
+      "min": 0
+    },
+    "ScoringMethod": "",
+    "Subscales": [
+      {
+        "Items": [
+          ""
+        ],
+        "Method": "sum",
+        "Name": {},
+        "Note": {},
+        "Range": {
+          "max": 0,
+          "min": 0
+        },
+        "ReverseCodedItems": [
+          ""
+        ]
+      }
+    ]
+  },
+  "Study": {
+    "Access": "permission-required",
+    "AdministrationTime": {
+      "max": 15,
+      "min": 10
+    },
+    "AgeRange": {
+      "max": 99,
+      "min": 18
+    },
+    "Authors": [
+      ""
+    ],
+    "Citation": "Demo Questionnaire for PRISM Testing",
+    "Construct": {},
+    "CopyrightHolder": "",
+    "DOI": "",
+    "Description": {
+      "de": "5-Item Fragebogen zur Erfassung des allgemeinen Wohlbefindens (Demo-Daten)",
+      "en": "5-item questionnaire measuring general well-being (demo data)"
+    },
+    "Instructions": {},
+    "ItemCount": 0,
+    "Keywords": [
+      ""
+    ],
+    "License": "",
+    "LicenseID": "CC-BY-4.0",
+    "LicenseURL": "",
+    "Norming": {},
+    "OriginalName": {
+      "de": "Wohlbefindens-Kurzskala",
+      "en": "Well-Being Short Scale"
+    },
+    "PermissionsNote": {},
+    "PermissionsURL": "",
+    "References": [
+      {
+        "Citation": "Hautzinger, M., & Bailer, M. (1993). Allgemeine Depressionsskala (ADS).",
+        "DOI": "10.1007/978-3-642-34523-1",
+        "Notes": {
+          "en": "Original ADS manual"
+        },
+        "Type": "primary",
+        "URL": "https://doi.org/10.1007/978-3-642-34523-1",
+        "Year": 1993
+      }
+    ],
+    "Reliability": {},
+    "ScoringTime": {
+      "max": 5,
+      "min": 5
+    },
+    "ShortName": {},
+    "Subscales": [
+      ""
+    ],
+    "TaskName": "wellbeing",
+    "TermURL": "",
+    "Translation": {
+      "Method": "",
+      "Notes": {},
+      "Reference": "",
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false
+    },
+    "Validity": {},
+    "Version": "Demo 1.0"
+  },
+  "Technical": {
+    "AdministrationMethod": "online",
+    "CalibrationDate": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "FileFormat": "tsv",
+    "Language": "en",
+    "Location": "laboratory",
+    "Respondent": "self",
+    "SoftwarePlatform": "Generic",
+    "SoftwareVersion": "",
+    "StimulusType": "Questionnaire",
+    "Supervisor": "investigator"
   },
   "WB01": {
     "Description": {
@@ -59,7 +164,20 @@
         "en": "Extremely satisfied"
       }
     },
-    "Units": "ordinal"
+    "Units": "ordinal",
+    "AllowedValues": [
+      ""
+    ],
+    "DataType": "string",
+    "MaxValue": 0,
+    "MinValue": 0,
+    "Relevance": "",
+    "RunHint": "",
+    "SessionHint": "",
+    "TermURL": "",
+    "Unit": "",
+    "WarnMaxValue": 0,
+    "WarnMinValue": 0
   },
   "WB02": {
     "Description": {
@@ -117,10 +235,10 @@
         "en": "Very high stress"
       }
     },
-    "Units": "ordinal",
     "Scoring": {
       "Note": "This item is reverse-scored for the positive well-being subscale"
-    }
+    },
+    "Units": "ordinal"
   },
   "WB04": {
     "Description": {

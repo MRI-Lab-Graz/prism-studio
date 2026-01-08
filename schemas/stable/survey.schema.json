@@ -44,7 +44,7 @@
           "description": "How the survey was administered"
         },
         "Equipment": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "Equipment used for measurement (e.g., Stopwatch, Cycle Ergometer, Dynamometer)"
         },
         "EquipmentManufacturer": {
