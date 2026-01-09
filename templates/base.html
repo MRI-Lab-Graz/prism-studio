@@ -136,10 +136,41 @@
                     <a class="nav-link" href="https://prism-studio.readthedocs.io/en/latest/" target="_blank" rel="noopener">
                         <i class="fas fa-book-open me-1"></i>Docs
                     </a>
+                    <a class="nav-link text-danger" href="#" id="quitAppBtn">
+                        <i class="fas fa-power-off me-1"></i>Quit
+                    </a>
                 </div>
             </div>
         </div>
     </nav>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('quitAppBtn')?.addEventListener('click', async function(e) {
+                e.preventDefault();
+                if (!confirm('Are you sure you want to quit PRISM Studio?')) return;
+                
+                try {
+                    const response = await fetch('/shutdown', { method: 'POST' });
+                    const result = await response.json();
+                    if (result.success) {
+                        document.body.innerHTML = `
+                            <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f8f9fa;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;">
+                                <div style="text-align:center;">
+                                    <div style="font-size:4rem;color:#dc3545;margin-bottom:1rem;"><i class="fas fa-power-off"></i></div>
+                                    <h1 style="color:#212529;margin-bottom:0.5rem;">PRISM Studio is closed</h1>
+                                    <p style="color:#6c757d;font-size:1.2rem;">You can safely close this tab now.</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    console.error('Shutdown failed:', error);
+                    alert('Could not shut down automatically. Please close the console window manually.');
+                }
+            });
+        });
+    </script>
 
     <main class="container my-4">
         {% with messages = get_flashed_messages(with_categories=true) %}

@@ -258,6 +258,30 @@ def specifications():
     return render_template("specifications.html")
 
 
+@app.route("/shutdown", methods=["POST"])
+def shutdown():
+    """Shutdown the server"""
+    import os
+    import signal
+    import threading
+    import time
+    
+    def kill_server():
+        time.sleep(1)
+        print("🛑 Shutting down server...")
+        os.kill(os.getpid(), signal.SIGINT)
+
+    # Try Werkzeug shutdown first (works in debug mode)
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func:
+        func()
+    else:
+        # Fallback for Waitress/Production
+        threading.Thread(target=kill_server).start()
+        
+    return jsonify({"success": True, "message": "Server is shutting down..."})
+
+
 # Note: Validation, Conversion, Library, and Tools routes are now handled by blueprints.
 # See src/web/blueprints/ for details.
 
