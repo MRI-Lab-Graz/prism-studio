@@ -157,10 +157,18 @@ def convert_survey_xlsx_to_prism_dataset(
     authors: list[str] | None = None,
     language: str | None = None,
     alias_file: str | Path | None = None,
+    duplicate_handling: str = "error",
 ) -> SurveyConvertResult:
     """Convert a wide survey Excel table into a PRISM dataset.
 
     Parameters mirror `prism_tools.py survey convert`.
+
+    Args:
+        duplicate_handling: How to handle duplicate participant IDs:
+            - "error": Raise an error (default)
+            - "keep_first": Keep only the first occurrence
+            - "keep_last": Keep only the last occurrence
+            - "sessions": Auto-generate session numbers for duplicates
 
     Raises:
         ValueError: for user errors (missing files, invalid columns, etc.)
@@ -195,6 +203,7 @@ def convert_survey_xlsx_to_prism_dataset(
         language=language,
         alias_file=alias_file,
         strict_levels=True,
+        duplicate_handling=duplicate_handling,
     )
 
 
@@ -215,11 +224,19 @@ def convert_survey_lsa_to_prism_dataset(
     language: str | None = None,
     alias_file: str | Path | None = None,
     strict_levels: bool | None = None,
+    duplicate_handling: str = "error",
 ) -> SurveyConvertResult:
     """Convert a LimeSurvey response archive (.lsa) into a PRISM dataset.
 
     The .lsa file is a zip archive. We extract the embedded *_responses.lsr XML and
     treat it as a wide table where each column is a survey item / variable.
+
+    Args:
+        duplicate_handling: How to handle duplicate participant IDs:
+            - "error": Raise an error (default)
+            - "keep_first": Keep only the first occurrence
+            - "keep_last": Keep only the last occurrence
+            - "sessions": Auto-generate session numbers for duplicates
     """
 
     input_path = Path(input_path).resolve()
@@ -253,6 +270,7 @@ def convert_survey_lsa_to_prism_dataset(
         technical_overrides=inferred_tech,
         alias_file=alias_file,
         strict_levels=effective_strict_levels,
+        duplicate_handling=duplicate_handling,
     )
 
 
@@ -358,9 +376,16 @@ def _convert_survey_dataframe_to_prism_dataset(
     technical_overrides: dict | None = None,
     alias_file: str | Path | None = None,
     strict_levels: bool = True,
+    duplicate_handling: str = "error",
 ) -> SurveyConvertResult:
     if unknown not in {"error", "warn", "ignore"}:
         raise ValueError("unknown must be one of: error, warn, ignore")
+
+    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
+        raise ValueError("duplicate_handling must be one of: error, keep_first, keep_last, sessions")
+
+    # Initialize warnings list early (used for duplicate handling and later for unknown columns)
+    conversion_warnings: list[str] = []
 
     library_dir = Path(library_dir).resolve()
     output_root = Path(output_root).resolve()
@@ -521,34 +546,67 @@ def _convert_survey_dataframe_to_prism_dataset(
             return True
         return False
 
-    # Detect duplicate IDs after normalization (to avoid silent merges)
+    # --- Filter out rows with missing/empty ID values ---
+    original_row_count = len(df)
+    missing_id_mask = df[resolved_id_col].apply(_is_missing_value)
+    rows_with_missing_ids = missing_id_mask.sum()
+    if rows_with_missing_ids > 0:
+        df = df[~missing_id_mask].copy()
+        conversion_warnings.append(f"Skipped {rows_with_missing_ids} rows with missing/empty '{resolved_id_col}' values")
+
+    if len(df) == 0:
+        raise ValueError(f"No valid rows remaining after filtering out missing '{resolved_id_col}' values")
+
+    # --- Detect and handle duplicate IDs ---
     normalized_ids = df[resolved_id_col].astype(str).map(_normalize_sub_id)
     dup_mask = normalized_ids.duplicated(keep=False)
+
     if dup_mask.any():
         dup_ids = sorted(set(normalized_ids[dup_mask]))
+        dup_count = dup_mask.sum()
         preview = ", ".join(dup_ids[:5])
         suffix = "" if len(dup_ids) <= 5 else " ..."
-        dup_count = dup_mask.sum()
 
-        # Find alternative columns that might be unique
-        potential_id_cols = []
-        for col in df.columns:
-            col_lower = str(col).lower()
-            if col_lower in ["id", "response_id", "responseid", "token", "participant_id", "subject"]:
-                if not df[col].duplicated().any():
-                    potential_id_cols.append(col)
+        if duplicate_handling == "error":
+            # Find alternative columns that might be unique
+            potential_id_cols = []
+            for col in df.columns:
+                col_lower = str(col).lower()
+                if col_lower in ["id", "response_id", "responseid", "token", "participant_id", "subject"]:
+                    if not df[col].duplicated().any():
+                        potential_id_cols.append(col)
 
-        suggestion = ""
-        if potential_id_cols:
-            suggestion = f"\nTry using one of these unique columns: {', '.join(potential_id_cols)}"
-        else:
-            suggestion = "\nYour data may contain duplicate survey submissions. Remove duplicates first or use a unique ID column."
+            suggestion = ""
+            if potential_id_cols:
+                suggestion = f"\nTry using one of these unique columns: {', '.join(potential_id_cols)}"
+            else:
+                suggestion = "\nUse duplicate_handling='keep_first', 'keep_last', or 'sessions' to handle duplicates."
 
-        raise ValueError(
-            f"Duplicate participant IDs found using column '{resolved_id_col}' ({dup_count} duplicate rows).\n"
-            f"Duplicated values: {preview}{suffix}"
-            f"{suggestion}"
-        )
+            raise ValueError(
+                f"Duplicate participant IDs found using column '{resolved_id_col}' ({dup_count} duplicate rows).\n"
+                f"Duplicated values: {preview}{suffix}"
+                f"{suggestion}"
+            )
+
+        elif duplicate_handling == "keep_first":
+            df = df[~normalized_ids.duplicated(keep="first")].copy()
+            conversion_warnings.append(f"Kept first occurrence only for {len(dup_ids)} participants with duplicate entries ({dup_count} rows reduced)")
+
+        elif duplicate_handling == "keep_last":
+            df = df[~normalized_ids.duplicated(keep="last")].copy()
+            conversion_warnings.append(f"Kept last occurrence only for {len(dup_ids)} participants with duplicate entries ({dup_count} rows reduced)")
+
+        elif duplicate_handling == "sessions":
+            # Auto-generate session numbers for duplicates
+            if resolved_session_col is None:
+                # Create a session column based on occurrence number
+                df = df.copy()
+                df["_auto_session"] = df.groupby(normalized_ids.values).cumcount() + 1
+                df["_auto_session"] = df["_auto_session"].apply(lambda x: f"ses-{str(x).zfill(2)}")
+                resolved_session_col = "_auto_session"
+                conversion_warnings.append(f"Auto-generated sessions for {len(dup_ids)} participants with multiple responses")
+            else:
+                conversion_warnings.append(f"Session column '{resolved_session_col}' already specified; duplicates may exist within sessions")
 
     # --- Determine which columns map to which surveys ---
     lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
@@ -582,8 +640,6 @@ def _convert_survey_dataframe_to_prism_dataset(
             continue
         else:
             unknown_cols.append(c)
-
-    conversion_warnings: list[str] = []
 
     tasks_with_data = set(col_to_task.values())
     if selected_tasks is not None:

@@ -462,31 +462,37 @@ project/
 ├── .prismrc.json              # PRISM validation settings
 ├── README.md                  # This file
 │
-├── sub-example/               # Example subject (rename to sub-001, etc.)
+├── sub-001/                   # Subject folders (BIDS standard: at root level)
+├── sub-002/                   # Rename sub-example/ to sub-001, sub-002, etc.
 │   └── ses-01/                # Session folder (if using sessions)
-│       ├── survey/            # Survey data files
+│       ├── survey/            # Survey response data
 │       └── biometrics/        # Biometrics data files
 │
-├── sourcedata/                # Raw source files (before BIDS conversion)
-│   └── README                 # e.g., Excel exports, LimeSurvey archives
+├── sourcedata/                # Raw source files and import documentation
+│   ├── raw/                   # Original data exports (never modify)
+│   │   └── limesurvey/        # LimeSurvey archives (.lsa)
+│   ├── structure/             # Survey definitions (.lss) - no response data
+│   └── imports/               # Import manifests (conversion records)
 │
 ├── derivatives/               # Processed/derived data outputs
-│   └── README                 # e.g., scored data, analysis outputs
+│   └── recipes/               # Scored surveys, computed measures
 │
 ├── code/                      # Analysis scripts
-│   └── README                 # e.g., R scripts, Python notebooks
 │
 ├── stimuli/                   # Stimulus files (if applicable)
 │
 └── library/                   # JSON templates for conversion
-    ├── survey/                # Survey JSON templates (LimeSurvey imports)
+    ├── survey/                # Survey JSON templates
     └── biometrics/            # Biometrics JSON templates
 ```
 
 ## BIDS Standard Folders
 
-- `sourcedata/` - Place original/raw data files here before converting to BIDS format
-- `derivatives/` - Processed outputs (Recipes & Scoring writes to `derivatives/recipes/`)
+- `sourcedata/` - Raw data files organized in subfolders:
+  - `raw/` - Original exports (.lsa, .xlsx, .csv) - never modified after import
+  - `structure/` - Survey definitions (.lss) without response data
+  - `imports/` - JSON manifests documenting each conversion
+- `derivatives/` - Processed outputs (Data Processing writes to `derivatives/recipes/`)
 - `code/` - Analysis scripts (R, Python, SPSS syntax, etc.)
 - `stimuli/` - Stimulus files used in the study (images, audio, etc.)
 
@@ -517,14 +523,85 @@ When using the Converter, point "Template Library Root" to the `library/` folder
         sourcedata_path.mkdir(exist_ok=True)
         created.append("sourcedata/")
 
-        # Add README to sourcedata
-        sourcedata_readme = sourcedata_path / "README"
+        # Add README.md to sourcedata
+        sourcedata_readme = sourcedata_path / "README.md"
         CrossPlatformFile.write_text(
             str(sourcedata_readme),
-            "Place original/raw data files here before converting to BIDS format.\n"
-            "Examples: Excel exports, LimeSurvey archives (.lsa), raw physio recordings.\n"
+            self._create_sourcedata_readme()
         )
-        created.append("sourcedata/README")
+        created.append("sourcedata/README.md")
+
+        # sourcedata/raw/ - Original untouched data files
+        raw_path = sourcedata_path / "raw"
+        raw_path.mkdir(exist_ok=True)
+        created.append("sourcedata/raw/")
+
+        raw_readme = raw_path / "README.md"
+        CrossPlatformFile.write_text(
+            str(raw_readme),
+            "# Raw Data Files\n\n"
+            "Place original/raw data exports here. These files should never be modified.\n\n"
+            "## Supported formats:\n"
+            "- `.lsa` - LimeSurvey Archive (contains structure + responses)\n"
+            "- `.xlsx` / `.csv` - Excel/CSV exports\n"
+            "- `.tsv` - Tab-separated data\n\n"
+            "## Organization:\n"
+            "You can organize by source:\n"
+            "```\n"
+            "raw/\n"
+            "├── limesurvey/\n"
+            "│   └── export_2024-01-15.lsa\n"
+            "├── excel/\n"
+            "│   └── biometrics.xlsx\n"
+            "└── csv/\n"
+            "    └── external_survey.csv\n"
+            "```\n"
+        )
+        created.append("sourcedata/raw/README.md")
+
+        # sourcedata/structure/ - Survey structure definitions (no response data)
+        structure_path = sourcedata_path / "structure"
+        structure_path.mkdir(exist_ok=True)
+        created.append("sourcedata/structure/")
+
+        structure_readme = structure_path / "README.md"
+        CrossPlatformFile.write_text(
+            str(structure_readme),
+            "# Survey Structure Files\n\n"
+            "Place survey structure/definition files here (no response data).\n\n"
+            "## Supported formats:\n"
+            "- `.lss` - LimeSurvey Structure (survey definition only)\n"
+            "- `.json` - PRISM template definitions\n\n"
+            "These files define the questionnaire structure and can be:\n"
+            "- Imported into PRISM to create templates\n"
+            "- Exported to LimeSurvey to create new surveys\n"
+            "- Used for documentation and reproducibility\n"
+        )
+        created.append("sourcedata/structure/README.md")
+
+        # sourcedata/imports/ - Import manifests (conversion records)
+        imports_path = sourcedata_path / "imports"
+        imports_path.mkdir(exist_ok=True)
+        created.append("sourcedata/imports/")
+
+        imports_readme = imports_path / "README.md"
+        CrossPlatformFile.write_text(
+            str(imports_readme),
+            "# Import Manifests\n\n"
+            "This folder contains JSON files documenting each data import.\n\n"
+            "## Purpose:\n"
+            "Import manifests record exactly how raw data was converted to BIDS format:\n"
+            "- Source files used\n"
+            "- Session assignments\n"
+            "- Questionnaire mappings\n"
+            "- Participant ID transformations\n\n"
+            "## Usage:\n"
+            "These files are automatically created when using the Converter tool.\n"
+            "They enable reproducibility and documentation of the data pipeline.\n\n"
+            "## Format:\n"
+            "See PRISM documentation for the import manifest JSON schema.\n"
+        )
+        created.append("sourcedata/imports/README.md")
 
         # derivatives/ - for processed/derived data
         derivatives_path = project_path / "derivatives"
@@ -605,6 +682,102 @@ When using the Converter, point "Template Library Root" to the `library/` folder
         # The converter will look for it at the project root.
 
         return created
+
+    def _create_sourcedata_readme(self) -> str:
+        """Create README.md content for sourcedata folder."""
+        return """# Sourcedata
+
+This folder contains raw source data before BIDS conversion.
+
+## Supported Structures
+
+PRISM supports **two approaches** that can be used together:
+
+### 1. Flat Structure (Bulk Exports)
+For bulk data exports like LimeSurvey archives or Excel files:
+
+```
+sourcedata/
+├── raw/                    # Bulk exports (never modified)
+│   ├── limesurvey/
+│   │   └── export_2024-01.lsa
+│   ├── excel/
+│   │   └── biometrics.xlsx
+│   └── csv/
+│       └── external_survey.csv
+│
+├── structure/              # Survey definitions (no response data)
+│   └── limesurvey/
+│       └── my_survey.lss
+│
+└── imports/                # Import manifests
+    └── 2024-01-20_baseline.json
+```
+
+### 2. BIDS-like Structure (Per-Subject Raw Files)
+For individual raw files that are already organized by subject:
+
+```
+sourcedata/
+├── sub-001/
+│   └── ses-01/
+│       └── physio/
+│           └── sub-001_ses-01_physio.raw
+├── sub-002/
+│   └── ses-01/
+│       └── physio/
+│           └── sub-002_ses-01_physio.raw
+```
+
+### Combined Example
+
+Both approaches can coexist:
+
+```
+sourcedata/
+├── raw/                    # Bulk exports
+│   └── limesurvey/
+│       └── survey_export.lsa
+├── structure/              # Survey definitions
+├── imports/                # Import manifests
+│
+├── sub-001/                # Per-subject raw files
+│   └── ses-01/
+│       └── physio/
+│           └── sub-001_ses-01_physio.raw
+└── sub-002/
+    └── ses-01/
+        └── physio/
+            └── sub-002_ses-01_physio.raw
+```
+
+## When to Use Each Approach
+
+| Data Type | Recommended Location |
+|-----------|---------------------|
+| LimeSurvey exports (.lsa) | `raw/limesurvey/` |
+| Excel/CSV bulk exports | `raw/excel/` or `raw/csv/` |
+| Survey structure files (.lss) | `structure/limesurvey/` |
+| Individual physio recordings | `sub-*/ses-*/physio/` |
+| Individual eyetracking files | `sub-*/ses-*/eyetracking/` |
+| Any per-subject raw file | `sub-*/ses-*/modality/` |
+
+## Import Manifests
+
+The `imports/` folder contains JSON files documenting each conversion:
+- Source files used
+- Session assignments
+- Questionnaire mappings
+- Participant ID transformations
+
+These are automatically created by the Converter tool.
+
+## Important Notes
+
+- Files in sourcedata should **never be modified** after import
+- Import manifests enable **reproducibility**
+- Structure files can be used to **recreate surveys** in LimeSurvey
+"""
 
     def _create_example_survey_template(self) -> dict:
         """Create an example survey JSON template."""

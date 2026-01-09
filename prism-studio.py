@@ -252,6 +252,12 @@ def main():
         action="store_true",
         help="Do not automatically open browser",
     )
+    parser.add_argument(
+        "--browser",
+        type=str,
+        default=None,
+        help="Browser to use (e.g., 'chrome', 'firefox'). Uses system default if not specified.",
+    )
 
     args = parser.parse_args()
 
@@ -282,8 +288,19 @@ def main():
 
             time.sleep(1)  # Wait for server to start
             try:
-                webbrowser.open(url)
-                print("[OK] Browser opened automatically")
+                if args.browser:
+                    # Try to get specific browser
+                    try:
+                        browser = webbrowser.get(args.browser)
+                        browser.open(url)
+                        print(f"[OK] Opened in {args.browser}")
+                    except webbrowser.Error:
+                        print(f"[WARN] Browser '{args.browser}' not found, using default")
+                        webbrowser.open(url)
+                        print("[OK] Browser opened automatically")
+                else:
+                    webbrowser.open(url)
+                    print("[OK] Browser opened automatically")
             except Exception as e:
                 print(f"[INFO] Could not open browser automatically: {e}")
                 print(f"   Please visit {url} manually")

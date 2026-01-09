@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prism-studio.org/schemas/import-manifest.schema.json",
+  "title": "PRISM Import Manifest",
+  "description": "Schema for documenting data imports into PRISM/BIDS format",
+  "type": "object",
+  "required": ["manifest_version", "import_id", "created", "source_files", "target_session"],
+  "properties": {
+    "manifest_version": {
+      "type": "string",
+      "description": "Version of the manifest schema",
+      "const": "1.0"
+    },
+    "import_id": {
+      "type": "string",
+      "description": "Unique identifier for this import (e.g., '2024-01-20_baseline')",
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "created": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when import was performed"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "User or system that performed the import"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of this import"
+    },
+    "source_files": {
+      "type": "array",
+      "description": "List of source files used in this import",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["path", "type"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Relative path from project root (e.g., 'sourcedata/raw/limesurvey/export.lsa')"
+          },
+          "type": {
+            "type": "string",
+            "description": "Type of source file",
+            "enum": ["limesurvey_archive", "limesurvey_structure", "excel", "csv", "tsv", "other"]
+          },
+          "sha256": {
+            "type": "string",
+            "description": "SHA256 hash of the file for integrity verification"
+          },
+          "original_filename": {
+            "type": "string",
+            "description": "Original filename before archiving"
+          },
+          "archived_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the file was archived to sourcedata/"
+          },
+          "file_size_bytes": {
+            "type": "integer",
+            "description": "File size in bytes"
+          }
+        }
+      }
+    },
+    "target_session": {
+      "type": "string",
+      "description": "Session identifier (e.g., 'ses-01')",
+      "pattern": "^ses-[a-zA-Z0-9]+$"
+    },
+    "participant_mapping": {
+      "type": "object",
+      "description": "Configuration for participant ID extraction and transformation",
+      "properties": {
+        "id_column": {
+          "type": "string",
+          "description": "Column name containing participant IDs"
+        },
+        "id_pattern": {
+          "type": "string",
+          "description": "Regex pattern that IDs should match"
+        },
+        "transform": {
+          "type": "string",
+          "description": "Description of ID transformation (e.g., 'P001 -> sub-001')"
+        },
+        "prefix_to_remove": {
+          "type": "string",
+          "description": "Prefix to remove from source IDs"
+        },
+        "prefix_to_add": {
+          "type": "string",
+          "description": "Prefix to add (usually 'sub-')",
+          "default": "sub-"
+        }
+      }
+    },
+    "questionnaire_mappings": {
+      "type": "array",
+      "description": "Mapping of detected variable groups to templates",
+      "items": {
+        "type": "object",
+        "required": ["detected_prefix", "output_task"],
+        "properties": {
+          "detected_prefix": {
+            "type": "string",
+            "description": "Variable prefix detected in source data (e.g., 'phq9_')"
+          },
+          "matched_template": {
+            "type": "string",
+            "description": "Path to template used for conversion"
+          },
+          "match_confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Confidence score of automatic template matching (0-1)"
+          },
+          "user_confirmed": {
+            "type": "boolean",
+            "description": "Whether user explicitly confirmed this mapping",
+            "default": false
+          },
+          "instance": {
+            "type": ["string", "null"],
+            "description": "Instance identifier for repeated questionnaires (e.g., 'pre', 'post', 'fu1')"
+          },
+          "output_task": {
+            "type": "string",
+            "description": "Task name for output files (e.g., 'phq9', 'phq9post')",
+            "pattern": "^[a-zA-Z0-9]+$"
+          },
+          "output_file_pattern": {
+            "type": "string",
+            "description": "Pattern for output files (e.g., 'sub-{id}_ses-01_task-phq9_beh.tsv')"
+          },
+          "variables_mapped": {
+            "type": "array",
+            "description": "List of source variables mapped",
+            "items": {"type": "string"}
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes about this mapping"
+          }
+        }
+      }
+    },
+    "participants_imported": {
+      "type": "array",
+      "description": "List of participant IDs successfully imported",
+      "items": {"type": "string"}
+    },
+    "participants_skipped": {
+      "type": "array",
+      "description": "List of participant IDs skipped (with reasons)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "reason": {"type": "string"}
+        }
+      }
+    },
+    "merge_info": {
+      "type": "object",
+      "description": "Information about merging with existing data",
+      "properties": {
+        "merged_with_existing": {
+          "type": "boolean",
+          "description": "Whether this import was merged with existing data"
+        },
+        "existing_participants_count": {
+          "type": "integer",
+          "description": "Number of existing participants before merge"
+        },
+        "duplicates_found": {
+          "type": "array",
+          "description": "Participant IDs that existed in both sources",
+          "items": {"type": "string"}
+        },
+        "duplicate_handling": {
+          "type": "string",
+          "description": "How duplicates were handled",
+          "enum": ["skip", "overwrite", "flag_for_review"]
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "description": "Warnings generated during import",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {"type": "string"},
+          "message": {"type": "string"},
+          "context": {"type": "string"}
+        }
+      }
+    },
+    "errors": {
+      "type": "array",
+      "description": "Errors encountered during import",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {"type": "string"},
+          "message": {"type": "string"},
+          "context": {"type": "string"}
+        }
+      }
+    },
+    "statistics": {
+      "type": "object",
+      "description": "Import statistics",
+      "properties": {
+        "total_rows_processed": {"type": "integer"},
+        "total_participants": {"type": "integer"},
+        "total_questionnaires": {"type": "integer"},
+        "total_files_created": {"type": "integer"},
+        "processing_time_seconds": {"type": "number"}
+      }
+    }
+  }
+}

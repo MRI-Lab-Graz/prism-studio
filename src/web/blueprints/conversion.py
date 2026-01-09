@@ -12,6 +12,8 @@ import shutil
 import tempfile
 import zipfile
 import base64
+import hashlib
+from datetime import datetime, timezone
 from pathlib import Path
 from flask import Blueprint, request, jsonify, send_file, render_template, current_app, session
 from werkzeug.utils import secure_filename
@@ -55,6 +57,126 @@ conversion_bp = Blueprint('conversion', __name__)
 
 # Batch conversion job tracking
 _batch_convert_jobs = {}
+
+
+def _compute_file_hash(file_path: Path) -> str:
+    """Compute SHA256 hash of a file."""
+    sha256 = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            sha256.update(chunk)
+    return sha256.hexdigest()
+
+
+def _generate_import_manifest(
+    source_file: Path,
+    target_session: str,
+    convert_result,
+    library_dir: Path,
+    participants_imported: list[str] = None,
+    description: str = None,
+) -> dict:
+    """Generate an import manifest documenting the conversion.
+
+    Args:
+        source_file: Path to the source data file
+        target_session: Target session identifier (e.g., "ses-01")
+        convert_result: Result from survey converter with tasks_included, id_column, etc.
+        library_dir: Path to the template library used
+        participants_imported: List of participant IDs that were imported
+        description: Optional description of the import
+
+    Returns:
+        Import manifest dictionary
+    """
+    now = datetime.now(timezone.utc)
+    import_id = now.strftime("%Y-%m-%d") + "_" + source_file.stem.replace(" ", "_")[:20]
+
+    # Determine source file type
+    suffix = source_file.suffix.lower()
+    if suffix == ".lsa":
+        file_type = "limesurvey_archive"
+    elif suffix == ".lss":
+        file_type = "limesurvey_structure"
+    elif suffix == ".xlsx":
+        file_type = "excel"
+    elif suffix == ".csv":
+        file_type = "csv"
+    elif suffix == ".tsv":
+        file_type = "tsv"
+    else:
+        file_type = "other"
+
+    manifest = {
+        "manifest_version": "1.0",
+        "import_id": import_id,
+        "created": now.isoformat(),
+        "created_by": "prism-studio",
+        "description": description or f"Import from {source_file.name}",
+        "source_files": [
+            {
+                "path": f"sourcedata/raw/{source_file.name}",
+                "type": file_type,
+                "sha256": _compute_file_hash(source_file) if source_file.exists() else None,
+                "original_filename": source_file.name,
+                "archived_date": now.isoformat(),
+                "file_size_bytes": source_file.stat().st_size if source_file.exists() else None,
+            }
+        ],
+        "target_session": target_session,
+        "participant_mapping": {
+            "id_column": convert_result.id_column if convert_result else None,
+            "prefix_to_add": "sub-",
+        },
+        "questionnaire_mappings": [],
+        "participants_imported": participants_imported or [],
+        "participants_skipped": [],
+        "warnings": [],
+        "statistics": {
+            "total_questionnaires": len(convert_result.tasks_included) if convert_result else 0,
+            "total_participants": len(participants_imported) if participants_imported else 0,
+        },
+    }
+
+    # Add questionnaire mappings from convert result
+    if convert_result and hasattr(convert_result, "tasks_included"):
+        for task_name in convert_result.tasks_included:
+            # Try to find the matching template
+            template_path = None
+            survey_dir = library_dir / "survey" if (library_dir / "survey").is_dir() else library_dir
+            template_candidates = list(survey_dir.glob(f"survey-{task_name}.json"))
+            if template_candidates:
+                template_path = str(template_candidates[0].relative_to(library_dir))
+
+            mapping = {
+                "detected_prefix": f"{task_name}_",
+                "matched_template": template_path,
+                "match_confidence": 1.0 if template_path else 0.0,
+                "user_confirmed": True,  # User initiated the conversion
+                "instance": None,
+                "output_task": task_name,
+                "output_file_pattern": f"sub-{{id}}_{target_session}_task-{task_name}_beh.tsv",
+            }
+            manifest["questionnaire_mappings"].append(mapping)
+
+    # Add warnings from conversion
+    if convert_result:
+        if hasattr(convert_result, "conversion_warnings") and convert_result.conversion_warnings:
+            for warn in convert_result.conversion_warnings:
+                manifest["warnings"].append({
+                    "code": "CONVERSION_WARNING",
+                    "message": warn,
+                    "context": "conversion"
+                })
+
+        if hasattr(convert_result, "unknown_columns") and convert_result.unknown_columns:
+            manifest["warnings"].append({
+                "code": "UNKNOWN_COLUMNS",
+                "message": f"Columns not mapped: {', '.join(convert_result.unknown_columns[:10])}",
+                "context": "column_mapping"
+            })
+
+    return manifest
 
 @conversion_bp.route("/api/survey-languages", methods=["GET"])
 def api_survey_languages():
@@ -179,6 +301,11 @@ def api_survey_convert():
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
 
+    # Duplicate handling: error (default), keep_first, keep_last, sessions
+    duplicate_handling = (request.form.get("duplicate_handling") or "error").strip().lower()
+    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
+        duplicate_handling = "error"
+
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_")
     try:
         tmp_dir_path = Path(tmp_dir)
@@ -226,6 +353,7 @@ def api_survey_convert():
                 authors=["prism-studio"],
                 language=language,
                 alias_file=alias_path,
+                duplicate_handling=duplicate_handling,
             )
         elif suffix == ".lsa":
             convert_survey_lsa_to_prism_dataset(
@@ -244,6 +372,7 @@ def api_survey_convert():
                 language=language,
                 alias_file=alias_path,
                 strict_levels=True if strict_levels else None,
+                duplicate_handling=duplicate_handling,
             )
 
         mem = io.BytesIO()
@@ -328,6 +457,11 @@ def api_survey_convert_validate():
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
 
+    # Duplicate handling: error (default), keep_first, keep_last, sessions
+    duplicate_handling = (request.form.get("duplicate_handling") or "error").strip().lower()
+    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
+        duplicate_handling = "error"
+
     # Save to project folder option
     save_to_project_raw = (request.form.get("save_to_project") or "").strip().lower()
     save_to_project = save_to_project_raw in {"1", "true", "yes", "on"}
@@ -364,6 +498,7 @@ def api_survey_convert_validate():
                 sheet=sheet, unknown=unknown,
                 dry_run=False, force=True, name=dataset_name, authors=["prism-studio"],
                 language=language, alias_file=alias_path,
+                duplicate_handling=duplicate_handling,
             )
         elif suffix == ".lsa":
             convert_result = convert_survey_lsa_to_prism_dataset(
@@ -374,6 +509,7 @@ def api_survey_convert_validate():
                 force=True, name=dataset_name, authors=["prism-studio"],
                 language=language, alias_file=alias_path,
                 strict_levels=True if strict_levels else None,
+                duplicate_handling=duplicate_handling,
             )
         add_log("Conversion completed", "success")
 
@@ -470,10 +606,17 @@ def api_survey_convert_validate():
         saved_to_project = None
         saved_file_count = 0
         source_file_archived = None
+        import_manifest_path = None
         if save_to_project and project_path and os.path.isdir(project_path):
             try:
                 project_root = Path(project_path)
                 add_log(f"Saving converted data to project: {project_path}", "info")
+
+                # Extract participant IDs from output (sub-* directories)
+                participants_imported = []
+                for item in output_root.iterdir():
+                    if item.is_dir() and item.name.startswith("sub-"):
+                        participants_imported.append(item.name)
 
                 # Copy all converted files to project root (merge, don't replace)
                 for item in output_root.iterdir():
@@ -497,15 +640,46 @@ def api_survey_convert_validate():
                         shutil.copy2(item, dest)
                         saved_file_count += 1
 
-                # Archive raw source file to sourcedata/ folder
+                # Archive raw source file to sourcedata/raw/ folder
                 sourcedata_dir = project_root / "sourcedata"
+                raw_dir = sourcedata_dir / "raw"
                 if sourcedata_dir.exists() and input_path.exists():
-                    source_dest = sourcedata_dir / input_path.name
+                    # Ensure raw/ subdirectory exists
+                    raw_dir.mkdir(parents=True, exist_ok=True)
+                    source_dest = raw_dir / input_path.name
                     # Don't overwrite if already exists (might be same file)
                     if not source_dest.exists() or source_dest.resolve() != input_path.resolve():
                         shutil.copy2(input_path, source_dest)
                         source_file_archived = str(source_dest)
-                        add_log(f"Archived source file to: sourcedata/{input_path.name}", "info")
+                        add_log(f"Archived source file to: sourcedata/raw/{input_path.name}", "info")
+
+                # Generate and save import manifest
+                imports_dir = sourcedata_dir / "imports"
+                if sourcedata_dir.exists():
+                    imports_dir.mkdir(parents=True, exist_ok=True)
+
+                    # Determine target session
+                    target_session = session_override or "ses-01"
+                    if not target_session.startswith("ses-"):
+                        target_session = f"ses-{target_session}"
+
+                    manifest = _generate_import_manifest(
+                        source_file=input_path,
+                        target_session=target_session,
+                        convert_result=convert_result,
+                        library_dir=library_root,
+                        participants_imported=participants_imported,
+                        description=f"Survey data import from {input_path.name}",
+                    )
+
+                    # Save manifest with timestamp-based filename
+                    manifest_filename = f"import_{manifest['import_id']}.json"
+                    manifest_path = imports_dir / manifest_filename
+                    with open(manifest_path, "w", encoding="utf-8") as f:
+                        json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+                    import_manifest_path = str(manifest_path)
+                    add_log(f"Created import manifest: sourcedata/imports/{manifest_filename}", "info")
 
                 saved_to_project = str(project_root)
                 add_log(f"Saved {saved_file_count} files to project folder", "success")
