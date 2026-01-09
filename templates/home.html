@@ -21,6 +21,50 @@
             </div>
         </div>
 
+        {% if current_project and current_project.path %}
+        <!-- Quick Actions (when project is selected) -->
+        <div class="card border-primary mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="fas fa-folder-open text-primary fa-lg me-3"></i>
+                    <div>
+                        <h6 class="mb-0">{{ current_project.name or 'Current Project' }}</h6>
+                        <small class="text-muted">{{ current_project.path }}</small>
+                    </div>
+                    <a href="{{ url_for('projects.projects_page') }}" class="btn btn-sm btn-outline-secondary ms-auto">
+                        <i class="fas fa-exchange-alt me-1"></i>Change
+                    </a>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('validation.validate_dataset') }}" class="btn btn-success">
+                        <i class="fas fa-check-circle me-2"></i>Validate
+                    </a>
+                    <a href="{{ url_for('tools.converter') }}" class="btn btn-warning">
+                        <i class="fas fa-file-import me-2"></i>Import Data
+                    </a>
+                    <a href="{{ url_for('tools.recipes') }}" class="btn btn-primary">
+                        <i class="fas fa-calculator me-2"></i>Process
+                    </a>
+                    <a href="{{ url_for('tools.template_editor') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-file-code me-2"></i>Templates
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- No Project - Quick Start -->
+        <div class="card border-secondary mb-4 bg-light">
+            <div class="card-body p-4 text-center">
+                <i class="fas fa-folder-plus fa-2x text-secondary mb-3"></i>
+                <h5>No Project Selected</h5>
+                <p class="text-muted mb-3">Create or open a project to get started with PRISM Studio</p>
+                <a href="{{ url_for('projects.projects_page') }}" class="btn btn-primary">
+                    <i class="fas fa-folder-open me-2"></i>Open Projects
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Part 1: PRISM Specifications -->
         <div class="card feature-card mb-5 border-primary">
             <div class="card-body p-5">
@@ -100,17 +144,17 @@
                     </div>
                 </div>
 
-                <!-- Recipes & Scoring Card -->
+                <!-- Data Processing Card -->
                 <div class="col-md-6">
                     <div class="card feature-card h-100">
                         <div class="card-body text-center p-4">
                             <i class="fas fa-calculator fa-3x text-primary mb-3"></i>
-                            <h5 class="card-title mb-3">Recipes & Scoring</h5>
+                            <h5 class="card-title mb-3">Data Processing</h5>
                             <p class="card-text text-muted mb-4">
-                                Take a PRISM dataset and generate analysis-ready outputs like scores and subscales using recipes.
+                                Generate analysis-ready outputs like scores and subscales from your PRISM dataset.
                             </p>
                             <a href="{{ url_for('tools.recipes') }}" class="btn btn-primary">
-                                <i class="fas fa-arrow-right me-2"></i>Open Recipes
+                                <i class="fas fa-arrow-right me-2"></i>Open Processing
                             </a>
                         </div>
                     </div>
@@ -134,94 +178,79 @@
             </div>
         </div>
 
-        <!-- Features Section -->
+        <!-- Key Highlights Section (Collapsible) -->
         <div class="card feature-card">
-            <div class="card-body p-5">
-                <h4 class="card-title mb-4">
-                    <i class="fas fa-star text-warning me-2"></i>
-                    Key Highlights
-                </h4>
-                
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-microscope me-2"></i>
-                                Multi-Modal Support
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                Specialized validation for surveys, biometrics, physio, and eyetracking alongside standard BIDS modalities.
-                            </p>
+            <div class="card-header bg-white border-bottom-0 py-3">
+                <a class="text-decoration-none d-flex justify-content-between align-items-center"
+                   data-bs-toggle="collapse" href="#keyHighlights" role="button" aria-expanded="false">
+                    <h5 class="mb-0">
+                        <i class="fas fa-star text-warning me-2"></i>
+                        Key Highlights
+                    </h5>
+                    <i class="fas fa-chevron-down text-muted"></i>
+                </a>
+            </div>
+            <div class="collapse" id="keyHighlights">
+                <div class="card-body pt-0">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="text-center p-2">
+                                <i class="fas fa-microscope text-primary mb-2"></i>
+                                <h6 class="small mb-1">Multi-Modal</h6>
+                                <p class="text-muted small mb-0">Surveys, biometrics, physio, eyetracking</p>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-magic me-2"></i>
-                                Automated Processing
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                Instantly calculate scores, subscales, and handle reverse-coding for standardized psychological questionnaires.
-                            </p>
+                        <div class="col-md-4">
+                            <div class="text-center p-2">
+                                <i class="fas fa-magic text-primary mb-2"></i>
+                                <h6 class="small mb-1">Auto Processing</h6>
+                                <p class="text-muted small mb-0">Scores, subscales, reverse-coding</p>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-sync me-2"></i>
-                                LimeSurvey Ecosystem
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                Generate LimeSurvey templates and convert exported responses back into structured PRISM datasets.
-                            </p>
+                        <div class="col-md-4">
+                            <div class="text-center p-2">
+                                <i class="fas fa-sync text-primary mb-2"></i>
+                                <h6 class="small mb-1">LimeSurvey</h6>
+                                <p class="text-muted small mb-0">Import/export integration</p>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-database me-2"></i>
-                                FAIR Metadata Standards
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                Enforces rich, structured JSON sidecars to ensure your data is Findable, Accessible, Interoperable, and Reusable.
-                            </p>
+                        <div class="col-md-4">
+                            <div class="text-center p-2">
+                                <i class="fas fa-database text-primary mb-2"></i>
+                                <h6 class="small mb-1">FAIR Data</h6>
+                                <p class="text-muted small mb-0">Rich structured metadata</p>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-bolt me-2"></i>
-                                Efficient Validation
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                DataLad-style metadata-only upload allows you to validate massive datasets without transferring large binary files.
-                            </p>
+                        <div class="col-md-4">
+                            <div class="text-center p-2">
+                                <i class="fas fa-bolt text-primary mb-2"></i>
+                                <h6 class="small mb-1">Efficient</h6>
+                                <p class="text-muted small mb-0">Metadata-only validation</p>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-puzzle-piece me-2"></i>
-                                BIDS Compatibility
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                PRISM datasets remain 100% BIDS-compliant, ensuring they work with fMRIPrep and other standard neuroimaging tools.
-                            </p>
+                        <div class="col-md-4">
+                            <div class="text-center p-2">
+                                <i class="fas fa-puzzle-piece text-primary mb-2"></i>
+                                <h6 class="small mb-1">BIDS Compatible</h6>
+                                <p class="text-muted small mb-0">Works with fMRIPrep</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Info Section -->
-        <div class="alert alert-info mt-5" role="alert">
-            <i class="fas fa-info-circle me-2"></i>
-            <strong>Getting Started:</strong> Choose one of the tools above to begin. Start with <strong>Validator</strong> to check your dataset, then use <strong>Data Processing</strong> to generate survey scores.
+        <!-- Getting Started Section -->
+        <div class="alert alert-primary mt-5" role="alert">
+            <h6 class="alert-heading mb-2">
+                <i class="fas fa-rocket me-2"></i>Getting Started
+            </h6>
+            <p class="mb-0">
+                <strong>1.</strong> Create or open a <strong>Project</strong> to set your working context<br>
+                <strong>2.</strong> Use <strong>Converter</strong> to import LimeSurvey or Excel data<br>
+                <strong>3.</strong> <strong>Validate</strong> your dataset for BIDS compliance<br>
+                <strong>4.</strong> Run <strong>Data Processing</strong> to generate scores and subscales
+            </p>
         </div>
     </div>
 </div>

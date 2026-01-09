@@ -58,7 +58,7 @@ class BIDSSchemaLoader:
             try:
                 with open(self.schema_file, "r") as f:
                     self.schema = json.load(f)
-                print(f"✓ Schema loaded from cache: {self.schema_file}")
+                print(f"[OK] Schema loaded from cache: {self.schema_file}")
                 self._extract_version()
                 return self.schema
             except Exception as e:
@@ -72,7 +72,7 @@ class BIDSSchemaLoader:
         if self._load_from_bidsschematools():
             return self.schema
 
-        print("✗ Error: Failed to load BIDS schema from all sources")
+        print("[ERROR] Failed to load BIDS schema from all sources")
         return None
 
     def _load_from_remote(self) -> bool:
@@ -93,7 +93,7 @@ class BIDSSchemaLoader:
             with open(self.schema_file, "w") as f:
                 json.dump(self.schema, f, indent=2)
 
-            print(f"✓ Schema loaded from remote and cached to: {self.schema_file}")
+            print(f"[OK] Schema loaded from remote and cached to: {self.schema_file}")
             self._extract_version()
             return True
 
@@ -123,7 +123,7 @@ class BIDSSchemaLoader:
             with open(self.schema_file, "w") as f:
                 json.dump(self.schema, f, indent=2)
 
-            print("✓ Schema loaded from bidsschematools and cached")
+            print("[OK] Schema loaded from bidsschematools and cached")
             self._extract_version()
             return True
 

@@ -73,9 +73,9 @@ try:
         SKIP_EXTENSIONS,
     )
 
-    print("✓ Web modules loaded from src/web/")
+    print("[OK] Web modules loaded from src/web/")
 except ImportError as e:
-    print(f"⚠️  Could not import web modules: {e}")
+    print(f"[WARN] Could not import web modules: {e}")
     # Fallback definitions will be provided inline if needed
 
 # Legacy alias for backwards compatibility
@@ -84,16 +84,16 @@ run_main_validator = run_validation
 # Import core components
 try:
     from src.survey_manager import SurveyManager
-    print("✓ SurveyManager loaded")
+    print("[OK] SurveyManager loaded")
 except ImportError as e:
     SurveyManager = None
-    print(f"⚠️  Could not import SurveyManager: {e}")
+    print(f"[WARN] Could not import SurveyManager: {e}")
 
 try:
     from src.recipes_surveys import compute_survey_recipes
 except ImportError as e:
     compute_survey_recipes = None
-    print(f"⚠️  Could not import compute_survey_recipes: {e}")
+    print(f"[WARN] Could not import compute_survey_recipes: {e}")
 
 
 if getattr(sys, "frozen", False):
@@ -119,7 +119,7 @@ survey_manager = None
 if SurveyManager:
     survey_manager = SurveyManager(survey_library_path)
     app.config["SURVEY_MANAGER"] = survey_manager
-    print(f"✓ Survey Manager initialized at {survey_library_path}")
+    print(f"[OK] Survey Manager initialized at {survey_library_path}")
 
 # Register JSON Editor blueprint if available
 try:
@@ -127,11 +127,11 @@ try:
 
     json_editor_bp = create_json_editor_blueprint(bids_folder=None)
     app.register_blueprint(json_editor_bp)
-    print("✓ JSON Editor blueprint registered at /editor")
+    print("[OK] JSON Editor blueprint registered at /editor")
 except ImportError as e:
-    print(f"ℹ️  JSON Editor not available: {e}")
+    print(f"[INFO] JSON Editor not available: {e}")
 except Exception as e:
-    print(f"⚠️  Error registering JSON Editor blueprint: {e}")
+    print(f"[WARN] Error registering JSON Editor blueprint: {e}")
 
 # Register REST API blueprint
 try:
@@ -140,11 +140,11 @@ try:
     schema_dir = str(BASE_DIR / "schemas")
     api_bp = create_api_blueprint(schema_dir=schema_dir)
     app.register_blueprint(api_bp)
-    print("✓ REST API registered at /api/v1")
+    print("[OK] REST API registered at /api/v1")
 except ImportError as e:
-    print(f"ℹ️  REST API not available: {e}")
+    print(f"[INFO] REST API not available: {e}")
 except Exception as e:
-    print(f"⚠️  Error registering REST API blueprint: {e}")
+    print(f"[WARN] Error registering REST API blueprint: {e}")
 
 # Register Modular Blueprints
 try:
@@ -161,11 +161,11 @@ try:
     app.register_blueprint(validation_bp)
     app.register_blueprint(tools_bp)
     app.register_blueprint(projects_bp)
-    print("✓ Modular blueprints registered (neurobagel, conversion, library, validation, tools, projects)")
+    print("[OK] Modular blueprints registered (neurobagel, conversion, library, validation, tools, projects)")
 except ImportError as e:
-    print(f"⚠️  Error importing modular blueprints: {e}")
+    print(f"[WARN] Error importing modular blueprints: {e}")
 except Exception as e:
-    print(f"⚠️  Error registering modular blueprints: {e}")
+    print(f"[WARN] Error registering modular blueprints: {e}")
 
 # Note: METADATA_EXTENSIONS and SKIP_EXTENSIONS are now imported from src.web.upload
 # Note: format_validation_results, get_error_description, get_error_documentation_url
@@ -262,16 +262,16 @@ def main():
     if not args.public:  # Only auto-find port for local binding
         port = find_free_port(args.port)
         if port != args.port:
-            print(f"ℹ️  Port {args.port} is in use, using {port} instead")
+            print(f"[INFO] Port {args.port} is in use, using {port} instead")
 
     display_host = "localhost" if host == "127.0.0.1" else host
     url = f"http://{display_host}:{port}"
 
-    print("🌐 Starting PRISM Studio")
-    print(f"🔗 URL: {url}")
+    print("Starting PRISM Studio")
+    print(f"URL: {url}")
     if args.public:
-        print("⚠️  Warning: Running in public mode - accessible from other computers")
-    print("💡 Press Ctrl+C to stop the server")
+        print("[WARN] Running in public mode - accessible from other computers")
+    print("Press Ctrl+C to stop the server")
     print()
 
     # Open browser in a separate thread to avoid blocking the Flask server
@@ -283,9 +283,9 @@ def main():
             time.sleep(1)  # Wait for server to start
             try:
                 webbrowser.open(url)
-                print("✅ Browser opened automatically")
+                print("[OK] Browser opened automatically")
             except Exception as e:
-                print(f"ℹ️  Could not open browser automatically: {e}")
+                print(f"[INFO] Could not open browser automatically: {e}")
                 print(f"   Please visit {url} manually")
 
         browser_thread = threading.Thread(target=open_browser, daemon=True)
@@ -297,10 +297,10 @@ def main():
         try:
             from waitress import serve
 
-            print(f"🚀 Running with Waitress server on {host}:{port}")
+            print(f"Running with Waitress server on {host}:{port}")
             serve(app, host=host, port=port)
         except ImportError:
-            print("⚠️  Waitress not installed, falling back to Flask development server")
+            print("[WARN] Waitress not installed, falling back to Flask development server")
             app.run(host=host, port=port, debug=False)
 
 

@@ -28,7 +28,7 @@ try:
     from schema_manager import get_available_schema_versions, load_all_schemas
     from issues import tuple_to_issue, issues_to_dict, summarize_issues, Issue
 except ImportError as e:
-    print(f"⚠️  API import error: {e}")
+    print(f"[WARN] API import error: {e}")
     validate_dataset = None
     get_available_schema_versions = None
 

@@ -110,6 +110,6 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
                     added_rules.append(rule)
 
         except IOError as e:
-            print(f"⚠️ Warning: Could not update .bidsignore: {e}")
+            print(f"[WARN] Could not update .bidsignore: {e}")
 
     return added_rules

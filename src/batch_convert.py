@@ -561,7 +561,7 @@ def batch_convert_folder(
         output_folder=output_folder,
     )
 
-    log(f"📂 Scanning source folder: {source_folder.name}", "info")
+    log(f"Scanning source folder: {source_folder.name}", "info")
 
     # Find all supported files
     all_extensions = set()
@@ -592,7 +592,7 @@ def batch_convert_folder(
         elif ext in all_extensions:
             files_to_process.append(file_path)
 
-    log(f"📋 Found {len(files_to_process)} files to process", "info")
+    log(f"Found {len(files_to_process)} files to process", "info")
 
     for idx, file_path in enumerate(files_to_process, 1):
         ext = file_path.suffix.lower()
@@ -605,7 +605,7 @@ def batch_convert_folder(
             msg = f"Invalid filename pattern. Expected: sub-XXX_ses-YYY_task-ZZZ.{ext}"
             result.skipped.append((file_path, msg))
             log(
-                f"⏭️  [{idx}/{len(files_to_process)}] Skipped: {file_path.name} - {msg}",
+                f"[SKIP] [{idx}/{len(files_to_process)}] Skipped: {file_path.name} - {msg}",
                 "warning",
             )
             continue
@@ -621,7 +621,7 @@ def batch_convert_folder(
             target_modality = modality
 
         log(
-            f"🔄 [{idx}/{len(files_to_process)}] Processing: {file_path.name} ({target_modality})",
+            f"[...] [{idx}/{len(files_to_process)}] Processing: {file_path.name} ({target_modality})",
             "info",
         )
 
@@ -649,7 +649,7 @@ def batch_convert_folder(
             msg = f"Unknown modality for extension: {ext}"
             result.skipped.append((file_path, msg))
             log(
-                f"⏭️  [{idx}/{len(files_to_process)}] Skipped: {file_path.name} - {msg}",
+                f"[SKIP] [{idx}/{len(files_to_process)}] Skipped: {file_path.name} - {msg}",
                 "warning",
             )
             continue
@@ -658,23 +658,23 @@ def batch_convert_folder(
 
         if converted.success:
             log(
-                f"✅ [{idx}/{len(files_to_process)}] Success: {file_path.name} → {converted.modality}/",
+                f"[OK] [{idx}/{len(files_to_process)}] Success: {file_path.name} -> {converted.modality}/",
                 "success",
             )
         else:
             log(
-                f"❌ [{idx}/{len(files_to_process)}] Error: {file_path.name} - {converted.error}",
+                f"[ERROR] [{idx}/{len(files_to_process)}] Error: {file_path.name} - {converted.error}",
                 "error",
             )
 
     # Summary
     log("", "info")
-    log("📊 Conversion complete:", "info")
-    log(f"   ✅ Successful: {result.success_count}", "success")
+    log("Conversion complete:", "info")
+    log(f"   [OK] Successful: {result.success_count}", "success")
     if result.error_count > 0:
-        log(f"   ❌ Errors: {result.error_count}", "error")
+        log(f"   [ERROR] Errors: {result.error_count}", "error")
     if result.skipped:
-        log(f"   ⏭️  Skipped: {len(result.skipped)}", "warning")
+        log(f"   [SKIP] Skipped: {len(result.skipped)}", "warning")
 
     return result
 
@@ -761,17 +761,17 @@ if __name__ == "__main__":
     create_dataset_description(args.output, name=args.dataset_name)
 
     # Print summary
-    print(f"✅ Successfully converted: {result.success_count} files")
+    print(f"[OK] Successfully converted: {result.success_count} files")
     if result.error_count > 0:
-        print(f"❌ Errors: {result.error_count} files")
+        print(f"[ERROR] Errors: {result.error_count} files")
     if result.skipped:
-        print(f"⏭️  Skipped: {len(result.skipped)} files")
+        print(f"[SKIP] Skipped: {len(result.skipped)} files")
         for path, reason in result.skipped:
             print(f"   - {path.name}: {reason}")
 
     print()
     for conv in result.converted:
-        status = "✅" if conv.success else "❌"
-        print(f"{status} {conv.source_path.name} → {conv.modality}/")
+        status = "[OK]" if conv.success else "[ERROR]"
+        print(f"{status} {conv.source_path.name} -> {conv.modality}/")
         if conv.error:
             print(f"   Error: {conv.error}")

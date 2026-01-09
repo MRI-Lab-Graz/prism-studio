@@ -161,6 +161,20 @@
         </div>
     </div>
 
+    <!-- Recent Projects Section -->
+    <div class="card shadow-sm mb-4" id="recentProjectsCard" style="display: none;">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">
+                <i class="fas fa-history text-muted me-2"></i>Recent Projects
+            </h6>
+        </div>
+        <div class="card-body py-2">
+            <div id="recentProjectsList" class="list-group list-group-flush">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <!-- Create New Project Form -->
     <div class="form-section" id="section-create">
         <div class="card shadow-sm">
@@ -424,10 +438,100 @@
 
 {% block scripts %}
 <script>
+    // ===== RECENT PROJECTS MANAGEMENT =====
+    const RECENT_PROJECTS_KEY = 'prism_recent_projects';
+    const MAX_RECENT_PROJECTS = 5;
+
+    // Get recent projects from localStorage
+    function getRecentProjects() {
+        try {
+            const stored = localStorage.getItem(RECENT_PROJECTS_KEY);
+            return stored ? JSON.parse(stored) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    // Save project to recent list
+    function addToRecentProjects(path, name) {
+        let recent = getRecentProjects();
+        // Remove if already exists (will re-add at top)
+        recent = recent.filter(p => p.path !== path);
+        // Add to beginning
+        recent.unshift({ path, name, timestamp: Date.now() });
+        // Keep only max items
+        recent = recent.slice(0, MAX_RECENT_PROJECTS);
+        localStorage.setItem(RECENT_PROJECTS_KEY, JSON.stringify(recent));
+        renderRecentProjects();
+    }
+
+    // Render recent projects list
+    function renderRecentProjects() {
+        const recent = getRecentProjects();
+        const card = document.getElementById('recentProjectsCard');
+        const list = document.getElementById('recentProjectsList');
+
+        if (recent.length === 0) {
+            card.style.display = 'none';
+            return;
+        }
+
+        card.style.display = 'block';
+        list.innerHTML = recent.map(p => `
+            <a href="#" class="list-group-item list-group-item-action py-2 d-flex justify-content-between align-items-center recent-project-item"
+               data-path="${escapeHtml(p.path)}" data-name="${escapeHtml(p.name || '')}">
+                <div class="text-truncate me-2">
+                    <i class="fas fa-folder text-primary me-2"></i>
+                    <strong>${escapeHtml(p.name || p.path.split(/[\\/]/).pop())}</strong>
+                    <br><small class="text-muted">${escapeHtml(p.path)}</small>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-recent" data-path="${escapeHtml(p.path)}" title="Remove from recent">
+                    <i class="fas fa-times"></i>
+                </button>
+            </a>
+        `).join('');
+
+        // Attach click handlers
+        list.querySelectorAll('.recent-project-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-recent')) return;
+                e.preventDefault();
+                const path = this.dataset.path;
+                document.getElementById('existingPath').value = path;
+                selectProjectType('open');
+                document.getElementById('openProjectForm').dispatchEvent(new Event('submit'));
+            });
+        });
+
+        list.querySelectorAll('.remove-recent').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                removeFromRecentProjects(this.dataset.path);
+            });
+        });
+    }
+
+    // Remove project from recent list
+    function removeFromRecentProjects(path) {
+        let recent = getRecentProjects();
+        recent = recent.filter(p => p.path !== path);
+        localStorage.setItem(RECENT_PROJECTS_KEY, JSON.stringify(recent));
+        renderRecentProjects();
+    }
+
+    // Escape HTML for safe rendering
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     // Load global settings on page load
     document.addEventListener('DOMContentLoaded', function() {
         loadGlobalSettings();
         loadLibraryInfo();
+        renderRecentProjects();
 
         // Update chevron icon on collapse toggle
         const settingsSection = document.getElementById('settingsSection');
@@ -725,6 +829,9 @@
             resultDiv.style.display = 'block';
 
             if (result.success) {
+                // Add to recent projects
+                addToRecentProjects(result.path, projectName);
+
                 resultDiv.innerHTML = `
                     <div class="alert alert-success">
                         <h5><i class="fas fa-check-circle me-2"></i>Project Created Successfully!</h5>
@@ -809,6 +916,10 @@
             const stats = result.stats;
             const issues = result.issues;
             const fixableIssues = result.fixable_issues;
+
+            // Add to recent projects on successful validation
+            const projectName = path.split(/[\\/]/).pop();
+            addToRecentProjects(path, projectName);
 
             let statusClass = 'valid';
             let statusIcon = 'check-circle';

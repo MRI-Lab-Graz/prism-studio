@@ -28,7 +28,7 @@ def run_bids_validator(
         List of (severity, message) tuples
     """
     issues = []
-    print("\n🤖 Running standard BIDS Validator...")
+    print("\n[INFO] Running standard BIDS Validator...")
 
     placeholders = placeholders or set()
     placeholder_basenames = {os.path.basename(p) for p in placeholders}
@@ -68,11 +68,11 @@ def run_bids_validator(
         return any(loc.endswith(p) or p.endswith(loc) for p in placeholders)
 
     if verbose and structure_only:
-        print("   ℹ️  Detected structure-only upload. Will suppress BIDS data-content checks.")
+        print("   [INFO] Detected structure-only upload. Will suppress BIDS data-content checks.")
 
     if placeholders and verbose:
         print(
-            f"   ℹ️  Found {len(placeholders)} placeholder files. Will suppress content errors for these."
+            f"   [INFO] Found {len(placeholders)} placeholder files. Will suppress content errors for these."
         )
 
     # 1. Try Deno-based validator (modern)
@@ -141,7 +141,7 @@ def run_bids_validator(
                 return issues
 
             except json.JSONDecodeError:
-                print("   ❌ Error: Could not parse Deno BIDS validator JSON output.")
+                print("   [ERROR] Could not parse Deno BIDS validator JSON output.")
                 issues.append(
                     (
                         "ERROR",
@@ -151,7 +151,7 @@ def run_bids_validator(
                 return issues
         else:
             print(
-                f"   ❌ Error: Deno validator produced no output. Stderr: {process.stderr}"
+                f"   [ERROR] Deno validator produced no output. Stderr: {process.stderr}"
             )
             issues.append(("ERROR", f"BIDS Validator (Deno) failed: {process.stderr}"))
             return issues
@@ -161,7 +161,7 @@ def run_bids_validator(
         pass
 
     # 2. Try legacy Python/Node CLI validator
-    print("   ⚠️  Deno not found. Falling back to legacy 'bids-validator' CLI...")
+    print("   [WARN] Deno not found. Falling back to legacy 'bids-validator' CLI...")
     try:
         # Check if bids-validator is installed
         subprocess.run(

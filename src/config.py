@@ -152,10 +152,10 @@ def load_config(dataset_path: str) -> PrismConfig:
         return config
 
     except json.JSONDecodeError as e:
-        print(f"⚠️  Error parsing config file {config_path}: {e}")
+        print(f"[WARN] Error parsing config file {config_path}: {e}")
         return PrismConfig()
     except Exception as e:
-        print(f"⚠️  Error loading config file {config_path}: {e}")
+        print(f"[WARN] Error loading config file {config_path}: {e}")
         return PrismConfig()
 
 
