@@ -201,9 +201,15 @@ def converter():
     project_path = session.get("current_project_path")
     default_library_path = None
     if project_path:
-        candidate = (Path(project_path) / "library").expanduser()
+        # Check for standard PRISM library location (code/library)
+        # We also check the legacy location (library) for backward compatibility
+        candidate = (Path(project_path) / "code" / "library").expanduser()
         if candidate.exists() and candidate.is_dir():
             default_library_path = candidate
+        else:
+            candidate = (Path(project_path) / "library").expanduser()
+            if candidate.exists() and candidate.is_dir():
+                default_library_path = candidate
 
     if default_library_path is None:
         default_library_path = _default_library_root_for_templates(modality="survey")

@@ -85,8 +85,7 @@ def create_project():
         "path": "/path/to/project",
         "name": "My Study",
         "sessions": 2,
-        "modalities": ["survey", "biometrics"],
-        "create_example": true
+        "modalities": ["survey", "biometrics"]
     }
     """
     try:
@@ -103,8 +102,7 @@ def create_project():
         config = {
             "name": data.get("name", Path(path).name),
             "sessions": data.get("sessions", 0),
-            "modalities": data.get("modalities", ["survey", "biometrics"]),
-            "create_example": data.get("create_example", True)
+            "modalities": data.get("modalities", ["survey", "biometrics"])
         }
 
         result = _project_manager.create_project(path, config)

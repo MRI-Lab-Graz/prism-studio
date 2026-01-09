@@ -190,15 +190,7 @@
                         <div class="col-md-6">
                             <label for="projectSessions" class="form-label fw-bold">Number of Sessions</label>
                             <input type="number" class="form-control" id="projectSessions" min="1" max="99" value="1">
-                            <small class="text-muted">Creates ses-01, ses-02, etc. folders</small>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-check mt-4">
-                                <input class="form-check-input" type="checkbox" id="createExample" checked>
-                                <label class="form-check-label" for="createExample">
-                                    Create example subject folder (sub-example/)
-                                </label>
-                            </div>
+                            <small class="text-muted">Records how many sessions your study uses (shown in the README).</small>
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-bold">Modalities</label>
@@ -688,8 +680,7 @@
             path: fullPath,
             name: projectName,
             sessions: parseInt(document.getElementById('projectSessions').value),
-            modalities: modalities,
-            create_example: document.getElementById('createExample').checked
+            modalities: modalities
         };
 
         try {
@@ -719,15 +710,12 @@
                             <h6 class="text-muted mb-2">Next Steps:</h6>
                             <div class="btn-group" role="group">
                                 <a href="/converter" class="btn btn-sm btn-outline-success">
-                                    <i class="fas fa-file-import me-1"></i>Import LimeSurvey Templates
-                                </a>
-                                <a href="/survey-generator" class="btn btn-sm btn-outline-info">
-                                    <i class="fas fa-poll-h me-1"></i>Survey & Boilerplate
-                                </a>
-                                <a href="/validate" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-check-circle me-1"></i>Validate Dataset
+                                    <i class="fas fa-magic me-1"></i>Open Converter Tool
                                 </a>
                             </div>
+                            <small class="text-muted d-block mt-2">
+                                Add subject folders and metadata before validating to avoid missing data errors.
+                            </small>
                         </div>
                     </div>
                 `;

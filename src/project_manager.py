@@ -15,7 +15,6 @@ Usage:
         "name": "My Study",
         "sessions": 2,
         "modalities": ["survey", "biometrics"],
-        "create_example": True
     })
 
     # Validate existing project
@@ -64,7 +63,6 @@ class ProjectManager:
                 - name: Project name (required)
                 - sessions: Number of sessions (0 = no sessions)
                 - modalities: List of modalities to include
-                - create_example: Whether to create example subject folder
 
         Returns:
             Dict with success status and created files list
@@ -90,7 +88,6 @@ class ProjectManager:
                 }
         sessions = max(1, config.get("sessions", 1))  # Minimum 1 session
         modalities = config.get("modalities", PRISM_MODALITIES)  # All modalities by default
-        create_example = config.get("create_example", True)
 
         # Validate modalities
         invalid_mods = [m for m in modalities if m not in PRISM_MODALITIES]
@@ -114,7 +111,7 @@ class ProjectManager:
 
             # 2. Create participants.tsv with example row
             tsv_path = project_path / "participants.tsv"
-            tsv_content = self._create_participants_tsv(create_example)
+            tsv_content = self._create_participants_tsv()
             CrossPlatformFile.write_text(str(tsv_path), tsv_content)
             created_files.append("participants.tsv")
 
@@ -145,14 +142,7 @@ class ProjectManager:
             CrossPlatformFile.write_text(str(prismrc_path), json.dumps(prismrc_content, indent=2))
             created_files.append(".prismrc.json")
 
-            # 6. Create example subject folder structure
-            if create_example:
-                example_files = self._create_example_subject(
-                    project_path, sessions, modalities
-                )
-                created_files.extend(example_files)
-
-            # 7. Create README.md with instructions
+            # 6. Create README.md with instructions
             readme_path = project_path / "README.md"
             readme_content = self._create_readme(name, sessions, modalities)
             CrossPlatformFile.write_text(str(readme_path), readme_content)
@@ -363,12 +353,9 @@ class ProjectManager:
             "DatasetDOI": ""
         }
 
-    def _create_participants_tsv(self, include_example: bool = True) -> str:
-        """Create participants.tsv content."""
-        header = "participant_id\tage\tsex"
-        if include_example:
-            return f"{header}\nsub-example\tn/a\tn/a\n"
-        return f"{header}\n"
+    def _create_participants_tsv(self) -> str:
+        """Create participants.tsv header (no sample rows)."""
+        return "participant_id\tage\tsex\n"
 
     def _create_bidsignore(self, modalities: List[str]) -> str:
         """Create .bidsignore content."""
@@ -393,32 +380,6 @@ class ProjectManager:
                 "code/**"
             ]
         }
-
-    def _create_example_subject(
-        self, project_path: Path, sessions: int, modalities: List[str]
-    ) -> List[str]:
-        """Create example subject folder structure."""
-        created = []
-        subject_path = project_path / "sub-example"
-
-        if sessions > 0:
-            # Create session folders
-            for i in range(1, sessions + 1):
-                session_name = f"ses-{i:02d}"
-                session_path = subject_path / session_name
-
-                for mod in modalities:
-                    mod_path = session_path / mod
-                    mod_path.mkdir(parents=True, exist_ok=True)
-                    created.append(f"sub-example/{session_name}/{mod}/")
-        else:
-            # No sessions - create modality folders directly
-            for mod in modalities:
-                mod_path = subject_path / mod
-                mod_path.mkdir(parents=True, exist_ok=True)
-                created.append(f"sub-example/{mod}/")
-
-        return created
 
     def _create_readme(
         self, name: str, sessions: int, modalities: List[str]
@@ -447,15 +408,11 @@ This project uses the PRISM framework for psychological research data.
         content += """
 ## Getting Started
 
-1. **Rename the example subject**: Copy/rename `sub-example/` to `sub-001/`, `sub-002/`, etc.
-
-2. **Add your data**: Place TSV data files in the appropriate modality folders.
-
-3. **Create sidecars**: Each `.tsv` file needs a corresponding `.json` sidecar with metadata.
-
-4. **Update participants.tsv**: Add a row for each subject.
-
-5. **Validate**: Run PRISM validation to check your dataset structure.
+1. **Create subject folders**: Make `sub-<label>/` directories (add `ses-01/` … if your study uses sessions) and place modality TSV files beneath them.
+2. **Add metadata sidecars**: Every modality TSV needs a matching `.json` sidecar describing the data.
+3. **Populate participants.tsv**: Add each subject here and keep descriptions synchronized with `participants.json`.
+4. **Store raw & derived data**: Use the `sourcedata/` and `derivatives/` folders for source exports and processed outputs.
+5. **Validate**: Run PRISM validation to confirm structural and metadata compliance before sharing.
 
 ## Project Structure
 
@@ -468,21 +425,24 @@ project/
 ├── .prismrc.json              # PRISM validation settings
 ├── README.md                  # This file
 │
-├── sub-example/               # Example subject (rename to sub-001, etc.)
-│   └── ses-01/                # Session folder (if using sessions)
-│       ├── survey/            # Survey data files
-│       └── biometrics/        # Biometrics data files
+├── sub-<label>/               # Create your subject folders here
+│   ├── ses-01/                # Session folder (if applicable)
+│   │   ├── survey/
+│   │   └── biometrics/
+│   └── ses-02/                # Add more sessions (if used)
+│       ├── survey/
+│       └── biometrics/
 │
 ├── sourcedata/                # Raw source files (before BIDS conversion)
-│   └── README                 # e.g., Excel exports, LimeSurvey archives
+│   └── README                 # Describe incoming formats (Excel, LimeSurvey, etc.)
 │
-├── derivatives/               # Processed/derived data outputs
-│   └── README                 # e.g., scored data, analysis outputs
+├── derivatives/               # Processed/derived outputs
+│   └── README                 # e.g., scoring, analysis, recipe exports
 │
 ├── code/                      # Analysis scripts
-│   └── README                 # e.g., R scripts, Python notebooks
+│   └── README                 # R, Python, SPSS, etc.
 │
-├── stimuli/                   # Stimulus files (if applicable)
+├── stimuli/                   # Stimulus files (images, audio, etc.)
 │
 └── code/library/              # JSON templates for conversion
     ├── survey/                # Survey JSON templates (LimeSurvey imports)
