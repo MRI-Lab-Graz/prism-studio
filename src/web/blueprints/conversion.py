@@ -72,9 +72,15 @@ def api_survey_languages():
     if not library_path:
         project_path = (session.get("current_project_path") or "").strip()
         if project_path:
-            candidate = (Path(project_path) / "library").expanduser()
+            # Check for standard PRISM library location (code/library)
+            candidate = (Path(project_path) / "code" / "library").expanduser()
             if candidate.exists() and candidate.is_dir():
                 library_path = str(candidate)
+            else:
+                # Check legacy location
+                candidate = (Path(project_path) / "library").expanduser()
+                if candidate.exists() and candidate.is_dir():
+                    library_path = str(candidate)
 
     if not library_path:
         preferred = (base_dir / "library" / "survey_i18n").resolve()
