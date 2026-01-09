@@ -1064,7 +1064,7 @@ def limesurvey_save_to_project():
         ]
     }
 
-    Templates are saved to: {project_path}/library/survey/
+    Templates are saved to: {project_path}/code/library/survey/
     """
     from src.cross_platform import CrossPlatformFile
     from werkzeug.utils import secure_filename
@@ -1085,8 +1085,8 @@ def limesurvey_save_to_project():
     if not templates:
         return jsonify({"success": False, "error": "No templates provided"}), 400
 
-    # Create library/survey folder if it doesn't exist
-    library_survey_path = project_path / "library" / "survey"
+    # Create code/library/survey folder if it doesn't exist
+    library_survey_path = project_path / "code" / "library" / "survey"
     library_survey_path.mkdir(parents=True, exist_ok=True)
 
     saved_files = []

@@ -56,6 +56,14 @@ conversion_bp = Blueprint('conversion', __name__)
 # Batch conversion job tracking
 _batch_convert_jobs = {}
 
+
+def _participant_json_candidates(library_root: Path, depth: int = 3):
+    """List possible participants.json locations above a library root."""
+    candidates = [library_root / "participants.json"]
+    for parent in library_root.parents[:depth]:
+        candidates.append(parent / "participants.json")
+    return candidates
+
 @conversion_bp.route("/api/survey-languages", methods=["GET"])
 def api_survey_languages():
     """List available languages for the selected survey template library folder."""
@@ -88,16 +96,12 @@ def api_survey_languages():
     # Check for expected items
     survey_dir = library_root / "survey"
     biometrics_dir = library_root / "biometrics"
-    participants_json = library_root / "participants.json"
-    # Also check parent directory for participants.json (for project/library/ structure)
-    parent_participants_json = library_root.parent / "participants.json"
+    participant_candidates = _participant_json_candidates(library_root)
 
     structure_info["has_survey_folder"] = survey_dir.is_dir()
     structure_info["has_biometrics_folder"] = biometrics_dir.is_dir()
-    # Accept participants.json from library folder OR parent (project root)
-    structure_info["has_participants_json"] = (
-        participants_json.is_file() or parent_participants_json.is_file()
-    )
+    # Accept participants.json from library folder or any reasonable ancestor (project root, code/)
+    structure_info["has_participants_json"] = any(p.is_file() for p in participant_candidates)
 
     # Build missing items list for survey conversion
     if not structure_info["has_survey_folder"]:
@@ -474,11 +478,8 @@ def api_biometrics_check_library():
 
     library_root = Path(library_path)
     biometrics_dir = library_root / "biometrics"
-    # Also check parent directory for participants.json (for project/library/ structure)
-    has_participants = (
-        (library_root / "participants.json").is_file() or
-        (library_root.parent / "participants.json").is_file()
-    )
+    participant_candidates = _participant_json_candidates(library_root)
+    has_participants = any(p.is_file() for p in participant_candidates)
 
     structure_info = {
         "has_survey_folder": (library_root / "survey").is_dir(),
