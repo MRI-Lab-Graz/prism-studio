@@ -66,6 +66,10 @@ def _load_participants_template(library_dir: Path) -> dict | None:
         ]
     )
 
+    # Also try a few ancestor folders (code/library -> project root) for participants.json
+    for ancestor in library_dir.parents[:3]:
+        candidates.append(ancestor / "participants.json")
+
     seen: set[Path] = set()
     for p in candidates:
         if p in seen:

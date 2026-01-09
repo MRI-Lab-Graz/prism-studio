@@ -382,7 +382,7 @@ def get_effective_template_library_path(
     Returns:
         Dictionary with:
         - global_library_path: Global shared template library (read-only)
-        - project_library_path: Project's own library folder (user templates)
+        - project_library_path: Project's own library folder (user templates, usually code/library or legacy library/)
         - effective_external_path: The resolved external library path
         - source: 'project', 'global', or 'default' indicating where external path came from
     """
@@ -411,10 +411,15 @@ def get_effective_template_library_path(
     if project_path and os.path.exists(project_path):
         project_path = os.path.abspath(project_path)
 
-        # Project's own library folder (for user templates)
-        project_library = os.path.join(project_path, "library")
-        if os.path.exists(project_library):
-            result["project_library_path"] = project_library
+        # Project's own library folders (legacy and new code/library layout)
+        project_library_candidates = [
+            os.path.join(project_path, "code", "library"),
+            os.path.join(project_path, "library"),
+        ]
+        for candidate in project_library_candidates:
+            if os.path.exists(candidate):
+                result["project_library_path"] = candidate
+                break
 
         # Check project config for external library override
         project_config = load_config(project_path)

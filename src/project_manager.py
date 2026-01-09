@@ -484,7 +484,7 @@ project/
 │
 ├── stimuli/                   # Stimulus files (if applicable)
 │
-└── library/                   # JSON templates for conversion
+└── code/library/              # JSON templates for conversion
     ├── survey/                # Survey JSON templates (LimeSurvey imports)
     └── biometrics/            # Biometrics JSON templates
 ```
@@ -498,14 +498,14 @@ project/
 
 ## Library Folder
 
-The `library/` folder contains JSON templates for your questionnaires and biometrics.
+The `code/library/` folder contains JSON templates for your questionnaires and biometrics.
 Use these with the Converter tool to process raw data into PRISM format.
 
-- `library/survey/` - Place survey JSON templates here (e.g., from LimeSurvey import)
-- `library/biometrics/` - Place biometrics JSON templates here
+- `code/library/survey/` - Place survey JSON templates here (e.g., from LimeSurvey import)
+- `code/library/biometrics/` - Place biometrics JSON templates here
 
 Note: The root `participants.json` is used for both BIDS compliance and the library.
-When using the Converter, point "Template Library Root" to the `library/` folder.
+When using the Converter, point "Template Library Root" to the `code/library/` folder.
 
 ## Resources
 
@@ -573,17 +573,17 @@ When using the Converter, point "Template Library Root" to the `library/` folder
     ) -> List[str]:
         """Create library folder structure for templates."""
         created = []
-        library_path = project_path / "library"
+        library_root = project_path / "code" / "library"
 
-        # Create library root
-        library_path.mkdir(parents=True, exist_ok=True)
-        created.append("library/")
+        # Create library root under the ignored code/ folder
+        library_root.mkdir(parents=True, exist_ok=True)
+        created.append("code/library/")
 
         # Create modality subfolders
         if "survey" in modalities:
-            survey_path = library_path / "survey"
+            survey_path = library_root / "survey"
             survey_path.mkdir(exist_ok=True)
-            created.append("library/survey/")
+            created.append("code/library/survey/")
 
             # Create example survey template
             example_survey = self._create_example_survey_template()
@@ -591,12 +591,12 @@ When using the Converter, point "Template Library Root" to the `library/` folder
             CrossPlatformFile.write_text(
                 str(example_path), json.dumps(example_survey, indent=2, ensure_ascii=False)
             )
-            created.append("library/survey/survey-example.json")
+            created.append("code/library/survey/survey-example.json")
 
         if "biometrics" in modalities:
-            biometrics_path = library_path / "biometrics"
+            biometrics_path = library_root / "biometrics"
             biometrics_path.mkdir(exist_ok=True)
-            created.append("library/biometrics/")
+            created.append("code/library/biometrics/")
 
             # Create example biometrics template
             example_bio = self._create_example_biometrics_template()
@@ -604,9 +604,9 @@ When using the Converter, point "Template Library Root" to the `library/` folder
             CrossPlatformFile.write_text(
                 str(example_path), json.dumps(example_bio, indent=2, ensure_ascii=False)
             )
-            created.append("library/biometrics/biometrics-example.json")
+            created.append("code/library/biometrics/biometrics-example.json")
 
-        # Note: participants.json is NOT duplicated in library/
+        # Note: participants.json is NOT duplicated in code/library/
         # The root-level participants.json (BIDS standard) is the single source of truth.
         # The converter will look for it at the project root.
 
