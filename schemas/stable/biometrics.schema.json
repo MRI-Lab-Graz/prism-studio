@@ -305,6 +305,10 @@
         "type": ["string", "object"],
         "description": "Description of the metric"
       },
+      "AliasOf": {
+        "type": "string",
+        "description": "Metric name of the canonical item this is an alias for (used during conversion)"
+      },
       "Units": {
         "type": "string",
         "description": "Unit of measurement (e.g., kg, sec, ml/kg/min)"

@@ -57,7 +57,8 @@
                   <i class="fas fa-folder-open me-1"></i>Browse
                 </button>
               </div>
-              <div class="form-text">Select the root library folder that contains a survey/ and/or biometrics/ subfolder.</div>
+              <div class="form-text mb-1">Template editing always writes into the current project's custom library (survey/biometrics subfolders); shared/global libraries remain read-only.</div>
+              <div id="projectLibraryStatus" class="form-text text-muted mt-1">Detecting writable custom library...</div>
             </div>
 
             <div>
@@ -219,6 +220,7 @@
   const templateSelectEl = document.getElementById('templateSelect');
   const libraryInfoEl = document.getElementById('libraryInfo');
   const libraryPathEl = document.getElementById('libraryPath');
+  const projectLibraryStatusEl = document.getElementById('projectLibraryStatus');
   const btnBrowseLibrary = document.getElementById('btnBrowseLibrary');
   const filenameEl = document.getElementById('filename');
   const topLevelFormEl = document.getElementById('topLevelForm');
@@ -245,6 +247,7 @@
   let currentTemplate = null;
   let selectedItemId = null;
   let checkedItemIds = new Set();
+  let projectLibraryRoot = null;
 
   function enableTooltips() {
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -276,6 +279,24 @@
 
   function clearAlert() {
     alertAreaEl.innerHTML = '';
+  }
+
+  function updateProjectLibraryStatus() {
+    if (!projectLibraryStatusEl) return;
+    projectLibraryStatusEl.className = 'form-text mt-1';
+    projectLibraryStatusEl.innerHTML = '';
+    if (projectLibraryRoot) {
+      projectLibraryStatusEl.classList.add('text-success');
+      const label = document.createElement('strong');
+      label.textContent = 'Writable custom library: ';
+      const pathSpan = document.createElement('span');
+      pathSpan.className = 'mono';
+      pathSpan.textContent = projectLibraryRoot;
+      projectLibraryStatusEl.append(label, pathSpan);
+    } else {
+      projectLibraryStatusEl.classList.add('text-warning');
+      projectLibraryStatusEl.textContent = 'Select a project to enable the writable custom library so saves always go there.';
+    }
   }
 
   async function apiGet(url) {
@@ -1264,17 +1285,16 @@
         templateMetadata[t.filename] = t;
       }
 
-      // Show library sources info
-      let infoText = [];
+      projectLibraryRoot = data.sources?.project_library_path || null;
+      const infoLines = [];
+      if (projectLibraryRoot) {
+        infoLines.push(`<small class="d-block text-success">Project (writable): ${projectLibraryRoot}</small>`);
+      }
       if (data.sources?.global_library_path) {
-        infoText.push(`Global: ${data.sources.global_library_path}`);
+        infoLines.push(`<small class="d-block text-info">Global (read-only): ${data.sources.global_library_path}</small>`);
       }
-      if (data.sources?.project_library_path) {
-        infoText.push(`Project: ${data.sources.project_library_path}`);
-      }
-      libraryInfoEl.innerHTML = infoText.length > 0
-        ? infoText.map(t => `<small class="d-block text-muted">${t}</small>`).join('')
-        : '<small class="text-muted">No libraries configured</small>';
+      infoLines.push('<small class="d-block text-muted">Saving always targets the project library (custom templates).</small>');
+      libraryInfoEl.innerHTML = infoLines.join('');
 
     } else {
       // Use original API when specific library path is provided
@@ -1290,8 +1310,10 @@
         templateSelectEl.appendChild(opt);
       }
 
-      libraryInfoEl.textContent = data.library_dir ? `Library: ${data.library_dir}` : '';
+      const baseInfo = data.library_dir ? `<small class="d-block text-muted">Library: ${data.library_dir}</small>` : '';
+      libraryInfoEl.innerHTML = `${baseInfo}<small class="d-block text-muted">Saving always targets the project library (custom templates only).</small>`;
     }
+    updateProjectLibraryStatus();
   }
 
   function getSourceBadge(source) {
@@ -1387,8 +1409,11 @@
 
     if (data.ok) {
       btnDownload.disabled = false;
-      btnSave.disabled = false;
-      showAlert('success', '✅ Valid template for the selected schema. You can download or save it now.');
+      const successMessage = projectLibraryRoot
+        ? '✅ Valid template for the selected schema. You can download or save it now.'
+        : '✅ Valid template, but saving is disabled until a project library is active; only custom libraries are writable.';
+      btnSave.disabled = !projectLibraryRoot;
+      showAlert(projectLibraryRoot ? 'success' : 'warning', successMessage);
     } else {
       btnDownload.disabled = true;
       btnSave.disabled = true;
@@ -1413,7 +1438,10 @@
     }
 
     const modality = modalityEl.value;
-    const library_path = (libraryPathEl.value || '').trim();
+    if (!projectLibraryRoot) {
+      showAlert('danger', 'Select or create a project first; saving changes only touches the project-specific library.');
+      return;
+    }
 
     ensureTemplateNormalized();
     try {
@@ -1421,7 +1449,6 @@
         modality,
         filename,
         template: obj,
-        library_path
       });
       showAlert('success', `✅ ${data.message}`);
       await refreshTemplateList();
@@ -1594,6 +1621,9 @@
     try {
       const response = await fetch('/api/projects/library-path');
       const data = await response.json();
+
+      projectLibraryRoot = data.project_library_path || null;
+      updateProjectLibraryStatus();
 
       // Don't set path if user has already entered something
       if (libraryPathEl.value.trim()) {

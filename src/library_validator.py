@@ -31,6 +31,23 @@ def check_uniqueness(library_path):
         for var, file_list in duplicates.items():
             print(f"  - '{var}' appears in: {', '.join(file_list)}")
 
+    print("\nChecking for redundant item definitions...")
+    redundant_issues = validator.find_redundant_items()
+    if redundant_issues:
+        warning_issues = [i for i in redundant_issues if i["severity"] == "warning"]
+        info_issues = [i for i in redundant_issues if i["severity"] == "info"]
+
+        if warning_issues:
+            print(f"⚠️  WARNING: Found {len(warning_issues)} redundant item groups:")
+            for issue in warning_issues:
+                print(f"  - {issue['message']}")
+        if info_issues:
+            print(f"ℹ️  Info: {len(info_issues)} alias clusters detected:")
+            for issue in info_issues:
+                print(f"  - {issue['message']}")
+    else:
+        print("✅ No redundant item definitions detected.")
+
     # 2. Check Schema
     # Note: We don't import load_schema here to avoid circular imports if any.
     # But we can try to import it locally.
@@ -83,6 +100,85 @@ class LibraryValidator:
     def __init__(self, library_path):
         self.library_path = Path(library_path)
         self.IGNORE_KEYS = {"Technical", "Study", "Metadata", "Questions", "I18n", "Scoring", "Normative"}
+
+    def _template_files(self, exclude_file=None):
+        if not self.library_path.exists():
+            return []
+
+        return [
+            f
+            for f in sorted(self.library_path.glob("*.json"))
+            if (f.name.startswith("survey-") or f.name.startswith("biometrics-"))
+            and f.name != exclude_file
+        ]
+
+    def _iter_template_items(self, file_path):
+        try:
+            with open(file_path, encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            return
+
+        if "Questions" in data and isinstance(data["Questions"], dict):
+            items = data["Questions"]
+        elif isinstance(data, dict):
+            items = {k: v for k, v in data.items() if k not in self.IGNORE_KEYS}
+        else:
+            return
+
+        for item_id, item_def in items.items():
+            yield item_id, item_def
+
+    def _item_signature(self, item_def):
+        normalized = {k: item_def[k] for k in sorted(item_def) if k != "AliasOf"}
+        return json.dumps(normalized, sort_keys=True, ensure_ascii=False)
+
+    def find_redundant_items(self):
+        issues = []
+        for file_path in self._template_files():
+            signature_map = defaultdict(list)
+            for item_id, item_def in self._iter_template_items(file_path):
+                if not isinstance(item_def, dict):
+                    continue
+                signature = self._item_signature(item_def)
+                signature_map[signature].append((item_id, item_def))
+
+            for group in signature_map.values():
+                if len(group) <= 1:
+                    continue
+
+                canonical = [item_id for item_id, item_def in group if "AliasOf" not in item_def]
+                alias_entries = [
+                    (item_id, item_def.get("AliasOf"))
+                    for item_id, item_def in group
+                    if "AliasOf" in item_def
+                ]
+                sorted_items = sorted(item_id for item_id, _ in group)
+
+                if alias_entries and len(canonical) == 1 and all(
+                    alias_target == canonical[0] for _, alias_target in alias_entries
+                ):
+                    severity = "info"
+                    alias_names = ", ".join(item for item, _ in alias_entries)
+                    message = f"{file_path.name}: canonical '{canonical[0]}' has aliases ({alias_names}) that duplicate its content."
+                else:
+                    severity = "warning"
+                    message = (
+                        f"{file_path.name}: items {', '.join(sorted_items)} share identical content; remove duplicates or mark them with AliasOf."
+                    )
+
+                issues.append(
+                    {
+                        "file": file_path.name,
+                        "items": sorted_items,
+                        "canonical": canonical,
+                        "aliases": alias_entries,
+                        "severity": severity,
+                        "message": message,
+                    }
+                )
+
+        return issues
 
     def get_all_library_variables(self, exclude_file=None):
         """

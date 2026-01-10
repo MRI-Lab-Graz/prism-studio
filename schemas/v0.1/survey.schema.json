@@ -164,6 +164,10 @@
         "type": "string",
         "description": "The exact question text presented to the participant"
       },
+      "AliasOf": {
+        "type": "string",
+        "description": "Column name of the canonical item this is an alias for (used during conversion)"
+      },
       "Levels": {
         "type": "object",
         "description": "Mapping of numeric values to text labels",
