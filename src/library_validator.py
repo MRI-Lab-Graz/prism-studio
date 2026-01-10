@@ -130,7 +130,9 @@ class LibraryValidator:
             yield item_id, item_def
 
     def _item_signature(self, item_def):
-        normalized = {k: item_def[k] for k in sorted(item_def) if k != "AliasOf"}
+        # Items are considered identical if they share the same content,
+        # ignoring both "AliasOf" (backward pointer) and "Aliases" (forward list)
+        normalized = {k: item_def[k] for k in sorted(item_def) if k not in ("AliasOf", "Aliases")}
         return json.dumps(normalized, sort_keys=True, ensure_ascii=False)
 
     def find_redundant_items(self):

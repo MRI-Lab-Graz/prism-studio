@@ -452,6 +452,13 @@
         "type": "string",
         "description": "Column name of the canonical item this is an alias for (used during conversion)"
       },
+      "Aliases": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Alternative column names that use this same definition"
+      },
       "Levels": {
         "type": "object",
         "description": "Mapping of numeric values to text labels",
