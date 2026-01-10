@@ -192,6 +192,54 @@
                             <input type="number" class="form-control" id="projectSessions" min="1" max="99" value="1">
                             <small class="text-muted">Records how many sessions your study uses (shown in the README).</small>
                         </div>
+
+                        <!-- Modern BIDS Metadata Section -->
+                        <div class="col-12 mt-3">
+                            <button class="btn btn-sm btn-outline-secondary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#advancedMetadata" aria-expanded="false" aria-controls="advancedMetadata">
+                                <i class="fas fa-plus-circle me-1"></i> Add BIDS Dataset Metadata (Authors, License, DOI...)
+                            </button>
+                            
+                            <div class="collapse" id="advancedMetadata">
+                                <div class="card card-body bg-light border-0">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="projectAuthors" class="form-label fw-bold">Authors</label>
+                                            <textarea class="form-control" id="projectAuthors" rows="2" placeholder="e.g. Paul Broca, Carl Wernicke"></textarea>
+                                            <small class="text-muted">Comma-separated list of contributors.</small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="projectLicense" class="form-label fw-bold">License</label>
+                                            <select class="form-select" id="projectLicense">
+                                                <option value="CC0">CC0 (Public Domain)</option>
+                                                <option value="CC BY 4.0">CC BY 4.0</option>
+                                                <option value="CC BY-SA 4.0">CC BY-SA 4.0</option>
+                                                <option value="ODbL 1.0">Open Database License (ODbL)</option>
+                                                <option value="PDDL 1.0">Public Domain Dedication and License (PDDL)</option>
+                                                <option value="other">Other/Proprietary</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="projectDOI" class="form-label fw-bold">Dataset DOI</label>
+                                            <input type="text" class="form-control" id="projectDOI" placeholder="e.g. doi:10.18112/openneuro.ds000114.v1.0.1">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="projectKeywords" class="form-label fw-bold">Keywords</label>
+                                            <input type="text" class="form-control" id="projectKeywords" placeholder="e.g. psychology, dance, prism">
+                                            <small class="text-muted">Comma-separated keywords.</small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="projectAcknowledgements" class="form-label fw-bold">Acknowledgements</label>
+                                            <textarea class="form-control" id="projectAcknowledgements" rows="2" placeholder="Who helped with this dataset?"></textarea>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="projectEthics" class="form-label fw-bold">Ethics Approvals</label>
+                                            <input type="text" class="form-control" id="projectEthics" placeholder="Ethics committee/protocol identifiers">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="col-12">
                             <label class="form-label fw-bold">Modalities</label>
                             <small class="text-muted d-block mb-2">Select which data types your study will collect</small>
@@ -269,7 +317,7 @@
                         </div>
                         <div class="col-md-5 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-search me-2"></i>Validate Structure
+                                <i class="fas fa-search me-2"></i>Load Project
                             </button>
                         </div>
                     </div>
@@ -680,7 +728,14 @@
             path: fullPath,
             name: projectName,
             sessions: parseInt(document.getElementById('projectSessions').value),
-            modalities: modalities
+            modalities: modalities,
+            // Modern BIDS metadata
+            authors: document.getElementById('projectAuthors').value.split(',').map(s => s.trim()).filter(s => s),
+            license: document.getElementById('projectLicense').value,
+            doi: document.getElementById('projectDOI').value.trim(),
+            keywords: document.getElementById('projectKeywords').value.split(',').map(s => s.trim()).filter(s => s),
+            acknowledgements: document.getElementById('projectAcknowledgements').value.trim(),
+            ethics_approvals: document.getElementById('projectEthics').value.split(',').map(s => s.trim()).filter(s => s)
         };
 
         try {

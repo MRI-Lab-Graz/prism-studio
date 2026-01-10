@@ -64,13 +64,9 @@ def _project_library_root() -> Path:
             "Select a project first; the template editor only saves into the project's custom library."
         )
     project_root = Path(project_path).expanduser().resolve()
-    candidates = [project_root / "code" / "library", project_root / "library"]
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    fallback = project_root / "library"
-    fallback.mkdir(parents=True, exist_ok=True)
-    return fallback
+    target = project_root / "code" / "library"
+    target.mkdir(parents=True, exist_ok=True)
+    return target
 
 
 def _project_template_folder(*, modality: str) -> Path:
@@ -315,6 +311,7 @@ def api_template_editor_list_merged():
     sources_info = {
         "global_library_path": None,
         "project_library_path": None,
+        "project_library_exists": False,
     }
 
     # 1. Load templates from global library (configured or default survey_library)
@@ -356,8 +353,10 @@ def api_template_editor_list_merged():
                         }
 
         # Project's own library folder (always writable)
-        project_lib = Path(project_path) / "library" / modality
-        sources_info["project_library_path"] = str(Path(project_path) / "library")
+        project_library_root = Path(project_path) / "code" / "library"
+        sources_info["project_library_path"] = str(project_library_root)
+        sources_info["project_library_exists"] = project_library_root.exists()
+        project_lib = project_library_root / modality
         if project_lib.exists() and project_lib.is_dir():
             for p in sorted(project_lib.glob("*.json")):
                 if p.name.startswith("."):
@@ -919,29 +918,16 @@ def detect_columns():
 
 @tools_bp.route("/api/limesurvey-to-prism", methods=["POST"])
 def limesurvey_to_prism():
-    """Convert LimeSurvey .lss/.lsa file to PRISM JSON sidecar(s).
+    """Convert LimeSurvey (.lss/.lsa) or Excel/CSV/TSV file to PRISM JSON sidecar(s).
 
     Supports three modes (via 'mode' parameter or legacy 'split_by_groups'):
     - mode=combined (default): Single combined JSON with all questions
     - mode=groups: Separate JSON per questionnaire group
     - mode=questions: Separate JSON per individual question (for template library)
     """
-    try:
-        from src.converters.limesurvey import (
-            parse_lss_xml,
-            parse_lss_xml_by_groups,
-            parse_lss_xml_by_questions
-        )
-    except ImportError:
-        try:
-            sys.path.insert(0, str(Path(current_app.root_path)))
-            from src.converters.limesurvey import (
-                parse_lss_xml,
-                parse_lss_xml_by_groups,
-                parse_lss_xml_by_questions
-            )
-        except ImportError:
-            return jsonify({"error": "LimeSurvey converter not available"}), 500
+    logs = []
+    def log(msg, type="info"):
+        logs.append({"message": msg, "type": type})
 
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
@@ -951,10 +937,14 @@ def limesurvey_to_prism():
         return jsonify({"error": "No file selected"}), 400
 
     filename = file.filename.lower()
-    if not (filename.endswith(".lss") or filename.endswith(".lsa")):
-        return jsonify({"error": "Please upload a .lss or .lsa file"}), 400
+    is_excel = any(filename.endswith(ext) for ext in [".xlsx", ".csv", ".tsv"])
+    is_limesurvey = any(filename.endswith(ext) for ext in [".lss", ".lsa"])
+
+    if not (is_excel or is_limesurvey):
+        return jsonify({"error": "Please upload a .lss, .lsa, .xlsx, .csv, or .tsv file"}), 400
 
     task_name = request.form.get("task_name", "").strip()
+    log(f"Starting template generation from: {file.filename}")
 
     # Support both new 'mode' parameter and legacy 'split_by_groups'
     mode = request.form.get("mode", "").strip().lower()
@@ -970,8 +960,180 @@ def limesurvey_to_prism():
         task_name = Path(file.filename).stem
 
     try:
-        xml_content = None
+        from src.converters.excel_base import sanitize_task_name
+        from jsonschema import validate, ValidationError
+        from src.schema_manager import load_schema
+        
+        survey_schema = load_schema("survey")
+        
+        def validate_template(sidecar, name):
+            if not survey_schema:
+                return
+            try:
+                # Filter out metadata keys that might not be in schema if needed
+                # But survey.schema.json should support PRISM structure
+                validate(instance=sidecar, schema=survey_schema)
+                log(f"✓ {name} matches PRISM survey schema", "success")
+            except ValidationError as e:
+                log(f"⚠ {name} validation issue: {e.message}", "warning")
+            except Exception as e:
+                log(f"⚠ Could not validate {name}: {str(e)}", "warning")
 
+        # Branch 1: Excel/CSV/TSV
+        if is_excel:
+            import io
+            from src.converters.excel_to_survey import extract_excel_templates
+            
+            log("Detected Excel/CSV source. Running data dictionary extraction...", "step")
+            
+            # Use BytesIO as file-like object for pandas
+            file_bytes = io.BytesIO(file.read())
+            # We need to give it a name so extract_excel_templates can check extension
+            file_bytes.name = file.filename 
+            
+            extracted = extract_excel_templates(file_bytes)
+            
+            if not extracted:
+                return jsonify({"error": "No data found in the Excel/CSV file", "log": logs}), 400
+
+            log(f"Extracted {len(extracted)} potential survey(s)", "info")
+
+            if mode == "questions":
+                log("Splitting by individual questions...", "step")
+                # Organize into groups for UI if possible
+                all_questions = {}
+                by_group = {}
+                
+                for prefix, sidecar in extracted.items():
+                    shared_technical = sidecar.get("Technical", {})
+                    shared_study = sidecar.get("Study", {})
+                    shared_metadata = sidecar.get("Metadata", {})
+                    shared_i18n = sidecar.get("I18n", {})
+                    
+                    for key, q_entry in sidecar.items():
+                        if key in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]:
+                            continue
+                        
+                        # Create a full single-question prism_json
+                        question_prism = {
+                            "Technical": shared_technical,
+                            "Study": {
+                                **shared_study,
+                                "TaskName": sanitize_task_name(key),
+                                "OriginalName": key,
+                            },
+                            "Metadata": shared_metadata,
+                            "I18n": shared_i18n,
+                            key: q_entry
+                        }
+                        
+                        validate_template(question_prism, f"Item {key}")
+                        
+                        all_questions[key] = {
+                            "prism_json": question_prism,
+                            "question_code": key,
+                            "question_type": "string", # placeholder
+                            "limesurvey_type": "N/A",
+                            "item_count": 1,
+                            "mandatory": False,
+                            "group_name": prefix,
+                            "group_order": 0,
+                            "question_order": 0,
+                            "suggested_filename": f"question-{sanitize_task_name(key)}.json"
+                        }
+                        
+                        if prefix not in by_group:
+                            by_group[prefix] = {"group_order": 0, "questions": []}
+                        
+                        by_group[prefix]["questions"].append({
+                            "code": key,
+                            "type": "string",
+                            "limesurvey_type": "N/A",
+                            "item_count": 1,
+                            "mandatory": False,
+                            "order": 0
+                        })
+                
+                log("Individual template generation complete.", "success")
+                return jsonify({
+                    "success": True,
+                    "mode": "questions",
+                    "questions": all_questions,
+                    "by_group": by_group,
+                    "question_count": len(all_questions),
+                    "group_count": len(by_group),
+                    "log": logs
+                })
+
+            elif mode == "groups":
+                log("Splitting by questionnaire prefixes...", "step")
+                result = {
+                    "success": True,
+                    "mode": "groups",
+                    "questionnaires": {},
+                    "questionnaire_count": len(extracted),
+                    "total_questions": 0,
+                    "log": logs
+                }
+
+                for prefix, prism_json in extracted.items():
+                    validate_template(prism_json, f"Survey {prefix}")
+                    q_count = len([k for k in prism_json.keys()
+                                  if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]])
+                    result["questionnaires"][prefix] = {
+                        "prism_json": prism_json,
+                        "suggested_filename": f"survey-{prefix}.json",
+                        "question_count": q_count
+                    }
+                    result["total_questions"] += q_count
+
+                log("Group template generation complete.", "success")
+                return jsonify(result)
+
+            else: # combined
+                log("Merging all extracted items into a single template...", "step")
+                combined_json = {}
+                total_q = 0
+                for prefix, prism_json in extracted.items():
+                    # If combined mode, we might want to merge them or just take the first one.
+                    # Usually if multiple found, the first one is the main one.
+                    # Let's merge them all into one flat structure if it's 'combined'
+                    for k, v in prism_json.items():
+                        if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]:
+                            combined_json[k] = v
+                            total_q += 1
+                        elif k not in combined_json:
+                            combined_json[k] = v
+                
+                validate_template(combined_json, "Combined template")
+                safe_name = sanitize_task_name(task_name)
+                log("Combined template generation complete.", "success")
+                return jsonify({
+                    "success": True,
+                    "mode": "combined",
+                    "prism_json": combined_json,
+                    "suggested_filename": f"survey-{safe_name}.json",
+                    "question_count": total_q,
+                    "log": logs
+                })
+
+        # Branch 2: LimeSurvey
+        log("Detected LimeSurvey source. Parsing XML structure...", "info")
+        try:
+            from src.converters.limesurvey import (
+                parse_lss_xml,
+                parse_lss_xml_by_groups,
+                parse_lss_xml_by_questions
+            )
+        except ImportError:
+            sys.path.insert(0, str(Path(current_app.root_path)))
+            from src.converters.limesurvey import (
+                parse_lss_xml,
+                parse_lss_xml_by_groups,
+                parse_lss_xml_by_questions
+            )
+
+        xml_content = None
         if filename.endswith(".lsa"):
             import zipfile as zf_module
             import io
@@ -981,29 +1143,30 @@ def limesurvey_to_prism():
                 with zf_module.ZipFile(file_bytes, "r") as zf:
                     lss_files = [f for f in zf.namelist() if f.endswith(".lss")]
                     if not lss_files:
-                        return jsonify({"error": "No .lss file found in the .lsa archive"}), 400
+                        return jsonify({"error": "No .lss file found in the .lsa archive", "log": logs}), 400
                     with zf.open(lss_files[0]) as f:
                         xml_content = f.read()
             except zf_module.BadZipFile:
-                return jsonify({"error": "Invalid .lsa archive"}), 400
+                return jsonify({"error": "Invalid .lsa archive", "log": logs}), 400
         else:
             xml_content = file.read()
 
         if not xml_content:
-            return jsonify({"error": "Could not read file content"}), 400
+            return jsonify({"error": "Could not read file content", "log": logs}), 400
 
-        from src.converters.excel_base import sanitize_task_name
 
         if mode == "questions":
+            log("Splitting LimeSurvey into individual question templates...", "step")
             # Individual question templates (for Survey & Boilerplate)
             questions = parse_lss_xml_by_questions(xml_content)
 
             if not questions:
-                return jsonify({"error": "Failed to parse LimeSurvey structure or no questions found"}), 400
+                return jsonify({"error": "Failed to parse LimeSurvey structure or no questions found", "log": logs}), 400
 
             # Organize questions by group for UI display
             by_group = {}
             for code, q_data in questions.items():
+                validate_template(q_data["prism_json"], f"Item {code}")
                 g = q_data["group_name"]
                 if g not in by_group:
                     by_group[g] = {
@@ -1023,21 +1186,24 @@ def limesurvey_to_prism():
             for g in by_group.values():
                 g["questions"].sort(key=lambda x: x["order"])
 
+            log("Individual template generation complete.", "success")
             return jsonify({
                 "success": True,
                 "mode": "questions",
                 "questions": questions,
                 "by_group": by_group,
                 "question_count": len(questions),
-                "group_count": len(by_group)
+                "group_count": len(by_group),
+                "log": logs
             })
 
         elif mode == "groups":
+            log("Splitting LimeSurvey into separate questionnaires by group...", "step")
             # Split into multiple questionnaires by group
             questionnaires = parse_lss_xml_by_groups(xml_content)
 
             if not questionnaires:
-                return jsonify({"error": "Failed to parse LimeSurvey structure or no groups found"}), 400
+                return jsonify({"error": "Failed to parse LimeSurvey structure or no groups found", "log": logs}), 400
 
             # Build response with all questionnaires
             result = {
@@ -1045,10 +1211,12 @@ def limesurvey_to_prism():
                 "mode": "groups",
                 "questionnaires": {},
                 "questionnaire_count": len(questionnaires),
-                "total_questions": 0
+                "total_questions": 0,
+                "log": logs
             }
 
             for name, prism_json in questionnaires.items():
+                validate_template(prism_json, f"Questionnaire {name}")
                 q_count = len([k for k in prism_json.keys()
                               if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]])
                 result["questionnaires"][name] = {
@@ -1058,29 +1226,35 @@ def limesurvey_to_prism():
                 }
                 result["total_questions"] += q_count
 
+            log("Group template generation complete.", "success")
             return jsonify(result)
 
         else:
+            log("Converting entire LimeSurvey to a single PRISM template...", "step")
             # Single combined JSON (default)
             prism_data = parse_lss_xml(xml_content, task_name=task_name)
 
             if not prism_data:
-                return jsonify({"error": "Failed to parse LimeSurvey structure"}), 400
+                return jsonify({"error": "Failed to parse LimeSurvey structure", "log": logs}), 400
 
+            validate_template(prism_data, "Combined LimeSurvey template")
             safe_name = sanitize_task_name(task_name)
             suggested_filename = f"survey-{safe_name}.json"
 
+            log("Combined template generation complete.", "success")
             return jsonify({
                 "success": True,
                 "mode": "combined",
                 "prism_json": prism_data,
                 "suggested_filename": suggested_filename,
                 "question_count": len([k for k in prism_data.keys()
-                                      if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]])
+                                      if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]]),
+                "log": logs
             })
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        log(f"Critical error: {str(e)}", "error")
+        return jsonify({"error": str(e), "log": logs}), 500
 
 
 @tools_bp.route("/api/limesurvey-save-to-project", methods=["POST"])

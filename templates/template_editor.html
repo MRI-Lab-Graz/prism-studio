@@ -248,6 +248,7 @@
   let selectedItemId = null;
   let checkedItemIds = new Set();
   let projectLibraryRoot = null;
+  let projectLibraryExists = false;
 
   function enableTooltips() {
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -286,13 +287,18 @@
     projectLibraryStatusEl.className = 'form-text mt-1';
     projectLibraryStatusEl.innerHTML = '';
     if (projectLibraryRoot) {
-      projectLibraryStatusEl.classList.add('text-success');
-      const label = document.createElement('strong');
-      label.textContent = 'Writable custom library: ';
-      const pathSpan = document.createElement('span');
-      pathSpan.className = 'mono';
-      pathSpan.textContent = projectLibraryRoot;
-      projectLibraryStatusEl.append(label, pathSpan);
+      if (projectLibraryExists) {
+        projectLibraryStatusEl.classList.add('text-success');
+        const label = document.createElement('strong');
+        label.textContent = 'Writable custom library: ';
+        const pathSpan = document.createElement('span');
+        pathSpan.className = 'mono';
+        pathSpan.textContent = projectLibraryRoot;
+        projectLibraryStatusEl.append(label, pathSpan);
+      } else {
+        projectLibraryStatusEl.classList.add('text-info');
+        projectLibraryStatusEl.textContent = `Writable custom library will be created at ${projectLibraryRoot} when you save.`;
+      }
     } else {
       projectLibraryStatusEl.classList.add('text-warning');
       projectLibraryStatusEl.textContent = 'Select a project to enable the writable custom library so saves always go there.';
@@ -475,6 +481,30 @@
   function ensureTemplateNormalized() {
     if (!currentSchema || !currentTemplate) return;
     normalizeDataInPlace(currentTemplate, currentSchema);
+    pruneStudyOptionalFields(currentTemplate);
+  }
+
+  function pruneStudyOptionalFields(template) {
+    if (!template || typeof template !== 'object') return;
+    const study = template.Study;
+    if (!study || typeof study !== 'object') return;
+
+    const checkRange = (section) => {
+      if (!section || typeof section !== 'object') return false;
+      const minValid = Number.isFinite(section.min);
+      const maxValid = Number.isFinite(section.max);
+      return minValid && maxValid;
+    };
+
+    if (!checkRange(study.AgeRange)) {
+      delete study.AgeRange;
+    }
+    if (!checkRange(study.AdministrationTime)) {
+      delete study.AdministrationTime;
+    }
+    if (!checkRange(study.ScoringTime)) {
+      delete study.ScoringTime;
+    }
   }
 
   function createInput(fieldSchema, value, onChange) {
@@ -1286,6 +1316,7 @@
       }
 
       projectLibraryRoot = data.sources?.project_library_path || null;
+      projectLibraryExists = Boolean(data.sources?.project_library_exists);
       const infoLines = [];
       if (projectLibraryRoot) {
         infoLines.push(`<small class="d-block text-success">Project (writable): ${projectLibraryRoot}</small>`);
@@ -1312,6 +1343,7 @@
 
       const baseInfo = data.library_dir ? `<small class="d-block text-muted">Library: ${data.library_dir}</small>` : '';
       libraryInfoEl.innerHTML = `${baseInfo}<small class="d-block text-muted">Saving always targets the project library (custom templates only).</small>`;
+      projectLibraryExists = false;
     }
     updateProjectLibraryStatus();
   }
@@ -1623,6 +1655,7 @@
       const data = await response.json();
 
       projectLibraryRoot = data.project_library_path || null;
+      projectLibraryExists = Boolean(data.project_library_exists);
       updateProjectLibraryStatus();
 
       // Don't set path if user has already entered something

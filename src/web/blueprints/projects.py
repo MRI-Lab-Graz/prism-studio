@@ -102,7 +102,14 @@ def create_project():
         config = {
             "name": data.get("name", Path(path).name),
             "sessions": data.get("sessions", 0),
-            "modalities": data.get("modalities", ["survey", "biometrics"])
+            "modalities": data.get("modalities", ["survey", "biometrics"]),
+            # Optional BIDS metadata
+            "authors": data.get("authors"),
+            "license": data.get("license"),
+            "doi": data.get("doi"),
+            "keywords": data.get("keywords"),
+            "acknowledgements": data.get("acknowledgements"),
+            "ethics_approvals": data.get("ethics_approvals")
         }
 
         result = _project_manager.create_project(path, config)
@@ -322,6 +329,7 @@ def get_library_path():
             "success": False,
             "message": "No project selected",
             "project_library_path": None,
+            "project_library_exists": False,
             "global_library_path": effective_global_path,
             "library_path": effective_global_path,  # Legacy compatibility
         })
@@ -336,7 +344,7 @@ def get_library_path():
     )
 
     # Project's own library folder
-    project_library = project_path / "library"
+    project_library = project_path / "code" / "library"
 
     # For legacy compatibility, provide a single "library_path" that works for conversion
     # Prefer project library if it exists, otherwise use external library
@@ -354,7 +362,8 @@ def get_library_path():
         "project_name": current.get("name"),
 
         # Dual library system
-        "project_library_path": str(project_library) if project_library.exists() else None,
+        "project_library_path": str(project_library),
+        "project_library_exists": project_library.exists(),
         "global_library_path": library_info.get("global_library_path") or effective_global_path,
         "effective_external_path": library_info.get("effective_external_path"),
         "external_source": library_info.get("source"),  # 'project', 'global', or 'default'

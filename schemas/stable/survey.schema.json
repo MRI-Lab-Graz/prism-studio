@@ -514,6 +514,9 @@
         "description": "Optional run hint for repeated assessments (e.g., 'run-2')"
       }
     },
-    "required": ["Description"]
+    "anyOf": [
+      { "required": ["Description"] },
+      { "required": ["AliasOf"] }
+    ]
   }
 }
