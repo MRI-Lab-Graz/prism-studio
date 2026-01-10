@@ -139,6 +139,211 @@ class DatasetValidator:
         self.schemas = schemas or {}
         self.library_path = library_path
 
+    def _build_effective_defs(self, sidecar_data: dict) -> dict:
+        """Resolve AliasOf and Aliases in sidecar data to build a flat definition table."""
+        effective_defs = {}
+        # First pass: identify canonical items and their direct aliases
+        for k, v in sidecar_data.items():
+            if not isinstance(v, dict):
+                continue
+            effective_defs[k] = v
+            if "Aliases" in v and isinstance(v["Aliases"], list):
+                for alias in v["Aliases"]:
+                    # If the alias column doesn't have its own explicit definition,
+                    # point it to this canonical parent.
+                    if alias not in sidecar_data:
+                        effective_defs[alias] = v
+
+        # Second pass: resolve explicit AliasOf pointers
+        for k, v in sidecar_data.items():
+            if isinstance(v, dict) and "AliasOf" in v:
+                target = v["AliasOf"]
+                if target in sidecar_data:
+                    effective_defs[k] = sidecar_data[target]
+        return effective_defs
+
+    def _get_allowed_values_list(self, col_def: dict) -> list | None:
+        """Get the list of allowed values from a column definition, resolving range logic."""
+        if "AllowedValues" in col_def and isinstance(col_def["AllowedValues"], list):
+            return [str(x) for x in col_def["AllowedValues"]]
+
+        if "Levels" in col_def and isinstance(col_def["Levels"], dict):
+            levels = col_def["Levels"]
+            level_keys = list(levels.keys())
+
+            # If explicit MinValue/MaxValue are provided, use them to define the range
+            min_val = col_def.get("MinValue")
+            max_val = col_def.get("MaxValue")
+
+            if min_val is not None and max_val is not None:
+                try:
+                    min_i = int(float(min_val))
+                    max_i = int(float(max_val))
+                    return [str(i) for i in range(min_i, max_i + 1)]
+                except (ValueError, TypeError):
+                    return level_keys
+
+            # Fallback: key range expansion for numeric ordinal scales
+            numeric_level_keys = []
+            try:
+                numeric_level_keys = [int(float(k)) for k in level_keys]
+            except ValueError:
+                pass
+
+            if numeric_level_keys:
+                min_level, max_level = min(numeric_level_keys), max(numeric_level_keys)
+                full_range = [str(i) for i in range(min_level, max_level + 1)]
+                if set(full_range).issuperset(set(level_keys)):
+                    return full_range
+
+            return level_keys
+        return None
+
+    def _check_allowed_values(
+        self, value: str, col_name: str, col_def: dict, file_name: str, row_idx: int
+    ) -> list:
+        """Checks if a value is within the allowed values or levels."""
+        allowed = self._get_allowed_values_list(col_def)
+        if not allowed or value in allowed:
+            return []
+
+        # Try numeric normalization (e.g., "7.0" -> "7")
+        try:
+            f_val = float(value)
+            if f_val.is_integer() and str(int(f_val)) in allowed:
+                return []
+        except (ValueError, TypeError):
+            pass
+
+        return [
+            (
+                "ERROR",
+                f"{file_name} line {row_idx}: Value '{value}' for '{col_name}' is not in allowed values: {allowed}",
+            )
+        ]
+
+    def _check_data_type(
+        self, value: str, col_name: str, col_def: dict, file_name: str, row_idx: int
+    ) -> list:
+        """Checks if a value matches the expected DataType (integer, float, date)."""
+        issues = []
+        dtype = col_def.get("DataType")
+
+        # Check Units="date" if DataType is missing
+        if not dtype and col_def.get("Units") == "date":
+            dtype = "date"
+
+        if not dtype:
+            return []
+
+        if dtype == "integer":
+            try:
+                if not float(value).is_integer():
+                    issues.append(
+                        (
+                            "ERROR",
+                            f"{file_name} line {row_idx}: Value '{value}' for '{col_name}' is not a valid integer",
+                        )
+                    )
+            except ValueError:
+                issues.append(
+                    (
+                        "ERROR",
+                        f"{file_name} line {row_idx}: Value '{value}' for '{col_name}' is not a valid integer",
+                    )
+                )
+        elif dtype == "float":
+            try:
+                float(value)
+            except ValueError:
+                issues.append(
+                    (
+                        "ERROR",
+                        f"{file_name} line {row_idx}: Value '{value}' for '{col_name}' is not a valid float",
+                    )
+                )
+        elif dtype == "date":
+            formats = ["%Y-%m-%d", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"]
+            valid_date, date_val = False, None
+            for fmt in formats:
+                try:
+                    date_val = datetime.strptime(value, fmt)
+                    valid_date = True
+                    break
+                except ValueError:
+                    continue
+
+            if valid_date:
+                if date_val > datetime.now():
+                    issues.append(
+                        (
+                            "WARNING",
+                            f"{file_name} line {row_idx}: Date '{value}' for '{col_name}' is in the future",
+                        )
+                    )
+                if date_val.year < 1900:
+                    issues.append(
+                        (
+                            "WARNING",
+                            f"{file_name} line {row_idx}: Date '{value}' for '{col_name}' is before 1900",
+                        )
+                    )
+            else:
+                issues.append(
+                    (
+                        "ERROR",
+                        f"{file_name} line {row_idx}: Value '{value}' for '{col_name}' is not a valid date (YYYY-MM-DD [HH:MM[:SS]])",
+                    )
+                )
+        return issues
+
+    def _check_numeric_range(
+        self, value: str, col_name: str, col_def: dict, file_name: str, row_idx: int
+    ) -> list:
+        """Checks if a numeric value is within Min/Max or WarnMin/Max ranges."""
+        range_keys = ["MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue"]
+        if not any(col_def.get(k) not in [None, ""] for k in range_keys):
+            return []
+
+        issues = []
+        try:
+            num_val = float(value)
+            # Mandatory bounds (ERROR)
+            for key, op, msg in [
+                ("MinValue", lambda a, b: a < b, "less than MinValue"),
+                ("MaxValue", lambda a, b: a > b, "greater than MaxValue"),
+            ]:
+                limit = col_def.get(key)
+                if limit not in [None, ""] and op(num_val, float(limit)):
+                    issues.append(
+                        (
+                            "ERROR",
+                            f"{file_name} line {row_idx}: Value {num_val} for '{col_name}' is {msg} {limit}",
+                        )
+                    )
+
+            # Warning bounds (WARNING)
+            for key, op, msg in [
+                ("WarnMinValue", lambda a, b: a < b, "less than WarnMinValue"),
+                ("WarnMaxValue", lambda a, b: a > b, "greater than WarnMaxValue"),
+            ]:
+                limit = col_def.get(key)
+                if limit not in [None, ""] and op(num_val, float(limit)):
+                    issues.append(
+                        (
+                            "WARNING",
+                            f"{file_name} line {row_idx}: Value {num_val} for '{col_name}' is {msg} {limit}",
+                        )
+                    )
+        except ValueError:
+            issues.append(
+                (
+                    "ERROR",
+                    f"{file_name} line {row_idx}: Value '{value}' for '{col_name}' is not numeric but has numeric constraints",
+                )
+            )
+        return issues
+
     def validate_data_content(self, file_path, modality, root_dir):
         """Validate data content against constraints in sidecar"""
         issues = []
@@ -167,27 +372,10 @@ class DatasetValidator:
             sidecar_data = json.loads(sidecar_content)
 
             # Build flat lookup table for validation, resolving AliasOf and Aliases
-            effective_defs = {}
-            # First pass: identify canonical items and their direct aliases
-            for k, v in sidecar_data.items():
-                if not isinstance(v, dict):
-                    continue
-                effective_defs[k] = v
-                if "Aliases" in v and isinstance(v["Aliases"], list):
-                    for alias in v["Aliases"]:
-                        # If the alias column doesn't have its own explicit definition,
-                        # point it to this canonical parent.
-                        if alias not in sidecar_data:
-                            effective_defs[alias] = v
-            
-            # Second pass: resolve explicit AliasOf pointers
-            for k, v in sidecar_data.items():
-                if isinstance(v, dict) and "AliasOf" in v:
-                    target = v["AliasOf"]
-                    if target in sidecar_data:
-                        effective_defs[k] = sidecar_data[target]
+            effective_defs = self._build_effective_defs(sidecar_data)
 
             # Read TSV file
+            file_name = os.path.basename(file_path)
             with open(file_path, "r", newline="", encoding="utf-8") as tsvfile:
                 reader = csv.DictReader(tsvfile, delimiter="\t")
 
@@ -195,7 +383,7 @@ class DatasetValidator:
                     return [
                         (
                             "ERROR",
-                            f"File {os.path.basename(file_path)} is not a valid TSV (no header found).",
+                            f"File {file_name} is not a valid TSV (no header found).",
                         )
                     ]
 
@@ -210,7 +398,7 @@ class DatasetValidator:
                         issues.append(
                             (
                                 "WARNING",
-                                f"{os.path.basename(file_path)} line {row_idx}: Row contains only empty values. Use 'n/a' for missing data, or delete the file if no data exists.",
+                                f"{file_name} line {row_idx}: Row contains only empty values. Use 'n/a' for missing data, or delete the file if no data exists.",
                             )
                         )
                         continue
@@ -220,256 +408,35 @@ class DatasetValidator:
                             col_def = effective_defs[col_name]
 
                             # Skip empty values
-                            if value is None or value.strip() == "" or value.lower() in ("n/a", "na"):
+                            if (
+                                value is None
+                                or value.strip() == ""
+                                or value.lower() in ("n/a", "na")
+                            ):
                                 continue
 
-                            # Check AllowedValues, Levels, or Min/Max range
-                            allowed = None
-                            if "AllowedValues" in col_def and isinstance(col_def["AllowedValues"], list):
-                                allowed = [str(x) for x in col_def["AllowedValues"]]
-                            elif "Levels" in col_def and isinstance(col_def["Levels"], dict):
-                                levels = col_def["Levels"]
-                                level_keys = list(levels.keys())
-
-                                # If explicit MinValue/MaxValue are provided, use them to define the range
-                                min_val = col_def.get("MinValue")
-                                max_val = col_def.get("MaxValue")
-                                
-                                if min_val is not None and max_val is not None:
-                                    try:
-                                        min_i = int(float(min_val))
-                                        max_i = int(float(max_val))
-                                        allowed = [str(i) for i in range(min_i, max_i + 1)]
-                                    except (ValueError, TypeError):
-                                        allowed = level_keys
-                                else:
-                                    # Fallback: If level keys are numeric endpoints (e.g., {"0": "...", "5": "..."})
-                                    # allow the full inclusive integer range to avoid over-rejecting mid-scale values.
-                                    numeric_level_keys = []
-                                    try:
-                                        numeric_level_keys = [
-                                            int(float(k)) for k in level_keys
-                                        ]
-                                    except ValueError:
-                                        numeric_level_keys = []
-
-                                    if numeric_level_keys:
-                                        min_level = min(numeric_level_keys)
-                                        max_level = max(numeric_level_keys)
-
-                                        # Only expand when we clearly have an ordinal numeric scale that might omit midpoints.
-                                        # If the provided keys already cover every integer in the range, keep them as-is.
-                                        full_range = [
-                                            str(i) for i in range(min_level, max_level + 1)
-                                        ]
-                                        if set(full_range).issuperset(set(level_keys)):
-                                            allowed = full_range
-                                        else:
-                                            allowed = level_keys
-                                    else:
-                                        allowed = level_keys
-
-                            if allowed:
-                                if value not in allowed:
-                                    # Try numeric normalization (e.g., "7.0" -> "7")
-                                    is_normalized = False
-                                    try:
-                                        f_val = float(value)
-                                        if f_val.is_integer():
-                                            norm_val = str(int(f_val))
-                                            if norm_val in allowed:
-                                                is_normalized = True
-                                    except (ValueError, TypeError):
-                                        pass
-
-                                    if not is_normalized:
-                                        issues.append(
-                                            (
-                                                "ERROR",
-                                                f"{os.path.basename(file_path)} line {row_idx}: Value '{value}' for '{col_name}' is not in allowed values: {allowed}",
-                                            )
-                                        )
-
-                            # Check DataType
-                            if "DataType" in col_def:
-                                dtype = col_def["DataType"]
-                                if dtype == "integer":
-                                    try:
-                                        # Check if it's a valid integer (e.g. "5", "5.0" might be acceptable depending on strictness, but usually "5")
-                                        # Let's be strict: must be parseable as int and str representation matches or float is integer
-                                        float_val = float(value)
-                                        if not float_val.is_integer():
-                                            issues.append(
-                                                (
-                                                    "ERROR",
-                                                    f"{os.path.basename(file_path)} line {row_idx}: Value '{value}' for '{col_name}' is not a valid integer",
-                                                )
-                                            )
-                                    except ValueError:
-                                        issues.append(
-                                            (
-                                                "ERROR",
-                                                f"{os.path.basename(file_path)} line {row_idx}: Value '{value}' for '{col_name}' is not a valid integer",
-                                            )
-                                        )
-                                elif dtype == "float":
-                                    try:
-                                        float(value)
-                                    except ValueError:
-                                        issues.append(
-                                            (
-                                                "ERROR",
-                                                f"{os.path.basename(file_path)} line {row_idx}: Value '{value}' for '{col_name}' is not a valid float",
-                                            )
-                                        )
-                                elif dtype == "date":
-                                    valid_date = False
-                                    date_val = None
-                                    formats = [
-                                        "%Y-%m-%d",
-                                        "%Y-%m-%d %H:%M",
-                                        "%Y-%m-%d %H:%M:%S",
-                                    ]
-
-                                    for fmt in formats:
-                                        try:
-                                            date_val = datetime.strptime(value, fmt)
-                                            valid_date = True
-                                            break
-                                        except ValueError:
-                                            continue
-
-                                    if valid_date:
-                                        if date_val > datetime.now():
-                                            issues.append(
-                                                (
-                                                    "WARNING",
-                                                    f"{os.path.basename(file_path)} line {row_idx}: Date '{value}' for '{col_name}' is in the future",
-                                                )
-                                            )
-                                        if date_val.year < 1900:
-                                            issues.append(
-                                                (
-                                                    "WARNING",
-                                                    f"{os.path.basename(file_path)} line {row_idx}: Date '{value}' for '{col_name}' is before 1900",
-                                                )
-                                            )
-                                    else:
-                                        issues.append(
-                                            (
-                                                "ERROR",
-                                                f"{os.path.basename(file_path)} line {row_idx}: Value '{value}' for '{col_name}' is not a valid date (YYYY-MM-DD [HH:MM[:SS]])",
-                                            )
-                                        )
-
-                            # Check Units="date" if DataType is missing
-                            elif col_def.get("Units") == "date":
-                                valid_date = False
-                                date_val = None
-                                formats = [
-                                    "%Y-%m-%d",
-                                    "%Y-%m-%d %H:%M",
-                                    "%Y-%m-%d %H:%M:%S",
-                                ]
-
-                                for fmt in formats:
-                                    try:
-                                        date_val = datetime.strptime(value, fmt)
-                                        valid_date = True
-                                        break
-                                    except ValueError:
-                                        continue
-
-                                if valid_date:
-                                    if date_val > datetime.now():
-                                        issues.append(
-                                            (
-                                                "WARNING",
-                                                f"{os.path.basename(file_path)} line {row_idx}: Date '{value}' for '{col_name}' is in the future",
-                                            )
-                                        )
-                                    if date_val.year < 1900:
-                                        issues.append(
-                                            (
-                                                "WARNING",
-                                                f"{os.path.basename(file_path)} line {row_idx}: Date '{value}' for '{col_name}' is before 1900",
-                                            )
-                                        )
-                                else:
-                                    issues.append(
-                                        (
-                                            "ERROR",
-                                            f"{os.path.basename(file_path)} line {row_idx}: Value '{value}' for '{col_name}' is not a valid date (YYYY-MM-DD [HH:MM[:SS]])",
-                                        )
-                                    )
-
-                            # Check MinValue/MaxValue/WarnMinValue/WarnMaxValue
-                            if any(
-                                col_def.get(k) not in [None, ""]
-                                for k in [
-                                    "MinValue",
-                                    "MaxValue",
-                                    "WarnMinValue",
-                                    "WarnMaxValue",
-                                ]
-                            ):
-                                try:
-                                    num_val = float(value)
-
-                                    if "MinValue" in col_def and col_def["MinValue"] not in [None, ""]:
-                                        min_val = float(col_def["MinValue"])
-                                        if num_val < min_val:
-                                            issues.append(
-                                                (
-                                                    "ERROR",
-                                                    f"{os.path.basename(file_path)} line {row_idx}: Value {num_val} for '{col_name}' is less than MinValue {min_val}",
-                                                )
-                                            )
-
-                                    if "MaxValue" in col_def and col_def["MaxValue"] not in [None, ""]:
-                                        max_val = float(col_def["MaxValue"])
-                                        if num_val > max_val:
-                                            issues.append(
-                                                (
-                                                    "ERROR",
-                                                    f"{os.path.basename(file_path)} line {row_idx}: Value {num_val} for '{col_name}' is greater than MaxValue {max_val}",
-                                                )
-                                            )
-
-                                    if "WarnMinValue" in col_def and col_def["WarnMinValue"] not in [None, ""]:
-                                        warn_min_val = float(col_def["WarnMinValue"])
-                                        if num_val < warn_min_val:
-                                            issues.append(
-                                                (
-                                                    "WARNING",
-                                                    f"{os.path.basename(file_path)} line {row_idx}: Value {num_val} for '{col_name}' is less than WarnMinValue {warn_min_val}",
-                                                )
-                                            )
-
-                                    if "WarnMaxValue" in col_def and col_def["WarnMaxValue"] not in [None, ""]:
-                                        warn_max_val = float(col_def["WarnMaxValue"])
-                                        if num_val > warn_max_val:
-                                            issues.append(
-                                                (
-                                                    "WARNING",
-                                                    f"{os.path.basename(file_path)} line {row_idx}: Value {num_val} for '{col_name}' is greater than WarnMaxValue {warn_max_val}",
-                                                )
-                                            )
-
-                                except ValueError:
-                                    # Only report if we expected a number (Min/Max present) but got non-number
-                                    issues.append(
-                                        (
-                                            "ERROR",
-                                            f"{os.path.basename(file_path)} line {row_idx}: Value '{value}' for '{col_name}' is not numeric but has numeric constraints",
-                                        )
-                                    )
+                            # Apply validation helpers
+                            issues.extend(
+                                self._check_allowed_values(
+                                    value, col_name, col_def, file_name, row_idx
+                                )
+                            )
+                            issues.extend(
+                                self._check_data_type(
+                                    value, col_name, col_def, file_name, row_idx
+                                )
+                            )
+                            issues.extend(
+                                self._check_numeric_range(
+                                    value, col_name, col_def, file_name, row_idx
+                                )
+                            )
 
                 if row_count == 0:
                     issues.append(
                         (
                             "WARNING",
-                            f"File {os.path.basename(file_path)} contains no data rows. If data is missing, please delete the file.",
+                            f"File {file_name} contains no data rows. If data is missing, please delete the file.",
                         )
                     )
 

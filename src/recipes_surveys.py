@@ -20,9 +20,24 @@ from datetime import datetime
 from pathlib import Path
 import csv
 import json
+import math
 from typing import Any, Dict, List, Optional
 
 from src.reporting import get_i18n_text, _pick_references
+
+# Safe dictionary for eval() calls
+SAFE_GLOBALS = {
+    "__builtins__": None,
+    "abs": abs,
+    "round": round,
+    "min": min,
+    "max": max,
+    "sum": sum,
+    "math": math,
+    "sqrt": math.sqrt,
+    "exp": math.exp,
+    "log": math.log,
+}
 
 
 @dataclass(frozen=True)
@@ -515,7 +530,8 @@ def _apply_survey_derivative_recipe_to_rows(
                         expr = expr.replace(f"{{{item_id}}}", val_str)
                     if not any_missing:
                         try:
-                            d_result = eval(expr, {"__builtins__": None}, {})
+                            # Use SAFE_GLOBALS to prevent code injection
+                            d_result = eval(expr, SAFE_GLOBALS, {})
                         except Exception:
                             d_result = None
 
@@ -555,8 +571,8 @@ def _apply_survey_derivative_recipe_to_rows(
                         val_str = str(v) if v is not None else "0.0"
                         expr = expr.replace(f"{{{item_id}}}", val_str)
                     try:
-                        # Safe-ish eval for basic math
-                        result = eval(expr, {"__builtins__": None}, {})
+                        # Use SAFE_GLOBALS to prevent code injection
+                        result = eval(expr, SAFE_GLOBALS, {})
                     except Exception:
                         result = None
                 else:
