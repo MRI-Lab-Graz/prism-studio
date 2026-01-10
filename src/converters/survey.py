@@ -29,6 +29,8 @@ _NON_ITEM_TOPLEVEL_KEYS = {
     # Template metadata (not survey response columns)
     "I18n",
     "LimeSurvey",
+    "_aliases",
+    "_reverse_aliases",
 }
 
 _MISSING_TOKEN = "n/a"
@@ -502,6 +504,17 @@ def _convert_survey_dataframe_to_prism_dataset(
         if canonical_aliases:
             sidecar = _canonicalize_template_items(sidecar=sidecar, canonical_aliases=canonical_aliases)
 
+        # Pre-process AliasOf mapping within the template
+        for k, v in sidecar.items():
+            if k in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(v, dict):
+                continue
+            if "AliasOf" in v:
+                target = v["AliasOf"]
+                # Store which canonical item this alias points to
+                sidecar.setdefault("_aliases", {})[k] = target
+                # Also store the reverse for fast lookup during data mapping
+                sidecar.setdefault("_reverse_aliases", {}).setdefault(target, []).append(k)
+
         templates[task_norm] = {"path": json_path, "json": sidecar, "task": task_norm}
 
         for k in sidecar.keys():
@@ -843,17 +856,38 @@ def _convert_survey_dataframe_to_prism_dataset(
                 continue
 
             schema = templates[task]["json"]
-            expected = [k for k in schema.keys() if k not in _NON_ITEM_TOPLEVEL_KEYS]
+            all_items = [k for k in schema.keys() if k not in _NON_ITEM_TOPLEVEL_KEYS]
+
+            # In the final dataset, we only want canonical columns, no aliases.
+            expected = [k for k in all_items if k not in schema.get("_aliases", {})]
+
             present_cols = [c for c, t in col_to_task.items() if t == task]
+            # Also consider columns that are aliases of items in this task
+            for c in df.columns:
+                if c in schema.get("_aliases", {}):
+                    # This column is an alias pointing to a canonical item in this task
+                    present_cols.append(c)
+
             if not present_cols:
                 continue
 
             out: dict[str, str] = {}
             for item_id in expected:
-                if item_id in df.columns:
-                    # Validate value before normalizing
-                    _validate_item_value(item_id, row[item_id], schema, sub_id, task)
-                    normalized = _normalize_item_value(row[item_id])
+                # Look for data in the canonical column or any of its aliases defined in the template
+                candidates = [item_id] + schema.get("_reverse_aliases", {}).get(item_id, [])
+                found_val = None
+                found_col = None
+
+                for cand in candidates:
+                    if cand in df.columns and not _is_missing_value(row[cand]):
+                        found_val = row[cand]
+                        found_col = cand
+                        break
+
+                if found_col:
+                    # Validate value using the canonical item's schema
+                    _validate_item_value(item_id, found_val, schema, sub_id, task)
+                    normalized = _normalize_item_value(found_val)
                     if normalized == _MISSING_TOKEN:
                         missing_cells_by_subject[sub_id] = missing_cells_by_subject.get(sub_id, 0) + 1
                     out[item_id] = normalized
@@ -947,6 +981,12 @@ def _localize_survey_template(template: dict, *, language: str | None) -> dict:
         if key in _NON_ITEM_TOPLEVEL_KEYS:
             continue
         if not isinstance(item, dict):
+            continue
+
+        # If this item is an alias, we don't include it in the final dataset sidecar.
+        # Its data was mapped to the canonical item during conversion.
+        if "AliasOf" in item:
+            out.pop(key)
             continue
 
         if "Description" in item:

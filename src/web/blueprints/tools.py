@@ -8,6 +8,7 @@ from pathlib import Path
 from datetime import date
 from flask import Blueprint, render_template, request, jsonify, send_file, current_app, session
 from src.config import load_app_settings, load_config
+from src.web.blueprints.projects import get_current_project
 
 tools_bp = Blueprint("tools", __name__)
 
@@ -53,6 +54,30 @@ def _template_dir(*, modality: str, library_root: Path) -> Path:
     if candidate.is_dir():
         return candidate
     return library_root
+
+
+def _project_library_root() -> Path:
+    project = get_current_project()
+    project_path = project.get("path")
+    if not project_path:
+        raise RuntimeError(
+            "Select a project first; the template editor only saves into the project's custom library."
+        )
+    project_root = Path(project_path).expanduser().resolve()
+    candidates = [project_root / "code" / "library", project_root / "library"]
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    fallback = project_root / "library"
+    fallback.mkdir(parents=True, exist_ok=True)
+    return fallback
+
+
+def _project_template_folder(*, modality: str) -> Path:
+    library_root = _project_library_root()
+    folder = library_root / modality
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
 
 
 def _load_prism_schema(*, modality: str, schema_version: str | None) -> dict:
@@ -475,7 +500,6 @@ def api_template_editor_save():
     modality = (payload.get("modality") or "").strip().lower()
     filename = (payload.get("filename") or "").strip()
     template = payload.get("template")
-    library_path = (payload.get("library_path") or "").strip() or None
 
     if modality not in {"survey", "biometrics"}:
         return jsonify({"error": "Invalid modality"}), 400
@@ -487,8 +511,7 @@ def api_template_editor_save():
         return jsonify({"error": "Template must be a JSON object"}), 400
 
     try:
-        library_root = _resolve_library_root(library_path)
-        folder = _template_dir(modality=modality, library_root=library_root)
+        folder = _project_template_folder(modality=modality)
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / filename
         
@@ -496,6 +519,8 @@ def api_template_editor_save():
             json.dump(template, f, indent=2, ensure_ascii=False)
             
         return jsonify({"ok": True, "message": f"Saved to {path}"}), 200
+    except RuntimeError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

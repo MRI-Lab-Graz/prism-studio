@@ -345,8 +345,15 @@ def process_dataframe(
 
         for path in [legacy_path]:  # , bids_path):
             if not os.path.exists(path):
+                # Strip aliases from the output sidecar to keep it clean
+                clean_schema = {
+                    k: v
+                    for k, v in schema.items()
+                    if k in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]
+                    or (isinstance(v, dict) and "AliasOf" not in v)
+                }
                 with open(path, "w") as f:
-                    json.dump(schema, f, indent=2)
+                    json.dump(clean_schema, f, indent=2)
 
     print("Conversion complete.")
 
