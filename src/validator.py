@@ -185,16 +185,20 @@ class DatasetValidator:
 
             # Fallback: key range expansion for numeric ordinal scales
             numeric_level_keys = []
-            try:
-                numeric_level_keys = [int(float(k)) for k in level_keys]
-            except ValueError:
-                pass
+            non_numeric_keys = []
+            for k in level_keys:
+                try:
+                    numeric_level_keys.append(int(float(k)))
+                except (ValueError, TypeError):
+                    non_numeric_keys.append(k)
 
             if numeric_level_keys:
                 min_level, max_level = min(numeric_level_keys), max(numeric_level_keys)
-                full_range = [str(i) for i in range(min_level, max_level + 1)]
-                if set(full_range).issuperset(set(level_keys)):
-                    return full_range
+                # Only expand if it looks like a continuous Likert-style range
+                # and doesn't create thousands of entries from arbitrary numbers
+                if 1 < (max_level - min_level) < 100:
+                    full_range = [str(i) for i in range(min_level, max_level + 1)]
+                    return full_range + non_numeric_keys
 
             return level_keys
         return None

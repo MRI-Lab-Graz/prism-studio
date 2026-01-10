@@ -703,8 +703,19 @@ def list_library_files():
 
     results = {"participants": [], "survey": [], "biometrics": [], "other": []}
     try:
-        participants_path = os.path.join(library_path, "participants.json")
-        if os.path.exists(participants_path):
+        # Check library_path and parent folders for participants.json
+        lib_p = Path(library_path).resolve()
+        participants_path = None
+        # Priority order: current folder, then parent folders up to 3 levels
+        participants_candidates = [lib_p / "participants.json"]
+        participants_candidates.extend([p / "participants.json" for p in lib_p.parents[:3]])
+
+        for p_cand in participants_candidates:
+            if p_cand.exists() and p_cand.is_file():
+                participants_path = str(p_cand)
+                break
+
+        if participants_path:
             results["participants"].append(_extract_template_info(participants_path, "participants.json"))
 
         for folder in ["survey", "biometrics"]:

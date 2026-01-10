@@ -56,6 +56,7 @@ def _load_participants_template(library_dir: Path) -> dict | None:
     `survey-participant.json` placed alongside the survey templates.
     """
 
+    library_dir = library_dir.resolve()
     candidates: list[Path] = []
     if library_dir.name == "survey":
         candidates.append(library_dir.parent / "participants.json")
@@ -505,21 +506,27 @@ def _convert_survey_dataframe_to_prism_dataset(
             sidecar = _canonicalize_template_items(sidecar=sidecar, canonical_aliases=canonical_aliases)
 
         # Pre-process AliasOf mapping within the template
-        for k, v in sidecar.items():
+        # Initialize special keys outside the loop to avoid "dictionary changed size during iteration"
+        if "_aliases" not in sidecar:
+            sidecar["_aliases"] = {}
+        if "_reverse_aliases" not in sidecar:
+            sidecar["_reverse_aliases"] = {}
+
+        for k, v in list(sidecar.items()):
             if k in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(v, dict):
                 continue
             # New forward Aliases format
             if "Aliases" in v and isinstance(v["Aliases"], list):
                 for alias in v["Aliases"]:
-                    sidecar.setdefault("_aliases", {})[alias] = k
-                    sidecar.setdefault("_reverse_aliases", {}).setdefault(k, []).append(alias)
+                    sidecar["_aliases"][alias] = k
+                    sidecar["_reverse_aliases"].setdefault(k, []).append(alias)
             # Legacy backward AliasOf format
             if "AliasOf" in v:
                 target = v["AliasOf"]
                 # Store which canonical item this alias points to
-                sidecar.setdefault("_aliases", {})[k] = target
+                sidecar["_aliases"][k] = target
                 # Also store the reverse for fast lookup during data mapping
-                sidecar.setdefault("_reverse_aliases", {}).setdefault(target, []).append(k)
+                sidecar["_reverse_aliases"].setdefault(target, []).append(k)
 
         templates[task_norm] = {"path": json_path, "json": sidecar, "task": task_norm}
 
@@ -669,6 +676,8 @@ def _convert_survey_dataframe_to_prism_dataset(
             unknown_cols.append(c)
 
     conversion_warnings: list[str] = []
+    # Track items that used numeric range tolerance to avoid log spam
+    items_using_tolerance: dict[str, set[str]] = {}  # task -> set(item_ids)
 
     tasks_with_data = set(col_to_task.values())
     if selected_tasks is not None:
@@ -687,12 +696,21 @@ def _convert_survey_dataframe_to_prism_dataset(
         missing_items_by_task[task] = len(missing)
 
     if unknown_cols:
-        if unknown == "error":
-            raise ValueError("Unmapped columns: " + ", ".join(unknown_cols))
-        if unknown == "warn":
-            shown = ", ".join(unknown_cols[:10])
-            more = "" if len(unknown_cols) <= 10 else f" (+{len(unknown_cols)-10} more)"
-            conversion_warnings.append(f"Unmapped columns (not in any survey template): {shown}{more}")
+        # Filter out common LimeSurvey/Platform bookkeeping columns to reduce noise
+        bookkeeping = {
+            "id", "submitdate", "lastpage", "startlanguage", "seed", "startdate", "datestamp",
+            "token", "refurl", "ipaddr", "googleid", "session_id", "participant_id",
+            "attribute_1", "attribute_2", "attribute_3"
+        }
+        filtered_unknown = [c for c in unknown_cols if str(c).lower() not in bookkeeping]
+
+        if filtered_unknown:
+            if unknown == "error":
+                raise ValueError("Unmapped columns: " + ", ".join(filtered_unknown))
+            if unknown == "warn":
+                shown = ", ".join(filtered_unknown[:10])
+                more = "" if len(filtered_unknown) <= 10 else f" (+{len(filtered_unknown)-10} more)"
+                conversion_warnings.append(f"Unmapped columns (not in any survey template): {shown}{more}")
 
     if dry_run:
         return SurveyConvertResult(
@@ -848,12 +866,7 @@ def _convert_survey_dataframe_to_prism_dataset(
                         max_num = max(level_nums)
 
                 if val_num is not None and min_num is not None and max_num is not None and min_num <= val_num <= max_num:
-                    conversion_warnings.append(
-                        "[LSA tolerance] Value accepted but would fail strict Levels check: "
-                        f"question='{item_id}', subject='{sub_id}', task='{task}', value='{val_str}'. "
-                        f"Template Levels keys={allowed_str}; treated as numeric range {min_num}..{max_num}. "
-                        "Consider adding MinValue/MaxValue or enumerating all numeric Levels."
-                    )
+                    items_using_tolerance.setdefault(task, set()).add(item_id)
                     return
 
             # Strict (or not safely tolerable): error with detailed context.
@@ -926,6 +939,18 @@ def _convert_survey_dataframe_to_prism_dataset(
                 writer.writeheader()
                 writer.writerow(out)
 
+    # Add summary for items using numeric range tolerance
+    if items_using_tolerance:
+        for task, item_ids in sorted(items_using_tolerance.items()):
+            sorted_items = sorted(list(item_ids))
+            shown = ", ".join(sorted_items[:10])
+            more = "" if len(sorted_items) <= 10 else f" (+{len(sorted_items)-10} more)"
+            conversion_warnings.append(
+                f"Task '{task}': Numeric values for items [{shown}{more}] were accepted via range tolerance "
+                "because they fall between the defined anchor levels. Consider explicitly adding MinValue/MaxValue "
+                "to the template for strict validation."
+            )
+
     return SurveyConvertResult(
         tasks_included=sorted(tasks_with_data),
         unknown_columns=unknown_cols,
@@ -971,8 +996,19 @@ def _localize_survey_template(template: dict, *, language: str | None) -> dict:
     chosen = chosen or default_lang or tech_lang or "en"
 
     # Drop top-level keys that are not survey items / not allowed by schema.
+    # We keep Technical, Study, Metadata. Everything else in _NON_ITEM_TOPLEVEL_KEYS is internal/template-only.
     out.pop("I18n", None)
     out.pop("LimeSurvey", None)
+    out.pop("_aliases", None)
+    out.pop("_reverse_aliases", None)
+
+    # Ensure critical blocks exist for schema validity
+    if "Technical" not in out:
+        out["Technical"] = {"StimulusType": "Questionnaire", "FileFormat": "tsv"}
+    if "Study" not in out:
+        out["Study"] = {"TaskName": out.get("Technical", {}).get("TaskName") or "survey"}
+    if "Metadata" not in out:
+        out["Metadata"] = {"SchemaVersion": "1.1.1", "Creator": "prism-survey-converter"}
 
     def pick_lang(val):
         if isinstance(val, dict):
