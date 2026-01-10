@@ -418,6 +418,192 @@ def _format_numeric_cell(val: Any) -> str:
         return str(val)
 
 
+def _get_item_value(
+    item_id: str,
+    data: dict,
+    invert_items: set[str],
+    invert_min: Any,
+    invert_max: Any,
+) -> float | None:
+    raw = data.get(item_id)
+    v = _parse_numeric_cell(raw)
+    if v is None:
+        return None
+    if (
+        item_id in invert_items
+        and invert_min is not None
+        and invert_max is not None
+    ):
+        try:
+            return float(invert_max) + float(invert_min) - float(v)
+        except Exception:
+            return v
+    return v
+
+
+def _map_value_to_bucket(val: float, mapping: dict) -> Any:
+    for range_str, mapped in mapping.items():
+        if "-" in str(range_str):
+            try:
+                low, high = map(float, str(range_str).split("-"))
+                if low <= val <= high:
+                    return mapped
+            except Exception:
+                continue
+        else:
+            try:
+                if float(val) == float(range_str):
+                    return mapped
+            except Exception:
+                continue
+    return None
+
+
+def _calculate_derived_variables(
+    derived_cfg: list[dict],
+    current_row: dict[str, str],
+    invert_items: set[str],
+    invert_min: Any,
+    invert_max: Any,
+) -> None:
+    """Compute derived variables (e.g., averages or formulas) and add to row."""
+    for d in derived_cfg:
+        d_name = d.get("Name")
+        if not d_name:
+            continue
+        d_method = str(d.get("Method", "max")).strip().lower()
+        d_items = [str(i).strip() for i in (d.get("Items") or []) if str(i).strip()]
+
+        d_result = None
+        if d_method in {"max", "min", "mean", "avg", "sum"}:
+            d_values = []
+            for item_id in d_items:
+                v = _get_item_value(
+                    item_id, current_row, invert_items, invert_min, invert_max
+                )
+                if v is not None:
+                    d_values.append(v)
+
+            if d_values:
+                if d_method == "max":
+                    d_result = max(d_values)
+                elif d_method == "min":
+                    d_result = min(d_values)
+                elif d_method in ("mean", "avg"):
+                    d_result = sum(d_values) / float(len(d_values))
+                elif d_method == "sum":
+                    d_result = sum(d_values)
+
+        elif d_method == "map":
+            mapping = d.get("Mapping") or {}
+            source = d.get("Source")
+            if not source and d_items:
+                source = d_items[0]
+            v = (
+                _get_item_value(
+                    str(source).strip(), current_row, invert_items, invert_min, invert_max
+                )
+                if source
+                else None
+            )
+            if v is not None and isinstance(mapping, dict) and mapping:
+                d_result = _map_value_to_bucket(v, mapping)
+
+        elif d_method == "formula":
+            formula = d.get("Formula")
+            if formula:
+                expr = str(formula)
+                any_missing = False
+                for item_id in d_items:
+                    v = _get_item_value(
+                        item_id, current_row, invert_items, invert_min, invert_max
+                    )
+                    if v is None:
+                        any_missing = True
+                        break
+                    val_str = str(v)
+                    expr = expr.replace(f"{{{item_id}}}", val_str)
+                if not any_missing:
+                    try:
+                        # Use SAFE_GLOBALS to prevent code injection
+                        d_result = eval(expr, SAFE_GLOBALS, {})
+                    except Exception:
+                        d_result = None
+
+        current_row[d_name] = _format_numeric_cell(d_result)
+
+
+def _calculate_scores(
+    scores: list[dict],
+    current_row: dict[str, str],
+    invert_items: set[str],
+    invert_min: Any,
+    invert_max: Any,
+) -> dict[str, str]:
+    """Compute primary scores based on recipe methods."""
+    out: dict[str, str] = {}
+    for score in scores:
+        name = str(score.get("Name", "")).strip()
+        if not name:
+            continue
+        method = str(score.get("Method", "sum")).strip().lower()
+        items = [str(i).strip() for i in (score.get("Items") or []) if str(i).strip()]
+        missing = str(score.get("Missing", "ignore")).strip().lower()
+
+        values: list[float] = []
+        any_missing = False
+        for item_id in items:
+            v = _get_item_value(
+                item_id, current_row, invert_items, invert_min, invert_max
+            )
+            if v is None:
+                any_missing = True
+            else:
+                values.append(v)
+
+        result: float | None = None
+        if missing in {"require_all", "all", "strict"} and any_missing:
+            result = None
+        elif method == "formula":
+            formula = score.get("Formula")
+            if formula:
+                expr = formula
+                # Replace {item_id} with value from current_row (which includes derived)
+                for item_id in items:
+                    v = _get_item_value(
+                        item_id, current_row, invert_items, invert_min, invert_max
+                    )
+                    val_str = str(v) if v is not None else "0.0"
+                    expr = expr.replace(f"{{{item_id}}}", val_str)
+                try:
+                    # Use SAFE_GLOBALS to prevent code injection
+                    result = eval(expr, SAFE_GLOBALS, {})
+                except Exception:
+                    result = None
+        elif method == "map":
+            source = score.get("Source")
+            mapping = score.get("Mapping")
+            if source and mapping:
+                val = _get_item_value(
+                    source, current_row, invert_items, invert_min, invert_max
+                )
+                if val is not None:
+                    result = _map_value_to_bucket(val, mapping)
+        elif not values:
+            result = None
+        else:
+            if method == "mean":
+                result = sum(values) / float(len(values))
+            else:
+                result = sum(values)
+
+        formatted_val = _format_numeric_cell(result)
+        out[name] = formatted_val
+        # Add to current_row so subsequent scores can reference it
+        current_row[name] = formatted_val
+    return out
+
+
 def _apply_survey_derivative_recipe_to_rows(
     recipe: dict, rows: list[dict[str, str]], include_raw: bool = False
 ) -> tuple[list[str], list[dict[str, str]]]:
@@ -448,172 +634,15 @@ def _apply_survey_derivative_recipe_to_rows(
         # We work on a copy to allow derived variables to be used in scores
         current_row = row.copy()
 
-        def _get_item_value(item_id: str, data: dict) -> float | None:
-            raw = data.get(item_id)
-            v = _parse_numeric_cell(raw)
-            if v is None:
-                return None
-            if (
-                item_id in invert_items
-                and invert_min is not None
-                and invert_max is not None
-            ):
-                try:
-                    return float(invert_max) + float(invert_min) - float(v)
-                except Exception:
-                    return v
-            return v
-
-        def _map_value_to_bucket(val: float, mapping: dict) -> Any:
-            for range_str, mapped in mapping.items():
-                if "-" in str(range_str):
-                    try:
-                        low, high = map(float, str(range_str).split("-"))
-                        if low <= val <= high:
-                            return mapped
-                    except Exception:
-                        continue
-                else:
-                    try:
-                        if float(val) == float(range_str):
-                            return mapped
-                    except Exception:
-                        continue
-            return None
-
         # 1) Compute Derived variables first
-        for d in derived_cfg:
-            d_name = d.get("Name")
-            if not d_name:
-                continue
-            d_method = str(d.get("Method", "max")).strip().lower()
-            d_items = [str(i).strip() for i in (d.get("Items") or []) if str(i).strip()]
-
-            d_result = None
-            if d_method in {"max", "min", "mean", "avg", "sum"}:
-                d_values = []
-                for item_id in d_items:
-                    v = _get_item_value(item_id, current_row)
-                    if v is not None:
-                        d_values.append(v)
-
-                if d_values:
-                    if d_method == "max":
-                        d_result = max(d_values)
-                    elif d_method == "min":
-                        d_result = min(d_values)
-                    elif d_method in ("mean", "avg"):
-                        d_result = sum(d_values) / float(len(d_values))
-                    elif d_method == "sum":
-                        d_result = sum(d_values)
-
-            elif d_method == "map":
-                mapping = d.get("Mapping") or {}
-                source = d.get("Source")
-                if not source and d_items:
-                    source = d_items[0]
-                v = _get_item_value(str(source).strip(), current_row) if source else None
-                if v is not None and isinstance(mapping, dict) and mapping:
-                    d_result = _map_value_to_bucket(v, mapping)
-
-            elif d_method == "formula":
-                formula = d.get("Formula")
-                if formula:
-                    expr = str(formula)
-                    any_missing = False
-                    for item_id in d_items:
-                        v = _get_item_value(item_id, current_row)
-                        if v is None:
-                            any_missing = True
-                            break
-                        val_str = str(v)
-                        expr = expr.replace(f"{{{item_id}}}", val_str)
-                    if not any_missing:
-                        try:
-                            # Use SAFE_GLOBALS to prevent code injection
-                            d_result = eval(expr, SAFE_GLOBALS, {})
-                        except Exception:
-                            d_result = None
-
-            current_row[d_name] = _format_numeric_cell(d_result)
+        _calculate_derived_variables(
+            derived_cfg, current_row, invert_items, invert_min, invert_max
+        )
 
         # 2) Compute Scores
-        out: dict[str, str] = {}
-        for score in scores:
-            name = str(score.get("Name", "")).strip()
-            if not name:
-                continue
-            method = str(score.get("Method", "sum")).strip().lower()
-            items = [
-                str(i).strip() for i in (score.get("Items") or []) if str(i).strip()
-            ]
-            missing = str(score.get("Missing", "ignore")).strip().lower()
-
-            values: list[float] = []
-            any_missing = False
-            for item_id in items:
-                v = _get_item_value(item_id, current_row)
-                if v is None:
-                    any_missing = True
-                else:
-                    values.append(v)
-
-            result: float | None
-            if missing in {"require_all", "all", "strict"} and any_missing:
-                result = None
-            elif method == "formula":
-                formula = score.get("Formula")
-                if formula:
-                    expr = formula
-                    # Replace {item_id} with value from current_row (which includes derived)
-                    for item_id in items:
-                        v = _get_item_value(item_id, current_row)
-                        val_str = str(v) if v is not None else "0.0"
-                        expr = expr.replace(f"{{{item_id}}}", val_str)
-                    try:
-                        # Use SAFE_GLOBALS to prevent code injection
-                        result = eval(expr, SAFE_GLOBALS, {})
-                    except Exception:
-                        result = None
-                else:
-                    result = None
-            elif method == "map":
-                source = score.get("Source")
-                mapping = score.get("Mapping")
-                if source and mapping:
-                    val = _get_item_value(source, current_row)
-                    result = None
-                    if val is not None:
-                        for range_str, cat_val in mapping.items():
-                            if "-" in str(range_str):
-                                try:
-                                    low, high = map(float, str(range_str).split("-"))
-                                    if low <= val <= high:
-                                        result = cat_val
-                                        break
-                                except Exception:
-                                    pass
-                            else:
-                                try:
-                                    if float(val) == float(range_str):
-                                        result = cat_val
-                                        break
-                                except Exception:
-                                    pass
-                else:
-                    result = None
-            elif not values:
-                result = None
-            else:
-                if method == "mean":
-                    result = sum(values) / float(len(values))
-                else:
-                    result = sum(values)
-
-            formatted_val = _format_numeric_cell(result)
-            out[name] = formatted_val
-            # Add to current_row so subsequent scores can reference it (e.g. for 'map' or 'formula')
-            current_row[name] = formatted_val
+        out = _calculate_scores(
+            scores, current_row, invert_items, invert_min, invert_max
+        )
 
         if include_raw:
             # Merge original row with scores
@@ -672,10 +701,10 @@ def _write_recipes_dataset_description(*, out_root: Path, modality: str, prism_r
     _write_json(desc_path, obj)
 
 
-def _generate_recipes_boilerplate(
-    applied_recipes: list[dict], out_path: Path, lang: str = "en"
-) -> None:
-    """Generate a formal methods section boilerplate based on applied recipes (MD and HTML)."""
+def _generate_recipes_boilerplate_sections(
+    applied_recipes: list[dict], lang: str = "en"
+) -> list[str]:
+    """Build text sections for the boilerplate."""
     sections = []
 
     # 1. General PRISM/BIDS Section
@@ -712,25 +741,28 @@ def _generate_recipes_boilerplate(
         )
 
     for recipe in applied_recipes:
-        # Recipes might use "Survey" or "Study" (for compatibility)
         survey_info = recipe.get("Survey") or recipe.get("Study") or {}
-        
-        name = get_i18n_text(survey_info.get("Name") or survey_info.get("OriginalName") or survey_info.get("TaskName"), lang)
+        name = get_i18n_text(
+            survey_info.get("Name")
+            or survey_info.get("OriginalName")
+            or survey_info.get("TaskName"),
+            lang,
+        )
         desc = get_i18n_text(survey_info.get("Description"), lang)
         refs = _pick_references(survey_info, lang)
 
         sections.append(f"\n### {name}\n")
-        
+
         text_parts = []
         if desc:
             text_parts.append(desc)
-        
+
         if refs["primary"]:
             if lang == "de":
                 text_parts.append(f"Das Instrument basiert auf {refs['primary']}.")
             else:
                 text_parts.append(f"The instrument is based on {refs['primary']}.")
-        
+
         if refs["translation"]:
             if lang == "de":
                 text_parts.append(f"Die verwendete Übersetzung ist {refs['translation']}.")
@@ -744,38 +776,48 @@ def _generate_recipes_boilerplate(
         transforms = recipe.get("Transforms", {})
         invert = transforms.get("Invert", {})
         has_invert = invert and invert.get("Items")
-        
         scores = recipe.get("Scores", [])
-        
+
         if has_invert or scores:
             sections.append("**Scoring**:")
-            
             if has_invert:
                 if lang == "de":
-                    sections.append("- Negativ gepolte Items wurden vor der Skalenbildung invertiert.")
+                    sections.append(
+                        "- Negativ gepolte Items wurden vor der Skalenbildung invertiert."
+                    )
                 else:
-                    sections.append("- Negatively keyed items were reverse-coded prior to score calculation.")
-            
+                    sections.append(
+                        "- Negatively keyed items were reverse-coded prior to score calculation."
+                    )
+
             for s in scores:
                 s_name = s.get("Name")
                 s_method = s.get("Method", "sum")
                 s_items = s.get("Items", [])
                 s_source = s.get("Source")
-                
+
                 method_desc = s_method
                 if s_method == "sum":
                     method_desc = "sum score" if lang == "en" else "Summenwert"
                 elif s_method == "mean":
                     method_desc = "mean score" if lang == "en" else "Mittelwert"
                 elif s_method == "map":
-                    method_desc = "categorical mapping" if lang == "en" else "kategorisierte Zuordnung"
-                
+                    method_desc = (
+                        "categorical mapping"
+                        if lang == "en"
+                        else "kategorisierte Zuordnung"
+                    )
+
                 item_count = len(s_items)
                 if item_count > 0:
                     if lang == "de":
-                        sections.append(f"- `{s_name}`: {method_desc} ({item_count} Items).")
+                        sections.append(
+                            f"- `{s_name}`: {method_desc} ({item_count} Items)."
+                        )
                     else:
-                        sections.append(f"- `{s_name}`: {method_desc} ({item_count} items).")
+                        sections.append(
+                            f"- `{s_name}`: {method_desc} ({item_count} items)."
+                        )
                 elif s_source:
                     if lang == "de":
                         sections.append(f"- `{s_name}`: {method_desc} basierend auf `{s_source}`.")
@@ -783,13 +825,11 @@ def _generate_recipes_boilerplate(
                         sections.append(f"- `{s_name}`: {method_desc} based on `{s_source}`.")
                 else:
                     sections.append(f"- `{s_name}`: {method_desc}.")
+    return sections
 
-    # Write Markdown
-    with open(out_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(sections))
 
-    # Write HTML
-    html_path = out_path.with_suffix(".html")
+def _generate_recipes_boilerplate_html(sections: list[str]) -> str:
+    """Convert sections list to a standalone HTML string."""
     html_content = [
         "<!DOCTYPE html>",
         "<html>",
@@ -805,7 +845,7 @@ def _generate_recipes_boilerplate(
         "p { margin-bottom: 15px; }",
         "</style>",
         "</head>",
-        "<body>"
+        "<body>",
     ]
 
     in_list = False
@@ -813,18 +853,18 @@ def _generate_recipes_boilerplate(
         line = line.strip()
         if not line:
             continue
-        
+
         if line.startswith("- "):
             if not in_list:
                 html_content.append("<ul>")
                 in_list = True
-            
+
             li_text = line[2:]
             while "`" in li_text:
                 li_text = li_text.replace("`", "<code>", 1).replace("`", "</code>", 1)
             html_content.append(f"  <li>{li_text}</li>")
             continue
-        
+
         # If we were in a list and the line doesn't start with "- ", close the list
         if in_list:
             html_content.append("</ul>")
@@ -835,11 +875,9 @@ def _generate_recipes_boilerplate(
         elif line.startswith("### "):
             html_content.append(f"<h3>{line[4:]}</h3>")
         elif line.startswith("**"):
-            # Handle bold headers like **Scoring**:
             bold_text = line.replace("**", "").strip().strip(":")
             html_content.append(f"<p><strong>{bold_text}:</strong></p>")
         else:
-            # Handle backticks in paragraphs
             p_text = line
             while "`" in p_text:
                 p_text = p_text.replace("`", "<code>", 1).replace("`", "</code>", 1)
@@ -849,12 +887,497 @@ def _generate_recipes_boilerplate(
         html_content.append("</ul>")
 
     html_content.extend(["</body>", "</html>"])
-    
-    with open(html_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(html_content))
+    return "\n".join(html_content)
 
+
+def _generate_recipes_boilerplate(
+    applied_recipes: list[dict], out_path: Path, lang: str = "en"
+) -> None:
+    """Generate a formal methods section boilerplate based on applied recipes (MD and HTML)."""
+    sections = _generate_recipes_boilerplate_sections(applied_recipes, lang)
+
+    # Write Markdown
     with open(out_path, "w", encoding="utf-8") as f:
         f.write("\n".join(sections))
+
+    # Write HTML
+    html_path = out_path.with_suffix(".html")
+    html_string = _generate_recipes_boilerplate_html(sections)
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html_string)
+
+
+def _load_and_validate_recipes(
+    repo_root: Path, modality: str, survey_ids: str | None = None
+) -> dict[str, dict]:
+    """Locate, load and validate recipe JSON files."""
+    if modality == "survey":
+        recipes_dir = (repo_root / "recipes" / "surveys").resolve()
+        expected = "recipes/surveys/*.json"
+    elif modality == "biometrics":
+        recipes_dir = (repo_root / "recipes" / "biometrics").resolve()
+        expected = "recipes/biometrics/*.json"
+    else:
+        raise ValueError("modality must be one of: survey, biometrics")
+
+    if not recipes_dir.exists() or not recipes_dir.is_dir():
+        raise ValueError(f"Missing recipe folder: {recipes_dir}. Expected {expected}")
+
+    recipe_paths = sorted(recipes_dir.glob("*.json"))
+    if not recipe_paths:
+        raise ValueError(f"No derivative recipes found in: {recipes_dir}")
+
+    all_recipes: dict[str, dict] = {}
+    for p in recipe_paths:
+        try:
+            recipe_json = _read_json(p)
+            recipe_id = _normalize_survey_key(p.stem)
+            all_recipes[recipe_id] = {"path": p, "json": recipe_json}
+        except Exception:
+            continue
+
+    if not all_recipes:
+        raise ValueError("No valid recipes could be loaded.")
+
+    # Validate recipe structure before executing.
+    try:
+        from .recipe_validation import validate_recipe
+    except (ImportError, ValueError):
+        try:
+            from recipe_validation import validate_recipe
+        except ImportError:
+            validate_recipe = None
+
+    if validate_recipe is not None:
+        recipe_errors: list[str] = []
+        for recipe_id, rec in sorted(all_recipes.items()):
+            errs = validate_recipe(rec.get("json") or {}, recipe_id=recipe_id)
+            recipe_errors.extend([f"{rec.get('path').name}: {e}" for e in errs])
+
+        if recipe_errors:
+            raise ValueError(
+                "Invalid derivative recipe(s):\n- " + "\n- ".join(recipe_errors)
+            )
+
+    if not survey_ids:
+        return all_recipes
+
+    # Filter by selected IDs
+    requested = [p.strip() for p in str(survey_ids).replace(";", ",").split(",")]
+    requested = [_normalize_survey_key(p) for p in requested if p.strip()]
+    selected_set = set([p for p in requested if p])
+    
+    unknown = sorted([s for s in selected_set if s not in all_recipes])
+    if unknown:
+        raise ValueError(
+            f"Unknown {modality} recipe names: "
+            + ", ".join(unknown)
+            + ". Available: "
+            + ", ".join(sorted(all_recipes.keys()))
+        )
+
+    return {k: v for k, v in all_recipes.items() if k in selected_set}
+
+
+def _find_tsv_files(prism_root: Path, modality: str) -> list[Path]:
+    """Scan dataset for TSV files based on modality."""
+    tsv_files: list[Path] = []
+    if modality == "survey":
+        # Search in survey/ and beh/ (BIDS standard)
+        for folder in ("survey", "beh"):
+            tsv_files.extend(prism_root.glob(f"sub-*/ses-*/{folder}/*.tsv"))
+            tsv_files.extend(prism_root.glob(f"sub-*/{folder}/*.tsv"))
+    elif modality == "biometrics":
+        tsv_files.extend(prism_root.glob("sub-*/ses-*/biometrics/*.tsv"))
+        tsv_files.extend(prism_root.glob("sub-*/biometrics/*.tsv"))
+    else:
+        # Fallback: search both
+        tsv_files.extend(prism_root.glob("sub-*/ses-*/*/*.tsv"))
+        tsv_files.extend(prism_root.glob("sub-*/*/*.tsv"))
+
+    return sorted(set([p for p in tsv_files if p.is_file()]))
+
+
+def _load_participants_data(prism_root: Path) -> tuple[Any, dict]:
+    """Load participants.tsv (as DataFrame) and participants.json (as dict)."""
+    participants_df = None
+    participants_json_meta = {}
+
+    participants_tsv = prism_root / "participants.tsv"
+    participants_json = prism_root / "participants.json"
+
+    if participants_tsv.is_file():
+        try:
+            import pandas as pd
+
+            df = pd.read_csv(participants_tsv, sep="\t", dtype=str)
+            if "participant_id" in df.columns:
+                participants_df = df
+        except Exception:
+            pass
+
+    if participants_json.is_file():
+        try:
+            participants_json_meta = _read_json(participants_json)
+        except Exception:
+            pass
+
+    return participants_df, participants_json_meta
+
+
+def _handle_wide_pivot(
+    df: Any, out_header: list[str]
+) -> tuple[Any, list[str], str | None]:
+    """Pivot a long-format DataFrame to wide-format."""
+    import pandas as pd
+
+    try:
+        # Pivot the score columns
+        df_wide = df.pivot(index="participant_id", columns="session", values=out_header)
+        # Flatten multi-index columns: "ses-1_total_score"
+        if isinstance(df_wide.columns, pd.MultiIndex):
+            # df.pivot with multiple values returns MultiIndex (value, session)
+            # We want (session, value)
+            df_wide.columns = [f"{ses}_{val}" for val, ses in df_wide.columns]
+        else:
+            # Only one score column
+            df_wide.columns = [f"{ses}_{out_header[0]}" for ses in df_wide.columns]
+
+        df = df_wide.reset_index().fillna("n/a")
+        # Update out_header to reflect new columns for metadata building
+        new_header = [c for c in df.columns if c != "participant_id"]
+        return df, new_header, None
+    except Exception as e:
+        return df, out_header, f"Could not create wide layout: {e}"
+
+
+def _export_recipe_aggregated(
+    recipe_id: str,
+    recipe: dict,
+    matching: list[Path],
+    out_root: Path,
+    out_format: str,
+    modality: str,
+    lang: str,
+    layout: str,
+    include_raw: bool,
+    participants_df: Optional[Any],
+    participants_meta: dict,
+    output_prism_root: Path,
+    survey_task: str,
+) -> tuple[int, int, Path | None, str | None, list[str]]:
+    """Process all files for one recipe and write a single aggregated output file."""
+    import pandas as pd
+
+    rows_accum: list[dict[str, Any]] = []
+    processed_count = 0
+    final_header = []
+
+    for in_path in matching:
+        processed_count += 1
+        sub_id, ses_id = _infer_sub_ses_from_path(in_path)
+        if not sub_id:
+            continue
+        if not ses_id:
+            ses_id = "ses-1"
+
+        in_header, in_rows = _read_tsv_rows(in_path)
+        if not in_header or not in_rows:
+            continue
+
+        out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
+            recipe, in_rows, include_raw=include_raw
+        )
+        if not out_header:
+            continue
+
+        final_header = out_header  # Keep track of last valid header
+        for row_index, score_row in enumerate(out_rows):
+            merged = {"participant_id": sub_id, "session": ses_id}
+            for col in out_header:
+                merged[col] = score_row.get(col, "n/a")
+            rows_accum.append(merged)
+
+    if not rows_accum:
+        return processed_count, 0, None, None, []
+
+    df = pd.DataFrame(rows_accum)
+    # Ensure column order: participant_id, session, then score columns
+    cols = [
+        c
+        for c in (["participant_id", "session"] + [c for c in final_header])
+        if c in df.columns
+    ]
+    df = df.loc[:, cols]
+
+    fallback_note = None
+    if layout == "wide":
+        df, final_header, fallback_note = _handle_wide_pivot(df, final_header)
+
+    # Detect columns with all missing values (excluding ids)
+    nan_cols = []
+    try:
+        df_nan = df.replace("n/a", pd.NA)
+        nan_cols = [
+            c
+            for c in df_nan.columns
+            if c not in {"participant_id", "session"} and df_nan[c].isna().all()
+        ]
+    except Exception:
+        pass
+
+    # Merge participant variables (age, sex, etc.) if available
+    if participants_df is not None:
+        participant_cols = [c for c in participants_df.columns if c != "participant_id"]
+        if participant_cols:
+            df = df.merge(
+                participants_df[["participant_id"] + participant_cols],
+                on="participant_id",
+                how="left",
+            )
+            # Reorder: participant_id, participant vars, session, scores
+            ordered_cols = (
+                ["participant_id"]
+                + participant_cols
+                + ["session"]
+                + [c for c in final_header if c in df.columns]
+            )
+            df = df.loc[:, [c for c in ordered_cols if c in df.columns]]
+
+    # Metadata building
+    sidecar_meta = _get_sidecar_for_task(output_prism_root, modality, survey_task)
+    var_labels, val_labels, score_details = _build_variable_metadata(
+        list(df.columns),
+        participants_meta,
+        recipe,
+        sidecar_meta=sidecar_meta,
+        lang=lang,
+    )
+    survey_meta = _build_survey_metadata(recipe, lang=lang)
+
+    out_fname: Path | None = None
+    _ensure_dir(out_root)
+
+    if out_format == "csv":
+        out_fname = out_root / f"{recipe_id}.csv"
+        df.to_csv(out_fname, index=False)
+        _write_codebook_json(
+            out_root / f"{recipe_id}_codebook.json",
+            var_labels,
+            val_labels,
+            score_details,
+            survey_meta,
+        )
+        _write_codebook_tsv(
+            out_root / f"{recipe_id}_codebook.tsv",
+            var_labels,
+            val_labels,
+            score_details,
+        )
+        _write_jamovi_r_helper(
+            out_root / f"{recipe_id}_jamovi_helper.R",
+            f"{recipe_id}.csv",
+            var_labels,
+            val_labels,
+        )
+    elif out_format == "xlsx":
+        out_fname = out_root / f"{recipe_id}.xlsx"
+        try:
+            with pd.ExcelWriter(out_fname, engine="openpyxl") as writer:
+                df.to_excel(writer, sheet_name="Data", index=False)
+                # Codebook sheet
+                cb_rows = []
+                for var in df.columns:
+                    v_labels = val_labels.get(var, {})
+                    v_str = (
+                        "; ".join(
+                            f"{k}={v}"
+                            for k, v in sorted(v_labels.items(), key=lambda x: str(x[0]))
+                        )
+                        if v_labels
+                        else ""
+                    )
+                    det_str = ""
+                    if var in score_details:
+                        d = score_details[var]
+                        parts = []
+                        if d.get("method"):
+                            parts.append(f"method={d['method']}")
+                        if d.get("items"):
+                            parts.append(f"items={'+'.join(d['items'])}")
+                        if d.get("range"):
+                            r = d["range"]
+                            parts.append(f"range={r.get('min', '?')}-{r.get('max', '?')}")
+                        det_str = "; ".join(parts)
+                    cb_rows.append(
+                        {
+                            "variable": var,
+                            "label": var_labels.get(var, ""),
+                            "values": v_str,
+                            "score_details": det_str,
+                        }
+                    )
+                pd.DataFrame(cb_rows).to_excel(writer, sheet_name="Codebook", index=False)
+                if survey_meta:
+                    s_rows = [{"property": k, "value": str(v)} for k, v in survey_meta.items()]
+                    pd.DataFrame(s_rows).to_excel(writer, sheet_name="Survey Info", index=False)
+        except Exception:
+            df.to_excel(out_fname, index=False)
+    elif out_format == "save":
+        out_fname = out_root / f"{recipe_id}.sav"
+        try:
+            import pyreadstat
+            sav_val_labels = {}
+            for col, vals in val_labels.items():
+                if col in df.columns:
+                    try:
+                        sav_val_labels[col] = {float(k): v for k, v in vals.items()}
+                    except (ValueError, TypeError):
+                        sav_val_labels[col] = vals
+            pyreadstat.write_sav(
+                df,
+                str(out_fname),
+                column_labels=var_labels if var_labels else None,
+                variable_value_labels=sav_val_labels if sav_val_labels else None,
+            )
+            _write_codebook_json(out_root / f"{recipe_id}_codebook.json", var_labels, val_labels, score_details, survey_meta)
+        except Exception:
+            out_fname = out_root / f"{recipe_id}.csv"
+            df.to_csv(out_fname, index=False)
+            fallback_note = "pyreadstat not available; wrote CSV instead of SAVE"
+    elif out_format == "r":
+        out_fname = out_root / f"{recipe_id}.feather"
+        try:
+            df.to_feather(out_fname)
+            _write_codebook_json(out_root / f"{recipe_id}_codebook.json", var_labels, val_labels, score_details, survey_meta)
+        except Exception:
+            out_fname = out_root / f"{recipe_id}.csv"
+            df.to_csv(out_fname, index=False)
+            fallback_note = "pyarrow/feather not available; wrote CSV instead of R/feather"
+
+    return processed_count, 1, out_fname, fallback_note, nan_cols
+
+
+def _export_recipe_legacy(
+    recipe_id: str,
+    recipe: dict,
+    matching: list[Path],
+    out_root: Path,
+    out_format: str,
+    modality: str,
+    include_raw: bool,
+    flat_rows: list[dict],
+    flat_key_to_idx: dict[tuple, int],
+) -> tuple[int, int]:
+    """Process all files for one recipe using legacy (PRISM/Flat) per-file logic."""
+    processed_count = 0
+    written_count = 0
+
+    for in_path in matching:
+        processed_count += 1
+        sub_id, ses_id = _infer_sub_ses_from_path(in_path)
+        if not sub_id:
+            continue
+        if not ses_id:
+            ses_id = "ses-1"
+
+        in_header, in_rows = _read_tsv_rows(in_path)
+        if not in_header or not in_rows:
+            continue
+
+        out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
+            recipe, in_rows, include_raw=include_raw
+        )
+        if not out_header:
+            break
+
+        if out_format == "flat":
+            prefix = f"{recipe_id}_"
+            for row_index, score_row in enumerate(out_rows):
+                key = (sub_id, ses_id, recipe_id, row_index)
+                if key in flat_key_to_idx:
+                    merged = flat_rows[flat_key_to_idx[key]]
+                else:
+                    merged = {
+                        "participant_id": sub_id,
+                        "session": ses_id,
+                        "survey": recipe_id,
+                    }
+                    flat_key_to_idx[key] = len(flat_rows)
+                    flat_rows.append(merged)
+
+                for col in out_header:
+                    merged[prefix + col] = score_row.get(col, "n/a")
+            written_count += 1
+        else:
+            # PRISM format: sub-*/ses-*/survey/*.tsv
+            out_dir = out_root / recipe_id / sub_id / ses_id / modality
+            stem = in_path.stem
+            base_stem, _in_suffix = _strip_suffix(stem)
+            new_stem = f"{base_stem}_desc-scores_{modality}"
+            out_path = out_dir / f"{new_stem}.tsv"
+            _write_tsv_rows(out_path, out_header, out_rows)
+            written_count += 1
+
+    return processed_count, written_count
+
+
+def _finalize_flat_output(
+    flat_rows: list[dict],
+    modality: str,
+    layout: str,
+    output_prism_root: Path,
+    fallback_note: str | None,
+) -> tuple[Path, str | None, list[str]]:
+    """Assemble the global flat_rows into a single TSV file (long or wide)."""
+    import pandas as pd
+
+    fixed = ["participant_id", "session", modality]
+    score_cols = sorted({k for r in flat_rows for k in r.keys() if k not in fixed})
+    flat_out_path = output_prism_root / "recipes" / f"{modality}_scores.tsv"
+
+    if layout == "wide":
+        try:
+            df_flat = pd.DataFrame(flat_rows)
+            # Melt and Pivot to handle session-specific columns
+            id_vars = ["participant_id", "session", "survey"]
+            df_melt = df_flat.melt(id_vars=id_vars, value_vars=score_cols).dropna()
+            df_melt["col_name"] = df_melt["session"] + "_" + df_melt["variable"]
+
+            df_wide = df_melt.pivot(
+                index="participant_id", columns="col_name", values="value"
+            )
+            df_flat = df_wide.reset_index().fillna("n/a")
+
+            flat_header = ["participant_id"] + sorted(
+                [c for c in df_flat.columns if c != "participant_id"]
+            )
+            final_rows = df_flat.to_dict("records")
+        except Exception as e:
+            if fallback_note is None:
+                fallback_note = f"Could not create wide flat layout: {e}"
+            flat_header = fixed + score_cols
+            final_rows = flat_rows
+    else:
+        flat_header = fixed + score_cols
+        final_rows = flat_rows
+
+    _write_tsv_rows(flat_out_path, flat_header, final_rows)
+
+    # Detect all-NA columns for report
+    nan_cols = []
+    try:
+        df_chk = pd.DataFrame(final_rows).replace("n/a", pd.NA)
+        ignore_cols = {"participant_id", "session", modality, "survey"}
+        nan_cols = [
+            c
+            for c in df_chk.columns
+            if c not in ignore_cols and df_chk[c].isna().all()
+        ]
+    except Exception:
+        pass
+
+    return flat_out_path, fallback_note, nan_cols
 
 
 def compute_survey_recipes(
@@ -909,113 +1432,16 @@ def compute_survey_recipes(
     if layout not in {"long", "wide"}:
         raise ValueError("--layout must be one of: long, wide")
 
-    # Locate recipe folder by modality.
-    if modality == "survey":
-        recipes_dir = (repo_root / "recipes" / "surveys").resolve()
-        expected = "recipes/surveys/*.json"
-    elif modality == "biometrics":
-        recipes_dir = (repo_root / "recipes" / "biometrics").resolve()
-        expected = "recipes/biometrics/*.json"
-    else:
-        raise ValueError("modality must be one of: survey, biometrics")
+    # 1. Load and validate recipes
+    recipes = _load_and_validate_recipes(repo_root, modality, survey)
 
-    if not recipes_dir.exists() or not recipes_dir.is_dir():
-        raise ValueError(f"Missing recipe folder: {recipes_dir}. Expected {expected}")
-
-    recipe_paths = sorted(recipes_dir.glob("*.json"))
-    if not recipe_paths:
-        raise ValueError(f"No derivative recipes found in: {recipes_dir}")
-
-    recipes: dict[str, dict] = {}
-    for p in recipe_paths:
-        try:
-            recipe = _read_json(p)
-        except Exception:
-            continue
-        recipe_id = _normalize_survey_key(p.stem)
-        recipes[recipe_id] = {"path": p, "json": recipe}
-
-    if not recipes:
-        raise ValueError("No valid recipes could be loaded.")
-
-    # Validate recipe structure before executing.
-    try:
-        from .recipe_validation import validate_recipe
-    except (ImportError, ValueError):
-        try:
-            from recipe_validation import validate_recipe
-        except ImportError:
-            validate_recipe = None
-
-    if validate_recipe is not None:
-        recipe_errors: list[str] = []
-        for recipe_id, rec in sorted(recipes.items()):
-            errs = validate_recipe(rec.get("json") or {}, recipe_id=recipe_id)
-            # Only treat "Scores missing" as a warning-like error if the recipe truly has no scores.
-            # We still surface it because it usually indicates a non-functional recipe.
-            recipe_errors.extend([f"{rec.get('path').name}: {e}" for e in errs])
-
-        if recipe_errors:
-            # Fail-fast: better to abort than to produce partial/wrong outputs.
-            raise ValueError(
-                "Invalid derivative recipe(s):\n- " + "\n- ".join(recipe_errors)
-            )
-
-    selected: set[str] | None = None
-    if survey:
-        parts = [p.strip() for p in str(survey).replace(";", ",").split(",")]
-        parts = [_normalize_survey_key(p) for p in parts if p.strip()]
-        selected = set([p for p in parts if p])
-        unknown = sorted([s for s in selected if s not in recipes])
-        if unknown:
-            raise ValueError(
-                "Unknown survey recipe names: "
-                + ", ".join(unknown)
-                + ". Available: "
-                + ", ".join(sorted(recipes.keys()))
-            )
-
-    # Scan dataset for TSV files based on modality
-    tsv_files: list[Path] = []
-    if modality == "survey":
-        # Search in survey/ and beh/ (BIDS standard)
-        for folder in ("survey", "beh"):
-            tsv_files.extend(prism_root.glob(f"sub-*/ses-*/{folder}/*.tsv"))
-            tsv_files.extend(prism_root.glob(f"sub-*/{folder}/*.tsv"))
-    elif modality == "biometrics":
-        tsv_files.extend(prism_root.glob("sub-*/ses-*/biometrics/*.tsv"))
-        tsv_files.extend(prism_root.glob("sub-*/biometrics/*.tsv"))
-    else:
-        # Fallback: search both
-        tsv_files.extend(prism_root.glob("sub-*/ses-*/*/*.tsv"))
-        tsv_files.extend(prism_root.glob("sub-*/*/*.tsv"))
-
-    tsv_files = sorted(set([p for p in tsv_files if p.is_file()]))
+    # 2. Scan dataset for TSV files based on modality
+    tsv_files = _find_tsv_files(prism_root, modality)
     if not tsv_files:
         raise ValueError(f"No {modality} TSV files found under: {prism_root}")
 
-    # Load participants.tsv if available (for merging demographic data)
-    participants_df = None
-    participants_meta = {}  # Column metadata from participants.json
-    participants_tsv = output_prism_root / "participants.tsv"
-    participants_json = output_prism_root / "participants.json"
-    if participants_tsv.is_file():
-        try:
-            import pandas as pd
-
-            participants_df = pd.read_csv(participants_tsv, sep="\t", dtype=str)
-            # Ensure participant_id column exists
-            if "participant_id" not in participants_df.columns:
-                participants_df = None
-        except Exception:
-            participants_df = None
-
-    # Load participants.json for metadata (variable labels, value labels)
-    if participants_json.is_file():
-        try:
-            participants_meta = _read_json(participants_json)
-        except Exception:
-            participants_meta = {}
+    # 3. Load participants data (for merging demographic data)
+    participants_df, participants_meta = _load_participants_data(output_prism_root)
 
     # Output scores into BIDS-recipes folders; recipes remain the instruction set in the repo.
     out_root = output_prism_root / "recipes" / ("surveys" if modality == "survey" else "biometrics")
@@ -1034,14 +1460,11 @@ def compute_survey_recipes(
 
     # If modality=survey/biometrics we will write one flat file per survey/biometric (recipe)
     for recipe_id, rec in sorted(recipes.items()):
-        if selected is not None and recipe_id not in selected:
-            continue
-
         recipe = rec["json"]
         # For biometrics, we might use BiometricName instead of TaskName
         task_key = "BiometricName" if modality == "biometrics" else "TaskName"
         info_key = "Biometrics" if modality == "biometrics" else "Survey"
-        
+
         survey_task = _normalize_survey_key(
             (recipe.get(info_key, {}) or {}).get(task_key) or recipe_id
         )
@@ -1057,430 +1480,68 @@ def compute_survey_recipes(
         applied_recipes_list.append(recipe)
 
         if out_format in ("csv", "xlsx", "save", "r"):
-            # Aggregated formats (one file per recipe)
-            rows_accum: List[Dict[str, Any]] = []
-            for in_path in matching:
-                processed_files += 1
-                sub_id, ses_id = _infer_sub_ses_from_path(in_path)
-                if not sub_id:
-                    continue
-                if not ses_id:
-                    ses_id = "ses-1"
-
-                in_header, in_rows = _read_tsv_rows(in_path)
-                if not in_header or not in_rows:
-                    continue
-
-                out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
-                    recipe, in_rows, include_raw=include_raw
-                )
-                if not out_header:
-                    continue
-
-                for row_index, score_row in enumerate(out_rows):
-                    merged = {"participant_id": sub_id, "session": ses_id}
-                    for col in out_header:
-                        merged[col] = score_row.get(col, "n/a")
-                    rows_accum.append(merged)
-
-            if not rows_accum:
-                continue
-
-            # Write a single file for this recipe
-            _ensure_dir(out_root)
-            try:
-                import pandas as pd
-            except Exception:
-                raise RuntimeError(
-                    f"pandas is required to write flat {modality} outputs (install pandas)"
-                )
-
-            df = pd.DataFrame(rows_accum)
-            # Ensure column order: participant_id, session, then score columns
-            cols = [
-                c
-                for c in (["participant_id", "session"] + [c for c in out_header])
-                if c in df.columns
-            ]
-            df = df.loc[:, cols]
-
-            if layout == "wide":
-                # Pivot so that session is in columns
-                # We keep participant_id as index
-                try:
-                    # Pivot the score columns
-                    df_wide = df.pivot(
-                        index="participant_id", columns="session", values=out_header
-                    )
-                    # Flatten multi-index columns: "ses-1_total_score"
-                    if isinstance(df_wide.columns, pd.MultiIndex):
-                        # df.pivot with multiple values returns MultiIndex (value, session)
-                        # We want (session, value)
-                        df_wide.columns = [
-                            f"{ses}_{val}" for val, ses in df_wide.columns
-                        ]
-                    else:
-                        # Only one score column
-                        df_wide.columns = [f"{ses}_{out_header[0]}" for ses in df_wide.columns]
-                    
-                    df = df_wide.reset_index().fillna("n/a")
-                    # Update out_header to reflect new columns for metadata building
-                    out_header = [c for c in df.columns if c != "participant_id"]
-                except Exception as e:
-                    # Fallback to long if pivot fails (e.g. duplicate sub/ses pairs)
-                    if fallback_note is None:
-                        fallback_note = f"Could not create wide layout: {e}"
-
-            # Detect columns with all missing values (excluding ids)
-            try:
-                df_nan = df.replace("n/a", pd.NA)
-                nan_cols = [
-                    c
-                    for c in df_nan.columns
-                    if c not in {"participant_id", "session"} and df_nan[c].isna().all()
-                ]
-                if nan_cols:
-                    nan_report[recipe_id] = nan_cols
-            except Exception:
-                pass
-
-            # Merge participant variables (age, sex, etc.) if available
-            if participants_df is not None:
-                # Get participant columns except participant_id (already in df)
-                participant_cols = [
-                    c for c in participants_df.columns if c != "participant_id"
-                ]
-                if participant_cols:
-                    df = df.merge(
-                        participants_df[["participant_id"] + participant_cols],
-                        on="participant_id",
-                        how="left",
-                    )
-                    # Reorder: participant_id, participant vars, session, scores
-                    final_cols = (
-                        ["participant_id"]
-                        + participant_cols
-                        + ["session"]
-                        + [c for c in out_header if c in df.columns]
-                    )
-                    df = df.loc[:, [c for c in final_cols if c in df.columns]]
-
-            out_fname = None
-            final_format = out_format
-
-            # Build metadata for all export formats
-            sidecar_meta = _get_sidecar_for_task(output_prism_root, modality, survey_task)
-            var_labels, val_labels, score_details = _build_variable_metadata(
-                list(df.columns),
-                participants_meta,
-                recipe,
-                sidecar_meta=sidecar_meta,
+            (
+                p_count,
+                w_count,
+                o_path,
+                f_note,
+                n_cols,
+            ) = _export_recipe_aggregated(
+                recipe_id=recipe_id,
+                recipe=recipe,
+                matching=matching,
+                out_root=out_root,
+                out_format=out_format,
+                modality=modality,
                 lang=lang,
+                layout=layout,
+                include_raw=include_raw,
+                participants_df=participants_df,
+                participants_meta=participants_meta,
+                output_prism_root=output_prism_root,
+                survey_task=survey_task,
             )
-            survey_meta = _build_survey_metadata(recipe, lang=lang)
-
-            if out_format == "csv":
-                out_fname = out_root / f"{recipe_id}.csv"
-                df.to_csv(out_fname, index=False)
-                # Write companion codebook files
-                _write_codebook_json(
-                    out_root / f"{recipe_id}_codebook.json",
-                    var_labels,
-                    val_labels,
-                    score_details,
-                    survey_meta,
-                )
-                _write_codebook_tsv(
-                    out_root / f"{recipe_id}_codebook.tsv",
-                    var_labels,
-                    val_labels,
-                    score_details,
-                )
-                # Jamovi R Helper
-                _write_jamovi_r_helper(
-                    out_root / f"{recipe_id}_jamovi_helper.R",
-                    f"{recipe_id}.csv",
-                    var_labels,
-                    val_labels,
-                )
-            elif out_format == "xlsx":
-                out_fname = out_root / f"{recipe_id}.xlsx"
-                # Write data + codebook sheet
-                try:
-                    with pd.ExcelWriter(out_fname, engine="openpyxl") as writer:
-                        df.to_excel(writer, sheet_name="Data", index=False)
-                        # Build codebook dataframe with full metadata
-                        codebook_rows = []
-                        for var in df.columns:
-                            label = var_labels.get(var, "")
-                            values = val_labels.get(var, {})
-                            values_str = (
-                                "; ".join(
-                                    f"{k}={v}"
-                                    for k, v in sorted(
-                                        values.items(), key=lambda x: str(x[0])
-                                    )
-                                )
-                                if values
-                                else ""
-                            )
-                            # Include score details
-                            details_str = ""
-                            if var in score_details:
-                                d = score_details[var]
-                                parts = []
-                                if d.get("method"):
-                                    parts.append(f"method={d['method']}")
-                                if d.get("items"):
-                                    parts.append(f"items={'+'.join(d['items'])}")
-                                if d.get("range"):
-                                    r = d["range"]
-                                    parts.append(
-                                        f"range={r.get('min', '?')}-{r.get('max', '?')}"
-                                    )
-                                details_str = "; ".join(parts)
-                            codebook_rows.append(
-                                {
-                                    "variable": var,
-                                    "label": label,
-                                    "values": values_str,
-                                    "score_details": details_str,
-                                }
-                            )
-                        codebook_df = pd.DataFrame(codebook_rows)
-                        codebook_df.to_excel(writer, sheet_name="Codebook", index=False)
-                        # Add survey info sheet
-                        if survey_meta:
-                            survey_rows = [
-                                {"property": k, "value": str(v)}
-                                for k, v in survey_meta.items()
-                            ]
-                            survey_df = pd.DataFrame(survey_rows)
-                            survey_df.to_excel(
-                                writer, sheet_name="Survey Info", index=False
-                            )
-                except Exception:
-                    # Fallback: just write data without codebook sheet
-                    df.to_excel(out_fname, index=False)
-            elif out_format == "save":
-                out_fname = out_root / f"{recipe_id}.sav"
-                try:
-                    import pyreadstat
-
-                    # Convert value_labels to pyreadstat format: {col: {numeric_code: label}}
-                    # pyreadstat expects numeric keys for value labels
-                    sav_value_labels = {}
-                    for col, vals in val_labels.items():
-                        if col in df.columns:
-                            try:
-                                # Try to convert keys to float for numeric columns
-                                sav_value_labels[col] = {
-                                    float(k): v for k, v in vals.items()
-                                }
-                            except (ValueError, TypeError):
-                                # Keep as string if not numeric
-                                sav_value_labels[col] = vals
-
-                    pyreadstat.write_sav(
-                        df,
-                        str(out_fname),
-                        column_labels=var_labels if var_labels else None,
-                        variable_value_labels=(
-                            sav_value_labels if sav_value_labels else None
-                        ),
-                    )
-                    # SPSS doesn't store survey-level metadata, write companion codebook
-                    _write_codebook_json(
-                        out_root / f"{recipe_id}_codebook.json",
-                        var_labels,
-                        val_labels,
-                        score_details,
-                        survey_meta,
-                    )
-                except Exception:
-                    # Fallback to CSV if pyreadstat not available
-                    out_fname = out_root / f"{recipe_id}.csv"
-                    df.to_csv(out_fname, index=False)
-                    _write_codebook_json(
-                        out_root / f"{recipe_id}_codebook.json",
-                        var_labels,
-                        val_labels,
-                        score_details,
-                        survey_meta,
-                    )
-                    _write_codebook_tsv(
-                        out_root / f"{recipe_id}_codebook.tsv",
-                        var_labels,
-                        val_labels,
-                        score_details,
-                    )
-                    final_format = "csv"
-                    if fallback_note is None:
-                        fallback_note = (
-                            "pyreadstat not available; wrote CSV instead of SAVE"
-                        )
-            elif out_format == "r":
-                # Try to write a feather file (widely readable by R via arrow)
-                out_fname = out_root / f"{recipe_id}.feather"
-                try:
-                    df.to_feather(out_fname)
-                    # Feather doesn't support metadata, write companion codebook
-                    _write_codebook_json(
-                        out_root / f"{recipe_id}_codebook.json",
-                        var_labels,
-                        val_labels,
-                        score_details,
-                        survey_meta,
-                    )
-                    _write_codebook_tsv(
-                        out_root / f"{recipe_id}_codebook.tsv",
-                        var_labels,
-                        val_labels,
-                        score_details,
-                    )
-                except Exception:
-                    # Fallback to CSV
-                    out_fname = out_root / f"{recipe_id}.csv"
-                    df.to_csv(out_fname, index=False)
-                    _write_codebook_json(
-                        out_root / f"{recipe_id}_codebook.json",
-                        var_labels,
-                        val_labels,
-                        score_details,
-                        survey_meta,
-                    )
-                    _write_codebook_tsv(
-                        out_root / f"{recipe_id}_codebook.tsv",
-                        var_labels,
-                        val_labels,
-                        score_details,
-                    )
-                    final_format = "csv"
-                    if fallback_note is None:
-                        fallback_note = "pyarrow/feather not available; wrote CSV instead of R/feather"
-
-            if out_fname and out_fname.exists():
-                written_files += 1
-                # Point the flat_out_path to the primary data file so the UI shows it correctly
+            processed_files += p_count
+            written_files += w_count
+            if w_count > 0:
                 if written_files == 1:
-                    flat_out_path = out_fname
-                elif written_files > 1:
-                    # If we wrote multiple recipes, point to the output directory
+                    flat_out_path = o_path
+                else:
                     flat_out_path = out_root
+            if f_note:
+                fallback_note = f_note
+            if n_cols:
+                nan_report[recipe_id] = n_cols
 
         else:
             # legacy behaviour (prism/flat per-participant outputs)
-            for in_path in matching:
-                processed_files += 1
-                sub_id, ses_id = _infer_sub_ses_from_path(in_path)
-                if not sub_id:
-                    continue
-                if not ses_id:
-                    ses_id = "ses-1"
-
-                in_header, in_rows = _read_tsv_rows(in_path)
-                if not in_header or not in_rows:
-                    continue
-
-                out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
-                    recipe, in_rows, include_raw=include_raw
-                )
-                if not out_header:
-                    break
-
-                if out_format == "flat":
-                    prefix = f"{recipe_id}_"
-                    for row_index, score_row in enumerate(out_rows):
-                        key = (sub_id, ses_id, recipe_id, row_index)
-                        if key in flat_key_to_idx:
-                            merged = flat_rows[flat_key_to_idx[key]]
-                        else:
-                            merged = {
-                                "participant_id": sub_id,
-                                "session": ses_id,
-                                "survey": recipe_id,
-                            }
-                            flat_key_to_idx[key] = len(flat_rows)
-                            flat_rows.append(merged)
-
-                        for col in out_header:
-                            merged[prefix + col] = score_row.get(col, "n/a")
-
-                    written_files += 1
-                else:
-                    out_dir = out_root / recipe_id / sub_id / ses_id / modality
-                    stem = in_path.stem
-                    base_stem, _in_suffix = _strip_suffix(stem)
-                    # Write recipes with the new _survey suffix; legacy _beh inputs are upgraded.
-                    new_stem = f"{base_stem}_desc-scores_{modality}"
-                    out_path = out_dir / f"{new_stem}.tsv"
-                    _write_tsv_rows(out_path, out_header, out_rows)
-                    written_files += 1
+            p_count, w_count = _export_recipe_legacy(
+                recipe_id=recipe_id,
+                recipe=recipe,
+                matching=matching,
+                out_root=out_root,
+                out_format=out_format,
+                modality=modality,
+                include_raw=include_raw,
+                flat_rows=flat_rows,
+                flat_key_to_idx=flat_key_to_idx,
+            )
+            processed_files += p_count
+            written_files += w_count
 
     if written_files == 0:
-        msg = f"No matching {modality} recipes applied."
-        if selected:
-            msg += f" (No {modality} TSV matched the selected --survey/--biometric.)"
-        else:
-            msg += f" (No {modality} TSV matched any recipe TaskName/BiometricName.)"
-        raise ValueError(msg)
+        raise ValueError(f"No matching {modality} recipes applied.")
 
     if out_format == "flat":
-        fixed = ["participant_id", "session", modality]
-        score_cols = sorted({k for r in flat_rows for k in r.keys() if k not in fixed})
-        
-        if layout == "wide":
-            try:
-                import pandas as pd
-                df_flat = pd.DataFrame(flat_rows)
-                # Pivot
-                # We need to handle the case where multiple surveys exist for the same sub/ses
-                # The 'survey' column distinguishes them in long format.
-                # In wide format, we want to pivot on participant_id, and have columns like ses-1_ads_total, ses-1_pss_total
-                
-                # First, melt the score columns so we have (participant, session, survey, variable, value)
-                id_vars = ["participant_id", "session", "survey"]
-                df_melt = df_flat.melt(id_vars=id_vars, value_vars=score_cols).dropna()
-                
-                # Create a combined column name: {session}_{variable}
-                # Note: variable already contains the survey prefix (e.g. ads_total)
-                df_melt["col_name"] = df_melt["session"] + "_" + df_melt["variable"]
-                
-                # Pivot to wide
-                df_wide = df_melt.pivot(index="participant_id", columns="col_name", values="value")
-                df_flat = df_wide.reset_index().fillna("n/a")
-                
-                flat_header = ["participant_id"] + sorted([c for c in df_flat.columns if c != "participant_id"])
-                flat_out_path = output_prism_root / "recipes" / f"{modality}_scores.tsv"
-                # Convert back to rows for _write_tsv_rows
-                flat_rows = df_flat.to_dict("records")
-            except Exception as e:
-                if fallback_note is None:
-                    fallback_note = f"Could not create wide flat layout: {e}"
-                flat_header = fixed + score_cols
-                flat_out_path = output_prism_root / "recipes" / f"{modality}_scores.tsv"
-        else:
-            flat_header = fixed + score_cols
-            flat_out_path = output_prism_root / "recipes" / f"{modality}_scores.tsv"
-
-        _write_tsv_rows(flat_out_path, flat_header, flat_rows)
-
-        # Detect all-NA columns in flat output (long or wide)
-        try:
-            import pandas as pd
-
-            df_flat_chk = pd.DataFrame(flat_rows)
-            df_flat_chk = df_flat_chk.replace("n/a", pd.NA)
-            ignore_cols = {"participant_id", "session", modality, "survey"}
-            nan_cols = [
-                c
-                for c in df_flat_chk.columns
-                if c not in ignore_cols and df_flat_chk[c].isna().all()
-            ]
-            if nan_cols:
-                nan_report["flat_output"] = nan_cols
-        except Exception:
-            pass
+        flat_out_path, fallback_note, flat_nan_cols = _finalize_flat_output(
+            flat_rows=flat_rows,
+            modality=modality,
+            layout=layout,
+            output_prism_root=output_prism_root,
+            fallback_note=fallback_note,
+        )
+        if flat_nan_cols:
+            nan_report["flat_output"] = flat_nan_cols
 
     _ensure_dir(out_root)
     _write_recipes_dataset_description(
