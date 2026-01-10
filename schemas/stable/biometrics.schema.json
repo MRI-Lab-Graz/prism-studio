@@ -309,6 +309,13 @@
         "type": "string",
         "description": "Metric name of the canonical item this is an alias for (used during conversion)"
       },
+      "Aliases": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Alternative metric names that use this same definition"
+      },
       "Units": {
         "type": "string",
         "description": "Unit of measurement (e.g., kg, sec, ml/kg/min)"

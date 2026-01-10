@@ -644,30 +644,47 @@ def extract_excel_templates(excel_file, participants_prefix=None):
     extracted_surveys = {}
 
     for prefix, variables in surveys.items():
-        # Deduplicate redundant information from Alias entries
+        # Move aliases into canonical items and remove redundant alias items
+        to_remove_vars = []
         for var_name, entry in variables.items():
             alias_target = entry.get("AliasOf")
             if alias_target and alias_target in variables:
                 target_entry = variables[alias_target]
+                
+                # Register as an alias in the canonical item
+                if "Aliases" not in target_entry:
+                    target_entry["Aliases"] = []
+                if var_name not in target_entry["Aliases"]:
+                    target_entry["Aliases"].append(var_name)
+
                 # Remove fields that match the alias target exactly
-                to_remove = []
+                to_remove_fields = []
                 for field in ["Description", "Levels", "Units", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "AllowedValues", "TermURL", "Relevance"]:
                     if field in entry and field in target_entry:
                         if entry[field] == target_entry[field]:
-                            to_remove.append(field)
+                            to_remove_fields.append(field)
                     # Also handle case where alias entry has empty/placeholder description but target has real one
                     elif field == "Description" and field in entry:
                         desc = entry[field]
                         if isinstance(desc, dict) and not any(v for v in desc.values() if v):
-                            to_remove.append(field)
+                            to_remove_fields.append(field)
                     # Same for Levels
                     elif field == "Levels" and field in entry:
                         levs = entry[field]
                         if isinstance(levs, dict) and not levs:
-                            to_remove.append(field)
+                            to_remove_fields.append(field)
                 
-                for field in to_remove:
+                for field in to_remove_fields:
                     del entry[field]
+                
+                # If the entry is now purely redundant (only AliasOf left), mark it for total removal
+                # This aligns with the "centralized aliases in main item" approach
+                remaining_keys = [k for k in entry.keys() if k != "AliasOf"]
+                if not remaining_keys:
+                    to_remove_vars.append(var_name)
+
+        for var_name in to_remove_vars:
+            del variables[var_name]
 
         is_participants = (
             participants_prefix is not None and prefix == participants_prefix

@@ -166,6 +166,27 @@ class DatasetValidator:
             sidecar_content = CrossPlatformFile.read_text(sidecar_path)
             sidecar_data = json.loads(sidecar_content)
 
+            # Build flat lookup table for validation, resolving AliasOf and Aliases
+            effective_defs = {}
+            # First pass: identify canonical items and their direct aliases
+            for k, v in sidecar_data.items():
+                if not isinstance(v, dict):
+                    continue
+                effective_defs[k] = v
+                if "Aliases" in v and isinstance(v["Aliases"], list):
+                    for alias in v["Aliases"]:
+                        # If the alias column doesn't have its own explicit definition,
+                        # point it to this canonical parent.
+                        if alias not in sidecar_data:
+                            effective_defs[alias] = v
+            
+            # Second pass: resolve explicit AliasOf pointers
+            for k, v in sidecar_data.items():
+                if isinstance(v, dict) and "AliasOf" in v:
+                    target = v["AliasOf"]
+                    if target in sidecar_data:
+                        effective_defs[k] = sidecar_data[target]
+
             # Read TSV file
             with open(file_path, "r", newline="", encoding="utf-8") as tsvfile:
                 reader = csv.DictReader(tsvfile, delimiter="\t")
@@ -195,8 +216,8 @@ class DatasetValidator:
                         continue
 
                     for col_name, value in row.items():
-                        if col_name in sidecar_data:
-                            col_def = sidecar_data[col_name]
+                        if col_name in effective_defs:
+                            col_def = effective_defs[col_name]
 
                             # Skip empty values
                             if value is None or value.strip() == "" or value.lower() in ("n/a", "na"):

@@ -178,10 +178,17 @@ def process_dataframe(
     # Identify all schema variables to separate participant-only columns when no participants.json
     all_schema_vars = set()
     for schema in schemas.values():
-        for k in schema.keys():
+        for k, v in schema.items():
             if k in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]:
                 continue
             all_schema_vars.add(k)
+            # Support both backward AliasOf and new forward Aliases
+            if isinstance(v, dict):
+                if "AliasOf" in v:
+                    all_schema_vars.add(v["AliasOf"])
+                if "Aliases" in v and isinstance(v["Aliases"], list):
+                    for alias in v["Aliases"]:
+                        all_schema_vars.add(alias)
 
     candidate_participant_cols = []
     for col in df.columns:

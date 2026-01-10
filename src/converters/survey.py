@@ -508,6 +508,12 @@ def _convert_survey_dataframe_to_prism_dataset(
         for k, v in sidecar.items():
             if k in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(v, dict):
                 continue
+            # New forward Aliases format
+            if "Aliases" in v and isinstance(v["Aliases"], list):
+                for alias in v["Aliases"]:
+                    sidecar.setdefault("_aliases", {})[alias] = k
+                    sidecar.setdefault("_reverse_aliases", {}).setdefault(k, []).append(alias)
+            # Legacy backward AliasOf format
             if "AliasOf" in v:
                 target = v["AliasOf"]
                 # Store which canonical item this alias points to
@@ -517,13 +523,23 @@ def _convert_survey_dataframe_to_prism_dataset(
 
         templates[task_norm] = {"path": json_path, "json": sidecar, "task": task_norm}
 
-        for k in sidecar.keys():
+        for k, v in sidecar.items():
             if k in _NON_ITEM_TOPLEVEL_KEYS:
                 continue
+            
+            # Map canonical item to task
             if k in item_to_task and item_to_task[k] != task_norm:
                 duplicate_items.setdefault(k, set()).update({item_to_task[k], task_norm})
             else:
                 item_to_task[k] = task_norm
+
+            # Map aliases to same task to ensure they are discovered
+            if isinstance(v, dict) and "Aliases" in v and isinstance(v["Aliases"], list):
+                for alias in v["Aliases"]:
+                    if alias in item_to_task and item_to_task[alias] != task_norm:
+                        duplicate_items.setdefault(alias, set()).update({item_to_task[alias], task_norm})
+                    else:
+                        item_to_task[alias] = task_norm
 
     if not templates:
         raise ValueError(f"No survey templates found in: {library_dir} (expected survey-*.json)")
