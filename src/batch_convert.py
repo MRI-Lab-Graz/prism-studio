@@ -685,18 +685,21 @@ def create_dataset_description(
     name: str = "Converted Dataset",
     description: str = "Dataset converted from raw physio/eyetracking files",
 ) -> Path:
-    """Create a dataset_description.json file for the output dataset."""
+    """Create a dataset_description.json file for the output dataset following BIDS v1.10.1."""
     desc = {
         "Name": name,
-        "BIDSVersion": "1.9.0",
+        "BIDSVersion": "1.10.1",
         "DatasetType": "raw",
         "Description": description,
+        "Authors": ["PRISM Batch Converter"],
         "GeneratedBy": [
             {
-                "Name": "prism batch converter",
-                "Version": "1.0.0",
+                "Name": "PRISM Batch Converter",
+                "Version": "1.1.1",
+                "Description": "Automated conversion from raw physiological/eyetracking files to BIDS/PRISM structure."
             }
         ],
+        "HEDVersion": "8.2.0"
     }
 
     output_path = output_folder / "dataset_description.json"

@@ -695,9 +695,18 @@ def _convert_survey_dataframe_to_prism_dataset(
     if not ds_desc.exists():
         dataset_description = {
             "Name": name or "PRISM Survey Dataset",
-            "BIDSVersion": "1.8.0",
+            "BIDSVersion": "1.10.1",
             "DatasetType": "raw",
-            "Authors": authors or ["prism"],
+            "Authors": authors or ["PRISM Survey Converter"],
+            "HowToAcknowledge": "Please cite the original survey publication and the PRISM framework.",
+            "GeneratedBy": [
+                {
+                    "Name": "PRISM Survey Converter",
+                    "Version": "1.1.1",
+                    "Description": "Manual survey template mapping and TSV conversion."
+                }
+            ],
+            "HEDVersion": "8.2.0"
         }
         _write_json(ds_desc, dataset_description)
 

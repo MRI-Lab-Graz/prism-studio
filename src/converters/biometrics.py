@@ -274,9 +274,17 @@ def convert_biometrics_table_to_prism_dataset(
     output_root.mkdir(parents=True, exist_ok=True)
     dataset_description = {
         "Name": name or "PRISM Biometrics Dataset",
-        "BIDSVersion": "1.8.0",
+        "BIDSVersion": "1.10.1",
         "DatasetType": "raw",
-        "Authors": authors or ["prism-studio"],
+        "Authors": authors or ["PRISM Biometrics Converter"],
+        "GeneratedBy": [
+            {
+                "Name": "PRISM Biometrics Converter",
+                "Version": "1.1.1",
+                "Description": "Automated biometrics data conversion to PRISM format."
+            }
+        ],
+        "HEDVersion": "8.2.0"
     }
     _write_json(output_root / "dataset_description.json", dataset_description)
 

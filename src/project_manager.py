@@ -105,7 +105,7 @@ class ProjectManager:
 
             # 1. Create dataset_description.json
             desc_path = project_path / "dataset_description.json"
-            desc_content = self._create_dataset_description(name)
+            desc_content = self._create_dataset_description(name, config)
             CrossPlatformFile.write_text(str(desc_path), json.dumps(desc_content, indent=2))
             created_files.append("dataset_description.json")
 
@@ -147,6 +147,12 @@ class ProjectManager:
             readme_content = self._create_readme(name, sessions, modalities)
             CrossPlatformFile.write_text(str(readme_path), readme_content)
             created_files.append("README.md")
+
+            # 7. Create CHANGES file (Recommended by BIDS)
+            changes_path = project_path / "CHANGES"
+            changes_content = f"1.0.0 {date.today().isoformat()}\n  - Initial dataset structure created and validated via PRISM.\n"
+            CrossPlatformFile.write_text(str(changes_path), changes_content)
+            created_files.append("CHANGES")
 
             # 8. Create BIDS standard folders
             bids_folders = self._create_bids_folders(project_path)
@@ -338,19 +344,34 @@ class ProjectManager:
     # Private helper methods
     # =========================================================================
 
-    def _create_dataset_description(self, name: str) -> Dict[str, Any]:
-        """Create dataset_description.json content."""
+    def _create_dataset_description(self, name: str, config: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Create dataset_description.json content following BIDS v1.10.1."""
+        if config is None:
+            config = {}
+            
         return {
             "Name": name,
-            "BIDSVersion": "1.9.0",
+            "BIDSVersion": "1.10.1",
             "DatasetType": "raw",
-            "License": "CC0",
-            "Authors": ["TODO: Add author names"],
-            "Acknowledgements": "",
-            "HowToAcknowledge": "",
-            "Funding": [],
-            "ReferencesAndLinks": [],
-            "DatasetDOI": ""
+            "License": config.get("license", "CC0"),
+            "Authors": config.get("authors", ["TODO: Add author names"]),
+            "Acknowledgements": config.get("acknowledgements", ""),
+            "HowToAcknowledge": config.get("how_to_acknowledge", "Please cite the original paper or the dataset DOI below."),
+            "Funding": config.get("funding", []),
+            "ReferencesAndLinks": config.get("references_and_links", []),
+            "DatasetDOI": config.get("doi", ""),
+            "EthicsApprovals": config.get("ethics_approvals", []),
+            "Keywords": config.get("keywords", []),
+            "HEDVersion": "8.2.0",
+            "DatasetLinks": config.get("dataset_links", {}),
+            "GeneratedBy": [
+                {
+                    "Name": "PRISM Validator",
+                    "Version": "1.1.1",
+                    "Description": "Dataset initialized and managed via PRISM Studio"
+                }
+            ],
+            "SourceDatasets": config.get("source_datasets", [])
         }
 
     def _create_participants_tsv(self) -> str:

@@ -502,7 +502,7 @@
                                     <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa, .lss)</label>
                                     <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv,.lss">
                                     <div class="form-text" id="convertFileHint">
-                                        <span class="text-info"><i class="fas fa-info-circle me-1"></i>.lss/.lsa for LimeSurvey, .xlsx/.csv for other sources</span>
+                                        <span class="text-info"><i class="fas fa-info-circle me-1"></i>LimeSurvey (.lss/.lsa) or Data Dictionary (.xlsx/.csv/.tsv)</span>
                                     </div>
                                 </div>
                                 <div class="col-md-4" id="convertDatasetNameGroup">
@@ -2327,6 +2327,14 @@ document.addEventListener('DOMContentLoaded', function() {
         convertError.classList.add('d-none');
         convertInfo.classList.add('d-none');
 
+        // Show and clear logs
+        if (conversionLogContainer) {
+            conversionLogContainer.classList.remove('d-none');
+        }
+        if (conversionLog) {
+            conversionLog.innerHTML = '';
+        }
+
         try {
             const formData = new FormData();
             formData.append('file', file);
@@ -2341,6 +2349,13 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             const data = await response.json();
+
+            // Process logs if returned
+            if (data.log && Array.isArray(data.log)) {
+                data.log.forEach(entry => {
+                    appendLog(entry.message, entry.type, conversionLog);
+                });
+            }
 
             if (!response.ok || data.error) {
                 throw new Error(data.error || 'Template generation failed');
@@ -2371,6 +2386,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (err) {
             convertError.textContent = err.message;
             convertError.classList.remove('d-none');
+            appendLog(`Error: ${err.message}`, 'error', conversionLog);
         } finally {
             updateConvertBtn();
         }

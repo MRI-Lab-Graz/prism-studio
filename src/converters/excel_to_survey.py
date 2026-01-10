@@ -213,10 +213,51 @@ def process_excel(
 ):
     print(f"Loading metadata from {excel_file}...")
     try:
-        df_meta = pd.read_excel(excel_file, header=None)
+        surveys_data = extract_excel_templates(excel_file, participants_prefix=participants_prefix)
     except Exception as e:
-        print(f"Error reading Excel file: {e}")
+        print(f"Error during extraction: {e}")
         sys.exit(1)
+
+    # Generate JSON Sidecars
+    print(f"Generating JSON sidecars in {output_dir}...")
+    os.makedirs(output_dir, exist_ok=True)
+    if participants_output and participants_output != output_dir:
+        os.makedirs(participants_output, exist_ok=True)
+
+    for prefix, sidecar in surveys_data.items():
+        is_participants = (
+            participants_prefix is not None and prefix == participants_prefix
+        )
+
+        if is_participants:
+            json_filename = "participants.json"
+            target_dir = participants_output or output_dir
+        else:
+            json_filename = f"survey-{prefix}.json"
+            target_dir = output_dir
+
+        json_path = os.path.join(target_dir, json_filename)
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(sidecar, f, indent=2, ensure_ascii=False)
+            print(f"  - Created {json_path}")
+
+    print("Done!")
+
+
+def extract_excel_templates(excel_file, participants_prefix=None):
+    """
+    Core extraction logic that returns a dictionary of templates {prefix: sidecar_dict}.
+    Extracted from process_excel for use in Web UI.
+    """
+    try:
+        if str(excel_file).lower().endswith(".csv"):
+            df_meta = pd.read_csv(excel_file, header=None)
+        elif str(excel_file).lower().endswith(".tsv"):
+            df_meta = pd.read_csv(excel_file, sep="\t", header=None)
+        else:
+            df_meta = pd.read_excel(excel_file, header=None)
+    except Exception as e:
+        raise RuntimeError(f"Error reading source file: {e}")
 
     # Detect header row and column indices
     header_row = [str(v) for v in df_meta.iloc[0].tolist()]
@@ -599,13 +640,35 @@ def process_excel(
 
         surveys[prefix][var_name] = entry
 
-    # Generate JSON Sidecars
-    print(f"Generating JSON sidecars in {output_dir}...")
-    os.makedirs(output_dir, exist_ok=True)
-    if participants_output and participants_output != output_dir:
-        os.makedirs(participants_output, exist_ok=True)
+    # Create Sidecar structures
+    extracted_surveys = {}
 
     for prefix, variables in surveys.items():
+        # Deduplicate redundant information from Alias entries
+        for var_name, entry in variables.items():
+            alias_target = entry.get("AliasOf")
+            if alias_target and alias_target in variables:
+                target_entry = variables[alias_target]
+                # Remove fields that match the alias target exactly
+                to_remove = []
+                for field in ["Description", "Levels", "Units", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "AllowedValues", "TermURL", "Relevance"]:
+                    if field in entry and field in target_entry:
+                        if entry[field] == target_entry[field]:
+                            to_remove.append(field)
+                    # Also handle case where alias entry has empty/placeholder description but target has real one
+                    elif field == "Description" and field in entry:
+                        desc = entry[field]
+                        if isinstance(desc, dict) and not any(v for v in desc.values() if v):
+                            to_remove.append(field)
+                    # Same for Levels
+                    elif field == "Levels" and field in entry:
+                        levs = entry[field]
+                        if isinstance(levs, dict) and not levs:
+                            to_remove.append(field)
+                
+                for field in to_remove:
+                    del entry[field]
+
         is_participants = (
             participants_prefix is not None and prefix == participants_prefix
         )
@@ -790,20 +853,9 @@ def process_excel(
                 sidecar["Study"].pop("ShortName", None)
 
         sidecar.update(variables)
+        extracted_surveys[prefix] = sidecar
 
-        if is_participants:
-            json_filename = "participants.json"
-            target_dir = participants_output or output_dir
-        else:
-            json_filename = f"survey-{prefix}.json"
-            target_dir = output_dir
-
-        json_path = os.path.join(target_dir, json_filename)
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(sidecar, f, indent=2, ensure_ascii=False)
-            print(f"  - Created {json_path}")
-
-    print("Done!")
+    return extracted_surveys
 
 
 if __name__ == "__main__":
