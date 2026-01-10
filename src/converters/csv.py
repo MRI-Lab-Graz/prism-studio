@@ -43,14 +43,24 @@ def _ensure_participants(
     rawdata_dir = os.path.join(output_root, "rawdata")
     os.makedirs(rawdata_dir, exist_ok=True)
 
-    participants_json_path = os.path.join(library_path, "participants.json")
+    # Resolve participants.json path, checking parent folders as well
+    lib_path_obj = Path(library_path).resolve()
+    participants_json_path = None
+    candidates_paths = [lib_path_obj / "participants.json"]
+    candidates_paths.extend([p / "participants.json" for p in lib_path_obj.parents[:3]])
+
+    for p in candidates_paths:
+        if p.exists() and p.is_file():
+            participants_json_path = str(p)
+            break
+
     inferred = False
     used_schema = False
 
     if participant_schema:
         part_schema = participant_schema
         used_schema = True
-    elif not os.path.exists(participants_json_path):
+    elif not participants_json_path:
         # Build a minimal schema from candidates
         cols = candidates or []
         cols = [c for c in cols if c != id_col]

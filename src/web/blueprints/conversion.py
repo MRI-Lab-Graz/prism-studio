@@ -59,6 +59,7 @@ _batch_convert_jobs = {}
 
 def _participant_json_candidates(library_root: Path, depth: int = 3):
     """List possible participants.json locations above a library root."""
+    library_root = library_root.resolve()
     candidates = [library_root / "participants.json"]
     for parent in library_root.parents[:depth]:
         candidates.append(parent / "participants.json")
