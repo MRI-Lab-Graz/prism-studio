@@ -410,12 +410,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const fileNameLower = fileName.toLowerCase();
                 
                 // Skip system files
-                if (fileName.startsWith('.') || fileName.startsWith('._') || fileName === 'Thumbs.db') {
+                if (fileName === '.bidsignore') {
+                    // Include .bidsignore
+                } else if (fileName.startsWith('.') || fileName.startsWith('._') || fileName === 'Thumbs.db') {
                     continue;
                 }
 
                 const isSkipped = skipExtensions.some(ext => fileNameLower.endsWith(ext));
-                const isMetadata = metadataExtensions.some(ext => fileNameLower.endsWith(ext));
+                const isMetadata = metadataExtensions.some(ext => fileNameLower.endsWith(ext)) || fileName === '.bidsignore';
                 
                 if (isMetadata) {
                     metadataCount++;
@@ -515,12 +517,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const fileNameLower = fileName.toLowerCase();
                 const filePath = file.webkitRelativePath || fileName;
                 
-                // Skip system files (macOS .DS_Store, ._ files, etc.)
-                if (fileName.startsWith('.') || fileName.startsWith('._') || fileName === 'Thumbs.db') {
+                // Keep .bidsignore as it's critical for validation
+                // Skip other system files (macOS .DS_Store, ._ files, etc.)
+                if (fileName === '.bidsignore') {
+                    // Continue to process as metadata below
+                } else if (fileName.startsWith('.') || fileName.startsWith('._') || fileName === 'Thumbs.db') {
                     continue;
                 }
 
-                const isMetadata = metadataExtensions.some(ext => fileNameLower.endsWith(ext));
+                const isMetadata = metadataExtensions.some(ext => fileNameLower.endsWith(ext)) || fileName === '.bidsignore';
                 const isSkipped = skipExtensions.some(ext => fileNameLower.endsWith(ext)) || fileNameLower.endsWith('.nii.gz');
                 
                 if (isMetadata && !isSkipped) {

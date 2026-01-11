@@ -1,0 +1,6 @@
+{
+  "Name": "Workshop Messy Dataset",
+  "BIDSVersion": "1.8.0",
+  "DatasetType": "raw",
+  "Authors": ["Workshop Participant"]
+}

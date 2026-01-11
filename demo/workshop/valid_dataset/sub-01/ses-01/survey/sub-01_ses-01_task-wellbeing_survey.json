@@ -1,0 +1,27 @@
+{
+    "Technical": {
+        "StimulusType": "Questionnaire",
+        "FileFormat": "tsv",
+        "Language": "en",
+        "Respondent": "self"
+    },
+    "Study": {
+        "TaskName": "wellbeing",
+        "OriginalName": "Patient Health Questionnaire (PHQ-9)",
+        "StudyName": "Workshop Demo"
+    },
+    "Metadata": {
+        "SchemaVersion": "1.1.1",
+        "CreationDate": "2026-01-11",
+        "Creator": "PRISM Studio"
+    },
+    "item_1": {
+        "Description": "PHQ-1: Little interest or pleasure in doing things"
+    },
+    "item_2": {
+        "Description": "PHQ-2: Feeling down, depressed, or hopeless"
+    },
+    "item_3": {
+        "Description": "PHQ-3: Trouble falling or staying asleep, or sleeping too much"
+    }
+}

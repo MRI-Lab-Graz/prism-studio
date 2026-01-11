@@ -1,0 +1,7 @@
+{
+    "Name": "PRISM Workshop Reference Dataset",
+    "BIDSVersion": "1.8.0",
+    "DatasetType": "raw",
+    "Authors": ["Workshop Participant"],
+    "Acknowledgements": "PRISM Team"
+}

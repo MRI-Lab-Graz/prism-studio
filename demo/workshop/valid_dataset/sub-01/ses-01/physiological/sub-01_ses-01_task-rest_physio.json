@@ -1,0 +1,13 @@
+{
+    "SamplingFrequency": 1000,
+    "StartTime": 0,
+    "Columns": ["time", "ecg", "gsr"],
+    "Technical": {
+        "SamplingFrequency": 1000,
+        "Columns": ["time", "ecg", "gsr"]
+    },
+    "Metadata": {
+        "SchemaVersion": "1.0.0",
+        "CreationDate": "2026-01-11"
+    }
+}

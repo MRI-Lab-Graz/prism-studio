@@ -286,14 +286,13 @@ def download_report(result_id):
     report = {
         "dataset": data["filename"],
         "validation_timestamp": results.get("timestamp", ""),
-        "summary": {
-            "total_files": len(results.get("valid_files", []))
-            + len(results.get("invalid_files", [])),
-            "valid_files": len(results.get("valid_files", [])),
-            "invalid_files": len(results.get("invalid_files", [])),
-            "total_errors": len(results.get("errors", [])),
-            "total_warnings": len(results.get("warnings", [])),
-        },
+        "summary": results.get("summary", {
+            "total_files": 0,
+            "valid_files": 0,
+            "invalid_files": 0,
+            "total_errors": 0,
+            "total_warnings": 0,
+        }),
         "results": results,
     }
 

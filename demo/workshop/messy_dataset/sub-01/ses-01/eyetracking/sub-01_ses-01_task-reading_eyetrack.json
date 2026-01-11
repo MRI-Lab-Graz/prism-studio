@@ -1,0 +1,6 @@
+{
+    "TaskName": "reading",
+    "SamplingRate": 500,
+    "InstitutionName": "University of Research",
+    "Description": "This JSON is deliberately messy for the workshop."
+}
