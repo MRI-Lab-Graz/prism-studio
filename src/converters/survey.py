@@ -381,8 +381,8 @@ def _convert_survey_dataframe_to_prism_dataset(
     if unknown not in {"error", "warn", "ignore"}:
         raise ValueError("unknown must be one of: error, warn, ignore")
 
-    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
-        raise ValueError("duplicate_handling must be one of: error, keep_first, keep_last, sessions")
+    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions", "skip"}:
+        raise ValueError("duplicate_handling must be one of: error, keep_first, keep_last, sessions, skip")
 
     # Initialize warnings list early (used for duplicate handling and later for unknown columns)
     conversion_warnings: list[str] = []
@@ -607,6 +607,11 @@ def _convert_survey_dataframe_to_prism_dataset(
                 conversion_warnings.append(f"Auto-generated sessions for {len(dup_ids)} participants with multiple responses")
             else:
                 conversion_warnings.append(f"Session column '{resolved_session_col}' already specified; duplicates may exist within sessions")
+
+        elif duplicate_handling == "skip":
+            # Remove all rows for duplicate participants (skip all occurrences)
+            df = df[~normalized_ids.isin(dup_ids)].copy()
+            conversion_warnings.append(f"Skipped all {dup_count} rows for {len(dup_ids)} participants with duplicate entries")
 
     # --- Determine which columns map to which surveys ---
     lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
@@ -973,7 +978,12 @@ def _localize_survey_template(template: dict, *, language: str | None) -> dict:
 
 
 def _inject_missing_token(sidecar: dict, *, token: str) -> dict:
-    """Ensure every item Levels includes the missing-value token."""
+    """Ensure every item Levels includes the missing-value token.
+
+    Only adds the token to items that already have Levels defined.
+    Items without Levels (e.g., free-text fields) are left unchanged
+    to allow any value.
+    """
     if not isinstance(sidecar, dict):
         return sidecar
 
@@ -984,16 +994,14 @@ def _inject_missing_token(sidecar: dict, *, token: str) -> dict:
             continue
 
         levels = item.get("Levels")
-        if isinstance(levels, dict):
+        # Only add missing token if Levels already exists
+        # Don't create Levels for free-text fields that have none
+        if isinstance(levels, dict) and levels:
             if token not in levels:
                 levels[token] = "Missing/Not provided"
                 item["Levels"] = levels
-        else:
-            item["Levels"] = {token: "Missing/Not provided"}
 
     return sidecar
-
-    return out
 
 
 def _read_alias_rows(path: Path) -> list[list[str]]:

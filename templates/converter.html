@@ -110,12 +110,12 @@
                 <div class="col-md-3">
                     <label class="form-label">Export Mode</label>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="lssMode" id="lssModeGroups" value="groups" checked>
-                        <label class="form-check-label" for="lssModeGroups">By questionnaire group</label>
+                        <input class="form-check-input" type="radio" name="lssMode" id="lssModeQuestions" value="questions" checked>
+                        <label class="form-check-label" for="lssModeQuestions">Individual questions <small class="text-muted">(recommended)</small></label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="lssMode" id="lssModeQuestions" value="questions">
-                        <label class="form-check-label" for="lssModeQuestions">Individual questions</label>
+                        <input class="form-check-input" type="radio" name="lssMode" id="lssModeGroups" value="groups">
+                        <label class="form-check-label" for="lssModeGroups">By questionnaire group</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="lssMode" id="lssModeCombined" value="combined">
@@ -529,14 +529,14 @@
                                 <!-- Participant ID selector (for data conversion) -->
                                 <div class="col-md-4" id="convertIdColumnGroup">
                                     <label for="convertIdColumn" class="form-label">
-                                        Participant ID Column
+                                        Participant ID Column <span class="text-danger">*</span>
                                         <span id="idColumnStatus" class="ms-2 small"></span>
                                     </label>
                                     <select class="form-select" id="convertIdColumn">
-                                        <option value="auto" selected>Auto-detect</option>
+                                        <option value="">-- Select ID column --</option>
                                     </select>
                                     <div class="form-text" id="idColumnHelp">
-                                        <i class="fas fa-info-circle me-1"></i>Upload a file to detect available columns
+                                        <i class="fas fa-info-circle me-1"></i>Upload a file to detect available columns. Values will be used for folder names (sub-{value}).
                                     </div>
                                 </div>
 
@@ -544,8 +544,8 @@
                                 <div class="col-md-4 d-none" id="convertTemplateExportGroup">
                                     <label class="form-label">Template Export</label>
                                     <select class="form-select" id="convertTemplateExport">
-                                        <option value="groups" selected>By questionnaire group</option>
-                                        <option value="questions">Individual questions</option>
+                                        <option value="groups">By questionnaire group</option>
+                                        <option value="questions" selected>Individual questions</option>
                                         <option value="combined">Combined (single file)</option>
                                     </select>
                                 </div>
@@ -575,6 +575,17 @@
                                             <div class="form-text">Force a specific session ID (e.g. '01' becomes 'ses-01'). Default: ses-01</div>
                                         </div>
                                         <div class="col-md-6">
+                                            <label for="convertDuplicateHandling" class="form-label">Duplicate IDs</label>
+                                            <select class="form-select" id="convertDuplicateHandling">
+                                                <option value="ask" selected>Ask for each duplicate</option>
+                                                <option value="error">Stop and report</option>
+                                                <option value="keep_first">Keep first occurrence</option>
+                                                <option value="keep_last">Keep last occurrence</option>
+                                                <option value="sessions">Treat as multiple sessions</option>
+                                            </select>
+                                            <div class="form-text">How to handle participants with duplicate IDs in the data.</div>
+                                        </div>
+                                        <div class="col-md-6">
                                             <label for="convertUnknown" class="form-label">Unknown Items</label>
                                             <select class="form-select" id="convertUnknown">
                                                 <option value="warn" selected>Show warnings</option>
@@ -587,7 +598,7 @@
                                                 <input class="form-check-input" type="checkbox" id="convertStrictLevels">
                                                 <label class="form-check-label" for="convertStrictLevels">Strict Levels Validation</label>
                                             </div>
-                                            <div class="form-text">If enabled, values must match the template's enumerated Levels exactly. For .lsa inputs, leave this off to allow numeric scale values (e.g., 1) with detailed warnings.</div>
+                                            <div class="form-text">If enabled, values must exactly match the Levels defined in the template. For LimeSurvey (.lsa) files, keep this OFF to allow numeric scale values (1, 2, 3...) to be mapped correctly.</div>
                                         </div>
                                         {% if current_project.path %}
                                         <div class="col-md-12 mt-3">
@@ -607,19 +618,175 @@
                             <div id="convertError" class="alert alert-danger d-none mt-3"></div>
                             <div id="convertInfo" class="alert alert-info d-none mt-3"></div>
 
-                            <!-- Conversion Log Output -->
-                            <div id="conversionLogContainer" class="d-none mt-3">
-                                <div class="card border-secondary">
-                                    <div class="card-header bg-dark text-white py-2 d-flex justify-content-between align-items-center">
-                                        <span><i class="fas fa-terminal me-2"></i>Conversion Log</span>
-                                        <button type="button" class="btn btn-sm btn-outline-light" id="toggleLogBtn" title="Toggle log">
-                                            <i class="fas fa-chevron-down"></i>
-                                        </button>
+                            <!-- Duplicate Resolution Panel -->
+                            <div id="duplicateResolutionPanel" class="d-none mt-3">
+                                <div class="card border-warning">
+                                    <div class="card-header bg-warning text-dark">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <strong>Duplicate Participant IDs Found</strong>
                                     </div>
-                                    <div class="card-body p-0" id="conversionLogBody">
-                                        <pre id="conversionLog" class="m-0 p-3 bg-dark text-light" style="max-height: 300px; overflow-y: auto; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; white-space: pre-wrap;"></pre>
+                                    <div class="card-body">
+                                        <p class="text-muted mb-3" id="duplicateDescription">
+                                            The following participant IDs appear multiple times in your data.
+                                        </p>
+
+                                        <!-- Global action for all duplicates -->
+                                        <div class="mb-3 p-3 bg-light rounded border">
+                                            <label class="form-label fw-bold">
+                                                <i class="fas fa-cog text-primary me-1"></i>
+                                                Apply to all duplicates:
+                                            </label>
+                                            <div class="row g-2">
+                                                <div class="col-auto">
+                                                    <button class="btn btn-outline-primary btn-sm duplicate-global-action" data-action="keep_first">
+                                                        <i class="fas fa-arrow-up me-1"></i>Keep First
+                                                    </button>
+                                                </div>
+                                                <div class="col-auto">
+                                                    <button class="btn btn-outline-primary btn-sm duplicate-global-action" data-action="keep_last">
+                                                        <i class="fas fa-arrow-down me-1"></i>Keep Last
+                                                    </button>
+                                                </div>
+                                                <div class="col-auto">
+                                                    <button class="btn btn-outline-primary btn-sm duplicate-global-action" data-action="sessions">
+                                                        <i class="fas fa-layer-group me-1"></i>Multiple Sessions
+                                                    </button>
+                                                </div>
+                                                <div class="col-auto">
+                                                    <button class="btn btn-outline-danger btn-sm duplicate-global-action" data-action="skip">
+                                                        <i class="fas fa-ban me-1"></i>Skip All Duplicates
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- List of duplicates with per-item actions -->
+                                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                                            <table class="table table-sm table-hover mb-0">
+                                                <thead class="table-light sticky-top">
+                                                    <tr>
+                                                        <th>Participant ID</th>
+                                                        <th>Occurrences</th>
+                                                        <th>Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="duplicateList">
+                                                    <!-- Dynamically populated -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <div class="mt-3 d-flex justify-content-between">
+                                            <button class="btn btn-outline-secondary" id="cancelDuplicateResolution">
+                                                <i class="fas fa-times me-1"></i>Cancel
+                                            </button>
+                                            <button class="btn btn-warning text-white" id="proceedWithDuplicates">
+                                                <i class="fas fa-check me-1"></i>Proceed with Selected Actions
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
+                            </div>
+
+                            <!-- Conversion Progress Steps -->
+                            <div id="surveyConversionProgress" class="d-none mt-3">
+                                <div class="card border-warning">
+                                    <div class="card-body py-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <!-- Step 1: Upload -->
+                                            <div class="text-center flex-fill">
+                                                <div id="step1Icon" class="rounded-circle bg-warning text-white d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                                    <i class="fas fa-upload"></i>
+                                                </div>
+                                                <div class="small mt-1 text-muted">Upload</div>
+                                            </div>
+                                            <div class="flex-fill"><hr class="border-warning step-line" id="line1"></div>
+                                            <!-- Step 2: Process -->
+                                            <div class="text-center flex-fill">
+                                                <div id="step2Icon" class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                                    <i class="fas fa-cogs"></i>
+                                                </div>
+                                                <div class="small mt-1 text-muted">Process</div>
+                                            </div>
+                                            <div class="flex-fill"><hr class="border-secondary step-line" id="line2"></div>
+                                            <!-- Step 3: Convert -->
+                                            <div class="text-center flex-fill">
+                                                <div id="step3Icon" class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                                    <i class="fas fa-exchange-alt"></i>
+                                                </div>
+                                                <div class="small mt-1 text-muted">Convert</div>
+                                            </div>
+                                            <div class="flex-fill"><hr class="border-secondary step-line" id="line3"></div>
+                                            <!-- Step 4: Validate -->
+                                            <div class="text-center flex-fill">
+                                                <div id="step4Icon" class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                                    <i class="fas fa-check-double"></i>
+                                                </div>
+                                                <div class="small mt-1 text-muted">Validate</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-center">
+                                            <span id="surveyProgressText" class="text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Starting conversion...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Conversion Summary (shows after completion) -->
+                            <div id="conversionSummaryContainer" class="d-none mt-3">
+                                <div class="card border-success">
+                                    <div class="card-header bg-success bg-opacity-10 py-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span class="fw-bold">Conversion Complete</span>
+                                    </div>
+                                    <div class="card-body py-3">
+                                        <div class="row g-3 text-center" id="conversionStats">
+                                            <div class="col-4">
+                                                <div class="border rounded p-2">
+                                                    <div class="fs-4 fw-bold text-primary" id="statParticipants">-</div>
+                                                    <small class="text-muted">Participants</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="border rounded p-2">
+                                                    <div class="fs-4 fw-bold text-success" id="statQuestionnaires">-</div>
+                                                    <small class="text-muted">Questionnaires</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="border rounded p-2">
+                                                    <div class="fs-4 fw-bold text-info" id="statFiles">-</div>
+                                                    <small class="text-muted">Files Created</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Questionnaire breakdown -->
+                                        <div id="questionnaireBreakdown" class="mt-3 d-none">
+                                            <hr class="my-2">
+                                            <small class="text-muted d-block mb-2">Questionnaires converted:</small>
+                                            <div id="questionnaireList" class="d-flex flex-wrap gap-1"></div>
+                                        </div>
+                                        <!-- Warnings summary -->
+                                        <div id="conversionWarningsSummary" class="mt-3 d-none">
+                                            <hr class="my-2">
+                                            <div class="alert alert-warning py-2 mb-0">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                <span id="conversionWarningsText"></span>
+                                            </div>
+                                        </div>
+                                        <!-- Download log button -->
+                                        <div class="mt-3 text-center">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="downloadLogBtn">
+                                                <i class="fas fa-file-alt me-1"></i>Download Conversion Log
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Conversion Log (hidden, for download only) -->
+                            <div id="conversionLogContainer" class="d-none">
+                                <pre id="conversionLog" class="d-none"></pre>
                             </div>
 
                             <!-- Validation Results -->
@@ -741,10 +908,30 @@
                                         <small class="text-muted ms-2">(fields that go into participants.tsv)</small>
                                     </h6>
 
+                                    <div class="alert alert-warning py-2 mb-3">
+                                        <small>
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            <strong>Required:</strong> You must select which field contains the <strong>Participant ID</strong>.
+                                            This value will be used for subject folder naming (e.g., sub-{id}).
+                                        </small>
+                                    </div>
+
+                                    <!-- Participant ID selector (mandatory) -->
+                                    <div class="mb-3 p-3 bg-light rounded border">
+                                        <label class="form-label fw-bold">
+                                            <i class="fas fa-id-card text-primary me-1"></i>
+                                            Participant ID Column <span class="text-danger">*</span>
+                                        </label>
+                                        <select id="participantIdColumn" class="form-select">
+                                            <option value="">-- Select the ID field --</option>
+                                        </select>
+                                        <div class="form-text">This field's value will be used for subject folder names (sub-{value})</div>
+                                    </div>
+
                                     <div class="alert alert-info py-2 mb-3">
                                         <small>
                                             <i class="fas fa-lightbulb me-1"></i>
-                                            <strong>BIDS Tip:</strong> Mark demographic questions (age, sex, ID) as participant metadata.
+                                            <strong>Optional:</strong> Mark additional demographic questions (age, sex) as participant metadata.
                                             These will be saved to <code>participants.json</code> instead of per-subject survey files.
                                         </small>
                                     </div>
@@ -1576,10 +1763,21 @@ document.addEventListener('DOMContentLoaded', function() {
         lssSaveGroupsToProjectBtn.addEventListener('click', async function() {
             if (!lssQuestionnaires) return;
 
-            const templates = Object.entries(lssQuestionnaires).map(([name, qData]) => ({
-                filename: qData.suggested_filename,
-                content: qData.prism_json
-            }));
+            // Get groups that have fields marked as participant metadata
+            const participantGroups = new Set();
+            for (const fieldInfo of Object.values(selectedParticipantFields)) {
+                if (fieldInfo.fullMetadata?.Position?.Group) {
+                    participantGroups.add(fieldInfo.fullMetadata.Position.Group.toLowerCase());
+                }
+            }
+
+            // Filter out participant metadata groups
+            const templates = Object.entries(lssQuestionnaires)
+                .filter(([name]) => !participantGroups.has(name.toLowerCase()))
+                .map(([name, qData]) => ({
+                    filename: qData.suggested_filename,
+                    content: qData.prism_json
+                }));
 
             lssSaveGroupsToProjectBtn.disabled = true;
             lssSaveGroupsToProjectBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
@@ -1596,10 +1794,16 @@ document.addEventListener('DOMContentLoaded', function() {
         lssSaveQuestionsToProjectBtn.addEventListener('click', async function() {
             if (!lssIndividualQuestions) return;
 
-            const templates = Object.entries(lssIndividualQuestions).map(([code, qData]) => ({
-                filename: qData.suggested_filename,
-                content: qData.prism_json
-            }));
+            // Get question codes that are marked as participant metadata
+            const participantCodes = new Set(Object.keys(selectedParticipantFields).map(c => c.toLowerCase()));
+
+            // Filter out participant metadata questions
+            const templates = Object.entries(lssIndividualQuestions)
+                .filter(([code]) => !participantCodes.has(code.toLowerCase()))
+                .map(([code, qData]) => ({
+                    filename: qData.suggested_filename,
+                    content: qData.prism_json
+                }));
 
             lssSaveQuestionsToProjectBtn.disabled = true;
             lssSaveQuestionsToProjectBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
@@ -1857,6 +2061,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         convertInfo.innerHTML = '<i class="fas fa-info-circle me-1"></i>.lss files contain structure only (no response data). Using Template Generation mode.';
                         convertInfo.classList.remove('d-none');
                     }
+
+                    // Detect columns for ID selection (server file path)
+                    await detectFileColumns(data.path);
                 }
             } catch (err) {
                 console.error('Error browsing for file:', err);
@@ -2032,16 +2239,93 @@ document.addEventListener('DOMContentLoaded', function() {
         convertModeTemplate.addEventListener('change', handleModeSwitch);
     }
 
+    // ========================================
+    // Participants.json Schema Integration
+    // ========================================
+
+    // Cache for participants.json schema
+    let cachedParticipantsSchema = null;
+
+    // Fetch participants.json schema from current project
+    async function fetchParticipantsSchema() {
+        try {
+            const response = await fetch('/api/projects/participants');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.exists && data.schema) {
+                    cachedParticipantsSchema = data.schema;
+                    console.log('[Participants] Schema loaded:', Object.keys(data.schema));
+                    // Pre-populate ID column dropdown from participants.json
+                    prefillIdColumnFromSchema();
+                    return data.schema;
+                }
+            }
+        } catch (e) {
+            console.warn('[Participants] Could not load schema:', e);
+        }
+        cachedParticipantsSchema = null;
+        return null;
+    }
+
+    // Pre-fill the ID column dropdown from participants.json _sourceField
+    function prefillIdColumnFromSchema() {
+        const idColumnSelect = document.getElementById('convertIdColumn');
+        const idColumnStatus = document.getElementById('idColumnStatus');
+        const idColumnHelp = document.getElementById('idColumnHelp');
+        if (!idColumnSelect || !cachedParticipantsSchema) return;
+
+        const schemaParticipantId = cachedParticipantsSchema.participant_id;
+        const sourceField = schemaParticipantId?._sourceField;
+
+        if (sourceField) {
+            // Add the sourceField as the first option (pre-selected)
+            idColumnSelect.innerHTML = `<option value="${sourceField}" selected>${sourceField} (from participants.json)</option>`;
+            if (idColumnStatus) {
+                idColumnStatus.innerHTML = '<i class="fas fa-file-code text-info" title="From participants.json"></i>';
+            }
+            if (idColumnHelp) {
+                idColumnHelp.innerHTML = `<i class="fas fa-file-code text-info me-1"></i>From participants.json: <strong>${sourceField}</strong> -> participant_id`;
+            }
+            console.log('[Participants] ID column pre-filled from participants.json:', sourceField);
+        }
+    }
+
+    // Check if participants.json defines participant_id
+    function getParticipantIdFromSchema() {
+        if (cachedParticipantsSchema && cachedParticipantsSchema.participant_id) {
+            return 'participant_id';
+        }
+        return null;
+    }
+
+    // Load schema on page init
+    fetchParticipantsSchema();
+
     // Detect columns from file for ID column selector
-    async function detectFileColumns(file) {
-        const filename = file.name.toLowerCase();
+    // Accepts either a File object or a server file path string
+    async function detectFileColumns(fileOrPath) {
+        const isFilePath = typeof fileOrPath === 'string';
+        const filename = isFilePath ? fileOrPath.split(/[\\/]/).pop().toLowerCase() : fileOrPath.name.toLowerCase();
         const idColumnSelect = document.getElementById('convertIdColumn');
         const idColumnStatus = document.getElementById('idColumnStatus');
         const idColumnHelp = document.getElementById('idColumnHelp');
         if (!idColumnSelect) return;
 
-        // Reset to auto-detect
-        idColumnSelect.innerHTML = '<option value="auto" selected>Auto-detect</option>';
+        // Ensure participants.json schema is loaded first
+        if (!cachedParticipantsSchema) {
+            await fetchParticipantsSchema();
+        }
+
+        // Check for participants.json _sourceField before resetting
+        const schemaParticipantId = cachedParticipantsSchema?.participant_id;
+        const schemaSourceField = schemaParticipantId?._sourceField;
+
+        // Reset dropdown but keep participants.json option if available
+        if (schemaSourceField) {
+            idColumnSelect.innerHTML = `<option value="">-- Select ID column --</option><option value="${schemaSourceField}" selected>${schemaSourceField} (from participants.json)</option>`;
+        } else {
+            idColumnSelect.innerHTML = '<option value="">-- Select ID column --</option>';
+        }
 
         // For .lss files, no columns to detect (structure only)
         if (filename.endsWith('.lss')) {
@@ -2056,43 +2340,134 @@ document.addEventListener('DOMContentLoaded', function() {
         // For .lsa and other files, try to detect columns
         if (filename.endsWith('.lsa') || filename.endsWith('.xlsx') || filename.endsWith('.csv') || filename.endsWith('.tsv')) {
             try {
-                const formData = new FormData();
-                formData.append('file', file);
+                let fetchOptions;
+                if (isFilePath) {
+                    // Server file path - send as JSON
+                    fetchOptions = {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ file_path: fileOrPath })
+                    };
+                } else {
+                    // Uploaded file - send as FormData
+                    const formData = new FormData();
+                    formData.append('file', fileOrPath);
+                    fetchOptions = {
+                        method: 'POST',
+                        body: formData
+                    };
+                }
 
-                const response = await fetch('/api/detect-columns', {
-                    method: 'POST',
-                    body: formData
-                });
+                const response = await fetch('/api/detect-columns', fetchOptions);
 
                 if (response.ok) {
                     const data = await response.json();
                     if (data.columns && data.columns.length > 0) {
-                        // Add detected columns
+                        // Check if participants.json defines participant_id with _sourceField
+                        const schemaParticipantId = cachedParticipantsSchema?.participant_id;
+                        const schemaSourceField = schemaParticipantId?._sourceField;
+                        let autoSelectedId = null;
+                        let selectionSource = '';
+
+                        // Priority 1: If participants.json exists with participant_id._sourceField, use that exact column
+                        let schemaFieldNotFound = false;
+                        if (schemaSourceField) {
+                            // Look for the _sourceField column in the data (case-insensitive)
+                            const exactMatch = data.columns.find(c => c.toLowerCase() === schemaSourceField.toLowerCase());
+                            if (exactMatch) {
+                                autoSelectedId = exactMatch;
+                                selectionSource = 'from participants.json';
+                            } else {
+                                // _sourceField not found in columns - will use fallback
+                                schemaFieldNotFound = true;
+                                console.warn(`[Participants] _sourceField "${schemaSourceField}" not found in data columns`);
+                            }
+                        }
+
+                        // Priority 2: Backend suggestion
+                        if (!autoSelectedId && data.suggested_id_column) {
+                            autoSelectedId = data.suggested_id_column;
+                            selectionSource = 'suggested';
+                        }
+
+                        // Priority 3: Pattern matching fallback
+                        if (!autoSelectedId) {
+                            const idPatterns = [
+                                'participant_id', 'participantid', 'participant',
+                                'subject_id', 'subjectid', 'subject',
+                                'code', 'id', 'token',
+                                'prolific_id', 'prolificid',
+                                'respondent_id', 'respondentid'
+                            ];
+                            for (const pattern of idPatterns) {
+                                for (const col of data.columns) {
+                                    const colLower = col.toLowerCase().replace(/[_-]/g, '');
+                                    if (colLower === pattern || colLower.includes(pattern)) {
+                                        autoSelectedId = col;
+                                        selectionSource = 'pattern match';
+                                        break;
+                                    }
+                                }
+                                if (autoSelectedId) break;
+                            }
+                        }
+
+                        // Common patterns for highlighting
+                        const idPatterns = [
+                            'participant_id', 'participantid', 'participant',
+                            'subject_id', 'subjectid', 'subject',
+                            'code', 'id', 'token',
+                            'prolific_id', 'prolificid',
+                            'respondent_id', 'respondentid'
+                        ];
+
+                        // Clear dropdown and rebuild with proper options
+                        idColumnSelect.innerHTML = '<option value="">-- Select ID column --</option>';
+
+                        // Add detected columns (user can always select any)
                         data.columns.forEach(col => {
                             const opt = document.createElement('option');
                             opt.value = col;
                             opt.textContent = col;
-                            // Pre-select likely ID columns
-                            if (['participant_id', 'id', 'code', 'token', 'subject'].includes(col.toLowerCase())) {
+                            // Highlight likely ID columns
+                            const colLower = col.toLowerCase();
+                            if (idPatterns.some(p => colLower.includes(p))) {
                                 opt.textContent += ' ★';
+                            }
+                            // Mark if from participants.json or auto-detected
+                            if (col === autoSelectedId) {
+                                opt.textContent += ` (${selectionSource})`;
+                                opt.selected = true;
                             }
                             idColumnSelect.appendChild(opt);
                         });
 
-                        // If suggested column exists, pre-select it
-                        if (data.suggested_id_column) {
-                            idColumnSelect.value = data.suggested_id_column;
+                        // Set the auto-selected value
+                        if (autoSelectedId) {
+                            idColumnSelect.value = autoSelectedId;
                         }
 
                         // Update status
                         if (idColumnStatus) {
-                            idColumnStatus.innerHTML = `<span class="text-success"><i class="fas fa-check me-1"></i>${data.columns.length} columns</span>`;
+                            const schemaInfo = schemaSourceField ? ` <i class="fas fa-file-code text-info" title="participants.json: ${schemaSourceField} → participant_id"></i>` : '';
+                            idColumnStatus.innerHTML = `<span class="text-success"><i class="fas fa-check me-1"></i>${data.columns.length} columns</span>${schemaInfo}`;
                         }
                         if (idColumnHelp) {
-                            idColumnHelp.innerHTML = data.suggested_id_column
-                                ? `<i class="fas fa-lightbulb me-1 text-warning"></i>Suggested: <strong>${data.suggested_id_column}</strong> (★ = likely ID columns)`
-                                : '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>No common ID column found. Please select manually.';
+                            if (autoSelectedId) {
+                                let schemaNote = '';
+                                if (schemaSourceField && !schemaFieldNotFound) {
+                                    schemaNote = `<br><small class="text-info"><i class="fas fa-file-code me-1"></i>participants.json: <strong>${schemaSourceField}</strong> → participant_id</small>`;
+                                } else if (schemaSourceField && schemaFieldNotFound) {
+                                    schemaNote = `<br><small class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>participants.json expects "<strong>${schemaSourceField}</strong>" but column not found in data. Using fallback.</small>`;
+                                }
+                                idColumnHelp.innerHTML = `<i class="fas fa-lightbulb me-1 text-warning"></i>Auto-selected: <strong>${autoSelectedId}</strong> (★ = likely ID columns)${schemaNote}`;
+                            } else {
+                                idColumnHelp.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>No common ID column found. Please select manually.';
+                            }
                         }
+
+                        // Update convert button state
+                        updateConvertBtn();
                     } else {
                         if (idColumnStatus) idColumnStatus.innerHTML = '<span class="text-warning">No columns found</span>';
                     }
@@ -2107,6 +2482,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Sync participant ID column selection from template generation to data conversion
+    function syncParticipantIdToConversion() {
+        const templateIdSelect = document.getElementById('participantIdColumn');
+        const convertIdSelect = document.getElementById('convertIdColumn');
+        if (!templateIdSelect || !convertIdSelect) return;
+
+        const selectedId = templateIdSelect.value;
+        if (selectedId) {
+            // Check if this option exists in convert dropdown
+            const existingOpt = Array.from(convertIdSelect.options).find(o => o.value === selectedId);
+            if (existingOpt) {
+                convertIdSelect.value = selectedId;
+            } else {
+                // Add the option if it doesn't exist
+                const opt = document.createElement('option');
+                opt.value = selectedId;
+                opt.textContent = `${selectedId} (from template)`;
+                opt.selected = true;
+                convertIdSelect.appendChild(opt);
+            }
+        }
+    }
+
+    // Add listener to sync when participant ID is changed in template section
+    const participantIdColSelect = document.getElementById('participantIdColumn');
+    if (participantIdColSelect) {
+        participantIdColSelect.addEventListener('change', syncParticipantIdToConversion);
+    }
+
     function updateConvertBtn() {
         const hasUploadedFile = convertExcelFile.files && convertExcelFile.files.length === 1;
         const hasBrowsedFile = convertSelectedFilePath && convertSelectedFilePath.value.trim() !== '';
@@ -2117,9 +2521,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // Template mode only needs a file
             convertBtn.disabled = !hasFile;
         } else {
-            // Data mode needs file + library path
+            // Data mode needs file + library path + explicit ID column (not auto)
             const hasLibraryPath = convertLibraryPathInput && convertLibraryPathInput.value.trim() !== '';
-            convertBtn.disabled = !(hasFile && hasLibraryPath);
+            const idColumnSelect = document.getElementById('convertIdColumn');
+            const hasIdColumn = idColumnSelect && idColumnSelect.value && idColumnSelect.value !== '' && idColumnSelect.value !== 'auto';
+            convertBtn.disabled = !(hasFile && hasLibraryPath && hasIdColumn);
+
+            // Show warning if missing ID column
+            const idColumnHelp = document.getElementById('idColumnHelp');
+            if (hasFile && hasLibraryPath && !hasIdColumn && idColumnHelp) {
+                idColumnHelp.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i><strong>Required: Select the column containing participant IDs</strong>';
+            }
         }
 
         // Update button text based on mode
@@ -2134,6 +2546,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 convertBtn.classList.add('btn-warning');
             }
         }
+    }
+
+    // Add listener for ID column changes to update convert button
+    const convertIdColumnSelect = document.getElementById('convertIdColumn');
+    if (convertIdColumnSelect) {
+        convertIdColumnSelect.addEventListener('change', updateConvertBtn);
     }
 
     // Initialize mode on page load
@@ -2178,19 +2596,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let currentZipBlob = null;
     let currentBiometricsZipBlob = null;
+    let conversionLogMessages = []; // Store log messages for download
 
-    // Toggle log visibility
-    if (toggleLogBtn) {
-        toggleLogBtn.addEventListener('click', function() {
-            conversionLogBody.classList.toggle('d-none');
-            const icon = toggleLogBtn.querySelector('i');
-            if (conversionLogBody.classList.contains('d-none')) {
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-right');
-            } else {
-                icon.classList.remove('fa-chevron-right');
-                icon.classList.add('fa-chevron-down');
+    // Download log button handler
+    const downloadLogBtn = document.getElementById('downloadLogBtn');
+    if (downloadLogBtn) {
+        downloadLogBtn.addEventListener('click', function() {
+            if (conversionLogMessages.length === 0) {
+                alert('No conversion log available.');
+                return;
             }
+
+            const logText = conversionLogMessages.map(m => `[${m.timestamp}] [${m.type.toUpperCase()}] ${m.message}`).join('\n');
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `conversion_log_${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         });
     }
 
@@ -2217,9 +2643,14 @@ document.addEventListener('DOMContentLoaded', function() {
             'step': '#6c757d'
         };
         const targetLog = logElement || conversionLog;
-        if (!targetLog) return;
-
         const timestamp = new Date().toLocaleTimeString();
+
+        // Store message for download (only for main conversion log)
+        if (!logElement) {
+            conversionLogMessages.push({ timestamp, type, message });
+        }
+
+        if (!targetLog) return;
         const color = colors[type] || colors.info;
         targetLog.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
         targetLog.scrollTop = targetLog.scrollHeight;
@@ -2230,10 +2661,38 @@ document.addEventListener('DOMContentLoaded', function() {
         validationResultsContainer.classList.add('d-none');
         downloadSection.classList.add('d-none');
         downloadWarningSection.classList.add('d-none');
-        conversionLog.innerHTML = '';
+        if (conversionLog) conversionLog.innerHTML = '';
         validationSummary.innerHTML = '';
         validationDetails.innerHTML = '';
         currentZipBlob = null;
+        conversionLogMessages = []; // Clear log messages
+
+        // Reset progress and summary
+        const progressContainer = document.getElementById('surveyConversionProgress');
+        const summaryContainer = document.getElementById('conversionSummaryContainer');
+        if (progressContainer) progressContainer.classList.add('d-none');
+        if (summaryContainer) summaryContainer.classList.add('d-none');
+
+        // Reset step icons
+        const stepIcons = ['step1Icon', 'step2Icon', 'step3Icon', 'step4Icon'];
+        const stepLines = ['line1', 'line2', 'line3'];
+        const defaultIcons = ['fa-upload', 'fa-cogs', 'fa-exchange-alt', 'fa-check-double'];
+
+        stepIcons.forEach((id, i) => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('bg-success', 'bg-warning');
+                el.classList.add('bg-secondary');
+                el.innerHTML = `<i class="fas ${defaultIcons[i]}"></i>`;
+            }
+        });
+        stepLines.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('border-success', 'border-warning');
+                el.classList.add('border-secondary');
+            }
+        });
     }
 
     function resetBiometricsUI() {
@@ -2247,6 +2706,95 @@ document.addEventListener('DOMContentLoaded', function() {
         biometricsValidationDetails.innerHTML = '';
         biometricsDetectedList.innerHTML = '';
         currentBiometricsZipBlob = null;
+    }
+
+    function displayConversionSummary(data) {
+        const container = document.getElementById('conversionSummaryContainer');
+        const statParticipants = document.getElementById('statParticipants');
+        const statQuestionnaires = document.getElementById('statQuestionnaires');
+        const statFiles = document.getElementById('statFiles');
+        const questionnaireBreakdown = document.getElementById('questionnaireBreakdown');
+        const questionnaireList = document.getElementById('questionnaireList');
+        const warningsSummary = document.getElementById('conversionWarningsSummary');
+        const warningsText = document.getElementById('conversionWarningsText');
+
+        if (!container) return;
+
+        // Extract statistics from response
+        let participants = 0;
+        let questionnaires = 0;
+        let filesCreated = data.saved_file_count || 0;
+        let tasks = [];
+        let conversionWarnings = [];
+
+        // Get stats from validation summary if available
+        if (data.validation) {
+            const summary = data.validation.summary || {};
+            filesCreated = filesCreated || summary.total_files || summary.files_created || 0;
+
+            // Try to get tasks from validation
+            if (summary.tasks_included) {
+                tasks = summary.tasks_included;
+            }
+        }
+
+        // Get stats from conversion_stats if provided by API
+        if (data.conversion_stats) {
+            participants = data.conversion_stats.participants || 0;
+            questionnaires = data.conversion_stats.questionnaires || 0;
+            tasks = data.conversion_stats.tasks || tasks;
+            filesCreated = filesCreated || data.conversion_stats.files_created || 0;
+        }
+
+        // Estimate from file count if not provided
+        if (participants === 0 && filesCreated > 0 && tasks.length > 0) {
+            // TSV files per task = participants, plus JSON sidecars
+            // Rough estimate: (files - tasks) / tasks ≈ participants
+            participants = Math.round((filesCreated - tasks.length) / Math.max(tasks.length, 1));
+        }
+
+        if (questionnaires === 0) {
+            questionnaires = tasks.length;
+        }
+
+        // Collect warnings from log messages
+        if (data.log && Array.isArray(data.log)) {
+            data.log.forEach(entry => {
+                if (entry.level === 'warning' || entry.type === 'warning') {
+                    conversionWarnings.push(entry.message);
+                }
+            });
+        }
+
+        // Update statistics display
+        statParticipants.textContent = participants > 0 ? participants : '-';
+        statQuestionnaires.textContent = questionnaires > 0 ? questionnaires : '-';
+        statFiles.textContent = filesCreated > 0 ? filesCreated : '-';
+
+        // Show questionnaire breakdown
+        if (tasks.length > 0) {
+            questionnaireList.innerHTML = '';
+            tasks.forEach(task => {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-success bg-opacity-75';
+                badge.innerHTML = `<i class="fas fa-clipboard-list me-1"></i>${task}`;
+                questionnaireList.appendChild(badge);
+            });
+            questionnaireBreakdown.classList.remove('d-none');
+        } else {
+            questionnaireBreakdown.classList.add('d-none');
+        }
+
+        // Show warnings summary if any
+        if (conversionWarnings.length > 0) {
+            warningsText.textContent = `${conversionWarnings.length} warning(s) during conversion`;
+            warningsSummary.classList.remove('d-none');
+        } else {
+            warningsSummary.classList.add('d-none');
+        }
+
+        // Show the summary container
+        container.classList.remove('d-none');
     }
 
     function displayValidationResults(validation, prefix = '') {
@@ -2641,36 +3189,91 @@ document.addEventListener('DOMContentLoaded', function() {
         const listEl = document.getElementById('templateQuestionsList');
         if (listEl) {
             listEl.innerHTML = '';
+            // Track which groups are set to "keep as group"
+            window.groupedGroups = window.groupedGroups || new Set();
+
             for (const [groupName, groupInfo] of Object.entries(data.by_group || {})) {
+                const safeGroupName = groupName.replace(/[^a-zA-Z0-9]/g, '_');
+                const isGrouped = window.groupedGroups.has(groupName);
+                const questionCount = (groupInfo.questions || []).length;
+
+                // Group header with toggle
                 const groupDiv = document.createElement('div');
-                groupDiv.className = 'col-12 mb-2';
-                groupDiv.innerHTML = `<h6 class="text-muted">${groupName}</h6>`;
+                groupDiv.className = 'col-12 mb-2 mt-3';
+                groupDiv.innerHTML = `
+                    <div class="d-flex align-items-center justify-content-between border-bottom pb-2">
+                        <h6 class="text-primary mb-0">
+                            <i class="fas fa-folder-open me-2"></i>${groupName}
+                            <span class="badge bg-secondary ms-2">${questionCount} questions</span>
+                        </h6>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input group-toggle" type="checkbox"
+                                   id="groupToggle_${safeGroupName}" data-group="${groupName}" ${isGrouped ? 'checked' : ''}>
+                            <label class="form-check-label small text-muted" for="groupToggle_${safeGroupName}">
+                                Save as single template
+                            </label>
+                        </div>
+                    </div>
+                `;
                 listEl.appendChild(groupDiv);
 
-                for (const q of groupInfo.questions || []) {
-                    const qData = data.questions[q.code];
-                    if (!qData) continue;
+                // Container for individual question cards
+                const questionsContainer = document.createElement('div');
+                questionsContainer.className = 'col-12 questions-container';
+                questionsContainer.dataset.group = groupName;
+                questionsContainer.innerHTML = isGrouped
+                    ? `<div class="row g-2"><div class="col-12">
+                        <div class="alert alert-info py-2 mb-0">
+                            <i class="fas fa-object-group me-2"></i>
+                            All ${questionCount} questions will be saved as a single template: <strong>survey-${groupName.toLowerCase().replace(/[^a-z0-9]/g, '-')}.json</strong>
+                        </div>
+                       </div></div>`
+                    : '';
 
-                    const card = document.createElement('div');
-                    card.className = 'col-md-3';
-                    card.innerHTML = `
-                        <div class="card h-100">
-                            <div class="card-body py-2">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>${q.code}</strong>
-                                        <small class="d-block text-muted">${q.type} (${q.item_count} items)</small>
+                if (!isGrouped) {
+                    let questionsHtml = '<div class="row g-2">';
+                    for (const q of groupInfo.questions || []) {
+                        const qData = data.questions[q.code];
+                        if (!qData) continue;
+
+                        questionsHtml += `
+                            <div class="col-md-3">
+                                <div class="card h-100 question-card" data-code="${q.code}" data-group="${groupName}">
+                                    <div class="card-body py-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>${q.code}</strong>
+                                                <small class="d-block text-muted">${q.type} (${q.item_count} items)</small>
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-success download-q-btn" data-code="${q.code}">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <button class="btn btn-sm btn-outline-success download-q-btn" data-code="${q.code}">
-                                        <i class="fas fa-download"></i>
-                                    </button>
                                 </div>
                             </div>
-                        </div>
-                    `;
-                    listEl.appendChild(card);
+                        `;
+                    }
+                    questionsHtml += '</div>';
+                    questionsContainer.innerHTML = questionsHtml;
                 }
+
+                listEl.appendChild(questionsContainer);
             }
+
+            // Add group toggle handlers
+            listEl.querySelectorAll('.group-toggle').forEach(toggle => {
+                toggle.onchange = function() {
+                    const groupName = this.dataset.group;
+                    if (this.checked) {
+                        window.groupedGroups.add(groupName);
+                    } else {
+                        window.groupedGroups.delete(groupName);
+                    }
+                    // Re-render the display
+                    displayTemplateQuestions(data);
+                };
+            });
 
             // Add download handlers
             listEl.querySelectorAll('.download-q-btn').forEach(btn => {
@@ -2700,7 +3303,36 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 const zip = new JSZip();
+                const groupedGroups = window.groupedGroups || new Set();
+                const processedCodes = new Set();
+
+                // First, handle grouped groups
+                for (const [groupName, groupInfo] of Object.entries(data.by_group || {})) {
+                    if (groupedGroups.has(groupName)) {
+                        const combinedItems = [];
+                        for (const q of groupInfo.questions || []) {
+                            const qData = data.questions[q.code];
+                            if (!qData || !qData.prism_json) continue;
+                            combinedItems.push(...(qData.prism_json.Items || []));
+                            processedCodes.add(q.code);
+                        }
+                        if (combinedItems.length > 0) {
+                            const safeGroupName = groupName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                            const combinedTemplate = {
+                                MeasurementToolMetadata: {
+                                    ShortName: groupName,
+                                    Description: `Combined template for ${groupName} group`
+                                },
+                                Items: combinedItems
+                            };
+                            zip.file(`survey-${safeGroupName}.json`, JSON.stringify(combinedTemplate, null, 2));
+                        }
+                    }
+                }
+
+                // Then, handle individual questions
                 for (const [code, qData] of Object.entries(data.questions || {})) {
+                    if (processedCodes.has(code)) continue;
                     if (qData.prism_json) {
                         zip.file(qData.suggested_filename || `survey-${code}.json`, JSON.stringify(qData.prism_json, null, 2));
                     }
@@ -2729,15 +3361,78 @@ document.addEventListener('DOMContentLoaded', function() {
         saveBtn.onclick = async () => {
             const templates = [];
 
+            // Get groups that have fields marked as participant metadata
+            // These should NOT become templates - they go in participants.json instead
+            const participantGroups = new Set();
+            for (const fieldInfo of Object.values(selectedParticipantFields)) {
+                if (fieldInfo.fullMetadata?.Position?.Group) {
+                    participantGroups.add(fieldInfo.fullMetadata.Position.Group.toLowerCase());
+                }
+            }
+
+            // Get question codes that are marked as participant metadata
+            const participantCodes = new Set(Object.keys(selectedParticipantFields).map(c => c.toLowerCase()));
+
             if (mode === 'groups') {
                 for (const [name, info] of Object.entries(data.questionnaires || {})) {
+                    // Skip groups that contain participant metadata fields
+                    const normalizedName = name.toLowerCase();
+                    if (participantGroups.has(normalizedName)) {
+                        console.log(`Skipping group '${name}' - marked as participant metadata`);
+                        continue;
+                    }
                     templates.push({
                         filename: info.suggested_filename || `survey-${name}.json`,
                         content: info.prism_json
                     });
                 }
             } else {
+                // Track which questions are in grouped groups (to avoid double-saving)
+                const processedCodes = new Set();
+
+                // First, handle groups that are toggled to "save as single template"
+                const groupedGroups = window.groupedGroups || new Set();
+                for (const [groupName, groupInfo] of Object.entries(data.by_group || {})) {
+                    if (groupedGroups.has(groupName)) {
+                        // Combine all questions in this group into one template
+                        const combinedItems = [];
+                        for (const q of groupInfo.questions || []) {
+                            const qData = data.questions[q.code];
+                            if (!qData || !qData.prism_json) continue;
+                            if (participantCodes.has(q.code.toLowerCase())) continue;
+
+                            // Add items from this question to combined template
+                            combinedItems.push(...(qData.prism_json.Items || []));
+                            processedCodes.add(q.code);
+                        }
+
+                        if (combinedItems.length > 0) {
+                            // Create combined template
+                            const safeGroupName = groupName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+                            templates.push({
+                                filename: `survey-${safeGroupName}.json`,
+                                content: {
+                                    MeasurementToolMetadata: {
+                                        ShortName: groupName,
+                                        Description: `Combined template for ${groupName} group`
+                                    },
+                                    Items: combinedItems
+                                }
+                            });
+                        }
+                    }
+                }
+
+                // Then, handle individual questions (skip those already processed in groups)
                 for (const [code, qData] of Object.entries(data.questions || {})) {
+                    // Skip if already processed as part of a grouped group
+                    if (processedCodes.has(code)) continue;
+
+                    // Skip questions that are marked as participant metadata
+                    if (participantCodes.has(code.toLowerCase())) {
+                        console.log(`Skipping question '${code}' - marked as participant metadata`);
+                        continue;
+                    }
                     if (qData.prism_json) {
                         templates.push({
                             filename: qData.suggested_filename || `survey-${code}.json`,
@@ -2746,6 +3441,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
+
+            const skippedCount = mode === 'groups'
+                ? participantGroups.size
+                : Object.keys(selectedParticipantFields).length;
 
             try {
                 const response = await fetch('/api/limesurvey-save-to-project', {
@@ -2759,7 +3458,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const msgSpan = document.getElementById('templateSaveSuccessMessage');
                 if (result.success) {
                     successDiv?.classList.remove('d-none');
-                    msgSpan.textContent = `Saved ${result.saved_files?.length || templates.length} templates to project library!`;
+                    let msg = `Saved ${result.saved_files?.length || templates.length} templates to project library!`;
+                    if (skippedCount > 0) {
+                        msg += ` (${skippedCount} participant field(s) → participants.json)`;
+                    }
+                    msgSpan.textContent = msg;
                 } else {
                     alert('Error: ' + (result.error || 'Unknown error'));
                 }
@@ -2773,11 +3476,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Store selected participant fields
     let selectedParticipantFields = {};
+    let selectedParticipantIdColumn = null;
 
     // BIDS standard field suggestions for auto-mapping
     const bidsFieldMappings = {
         // Common patterns -> BIDS field names
-        'participant_id': ['token', 'id', 'participant', 'subject', 'subj', 'respondent'],
+        'participant_id': ['token', 'id', 'participant', 'subject', 'subj', 'respondent', 'code'],
         'age': ['age', 'alter', 'years_old'],
         'sex': ['sex', 'gender', 'geschlecht', 'm_f', 'male_female'],
         'handedness': ['hand', 'handed', 'handedness', 'dominant_hand'],
@@ -2789,6 +3493,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayParticipantMetadataSection(data) {
         const section = document.getElementById('participantMetadataSection');
         const fieldsList = document.getElementById('participantFieldsList');
+        const idColumnSelect = document.getElementById('participantIdColumn');
         if (!section || !fieldsList) return;
 
         // Extract all question codes/fields from the template data
@@ -2801,49 +3506,227 @@ document.addEventListener('DOMContentLoaded', function() {
 
         section.classList.remove('d-none');
         selectedParticipantFields = {};
+        selectedParticipantIdColumn = null;
 
-        // Render field checkboxes
-        let html = '<div class="list-group list-group-flush">';
+        // Populate participant ID column selector with auto-detection
+        // Check if participants.json defines participant_id
+        const schemaHasParticipantId = cachedParticipantsSchema && cachedParticipantsSchema.participant_id;
+
+        // Common patterns for participant ID columns (in priority order)
+        const participantIdPatterns = [
+            'participant_id', 'participantid', 'participant',
+            'subject_id', 'subjectid', 'subject',
+            'code', 'id', 'token',
+            'prolific_id', 'prolificid',
+            'respondent_id', 'respondentid'
+        ];
+
+        if (idColumnSelect) {
+            let idOptions = '<option value="">-- Select the ID field --</option>';
+            let autoSelectedId = null;
+            let selectionSource = '';
+
+            // Priority 1: If participants.json exists with participant_id, look for exact match first
+            if (schemaHasParticipantId) {
+                const exactMatch = allFields.find(f => f.code.toLowerCase() === 'participant_id');
+                if (exactMatch) {
+                    autoSelectedId = exactMatch.code;
+                    selectionSource = 'from participants.json';
+                }
+            }
+
+            // Priority 2: Pattern matching fallback
+            if (!autoSelectedId) {
+                for (const pattern of participantIdPatterns) {
+                    for (const field of allFields) {
+                        if (field.code.toLowerCase() === pattern ||
+                            field.code.toLowerCase().includes(pattern) ||
+                            field.code.toLowerCase().replace(/[_-]/g, '') === pattern) {
+                            autoSelectedId = field.code;
+                            selectionSource = 'pattern match';
+                            break;
+                        }
+                    }
+                    if (autoSelectedId) break;
+                }
+            }
+
+            for (const field of allFields) {
+                const isAutoSelected = field.code === autoSelectedId;
+                idOptions += `<option value="${field.code}" ${isAutoSelected ? 'selected' : ''}>${field.code} ${field.group ? `(${field.group})` : ''}${isAutoSelected ? ' (auto-detected)' : ''}</option>`;
+            }
+            idColumnSelect.innerHTML = idOptions;
+
+            // Set the auto-selected value
+            selectedParticipantIdColumn = autoSelectedId || null;
+
+            // If auto-detected, trigger the change event to set up mappings
+            if (autoSelectedId) {
+                idColumnSelect.value = autoSelectedId;
+                // Dispatch change event to trigger the auto-check logic
+                idColumnSelect.dispatchEvent(new Event('change'));
+            }
+
+            // Track previous selection to reset it when changed
+            let previousIdSelection = autoSelectedId;
+
+            // Add change listener - auto-check and mark the selected ID field
+            idColumnSelect.addEventListener('change', function() {
+                const selectedCode = this.value;
+
+                // Reset previous selection to its original state
+                if (previousIdSelection && previousIdSelection !== selectedCode) {
+                    const prevMappingSelect = fieldsList.querySelector(`.bids-mapping-select[data-code="${previousIdSelection}"]`);
+                    if (prevMappingSelect) {
+                        // Reset to original field name (first option)
+                        prevMappingSelect.value = previousIdSelection;
+                    }
+                    // Uncheck if it was auto-checked (not manually selected by user for other metadata)
+                    const prevCheckbox = fieldsList.querySelector(`.participant-field-checkbox[data-code="${previousIdSelection}"]`);
+                    if (prevCheckbox && prevCheckbox.dataset.autoCheckedAsId === 'true') {
+                        prevCheckbox.checked = false;
+                        prevCheckbox.dataset.autoCheckedAsId = '';
+                    }
+                }
+
+                selectedParticipantIdColumn = selectedCode || null;
+
+                // Find and auto-check the corresponding checkbox in the list
+                if (selectedCode) {
+                    const checkbox = fieldsList.querySelector(`.participant-field-checkbox[data-code="${selectedCode}"]`);
+                    if (checkbox && !checkbox.checked) {
+                        checkbox.checked = true;
+                        checkbox.dataset.autoCheckedAsId = 'true'; // Mark as auto-checked
+                    }
+                    // Also set the BIDS mapping to participant_id
+                    const mappingSelect = fieldsList.querySelector(`.bids-mapping-select[data-code="${selectedCode}"]`);
+                    if (mappingSelect) {
+                        // Add participant_id option if not present
+                        if (!Array.from(mappingSelect.options).some(o => o.value === 'participant_id')) {
+                            const opt = document.createElement('option');
+                            opt.value = 'participant_id';
+                            opt.textContent = '→ participant_id';
+                            mappingSelect.appendChild(opt);
+                        }
+                        mappingSelect.value = 'participant_id';
+                    }
+                }
+
+                previousIdSelection = selectedCode;
+                updateParticipantFieldSelection();
+                // Also sync to conversion ID column
+                syncParticipantIdToConversion();
+            });
+        }
+
+        // Render field checkboxes as a clean table - user selects which fields are participant metadata
+        const bidsStandardFields = [
+            { value: 'participant_id', label: 'participant_id' },
+            { value: 'age', label: 'age' },
+            { value: 'sex', label: 'sex' },
+            { value: 'handedness', label: 'handedness' },
+            { value: 'species', label: 'species' },
+            { value: 'strain', label: 'strain' },
+            { value: 'education_years', label: 'education' },
+            { value: 'native_language', label: 'language' }
+        ];
+
+        let html = `
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 40px;"></th>
+                        <th style="width: 140px;">Variable</th>
+                        <th>Description</th>
+                        <th style="width: 150px;">Map to</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
         for (const field of allFields) {
             const suggestedMapping = suggestBidsMapping(field.code);
-            // Build BIDS field options - avoid duplicates
-            const bidsOptions = ['participant_id', 'age', 'sex', 'handedness', 'education_years', 'native_language'];
-            const filteredOptions = bidsOptions.filter(opt => opt !== suggestedMapping);
+
+            // Safely encode full metadata for data attribute
+            const metadataJson = field.fullMetadata
+                ? JSON.stringify(field.fullMetadata).replace(/"/g, '&quot;')
+                : '';
+
+            // Escape description for HTML attribute
+            const safeDescription = (field.description || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // Truncate variable name if too long
+            const displayCode = field.code.length > 18 ? field.code.substring(0, 16) + '..' : field.code;
+            const displayDesc = (field.description || field.type || '').substring(0, 40) + ((field.description || '').length > 40 ? '...' : '');
 
             html += `
-                <label class="list-group-item list-group-item-action py-2 d-flex align-items-center">
-                    <input type="checkbox" class="form-check-input me-2 participant-field-checkbox"
-                           data-code="${field.code}" data-description="${field.description || ''}"
-                           data-type="${field.type || 'text'}">
-                    <div class="flex-grow-1">
-                        <code class="me-2">${field.code}</code>
-                        <small class="text-muted">${field.description || field.type || ''}</small>
-                        ${field.group ? `<span class="badge bg-light text-dark ms-2">${field.group}</span>` : ''}
-                    </div>
-                    <select class="form-select form-select-sm bids-mapping-select" style="width: 160px;" data-code="${field.code}">
-                        <option value="${field.code}">Keep: ${field.code}</option>
-                        ${suggestedMapping ? `<option value="${suggestedMapping}" selected>→ ${suggestedMapping} (suggested)</option>` : ''}
-                        ${filteredOptions.map(opt => `<option value="${opt}">→ ${opt}</option>`).join('')}
-                    </select>
-                </label>
+                <tr class="participant-field-row">
+                    <td class="text-center align-middle">
+                        <input type="checkbox" class="form-check-input participant-field-checkbox"
+                               data-code="${field.code}" data-description="${safeDescription}"
+                               data-type="${field.type || 'text'}"
+                               data-full-metadata="${metadataJson}">
+                    </td>
+                    <td class="align-middle">
+                        <code class="small" title="${field.code}">${displayCode}</code>
+                        ${field.group ? `<span class="badge bg-light text-muted ms-1" style="font-size: 0.65em;">${field.group}</span>` : ''}
+                    </td>
+                    <td class="text-muted small align-middle">${displayDesc}</td>
+                    <td class="align-middle">
+                        <select class="form-select form-select-sm bids-mapping-select" data-code="${field.code}">
+                            <option value="${field.code}">Keep original</option>
+                            <optgroup label="BIDS">
+                                ${bidsStandardFields.map(opt =>
+                                    `<option value="${opt.value}" ${suggestedMapping === opt.value ? 'selected' : ''}>${opt.label}</option>`
+                                ).join('')}
+                            </optgroup>
+                            <option value="_custom_">Custom...</option>
+                        </select>
+                    </td>
+                </tr>
             `;
         }
-        html += '</div>';
+        html += '</tbody></table>';
         fieldsList.innerHTML = html;
 
-        // Add event listeners
+        // Handle custom field name input
+        fieldsList.querySelectorAll('.bids-mapping-select').forEach(sel => {
+            sel.addEventListener('change', function() {
+                if (this.value === '_custom_') {
+                    const customName = prompt('Enter custom field name for participants.json:', this.dataset.code);
+                    if (customName && customName.trim()) {
+                        // Add custom option
+                        const opt = document.createElement('option');
+                        opt.value = customName.trim();
+                        opt.textContent = customName.trim() + ' (custom)';
+                        opt.selected = true;
+                        this.insertBefore(opt, this.querySelector('optgroup'));
+                    } else {
+                        // Reset to original
+                        this.value = this.dataset.code;
+                    }
+                }
+            });
+        });
+
+        // Add checkbox event listeners
         fieldsList.querySelectorAll('.participant-field-checkbox').forEach(cb => {
             cb.addEventListener('change', updateParticipantFieldSelection);
         });
 
+        // Add select event listeners - auto-check when mapping is changed
         fieldsList.querySelectorAll('.bids-mapping-select').forEach(sel => {
             sel.addEventListener('change', function() {
+                // Skip if handling custom (already handled above)
+                if (this.value === '_custom_') return;
+
                 const code = this.dataset.code;
                 const checkbox = fieldsList.querySelector(`.participant-field-checkbox[data-code="${code}"]`);
-                if (this.value && checkbox && !checkbox.checked) {
+                // Auto-check the checkbox when a mapping is selected
+                if (this.value && this.value !== code && checkbox && !checkbox.checked) {
                     checkbox.checked = true;
-                    updateParticipantFieldSelection();
                 }
+                updateParticipantFieldSelection();
             });
         });
 
@@ -2869,20 +3752,64 @@ document.addEventListener('DOMContentLoaded', function() {
                             code: item.SurveyItemID,
                             description: item.Prompt || item.Description || '',
                             type: item.ResponseType || 'text',
-                            group: source.group
+                            group: source.group,
+                            fullMetadata: {
+                                QuestionType: item.ResponseType || item.QuestionType,
+                                LimeSurveyType: item.LimeSurveyType,
+                                Mandatory: item.Mandatory,
+                                Position: item.Position,
+                                Levels: item.Levels,
+                                Attributes: item.Attributes,
+                                Timing: item.Timing,
+                                Relevance: item.Relevance,
+                                Dependencies: item.Dependencies,
+                                Units: item.Units,
+                                HelpText: item.HelpText
+                            }
                         });
                     }
                 }
             }
         } else if (data.mode === 'questions') {
-            // Extract from by_group structure
+            // Extract from by_group structure - full template data is in data.questions[code]
+            const allQuestions = data.questions || {};
+
             for (const [groupName, groupInfo] of Object.entries(data.by_group || {})) {
                 for (const q of groupInfo.questions || []) {
+                    // Get full metadata from data.questions which contains the prism_json
+                    const qData = allQuestions[q.code] || {};
+                    const prismJson = qData.prism_json || {};
+
+                    // Extract item-level metadata from the prism_json
+                    // The prism_json has root-level keys that are the item codes
+                    const itemKeys = Object.keys(prismJson).filter(k =>
+                        !['Technical', 'Study', 'Metadata', 'I18n', 'Scoring', 'Normative'].includes(k)
+                    );
+                    // Use first item for representative metadata
+                    const firstItemKey = itemKeys[0];
+                    const itemMeta = firstItemKey ? prismJson[firstItemKey] : {};
+
                     fields.push({
                         code: q.code,
-                        description: q.title || '',
-                        type: q.type || 'text',
-                        group: groupName
+                        description: itemMeta.Description || qData.question_text || '',
+                        type: q.type || itemMeta.QuestionType || 'text',
+                        group: groupName,
+                        fullMetadata: {
+                            QuestionType: itemMeta.QuestionType || q.type,
+                            LimeSurveyType: q.limesurvey_type || itemMeta.LimeSurveyType,
+                            Mandatory: q.mandatory !== undefined ? q.mandatory : itemMeta.Mandatory,
+                            Position: itemMeta.Position || {
+                                Group: groupName,
+                                GroupOrder: groupInfo.group_order,
+                                QuestionOrder: q.order
+                            },
+                            Levels: itemMeta.Levels,
+                            Attributes: itemMeta.Attributes,
+                            Timing: itemMeta.Timing,
+                            Relevance: itemMeta.Condition,
+                            HelpText: itemMeta.HelpText,
+                            ItemCount: q.item_count
+                        }
                     });
                 }
             }
@@ -2915,10 +3842,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const mappingSelect = document.querySelector(`.bids-mapping-select[data-code="${code}"]`);
             const bidsName = mappingSelect?.value || code;
 
+            // Try to get full metadata from stored template data
+            let fullMetadata = null;
+            try {
+                const metaStr = cb.dataset.fullMetadata;
+                if (metaStr) {
+                    fullMetadata = JSON.parse(metaStr);
+                }
+            } catch (e) {
+                console.warn('Could not parse field metadata:', e);
+            }
+
             selectedParticipantFields[code] = {
                 originalCode: code,
                 bidsFieldName: bidsName || code,
-                description: description
+                description: description,
+                fullMetadata: fullMetadata
             };
         });
 
@@ -2935,28 +3874,64 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Build participants.json schema from selections
+    // Build participants.json schema from selections with FULL metadata from templates
     function buildParticipantsJsonSchema() {
         const schema = {};
 
         for (const [code, info] of Object.entries(selectedParticipantFields)) {
             const fieldName = info.bidsFieldName || code;
 
-            // Get description from original data
+            // Start with description
             schema[fieldName] = {
                 Description: info.description || `Extracted from survey field: ${code}`
             };
 
-            // Add standard properties for known BIDS fields
-            if (fieldName === 'age') {
+            // Preserve full metadata from template if available
+            if (info.fullMetadata) {
+                const meta = info.fullMetadata;
+
+                // Question/Response type info
+                if (meta.QuestionType) schema[fieldName].QuestionType = meta.QuestionType;
+                if (meta.LimeSurveyType) schema[fieldName].LimeSurveyType = meta.LimeSurveyType;
+                if (meta.Mandatory !== undefined) schema[fieldName].Mandatory = meta.Mandatory;
+
+                // Position in survey
+                if (meta.Position) schema[fieldName].Position = meta.Position;
+
+                // Levels/response options
+                if (meta.Levels && Object.keys(meta.Levels).length > 0) {
+                    schema[fieldName].Levels = meta.Levels;
+                }
+
+                // Attributes (styling, validation, etc.)
+                if (meta.Attributes && Object.keys(meta.Attributes).length > 0) {
+                    schema[fieldName].Attributes = meta.Attributes;
+                }
+
+                // Timing info
+                if (meta.Timing) schema[fieldName].Timing = meta.Timing;
+
+                // Dependencies/relevance equations
+                if (meta.Relevance) schema[fieldName].Relevance = meta.Relevance;
+                if (meta.Dependencies) schema[fieldName].Dependencies = meta.Dependencies;
+
+                // Units for numeric fields
+                if (meta.Units) schema[fieldName].Units = meta.Units;
+
+                // Help text
+                if (meta.HelpText) schema[fieldName].HelpText = meta.HelpText;
+            }
+
+            // Add standard properties for known BIDS fields (only if not already set)
+            if (fieldName === 'age' && !schema[fieldName].Units) {
                 schema[fieldName].Units = 'years';
-            } else if (fieldName === 'sex') {
+            } else if (fieldName === 'sex' && !schema[fieldName].Levels) {
                 schema[fieldName].Levels = {
                     'M': 'Male',
                     'F': 'Female',
                     'O': 'Other'
                 };
-            } else if (fieldName === 'handedness') {
+            } else if (fieldName === 'handedness' && !schema[fieldName].Levels) {
                 schema[fieldName].Levels = {
                     'R': 'Right',
                     'L': 'Left',
@@ -3050,6 +4025,189 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // ========================================
+    // Duplicate Resolution Handling
+    // ========================================
+
+    const duplicateResolutionPanel = document.getElementById('duplicateResolutionPanel');
+    const duplicateList = document.getElementById('duplicateList');
+    const cancelDuplicateBtn = document.getElementById('cancelDuplicateResolution');
+    const proceedDuplicateBtn = document.getElementById('proceedWithDuplicates');
+
+    // Store pending conversion data for retry
+    let pendingConversionData = null;
+
+    // Parse duplicate error message to extract duplicate IDs
+    function parseDuplicateError(errorMsg) {
+        // Match: "Duplicate participant IDs found using column 'xxx' (N duplicate rows).\nDuplicated values: id1, id2, ..."
+        const match = errorMsg.match(/Duplicate participant IDs found using column '([^']+)' \((\d+) duplicate rows\)[\s\S]*?Duplicated values: ([^\n]+)/);
+        if (!match) return null;
+
+        const column = match[1];
+        const count = parseInt(match[2]);
+        const valuesStr = match[3].trim();
+
+        // Parse the values (may include " and X more..." suffix)
+        let values = [];
+        const moreMatch = valuesStr.match(/(.+?) and (\d+) more\.\.\.$/);
+        if (moreMatch) {
+            values = moreMatch[1].split(/,\s*/).map(v => v.trim());
+        } else {
+            values = valuesStr.split(/,\s*/).map(v => v.trim());
+        }
+
+        return { column, count, values };
+    }
+
+    // Show duplicate resolution panel
+    function showDuplicateResolution(duplicateInfo, conversionFormData) {
+        pendingConversionData = conversionFormData;
+
+        // Update description
+        document.getElementById('duplicateDescription').innerHTML =
+            `Found <strong>${duplicateInfo.count}</strong> duplicate entries using column <code>${duplicateInfo.column}</code>. ` +
+            `Choose how to handle each duplicate or apply a global action.`;
+
+        // Populate duplicate list
+        duplicateList.innerHTML = '';
+        duplicateInfo.values.forEach((id, idx) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><code>${id}</code></td>
+                <td><span class="badge bg-warning text-dark">2+</span></td>
+                <td>
+                    <select class="form-select form-select-sm duplicate-action" data-id="${id}" style="width: auto;">
+                        <option value="keep_first">Keep First</option>
+                        <option value="keep_last">Keep Last</option>
+                        <option value="sessions">Multiple Sessions</option>
+                        <option value="skip">Skip All Occurrences</option>
+                    </select>
+                </td>
+            `;
+            duplicateList.appendChild(row);
+        });
+
+        // Show panel
+        duplicateResolutionPanel.classList.remove('d-none');
+        convertError.classList.add('d-none');
+    }
+
+    // Handle global action buttons
+    document.querySelectorAll('.duplicate-global-action').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const action = this.dataset.action;
+            document.querySelectorAll('.duplicate-action').forEach(select => {
+                select.value = action;
+            });
+        });
+    });
+
+    // Cancel duplicate resolution
+    if (cancelDuplicateBtn) {
+        cancelDuplicateBtn.addEventListener('click', function() {
+            duplicateResolutionPanel.classList.add('d-none');
+            pendingConversionData = null;
+        });
+    }
+
+    // Proceed with duplicate resolution
+    if (proceedDuplicateBtn) {
+        proceedDuplicateBtn.addEventListener('click', async function() {
+            if (!pendingConversionData) return;
+
+            // Collect all selected actions
+            const actions = {};
+            let globalAction = null;
+            const allSelects = document.querySelectorAll('.duplicate-action');
+
+            // Check if all actions are the same (then use global strategy)
+            const firstAction = allSelects[0]?.value;
+            const allSame = Array.from(allSelects).every(s => s.value === firstAction);
+
+            if (allSame && firstAction && firstAction !== 'skip') {
+                // Use global strategy
+                globalAction = firstAction;
+            } else {
+                // Per-participant actions need backend support
+                // For now, use the most common non-skip action
+                const counts = {};
+                allSelects.forEach(s => {
+                    const v = s.value;
+                    if (v !== 'skip') {
+                        counts[v] = (counts[v] || 0) + 1;
+                    }
+                });
+                globalAction = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || 'keep_first';
+            }
+
+            // Update FormData with new duplicate handling strategy
+            pendingConversionData.set('duplicate_handling', globalAction);
+
+            // Hide panel and show progress
+            duplicateResolutionPanel.classList.add('d-none');
+            appendLog(`Retrying conversion with duplicate handling: ${globalAction}`, 'info');
+
+            // Re-trigger conversion with updated FormData
+            const progressContainer = document.getElementById('surveyConversionProgress');
+            progressContainer.classList.remove('d-none');
+            convertBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/survey-convert-validate', {
+                    method: 'POST',
+                    body: pendingConversionData
+                });
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || 'Conversion failed');
+                }
+
+                // Handle successful conversion (similar to original logic)
+                progressContainer.classList.add('d-none');
+
+                // If conversion was successful, show results
+                if (data.validation) {
+                    displayValidationResults(data.validation, 'survey');
+                }
+                if (data.log) {
+                    data.log.forEach(entry => appendLog(entry.message, entry.level));
+                }
+                if (data.zip_base64) {
+                    const byteCharacters = atob(data.zip_base64);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    currentConvertedZipBlob = new Blob([byteArray], {type: 'application/zip'});
+                    appendLog('Dataset ready for download', 'success');
+                }
+                displayConversionSummary(data);
+
+                if (data.saved_to_project) {
+                    convertInfo.innerHTML = `Conversion complete. <strong>${data.saved_file_count || 0} files saved to project.</strong>`;
+                } else {
+                    convertInfo.textContent = 'Conversion complete. See results below.';
+                }
+                convertInfo.classList.remove('d-none');
+
+            } catch (err) {
+                progressContainer.classList.add('d-none');
+                appendLog(`Error: ${err.message}`, 'error');
+                convertError.textContent = err.message;
+                convertError.classList.remove('d-none');
+            } finally {
+                updateConvertBtn();
+                pendingConversionData = null;
+            }
+        });
+    }
+
+    // ========================================
+    // Convert Button Click Handler
+    // ========================================
+
     convertBtn.addEventListener('click', function() {
         convertError.classList.add('d-none');
         convertInfo.classList.add('d-none');
@@ -3114,13 +4272,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Show log container
-        conversionLogContainer.classList.remove('d-none');
-        conversionLogBody.classList.remove('d-none');
-        const icon = toggleLogBtn.querySelector('i');
-        icon.classList.remove('fa-chevron-right');
-        icon.classList.add('fa-chevron-down');
-
         const displayName = usingFilePath ? browsedFilePath.split(/[\\/]/).pop() : uploadedFile.name;
         appendLog(`Starting conversion of: ${displayName}`, 'info');
         appendLog(`Using library: ${libraryPath}`, 'step');
@@ -3165,6 +4316,16 @@ document.addEventListener('DOMContentLoaded', function() {
             appendLog('Strict Levels Validation: enabled', 'step');
         }
 
+        // Duplicate handling option
+        const duplicateHandlingEl = document.getElementById('convertDuplicateHandling');
+        const duplicateHandling = duplicateHandlingEl ? duplicateHandlingEl.value : 'error';
+        if (duplicateHandling !== 'ask') {
+            formData.append('duplicate_handling', duplicateHandling);
+            if (duplicateHandling !== 'error') {
+                appendLog(`Duplicate handling: ${duplicateHandling}`, 'step');
+            }
+        }
+
         // Save to project option
         const saveToProjectEl = document.getElementById('convertSaveToProject');
         if (saveToProjectEl && saveToProjectEl.checked) {
@@ -3174,6 +4335,77 @@ document.addEventListener('DOMContentLoaded', function() {
 
         convertBtn.disabled = true;
         appendLog('Uploading file and starting conversion...', 'info');
+
+        // Show progress steps
+        const progressContainer = document.getElementById('surveyConversionProgress');
+        const progressText = document.getElementById('surveyProgressText');
+        const summaryContainer = document.getElementById('conversionSummaryContainer');
+        summaryContainer.classList.add('d-none');
+        progressContainer.classList.remove('d-none');
+
+        // Step icons and lines
+        const step1 = document.getElementById('step1Icon');
+        const step2 = document.getElementById('step2Icon');
+        const step3 = document.getElementById('step3Icon');
+        const step4 = document.getElementById('step4Icon');
+        const line1 = document.getElementById('line1');
+        const line2 = document.getElementById('line2');
+        const line3 = document.getElementById('line3');
+
+        // Reset all steps
+        [step1, step2, step3, step4].forEach(s => {
+            s.classList.remove('bg-success', 'bg-warning');
+            s.classList.add('bg-secondary');
+        });
+        [line1, line2, line3].forEach(l => {
+            l.classList.remove('border-success', 'border-warning');
+            l.classList.add('border-secondary');
+        });
+
+        // Activate step 1 (Upload)
+        step1.classList.remove('bg-secondary');
+        step1.classList.add('bg-warning');
+        progressText.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading file...';
+
+        // Progress step animation
+        const progressSteps = [
+            { step: 1, text: 'Uploading file...', delay: 0 },
+            { step: 2, text: 'Processing survey data...', delay: 1500 },
+            { step: 3, text: 'Converting to BIDS format...', delay: 3500 },
+            { step: 4, text: 'Validating output...', delay: 5500 }
+        ];
+
+        function activateStep(stepNum) {
+            const steps = [step1, step2, step3, step4];
+            const lines = [line1, line2, line3];
+
+            // Mark previous steps as complete
+            for (let i = 0; i < stepNum - 1; i++) {
+                steps[i].classList.remove('bg-warning', 'bg-secondary');
+                steps[i].classList.add('bg-success');
+                steps[i].innerHTML = '<i class="fas fa-check"></i>';
+                if (lines[i]) {
+                    lines[i].classList.remove('border-secondary', 'border-warning');
+                    lines[i].classList.add('border-success');
+                }
+            }
+
+            // Activate current step
+            if (steps[stepNum - 1]) {
+                steps[stepNum - 1].classList.remove('bg-secondary', 'bg-success');
+                steps[stepNum - 1].classList.add('bg-warning');
+            }
+        }
+
+        // Schedule step animations
+        const stepTimeouts = [];
+        progressSteps.forEach(({ step, text, delay }) => {
+            const timeout = setTimeout(() => {
+                activateStep(step);
+                progressText.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${text}`;
+            }, delay);
+            stepTimeouts.push(timeout);
+        });
 
         fetch('/api/survey-convert-validate', {
             method: 'POST',
@@ -3198,6 +4430,26 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .then(data => {
+            // Clear step timeouts and hide progress
+            stepTimeouts.forEach(t => clearTimeout(t));
+
+            // Mark all steps complete
+            [step1, step2, step3, step4].forEach(s => {
+                s.classList.remove('bg-warning', 'bg-secondary');
+                s.classList.add('bg-success');
+                s.innerHTML = '<i class="fas fa-check"></i>';
+            });
+            [line1, line2, line3].forEach(l => {
+                l.classList.remove('border-secondary', 'border-warning');
+                l.classList.add('border-success');
+            });
+            progressText.innerHTML = '<i class="fas fa-check-circle text-success me-2"></i>Conversion complete!';
+
+            // Hide progress after short delay
+            setTimeout(() => {
+                progressContainer.classList.add('d-none');
+            }, 1000);
+
             if (data.log && Array.isArray(data.log)) {
                 data.log.forEach(entry => {
                     appendLog(entry.message, entry.type || 'info');
@@ -3208,7 +4460,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const v = data.validation;
                 const errorCount = (v.errors || []).length;
                 const warningCount = (v.warnings || []).length;
-                
+
                 if (errorCount === 0 && warningCount === 0) {
                     appendLog('✓ Validation passed - dataset is valid!', 'success');
                 } else if (errorCount === 0) {
@@ -3216,7 +4468,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     appendLog(`✗ Validation failed with ${errorCount} error(s)`, 'error');
                 }
-                
+
                 displayValidationResults(data.validation);
             }
 
@@ -3235,6 +4487,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 appendLog('Dataset ready for download', 'success');
             }
 
+            // Display conversion summary with statistics
+            displayConversionSummary(data);
+
             // Show save-to-project success message
             if (data.saved_to_project) {
                 appendLog(`Saved ${data.saved_file_count || 0} files to project: ${data.saved_to_project}`, 'success');
@@ -3245,9 +4500,38 @@ document.addEventListener('DOMContentLoaded', function() {
             convertInfo.classList.remove('d-none');
         })
         .catch(err => {
-            appendLog(`Error: ${err.message}`, 'error');
-            convertError.textContent = err.message;
-            convertError.classList.remove('d-none');
+            // Clear step timeouts and hide progress on error
+            stepTimeouts.forEach(t => clearTimeout(t));
+            progressContainer.classList.add('d-none');
+
+            // Check if this is a duplicate error and user wants to handle it interactively
+            const duplicateHandlingMode = document.getElementById('convertDuplicateHandling')?.value || 'error';
+            const duplicateInfo = parseDuplicateError(err.message);
+
+            if (duplicateInfo && duplicateHandlingMode === 'ask') {
+                // Show duplicate resolution panel
+                appendLog('Duplicate IDs found - awaiting user resolution...', 'warn');
+                showDuplicateResolution(duplicateInfo, formData);
+            } else if (duplicateInfo) {
+                // Show error with helpful message about duplicate options
+                appendLog(`Error: ${err.message}`, 'error');
+                convertError.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Duplicate Participant IDs</strong><br>
+                    ${err.message}<br><br>
+                    <small class="text-muted">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        Tip: Use <strong>Advanced options > Duplicate IDs</strong> to configure how duplicates are handled,
+                        or select "Ask for each duplicate" for interactive resolution.
+                    </small>
+                `;
+                convertError.classList.remove('d-none');
+            } else {
+                // Regular error
+                appendLog(`Error: ${err.message}`, 'error');
+                convertError.textContent = err.message;
+                convertError.classList.remove('d-none');
+            }
         })
         .finally(() => {
             updateConvertBtn();

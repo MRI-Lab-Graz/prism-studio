@@ -301,9 +301,9 @@ def api_survey_convert():
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
 
-    # Duplicate handling: error (default), keep_first, keep_last, sessions
+    # Duplicate handling: error, keep_first, keep_last, sessions, skip
     duplicate_handling = (request.form.get("duplicate_handling") or "error").strip().lower()
-    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
+    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions", "skip"}:
         duplicate_handling = "error"
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_")
@@ -457,9 +457,9 @@ def api_survey_convert_validate():
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
 
-    # Duplicate handling: error (default), keep_first, keep_last, sessions
+    # Duplicate handling: error, keep_first, keep_last, sessions, skip
     duplicate_handling = (request.form.get("duplicate_handling") or "error").strip().lower()
-    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
+    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions", "skip"}:
         duplicate_handling = "error"
 
     # Save to project folder option
@@ -686,9 +686,31 @@ def api_survey_convert_validate():
             except Exception as save_err:
                 add_log(f"Failed to save to project: {save_err}", "error")
 
+        # Build conversion statistics for the UI
+        conversion_stats = {
+            "participants": 0,
+            "questionnaires": 0,
+            "tasks": [],
+            "files_created": 0,
+        }
+
+        # Extract stats from convert_result
+        if convert_result:
+            if hasattr(convert_result, "tasks_included"):
+                conversion_stats["tasks"] = list(convert_result.tasks_included)
+                conversion_stats["questionnaires"] = len(convert_result.tasks_included)
+
+        # Count participants from output directories
+        output_participants = [d.name for d in output_root.iterdir() if d.is_dir() and d.name.startswith("sub-")]
+        conversion_stats["participants"] = len(output_participants)
+
+        # Count files created
+        conversion_stats["files_created"] = sum(1 for _ in output_root.rglob("*") if _.is_file())
+
         response_data = {
             "success": True, "log": log_messages,
             "validation": validation_result, "zip_base64": zip_base64,
+            "conversion_stats": conversion_stats,
         }
         if saved_to_project:
             response_data["saved_to_project"] = saved_to_project

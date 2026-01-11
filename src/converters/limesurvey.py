@@ -476,6 +476,15 @@ def _parse_lss_structure(root, get_text):
 
 def parse_lss_xml(xml_content, task_name=None):
     """Parse a LimeSurvey .lss XML blob into a Prism sidecar dict."""
+    # Ensure proper UTF-8 encoding handling
+    if isinstance(xml_content, bytes):
+        # Try to decode with UTF-8 first, then let ElementTree handle it
+        try:
+            xml_content = xml_content.decode("utf-8")
+        except UnicodeDecodeError:
+            # Fall back to latin-1 if UTF-8 fails
+            xml_content = xml_content.decode("latin-1")
+
     try:
         root = ET.fromstring(xml_content)
     except ET.ParseError as e:
@@ -639,12 +648,24 @@ def parse_lss_xml(xml_content, task_name=None):
     return metadata
 
 
-def parse_lss_xml_by_groups(xml_content):
+def parse_lss_xml_by_groups(xml_content, *, exclude_groups: set[str] | None = None):
     """Parse a LimeSurvey .lss XML blob and split into separate questionnaires by group.
+
+    Args:
+        xml_content: The XML content to parse
+        exclude_groups: Optional set of group names to exclude from output (e.g., fields
+                        that are in participants.json should be excluded here)
 
     Returns:
         dict: {group_name: prism_json_dict, ...} or None on error
     """
+    # Ensure proper UTF-8 encoding handling
+    if isinstance(xml_content, bytes):
+        try:
+            xml_content = xml_content.decode("utf-8")
+        except UnicodeDecodeError:
+            xml_content = xml_content.decode("latin-1")
+
     try:
         root = ET.fromstring(xml_content)
     except ET.ParseError as e:
@@ -698,6 +719,12 @@ def parse_lss_xml_by_groups(xml_content):
         group_name = group_info["name"] if group_info["name"] else f"group_{gid}"
         group_order = group_info["order"]
         group_description = group_info.get("description", "")
+
+        # Check if this group should be excluded (e.g., if it's in participants.json)
+        if exclude_groups:
+            group_name_lower = group_name.lower().strip()
+            if group_name_lower in {g.lower() for g in exclude_groups}:
+                continue
 
         # Sort questions by question_order within the group
         sorted_questions = sorted(questions_list, key=lambda x: x[1]["question_order"])
@@ -825,6 +852,13 @@ def parse_lss_xml_by_questions(xml_content):
     Returns:
         dict: {question_code: {prism_json, group_name, group_order, ...}, ...} or None on error
     """
+    # Ensure proper UTF-8 encoding handling
+    if isinstance(xml_content, bytes):
+        try:
+            xml_content = xml_content.decode("utf-8")
+        except UnicodeDecodeError:
+            xml_content = xml_content.decode("latin-1")
+
     try:
         root = ET.fromstring(xml_content)
     except ET.ParseError as e:

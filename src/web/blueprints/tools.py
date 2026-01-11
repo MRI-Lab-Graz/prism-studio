@@ -853,63 +853,130 @@ def generate_boilerplate_endpoint():
 
 @tools_bp.route("/api/detect-columns", methods=["POST"])
 def detect_columns():
-    """Detect column names from uploaded file for ID column selection.
+    """Detect column names from uploaded file or server file path for ID column selection.
 
     Supports .lsa, .xlsx, .csv, .tsv files.
+    Accepts either:
+    - file: uploaded file via multipart form
+    - file_path: server-side file path (JSON body or form data)
     Returns list of columns and suggests likely ID column.
     """
     import pandas as pd
+    import io
 
-    if "file" not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+    filename = None
+    file_content = None
 
-    file = request.files["file"]
-    if not file.filename:
-        return jsonify({"error": "No file selected"}), 400
+    # Check for server file path first (from JSON body or form data)
+    file_path = None
+    if request.is_json:
+        file_path = request.json.get("file_path")
+    else:
+        file_path = request.form.get("file_path")
 
-    filename = file.filename.lower()
+    if file_path and os.path.isfile(file_path):
+        filename = os.path.basename(file_path).lower()
+        with open(file_path, "rb") as f:
+            file_content = f.read()
+    elif "file" in request.files:
+        file = request.files["file"]
+        if file.filename:
+            filename = file.filename.lower()
+            file_content = file.read()
+
+    if not filename or not file_content:
+        return jsonify({"error": "No file uploaded or file path provided"}), 400
 
     try:
         columns = []
 
         if filename.endswith(".lsa"):
-            # Extract response data from LimeSurvey archive
+            # Extract response data from LimeSurvey archive and map to question codes
             import zipfile as zf_module
-            import io
+            import xml.etree.ElementTree as ET
+            import re
+            from src.converters.limesurvey import _parse_lss_structure, _map_field_to_code
 
-            file_bytes = io.BytesIO(file.read())
+            file_bytes = io.BytesIO(file_content)
             try:
                 with zf_module.ZipFile(file_bytes, "r") as zf:
-                    # Look for response data files
+                    # Look for response data files (.lsr = LimeSurvey Response format)
                     response_files = [f for f in zf.namelist()
-                                     if f.endswith(('.txt', '.csv')) and 'response' in f.lower()]
+                                     if f.endswith(('.txt', '.csv', '.lsr')) and 'response' in f.lower()]
                     if not response_files:
-                        # Try any txt/csv file
                         response_files = [f for f in zf.namelist()
-                                         if f.endswith(('.txt', '.csv'))]
+                                         if f.endswith(('.txt', '.csv', '.lsr'))]
+
+                    # Also get the .lss structure file for column name mapping
+                    lss_files = [f for f in zf.namelist() if f.endswith('.lss')]
+                    qid_to_title = {}
+
+                    if lss_files:
+                        try:
+                            lss_content = zf.read(lss_files[0]).decode('utf-8', errors='replace')
+                            lss_root = ET.fromstring(lss_content)
+
+                            def get_text(element, tag):
+                                child = element.find(tag)
+                                return (child.text or "") if child is not None else ""
+
+                            questions_map, _ = _parse_lss_structure(lss_root, get_text)
+                            qid_to_title = {qid: d["title"] for qid, d in questions_map.items()}
+
+                            # Include subquestions
+                            for row in lss_root.findall(".//subquestions/rows/row"):
+                                qid_el = row.find("qid")
+                                title_el = row.find("title")
+                                if qid_el is not None and title_el is not None:
+                                    qid_to_title[qid_el.text] = title_el.text
+                        except Exception as e:
+                            print(f"[detect-columns] Could not parse .lss structure: {e}")
 
                     if response_files:
-                        with zf.open(response_files[0]) as f:
-                            # Try to detect delimiter
+                        response_file = response_files[0]
+                        with zf.open(response_file) as f:
                             content = f.read().decode('utf-8', errors='replace')
-                            if '\t' in content.split('\n')[0]:
-                                df = pd.read_csv(io.StringIO(content), sep='\t', nrows=1)
+
+                            # Check if .lsr file (XML format)
+                            if response_file.endswith('.lsr') and content.strip().startswith('<?xml'):
+                                try:
+                                    root = ET.fromstring(content)
+                                    fields = root.findall('.//fieldname')
+                                    raw_columns = [f.text for f in fields if f.text]
+
+                                    # Map internal IDs to question codes
+                                    if qid_to_title:
+                                        columns = [_map_field_to_code(col, qid_to_title) for col in raw_columns]
+                                    else:
+                                        columns = raw_columns
+                                except ET.ParseError:
+                                    pass
                             else:
-                                df = pd.read_csv(io.StringIO(content), nrows=1)
-                            columns = list(df.columns)
+                                # Try CSV/TSV format
+                                if '\t' in content.split('\n')[0]:
+                                    df = pd.read_csv(io.StringIO(content), sep='\t', nrows=1)
+                                else:
+                                    df = pd.read_csv(io.StringIO(content), nrows=1)
+                                raw_columns = list(df.columns)
+
+                                # Map internal IDs to question codes
+                                if qid_to_title:
+                                    columns = [_map_field_to_code(col, qid_to_title) for col in raw_columns]
+                                else:
+                                    columns = raw_columns
             except zf_module.BadZipFile:
                 return jsonify({"error": "Invalid .lsa archive"}), 400
 
         elif filename.endswith(".xlsx"):
-            df = pd.read_excel(file, nrows=1)
+            df = pd.read_excel(io.BytesIO(file_content), nrows=1)
             columns = list(df.columns)
 
         elif filename.endswith(".csv"):
-            df = pd.read_csv(file, nrows=1)
+            df = pd.read_csv(io.BytesIO(file_content), nrows=1)
             columns = list(df.columns)
 
         elif filename.endswith(".tsv"):
-            df = pd.read_csv(file, sep='\t', nrows=1)
+            df = pd.read_csv(io.BytesIO(file_content), sep='\t', nrows=1)
             columns = list(df.columns)
 
         else:
