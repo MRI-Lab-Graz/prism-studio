@@ -105,6 +105,10 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Schema version mismatch",
         "fix_hint": "The metadata uses an older or newer schema version than the validator. Consider updating the 'SchemaVersion' in your metadata files.",
     },
+    "PRISM006": {
+        "message": "Incomplete dataset description",
+        "fix_hint": "Add recommended fields to dataset_description.json for FAIR compliance and scientific reproducibility: Description, License, EthicsApprovals, Funding, DataCollection, Keywords.",
+    },
     # Filename errors (1xx)
     "PRISM101": {
         "message": "Invalid BIDS filename format",
@@ -280,7 +284,11 @@ def infer_code_from_message(message: str) -> str:
     elif "schema version mismatch" in msg_lower:
         return "PRISM005"
     elif "dataset_description.json" in msg_lower:
-        if "missing" in msg_lower: return "PRISM001"
+        if "missing" in msg_lower and "field" not in msg_lower:
+            return "PRISM001"
+        # Completeness warnings (missing recommended fields)
+        if any(x in msg_lower for x in ["recommended", "fair compliance", "too short", "fewer than"]):
+            return "PRISM006"
         return "PRISM003"
     elif "no subjects found" in msg_lower:
         return "PRISM002"

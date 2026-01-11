@@ -31,6 +31,94 @@ if current_dir not in sys.path:
 ProgressCallback = Callable[[int, int, str, Optional[str]], None]
 
 
+def _check_dataset_description_completeness(dataset_desc: dict) -> list:
+    """
+    Check dataset_description.json for recommended fields.
+    Returns list of (level, message) tuples for missing recommended fields.
+
+    For scientific reproducibility, a complete dataset_description.json should include:
+    - Description: What the dataset is about
+    - License: How data can be used
+    - EthicsApprovals: Ethics committee approval information
+    - Funding: Funding sources
+    - DataCollection: When/where data was collected
+    - Keywords: For discoverability
+    """
+    issues = []
+
+    # Check for Description (important for understanding the dataset)
+    if "Description" not in dataset_desc:
+        issues.append((
+            "WARNING",
+            "dataset_description.json: Missing 'Description' field. "
+            "A detailed description is recommended for scientific reproducibility."
+        ))
+    elif len(dataset_desc.get("Description", "")) < 50:
+        issues.append((
+            "WARNING",
+            "dataset_description.json: 'Description' is too short (< 50 chars). "
+            "Please provide a more detailed description of the dataset."
+        ))
+
+    # Check for License (required for data sharing)
+    if "License" not in dataset_desc:
+        issues.append((
+            "WARNING",
+            "dataset_description.json: Missing 'License' field. "
+            "Specifying a license (e.g., CC0, CC-BY-4.0) is recommended for data sharing."
+        ))
+
+    # Check for EthicsApprovals (important for human subjects research)
+    if "EthicsApprovals" not in dataset_desc:
+        issues.append((
+            "WARNING",
+            "dataset_description.json: Missing 'EthicsApprovals' field. "
+            "Ethics approval information is recommended for human subjects research."
+        ))
+
+    # Check for Funding (often required by funders)
+    if "Funding" not in dataset_desc:
+        issues.append((
+            "WARNING",
+            "dataset_description.json: Missing 'Funding' field. "
+            "Funding source information is recommended for transparency."
+        ))
+
+    # Check for DataCollection info
+    if "DataCollection" not in dataset_desc:
+        issues.append((
+            "WARNING",
+            "dataset_description.json: Missing 'DataCollection' field. "
+            "Data collection details (dates, location, sample size) are recommended."
+        ))
+
+    # Check for Keywords (for discoverability)
+    if "Keywords" not in dataset_desc:
+        issues.append((
+            "WARNING",
+            "dataset_description.json: Missing 'Keywords' field. "
+            "Keywords are recommended for dataset discoverability."
+        ))
+    elif len(dataset_desc.get("Keywords", [])) < 3:
+        issues.append((
+            "WARNING",
+            "dataset_description.json: Fewer than 3 keywords provided. "
+            "More keywords are recommended for discoverability."
+        ))
+
+    # Check Authors have proper structure (ORCID recommended)
+    authors = dataset_desc.get("Authors", [])
+    simple_authors = [a for a in authors if isinstance(a, str)]
+    if simple_authors and len(simple_authors) == len(authors):
+        issues.append((
+            "WARNING",
+            "dataset_description.json: Authors are simple strings. "
+            "Consider using structured author objects with 'orcid' and 'affiliation' for FAIR compliance."
+        ))
+
+    return issues
+
+
 def validate_dataset(
     root_dir,
     verbose=False,
@@ -99,8 +187,14 @@ def validate_dataset(
                     version_issues = validate_schema_version(dataset_desc, dataset_schema)
                     for level, msg in version_issues:
                         issues.append((level, msg, dataset_desc_path))
-                    
+
                     validate(instance=dataset_desc, schema=dataset_schema)
+
+                # Check for recommended fields (FAIR/scientific completeness)
+                recommended_issues = _check_dataset_description_completeness(dataset_desc)
+                for level, msg in recommended_issues:
+                    issues.append((level, msg, dataset_desc_path))
+
         except json.JSONDecodeError as e:
             if run_prism:
                 issues.append(("ERROR", f"dataset_description.json is not valid JSON: {e}", dataset_desc_path))
