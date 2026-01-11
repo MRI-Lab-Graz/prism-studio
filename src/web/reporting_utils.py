@@ -61,6 +61,8 @@ def format_validation_results(
             file_path = extract_path_from_message(message, dataset_path)
         file_path = strip_temp_path(file_path, dataset_path) if file_path else None
 
+        message = strip_temp_path_from_message(message, dataset_path)
+
         if file_path:
             file_paths.add(file_path)
             if file_path not in file_issues:
@@ -71,7 +73,6 @@ def format_validation_results(
             elif level == "WARNING":
                 file_issues[file_path]["warnings"].append(message)
 
-        message = strip_temp_path_from_message(message)
         error_code = infer_code_from_message(message)
 
         group_message = message
@@ -186,6 +187,8 @@ def format_validation_results(
                 "total_sessions": len(unique_sessions),
                 "modalities": getattr(dataset_stats, "modalities", {}),
                 "tasks": sorted(list(getattr(dataset_stats, "tasks", []))),
+                "eyetracking": sorted(list(getattr(dataset_stats, "eyetracking", []))),
+                "physio": sorted(list(getattr(dataset_stats, "physio", []))),
                 "surveys": sorted(list(getattr(dataset_stats, "surveys", []))),
                 "biometrics": sorted(list(getattr(dataset_stats, "biometrics", []))),
                 "total_files": getattr(dataset_stats, "total_files", 0),

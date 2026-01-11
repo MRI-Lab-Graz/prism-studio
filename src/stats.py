@@ -15,6 +15,8 @@ class DatasetStats:
         self.tasks = set()
         self.surveys = set()
         self.biometrics = set()
+        self.eyetracking = set()
+        self.physio = set()
         self.descriptions = {}  # type -> name -> description
         self.total_files = 0
         self.sidecar_files = 0
@@ -30,8 +32,8 @@ class DatasetStats:
             self.modalities[modality] = 0
         self.modalities[modality] += 1
         
-        # Only add to tasks if it's not a survey or biometrics
-        if task and modality not in ["survey", "biometrics"]:
+        # Only add to tasks if it's not a modality that has its own specific category
+        if task and modality not in ["survey", "biometrics", "eyetracking", "physio", "physiological"]:
             self.tasks.add(task)
 
         if modality == "survey":
@@ -40,8 +42,26 @@ class DatasetStats:
             match = re.search(r"_survey-([a-zA-Z0-9]+)", filename)
             if match:
                 self.surveys.add(match.group(1))
+        
+        elif modality in ["eyetracking", "eyetrack"]:
+            if task:
+                self.eyetracking.add(task)
+            else:
+                # Fallback task extraction
+                match = re.search(r"_task-([a-zA-Z0-9]+)", filename)
+                if match:
+                    self.eyetracking.add(match.group(1))
+        
+        elif modality in ["physio", "physiological"]:
+            if task:
+                self.physio.add(task)
+            else:
+                # Fallback task extraction
+                match = re.search(r"_task-([a-zA-Z0-9]+)", filename)
+                if match:
+                    self.physio.add(match.group(1))
 
-        if modality == "biometrics":
+        elif modality == "biometrics":
             if task:
                 self.biometrics.add(task)
             match = re.search(r"_biometrics-([a-zA-Z0-9]+)", filename)

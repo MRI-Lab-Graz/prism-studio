@@ -7,7 +7,7 @@
         "Columns": ["time", "ecg", "gsr"]
     },
     "Metadata": {
-        "SchemaVersion": "1.0.0",
+        "SchemaVersion": "1.1.0",
         "CreationDate": "2026-01-11"
     }
 }

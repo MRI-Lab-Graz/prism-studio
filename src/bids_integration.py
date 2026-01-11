@@ -24,14 +24,13 @@ STANDARD_BIDS_FOLDERS = {
 
 
 # Extra non-BIDS artifacts that can confuse BIDS apps/validators.
-#
-# `MRI-Lab-Graz/check_repo` is a generic repository QA tool; it doesn't validate
-# PRISM/BIDS datasets, but it does write a timestamped report file in the
-# working directory (e.g., "<name>_report_<timestamp>.txt"). If users run it in
-# a dataset root, that report shouldn't be considered part of the dataset by
-# BIDS tooling.
 EXTRA_BIDSIGNORE_RULES = {
     "*_report_*.txt",
+    "prism_summary.json",
+    "validation_report.json",
+    ".upload_manifest.json",
+    "survey/",      # Root survey definition folder
+    "derivatives/", # Explicitly ignore derivatives if needed
 }
 
 
@@ -51,6 +50,13 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
 
     # Determine which modalities are non-standard
     non_standard = [m for m in supported_modalities if m not in STANDARD_BIDS_FOLDERS]
+    
+    # Always ensure we include these common PRISM/non-BIDS folders just in case
+    # they are not in the current supported_modalities list
+    prism_folders = {"eyetracking", "physiological", "physio", "survey", "biometrics", "eeg", "metadata", "events"}
+    for pf in prism_folders:
+        if pf not in STANDARD_BIDS_FOLDERS and pf not in non_standard:
+            non_standard.append(pf)
 
     # Read existing .bidsignore
     existing_rules = set()
@@ -66,8 +72,11 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
 
     # We use the pattern "modality/" to match directories of that name anywhere.
     # This is standard .gitignore syntax which .bidsignore follows.
+    # We also add "**/modality/" as a fallback for some validator versions.
     needed_rules = set(EXTRA_BIDSIGNORE_RULES)
-    needed_rules.update({f"{m}/" for m in non_standard})
+    for m in non_standard:
+        needed_rules.add(f"{m}/")
+        needed_rules.add(f"**/{m}/")
 
     if not needed_rules:
         return []

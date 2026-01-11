@@ -20,7 +20,7 @@ from cross_platform import (
 # PRISM-specific modalities that we validate with our schemas
 # Standard BIDS modalities (anat, func, fmap, dwi, eeg) are passed through
 # and should be validated by the optional BIDS validator instead
-PRISM_MODALITIES = {"survey", "biometrics", "events", "physio", "eyetracking"}
+PRISM_MODALITIES = {"survey", "biometrics", "events", "physio", "physiological", "eyetracking"}
 
 # Standard BIDS modalities - we only do minimal checks (subject/session consistency)
 # Full validation is delegated to the BIDS validator
@@ -33,6 +33,7 @@ MODALITY_PATTERNS = {
     "biometrics": r".+_biometrics\.(tsv|json)$",
     "events": r".+_events\.tsv$",
     "physio": r".+(_recording-(ecg|cardiac|puls|resp|eda|ppg|emg|temp|bp|spo2|trigger|[a-zA-Z0-9]+))?_physio\.(tsv|tsv\.gz|json|edf)$",
+    "physiological": r".+(_recording-(ecg|cardiac|puls|resp|eda|ppg|emg|temp|bp|spo2|trigger|[a-zA-Z0-9]+))?_physio\.(tsv|tsv\.gz|json|edf)$",
     "eyetracking": r".+(_trackedEye-(left|right|both))?_(eyetrack|eye|gaze)\.(tsv|tsv\.gz|json|edf|asc)$",
 }
 

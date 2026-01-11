@@ -242,6 +242,8 @@ def show_results(result_id):
                 "total_sessions": len(unique_sessions),
                 "modalities": dict(sorted(modalities.items())),
                 "tasks": sorted(getattr(stats_obj, "tasks", set()) or set()),
+                "eyetracking": sorted(getattr(stats_obj, "eyetracking", set()) or set()),
+                "physio": sorted(getattr(stats_obj, "physio", set()) or set()),
                 "surveys": sorted(getattr(stats_obj, "surveys", set()) or set()),
                 "biometrics": sorted(getattr(stats_obj, "biometrics", set()) or set()),
                 "total_files": getattr(stats_obj, "total_files", 0),

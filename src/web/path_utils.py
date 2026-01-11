@@ -17,6 +17,27 @@ def strip_temp_path(
     # Normalize separators
     file_path = file_path.replace("\\", "/")
 
+    # If dataset_path is provided, try to strip up to its parent folder
+    # This keeps the dataset root folder name (e.g., messy_dataset/sub-01)
+    if dataset_path:
+        dataset_path = dataset_path.replace("\\", "/").rstrip("/")
+        parent_dir = os.path.dirname(dataset_path)
+        if parent_dir and parent_dir != "/":
+            prefix = parent_dir if parent_dir.endswith("/") else parent_dir + "/"
+            if file_path.startswith(prefix):
+                return file_path[len(prefix):]
+            elif prefix in file_path:
+                idx = file_path.find(prefix)
+                return file_path[idx + len(prefix):]
+        
+        # Fallback to stripping the dataset_path itself
+        ds_prefix = dataset_path + "/"
+        if file_path.startswith(ds_prefix):
+            return file_path[len(ds_prefix) :]
+        elif dataset_path in file_path:
+            idx = file_path.find(dataset_path)
+            return file_path[idx + len(dataset_path) :].lstrip("/")
+
     # Look for common BIDS/PRISM root markers
     markers = ["sub-", "dataset_description.json", "participants.tsv", "task-", "survey-"]
     best_match = None
@@ -29,16 +50,6 @@ def strip_temp_path(
     
     if best_match:
         return best_match
-
-    # If dataset_path is a temp directory, strip it
-    if dataset_path:
-        dataset_path = dataset_path.replace("\\", "/")
-        ds_prefix = dataset_path if dataset_path.endswith("/") else dataset_path + "/"
-        if file_path.startswith(ds_prefix):
-            return file_path[len(ds_prefix) :]
-        elif dataset_path in file_path:
-            idx = file_path.find(dataset_path)
-            return file_path[idx + len(dataset_path) :].lstrip("/")
 
     # If it's a temp path, try to extract the relative path
     temp_patterns = ["/tmp/", "/T/prism_validator_", "/var/folders/", "prism_validator_", "renamed_files"]
@@ -64,19 +75,50 @@ def strip_temp_path(
     return file_path
 
 
-def strip_temp_path_from_message(msg: str) -> str:
+def strip_temp_path_from_message(msg: str, dataset_path: Optional[str] = None) -> str:
     """Remove temp folder paths from message text."""
     if not msg:
         return msg
     
     msg = msg.replace("\\", "/")
-    markers = ["sub-", "dataset_description.json", "participants.tsv", "task-", "survey-"]
-    for marker in markers:
-        if marker in msg:
-            pattern = r"/[^\s,:]*/" + re.escape(marker)
-            msg = re.sub(pattern, marker, msg)
-            temp_prefix_pattern = r"(?:prism_validator|renamed_files)[^/\s,:]*" + re.escape(marker)
-            msg = re.sub(temp_prefix_pattern, marker, msg)
+
+    # If dataset_path is provided, try to strip up to its parent folder
+    # This keeps the dataset root folder name (e.g., /messy_dataset/sub-01)
+    did_dataset_strip = False
+    if dataset_path:
+        dataset_path = dataset_path.replace("\\", "/").rstrip("/")
+        parent_dir = os.path.dirname(dataset_path)
+        if parent_dir and parent_dir != "/":
+            prefix = parent_dir if parent_dir.endswith("/") else parent_dir + "/"
+            if prefix in msg:
+                msg = msg.replace(prefix, "/")
+                did_dataset_strip = True
+        
+        # Fallback: strip the dataset_path itself if parent stripping didn't work/apply
+        ds_prefix = dataset_path + "/"
+        if ds_prefix in msg:
+            msg = msg.replace(ds_prefix, "")
+            did_dataset_strip = True
+
+    # Normalize multiple slashes that might have been created
+    msg = msg.replace("//", "/")
+
+    # Only apply heuristic marker-based stripping if we didn't do a dataset strip
+    # or if the message STILL contains absolute system markers
+    has_system_markers = any(p in msg for p in ["/var/folders/", "/tmp/prism_", "/prism_validator_"])
+    
+    if not did_dataset_strip or has_system_markers:
+        markers = ["sub-", "dataset_description.json", "participants.tsv", "task-", "survey-"]
+        for marker in markers:
+            if marker in msg:
+                # Only strip automatically if it looks like a temporary or absolute path
+                # This pattern matches common Unix absolute roots and temp folders
+                temp_prefix_pattern = r"/(?:var|tmp|Volumes|Users|home|Users|prism_validator|renamed_files)[^\s,:]*/" + re.escape(marker)
+                msg = re.sub(temp_prefix_pattern, marker, msg)
+                
+                # Legacy fallback for renamed_files
+                renamed_pattern = r"renamed_files[^/\s,:]*/" + re.escape(marker)
+                msg = re.sub(renamed_pattern, marker, msg)
 
     temp_patterns = [
         r"/var/folders/[^/\s,:]+/[^/\s,:]+/T/prism_validator_[^/\s,:]+/",
@@ -88,7 +130,7 @@ def strip_temp_path_from_message(msg: str) -> str:
     for pattern in temp_patterns:
         msg = re.sub(pattern, "", msg)
     
-    return msg.replace("dataset/", "").strip()
+    return msg.strip()
 
 
 def extract_path_from_message(
