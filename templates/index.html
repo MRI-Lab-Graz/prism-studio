@@ -27,14 +27,32 @@
                 <p class="text-muted small mb-3">
                     <code>{{ current_project.path }}</code>
                 </p>
-                <form action="{{ url_for('validation.validate_folder') }}" method="post" class="d-inline">
+                <form id="validateProjectForm" class="d-inline">
                     <input type="hidden" name="folder_path" value="{{ current_project.path }}">
                     <input type="hidden" name="schema_version" value="stable">
-                    <input type="hidden" name="validation_mode" value="both">
-                    <button type="submit" class="btn btn-primary">
+                    <select name="validation_mode" class="form-select form-select-sm d-inline-block w-auto me-2">
+                        <option value="prism" selected>PRISM Only</option>
+                        <option value="both">Full (PRISM + BIDS)</option>
+                        <option value="bids">BIDS Only</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary" id="validateProjectBtn">
                         <i class="fas fa-check-circle me-2"></i>Validate Current Project
                     </button>
                 </form>
+                <!-- Validation Progress -->
+                <div id="validationProgressContainer" class="d-none mt-3">
+                    <div class="card border-primary">
+                        <div class="card-body py-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-spinner fa-spin text-primary me-2"></i>
+                                <span id="validationProgressText">Starting validation...</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div id="validationProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <a href="{{ url_for('projects.projects_page') }}" class="btn btn-outline-secondary ms-2">
                     <i class="fas fa-exchange-alt me-1"></i>Change Project
                 </a>
@@ -578,11 +596,98 @@ document.addEventListener('DOMContentLoaded', function() {
         return false;
     });
 
-    document.querySelector('form[action*="validate_folder"]').addEventListener('submit', function(e) {
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating...';
-    });
+    // Handle "Validate Current Project" form with progress
+    const validateProjectForm = document.getElementById('validateProjectForm');
+    if (validateProjectForm) {
+        validateProjectForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('validateProjectBtn');
+            const progressContainer = document.getElementById('validationProgressContainer');
+            const progressBar = document.getElementById('validationProgressBar');
+            const progressText = document.getElementById('validationProgressText');
+
+            // Show progress UI
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating...';
+            progressContainer.classList.remove('d-none');
+            progressBar.style.width = '0%';
+            progressBar.classList.remove('bg-success', 'bg-danger');
+            progressBar.classList.add('progress-bar-animated');
+            progressText.textContent = 'Starting validation...';
+
+            // Generate job ID for progress tracking
+            const jobId = 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+            // Create form data
+            const formData = new FormData(validateProjectForm);
+            formData.append('job_id', jobId);
+
+            // Start polling for progress
+            let pollInterval = setInterval(async () => {
+                try {
+                    const progressResponse = await fetch(`/api/progress/${jobId}`);
+                    const progressData = await progressResponse.json();
+
+                    progressBar.style.width = progressData.progress + '%';
+                    progressText.textContent = progressData.message || 'Validating...';
+
+                    if (progressData.status === 'complete') {
+                        clearInterval(pollInterval);
+                    }
+                } catch (err) {
+                    // Ignore polling errors
+                }
+            }, 300);
+
+            try {
+                // Submit validation request
+                const response = await fetch('{{ url_for("validation.validate_folder") }}', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                clearInterval(pollInterval);
+
+                // Check if we got redirected to results
+                if (response.redirected) {
+                    // Show completion
+                    progressBar.style.width = '100%';
+                    progressBar.classList.remove('progress-bar-animated');
+                    progressBar.classList.add('bg-success');
+                    progressText.innerHTML = '<i class="fas fa-check-circle text-success me-2"></i>Validation complete!';
+
+                    // Redirect to results after short delay
+                    setTimeout(() => {
+                        window.location.href = response.url;
+                    }, 500);
+                } else {
+                    // Handle error
+                    const text = await response.text();
+                    throw new Error('Validation failed');
+                }
+            } catch (err) {
+                clearInterval(pollInterval);
+                progressBar.classList.remove('progress-bar-animated');
+                progressBar.classList.add('bg-danger');
+                progressBar.style.width = '100%';
+                progressText.innerHTML = '<i class="fas fa-exclamation-circle text-danger me-2"></i>Validation failed: ' + err.message;
+
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Validate Current Project';
+            }
+        });
+    }
+
+    // Handle file upload validation form
+    const uploadForm = document.querySelector('form[action*="upload_dataset"]');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating...';
+        });
+    }
 
     // Show browser compatibility info
     if (!supportsFolderUpload) {
