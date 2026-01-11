@@ -1,0 +1,12 @@
+# PRISM folders to ignore for BIDS-App compatibility
+biometrics/
+eyetracking/
+survey/
+physiological/
+events/
+*.pdf
+*.docx
+*.xlsx
+*.csv
+library/
+derivatives/

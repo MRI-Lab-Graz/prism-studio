@@ -252,6 +252,19 @@ def ensure_project_selected_first():
     ):
         return None
 
+    # Allow validation API and results even without a project
+    # This enables one-off validation of uploaded ZIPs or folders.
+    if (
+        path == "/upload" 
+        or path == "/validate_folder" 
+        or path.startswith("/api/progress/") 
+        or path.startswith("/results/") 
+        or path.startswith("/download_report/")
+        or path.startswith("/cleanup/")
+        or path == "/api/validate"
+    ):
+        return None
+
     # For pages, redirect to the project selector.
     if request.method == "GET":
         return redirect(url_for("projects.projects_page"))
