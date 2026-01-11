@@ -237,6 +237,21 @@ def ensure_project_selected_first():
     if path.startswith("/editor"):
         return None
 
+    # Allow tool landing pages (GET) even without a project
+    # This avoids the "clicking link does nothing" behavior (silent redirects)
+    # The tools themselves handle the absence of a project UI-wise.
+    if request.method == "GET" and path in (
+        "/",
+        "/converter",
+        "/validate",
+        "/recipes",
+        "/survey-generator",
+        "/template-editor",
+        "/library-editor",
+        "/neurobagel",
+    ):
+        return None
+
     # For pages, redirect to the project selector.
     if request.method == "GET":
         return redirect(url_for("projects.projects_page"))

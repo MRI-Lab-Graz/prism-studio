@@ -466,145 +466,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             "pandas is required for survey conversion. Ensure dependencies are installed via setup.sh"
         ) from e
 
-    alias_map: dict[str, str] | None = None
-    canonical_aliases: dict[str, list[str]] | None = None
-    if alias_file:
-        alias_path = Path(alias_file).resolve()
-        if not alias_path.exists() or not alias_path.is_file():
-            raise ValueError(f"Alias file not found: {alias_path}")
-        rows = _read_alias_rows(alias_path)
-        if rows:
-            alias_map = _build_alias_map(rows)
-            canonical_aliases = _build_canonical_aliases(rows)
-
-    participant_template = _normalize_participant_template_dict(_load_participants_template(library_dir))
-    participant_columns_lower: set[str] = set()
-    if participant_template:
-        participant_columns_lower = {
-            str(k).strip().lower() for k in participant_template.keys() if isinstance(k, str)
-        }
-
-    # --- Load survey templates ---
-    templates: dict[str, dict] = {}
-    item_to_task: dict[str, str] = {}
-    duplicate_items: dict[str, set[str]] = {}
-
-    for json_path in sorted(library_dir.glob("survey-*.json")):
-        if _is_participant_template(json_path):
-            continue
-        try:
-            sidecar = _read_json(json_path)
-        except Exception:
-            continue
-
-        task_from_name = json_path.stem.replace("survey-", "")
-        task = str(sidecar.get("Study", {}).get("TaskName") or task_from_name).strip()
-        if not task:
-            task = task_from_name
-        task_norm = task.lower()
-        if canonical_aliases:
-            sidecar = _canonicalize_template_items(sidecar=sidecar, canonical_aliases=canonical_aliases)
-
-        # Pre-process AliasOf mapping within the template
-        # Initialize special keys outside the loop to avoid "dictionary changed size during iteration"
-        if "_aliases" not in sidecar:
-            sidecar["_aliases"] = {}
-        if "_reverse_aliases" not in sidecar:
-            sidecar["_reverse_aliases"] = {}
-
-        for k, v in list(sidecar.items()):
-            if k in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(v, dict):
-                continue
-            # New forward Aliases format
-            if "Aliases" in v and isinstance(v["Aliases"], list):
-                for alias in v["Aliases"]:
-                    sidecar["_aliases"][alias] = k
-                    sidecar["_reverse_aliases"].setdefault(k, []).append(alias)
-            # Legacy backward AliasOf format
-            if "AliasOf" in v:
-                target = v["AliasOf"]
-                # Store which canonical item this alias points to
-                sidecar["_aliases"][k] = target
-                # Also store the reverse for fast lookup during data mapping
-                sidecar["_reverse_aliases"].setdefault(target, []).append(k)
-
-        templates[task_norm] = {"path": json_path, "json": sidecar, "task": task_norm}
-
-        for k, v in sidecar.items():
-            if k in _NON_ITEM_TOPLEVEL_KEYS:
-                continue
-            
-            # Map canonical item to task
-            if k in item_to_task and item_to_task[k] != task_norm:
-                duplicate_items.setdefault(k, set()).update({item_to_task[k], task_norm})
-            else:
-                item_to_task[k] = task_norm
-
-            # Map aliases to same task to ensure they are discovered
-            if isinstance(v, dict) and "Aliases" in v and isinstance(v["Aliases"], list):
-                for alias in v["Aliases"]:
-                    if alias in item_to_task and item_to_task[alias] != task_norm:
-                        duplicate_items.setdefault(alias, set()).update({item_to_task[alias], task_norm})
-                    else:
-                        item_to_task[alias] = task_norm
-
-    if not templates:
-        raise ValueError(f"No survey templates found in: {library_dir} (expected survey-*.json)")
-
-    if duplicate_items:
-        msg_lines = ["Duplicate item IDs found across survey templates (ambiguous mapping):"]
-        for item_id, tasks in sorted(duplicate_items.items()):
-            msg_lines.append(f"- {item_id}: {', '.join(sorted(tasks))}")
-        raise ValueError("\n".join(msg_lines))
-
-    # --- Parse --survey filter ---
-    selected_tasks: set[str] | None = None
-    if survey:
-        parts = [p.strip() for p in str(survey).replace(";", ",").split(",")]
-        parts = [p for p in parts if p]
-        selected = {p.lower().replace("survey-", "") for p in parts}
-
-        unknown_surveys = sorted([t for t in selected if t not in templates])
-        if unknown_surveys:
-            raise ValueError(
-                "Unknown surveys: " + ", ".join(unknown_surveys) + ". Available: " + ", ".join(sorted(templates.keys()))
-            )
-        selected_tasks = selected
-
-    def _find_col(candidates: set[str]) -> str | None:
-        lower_map = {str(c).strip().lower(): str(c).strip() for c in df.columns}
-        for c in candidates:
-            if c in lower_map:
-                return lower_map[c]
-        return None
-
-    resolved_id_col = id_column
-    if resolved_id_col:
-        if resolved_id_col not in df.columns:
-            raise ValueError(
-                f"id_column '{resolved_id_col}' not found. Columns: {', '.join([str(c) for c in df.columns])}"
-            )
-    else:
-        # LimeSurvey response archives commonly use `token`.
-        resolved_id_col = _find_col({"participant_id", "subject", "id", "sub_id", "participant", "code", "token"})
-        if not resolved_id_col:
-            raise ValueError(
-                "Could not determine participant id column. Provide id_column explicitly (e.g., participant_id, CODE)."
-            )
-
-    resolved_session_col: str | None
-    if session_column:
-        if session_column not in df.columns:
-            raise ValueError(f"session_column '{session_column}' not found in input columns")
-        resolved_session_col = session_column
-    else:
-        resolved_session_col = _find_col({"session", "ses", "visit", "timepoint"})
-
-    # --- Optional alias mapping (canonical_id + aliases) ---
-    # Apply after ID/session detection to avoid surprises.
-    if alias_map:
-        df = _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
-
+    # Determine normalization logic
     def _normalize_sub_id(val) -> str:
         s = sanitize_id(str(val).strip())
         if not s:
@@ -630,19 +492,231 @@ def _convert_survey_dataframe_to_prism_dataset(
             return True
         return False
 
-    # Detect duplicate IDs after normalization (to avoid silent merges)
-    normalized_ids = df[resolved_id_col].astype(str).map(_normalize_sub_id)
-    dup_mask = normalized_ids.duplicated(keep=False)
-    if dup_mask.any():
-        dup_ids = sorted(set(normalized_ids[dup_mask]))
-        preview = ", ".join(dup_ids[:5])
-        suffix = "" if len(dup_ids) <= 5 else " ..."
-        raise ValueError(
-            f"Duplicate participant_id values after normalization: {preview}{suffix}. "
-            "Please resolve duplicates before conversion."
+    # --- Load Aliases and Templates ---
+    alias_map: dict[str, str] | None = None
+    canonical_aliases: dict[str, list[str]] | None = None
+    if alias_file:
+        alias_path = Path(alias_file).resolve()
+        if alias_path.exists() and alias_path.is_file():
+            rows = _read_alias_rows(alias_path)
+            if rows:
+                alias_map = _build_alias_map(rows)
+                canonical_aliases = _build_canonical_aliases(rows)
+
+    participant_template = _normalize_participant_template_dict(_load_participants_template(library_dir))
+    participant_columns_lower: set[str] = set()
+    if participant_template:
+        participant_columns_lower = {
+            str(k).strip().lower() for k in participant_template.keys() if isinstance(k, str)
+        }
+
+    templates, item_to_task, duplicates = _load_and_preprocess_templates(library_dir, canonical_aliases)
+    if duplicates:
+        msg_lines = ["Duplicate item IDs found across survey templates (ambiguous mapping):"]
+        for it_id, tsks in sorted(duplicates.items()):
+            msg_lines.append(f"- {it_id}: {', '.join(sorted(tsks))}")
+        raise ValueError("\n".join(msg_lines))
+
+    # --- Survey Filtering ---
+    selected_tasks: set[str] | None = None
+    if survey:
+        parts = [p.strip() for p in str(survey).replace(";", ",").split(",")]
+        parts = [p for p in parts if p]
+        selected = {p.lower().replace("survey-", "") for p in parts}
+        unknown_surveys = sorted([t for t in selected if t not in templates])
+        if unknown_surveys:
+            raise ValueError(
+                "Unknown surveys: " + ", ".join(unknown_surveys) + ". Available: " + ", ".join(sorted(templates.keys()))
+            )
+        selected_tasks = selected
+
+    # --- Determine Columns ---
+    res_id_col, res_ses_col = _resolve_id_and_session_cols(df, id_column, session_column)
+
+    if alias_map:
+        df = _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
+
+    # Detect duplicate IDs after normalization
+    normalized_ids = df[res_id_col].astype(str).map(_normalize_sub_id)
+    if normalized_ids.duplicated().any():
+        dup_ids = sorted(set(normalized_ids[normalized_ids.duplicated()]))
+        raise ValueError(f"Duplicate participant_id values after normalization: {', '.join(dup_ids[:5])}")
+
+    col_to_task, unknown_cols, conversion_warnings = _map_survey_columns(
+        df=df,
+        item_to_task=item_to_task,
+        participant_columns_lower=participant_columns_lower,
+        id_col=res_id_col,
+        ses_col=res_ses_col,
+        unknown_mode=unknown,
+    )
+
+    tasks_with_data = set(col_to_task.values())
+    if selected_tasks is not None:
+        tasks_with_data = tasks_with_data.intersection(selected_tasks)
+    if not tasks_with_data:
+        raise ValueError("No survey item columns matched the selected templates.")
+
+    # --- Results Preparation ---
+    missing_items_by_task = _compute_missing_items_report(tasks_with_data, templates, col_to_task)
+
+    if dry_run:
+        return SurveyConvertResult(
+            tasks_included=sorted(tasks_with_data),
+            unknown_columns=unknown_cols,
+            missing_items_by_task=missing_items_by_task,
+            id_column=res_id_col,
+            session_column=res_ses_col,
+            conversion_warnings=conversion_warnings,
         )
 
-    # --- Determine which columns map to which surveys ---
+    # --- Write Output ---
+    _ensure_dir(output_root)
+    _write_survey_description(output_root, name, authors)
+    _write_survey_participants(
+        df=df,
+        output_root=output_root,
+        id_col=res_id_col,
+        ses_col=res_ses_col,
+        participant_template=participant_template,
+        normalize_sub_fn=_normalize_sub_id,
+        is_missing_fn=_is_missing_value,
+    )
+
+    # Write task sidecars
+    for task in sorted(tasks_with_data):
+        sidecar_path = output_root / f"task-{task}_survey.json"
+        if not sidecar_path.exists() or force:
+            localized = _localize_survey_template(templates[task]["json"], language=language)
+            localized = _inject_missing_token(localized, token=_MISSING_TOKEN)
+            if technical_overrides:
+                localized = _apply_technical_overrides(localized, technical_overrides)
+            _write_json(sidecar_path, localized)
+
+    # --- Process and Write Responses ---
+    missing_cells_by_subject: dict[str, int] = {}
+    items_using_tolerance: dict[str, set[str]] = {}
+
+    for _, row in df.iterrows():
+        sub_id = _normalize_sub_id(row[res_id_col])
+        ses_id = _normalize_ses_id(session) if session else (
+            _normalize_ses_id(row[res_ses_col]) if res_ses_col else "ses-1"
+        )
+        modality_dir = _ensure_dir(output_root / sub_id / ses_id / "survey")
+
+        for task in sorted(tasks_with_data):
+            if selected_tasks is not None and task not in selected_tasks:
+                continue
+
+            schema = templates[task]["json"]
+            out_row, missing_count = _process_survey_row(
+                row=row,
+                df_cols=df.columns,
+                task=task,
+                schema=schema,
+                col_to_task=col_to_task,
+                sub_id=sub_id,
+                strict_levels=strict_levels,
+                items_using_tolerance=items_using_tolerance,
+                is_missing_fn=_is_missing_value,
+                normalize_val_fn=_normalize_item_value,
+            )
+            missing_cells_by_subject[sub_id] = missing_cells_by_subject.get(sub_id, 0) + missing_count
+
+            # Write TSV
+            expected_cols = [k for k in schema.keys() if k not in _NON_ITEM_TOPLEVEL_KEYS and k not in schema.get("_aliases", {})]
+            res_file = modality_dir / f"{sub_id}_{ses_id}_task-{task}_survey.tsv"
+            with open(res_file, "w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=expected_cols, delimiter="\t", lineterminator="\n")
+                writer.writeheader()
+                writer.writerow(out_row)
+
+    # Add summary for items using numeric range tolerance
+    if items_using_tolerance:
+        for task, item_ids in sorted(items_using_tolerance.items()):
+            sorted_items = sorted(list(item_ids))
+            shown = ", ".join(sorted_items[:10])
+            more = "" if len(sorted_items) <= 10 else f" (+{len(sorted_items)-10} more)"
+            conversion_warnings.append(
+                f"Task '{task}': Numeric values for items [{shown}{more}] were accepted via range tolerance."
+            )
+
+    return SurveyConvertResult(
+        tasks_included=sorted(tasks_with_data),
+        unknown_columns=unknown_cols,
+        missing_items_by_task=missing_items_by_task,
+        id_column=res_id_col,
+        session_column=res_ses_col,
+        missing_cells_by_subject=missing_cells_by_subject,
+        missing_value_token=_MISSING_TOKEN,
+        conversion_warnings=conversion_warnings,
+    )
+
+
+def _normalize_item_value(val) -> str:
+    from pandas import isna
+    if isna(val) or (isinstance(val, str) and str(val).strip() == ""):
+        return _MISSING_TOKEN
+    if isinstance(val, bool):
+        return str(val).lower()
+    if isinstance(val, int):
+        return str(int(val))
+    if isinstance(val, float):
+        if val.is_integer():
+            return str(int(val))
+        return str(val)
+    return str(val)
+
+
+def _resolve_id_and_session_cols(
+    df, id_column: str | None, session_column: str | None
+) -> tuple[str, str | None]:
+    """Helper to determine participant ID and session columns from dataframe."""
+
+    def _find_col(candidates: set[str]) -> str | None:
+        lower_map = {str(c).strip().lower(): str(c).strip() for c in df.columns}
+        for c in candidates:
+            if c in lower_map:
+                return lower_map[c]
+        return None
+
+    resolved_id = id_column
+    if resolved_id:
+        if resolved_id not in df.columns:
+            raise ValueError(
+                f"id_column '{resolved_id}' not found. Columns: {', '.join([str(c) for c in df.columns])}"
+            )
+    else:
+        # LimeSurvey response archives commonly use `token`.
+        resolved_id = _find_col(
+            {"participant_id", "subject", "id", "sub_id", "participant", "code", "token"}
+        )
+        if not resolved_id:
+            raise ValueError(
+                "Could not determine participant id column. Provide id_column explicitly (e.g., participant_id, CODE)."
+            )
+
+    resolved_ses: str | None
+    if session_column:
+        if session_column not in df.columns:
+            raise ValueError(f"session_column '{session_column}' not found in input columns")
+        resolved_ses = session_column
+    else:
+        resolved_ses = _find_col({"session", "ses", "visit", "timepoint"})
+
+    return str(resolved_id), resolved_ses
+
+
+def _map_survey_columns(
+    *,
+    df,
+    item_to_task: dict[str, str],
+    participant_columns_lower: set[str],
+    id_col: str,
+    ses_col: str | None,
+    unknown_mode: str,
+) -> tuple[dict[str, str], list[str], list[str]]:
+    """Determine which columns map to which surveys and identify unmapped columns."""
     lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
 
     # Detect participant-related columns first so they are not treated as unmapped survey items.
@@ -661,7 +735,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         if c in lower_to_col
     }
 
-    cols = [c for c in df.columns if c not in {resolved_id_col} and c != resolved_session_col]
+    cols = [c for c in df.columns if c not in {id_col} and c != ses_col]
     col_to_task: dict[str, str] = {}
     unknown_cols: list[str] = []
     for c in cols:
@@ -675,418 +749,274 @@ def _convert_survey_dataframe_to_prism_dataset(
         else:
             unknown_cols.append(c)
 
-    conversion_warnings: list[str] = []
-    # Track items that used numeric range tolerance to avoid log spam
-    items_using_tolerance: dict[str, set[str]] = {}  # task -> set(item_ids)
+    warnings: list[str] = []
+    bookkeeping = {
+        "id", "submitdate", "lastpage", "startlanguage", "seed", "startdate", "datestamp",
+        "token", "refurl", "ipaddr", "googleid", "session_id", "participant_id",
+        "attribute_1", "attribute_2", "attribute_3"
+    }
+    filtered_unknown = [c for c in unknown_cols if str(c).lower() not in bookkeeping]
 
-    tasks_with_data = set(col_to_task.values())
-    if selected_tasks is not None:
-        tasks_with_data = tasks_with_data.intersection(selected_tasks)
+    if filtered_unknown:
+        if unknown_mode == "error":
+            raise ValueError("Unmapped columns: " + ", ".join(filtered_unknown))
+        if unknown_mode == "warn":
+            shown = ", ".join(filtered_unknown[:10])
+            more = "" if len(filtered_unknown) <= 10 else f" (+{len(filtered_unknown)-10} more)"
+            warnings.append(f"Unmapped columns (not in any survey template): {shown}{more}")
 
-    if not tasks_with_data:
-        raise ValueError("No survey item columns matched the selected templates.")
+    return col_to_task, unknown_cols, warnings
 
-    # Missing-items report
-    missing_items_by_task: dict[str, int] = {}
-    for task in sorted(tasks_with_data):
-        schema = templates[task]["json"]
-        expected = [k for k in schema.keys() if k not in _NON_ITEM_TOPLEVEL_KEYS]
-        present = [c for c, t in col_to_task.items() if t == task]
-        missing = [k for k in expected if k not in present]
-        missing_items_by_task[task] = len(missing)
 
-    if unknown_cols:
-        # Filter out common LimeSurvey/Platform bookkeeping columns to reduce noise
-        bookkeeping = {
-            "id", "submitdate", "lastpage", "startlanguage", "seed", "startdate", "datestamp",
-            "token", "refurl", "ipaddr", "googleid", "session_id", "participant_id",
-            "attribute_1", "attribute_2", "attribute_3"
-        }
-        filtered_unknown = [c for c in unknown_cols if str(c).lower() not in bookkeeping]
-
-        if filtered_unknown:
-            if unknown == "error":
-                raise ValueError("Unmapped columns: " + ", ".join(filtered_unknown))
-            if unknown == "warn":
-                shown = ", ".join(filtered_unknown[:10])
-                more = "" if len(filtered_unknown) <= 10 else f" (+{len(filtered_unknown)-10} more)"
-                conversion_warnings.append(f"Unmapped columns (not in any survey template): {shown}{more}")
-
-    if dry_run:
-        return SurveyConvertResult(
-            tasks_included=sorted(tasks_with_data),
-            unknown_columns=unknown_cols,
-            missing_items_by_task=missing_items_by_task,
-            id_column=resolved_id_col,
-            session_column=resolved_session_col,
-            conversion_warnings=conversion_warnings,
-        )
-
-    # --- Write output dataset ---
-    _ensure_dir(output_root)
-
+def _write_survey_description(output_root: Path, name: str | None, authors: list[str] | None):
+    """Write dataset_description.json if it doesn't exist."""
     ds_desc = output_root / "dataset_description.json"
-    if not ds_desc.exists():
-        dataset_description = {
-            "Name": name or "PRISM Survey Dataset",
-            "BIDSVersion": "1.10.1",
-            "DatasetType": "raw",
-            "Authors": authors or ["PRISM Survey Converter"],
-            "HowToAcknowledge": "Please cite the original survey publication and the PRISM framework.",
-            "GeneratedBy": [
-                {
-                    "Name": "PRISM Survey Converter",
-                    "Version": "1.1.1",
-                    "Description": "Manual survey template mapping and TSV conversion."
-                }
-            ],
-            "HEDVersion": "8.2.0"
-        }
-        _write_json(ds_desc, dataset_description)
+    if ds_desc.exists():
+        return
 
-    # participants.tsv
-    df_part = pd.DataFrame({"participant_id": df[resolved_id_col].astype(str).map(_normalize_sub_id)})
-    extra_part_cols: list[str] = []
+    dataset_description = {
+        "Name": name or "PRISM Survey Dataset",
+        "BIDSVersion": "1.10.1",
+        "DatasetType": "raw",
+        "Authors": authors or ["PRISM Survey Converter"],
+        "HowToAcknowledge": "Please cite the original survey publication and the PRISM framework.",
+        "GeneratedBy": [
+            {
+                "Name": "PRISM Survey Converter",
+                "Version": "1.1.1",
+                "Description": "Manual survey template mapping and TSV conversion."
+            }
+        ],
+        "HEDVersion": "8.2.0"
+    }
+    _write_json(ds_desc, dataset_description)
 
-    for col in participant_columns_present:
-        if col not in {resolved_id_col, resolved_session_col}:
-            extra_part_cols.append(col)
 
-    for candidate in ["age", "sex", "gender"]:
-        col = lower_to_col.get(candidate)
-        if col and col not in {resolved_id_col, resolved_session_col}:
-            extra_part_cols.append(col)
+def _write_survey_participants(
+    *,
+    df,
+    output_root: Path,
+    id_col: str,
+    ses_col: str | None,
+    participant_template: dict | None,
+    normalize_sub_fn,
+    is_missing_fn,
+):
+    """Write participants.tsv and participants.json."""
+    import pandas as pd
+    lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
 
-    if extra_part_cols:
-        # Preserve original order while removing duplicates
-        extra_part_cols = list(dict.fromkeys(extra_part_cols))
+    df_part = pd.DataFrame({"participant_id": df[id_col].astype(str).map(normalize_sub_fn)})
 
-    if extra_part_cols:
-        df_extra = df[[resolved_id_col] + extra_part_cols].copy()
-        for c in extra_part_cols:
-            df_extra[c] = df_extra[c].apply(lambda v: _MISSING_TOKEN if _is_missing_value(v) else v)
-        df_extra[resolved_id_col] = df_extra[resolved_id_col].astype(str).map(_normalize_sub_id)
-        df_extra = df_extra.groupby(resolved_id_col, dropna=False)[extra_part_cols].first().reset_index()
-        df_extra = df_extra.rename(columns={resolved_id_col: "participant_id"})
+    # Determine extra columns from template + standard fallbacks
+    extra_cols: list[str] = []
+    template_cols = set(participant_template.keys()) if participant_template else set()
+    for col in (template_cols | {"age", "sex", "gender", "education", "handedness"}):
+        if col in lower_to_col:
+            actual = lower_to_col[col]
+            if actual not in {id_col, ses_col}:
+                extra_cols.append(actual)
+
+    if extra_cols:
+        extra_cols = list(dict.fromkeys(extra_cols))
+        df_extra = df[[id_col] + extra_cols].copy()
+        for c in extra_cols:
+            df_extra[c] = df_extra[c].apply(lambda v: _MISSING_TOKEN if is_missing_fn(v) else v)
+        df_extra[id_col] = df_extra[id_col].astype(str).map(normalize_sub_fn)
+        df_extra = df_extra.groupby("participant_id", dropna=False)[extra_cols].first().reset_index()
         df_part = df_part.merge(df_extra, on="participant_id", how="left")
 
     df_part = df_part.drop_duplicates(subset=["participant_id"]).reset_index(drop=True)
     df_part.to_csv(output_root / "participants.tsv", sep="\t", index=False)
 
-    # participants.json (column metadata)
-    participants_json_path = output_root / "participants.json"
-    participants_json = _participants_json_from_template(
+    # participants.json
+    parts_json_path = output_root / "participants.json"
+    p_json = _participants_json_from_template(
         columns=[str(c) for c in df_part.columns],
         template=participant_template,
     )
-    _write_json(participants_json_path, participants_json)
+    _write_json(parts_json_path, p_json)
 
-    # inherited sidecars at dataset root (inheritance principle)
-    for task in sorted(tasks_with_data):
-        # Write survey sidecar: task-<name>_survey.json (BIDS-aligned: entity != suffix)
-        sidecar_path = output_root / f"task-{task}_survey.json"
-        if not sidecar_path.exists() or force:
-            localized = _localize_survey_template(templates[task]["json"], language=language)
-            localized = _inject_missing_token(localized, token=_MISSING_TOKEN)
-            if technical_overrides:
-                localized = _apply_technical_overrides(localized, technical_overrides)
-            _write_json(sidecar_path, localized)
 
-    def _normalize_item_value(val) -> str:
-        if _is_missing_value(val):
-            return _MISSING_TOKEN
-        if isinstance(val, bool):
-            return str(val)
-        if isinstance(val, int):
-            return str(int(val))
-        if isinstance(val, float):
-            if val.is_integer():
-                return str(int(val))
-            return str(val)
-        return str(val)
+def _load_and_preprocess_templates(
+    library_dir: Path, canonical_aliases: dict[str, list[str]] | None
+) -> tuple[dict[str, dict], dict[str, str], dict[str, set[str]]]:
+    """Load and prepare survey templates from library."""
+    templates: dict[str, dict] = {}
+    item_to_task: dict[str, str] = {}
+    duplicates: dict[str, set[str]] = {}
 
-    def _try_float(x) -> float | None:
+    for json_path in sorted(library_dir.glob("survey-*.json")):
+        if _is_participant_template(json_path):
+            continue
         try:
-            return float(str(x).strip())
+            sidecar = _read_json(json_path)
         except Exception:
-            return None
+            continue
 
-    def _validate_item_value(item_id: str, val, schema: dict, sub_id: str, task: str):
-        """Validate that a value matches the allowed levels in the schema.
+        task_from_name = json_path.stem.replace("survey-", "")
+        task = str(sidecar.get("Study", {}).get("TaskName") or task_from_name).strip()
+        task_norm = task.lower() or task_from_name.lower()
 
-        When strict_levels=False (used for .lsa inputs), numeric values that fall within a
-        range implied by MinValue/MaxValue (or inferred from numeric Levels keys) are accepted,
-        but a detailed warning is recorded explaining what would have caused a strict error.
-        """
-        if _is_missing_value(val):
-            return  # Missing values are normalized later
+        if canonical_aliases:
+            sidecar = _canonicalize_template_items(sidecar=sidecar, canonical_aliases=canonical_aliases)
 
-        item_schema = schema.get(item_id)
-        if not item_schema or not isinstance(item_schema, dict):
-            return  # No schema to validate against
+        # Pre-process Aliases
+        if "_aliases" not in sidecar:
+            sidecar["_aliases"] = {}
+        if "_reverse_aliases" not in sidecar:
+            sidecar["_reverse_aliases"] = {}
 
-        levels = item_schema.get("Levels")
-        if not levels or not isinstance(levels, dict):
-            return  # No levels defined, accept any value
+        for k, v in list(sidecar.items()):
+            if k in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(v, dict):
+                continue
+            if "Aliases" in v and isinstance(v["Aliases"], list):
+                for alias in v["Aliases"]:
+                    sidecar["_aliases"][alias] = k
+                    sidecar["_reverse_aliases"].setdefault(k, []).append(alias)
+            if "AliasOf" in v:
+                target = v["AliasOf"]
+                sidecar["_aliases"][k] = target
+                sidecar["_reverse_aliases"].setdefault(target, []).append(k)
 
-        # Convert value to string for comparison
-        val_str = _normalize_item_value(val)
-        if val_str == _MISSING_TOKEN:
-            return  # Missing token is always allowed
+        templates[task_norm] = {"path": json_path, "json": sidecar, "task": task_norm}
 
-        # Check if value is in allowed levels
-        allowed_keys = set(str(k) for k in levels.keys())
-        if val_str not in allowed_keys:
-            levels_list = sorted(allowed_keys, key=lambda x: (len(x), x)) if allowed_keys else []
-            allowed_str = ", ".join(levels_list) if levels_list else "(no levels declared)"
+        for k, v in sidecar.items():
+            if k in _NON_ITEM_TOPLEVEL_KEYS:
+                continue
+            if k in item_to_task and item_to_task[k] != task_norm:
+                duplicates.setdefault(k, set()).update({item_to_task[k], task_norm})
+            else:
+                item_to_task[k] = task_norm
+            # Aliases also mapped to task
+            if isinstance(v, dict) and "Aliases" in v and isinstance(v["Aliases"], list):
+                for alias in v["Aliases"]:
+                    if alias in item_to_task and item_to_task[alias] != task_norm:
+                        duplicates.setdefault(alias, set()).update({item_to_task[alias], task_norm})
+                    else:
+                        item_to_task[alias] = task_norm
 
-            val_num = _try_float(val_str)
-            min_val = item_schema.get("MinValue")
-            max_val = item_schema.get("MaxValue")
+    return templates, item_to_task, duplicates
 
-            min_num = _try_float(min_val) if min_val is not None else None
-            max_num = _try_float(max_val) if max_val is not None else None
 
-            # If EXPLICIT range is provided in schema, we allow it even in strict mode
-            # (This supports scales where only anchors are labeled in Levels)
-            if val_num is not None and min_num is not None and max_num is not None:
-                if min_num <= val_num <= max_num:
-                    return
+def _compute_missing_items_report(tasks: set[str], templates: dict, col_to_task: dict) -> dict[str, int]:
+    report: dict[str, int] = {}
+    for task in sorted(tasks):
+        schema = templates[task]["json"]
+        expected = [k for k in schema.keys() if k not in _NON_ITEM_TOPLEVEL_KEYS]
+        present = [c for c, t in col_to_task.items() if t == task]
+        missing = [k for k in expected if k not in present]
+        report[task] = len(missing)
+    return report
 
-            if not strict_levels:
-                # Tolerant mode: accept numeric values within a range implied by the template.
-                if min_num is None or max_num is None:
-                    level_nums = []
-                    for k in levels.keys():
-                        n = _try_float(k)
-                        if n is not None:
-                            level_nums.append(n)
-                    if len(level_nums) >= 2:
-                        min_num = min(level_nums)
-                        max_num = max(level_nums)
 
-                if val_num is not None and min_num is not None and max_num is not None and min_num <= val_num <= max_num:
+def _process_survey_row(
+    *,
+    row,
+    df_cols,
+    task: str,
+    schema: dict,
+    col_to_task: dict,
+    sub_id: str,
+    strict_levels: bool,
+    items_using_tolerance: dict[str, set[str]],
+    is_missing_fn,
+    normalize_val_fn,
+) -> tuple[dict[str, str], int]:
+    """Process a single task's data for one subject/session."""
+    all_items = [k for k in schema.keys() if k not in _NON_ITEM_TOPLEVEL_KEYS]
+    expected = [k for k in all_items if k not in schema.get("_aliases", {})]
+    
+    out: dict[str, str] = {}
+    missing_count = 0
+
+    for item_id in expected:
+        candidates = [item_id] + schema.get("_reverse_aliases", {}).get(item_id, [])
+        found_val = None
+        found_col = None
+
+        for cand in candidates:
+            if cand in df_cols and not is_missing_fn(row[cand]):
+                found_val = row[cand]
+                found_col = cand
+                break
+
+        if found_col:
+            # Inline validation using the helper's logic
+            _validate_survey_item_value(
+                item_id=item_id,
+                val=found_val,
+                item_schema=schema.get(item_id),
+                sub_id=sub_id,
+                task=task,
+                strict_levels=strict_levels,
+                items_using_tolerance=items_using_tolerance,
+                normalize_fn=normalize_val_fn,
+                is_missing_fn=is_missing_fn,
+            )
+            norm = normalize_val_fn(found_val)
+            if norm == _MISSING_TOKEN:
+                missing_count += 1
+            out[item_id] = norm
+        else:
+            out[item_id] = _MISSING_TOKEN
+            missing_count += 1
+            
+    return out, missing_count
+
+
+def _validate_survey_item_value(
+    *,
+    item_id: str,
+    val,
+    item_schema: dict | None,
+    sub_id: str,
+    task: str,
+    strict_levels: bool,
+    items_using_tolerance: dict[str, set[str]],
+    normalize_fn,
+    is_missing_fn,
+):
+    """Internal validation for a single survey item value."""
+    if is_missing_fn(val) or not isinstance(item_schema, dict):
+        return
+
+    levels = item_schema.get("Levels")
+    if not isinstance(levels, dict) or not levels:
+        return
+
+    v_str = normalize_fn(val)
+    if v_str == _MISSING_TOKEN:
+        return
+
+    if v_str in levels:
+        return
+
+    # Try numeric range tolerance
+    try:
+        def _to_float(x):
+            try: return float(str(x).strip())
+            except: return None
+        
+        v_num = _to_float(v_str)
+        min_v = _to_float(item_schema.get("MinValue"))
+        max_v = _to_float(item_schema.get("MaxValue"))
+        
+        if v_num is not None and min_v is not None and max_v is not None:
+            if min_v <= v_num <= max_v:
+                return
+
+        if not strict_levels:
+            l_nums = [n for n in [_to_float(k) for k in levels.keys()] if n is not None]
+            if len(l_nums) >= 2 and v_num is not None:
+                if min(l_nums) <= v_num <= max(l_nums):
                     items_using_tolerance.setdefault(task, set()).add(item_id)
                     return
+    except:
+        pass
 
-            # Strict (or not safely tolerable): error with detailed context.
-            raise ValueError(
-                f"Invalid value '{val}' for question '{item_id}' in {sub_id} task '{task}'. "
-                f"Expected one of: {allowed_str}"
-            )
-
-    missing_cells_by_subject: dict[str, int] = {}
-
-    # per-subject TSVs
-    for _, row in df.iterrows():
-        sub_id = _normalize_sub_id(row[resolved_id_col])
-        if session:
-            ses_id = _normalize_ses_id(session)
-        elif resolved_session_col:
-            ses_id = _normalize_ses_id(row[resolved_session_col])
-        else:
-            ses_id = "ses-1"
-
-        modality_dir = _ensure_dir(output_root / sub_id / ses_id / "survey")
-
-        for task in sorted(tasks_with_data):
-            if selected_tasks is not None and task not in selected_tasks:
-                continue
-
-            schema = templates[task]["json"]
-            all_items = [k for k in schema.keys() if k not in _NON_ITEM_TOPLEVEL_KEYS]
-
-            # In the final dataset, we only want canonical columns, no aliases.
-            expected = [k for k in all_items if k not in schema.get("_aliases", {})]
-
-            present_cols = [c for c, t in col_to_task.items() if t == task]
-            # Also consider columns that are aliases of items in this task
-            for c in df.columns:
-                if c in schema.get("_aliases", {}):
-                    # This column is an alias pointing to a canonical item in this task
-                    present_cols.append(c)
-
-            if not present_cols:
-                continue
-
-            out: dict[str, str] = {}
-            for item_id in expected:
-                # Look for data in the canonical column or any of its aliases defined in the template
-                candidates = [item_id] + schema.get("_reverse_aliases", {}).get(item_id, [])
-                found_val = None
-                found_col = None
-
-                for cand in candidates:
-                    if cand in df.columns and not _is_missing_value(row[cand]):
-                        found_val = row[cand]
-                        found_col = cand
-                        break
-
-                if found_col:
-                    # Validate value using the canonical item's schema
-                    _validate_item_value(item_id, found_val, schema, sub_id, task)
-                    normalized = _normalize_item_value(found_val)
-                    if normalized == _MISSING_TOKEN:
-                        missing_cells_by_subject[sub_id] = missing_cells_by_subject.get(sub_id, 0) + 1
-                    out[item_id] = normalized
-                else:
-                    out[item_id] = _MISSING_TOKEN
-                    missing_cells_by_subject[sub_id] = missing_cells_by_subject.get(sub_id, 0) + 1
-
-            # stable column order
-            with open(modality_dir / f"{sub_id}_{ses_id}_task-{task}_survey.tsv", "w", encoding="utf-8", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=expected, delimiter="\t", lineterminator="\n")
-                writer.writeheader()
-                writer.writerow(out)
-
-    # Add summary for items using numeric range tolerance
-    if items_using_tolerance:
-        for task, item_ids in sorted(items_using_tolerance.items()):
-            sorted_items = sorted(list(item_ids))
-            shown = ", ".join(sorted_items[:10])
-            more = "" if len(sorted_items) <= 10 else f" (+{len(sorted_items)-10} more)"
-            conversion_warnings.append(
-                f"Task '{task}': Numeric values for items [{shown}{more}] were accepted via range tolerance "
-                "because they fall between the defined anchor levels. Consider explicitly adding MinValue/MaxValue "
-                "to the template for strict validation."
-            )
-
-    return SurveyConvertResult(
-        tasks_included=sorted(tasks_with_data),
-        unknown_columns=unknown_cols,
-        missing_items_by_task=missing_items_by_task,
-        id_column=resolved_id_col,
-        session_column=resolved_session_col,
-        missing_cells_by_subject=missing_cells_by_subject,
-        missing_value_token=_MISSING_TOKEN,
-        conversion_warnings=conversion_warnings,
-    )
-
-
-def _localize_survey_template(template: dict, *, language: str | None) -> dict:
-    """Convert i18n-capable survey templates into schema-valid single-language sidecars.
-
-    The stable survey schema expects:
-    - item `Description` as string
-    - item `Levels` values as string
-    - `Study.OriginalName` as string
-    and does not allow arbitrary top-level keys like `I18n`.
-
-    If `language` is None or "auto", uses `I18n.DefaultLanguage` if present, else `Technical.Language`.
-    """
-
-    out = deepcopy(template)
-
-    i18n = out.get("I18n")
-    default_lang = None
-    if isinstance(i18n, dict):
-        v = i18n.get("DefaultLanguage")
-        if isinstance(v, str) and v.strip():
-            default_lang = v.strip()
-
-    tech_lang = None
-    if isinstance(out.get("Technical"), dict):
-        v = out["Technical"].get("Language")
-        if isinstance(v, str) and v.strip():
-            tech_lang = v.strip()
-
-    chosen = (language or "").strip() or None
-    if chosen and chosen.lower() == "auto":
-        chosen = None
-    chosen = chosen or default_lang or tech_lang or "en"
-
-    # Drop top-level keys that are not survey items / not allowed by schema.
-    # We keep Technical, Study, Metadata. Everything else in _NON_ITEM_TOPLEVEL_KEYS is internal/template-only.
-    out.pop("I18n", None)
-    out.pop("LimeSurvey", None)
-    out.pop("_aliases", None)
-    out.pop("_reverse_aliases", None)
-
-    # Ensure critical blocks exist for schema validity
-    if "Technical" not in out:
-        out["Technical"] = {"StimulusType": "Questionnaire", "FileFormat": "tsv"}
-    if "Study" not in out:
-        out["Study"] = {"TaskName": out.get("Technical", {}).get("TaskName") or "survey"}
-    if "Metadata" not in out:
-        out["Metadata"] = {"SchemaVersion": "1.1.1", "Creator": "prism-survey-converter"}
-
-    def pick_lang(val):
-        if isinstance(val, dict):
-            preferred = val.get(chosen)
-            if isinstance(preferred, str) and preferred != "":
-                return preferred
-            if default_lang:
-                fallback = val.get(default_lang)
-                if isinstance(fallback, str) and fallback != "":
-                    return fallback
-            for _, v in val.items():
-                if isinstance(v, str) and v != "":
-                    return v
-            return ""
-        if val is None:
-            return ""
-        return str(val)
-
-    # Technical.Language must be a string.
-    if isinstance(out.get("Technical"), dict):
-        out["Technical"]["Language"] = chosen
-
-    # Study fields that are often i18n dicts in templates.
-    if isinstance(out.get("Study"), dict):
-        for key in ("OriginalName", "Version", "Description"):
-            if key in out["Study"]:
-                out["Study"][key] = pick_lang(out["Study"][key])
-
-    # Item fields
-    for key, item in list(out.items()):
-        if key in _NON_ITEM_TOPLEVEL_KEYS:
-            continue
-        if not isinstance(item, dict):
-            continue
-
-        # If this item is an alias, we don't include it in the final dataset sidecar.
-        # Its data was mapped to the canonical item during conversion.
-        if "AliasOf" in item:
-            out.pop(key)
-            continue
-
-        if "Description" in item:
-            item["Description"] = pick_lang(item.get("Description"))
-
-        levels = item.get("Levels")
-        if isinstance(levels, dict):
-            new_levels: dict[str, str] = {}
-            for lvl_key, lvl_val in levels.items():
-                new_levels[str(lvl_key)] = pick_lang(lvl_val)
-            item["Levels"] = new_levels
-
-        out[key] = item
-
-    return out
-
-
-def _inject_missing_token(sidecar: dict, *, token: str) -> dict:
-    """Ensure every item Levels includes the missing-value token."""
-    if not isinstance(sidecar, dict):
-        return sidecar
-
-    for key, item in sidecar.items():
-        if key in _NON_ITEM_TOPLEVEL_KEYS:
-            continue
-        if not isinstance(item, dict):
-            continue
-
-        levels = item.get("Levels")
-        if isinstance(levels, dict):
-            if token not in levels:
-                levels[token] = "Missing/Not provided"
-                item["Levels"] = levels
-        else:
-            item["Levels"] = {token: "Missing/Not provided"}
-
-    return sidecar
-
-    return out
+    allowed = ", ".join(sorted(levels.keys()))
+    raise ValueError(f"Invalid value '{val}' for '{item_id}' (Sub: {sub_id}, Task: {task}). Expected: {allowed}")
 
 
 def _read_alias_rows(path: Path) -> list[list[str]]:
@@ -1378,3 +1308,4 @@ def infer_lsa_metadata(input_path: str | Path) -> dict:
         "software_platform": "LimeSurvey",
         "software_version": software_version,
     }
+
