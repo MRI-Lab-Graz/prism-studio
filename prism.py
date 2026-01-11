@@ -13,7 +13,7 @@ import argparse
 # Check if running inside the venv (skip for frozen/packaged apps)
 venv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".venv")
 if not getattr(sys, "frozen", False) and not sys.prefix.startswith(venv_path):
-    print("❌ Error: You are not running inside the prism virtual environment!")
+    print("[ERROR] Error: You are not running inside the prism virtual environment!")
     print("   Please activate the venv first:")
     if os.name == "nt":  # Windows
         print(f"     {venv_path}\\Scripts\\activate")
@@ -45,7 +45,7 @@ try:
         list_plugins,
     )
 except ImportError as e:
-    print(f"❌ Import error: {e}")
+    print(f"[ERROR] Import error: {e}")
     print("Make sure you're running from the project root directory")
     sys.exit(1)
 
@@ -205,7 +205,7 @@ Examples:
         plugin_path = os.path.join(args.dataset, "validators", f"{plugin_name}.py")
 
         if os.path.exists(plugin_path):
-            print(f"❌ Plugin already exists: {plugin_path}")
+            print(f"[ERROR] Plugin already exists: {plugin_path}")
             sys.exit(1)
 
         generate_plugin_template(
@@ -213,7 +213,7 @@ Examples:
             name=plugin_name,
             description=f"Custom validator: {plugin_name}",
         )
-        print(f"✅ Created plugin template: {plugin_path}")
+        print(f"[OK] Created plugin template: {plugin_path}")
         print("   Edit the validate() function to add your checks.")
         return
 
@@ -234,7 +234,7 @@ Examples:
         parser.error("Dataset path is required")
 
     if not os.path.exists(args.dataset):
-        print(f"❌ Dataset directory not found: {args.dataset}")
+        print(f"[ERROR] Dataset directory not found: {args.dataset}")
         sys.exit(1)
 
     # Handle --fix mode
@@ -243,10 +243,10 @@ Examples:
         fixes = fixer.analyze()
 
         if not fixes:
-            print("✅ No auto-fixable issues found!")
+            print("[OK] No auto-fixable issues found!")
             sys.exit(0)
 
-        print(f"🔧 Found {len(fixes)} fixable issue(s):")
+        print(f"[FIX] Found {len(fixes)} fixable issue(s):")
         print("=" * 60)
 
         for i, fix in enumerate(fixes, 1):
@@ -257,7 +257,7 @@ Examples:
         print("=" * 60)
 
         if args.dry_run:
-            print("🔍 Dry run - no changes made.")
+            print("[CHECK] Dry run - no changes made.")
             print("   Run with --fix to apply these changes.")
         else:
             # Apply fixes (skip optional ones unless they're the only ones)
@@ -265,11 +265,11 @@ Examples:
             to_apply = non_optional if non_optional else fixes
 
             applied = fixer.apply_fixes([f.issue_code for f in to_apply])
-            print(f"\n✅ Applied {len(applied)} fix(es):")
+            print(f"\n[OK] Applied {len(applied)} fix(es):")
             for fix in applied:
                 print(f"   • {fix.description}")
 
-            print("\n💡 Re-run validation to check for remaining issues.")
+            print("\n[TIP] Re-run validation to check for remaining issues.")
 
         sys.exit(0)
 
@@ -284,7 +284,7 @@ Examples:
     machine_output = json_output or format_output_mode
 
     if config_path and not machine_output:
-        print(f"📄 Using config: {os.path.basename(config_path)}")
+        print(f"[FILE] Using config: {os.path.basename(config_path)}")
 
     # Load plugins (unless disabled)
     plugin_manager = None
@@ -294,16 +294,16 @@ Examples:
         plugin_manager.discover_local_plugins()
 
         if plugin_manager.plugins and not machine_output:
-            print(f"🔌 Loaded {len(plugin_manager.plugins)} plugin(s)")
+            print(f"[PLUGIN] Loaded {len(plugin_manager.plugins)} plugin(s)")
 
     # Use config values (CLI args already merged and take precedence)
     schema_version = config.schema_version
     run_bids = config.run_bids
 
     if not machine_output:
-        print(f"🔍 Validating dataset: {args.dataset}")
+        print(f"[CHECK] Validating dataset: {args.dataset}")
         if schema_version != "stable":
-            print(f"📋 Using schema version: {schema_version}")
+            print(f"[INFO] Using schema version: {schema_version}")
 
     try:
         issues, stats = validate_dataset(
@@ -324,7 +324,7 @@ Examples:
         # Run plugins
         if plugin_manager and plugin_manager.plugins:
             if not machine_output:
-                print(f"🔌 Running {len(plugin_manager.plugins)} plugin(s)...")
+                print(f"[PLUGIN] Running {len(plugin_manager.plugins)} plugin(s)...")
 
             plugin_context = create_context(
                 args.dataset,
@@ -346,7 +346,7 @@ Examples:
                 with open(args.output, "w") as f:
                     f.write(content)
                 if not machine_output:
-                    print(f"📄 Output written to: {args.output}")
+                    print(f"[FILE] Output written to: {args.output}")
             else:
                 print(content)
 
@@ -387,7 +387,7 @@ Examples:
         sys.exit(1 if error_count > 0 else 0)
 
     except Exception as e:
-        print(f"❌ Validation failed with error: {e}")
+        print(f"[ERROR] Validation failed with error: {e}")
         if args.verbose:
             import traceback
 

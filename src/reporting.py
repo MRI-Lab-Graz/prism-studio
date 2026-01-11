@@ -36,18 +36,18 @@ def get_entity_description(dataset_path, prefix, name, stats=None):
 def print_dataset_summary(dataset_path, stats):
     """Print a comprehensive dataset summary"""
     print("\n" + "=" * 60)
-    print("🗂️  DATASET SUMMARY")
+    print("[SUMMARY] DATASET SUMMARY")
     print("=" * 60)
 
     # Dataset info
     dataset_name = os.path.basename(os.path.abspath(dataset_path))
-    print(f"📁 Dataset: {dataset_name}")
+    print(f"[DIR] Dataset: {dataset_name}")
 
     # Subject and session counts
     num_subjects = len(stats.subjects)
     has_sessions = len(stats.sessions) > 0
 
-    print(f"👥 Subjects: {num_subjects}")
+    print(f"[USERS] Subjects: {num_subjects}")
 
     if has_sessions:
         # stats.sessions is a list of subject/session combinations like "sub-01/ses-01".
@@ -62,7 +62,7 @@ def print_dataset_summary(dataset_path, stats):
             sessions_per_subject.setdefault(subj, set()).add(ses)
             unique_session_labels.add(ses)
 
-        print(f"📋 Sessions: {len(unique_session_labels)} (unique labels)")
+        print(f"[LIST] Sessions: {len(unique_session_labels)} (unique labels)")
 
         avg_sessions = (
             sum(len(v) for v in sessions_per_subject.values())
@@ -70,12 +70,12 @@ def print_dataset_summary(dataset_path, stats):
             if sessions_per_subject
             else 0
         )
-        print(f"📊 Sessions per subject: {avg_sessions:.1f} (avg)")
+        print(f"[STATS] Sessions per subject: {avg_sessions:.1f} (avg)")
     else:
-        print("📋 Sessions: No session structure detected")
+        print("[LIST] Sessions: No session structure detected")
 
     # Modality breakdown
-    print(f"\n🎯 MODALITIES ({len(stats.modalities)} found):")
+    print(f"\n[TARGET] MODALITIES ({len(stats.modalities)} found):")
     if stats.modalities:
         for modality, count in sorted(stats.modalities.items()):
             print(f"  • {modality}: {count} files")
@@ -86,7 +86,7 @@ def print_dataset_summary(dataset_path, stats):
     pure_tasks = {
         t for t in stats.tasks if t not in stats.surveys and t not in stats.biometrics
     }
-    print(f"\n📝 TASKS ({len(pure_tasks)} found):")
+    print(f"\n[TASKS] TASKS ({len(pure_tasks)} found):")
     if pure_tasks:
         for task in sorted(pure_tasks):
             desc = get_entity_description(dataset_path, "task", task, stats)
@@ -98,7 +98,7 @@ def print_dataset_summary(dataset_path, stats):
         print("  No tasks detected")
 
     # Survey breakdown
-    print(f"\n📋 SURVEYS ({len(stats.surveys)} found):")
+    print(f"\n[SURVEYS] SURVEYS ({len(stats.surveys)} found):")
     if stats.surveys:
         for survey in sorted(stats.surveys):
             desc = get_entity_description(dataset_path, "survey", survey, stats)
@@ -110,7 +110,7 @@ def print_dataset_summary(dataset_path, stats):
         print("  No surveys detected")
 
     # Biometrics breakdown
-    print(f"\n🧬 BIOMETRICS ({len(stats.biometrics)} found):")
+    print(f"\n[BIO] BIOMETRICS ({len(stats.biometrics)} found):")
     if stats.biometrics:
         for biometric in sorted(stats.biometrics):
             desc = get_entity_description(dataset_path, "biometrics", biometric, stats)
@@ -354,7 +354,7 @@ def generate_methods_text(
     if output_file:
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(content)
-        print(f"✅ Methods boilerplate written to {output_file}")
+        print(f"[OK] Methods boilerplate written to {output_file}")
         
         # Also generate HTML version
         try:
@@ -422,9 +422,9 @@ def generate_methods_text(
             
             with open(html_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(html_content))
-            print(f"✅ Methods boilerplate (HTML) written to {html_path}")
+            print(f"[OK] Methods boilerplate (HTML) written to {html_path}")
         except Exception as e:
-            print(f"⚠️ Could not generate HTML boilerplate: {e}")
+            print(f"[WARN] Could not generate HTML boilerplate: {e}")
     else:
         print(content)
 
@@ -435,9 +435,9 @@ def print_validation_results(problems, show_bids_warnings=True):
     """Print validation results with proper categorization"""
     if not problems:
         print("\n" + "=" * 60)
-        print("✅ VALIDATION RESULTS")
+        print("[OK] VALIDATION RESULTS")
         print("=" * 60)
-        print("🎉 No issues found! Dataset is valid.")
+        print("[SUCCESS] No issues found! Dataset is valid.")
         return
 
     # Normalize problems to (level, message) pairs.
@@ -480,34 +480,34 @@ def print_validation_results(problems, show_bids_warnings=True):
     prism_infos = [i for i in infos if not i.startswith("[BIDS]")]
 
     print("\n" + "=" * 60)
-    print("🔍 VALIDATION RESULTS")
+    print("[SEARCH] VALIDATION RESULTS")
     print("=" * 60)
 
     # --- PRISM ISSUES ---
     if prism_errors or prism_warnings or prism_infos:
-        print("\n🔸 PRISM VALIDATOR REPORT:")
+        print("\n[PRISM] PRISM VALIDATOR REPORT:")
 
         if prism_errors:
-            print(f"\n\033[31m  🔴 ERRORS ({len(prism_errors)}):\033[0m")
+            print(f"\n\033[31m  [ERROR] ERRORS ({len(prism_errors)}):\033[0m")
             for i, error in enumerate(prism_errors, 1):
                 print(f"    \033[31m{i:2d}. {error}\033[0m")
 
         if prism_warnings:
-            print(f"\n\033[33m  🟡 WARNINGS ({len(prism_warnings)}):\033[0m")
+            print(f"\n\033[33m  [WARN] WARNINGS ({len(prism_warnings)}):\033[0m")
             for i, warning in enumerate(prism_warnings, 1):
                 print(f"    \033[33m{i:2d}. {warning}\033[0m")
 
         if prism_infos:
-            print(f"\n\033[34m  🔵 INFO ({len(prism_infos)}):\033[0m")
+            print(f"\n\033[34m  [INFO] INFO ({len(prism_infos)}):\033[0m")
             for i, info in enumerate(prism_infos, 1):
                 print(f"    \033[34m{i:2d}. {info}\033[0m")
 
     # --- BIDS ISSUES ---
     if bids_errors or bids_warnings or bids_infos:
-        print("\n🔹 BIDS VALIDATOR REPORT:")
+        print("\n[BIDS] BIDS VALIDATOR REPORT:")
 
         if bids_errors:
-            print(f"\n\033[31m  🔴 ERRORS ({len(bids_errors)}):\033[0m")
+            print(f"\n\033[31m  [ERROR] ERRORS ({len(bids_errors)}):\033[0m")
             for i, error in enumerate(bids_errors, 1):
                 # Strip [BIDS] prefix for cleaner output since we are in BIDS section
                 clean_error = error.replace("[BIDS] ", "", 1)
@@ -515,27 +515,27 @@ def print_validation_results(problems, show_bids_warnings=True):
 
         if bids_warnings:
             if show_bids_warnings:
-                print(f"\n\033[33m  🟡 WARNINGS ({len(bids_warnings)}):\033[0m")
+                print(f"\n\033[33m  [WARN] WARNINGS ({len(bids_warnings)}):\033[0m")
                 for i, warning in enumerate(bids_warnings, 1):
                     clean_warning = warning.replace("[BIDS] ", "", 1)
                     print(f"    \033[33m{i:2d}. {clean_warning}\033[0m")
             else:
                 print(
-                    f"\n\033[33m  🟡 WARNINGS ({len(bids_warnings)}): [Hidden] Use --bids-warnings to view\033[0m"
+                    f"\n\033[33m  [WARN] WARNINGS ({len(bids_warnings)}): [Hidden] Use --bids-warnings to view\033[0m"
                 )
 
         if bids_infos:
-            print(f"\n\033[34m  🔵 INFO ({len(bids_infos)}):\033[0m")
+            print(f"\n\033[34m  [INFO] INFO ({len(bids_infos)}):\033[0m")
             for i, info in enumerate(bids_infos, 1):
                 clean_info = info.replace("[BIDS] ", "", 1)
                 print(f"    \033[34m{i:2d}. {clean_info}\033[0m")
 
     # Summary line
     print(
-        f"\n📊 SUMMARY: {len(errors)} errors, {len(warnings)} warnings, {len(infos)} info"
+        f"\n[STATS] SUMMARY: {len(errors)} errors, {len(warnings)} warnings, {len(infos)} info"
     )
 
     if errors:
-        print("❌ Dataset validation failed due to errors.")
+        print("[ERROR] Dataset validation failed due to errors.")
     else:
-        print("⚠️  Dataset has warnings but no critical errors.")
+        print("[WARN] Dataset has warnings but no critical errors.")

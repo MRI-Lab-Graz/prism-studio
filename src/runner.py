@@ -72,9 +72,9 @@ def validate_dataset(
 
     if verbose:
         version_tag = schema_version or "stable"
-        print(f"📋 Loaded {len(schemas)} schemas (version: {version_tag})")
-        print(f"📁 Validating PRISM modalities: {list(MODALITY_PATTERNS.keys())}")
-        print(f"📁 Pass-through BIDS modalities: anat, func, fmap, dwi, eeg (use BIDS validator for these)")
+        print(f"[INFO] Loaded {len(schemas)} schemas (version: {version_tag})")
+        print(f"[DIR] Validating PRISM modalities: {list(MODALITY_PATTERNS.keys())}")
+        print(f"[DIR] Pass-through BIDS modalities: anat, func, fmap, dwi, eeg (use BIDS validator for these)")
 
 
     # Initialize validator
@@ -137,12 +137,12 @@ def validate_dataset(
             root_dir, list(MODALITY_PATTERNS.keys())
         )
         if added_rules and verbose:
-            print("ℹ️  Updated .bidsignore for BIDS-App compatibility:")
+            print("[INFO] Updated .bidsignore for BIDS-App compatibility:")
             for rule in added_rules:
                 print(f"   + {rule}")
     except Exception as e:
         if verbose:
-            print(f"⚠️  Failed to update .bidsignore: {e}")
+            print(f"[WARN]️  Failed to update .bidsignore: {e}")
 
     report_progress(15, 100, "Scanning subjects...")
 
@@ -152,7 +152,7 @@ def validate_dataset(
 
     if verbose and len(all_items) != len(filtered_items):
         ignored_count = len(all_items) - len(filtered_items)
-        print(f"🗑️  Ignored {ignored_count} system files (.DS_Store, Thumbs.db, etc.)")
+        print(f"[CLEAN] Ignored {ignored_count} system files (.DS_Store, Thumbs.db, etc.)")
 
     # Find all subject directories
     subject_dirs = [

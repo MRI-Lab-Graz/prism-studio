@@ -310,7 +310,7 @@ def to_markdown(
     lines.append("")
     lines.append("| Metric | Value |")
     lines.append("|--------|-------|")
-    lines.append(f"| Status | {'✅ Valid' if is_valid else '❌ Invalid'} |")
+    lines.append(f"| Status | {'[OK] Valid' if is_valid else '[ERROR] Invalid'} |")
     lines.append(f"| Errors | {summary['errors']} |")
     lines.append(f"| Warnings | {summary['warnings']} |")
 
@@ -349,7 +349,7 @@ def to_markdown(
                 lines.append(f"- ... and {len(warnings) - 20} more warnings")
             lines.append("")
     else:
-        lines.append("## ✅ No Issues Found")
+        lines.append("## [OK] No Issues Found")
         lines.append("")
         lines.append("The dataset passed all validation checks.")
 

@@ -525,9 +525,9 @@ def api_recipes_surveys():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-    msg = f"✅ Data processing complete: wrote {result.written_files} file(s)"
+    msg = f"[OK] Data processing complete: wrote {result.written_files} file(s)"
     if result.flat_out_path:
-        msg = f"✅ Data processing complete: wrote {result.flat_out_path}"
+        msg = f"[OK] Data processing complete: wrote {result.flat_out_path}"
     if result.fallback_note:
         msg += f" (note: {result.fallback_note})"
     

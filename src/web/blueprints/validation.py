@@ -233,7 +233,7 @@ def show_results(result_id):
                 "sidecar_files": getattr(stats_obj, "sidecar_files", 0),
             }
         except Exception as stats_error:
-            print(f"⚠️  Failed to prepare dataset stats for display: {stats_error}")
+            print(f"[WARN]️  Failed to prepare dataset stats for display: {stats_error}")
             dataset_stats = None
     
     if not dataset_stats:

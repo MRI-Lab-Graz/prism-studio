@@ -267,7 +267,7 @@ def process_folder_upload(
 
     prefix_to_strip = detect_dataset_prefix(candidate_paths)
     if prefix_to_strip:
-        print(f"📁 [UPLOAD] Stripping leading folder: {prefix_to_strip}")
+        print(f"[DIR] [UPLOAD] Stripping leading folder: {prefix_to_strip}")
 
     # Track uploaded file paths
     uploaded_paths: Set[str] = set()
@@ -347,7 +347,7 @@ def process_folder_upload(
         json.dump(manifest, f, indent=2)
 
     print(
-        f"📁 Processed {processed_count} metadata files, created {skipped_count} placeholders"
+        f"[DIR] Processed {processed_count} metadata files, created {skipped_count} placeholders"
     )
 
     return find_dataset_root(dataset_root)
@@ -384,7 +384,7 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
     with zipfile.ZipFile(file_path, "r") as zip_ref:
         all_files = zip_ref.namelist()
         if not all_files:
-            print(f"⚠️  [UPLOAD] ZIP file {filename} is empty!")
+            print(f"[WARN] [UPLOAD] ZIP file {filename} is empty!")
             
         for zip_info in all_files:
             # Skip directories
@@ -441,10 +441,10 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
                 )
 
     if processed_count == 0 and skipped_count == 0:
-        print(f"⚠️  [UPLOAD] No files were extracted from {filename}. ZIP contents: {all_files[:10]}...")
-    
+        print(f"[WARN] [UPLOAD] No files were extracted from {filename}. ZIP contents: {all_files[:10]}...")
+
     print(
-        f"📦 Extracted {processed_count} metadata files, skipped {skipped_count} data files"
+        f"[ZIP] Extracted {processed_count} metadata files, skipped {skipped_count} data files"
     )
 
     dataset_root = find_dataset_root(temp_dir)

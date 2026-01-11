@@ -150,7 +150,7 @@ def run_validation(
 
             return web_issues, stats
         except Exception as e:
-            print(f"⚠️  Error running core validator directly: {e}")
+            print(f"[WARN] Error running core validator directly: {e}")
             # Fall through to subprocess
 
     # Fallback to subprocess
@@ -191,7 +191,7 @@ def _run_validator_subprocess(
         else:
             error_msg = result.stderr or "Validation failed"
             print(
-                f"❌ Validator subprocess failed (code {result.returncode}): {error_msg}"
+                f"[ERROR] Validator subprocess failed (code {result.returncode}): {error_msg}"
             )
             stats = SimpleStats()
             issues = [
@@ -201,14 +201,14 @@ def _run_validator_subprocess(
 
     except FileNotFoundError:
         error_msg = "prism.py script not found"
-        print(f"❌ {error_msg}")
+        print(f"[ERROR] {error_msg}")
         stats = SimpleStats()
         issues = [("ERROR", error_msg, dataset_path)]
         return issues, stats
 
     except Exception as e:
         error_msg = f"Failed to run validator: {str(e)}"
-        print(f"❌ {error_msg}")
+        print(f"[ERROR] {error_msg}")
         stats = SimpleStats()
         issues = [("ERROR", error_msg, dataset_path)]
         return issues, stats
@@ -231,7 +231,7 @@ def _parse_subprocess_output(result, dataset_path: str) -> Tuple[List, SimpleSta
             match = re.search(r"Total files:\s*(\d+)", clean_line)
             if match:
                 stats.total_files = int(match.group(1))
-        elif "📊 Found" in clean_line and "files" in clean_line:
+        elif "[STATS] Found" in clean_line and "files" in clean_line:
             match = re.search(r"Found (\d+) files", clean_line)
             if match:
                 stats.total_files = int(match.group(1))
@@ -250,42 +250,42 @@ def _parse_subprocess_output(result, dataset_path: str) -> Tuple[List, SimpleSta
                 stats.sessions = {f"ses-{i:02d}" for i in range(1, count + 1)}
         
         # Parse subject count from summary
-        elif "👥 Subjects:" in clean_line:
+        elif "[USERS] Subjects:" in clean_line:
             match = re.search(r"Subjects:\s*(\d+)", clean_line)
             if match:
                 count = int(match.group(1))
                 stats.subjects = {f"sub-{i:02d}" for i in range(1, count + 1)}
         
         # Parse session count from summary
-        elif "📋 Sessions:" in clean_line:
+        elif "[LIST] Sessions:" in clean_line:
             match = re.search(r"Sessions:\s*(\d+)", clean_line)
             if match:
                 count = int(match.group(1))
                 stats.sessions = {f"ses-{i:02d}" for i in range(1, count + 1)}
 
         # Parse specific error messages (bullet style)
-        elif clean_line.startswith("•") and ("❌" in stdout or "ERROR" in stdout):
+        elif clean_line.startswith("•") and ("[ERROR]" in stdout or "ERROR" in stdout):
             issues.append(("ERROR", clean_line.replace("•", "").strip(), dataset_path))
         # Parse numbered error messages
         elif re.search(r"^\d+\.\s+", clean_line) and (
-            "❌" in stdout or "ERROR" in stdout
+            "[ERROR]" in stdout or "ERROR" in stdout
         ):
             msg = re.sub(r"^\d+\.\s+", "", clean_line).strip()
             issues.append(("ERROR", msg, dataset_path))
-        elif clean_line.startswith("•") and ("⚠️" in stdout or "WARNING" in stdout):
+        elif clean_line.startswith("•") and ("[WARN]" in stdout or "WARNING" in stdout):
             issues.append(
                 ("WARNING", clean_line.replace("•", "").strip(), dataset_path)
             )
         elif re.search(r"^\d+\.\s+", clean_line) and (
-            "⚠️" in stdout or "WARNING" in stdout
+            "[WARN]" in stdout or "WARNING" in stdout
         ):
             msg = re.sub(r"^\d+\.\s+", "", clean_line).strip()
             issues.append(("WARNING", msg, dataset_path))
 
     # Add generic error if validation failed but no specific issues found
-    if "✅ Dataset is valid!" in stdout:
+    if "[OK] Dataset is valid!" in stdout or "[SUCCESS] No issues" in stdout:
         pass  # No issues
-    elif "❌ Dataset has validation errors" in stdout:
+    elif "[ERROR] Dataset" in stdout:
         if not issues:
             issues.append(
                 (
