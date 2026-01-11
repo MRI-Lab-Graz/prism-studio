@@ -88,6 +88,9 @@ def validate_dataset(
         if run_prism:
             issues.append(("ERROR", "Missing dataset_description.json", dataset_desc_path))
     else:
+        # Register file in stats
+        stats.register_file("dataset_description.json")
+        
         # Validate dataset_description.json against the dataset_description schema (if present)
         try:
             with open(dataset_desc_path, "r", encoding="utf-8") as f:
@@ -110,6 +113,11 @@ def validate_dataset(
         except Exception as e:
             if run_prism:
                 issues.append(("ERROR", f"Error processing dataset_description.json: {e}", dataset_desc_path))
+
+    # Check for other top-level files
+    for top_file in ["participants.tsv", "participants.json", "README", "README.md", "CHANGES"]:
+        if os.path.exists(os.path.join(root_dir, top_file)):
+            stats.register_file(top_file)
 
     # Check for recipes/derivatives (BIDS-derivatives style)
     for folder_name in ["recipes", "derivatives"]:

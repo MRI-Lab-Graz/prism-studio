@@ -20,7 +20,8 @@ BIDS defines:
 
 ### PRISM (extensions)
 PRISM adds:
-- additional modality-specific schemas
+- additional modality-specific schemas (e.g., `survey`, `biometrics`)
+- **Mandatory Extensions to BIDS Core**: For certain standard BIDS modalities (like `events`), PRISM mandates additional metadata blocks (e.g., `StimulusPresentation`) that are optional or unspecified in standard BIDS.
 - stricter sidecar requirements for certain data types
 - optional internationalization (i18n) support for variable-level descriptions
 

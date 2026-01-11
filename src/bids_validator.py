@@ -153,8 +153,20 @@ def run_bids_validator(
 
                     if location:
                         msg += f"\n    Location: {location}"
-
-                    issues.append((level, msg))
+                    
+                    # Try to extract a specific file path from the location
+                    issue_file = None
+                    if location:
+                        # Deno location starts with /
+                        if location.startswith("/"):
+                            issue_file = os.path.join(root_dir, location.lstrip("/"))
+                        else:
+                            issue_file = os.path.join(root_dir, location)
+                    
+                    if issue_file:
+                        issues.append((level, msg, issue_file))
+                    else:
+                        issues.append((level, msg))
 
                 return issues
 
@@ -235,9 +247,16 @@ def run_bids_validator(
                                 continue
 
                         msg = f"[BIDS] {issue.get('reason')} ({key})"
-                        for file_path in filtered_files:
-                            msg += f"\n    File: {file_path}"
-                        issues.append((level, msg))
+                        first_file = None
+                        for f_path in filtered_files:
+                            msg += f"\n    File: {f_path}"
+                            if not first_file:
+                                first_file = os.path.join(root_dir, f_path.lstrip("/"))
+                        
+                        if first_file:
+                            issues.append((level, msg, first_file))
+                        else:
+                            issues.append((level, msg))
 
             except json.JSONDecodeError:
                 if verbose:

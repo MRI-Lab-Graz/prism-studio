@@ -13,6 +13,8 @@ class DatasetStats:
         self.sessions = set()
         self.modalities = {}  # modality -> file count
         self.tasks = set()
+        self.func_tasks = set()
+        self.eeg_tasks = set()
         self.surveys = set()
         self.biometrics = set()
         self.eyetracking = set()
@@ -23,18 +25,32 @@ class DatasetStats:
         # For consistency checking
         self.subject_data = {}  # subject_id -> {sessions: {}, modalities: set(), tasks: set()}
 
+    def register_file(self, filename):
+        """Register a generic file (non-subject specific)"""
+        self.total_files += 1
+        if filename.endswith(".json"):
+            self.sidecar_files += 1
+
     def add_file(self, subject_id, session_id, modality, task, filename):
         """Add a file to the statistics"""
-        self.subjects.add(subject_id)
+        if subject_id:
+            self.subjects.add(subject_id)
         if session_id:
             self.sessions.add(f"{subject_id}/{session_id}")
-        if modality not in self.modalities:
-            self.modalities[modality] = 0
-        self.modalities[modality] += 1
+        if modality:
+            if modality not in self.modalities:
+                self.modalities[modality] = 0
+            self.modalities[modality] += 1
         
         # Only add to tasks if it's not a modality that has its own specific category
-        if task and modality not in ["survey", "biometrics", "eyetracking", "physio", "physiological"]:
+        if task and modality not in ["survey", "biometrics", "eyetracking", "physio", "physiological", "func", "eeg"]:
             self.tasks.add(task)
+
+        if modality == "func" and task:
+            self.func_tasks.add(task)
+        
+        if modality == "eeg" and task:
+            self.eeg_tasks.add(task)
 
         if modality == "survey":
             if task:

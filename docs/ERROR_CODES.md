@@ -146,9 +146,20 @@ sub-01/survey/sub-01_task-bdi_survey.json    # Required sidecar (auto-created by
 
 ### PRISM301 - Missing required field
 
-**Description:** A required field is missing from the sidecar.
+**Description:** A required field is missing from the sidecar according to the loaded PRISM schema. This includes both standard BIDS requirements and **PRISM-specific mandatory extensions** (e.g., `StimulusPresentation` for events).
 
-**Fix Hint:** Add the missing field to the JSON sidecar.
+**Fix Hint:** Add the missing property to the JSON sidecar. PRISM schemas often require additional metadata (like software details or hardware settings) to ensure experimental reproducibility beyond the core BIDS standard.
+
+**Example (PRISM Extension):**
+For `_events.json` files, PRISM requires the `StimulusPresentation` object:
+```json
+{
+    "StimulusPresentation": {
+        "SoftwareName": "PsychoPy",
+        "SoftwareVersion": "2023.2.3"
+    }
+}
+```
 
 ---
 

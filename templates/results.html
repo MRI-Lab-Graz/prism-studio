@@ -452,6 +452,14 @@
                                 {% for b in dataset_stats.biometrics %}
                                 <span class="badge bg-dark x-small">{{ b }}</span>
                                 {% endfor %}
+                            {% elif modality == 'func' and dataset_stats.func_tasks %}
+                                {% for t in dataset_stats.func_tasks %}
+                                <span class="badge bg-info text-dark x-small">{{ t }}</span>
+                                {% endfor %}
+                            {% elif modality == 'eeg' and dataset_stats.eeg_tasks %}
+                                {% for t in dataset_stats.eeg_tasks %}
+                                <span class="badge bg-info text-dark x-small">{{ t }}</span>
+                                {% endfor %}
                             {% endif %}
                         </div>
                     </div>

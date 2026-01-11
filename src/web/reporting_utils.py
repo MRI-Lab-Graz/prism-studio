@@ -162,7 +162,14 @@ def format_validation_results(
 
     total_errors = sum(group["count"] for group in error_groups.values())
     total_warnings = sum(group["count"] for group in warning_groups.values())
-    invalid_count = len({f["path"] for f in invalid_files if f.get("path")})
+    
+    # Calculate invalid_count excluding the dataset root itself (global errors)
+    dataset_root_name = os.path.basename(dataset_path) if dataset_path else ""
+    invalid_file_paths = {f["path"] for f in invalid_files if f.get("path")}
+    if dataset_root_name in invalid_file_paths:
+        invalid_file_paths.remove(dataset_root_name)
+    
+    invalid_count = len(invalid_file_paths)
     valid_count = max(0, (stats_total or total_files) - invalid_count)
     is_valid = total_errors == 0 and total_files > 0
 
@@ -187,6 +194,8 @@ def format_validation_results(
                 "total_sessions": len(unique_sessions),
                 "modalities": getattr(dataset_stats, "modalities", {}),
                 "tasks": sorted(list(getattr(dataset_stats, "tasks", []))),
+                "func_tasks": sorted(list(getattr(dataset_stats, "func_tasks", []))),
+                "eeg_tasks": sorted(list(getattr(dataset_stats, "eeg_tasks", []))),
                 "eyetracking": sorted(list(getattr(dataset_stats, "eyetracking", []))),
                 "physio": sorted(list(getattr(dataset_stats, "physio", []))),
                 "surveys": sorted(list(getattr(dataset_stats, "surveys", []))),
