@@ -39,6 +39,11 @@ def run_bids_validator(
         "NIFTI_HEADER_UNREADABLE",
         "QUICK_TEST_FAILED",
     }
+    
+    # PRISM modalities that should be ignored by BIDS
+    prism_ignore_folders = {
+        "eyetracking", "physiological", "physio", "survey", "biometrics", "metadata"
+    }
 
     def _looks_like_content_file(location: str) -> bool:
         if not location:
@@ -118,6 +123,19 @@ def run_bids_validator(
                         if _is_placeholder_location(location):
                             continue
                         if structure_only and _looks_like_content_file(location):
+                            continue
+
+                    # Filter out NOT_INCLUDED for known PRISM modalities
+                    if code == "NOT_INCLUDED":
+                        is_prism_modality = False
+                        loc_lower = location.lower()
+                        for folder in prism_ignore_folders:
+                            if f"/{folder}/" in loc_lower or loc_lower.endswith(f"/{folder}/"):
+                                is_prism_modality = True
+                                break
+                        if is_prism_modality:
+                            if verbose:
+                                print(f"   ℹ️  Silencing '{code}' for PRISM modality: {location}")
                             continue
 
                     severity = issue.get("severity", "warning").upper()
@@ -204,6 +222,17 @@ def run_bids_validator(
                         
                         if not filtered_files and issue.get("files"):
                             continue
+                            
+                        # Filter out NOT_INCLUDED for known PRISM modalities
+                        if key == "NOT_INCLUDED":
+                            is_prism_folder = False
+                            for f_path in filtered_files:
+                                for prism_folder in prism_ignore_folders:
+                                    if f"/{prism_folder}/" in f_path.lower() or f_path.lower().endswith(f"/{prism_folder}/"):
+                                        is_prism_folder = True
+                                        break
+                            if is_prism_folder:
+                                continue
 
                         msg = f"[BIDS] {issue.get('reason')} ({key})"
                         for file_path in filtered_files:

@@ -373,6 +373,10 @@ def _validate_modality_dir(
                                     stats.add_description(
                                         "biometrics", task, original_name
                                     )
+                                elif modality == "eyetracking" and task:
+                                    stats.add_description("eyetracking", task, original_name)
+                                elif modality in ["physio", "physiological"] and task:
+                                    stats.add_description("physio", task, original_name)
                                 elif task:
                                     stats.add_description("task", task, original_name)
                 except Exception:

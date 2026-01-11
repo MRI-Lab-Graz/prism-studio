@@ -423,51 +423,49 @@
                 </div>
                 <hr>
                 <div class="mb-3">
-                    <div class="small text-muted mb-2 text-uppercase fw-bold">Modalities</div>
+                    <div class="small text-muted mb-2 text-uppercase fw-bold">Modalities & Content</div>
                     {% for modality, count in dataset_stats.modalities.items() %}
-                    <div class="d-flex justify-content-between mb-1">
-                        <span>
-                            <i class="fas fa-{{ 'clipboard-list' if modality == 'survey' else 'heartbeat' if modality == 'biometrics' else 'wave-square' if modality == 'physiological' else 'brain' }} me-2 text-secondary modality-icon"></i>
-                            {{ modality|capitalize }}
-                        </span>
-                        <span class="badge bg-light text-dark border">{{ count }}</span>
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>
+                                <i class="fas fa-{{ 'clipboard-list' if modality == 'survey' else 'heartbeat' if modality == 'biometrics' else 'wave-square' if modality in ['physio', 'physiological'] else 'eye' if modality in ['eyetracking', 'eyetrack'] else 'brain' }} me-2 text-secondary modality-icon"></i>
+                                {{ modality|capitalize }}
+                            </span>
+                            <span class="badge bg-light text-dark border">{{ count }}</span>
+                        </div>
+                        
+                        {# Show modality-specific tasks nested under the modality name #}
+                        <div class="ms-4 d-flex flex-wrap gap-1 mb-2">
+                            {% if modality == 'survey' and dataset_stats.surveys %}
+                                {% for s in dataset_stats.surveys %}
+                                <span class="badge bg-secondary x-small">{{ s }}</span>
+                                {% endfor %}
+                            {% elif modality in ['eyetracking', 'eyetrack'] and dataset_stats.eyetracking %}
+                                {% for e in dataset_stats.eyetracking %}
+                                <span class="badge bg-primary x-small">{{ e }}</span>
+                                {% endfor %}
+                            {% elif modality in ['physio', 'physiological'] and dataset_stats.physio %}
+                                {% for p in dataset_stats.physio %}
+                                <span class="badge bg-warning text-dark x-small">{{ p }}</span>
+                                {% endfor %}
+                            {% elif modality == 'biometrics' and dataset_stats.biometrics %}
+                                {% for b in dataset_stats.biometrics %}
+                                <span class="badge bg-dark x-small">{{ b }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
-                {% if dataset_stats.tasks or dataset_stats.surveys or dataset_stats.biometrics %}
+                {% if dataset_stats.tasks %}
                 <hr>
                 <div class="mb-0">
-                    <div class="small text-muted mb-2 text-uppercase fw-bold">Content</div>
-                    {% if dataset_stats.tasks %}
-                    <div class="mb-2">
-                        <div class="small text-muted">Tasks:</div>
-                        <div class="d-flex flex-wrap gap-1 mt-1">
-                            {% for task in dataset_stats.tasks %}
-                            <span class="badge bg-info text-dark">{{ task }}</span>
-                            {% endfor %}
-                        </div>
+                    <div class="small text-muted mb-2 text-uppercase fw-bold">Behavioral / Other Tasks</div>
+                    <div class="d-flex flex-wrap gap-1 mt-1">
+                        {% for task in dataset_stats.tasks %}
+                        <span class="badge bg-info text-dark">{{ task }}</span>
+                        {% endfor %}
                     </div>
-                    {% endif %}
-                    {% if dataset_stats.surveys %}
-                    <div class="mb-2">
-                        <div class="small text-muted">Surveys:</div>
-                        <div class="d-flex flex-wrap gap-1 mt-1">
-                            {% for survey in dataset_stats.surveys %}
-                            <span class="badge bg-secondary">{{ survey }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-                    {% if dataset_stats.biometrics %}
-                    <div class="mb-0">
-                        <div class="small text-muted">Biometrics:</div>
-                        <div class="d-flex flex-wrap gap-1 mt-1">
-                            {% for bio in dataset_stats.biometrics %}
-                            <span class="badge bg-dark">{{ bio }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
                 </div>
                 {% endif %}
             </div>
