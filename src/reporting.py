@@ -86,14 +86,28 @@ def print_dataset_summary(dataset_path, stats):
     pure_tasks = {
         t for t in stats.tasks if t not in stats.surveys and t not in stats.biometrics
     }
-    print(f"\n📝 TASKS ({len(pure_tasks)} found):")
-    if pure_tasks:
-        for task in sorted(pure_tasks):
+    
+    tasks_to_show = set(pure_tasks)
+    if hasattr(stats, 'func_tasks'):
+        tasks_to_show.update(stats.func_tasks)
+    if hasattr(stats, 'eeg_tasks'):
+        tasks_to_show.update(stats.eeg_tasks)
+
+    print(f"\n📝 TASKS ({len(tasks_to_show)} found):")
+    if tasks_to_show:
+        for task in sorted(tasks_to_show):
+            # Badge or prefix for modality
+            prefix = ""
+            if hasattr(stats, 'func_tasks') and task in stats.func_tasks:
+                prefix = "[func] "
+            elif hasattr(stats, 'eeg_tasks') and task in stats.eeg_tasks:
+                prefix = "[eeg] "
+                
             desc = get_entity_description(dataset_path, "task", task, stats)
             if desc:
-                print(f"  • {task} - {desc}")
+                print(f"  • {prefix}{task} - {desc}")
             else:
-                print(f"  • {task}")
+                print(f"  • {prefix}{task}")
     else:
         print("  No tasks detected")
 
