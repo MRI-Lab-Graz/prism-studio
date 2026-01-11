@@ -109,6 +109,10 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Incomplete dataset description",
         "fix_hint": "Add recommended fields to dataset_description.json for FAIR compliance and scientific reproducibility: Description, License, EthicsApprovals, Funding, DataCollection, Keywords.",
     },
+    "PRISM007": {
+        "message": "Incomplete survey template",
+        "fix_hint": "Add recommended fields to survey template for APA methods export: Study.References (primary citation), Study.DOI, Study.Reliability, Study.AdministrationTime, Study.Description.",
+    },
     # Filename errors (1xx)
     "PRISM101": {
         "message": "Invalid BIDS filename format",
@@ -290,6 +294,8 @@ def infer_code_from_message(message: str) -> str:
         if any(x in msg_lower for x in ["recommended", "fair compliance", "too short", "fewer than"]):
             return "PRISM006"
         return "PRISM003"
+    elif "survey template" in msg_lower or ("template" in msg_lower and "missing" in msg_lower and "study." in msg_lower):
+        return "PRISM007"
     elif "no subjects found" in msg_lower:
         return "PRISM002"
     elif "consistency" in msg_lower or "mislabeled" in msg_lower or "mixed session" in msg_lower:

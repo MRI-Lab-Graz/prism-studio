@@ -16,3 +16,11 @@ sub-*/ses-*/mri/
 # Common caches
 **/__pycache__/
 **/.ipynb_checkpoints/
+
+# Added by prism
+*_report_*.txt
+biometrics/
+events/
+eyetracking/
+physio/
+survey/

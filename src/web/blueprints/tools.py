@@ -1257,3 +1257,98 @@ def limesurvey_save_to_project():
         "library_path": str(library_survey_path),
         "errors": errors if errors else None
     })
+
+
+@tools_bp.route("/api/export-methods", methods=["POST"])
+def export_methods():
+    """
+    Export APA-style methods section for a PRISM project.
+
+    Request JSON:
+        - project_path: Path to the project (optional if current project is set)
+        - lang: Language code (default: "en")
+        - format: "download" or "json" (default: "download")
+
+    Returns:
+        Markdown file download or JSON with content
+    """
+    try:
+        data = request.get_json() or {}
+
+        # Get project path - accept both 'project_path' and 'path' for flexibility
+        project_path = data.get("project_path") or data.get("path")
+        if not project_path:
+            # Try session current project
+            project_path = session.get("current_project_path")
+
+        if not project_path or not os.path.isdir(project_path):
+            return jsonify({"error": "No valid project path provided"}), 400
+
+        lang = data.get("lang", "en")
+        output_format = data.get("format", "download")
+
+        # Import methods generator
+        from src.methods_export import generate_apa_methods
+
+        # Generate methods section
+        methods_content = generate_apa_methods(project_path, lang=lang)
+
+        if output_format == "json":
+            return jsonify({
+                "success": True,
+                "content": methods_content,
+                "project_path": project_path,
+                "lang": lang
+            })
+        else:
+            # Return as downloadable file
+            output = io.BytesIO()
+            output.write(methods_content.encode("utf-8"))
+            output.seek(0)
+
+            # Generate filename from project name
+            project_name = os.path.basename(project_path)
+            filename = f"methods_{project_name}.md"
+
+            return send_file(
+                output,
+                mimetype="text/markdown",
+                as_attachment=True,
+                download_name=filename
+            )
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@tools_bp.route("/api/export-methods-preview", methods=["POST"])
+def export_methods_preview():
+    """
+    Preview APA-style methods section (returns content without download).
+    """
+    try:
+        data = request.get_json() or {}
+
+        # Accept both 'project_path' and 'path' for flexibility
+        project_path = data.get("project_path") or data.get("path")
+        if not project_path:
+            project_path = session.get("current_project_path")
+
+        if not project_path or not os.path.isdir(project_path):
+            return jsonify({"error": "No valid project path provided"}), 400
+
+        lang = data.get("lang", "en")
+
+        from src.methods_export import generate_apa_methods
+
+        methods_content = generate_apa_methods(project_path, lang=lang)
+
+        return jsonify({
+            "success": True,
+            "content": methods_content,
+            "project_path": project_path,
+            "lang": lang
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

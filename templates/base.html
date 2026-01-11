@@ -70,6 +70,54 @@
             font-size: 0.75rem;
             letter-spacing: 0.08em;
         }
+        /* Navbar responsive improvements */
+        .navbar .nav-link {
+            padding: 0.5rem 0.75rem;
+            white-space: nowrap;
+        }
+        .project-badge {
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 0.4em 0.8em;
+        }
+        .project-badge-link:hover .project-badge {
+            background-color: #0a58ca !important;
+        }
+        /* Hide text on medium screens, show only icons */
+        @media (min-width: 992px) and (max-width: 1200px) {
+            .navbar .nav-text {
+                display: none;
+            }
+            .navbar .nav-link {
+                padding: 0.5rem 0.6rem;
+            }
+            .navbar .nav-link i {
+                margin-right: 0 !important;
+                font-size: 1.1rem;
+            }
+            .project-badge {
+                font-size: 0.75rem;
+                padding: 0.3em 0.6em;
+            }
+        }
+        /* Full display on large screens */
+        @media (min-width: 1201px) {
+            .navbar .nav-link {
+                padding: 0.5rem 0.85rem;
+            }
+        }
+        /* Dropdown menu styling */
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+        }
+        .dropdown-item {
+            padding: 0.6rem 1rem;
+        }
+        .dropdown-item:hover {
+            background-color: #f0f4ff;
+        }
         .footer {
             margin-top: 50px;
             padding: 30px 0;
@@ -104,42 +152,70 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home me-1"></i><span class="nav-text">Home</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('projects.projects_page') }}">
+                            <i class="fas fa-folder-open me-1 text-primary"></i><span class="nav-text">Projects</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('validation.validate_dataset') }}">
+                            <i class="fas fa-check-circle me-1 text-success"></i><span class="nav-text">Validate</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('tools.converter') }}">
+                            <i class="fas fa-file-arrow-up me-1 text-warning"></i><span class="nav-text">Convert</span>
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="toolsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-tools me-1 text-secondary"></i><span class="nav-text">Tools</span>
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="toolsDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('tools.recipes') }}">
+                                    <i class="fas fa-calculator me-2 text-primary"></i>Data Processing
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('tools.survey_generator') }}">
+                                    <i class="fas fa-poll-h me-2 text-info"></i>Survey & Boilerplate
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('tools.template_editor') }}">
+                                    <i class="fas fa-file-code me-2 text-primary"></i>Template Editor
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('specifications') }}">
+                                    <i class="fas fa-book me-2"></i>Specifications
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://prism-studio.readthedocs.io/en/latest/" target="_blank" rel="noopener">
+                            <i class="fas fa-book-open me-1"></i><span class="nav-text">Docs</span>
+                        </a>
+                    </li>
+                </ul>
                 {% if current_project.path %}
-                <div class="navbar-text me-3 d-none d-lg-block">
-                    <span class="badge bg-primary">
-                        <i class="fas fa-folder-open me-1"></i>{{ current_project.name or 'Project' }}
-                    </span>
+                <div class="navbar-nav">
+                    <a class="nav-link project-badge-link" href="{{ url_for('projects.projects_page') }}" title="{{ current_project.path }}">
+                        <span class="badge bg-primary rounded-pill project-badge">
+                            <i class="fas fa-folder-open me-1"></i>{{ current_project.name|truncate(15, True, '..') }}
+                        </span>
+                    </a>
                 </div>
                 {% endif %}
-                <div class="navbar-nav ms-auto">
-                    <a class="nav-link" href="{{ url_for('index') }}">
-                        <i class="fas fa-home me-1"></i>Home
-                    </a>
-                    <a class="nav-link" href="{{ url_for('projects.projects_page') }}">
-                        <i class="fas fa-folder-open me-1 text-primary"></i>Projects
-                    </a>
-                    <a class="nav-link" href="{{ url_for('specifications') }}">
-                        <i class="fas fa-book me-1"></i>Specifications
-                    </a>
-                    <a class="nav-link" href="{{ url_for('validation.validate_dataset') }}">
-                        <i class="fas fa-check-circle me-1 text-success"></i>Validator
-                    </a>
-                    <a class="nav-link" href="{{ url_for('tools.recipes') }}">
-                        <i class="fas fa-calculator me-1 text-primary"></i>Data Processing
-                    </a>
-                    <a class="nav-link" href="{{ url_for('tools.survey_generator') }}">
-                        <i class="fas fa-poll-h me-1 text-info"></i>Survey & Boilerplate
-                    </a>
-                    <a class="nav-link" href="{{ url_for('tools.converter') }}">
-                        <i class="fas fa-file-arrow-up me-1 text-warning"></i>Converter
-                    </a>
-                    <a class="nav-link" href="{{ url_for('tools.template_editor') }}">
-                        <i class="fas fa-file-code me-1 text-primary"></i>Template Editor
-                    </a>
-                    <a class="nav-link" href="https://prism-studio.readthedocs.io/en/latest/" target="_blank" rel="noopener">
-                        <i class="fas fa-book-open me-1"></i>Docs
-                    </a>
-                </div>
             </div>
         </div>
     </nav>

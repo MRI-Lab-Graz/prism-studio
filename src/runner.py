@@ -119,6 +119,73 @@ def _check_dataset_description_completeness(dataset_desc: dict) -> list:
     return issues
 
 
+def _check_survey_template_completeness(template_data: dict, template_name: str) -> list:
+    """
+    Check survey template for recommended fields needed for APA methods export.
+    Returns list of (level, message) tuples for missing recommended fields.
+
+    For proper APA methods section, a survey template should include:
+    - Study.References (at least one primary reference with citation)
+    - Study.DOI or Study.Citation
+    - Study.Reliability (Cronbach's alpha, etc.)
+    - Study.AdministrationTime
+    - Study.Description (detailed)
+    """
+    issues = []
+    study = template_data.get("Study", {})
+
+    # Check for References (most important for APA citation)
+    refs = study.get("References", [])
+    has_primary_ref = any(
+        r.get("Type") == "primary" and r.get("Citation")
+        for r in refs if isinstance(r, dict)
+    )
+    if not refs or not has_primary_ref:
+        if not study.get("Citation") and not study.get("DOI"):
+            issues.append((
+                "WARNING",
+                f"Survey template '{template_name}': Missing Study.References or Study.Citation. "
+                "Add a primary reference for APA methods export."
+            ))
+
+    # Check for Description
+    desc = study.get("Description", "")
+    if isinstance(desc, dict):
+        desc = desc.get("en", "") or list(desc.values())[0] if desc else ""
+    if not desc or len(str(desc)) < 20:
+        issues.append((
+            "WARNING",
+            f"Survey template '{template_name}': Missing or short Study.Description. "
+            "Add a detailed description for APA methods export."
+        ))
+
+    # Check for Reliability info
+    if not study.get("Reliability"):
+        issues.append((
+            "WARNING",
+            f"Survey template '{template_name}': Missing Study.Reliability. "
+            "Add reliability information (e.g., Cronbach's alpha) for APA methods export."
+        ))
+
+    # Check for AdministrationTime
+    if not study.get("AdministrationTime"):
+        issues.append((
+            "WARNING",
+            f"Survey template '{template_name}': Missing Study.AdministrationTime. "
+            "Add estimated completion time for APA methods export."
+        ))
+
+    # Check for ItemCount
+    if not study.get("ItemCount"):
+        issues.append((
+            "WARNING",
+            f"Survey template '{template_name}': Missing Study.ItemCount. "
+            "Add item count for APA methods export."
+        ))
+
+    return issues
+
+
 def validate_dataset(
     root_dir,
     verbose=False,
@@ -237,6 +304,33 @@ def validate_dataset(
     except Exception as e:
         if verbose:
             print(f"[WARN]️  Failed to update .bidsignore: {e}")
+
+    report_progress(12, 100, "Checking survey templates...")
+
+    # Check library templates for completeness (for methods export)
+    if run_prism:
+        # Determine library path
+        effective_library = library_path
+        if not effective_library:
+            # Check for project library
+            project_library = os.path.join(root_dir, "library", "survey")
+            if os.path.isdir(project_library):
+                effective_library = project_library
+
+        if effective_library and os.path.isdir(effective_library):
+            for template_file in os.listdir(effective_library):
+                if template_file.startswith("survey-") and template_file.endswith(".json"):
+                    template_path = os.path.join(effective_library, template_file)
+                    try:
+                        with open(template_path, "r", encoding="utf-8") as f:
+                            template_data = json.load(f)
+                        template_issues = _check_survey_template_completeness(
+                            template_data, template_file.replace(".json", "")
+                        )
+                        for level, msg in template_issues:
+                            issues.append((level, msg, template_path))
+                    except Exception:
+                        pass  # Skip invalid templates
 
     report_progress(15, 100, "Scanning subjects...")
 

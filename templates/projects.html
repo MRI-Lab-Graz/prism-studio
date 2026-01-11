@@ -137,6 +137,9 @@
         <a href="{{ url_for('validation.validate_dataset') }}" class="btn btn-sm btn-outline-success me-2">
             <i class="fas fa-check-circle me-1"></i>Validate
         </a>
+        <button type="button" class="btn btn-sm btn-outline-info me-2" onclick="exportMethods()">
+            <i class="fas fa-file-alt me-1"></i>Export Methods
+        </button>
         <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearCurrentProject()">
             <i class="fas fa-times"></i>
         </button>
@@ -855,6 +858,9 @@
                                 <a href="/" class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-check-circle me-1"></i>Validate Dataset
                                 </a>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportMethods()">
+                                    <i class="fas fa-file-alt me-1"></i>Export Methods
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1019,6 +1025,9 @@
                         <a href="/" class="btn btn-sm btn-outline-primary">
                             <i class="fas fa-check-circle me-1"></i>Validate Dataset
                         </a>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportMethods()">
+                            <i class="fas fa-file-alt me-1"></i>Export Methods
+                        </button>
                     </div>
                 </div>
             `;
@@ -1209,5 +1218,147 @@
 
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', initParticipantsStatus);
+
+    // ===== EXPORT METHODS =====
+
+    // Export APA-style methods section
+    async function exportMethods() {
+        // Get current project path
+        {% if current_project.path %}
+        const projectPath = '{{ current_project.path }}';
+        {% else %}
+        // Try from recent validation
+        const existingPath = document.getElementById('existingPath');
+        const projectPath = existingPath ? existingPath.value : null;
+        if (!projectPath) {
+            alert('Please select a project first.');
+            return;
+        }
+        {% endif %}
+
+        try {
+            // First show a preview in a modal
+            const previewResponse = await fetch('/api/export-methods-preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: projectPath })
+            });
+            const previewData = await previewResponse.json();
+
+            if (!previewData.success) {
+                alert('Error generating methods: ' + previewData.error);
+                return;
+            }
+
+            // Create modal for preview
+            const modalHtml = `
+                <div class="modal fade" id="methodsPreviewModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-file-alt me-2"></i>APA Methods Section Preview
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info small">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    This is auto-generated from your dataset metadata and survey templates.
+                                    Missing fields will show placeholders.
+                                </div>
+                                <pre class="bg-light p-3 rounded" style="white-space: pre-wrap; font-size: 0.85rem;">${escapeHtml(previewData.content)}</pre>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-success" onclick="downloadMethods('${projectPath}')">
+                                    <i class="fas fa-download me-1"></i>Download .md
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="copyMethodsToClipboard()">
+                                    <i class="fas fa-copy me-1"></i>Copy to Clipboard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Remove existing modal if any
+            const existingModal = document.getElementById('methodsPreviewModal');
+            if (existingModal) existingModal.remove();
+
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Store content for clipboard
+            window._methodsContent = previewData.content;
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('methodsPreviewModal'));
+            modal.show();
+
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    }
+
+    // Download methods as .md file
+    async function downloadMethods(projectPath) {
+        try {
+            const response = await fetch('/api/export-methods', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: projectPath, download: true })
+            });
+
+            if (response.ok) {
+                // Get filename from header or use default
+                const disposition = response.headers.get('Content-Disposition');
+                let filename = 'methods_section.md';
+                if (disposition) {
+                    const match = disposition.match(/filename="?([^"]+)"?/);
+                    if (match) filename = match[1];
+                }
+
+                // Download file
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('methodsPreviewModal')).hide();
+            } else {
+                const data = await response.json();
+                alert('Error: ' + data.error);
+            }
+        } catch (error) {
+            alert('Error downloading: ' + error.message);
+        }
+    }
+
+    // Copy methods to clipboard
+    function copyMethodsToClipboard() {
+        if (window._methodsContent) {
+            navigator.clipboard.writeText(window._methodsContent).then(() => {
+                // Show feedback
+                const btn = document.querySelector('#methodsPreviewModal .btn-primary');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
+                btn.classList.replace('btn-primary', 'btn-success');
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.replace('btn-success', 'btn-primary');
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy: ' + err.message);
+            });
+        }
+    }
 </script>
 {% endblock %}
