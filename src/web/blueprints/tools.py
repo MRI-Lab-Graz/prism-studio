@@ -391,22 +391,61 @@ def api_template_editor_load():
 
 @tools_bp.route("/api/template-editor/load-path", methods=["GET"])
 def api_template_editor_load_path():
-    """Load a template by full file path (for fix links from validation)."""
+    """Load a template by full file path or filename (for fix links from validation).
+
+    If a full path is given and exists, load it directly.
+    If just a filename is given (e.g., 'survey-a.json'), search for it in:
+    1. Current project's library/survey/ folder
+    2. Global library folder
+    """
     file_path = (request.args.get("path") or "").strip()
     schema_version = (request.args.get("schema_version") or "stable").strip()
 
     if not file_path:
         return jsonify({"error": "No file path provided"}), 400
 
-    # Resolve and validate path
+    path = None
+
+    # First, try the path as-is (might be a full path)
     try:
-        path = Path(file_path).resolve()
-        if not path.exists() or not path.is_file():
-            return jsonify({"error": "File not found"}), 404
-        if not path.suffix.lower() == ".json":
-            return jsonify({"error": "Not a JSON file"}), 400
-    except Exception as e:
-        return jsonify({"error": f"Invalid path: {e}"}), 400
+        candidate = Path(file_path).resolve()
+        if candidate.exists() and candidate.is_file():
+            path = candidate
+    except Exception:
+        pass
+
+    # If not found and it looks like just a filename, search in project library
+    if path is None and ("/" not in file_path and "\\" not in file_path):
+        # Get current project from session
+        current_project = session.get("current_project_path")
+        if current_project:
+            # Search in project's library/survey/ folder
+            project_library = Path(current_project) / "library" / "survey"
+            if project_library.is_dir():
+                candidate = project_library / file_path
+                if candidate.exists() and candidate.is_file():
+                    path = candidate
+
+            # Also try directly in project root
+            if path is None:
+                candidate = Path(current_project) / file_path
+                if candidate.exists() and candidate.is_file():
+                    path = candidate
+
+        # Fall back to global library
+        if path is None:
+            from flask import current_app
+            global_library = Path(current_app.root_path) / "library" / "survey"
+            if global_library.is_dir():
+                candidate = global_library / file_path
+                if candidate.exists() and candidate.is_file():
+                    path = candidate
+
+    if path is None:
+        return jsonify({"error": f"File not found: {file_path}"}), 404
+
+    if not path.suffix.lower() == ".json":
+        return jsonify({"error": "Not a JSON file"}), 400
 
     # Detect modality from filename or path
     filename = path.name.lower()
