@@ -134,6 +134,23 @@ def _check_survey_template_completeness(template_data: dict, template_name: str)
     issues = []
     study = template_data.get("Study", {})
 
+    # Reserved top-level keys (not question columns)
+    reserved_keys = {
+        "Technical", "Study", "Scoring", "Normative", "Metadata", "I18n",
+        "_filename", "$schema", "$id", "version", "title", "description"
+    }
+
+    # Identify question columns (any key that's not reserved and has Description)
+    question_columns = []
+    for key, value in template_data.items():
+        if key not in reserved_keys and isinstance(value, dict):
+            if "Description" in value or "Levels" in value:
+                question_columns.append(key)
+
+    # =========================================================================
+    # APA Methods Export Checks (PRISM007)
+    # =========================================================================
+
     # Check for References (most important for APA citation)
     refs = study.get("References", [])
     has_primary_ref = any(
@@ -175,13 +192,90 @@ def _check_survey_template_completeness(template_data: dict, template_name: str)
             "Add estimated completion time for APA methods export."
         ))
 
-    # Check for ItemCount
-    if not study.get("ItemCount"):
+    # =========================================================================
+    # Template Consistency Checks (PRISM008)
+    # =========================================================================
+
+    # Check ItemCount matches actual question count
+    declared_item_count = study.get("ItemCount")
+    if declared_item_count:
+        try:
+            count = int(declared_item_count)
+            actual_count = len(question_columns)
+            if actual_count > 0 and count != actual_count:
+                issues.append((
+                    "WARNING",
+                    f"Survey template '{template_name}': Study.ItemCount ({count}) doesn't match "
+                    f"actual question count ({actual_count}). Update ItemCount or check question definitions."
+                ))
+        except (ValueError, TypeError):
+            pass
+    elif not declared_item_count and question_columns:
         issues.append((
             "WARNING",
             f"Survey template '{template_name}': Missing Study.ItemCount. "
-            "Add item count for APA methods export."
+            f"Template has {len(question_columns)} questions - add ItemCount for APA methods export."
         ))
+
+    # Check Subscale items exist in template
+    scoring = template_data.get("Scoring", {})
+    subscales = scoring.get("Subscales", [])
+    for subscale in subscales:
+        if isinstance(subscale, dict):
+            subscale_name = subscale.get("Name", "unnamed")
+            if isinstance(subscale_name, dict):
+                subscale_name = subscale_name.get("en", str(subscale_name))
+            items = subscale.get("Items", [])
+            missing_items = [item for item in items if item not in question_columns]
+            if missing_items:
+                issues.append((
+                    "WARNING",
+                    f"Survey template '{template_name}': Subscale '{subscale_name}' references "
+                    f"non-existent items: {', '.join(missing_items[:5])}"
+                    f"{' (and more)' if len(missing_items) > 5 else ''}. "
+                    "Check item names in Scoring.Subscales."
+                ))
+
+    # Check ReverseCodedItems exist
+    reverse_items = scoring.get("ReverseCodedItems", [])
+    if reverse_items:
+        missing_reverse = [item for item in reverse_items if item not in question_columns]
+        if missing_reverse:
+            issues.append((
+                "WARNING",
+                f"Survey template '{template_name}': ReverseCodedItems references "
+                f"non-existent items: {', '.join(missing_reverse[:5])}"
+                f"{' (and more)' if len(missing_reverse) > 5 else ''}. "
+                "Check item names in Scoring.ReverseCodedItems."
+            ))
+
+    # Check Levels consistency with MinValue/MaxValue
+    for col_name in question_columns:
+        col_def = template_data.get(col_name, {})
+        levels = col_def.get("Levels", {})
+        min_val = col_def.get("MinValue")
+        max_val = col_def.get("MaxValue")
+
+        if levels and (min_val is not None or max_val is not None):
+            try:
+                level_keys = [int(k) for k in levels.keys() if k.lstrip("-").isdigit()]
+                if level_keys:
+                    actual_min = min(level_keys)
+                    actual_max = max(level_keys)
+                    if min_val is not None and actual_min < min_val:
+                        issues.append((
+                            "WARNING",
+                            f"Survey template '{template_name}': Column '{col_name}' has Levels key "
+                            f"({actual_min}) below MinValue ({min_val}). Check Levels or MinValue."
+                        ))
+                    if max_val is not None and actual_max > max_val:
+                        issues.append((
+                            "WARNING",
+                            f"Survey template '{template_name}': Column '{col_name}' has Levels key "
+                            f"({actual_max}) above MaxValue ({max_val}). Check Levels or MaxValue."
+                        ))
+            except (ValueError, TypeError):
+                pass
 
     return issues
 

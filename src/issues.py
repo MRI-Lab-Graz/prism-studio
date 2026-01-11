@@ -85,35 +85,48 @@ class Issue:
 
 ERROR_CODES: Dict[str, Dict[str, str]] = {
     # Dataset structure errors (0xx)
+    # fix_tool values: "projects", "template-editor", "converter", "json-editor", None
     "PRISM001": {
         "message": "Missing dataset_description.json",
         "fix_hint": "Create a dataset_description.json file at the dataset root with required fields: Name, BIDSVersion",
+        "fix_tool": "projects",
     },
     "PRISM002": {
         "message": "No subjects found in dataset",
         "fix_hint": "Ensure subject folders are named 'sub-<label>' and located at the dataset root",
+        "fix_tool": "converter",
     },
     "PRISM003": {
         "message": "Invalid dataset_description.json",
         "fix_hint": "Ensure the file contains valid JSON with required BIDS fields",
+        "fix_tool": "json-editor",
     },
     "PRISM004": {
         "message": "Missing participants.tsv",
         "fix_hint": "Create a participants.tsv file listing all subjects with at least a 'participant_id' column",
+        "fix_tool": "projects",
     },
     "PRISM005": {
         "message": "Schema version mismatch",
         "fix_hint": "The metadata uses an older or newer schema version than the validator. Consider updating the 'SchemaVersion' in your metadata files.",
+        "fix_tool": "template-editor",
     },
     "PRISM006": {
         "message": "Incomplete dataset description",
         "fix_hint": "Add recommended fields to dataset_description.json for FAIR compliance and scientific reproducibility: Description, License, EthicsApprovals, Funding, DataCollection, Keywords.",
+        "fix_tool": "json-editor",
     },
     "PRISM007": {
         "message": "Incomplete survey template",
         "fix_hint": "Add recommended fields to survey template for APA methods export: Study.References (primary citation), Study.DOI, Study.Reliability, Study.AdministrationTime, Study.Description.",
+        "fix_tool": "template-editor",
     },
-    # Filename errors (1xx)
+    "PRISM008": {
+        "message": "Template consistency issue",
+        "fix_hint": "Check template for consistency: ItemCount should match actual questions, Subscale items should exist, Levels should be within MinValue/MaxValue range.",
+        "fix_tool": "template-editor",
+    },
+    # Filename errors (1xx) - typically manual fixes needed
     "PRISM101": {
         "message": "Invalid BIDS filename format",
         "fix_hint": "Ensure filename follows sub-<label>[_ses-<label>]_task-<label>_<suffix>.<ext>",
@@ -134,14 +147,17 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
     "PRISM201": {
         "message": "Missing JSON sidecar",
         "fix_hint": "Every data file must have a corresponding .json sidecar with metadata",
+        "fix_tool": "template-editor",
     },
     "PRISM202": {
         "message": "Invalid JSON syntax in sidecar",
         "fix_hint": "Check for missing commas, quotes, or brackets in the .json file",
+        "fix_tool": "json-editor",
     },
     "PRISM203": {
         "message": "Empty sidecar file",
         "fix_hint": "The .json sidecar exists but contains no data",
+        "fix_tool": "template-editor",
     },
     "PRISM204": {
         "message": "Empty data file",
@@ -151,10 +167,12 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
     "PRISM301": {
         "message": "Metadata schema validation failed",
         "fix_hint": "Ensure all required fields for this modality are present in the JSON sidecar",
+        "fix_tool": "template-editor",
     },
     "PRISM302": {
         "message": "Invalid field type in sidecar",
         "fix_hint": "Check that field values match the expected type (string, number, etc.)",
+        "fix_tool": "template-editor",
     },
     # Content errors (4xx)
     "PRISM401": {
@@ -164,19 +182,23 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
     "PRISM402": {
         "message": "Value not in allowed levels",
         "fix_hint": "Check that the value in the TSV matches one of the Levels defined in the sidecar",
+        "fix_tool": "template-editor",
     },
     "PRISM403": {
         "message": "Value out of range",
         "fix_hint": "Check if the value is within the MinValue and MaxValue range defined in the sidecar",
+        "fix_tool": "template-editor",
     },
     "PRISM404": {
         "message": "Value out of warning range",
         "fix_hint": "The value is within absolute limits but outside the typical warning range",
+        "fix_tool": "template-editor",
     },
     # BIDS compatibility (5xx)
     "PRISM501": {
         "message": ".bidsignore needs update",
         "fix_hint": "Add PRISM-specific modalities to .bidsignore to avoid BIDS validator errors",
+        "fix_tool": "projects",
     },
     "PRISM502": {
         "message": "BIDS validator warning",
@@ -190,6 +212,7 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
     "PRISM601": {
         "message": "Dataset consistency warning",
         "fix_hint": "Check for missing sessions or modalities across subjects",
+        "fix_tool": "converter",
     },
     # Internal/System (9xx)
     "PRISM901": {
@@ -199,6 +222,31 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
     "PRISM999": {
         "message": "General validation error",
         "fix_hint": "Check the error message for details",
+    },
+}
+
+
+# Tool URL mapping for fix actions
+FIX_TOOL_URLS: Dict[str, Dict[str, str]] = {
+    "projects": {
+        "url": "/projects",
+        "label": "Project Manager",
+        "icon": "folder-open",
+    },
+    "template-editor": {
+        "url": "/template-editor",
+        "label": "Template Editor",
+        "icon": "file-code",
+    },
+    "converter": {
+        "url": "/converter",
+        "label": "Converter",
+        "icon": "file-arrow-up",
+    },
+    "json-editor": {
+        "url": "/editor",
+        "label": "JSON Editor",
+        "icon": "code",
     },
 }
 
@@ -234,6 +282,22 @@ def get_fix_hint(code: str, message: str = "") -> str:
 
     defaults = ERROR_CODES.get(code, {})
     return defaults.get("fix_hint", "")
+
+
+def get_fix_tool_info(code: str) -> Optional[Dict[str, str]]:
+    """
+    Get fix tool information for an error code.
+
+    Returns:
+        Dict with 'url', 'label', 'icon' if a fix tool is available, None otherwise.
+    """
+    defaults = ERROR_CODES.get(code, {})
+    fix_tool = defaults.get("fix_tool")
+
+    if fix_tool and fix_tool in FIX_TOOL_URLS:
+        return FIX_TOOL_URLS[fix_tool]
+
+    return None
 
 
 def get_error_documentation_url(code: str) -> str:
@@ -295,6 +359,10 @@ def infer_code_from_message(message: str) -> str:
             return "PRISM006"
         return "PRISM003"
     elif "survey template" in msg_lower or ("template" in msg_lower and "missing" in msg_lower and "study." in msg_lower):
+        # PRISM008: Template consistency issues (ItemCount mismatch, subscale issues, etc.)
+        if any(x in msg_lower for x in ["itemcount", "subscale", "reversecodeditems", "levels key"]):
+            if any(x in msg_lower for x in ["doesn't match", "references", "above", "below"]):
+                return "PRISM008"
         return "PRISM007"
     elif "no subjects found" in msg_lower:
         return "PRISM002"

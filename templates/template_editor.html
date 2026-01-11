@@ -1613,13 +1613,55 @@
     }
   }
 
+  // Auto-load file from query params (for validation fix links)
+  async function autoLoadFromPath(filePath) {
+    if (!filePath) return false;
+
+    try {
+      const response = await fetch(`/api/template-editor/load-path?path=${encodeURIComponent(filePath)}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        showAlert('warning', `Could not auto-load file: ${data.error}`);
+        return false;
+      }
+
+      // Set modality
+      if (data.modality) {
+        modalityEl.value = data.modality;
+      }
+
+      // Load the template
+      currentTemplate = data.template;
+      currentFilename = data.filename;
+      filenameEl.value = data.filename.replace(/\.json$/i, '');
+      renderCurrentTemplate();
+
+      showAlert('success', `Loaded: ${data.filename}`);
+      return true;
+    } catch (e) {
+      showAlert('danger', `Error loading file: ${e.message}`);
+      return false;
+    }
+  }
+
   // Initial load
   (async () => {
     try {
       await initializeLibraryPath();
       await refreshSchema();
       await refreshTemplateList();
-      await loadNewTemplate();
+
+      // Check for auto-load file from validation fix link
+      const autoLoadFile = '{{ auto_load_file|default("", true)|e }}';
+      if (autoLoadFile) {
+        const loaded = await autoLoadFromPath(autoLoadFile);
+        if (!loaded) {
+          await loadNewTemplate();
+        }
+      } else {
+        await loadNewTemplate();
+      }
     } catch (e) {
       showAlert('danger', e.message);
     }

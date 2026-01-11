@@ -57,6 +57,7 @@ try:
         format_validation_results,
         get_error_description,
         get_error_documentation_url,
+        get_fix_tool_info,
         shorten_path,
         get_filename_from_path,
         # Validation
@@ -186,6 +187,7 @@ def inject_utilities():
         "shorten_path": shorten_path,
         "get_error_description": get_error_description,
         "get_error_documentation_url": get_error_documentation_url,
+        "get_fix_tool_info": get_fix_tool_info,
         "current_project": {
             "path": session.get("current_project_path"),
             "name": session.get("current_project_name")

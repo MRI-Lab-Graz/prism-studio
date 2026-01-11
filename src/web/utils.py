@@ -35,6 +35,7 @@ try:
         get_error_description as _get_error_description,
         get_error_documentation_url as _get_error_documentation_url,
         infer_code_from_message as _get_error_code_from_message,
+        get_fix_tool_info as _get_fix_tool_info,
     )
 except ImportError:
     try:
@@ -42,11 +43,13 @@ except ImportError:
             get_error_description as _get_error_description,
             get_error_documentation_url as _get_error_documentation_url,
             infer_code_from_message as _get_error_code_from_message,
+            get_fix_tool_info as _get_fix_tool_info,
         )
     except ImportError:
         def _get_error_description(code): return "Validation error"
         def _get_error_documentation_url(code): return "https://prism-studio.readthedocs.io/"
         def _get_error_code_from_message(msg): return "PRISM999"
+        def _get_fix_tool_info(code): return None
 
 
 def is_system_file(filename: str) -> bool:
@@ -67,3 +70,8 @@ def get_error_description(error_code: str) -> str:
 def get_error_documentation_url(error_code: str) -> str:
     """Get documentation URL for an error code."""
     return _get_error_documentation_url(error_code)
+
+
+def get_fix_tool_info(error_code: str) -> dict:
+    """Get fix tool info for an error code (url, label, icon)."""
+    return _get_fix_tool_info(error_code)

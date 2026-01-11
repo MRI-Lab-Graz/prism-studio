@@ -203,10 +203,17 @@ def template_editor():
     except Exception:
         schema_versions = ["stable"]
 
+    # Support auto-loading a file via query params
+    # e.g., /template-editor?file=/path/to/template.json&modality=survey
+    auto_load_file = request.args.get("file", "").strip()
+    auto_load_modality = request.args.get("modality", "survey").strip().lower()
+
     return render_template(
         "template_editor.html",
         schema_versions=schema_versions,
         default_schema_version=(schema_versions[0] if schema_versions else "stable"),
+        auto_load_file=auto_load_file,
+        auto_load_modality=auto_load_modality,
     )
 
 
@@ -380,6 +387,57 @@ def api_template_editor_load():
         merged = loaded
 
     return jsonify({"template": merged, "filename": filename, "library_path": str(path)}), 200
+
+
+@tools_bp.route("/api/template-editor/load-path", methods=["GET"])
+def api_template_editor_load_path():
+    """Load a template by full file path (for fix links from validation)."""
+    file_path = (request.args.get("path") or "").strip()
+    schema_version = (request.args.get("schema_version") or "stable").strip()
+
+    if not file_path:
+        return jsonify({"error": "No file path provided"}), 400
+
+    # Resolve and validate path
+    try:
+        path = Path(file_path).resolve()
+        if not path.exists() or not path.is_file():
+            return jsonify({"error": "File not found"}), 404
+        if not path.suffix.lower() == ".json":
+            return jsonify({"error": "Not a JSON file"}), 400
+    except Exception as e:
+        return jsonify({"error": f"Invalid path: {e}"}), 400
+
+    # Detect modality from filename or path
+    filename = path.name.lower()
+    if "survey" in filename or "survey" in str(path.parent).lower():
+        modality = "survey"
+    elif "biometric" in filename or "biometric" in str(path.parent).lower():
+        modality = "biometrics"
+    else:
+        # Default to survey
+        modality = "survey"
+
+    # Load the file
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            loaded = json.load(f)
+    except Exception as e:
+        return jsonify({"error": f"Could not read JSON: {e}"}), 400
+
+    # Try to merge with schema defaults
+    try:
+        base = _new_template_from_schema(modality=modality, schema_version=schema_version)
+        merged = _deep_merge(base, loaded)
+    except Exception:
+        merged = loaded
+
+    return jsonify({
+        "template": merged,
+        "filename": path.name,
+        "file_path": str(path),
+        "modality": modality,
+    }), 200
 
 
 @tools_bp.route("/api/template-editor/validate", methods=["POST"])

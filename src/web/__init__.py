@@ -11,6 +11,7 @@ from .utils import (
     format_validation_results,
     get_error_description,
     get_error_documentation_url,
+    get_fix_tool_info,
     shorten_path,
     get_filename_from_path,
 )
@@ -43,6 +44,7 @@ __all__ = [
     "format_validation_results",
     "get_error_description",
     "get_error_documentation_url",
+    "get_fix_tool_info",
     "shorten_path",
     "get_filename_from_path",
     # Validation
