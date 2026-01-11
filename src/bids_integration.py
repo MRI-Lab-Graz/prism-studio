@@ -30,8 +30,20 @@ STANDARD_BIDS_FOLDERS = {
 # working directory (e.g., "<name>_report_<timestamp>.txt"). If users run it in
 # a dataset root, that report shouldn't be considered part of the dataset by
 # BIDS tooling.
+#
+# PRISM-specific files that BIDS doesn't recognize:
+# - *_survey.json / *_biometrics.json: Inheritance sidecars at root level
+# - library/: Template library folder for questionnaire definitions
+# - sourcedata/: Raw source files (already standard BIDS ignore)
 EXTRA_BIDSIGNORE_RULES = {
     "*_report_*.txt",
+    # PRISM inheritance sidecars at dataset root
+    "*_survey.json",
+    "*_biometrics.json",
+    "*_eyetracking.json",
+    "*_physio.json",
+    # PRISM template library
+    "library/",
 }
 
 
