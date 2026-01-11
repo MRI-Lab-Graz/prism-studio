@@ -728,6 +728,10 @@
                                         <div class="text-center">
                                             <span id="surveyProgressText" class="text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Starting conversion...</span>
                                         </div>
+                                        <!-- Progress bar -->
+                                        <div class="progress mt-3" style="height: 6px;">
+                                            <div id="surveyProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style="width: 0%"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -4339,6 +4343,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show progress steps
         const progressContainer = document.getElementById('surveyConversionProgress');
         const progressText = document.getElementById('surveyProgressText');
+        const progressBar = document.getElementById('surveyProgressBar');
         const summaryContainer = document.getElementById('conversionSummaryContainer');
         summaryContainer.classList.add('d-none');
         progressContainer.classList.remove('d-none');
@@ -4352,7 +4357,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const line2 = document.getElementById('line2');
         const line3 = document.getElementById('line3');
 
-        // Reset all steps
+        // Reset all steps and progress bar
         [step1, step2, step3, step4].forEach(s => {
             s.classList.remove('bg-success', 'bg-warning');
             s.classList.add('bg-secondary');
@@ -4361,21 +4366,24 @@ document.addEventListener('DOMContentLoaded', function() {
             l.classList.remove('border-success', 'border-warning');
             l.classList.add('border-secondary');
         });
+        progressBar.style.width = '0%';
+        progressBar.classList.remove('bg-success');
+        progressBar.classList.add('bg-warning', 'progress-bar-animated');
 
         // Activate step 1 (Upload)
         step1.classList.remove('bg-secondary');
         step1.classList.add('bg-warning');
         progressText.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading file...';
 
-        // Progress step animation
+        // Progress step animation - faster steps to show activity
         const progressSteps = [
-            { step: 1, text: 'Uploading file...', delay: 0 },
-            { step: 2, text: 'Processing survey data...', delay: 1500 },
-            { step: 3, text: 'Converting to BIDS format...', delay: 3500 },
-            { step: 4, text: 'Validating output...', delay: 5500 }
+            { step: 1, text: 'Uploading file...', delay: 0, progress: 10 },
+            { step: 2, text: 'Processing survey data...', delay: 500, progress: 35 },
+            { step: 3, text: 'Converting to BIDS format...', delay: 1200, progress: 60 },
+            { step: 4, text: 'Validating output...', delay: 2000, progress: 85 }
         ];
 
-        function activateStep(stepNum) {
+        function activateStep(stepNum, progressPct) {
             const steps = [step1, step2, step3, step4];
             const lines = [line1, line2, line3];
 
@@ -4395,13 +4403,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 steps[stepNum - 1].classList.remove('bg-secondary', 'bg-success');
                 steps[stepNum - 1].classList.add('bg-warning');
             }
+
+            // Update progress bar
+            if (progressPct !== undefined) {
+                progressBar.style.transition = 'width 0.4s ease';
+                progressBar.style.width = progressPct + '%';
+            }
         }
 
         // Schedule step animations
         const stepTimeouts = [];
-        progressSteps.forEach(({ step, text, delay }) => {
+        progressSteps.forEach(({ step, text, delay, progress }) => {
             const timeout = setTimeout(() => {
-                activateStep(step);
+                activateStep(step, progress);
                 progressText.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${text}`;
             }, delay);
             stepTimeouts.push(timeout);
@@ -4430,10 +4444,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .then(data => {
-            // Clear step timeouts and hide progress
+            // Clear step timeouts
             stepTimeouts.forEach(t => clearTimeout(t));
 
-            // Mark all steps complete
+            // Mark all steps complete with smooth animation
             [step1, step2, step3, step4].forEach(s => {
                 s.classList.remove('bg-warning', 'bg-secondary');
                 s.classList.add('bg-success');
@@ -4443,12 +4457,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 l.classList.remove('border-secondary', 'border-warning');
                 l.classList.add('border-success');
             });
+
+            // Complete progress bar
+            progressBar.style.transition = 'width 0.3s ease';
+            progressBar.style.width = '100%';
+            progressBar.classList.remove('bg-warning', 'progress-bar-animated');
+            progressBar.classList.add('bg-success');
             progressText.innerHTML = '<i class="fas fa-check-circle text-success me-2"></i>Conversion complete!';
 
-            // Hide progress after short delay
+            // Hide progress after a longer delay so user can see completion
             setTimeout(() => {
                 progressContainer.classList.add('d-none');
-            }, 1000);
+            }, 1500);
 
             if (data.log && Array.isArray(data.log)) {
                 data.log.forEach(entry => {
@@ -4500,9 +4520,19 @@ document.addEventListener('DOMContentLoaded', function() {
             convertInfo.classList.remove('d-none');
         })
         .catch(err => {
-            // Clear step timeouts and hide progress on error
+            // Clear step timeouts
             stepTimeouts.forEach(t => clearTimeout(t));
-            progressContainer.classList.add('d-none');
+
+            // Show error state on progress bar
+            progressBar.classList.remove('bg-warning', 'progress-bar-animated');
+            progressBar.classList.add('bg-danger');
+            progressBar.style.width = '100%';
+            progressText.innerHTML = '<i class="fas fa-exclamation-circle text-danger me-2"></i>Conversion failed';
+
+            // Hide progress after delay
+            setTimeout(() => {
+                progressContainer.classList.add('d-none');
+            }, 2000);
 
             // Check if this is a duplicate error and user wants to handle it interactively
             const duplicateHandlingMode = document.getElementById('convertDuplicateHandling')?.value || 'error';
