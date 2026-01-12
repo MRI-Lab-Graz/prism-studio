@@ -18,16 +18,16 @@ By the end of this exercise, you will:
 ## Starting Materials
 
 Look in the `raw_data/` folder:
-- **`participants_raw.tsv`** - Demographic information about your participants
-- **`phq9_scores.tsv`** - PHQ-9 depression questionnaire responses (tab-delimited file with columns `phq9_01` through `phq9_09` that already match the metadata template)
+- **`wellbeing.tsv`** - A survey about general wellness and life satisfaction.
+- **`fitness_data.tsv`** - Biometric measurements (heart rate, strength, etc.) from a physical fitness assessment.
 
-These are typical "raw" data files - just tab-delimited exports from your data collection tool.
+These are typical "raw" data files - tab-delimited exports from your data collection tools.
 
 ---
 
 ## Your Task
 
-Convert the PHQ-9 data into a proper BIDS/PRISM dataset with the correct folder structure and file naming.
+Convert both the Wellbeing and Fitness data into a proper BIDS/PRISM dataset with the correct folder structure and file naming.
 
 ---
 
@@ -40,35 +40,32 @@ Convert the PHQ-9 data into a proper BIDS/PRISM dataset with the correct folder 
 
 ### Step 2: Open the Converter Tool
 1. Click on **"Converter"** in the navigation menu (top or sidebar)
-2. Select **"Survey Data Converter"** or **"Raw Data to BIDS"**
+2. Select **"Survey Data Converter"**
 
-### Step 3: Load Your Data
+### Step 3: Load Your Data (Wellbeing Survey)
 1. Click **"Browse"** or **"Choose File"**
-2. Navigate to: `demo/workshop/exercise_1_raw_to_bids/raw_data/phq9_scores.tsv`
+2. Navigate to: `demo/workshop/exercise_1_raw_to_bids/raw_data/wellbeing.tsv`
 3. Click **"Upload"** or **"Load File"**
-4. Preview your data - you should see columns and rows
+4. Preview your data - you should see columns like `participant_id`, `session`, `age`, `WB01`, etc.
 
 ### Step 4: Map Columns
 The converter needs to know which column represents what:
 
 **Participant ID:**
-- Find the column with subject IDs (likely called `ID`, `SubjectID`, or `participant_id`)
 - In the dropdown, select: **"This column represents → participant_id"**
 
-**Session (if present):**
-- If you have a `session` or `visit` column, map it to → `session`
-- If not, the system will use `ses-01` for all participants
+**Session:**
+- Select: **"This column represents → session"**
 
-**Survey/Task Name:**
-- Enter: **`phq9`**
-- This will appear in your filenames as `task-phq9`
+**Survey Name:**
+- Enter: **`wellbeing`**
+- This will appear in your filenames as `task-wellbeing`
 
 **Modality:**
 - Select: **`survey`**
 
 **Data Columns:**
-- The remaining columns (`phq9_01`, `phq9_02`, ..., `phq9_09`) already match the survey template, so leave their names unchanged when converting
-- Make sure column names don't have spaces or special characters
+- The columns `WB01` through `WB05` are your survey items. The demographic columns (`age`, `sex`, etc.) will be automatically handled.
 
 ### Step 5: Configure Output
 1. **Output Directory:**
@@ -78,7 +75,7 @@ The converter needs to know which column represents what:
    - Select this folder
 
 2. **Preview Filename:**
-   - Check the preview: `sub-{id}_ses-{session}_task-phq9_survey.tsv`
+   - Check the preview: `sub-{id}_ses-{session}_task-wellbeing_survey.tsv`
    - This should look correct!
 
 3. **Options to Enable:**
@@ -87,22 +84,36 @@ The converter needs to know which column represents what:
    - ☑ **Create dataset_description.json**
 
 ### Step 6: Convert!
-1. Click **"Convert to BIDS"** or **"Generate Dataset"**
+1. Click **"Convert to BIDS"**
 2. Wait for the progress bar
-3. Success message should appear: "✓ Created X files"
+3. Success message should appear.
 
-### Step 7: Explore Your Dataset
+### Step 7: Convert Biometrics (Bonus)
+Repeat the process for **`fitness_data.tsv`**:
+1. Load `fitness_data.tsv`
+2. Map `participant_id` and `session`
+3. Enter Survey/Task Name: **`fitness`**
+4. **Change Modality to: `biometrics`**
+5. Select the same **`my_dataset`** output folder
+6. Click **"Convert to BIDS"**
+
+---
+
+## Step 8: Explore Your Dataset
 Navigate to `my_dataset/` and explore the structure:
 
 ```
 my_dataset/
-├── dataset_description.json      ← Describes your dataset
-├── participants.tsv               ← One row per participant
-└── sub-01/                        ← One folder per subject
-    └── ses-01/                    ← One folder per session
-        └── survey/                ← Modality folder
-            ├── sub-01_ses-01_task-phq9_survey.tsv    ← Data file
-            └── sub-01_ses-01_task-phq9_survey.json   ← Metadata (sidecar)
+├── dataset_description.json
+├── participants.tsv
+└── sub-DEMO001/
+    └── ses-baseline/
+        ├── survey/
+        │   ├── sub-DEMO001_ses-baseline_task-wellbeing_survey.tsv
+        │   └── sub-DEMO001_ses-baseline_task-wellbeing_survey.json
+        └── biometrics/
+            ├── sub-DEMO001_ses-baseline_task-fitness_biometrics.tsv
+            └── sub-DEMO001_ses-baseline_task-fitness_biometrics.json
 ```
 
 **Open some files and look inside!**
@@ -115,17 +126,17 @@ my_dataset/
 - [ ] A `my_dataset/` folder with proper structure
 - [ ] `dataset_description.json` at the root
 - [ ] `participants.tsv` at the root
-- [ ] Folders named `sub-01/`, `sub-02/`, `sub-03/`, etc.
-- [ ] Inside each: `ses-01/survey/`
+- [ ] Folders named `sub-DEMO001/`, `sub-DEMO002/`, etc.
+- [ ] Inside each: `ses-baseline/survey/` (and `biometrics/` if you did the bonus)
 - [ ] `.tsv` data files with proper BIDS naming
 - [ ] `.json` sidecar files (one for each `.tsv`)
 
 ✅ **File naming should follow this pattern:**
-- `sub-01` (with hyphen, not `sub01`)
-- `ses-01` (with hyphen, not `ses01`)
-- `task-phq9` (with hyphen, not `taskphq9`)
+- `sub-DEMO001` (with hyphen, not `subDEMO001`)
+- `ses-baseline` (with hyphen, not `sesbaseline`)
+- `task-wellbeing` (with hyphen, not `taskwellbeing`)
 - Underscores `_` separate the entities
-- Example: `sub-01_ses-01_task-phq9_survey.tsv`
+- Example: `sub-DEMO001_ses-baseline_task-wellbeing_survey.tsv`
 
 ---
 
@@ -169,26 +180,26 @@ Let's check if your dataset is valid:
 ### BIDS Hierarchy
 ```
 Dataset (study level)
-└── Subject (participant level) - sub-01, sub-02, ...
-    └── Session (visit level) - ses-01, ses-02, ...
-        └── Modality (data type) - survey, eeg, physio, ...
+└── Subject (participant level) - sub-DEMO001, sub-DEMO002, ...
+    └── Session (visit level) - ses-baseline, ses-followup, ...
+        └── Modality (data type) - survey, biometrics, ...
             └── Files (actual data)
 ```
 
 ### File Naming Rules
-- **Entities** are key-value pairs: `sub-01`, `ses-01`, `task-phq9`
+- **Entities** are key-value pairs: `sub-DEMO001`, `ses-baseline`, `task-wellbeing`
 - **Separator** between entities: underscore `_`
 - **Separator** within entities: hyphen `-`
-- **Suffix** describes the modality: `survey`, `eeg`, `physio`
-- **Extension** is the file type: `.tsv`, `.json`, `.nii.gz`
+- **Suffix** describes the modality: `survey`, `biometrics`
+- **Extension** is the file type: `.tsv`, `.json`
 
 ### Sidecar Files
-- Every data file (`.tsv`, `.nii.gz`, etc.) should have a `.json` sidecar
+- Every data file (`.tsv`, `.json`, etc.) should have a `.json` sidecar
 - The sidecar contains metadata about the data file
 - Same filename, just different extension
 - Example:
-  - Data: `sub-01_ses-01_task-phq9_survey.tsv`
-  - Sidecar: `sub-01_ses-01_task-phq9_survey.json`
+  - Data: `sub-DEMO001_ses-baseline_task-wellbeing_survey.tsv`
+  - Sidecar: `sub-DEMO001_ses-baseline_task-wellbeing_survey.json`
 
 ---
 
