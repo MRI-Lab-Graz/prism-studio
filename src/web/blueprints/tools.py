@@ -537,6 +537,7 @@ def api_recipes_surveys():
 
     data = request.get_json(silent=True) or {}
     dataset_path = (data.get("dataset_path") or "").strip()
+    recipe_dir = (data.get("recipe_dir") or "").strip()
     modality = (data.get("modality") or "survey").strip().lower() or "survey"
     out_format = (data.get("format") or "csv").strip().lower() or "csv"
     survey_filter = (data.get("survey") or "").strip() or None
@@ -567,6 +568,7 @@ def api_recipes_surveys():
         result = compute_survey_recipes(
             prism_root=dataset_path,
             repo_root=current_app.root_path,
+            recipe_dir=recipe_dir,
             survey=survey_filter,
             out_format=out_format,
             modality=modality,

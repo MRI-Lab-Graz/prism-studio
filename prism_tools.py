@@ -101,6 +101,7 @@ def cmd_recipes_surveys(args):
         sys.exit(1)
 
     out_format = str(getattr(args, "format", "flat") or "flat").strip().lower()
+    recipe_dir = (str(args.recipes).strip() if getattr(args, "recipes", None) else "") or None
     survey_filter = (str(args.survey).strip() if getattr(args, "survey", None) else "") or None
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
@@ -111,6 +112,7 @@ def cmd_recipes_surveys(args):
         result = compute_survey_recipes(
             prism_root=prism_root,
             repo_root=repo_root,
+            recipe_dir=recipe_dir,
             survey=survey_filter,
             out_format=out_format,
             modality="survey",
@@ -150,6 +152,7 @@ def cmd_recipes_biometrics(args):
         sys.exit(1)
 
     out_format = str(getattr(args, "format", "flat") or "flat").strip().lower()
+    recipe_dir = (str(args.recipes).strip() if getattr(args, "recipes", None) else "") or None
     biometric_filter = (str(args.biometric).strip() if getattr(args, "biometric", None) else "") or None
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
@@ -158,6 +161,7 @@ def cmd_recipes_biometrics(args):
         result = compute_survey_recipes(
             prism_root=prism_root,
             repo_root=repo_root,
+            recipe_dir=recipe_dir,
             survey=biometric_filter,
             out_format=out_format,
             modality="biometrics",
@@ -1287,6 +1291,10 @@ def main():
         ),
     )
     parser_deriv_surveys.add_argument(
+        "--recipes",
+        help="Optional path to a custom folder containing recipe JSONs. Overrides default repository folder.",
+    )
+    parser_deriv_surveys.add_argument(
         "--survey",
         help="Optional comma-separated recipe selection (e.g., 'ADS'). Default: run all matching recipes.",
     )
@@ -1376,6 +1384,10 @@ def main():
             "Path to the PRISM tools repository root (used to locate recipe JSONs under "
             "recipes/biometrics/*.json). Default: this script's folder."
         ),
+    )
+    parser_deriv_biometrics.add_argument(
+        "--recipes",
+        help="Optional path to a custom folder containing recipe JSONs. Overrides default repository folder.",
     )
     parser_deriv_biometrics.add_argument(
         "--biometric",
