@@ -908,10 +908,22 @@ def _generate_recipes_boilerplate(
 
 
 def _load_and_validate_recipes(
-    repo_root: Path, modality: str, survey_ids: str | None = None
+    repo_root: Path, modality: str, survey_ids: str | None = None, recipe_dir: str | Path | None = None
 ) -> dict[str, dict]:
     """Locate, load and validate recipe JSON files."""
-    if modality == "survey":
+    if recipe_dir:
+        recipes_dir = Path(recipe_dir).resolve()
+        
+        # Smart detection: if the provided dir has no JSONs but has modality subfolders, descend.
+        # This helps if the user selects the top-level 'recipes' folder of a project.
+        if recipes_dir.is_dir() and not list(recipes_dir.glob("*.json")):
+            if modality == "survey" and (recipes_dir / "surveys").is_dir():
+                recipes_dir = recipes_dir / "surveys"
+            elif modality == "biometrics" and (recipes_dir / "biometrics").is_dir():
+                recipes_dir = recipes_dir / "biometrics"
+                
+        expected = str(recipes_dir / "*.json")
+    elif modality == "survey":
         recipes_dir = (repo_root / "recipes" / "surveys").resolve()
         expected = "recipes/surveys/*.json"
     elif modality == "biometrics":
@@ -1384,6 +1396,7 @@ def compute_survey_recipes(
     *,
     prism_root: str | Path,
     repo_root: str | Path,
+    recipe_dir: str | Path | None = None,
     survey: str | None = None,
     out_format: str = "flat",
     modality: str = "survey",
@@ -1397,6 +1410,7 @@ def compute_survey_recipes(
     Args:
             prism_root: Target PRISM dataset root (must exist).
             repo_root: Repository root (used to locate recipe JSONs).
+            recipe_dir: Optional custom folder containing recipe JSONs.
             survey: Optional comma-separated recipe ids to apply.
             out_format: "flat" (default), "prism", "csv", "xlsx", "save", "r".
             lang: Language for metadata labels (e.g., "en", "de").
@@ -1433,7 +1447,7 @@ def compute_survey_recipes(
         raise ValueError("--layout must be one of: long, wide")
 
     # 1. Load and validate recipes
-    recipes = _load_and_validate_recipes(repo_root, modality, survey)
+    recipes = _load_and_validate_recipes(repo_root, modality, survey, recipe_dir=recipe_dir)
 
     # 2. Scan dataset for TSV files based on modality
     tsv_files = _find_tsv_files(prism_root, modality)
