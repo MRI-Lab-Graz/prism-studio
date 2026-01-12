@@ -149,14 +149,12 @@ def migrate_survey_template_to_i18n(source: dict, languages: list[str]) -> dict:
     Output keeps the original top-level structure and adds an "I18n" block.
     """
 
-    languages = [str(l).strip() for l in (languages or []) if str(l).strip()]
+    languages = [str(lang).strip() for lang in (languages or []) if str(lang).strip()]
     if not languages:
         languages = ["de", "en"]
 
     # Detect language from content (more reliable than Technical.Language in legacy files).
     texts: List[str] = []
-    tech_raw = source.get("Technical")
-    tech = tech_raw if isinstance(tech_raw, dict) else {}
     study_raw = source.get("Study")
     study = study_raw if isinstance(study_raw, dict) else {}
     for k in ["OriginalName", "Description"]:

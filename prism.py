@@ -28,16 +28,12 @@ src_path = os.path.join(current_dir, "src")
 sys.path.insert(0, src_path)
 
 try:
-    from schema_manager import load_all_schemas
-    from validator import DatasetValidator, MODALITY_PATTERNS
-    from stats import DatasetStats
     from reporting import print_dataset_summary, print_validation_results
-    from bids_integration import check_and_update_bidsignore
     from runner import validate_dataset
     from issues import tuple_to_issue, issues_to_dict, summarize_issues
     from config import load_config, merge_cli_args, find_config_file
     from fixer import DatasetFixer, get_fixable_issues
-    from formatters import format_output, FORMATTERS
+    from formatters import format_output
     from plugins import (
         PluginManager,
         create_context,
@@ -159,7 +155,7 @@ Examples:
         help="Disable plugin loading",
     )
     parser.add_argument(
-        "--version", action="version", version="PRISM 1.6.6"
+        "--version", action="version", version="PRISM 1.7.0"
     )
 
     args = parser.parse_args()

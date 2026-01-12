@@ -834,7 +834,7 @@ def generate_boilerplate_endpoint():
             os.remove(temp_path)
             if html_path.exists():
                 os.remove(html_path)
-        except:
+        except Exception:
             pass
 
         return jsonify({

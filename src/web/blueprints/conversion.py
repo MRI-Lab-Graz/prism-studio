@@ -6,8 +6,6 @@ Handles survey, biometrics, and physio conversion routes.
 import os
 import io
 import re
-import json
-import uuid
 import shutil
 import tempfile
 import zipfile
@@ -464,7 +462,8 @@ def api_survey_convert_validate():
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for p in output_root.rglob("*"):
-                if p.is_file(): zf.write(p, p.relative_to(output_root).as_posix())
+                if p.is_file():
+                    zf.write(p, p.relative_to(output_root).as_posix())
         mem.seek(0)
         zip_base64 = base64.b64encode(mem.read()).decode("utf-8")
 
@@ -481,7 +480,8 @@ def api_survey_convert_validate():
 def api_biometrics_check_library():
     """Check the structure of a biometrics template library folder."""
     library_path = (request.args.get("library_path") or "").strip()
-    if not library_path: return jsonify({"error": "No library path provided"}), 400
+    if not library_path:
+        return jsonify({"error": "No library path provided"}), 400
 
     library_root = Path(library_path)
     biometrics_dir = library_root / "biometrics"
@@ -496,8 +496,10 @@ def api_biometrics_check_library():
         "template_count": 0,
     }
 
-    if not structure_info["has_biometrics_folder"]: structure_info["missing_items"].append("biometrics/")
-    if not structure_info["has_participants_json"]: structure_info["missing_items"].append("participants.json (or ../participants.json)")
+    if not structure_info["has_biometrics_folder"]:
+        structure_info["missing_items"].append("biometrics/")
+    if not structure_info["has_participants_json"]:
+        structure_info["missing_items"].append("participants.json (or ../participants.json)")
     if biometrics_dir.is_dir():
         structure_info["template_count"] = len(list(biometrics_dir.glob("biometrics-*.json")))
 
@@ -793,7 +795,6 @@ def api_batch_convert():
     if not batch_convert_folder:
         return jsonify({"error": "Batch conversion not available"}), 500
 
-    job_id = str(uuid.uuid4())[:8]
     logs = []
 
     def log_callback(message: str, level: str = "info"):
@@ -802,7 +803,6 @@ def api_batch_convert():
     dataset_name = (request.form.get("dataset_name") or "Converted Dataset").strip()
     modality_filter = request.form.get("modality", "all")
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
-    return_format = request.form.get("format", "zip")
 
     try:
         sampling_rate = float(sampling_rate_str) if sampling_rate_str else None
@@ -817,7 +817,8 @@ def api_batch_convert():
     valid_extensions = {".raw", ".vpd", ".edf", ".tsv", ".csv", ".txt", ".json", ".nii", ".nii.gz", ".pdf", ".png", ".jpg", ".jpeg"}
     validated_files = []
     for f in files:
-        if not f or not f.filename: continue
+        if not f or not f.filename:
+            continue
         filename = secure_filename(f.filename)
         
         # Handle .nii.gz
@@ -837,7 +838,8 @@ def api_batch_convert():
         tmp_path = Path(tmp_dir)
         input_dir = tmp_path / "input"
         output_dir = tmp_path / "output"
-        input_dir.mkdir(); output_dir.mkdir()
+        input_dir.mkdir()
+        output_dir.mkdir()
 
         for f, filename in validated_files:
             f.save(str(input_dir / filename))
@@ -863,7 +865,7 @@ def api_batch_convert():
         
         return jsonify({
             "status": "success",
-            "log": "\n".join([l["message"] for l in logs]),
+            "log": "\n".join([log_entry["message"] for log_entry in logs]),
             "zip": zip_base64,
             "converted": result.success_count,
             "errors": result.error_count
@@ -915,7 +917,8 @@ def api_physio_rename():
                         sub = bids.get("sub")
                         ses = bids.get("ses")
                         parts = [sub]
-                        if ses: parts.append(ses)
+                        if ses:
+                            parts.append(ses)
                         parts.append(modality)
                         parts.append(new_name)
                         zip_path = "/".join(parts)
@@ -933,7 +936,8 @@ def api_physio_rename():
     try:
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for f in files:
-                if not f or not f.filename: continue
+                if not f or not f.filename:
+                    continue
                 old_name = secure_filename(f.filename)
                 
                 try:

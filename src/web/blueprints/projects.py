@@ -258,7 +258,7 @@ def get_global_library_settings():
 @projects_bp.route("/api/settings/global-library", methods=["POST"])
 def set_global_library_settings():
     """Update the global template library settings."""
-    from src.config import load_app_settings, save_app_settings, AppSettings
+    from src.config import load_app_settings, save_app_settings
     from flask import current_app
 
     data = request.get_json()

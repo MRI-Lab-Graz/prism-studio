@@ -280,14 +280,16 @@ def infer_code_from_message(message: str) -> str:
     elif "schema version mismatch" in msg_lower:
         return "PRISM005"
     elif "dataset_description.json" in msg_lower:
-        if "missing" in msg_lower: return "PRISM001"
+        if "missing" in msg_lower:
+            return "PRISM001"
         return "PRISM003"
     elif "no subjects found" in msg_lower:
         return "PRISM002"
     elif "consistency" in msg_lower or "mislabeled" in msg_lower or "mixed session" in msg_lower:
         return "PRISM601"
     elif "empty" in msg_lower:
-        if "tsv" in msg_lower: return "PRISM401"
+        if "tsv" in msg_lower:
+            return "PRISM401"
         return "PRISM204"
     elif "not in allowed values" in msg_lower:
         return "PRISM402"

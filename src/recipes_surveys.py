@@ -23,7 +23,7 @@ import json
 import math
 from typing import Any, Dict, List, Optional
 
-from src.reporting import get_i18n_text, _pick_references
+from src.reporting import _pick_references
 
 # Safe dictionary for eval() calls
 SAFE_GLOBALS = {
@@ -1610,7 +1610,7 @@ def _write_jamovi_r_helper(
         
         lines.append(f"if ('{var}' %in% colnames(df)) {{")
         lines.append(f"  df[['{var}']] <- factor(df[['{var}']], levels=c({r_levels}), labels=c({r_labels}))")
-        lines.append(f"}}")
+        lines.append("}")
 
     lines.append("")
     lines.append("# 3. Variable Descriptions (Reference)")

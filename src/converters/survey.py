@@ -12,12 +12,16 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 import csv
-import json
 import zipfile
 import xml.etree.ElementTree as ET
 from copy import deepcopy
 import re
 from typing import Iterable
+
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 
 from ..utils.io import ensure_dir as _ensure_dir, read_json as _read_json, write_json as _write_json
 from ..utils.naming import sanitize_id
@@ -400,13 +404,13 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
             # If the single column name contains semicolons or commas, likely wrong delimiter
             if ";" in col_name:
                 raise ValueError(
-                    f"TSV file appears to use semicolons (;) as delimiter instead of tabs. "
-                    f"Please convert to tab-separated format or save as CSV."
+                    "TSV file appears to use semicolons (;) as delimiter instead of tabs. "
+                    "Please convert to tab-separated format or save as CSV."
                 )
             elif "," in col_name:
                 raise ValueError(
-                    f"TSV file appears to use commas as delimiter instead of tabs. "
-                    f"Please save as .csv file or convert to tab-separated format."
+                    "TSV file appears to use commas as delimiter instead of tabs. "
+                    "Please save as .csv file or convert to tab-separated format."
                 )
 
         return df.rename(columns={c: str(c).strip() for c in df.columns})
@@ -1079,6 +1083,28 @@ def _validate_survey_item_value(
     raise ValueError(f"Invalid value '{val}' for '{item_id}' (Sub: {sub_id}, Task: {task}). Expected: {allowed}")
 
 
+def _inject_missing_token(sidecar: dict, *, token: str) -> dict:
+    """Ensure every item Levels includes the missing-value token."""
+    if not isinstance(sidecar, dict):
+        return sidecar
+
+    for key, item in sidecar.items():
+        if key in _NON_ITEM_TOPLEVEL_KEYS:
+            continue
+        if not isinstance(item, dict):
+            continue
+
+        levels = item.get("Levels")
+        if isinstance(levels, dict):
+            if token not in levels:
+                levels[token] = "Missing/Not provided"
+                item["Levels"] = levels
+        else:
+            item["Levels"] = {token: "Missing/Not provided"}
+
+    return sidecar
+
+
 def _read_alias_rows(path: Path) -> list[list[str]]:
     rows: list[list[str]] = []
     with open(path, "r", encoding="utf-8") as f:
@@ -1144,7 +1170,7 @@ def _apply_alias_file_to_dataframe(*, df, alias_file: str | Path) -> "object":
     """
 
     try:
-        import pandas as pd
+        pass
     except Exception as e:  # pragma: no cover
         raise RuntimeError(
             "pandas is required for survey conversion. Ensure dependencies are installed via setup.sh"
