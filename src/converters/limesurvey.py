@@ -16,11 +16,15 @@ if str(project_root) not in sys.path:
 
 try:
     from .survey_base import load_survey_library as load_schemas
-    from .excel_base import sanitize_task_name
+    from ..utils.naming import sanitize_task_name
 except (ImportError, ValueError):
     # Fallback for different execution contexts
-    from survey_base import load_survey_library as load_schemas
-    from excel_base import sanitize_task_name
+    try:
+        from survey_base import load_survey_library as load_schemas
+        from ..utils.naming import sanitize_task_name
+    except (ImportError, ValueError):
+        from .survey_base import load_survey_library as load_schemas
+        from utils.naming import sanitize_task_name
 
 from .csv import process_dataframe  # noqa: E402
 

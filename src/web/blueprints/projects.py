@@ -490,6 +490,94 @@ def save_participants_schema():
         }), 500
 
 
+@projects_bp.route("/api/projects/description", methods=["GET"])
+def get_dataset_description():
+    """Get the dataset_description.json for the current project."""
+    import json
+
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({
+            "success": False,
+            "error": "No project selected"
+        }), 400
+
+    project_path = Path(current["path"])
+    desc_path = project_path / "dataset_description.json"
+
+    if not desc_path.exists():
+        return jsonify({
+            "success": False,
+            "error": "dataset_description.json not found"
+        }), 404
+
+    try:
+        with open(desc_path, "r", encoding="utf-8") as f:
+            description = json.load(f)
+
+        return jsonify({
+            "success": True,
+            "description": description
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to read dataset_description.json: {str(e)}"
+        }), 500
+
+
+@projects_bp.route("/api/projects/description", methods=["POST"])
+def save_dataset_description():
+    """Save the dataset_description.json for the current project."""
+    import json
+
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({
+            "success": False,
+            "error": "No project selected"
+        }), 400
+
+    data = request.get_json()
+    if not data or "description" not in data:
+        return jsonify({
+            "success": False,
+            "error": "No description data provided"
+        }), 400
+
+    description = data["description"]
+    project_path = Path(current["path"])
+    desc_path = project_path / "dataset_description.json"
+
+    try:
+        # Ensure name remains standard BIDS 'Name' (case sensitivity)
+        if "Name" not in description and "name" in description:
+            description["Name"] = description.pop("name")
+
+        # Basic BIDS validation - ensure Name and BIDSVersion exist
+        if "Name" not in description:
+            return jsonify({"success": False, "error": "Dataset 'Name' is required"}), 400
+        if "BIDSVersion" not in description:
+            description["BIDSVersion"] = "1.10.1"
+
+        with open(desc_path, "w", encoding="utf-8") as f:
+            json.dump(description, f, indent=2, ensure_ascii=False)
+
+        # If name changed, also update session name for UI consistency
+        if "Name" in description:
+            set_current_project(str(project_path), description["Name"])
+
+        return jsonify({
+            "success": True,
+            "message": "dataset_description.json saved successfully"
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to save dataset_description.json: {str(e)}"
+        }), 500
+
+
 @projects_bp.route("/api/projects/participants/templates", methods=["GET"])
 def get_participants_templates():
     """Get predefined BIDS-compatible field templates.
