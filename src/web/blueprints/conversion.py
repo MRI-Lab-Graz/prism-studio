@@ -186,6 +186,7 @@ def api_survey_convert():
     language = (request.form.get("language") or "").strip() or None
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
+    save_to_project = request.form.get("save_to_project") == "true"
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_")
     try:
@@ -248,6 +249,20 @@ def api_survey_convert():
                 alias_file=alias_path,
                 strict_levels=True if strict_levels else None,
             )
+
+        # Save to project if requested
+        if save_to_project:
+            p_path = session.get("current_project_path")
+            if p_path:
+                p_path = Path(p_path)
+                if p_path.exists():
+                    # Merge output_root contents into project_path
+                    for item in output_root.rglob("*"):
+                        if item.is_file():
+                            rel_path = item.relative_to(output_root)
+                            dest = p_path / rel_path
+                            dest.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.copy2(item, dest)
 
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -322,6 +337,7 @@ def api_survey_convert_validate():
     language = (request.form.get("language") or "").strip() or None
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
+    save_to_project = request.form.get("save_to_project") == "true"
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_validate_")
     try:
@@ -458,6 +474,26 @@ def api_survey_convert_validate():
                 # Simple string list for non-formatted results
                 validation_result["warnings"].extend(conversion_warnings)
 
+        # Save to project if requested
+        if save_to_project:
+            project_path = session.get("current_project_path")
+            if project_path:
+                project_path = Path(project_path)
+                if project_path.exists():
+                    add_log(f"Saving output to project: {project_path.name}", "info")
+                    # Merge output_root contents into project_path
+                    for item in output_root.rglob("*"):
+                        if item.is_file():
+                            rel_path = item.relative_to(output_root)
+                            dest = project_path / rel_path
+                            dest.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.copy2(item, dest)
+                    add_log("Project updated successfully!", "success")
+                else:
+                    add_log(f"Project path not found: {project_path}", "error")
+            else:
+                add_log("No project selected in session. Cannot save directly.", "warning")
+
         # Create ZIP
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -579,6 +615,7 @@ def api_biometrics_convert():
     sheet = (request.form.get("sheet") or "0").strip() or 0
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
+    save_to_project = request.form.get("save_to_project") == "true"
     
     # Get tasks to export
     tasks_to_export = request.form.getlist("tasks[]")
@@ -642,6 +679,26 @@ def api_biometrics_convert():
         if result.unknown_columns:
             for col in result.unknown_columns:
                 log_msg(f"Unknown column ignored: {col}", "warning")
+
+        # Save to project if requested
+        if save_to_project:
+            project_path = session.get("current_project_path")
+            if project_path:
+                project_path = Path(project_path)
+                if project_path.exists():
+                    log_msg(f"Saving output to project: {project_path.name}", "info")
+                    # Merge output_root contents into project_path
+                    for item in output_root.rglob("*"):
+                        if item.is_file():
+                            rel_path = item.relative_to(output_root)
+                            dest = project_path / rel_path
+                            dest.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.copy2(item, dest)
+                    log_msg("Project updated successfully!", "success")
+                else:
+                    log_msg(f"Project path not found: {project_path}", "error")
+            else:
+                log_msg("No project selected in session. Cannot save directly.", "warning")
 
         # Create ZIP
         mem = io.BytesIO()
