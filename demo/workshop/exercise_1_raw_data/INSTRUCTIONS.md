@@ -1,7 +1,7 @@
-# Exercise 1: Converting Raw Data to BIDS Structure
+# Exercise 1: Handling Raw Data
 
 **Time:** 30 minutes  
-**Goal:** Transform unstructured CSV files into a valid BIDS/PRISM dataset
+**Goal:** Transform unstructured CSV/TSV files into a valid BIDS/PRISM dataset
 
 ---
 
@@ -44,7 +44,7 @@ Convert both the Wellbeing and Fitness data into a proper BIDS/PRISM dataset wit
 
 ### Step 3: Load Your Data (Wellbeing Survey)
 1. Click **"Browse"** or **"Choose File"**
-2. Navigate to: `demo/workshop/exercise_1_raw_to_bids/raw_data/wellbeing.tsv`
+2. Navigate to: `demo/workshop/exercise_1_raw_data/raw_data/wellbeing.tsv`
 3. Click **"Upload"** or **"Load File"**
 4. Preview your data - you should see columns like `participant_id`, `session`, `age`, `WB01`, etc.
 
@@ -70,7 +70,7 @@ The converter needs to know which column represents what:
 ### Step 5: Configure Output
 1. **Output Directory:**
    - Click **"Set Output Folder"**
-   - Navigate to: `demo/workshop/exercise_1_raw_to_bids/`
+   - Navigate to: `demo/workshop/exercise_1_raw_data/`
    - Create a new folder called: **`my_dataset`**
    - Select this folder
 
@@ -246,4 +246,4 @@ But wait - the JSON sidecars are mostly empty! They only have basic information.
 
 ---
 
-**Ready for Exercise 2?** → Go to `../exercise_2_json_metadata/`
+**Ready for Exercise 2?** → Go to `../exercise_2_hunting_errors/`

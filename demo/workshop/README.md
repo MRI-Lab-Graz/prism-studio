@@ -1,59 +1,28 @@
 # PRISM Workshop Demo Data
 
-This folder contains materials for the PRISM hands-on workshop. The workshop teaches participants how to use the PRISM GUI to convert raw data, create metadata, and export analysis-ready outputs.
+This folder contains materials for the PRISM hands-on workshop.
 
-## Contents
+## Exercises
 
-### 1. `exercise_1_raw_to_bids/`
-**Purpose:** Starting point for Exercise 1 (Raw Data Conversion)
+### 0. Exercise 0: Project Setup
+- **Goal:** Launch app and create project.
+- **Key URL:** http://localhost:5001/projects
 
-- **Main File:** `wellbeing.tsv` - Wellness survey data.
-- **Bonus File:** `fitness_data.tsv` - Biometric data.
+### 1. Exercise 1: Handling Raw Data
+- **Goal:** Convert \`wellbeing.tsv\` and \`fitness_data.tsv\` to BIDS.
+- **Materials:** \`exercise_1_raw_data/raw_data/\`
 
----
+### 2. Exercise 2: Hunting for Errors
+- **Goal:** Explore 13 messy files to learn about validation.
+- **Materials:** \`exercise_2_hunting_errors/bad_examples/\`
 
-### 2. `exercise_2_json_metadata/`
-**Purpose:** Exercise 2 (Validation & Troubleshooting)
+### 3. Exercise 3: Using Recipes
+- **Goal:** Scoring and SPSS export.
+- **Materials:** Uses data from Exercise 1 and recipes in \`recipes/\`.
 
-- **Materials:** `bad_examples/` folder with intentionally malformed data.
+### 4. Exercise 4: Making & Editing Templates
+- **Goal:** Use the Template Editor (Tools menu).
+- **Key URL:** http://localhost:5001/tools/template-editor
 
----
-
-### 3. `exercise_3_recipes_export/`
-**Purpose:** Exercise 3 (Recipes & SPSS Export)
-
-- **Recipes:** `wellbeing.json`, `fitness.json`
-
-**Current Use:** Not used in new workshop plan
-
-**Status:** ⚠️ Can be kept for reference but not part of main workshop flow
-
-**Notes:**
-- Old workshop focused on fixing an already-structured dataset
-- New workshop focuses on creating a dataset from scratch
-- Can be used as a bonus "troubleshooting" exercise if time permits
-
----
-
-### 4. `valid_dataset/`
-**Purpose:** Reference implementation - completed example for participants to compare
-
-### 4. `valid_dataset/`
-**Purpose:** Reference implementation - completed example for participants to compare
-
-**Status:** ⚠️ Needs to be created/updated
-
-**Should Contain:**
-A fully completed PRISM dataset that participants can reference, including wellbeing and fitness data.
-
----
-
-## Required Supporting Files
-
-### 1. Library Template: `library/survey/wellbeing.json`
-**Purpose:** Reusable template for Wellbeing metadata
-
-**Status:** ✓ Provided in library
-
-### 2. Scoring Recipes: `demo/workshop/recipes/`
-**Purpose:** Automated scoring logic for Exercise 3.
+## Reference Implementation
+- **Folder:** \`reference_solution/\` contains what the dataset should look like after Exercise 1.
