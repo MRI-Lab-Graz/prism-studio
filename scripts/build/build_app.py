@@ -31,7 +31,7 @@ def _get_version() -> str:
 
 def _generate_version_info(name: str, version: str) -> str:
     """Generates a Windows version info file for PyInstaller."""
-    # Convert version "1.7.0" to (1, 7, 0, 0)
+    # Convert version "1.7.1" to (1, 7, 1, 0)
     v_parts = version.split(".")
     while len(v_parts) < 4:
         v_parts.append("0")

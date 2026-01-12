@@ -25,3 +25,13 @@ metadata/
 physiological/
 prism_summary.json
 validation_report.json
+
+# Added by prism
+*_biometrics.*
+*_eyetrack.*
+*_physio.*
+*_survey.*
+task-*_biometrics.json
+task-*_eyetrack.json
+task-*_physio.json
+task-*_survey.json
