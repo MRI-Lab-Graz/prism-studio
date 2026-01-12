@@ -41,6 +41,19 @@ _MISSING_TOKEN = "n/a"
 _LANGUAGE_KEY_RE = re.compile(r"^[a-z]{2}(?:-[a-z]{2})?$", re.IGNORECASE)
 
 
+def _strip_internal_keys(sidecar: dict) -> dict:
+    """Remove internal underscore-prefixed keys that would fail schema validation."""
+    if not isinstance(sidecar, dict):
+        return sidecar
+    # Create a copy to avoid side effects
+    out = dict(sidecar)
+    # Filter keys matching internal patterns
+    for k in list(out.keys()):
+        if str(k).startswith("_"):
+            del out[k]
+    return out
+
+
 @dataclass(frozen=True)
 class SurveyConvertResult:
     tasks_included: list[str]
@@ -655,7 +668,9 @@ def _convert_survey_dataframe_to_prism_dataset(
             localized = _inject_missing_token(localized, token=_MISSING_TOKEN)
             if technical_overrides:
                 localized = _apply_technical_overrides(localized, technical_overrides)
-            _write_json(sidecar_path, localized)
+            # Remove internal keys before writing to avoid schema validation errors
+            cleaned = _strip_internal_keys(localized)
+            _write_json(sidecar_path, cleaned)
 
     # --- Process and Write Responses ---
     missing_cells_by_subject: dict[str, int] = {}
@@ -875,7 +890,7 @@ def _write_survey_participants(
     # Determine extra columns from template + standard fallbacks
     extra_cols: list[str] = []
     template_cols = set(participant_template.keys()) if participant_template else set()
-    for col in (template_cols | {"age", "sex", "gender", "education", "handedness"}):
+    for col in (template_cols | {"age", "sex", "gender", "education", "handedness", "completion_date"}):
         if col in lower_to_col:
             actual = lower_to_col[col]
             if actual not in {id_col, ses_col}:
