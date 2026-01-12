@@ -1,0 +1,11 @@
+participant_id	session	age	sex	education	WB01	WB02	WB03	WB04	WB05
+sub-001	ses-01	28	f	4	very good	excellent	bad	good	great
+sub-002	ses-01	34	m	5	okay	fine	terrible	good	nice
+sub-003	ses-02	22	f	3	amazing	wonderful	awful	superb	fantastic
+sub-004	ses-01	25	m	4	bad	good	okay	fine	well
+sub-005	ses-02	30	f	5	not bad	pretty good	could be better	decent	alright
+sub-006	ses-03	40	m	2	meh	low	poor	unsatisfactory	subpar
+sub-007	ses-01	19	f	1	perfect	flawless	immaculate	outstanding	exceptional
+sub-008	ses-02	55	m	6	terrible	horrific	dreadful	appalling	abysmal
+sub-009	ses-03	27	f	3	average	middle	mid	so-so	ordinary
+sub-010	ses-01	33	m	4	brilliant	spectacular	marvelous	terrific	stupendous

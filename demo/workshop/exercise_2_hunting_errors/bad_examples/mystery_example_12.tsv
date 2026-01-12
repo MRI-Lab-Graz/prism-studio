@@ -1,0 +1,11 @@
+participant_id	session	age	sex	education	WB01	WB02	WB03	WB04	WB05
+sub-001	ses-01	28	f	4	4	5	2	4	5
+sub-"002"	ses-01	34	m	5	3	4	3	3	4
+sub-003	ses-02	22	f	3	5	5	<script>	5	5
+sub-004	ses-01	45	m	6	4	5	2	"4"	5
+sub-005	ses-02	30	f	5	4\t5	4\n5	4\r5	4\b5	4\f5
+sub-006	ses-03	40	m	2	4	5	2	4	5	☠️
+sub-007	ses-01	19	f	1	4	5	2	4	5	\u0000
+sub-008	ses-02	55	m	6	4	5	2	4	5	%s%d
+sub-009	ses-03	27	f	3	4	5	2	4	5	$(rm -rf /)
+sub-010	ses-01	33	m	4	4	5	2	4	5	&nbsp;

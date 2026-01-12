@@ -1,0 +1,11 @@
+participant_id	session	age	sex	education	WB01	WB02	WB03	WB04	WB05	MYSTERY1	RANDOM_COL	XYZ123
+sub-001	ses-01	28	f	4	4	5	2	4	5	hello	world	foo
+sub-002	ses-01	34	m	5	3	4	3	3	4	test	data	bar
+sub-003	ses-02	22	f	3	5	5	1	5	5	unknown	stuff	baz
+sub-004	ses-01	25	m	4	2	3	4	5	1	more	random	data
+sub-005	ses-02	30	f	5	1	2	5	4	3	hidden	in	here
+sub-006	ses-03	40	m	2	4	4	4	4	4	secret	params	abc
+sub-007	ses-01	19	f	1	5	1	2	3	4	extra	info	def
+sub-008	ses-02	55	m	6	3	3	3	3	3	unrecognized	field	ghi
+sub-009	ses-03	27	f	3	2	5	1	4	2	bogus	entry	jkl
+sub-010	ses-01	33	m	4	4	2	4	2	4	noise	column	mno
