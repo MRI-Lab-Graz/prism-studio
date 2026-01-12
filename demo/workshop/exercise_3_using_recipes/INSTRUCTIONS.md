@@ -1,4 +1,4 @@
-# Exercise 3: Recipes & SPSS Export
+# Exercise 3: Using Recipes
 
 **Time:** 20 minutes  
 **Goal:** Calculate total scores automatically and export analysis-ready data to SPSS
@@ -19,7 +19,7 @@ By the end of this exercise, you will:
 ## Starting Point
 
 **You'll use the dataset you completed in Exercise 1:**
-- Location: `../exercise_1_raw_to_bids/my_dataset/`
+- Location: `../exercise_1_raw_data/my_dataset/`
 - Status: Properly structured.
 
 **Requirements:**
@@ -66,7 +66,7 @@ The recipes are located at `demo/workshop/recipes/surveys/wellbeing.json` and `d
 
 **Dataset Folder:**
 1. Click **"Browse"** button next to "PRISM Dataset Folder"
-2. Navigate to: `demo/workshop/exercise_1_raw_to_bids/my_dataset/`
+2. Navigate to: `demo/workshop/exercise_1_raw_data/my_dataset/`
 3. Select this folder
 
 ---
@@ -107,13 +107,7 @@ Instead of manual summing in Excel, you used a **machine-readable recipe** that:
 
 ---
 
-## End of Workshop!
+**Next Steps:**
+Now that you've processed your data, let's learn how to create your own survey templates from scratch!
 
-🎉 **Congratulations!** You have completed the PRISM Workshop.
-
-You now know how to:
-1. **Convert** messy raw data to BIDS/PRISM structure
-2. **Handle** and troubleshoot common data issues
-3. **Automate** scoring and export using recipes
-
-For more information, visit the [PRISM Documentation](https://prism-validator.readthedocs.io).
+**Ready for Exercise 4?** → Go to `../exercise_4_templates/`
