@@ -15,10 +15,18 @@ import base64
 import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
-from flask import Blueprint, request, jsonify, send_file, render_template, current_app, session
+from flask import Blueprint, request, jsonify, send_file, render_template, current_app, session, Response
 from werkzeug.utils import secure_filename
 from src.web.utils import list_survey_template_languages, sanitize_jsonable
 from src.web import run_validation
+from src.web.conversion_progress import (
+    create_job,
+    update_conversion_progress,
+    get_conversion_progress,
+    stream_progress,
+    clear_conversion_progress,
+    complete_job,
+)
 
 # Import conversion logic
 try:
@@ -54,6 +62,26 @@ except ImportError:
     parse_bids_filename = None
 
 conversion_bp = Blueprint('conversion', __name__)
+
+
+@conversion_bp.route("/api/conversion-progress/<job_id>")
+def get_progress_endpoint(job_id):
+    """Get current progress for a conversion job (polling)."""
+    return jsonify(get_conversion_progress(job_id))
+
+
+@conversion_bp.route("/api/conversion-progress-stream/<job_id>")
+def stream_progress_endpoint(job_id):
+    """Stream progress updates via Server-Sent Events (SSE)."""
+    return Response(
+        stream_progress(job_id, timeout=120.0),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+        }
+    )
+
 
 # Batch conversion job tracking
 _batch_convert_jobs = {}
@@ -409,6 +437,11 @@ def api_survey_convert_validate():
     if not convert_survey_xlsx_to_prism_dataset and not convert_survey_lsa_to_prism_dataset:
         return jsonify({"error": "Survey conversion module not available"}), 500
 
+    # Generate job ID for progress tracking
+    job_id = request.form.get("job_id") or str(uuid.uuid4())
+    create_job(job_id)
+    update_conversion_progress(job_id, 5, "Initializing conversion...", step=1)
+
     log_messages = []
     conversion_warnings = []
 
@@ -485,6 +518,7 @@ def api_survey_convert_validate():
 
         output_root = tmp_dir_path / "prism_dataset"
         add_log("Starting data conversion...", "info")
+        update_conversion_progress(job_id, 15, "Processing survey data...", step=2)
 
         if strict_levels:
             add_log("Strict Levels Validation: enabled", "info")
@@ -512,6 +546,7 @@ def api_survey_convert_validate():
                 duplicate_handling=duplicate_handling,
             )
         add_log("Conversion completed", "success")
+        update_conversion_progress(job_id, 45, "Converting to BIDS format...", step=3)
 
         # Process warnings and missing cells
         if convert_result and getattr(convert_result, "missing_cells_by_subject", None):
@@ -524,6 +559,7 @@ def api_survey_convert_validate():
 
         # Run validation
         add_log("Running validation...", "info")
+        update_conversion_progress(job_id, 60, "Validating output...", step=4)
         validation_result = {"errors": [], "warnings": [], "summary": {}}
         if request.form.get("validate") == "true":
             try:
@@ -595,6 +631,7 @@ def api_survey_convert_validate():
                 validation_result["warnings"].extend(conversion_warnings)
 
         # Create ZIP
+        update_conversion_progress(job_id, 80, "Creating output package...", step=4)
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for p in output_root.rglob("*"):
@@ -611,6 +648,7 @@ def api_survey_convert_validate():
             try:
                 project_root = Path(project_path)
                 add_log(f"Saving converted data to project: {project_path}", "info")
+                update_conversion_progress(job_id, 90, "Saving to project...", step=4)
 
                 # Extract participant IDs from output (sub-* directories)
                 participants_imported = []
@@ -707,10 +745,14 @@ def api_survey_convert_validate():
         # Count files created
         conversion_stats["files_created"] = sum(1 for _ in output_root.rglob("*") if _.is_file())
 
+        # Mark conversion complete
+        complete_job(job_id, success=True, message="Conversion complete!")
+
         response_data = {
             "success": True, "log": log_messages,
             "validation": validation_result, "zip_base64": zip_base64,
             "conversion_stats": conversion_stats,
+            "job_id": job_id,
         }
         if saved_to_project:
             response_data["saved_to_project"] = saved_to_project
@@ -718,7 +760,9 @@ def api_survey_convert_validate():
 
         return jsonify(sanitize_jsonable(response_data))
     except Exception as e:
-        return jsonify({"error": str(e), "log": log_messages}), 500
+        # Mark job as failed
+        complete_job(job_id, success=False, message=str(e))
+        return jsonify({"error": str(e), "log": log_messages, "job_id": job_id}), 500
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 

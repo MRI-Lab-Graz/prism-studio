@@ -4375,13 +4375,9 @@ document.addEventListener('DOMContentLoaded', function() {
         step1.classList.add('bg-warning');
         progressText.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading file...';
 
-        // Progress step animation - faster steps to show activity
-        const progressSteps = [
-            { step: 1, text: 'Uploading file...', delay: 0, progress: 10 },
-            { step: 2, text: 'Processing survey data...', delay: 500, progress: 35 },
-            { step: 3, text: 'Converting to BIDS format...', delay: 1200, progress: 60 },
-            { step: 4, text: 'Validating output...', delay: 2000, progress: 85 }
-        ];
+        // Generate job ID for SSE progress tracking
+        const jobId = crypto.randomUUID ? crypto.randomUUID() : 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        formData.append('job_id', jobId);
 
         function activateStep(stepNum, progressPct) {
             const steps = [step1, step2, step3, step4];
@@ -4411,15 +4407,52 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // Schedule step animations
-        const stepTimeouts = [];
-        progressSteps.forEach(({ step, text, delay, progress }) => {
-            const timeout = setTimeout(() => {
-                activateStep(step, progress);
-                progressText.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${text}`;
-            }, delay);
-            stepTimeouts.push(timeout);
-        });
+        // Connect to SSE for real-time progress updates
+        let eventSource = null;
+        let sseConnected = false;
+
+        function connectSSE() {
+            eventSource = new EventSource(`/api/conversion-progress-stream/${jobId}`);
+
+            eventSource.onmessage = function(event) {
+                sseConnected = true;
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.progress !== undefined) {
+                        activateStep(data.step || 1, data.progress);
+                        progressText.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${data.message || 'Processing...'}`;
+                    }
+                    if (data.status === 'complete' || data.status === 'error') {
+                        eventSource.close();
+                    }
+                } catch (e) {
+                    // Ignore parse errors (heartbeats)
+                }
+            };
+
+            eventSource.onerror = function() {
+                // SSE connection failed, will fallback to simulated progress
+                if (!sseConnected) {
+                    eventSource.close();
+                    // Use fallback simulated progress
+                    const fallbackSteps = [
+                        { step: 1, text: 'Uploading file...', delay: 0, progress: 10 },
+                        { step: 2, text: 'Processing survey data...', delay: 1000, progress: 35 },
+                        { step: 3, text: 'Converting to BIDS format...', delay: 3000, progress: 60 },
+                        { step: 4, text: 'Validating output...', delay: 5000, progress: 85 }
+                    ];
+                    fallbackSteps.forEach(({ step, text, delay, progress }) => {
+                        setTimeout(() => {
+                            activateStep(step, progress);
+                            progressText.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${text}`;
+                        }, delay);
+                    });
+                }
+            };
+        }
+
+        // Start SSE connection
+        connectSSE();
 
         fetch('/api/survey-convert-validate', {
             method: 'POST',
@@ -4444,8 +4477,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .then(data => {
-            // Clear step timeouts
-            stepTimeouts.forEach(t => clearTimeout(t));
+            // Close SSE connection
+            if (eventSource) {
+                eventSource.close();
+            }
 
             // Mark all steps complete with smooth animation
             [step1, step2, step3, step4].forEach(s => {
@@ -4520,8 +4555,10 @@ document.addEventListener('DOMContentLoaded', function() {
             convertInfo.classList.remove('d-none');
         })
         .catch(err => {
-            // Clear step timeouts
-            stepTimeouts.forEach(t => clearTimeout(t));
+            // Close SSE connection
+            if (eventSource) {
+                eventSource.close();
+            }
 
             // Show error state on progress bar
             progressBar.classList.remove('bg-warning', 'progress-bar-animated');
