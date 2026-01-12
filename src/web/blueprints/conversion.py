@@ -63,6 +63,39 @@ def _participant_json_candidates(library_root: Path, depth: int = 3):
         candidates.append(parent / "participants.json")
     return candidates
 
+def _log_file_head(input_path: Path, suffix: str, log_func):
+    """Helper to log the first few lines of a file to debug delimiter or structure issues."""
+    try:
+        if suffix in {".csv", ".tsv"}:
+            with open(input_path, "r", encoding="utf-8", errors="replace") as f:
+                head_lines = []
+                for i in range(4):
+                    line = f.readline()
+                    if not line:
+                        break
+                    head_lines.append(f"  L{i+1}: {line.strip()}")
+                if head_lines:
+                    log_func("Detected file content (first 4 lines):\n" + "\n".join(head_lines), "info")
+        elif suffix == ".xlsx":
+            try:
+                import pandas as pd
+                # Read only first few rows
+                df = pd.read_excel(input_path, nrows=4)
+                head_lines = []
+                # Header row
+                cols = [str(c) for c in df.columns]
+                head_lines.append("  H:  " + "\t".join(cols))
+                # Data rows
+                for i, row in df.iterrows():
+                    vals = [str(v) for v in row.values]
+                    head_lines.append(f"  R{i+1}: " + "\t".join(vals))
+                if head_lines:
+                    log_func("Detected Excel structure (first 4 rows):\n" + "\n".join(head_lines), "info")
+            except Exception as e:
+                log_func(f"Could not read Excel preview: {str(e)}", "warning")
+    except Exception as e:
+        log_func(f"Could not log file head: {str(e)}", "warning")
+
 @conversion_bp.route("/api/survey-languages", methods=["GET"])
 def api_survey_languages():
     """List available languages for the selected survey template library folder."""
@@ -353,20 +386,8 @@ def api_survey_convert_validate():
         output_root = tmp_dir_path / "prism_dataset"
         add_log("Starting data conversion...", "info")
 
-        # For text files, log the head to help debug delimiter issues
-        if suffix in {".csv", ".tsv"}:
-            try:
-                with open(input_path, "r", encoding="utf-8", errors="replace") as f:
-                    head_lines = []
-                    for i in range(4):
-                        line = f.readline()
-                        if not line:
-                            break
-                        head_lines.append(f"  [{i+1}] {line.strip()}")
-                    if head_lines:
-                        add_log("File head (first 4 lines):\n" + "\n".join(head_lines), "info")
-            except Exception:
-                pass
+        # Log the head to help debug delimiter/structure issues
+        _log_file_head(input_path, suffix, add_log)
 
         if strict_levels:
             add_log("Strict Levels Validation: enabled", "info")
@@ -637,20 +658,8 @@ def api_biometrics_convert():
 
         log_msg(f"Starting biometrics conversion for {filename}", "info")
         
-        # For text files, log the head to help debug delimiter issues
-        if suffix in {".csv", ".tsv"}:
-            try:
-                with open(input_path, "r", encoding="utf-8", errors="replace") as f:
-                    head_lines = []
-                    for i in range(4):
-                        line = f.readline()
-                        if not line:
-                            break
-                        head_lines.append(f"  [{i+1}] {line.strip()}")
-                    if head_lines:
-                        log_msg("File head (first 4 lines):\n" + "\n".join(head_lines), "info")
-            except Exception:
-                pass
+        # Log the head to help debug delimiter/structure issues
+        _log_file_head(input_path, suffix, log_msg)
 
         if tasks_to_export:
             log_msg(f"Exporting tasks: {', '.join(tasks_to_export)}", "step")
