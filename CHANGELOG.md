@@ -5,6 +5,21 @@ All notable changes to the PRISM project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2026-01-12
+
+### Added
+- **Custom Recipes**: Added support for custom recipe folders in survey and biometrics commands.
+- **Project UI**: Added dataset description API endpoints and metadata management.
+- **Converter UI**: Option to save conversion outputs directly to the project.
+- **Logging**: New logging helper for file previews and streamlined log processing in the converter UI.
+
+### Changed
+- **BIDS Compatibility**: Enhanced `.bidsignore` rules and integrated automatic updates during survey conversion.
+- **Refactoring**: Updated imports in the web module for improved organization.
+
+### Removed
+- **Examples**: Removed outdated example files.
+
 ## [1.7.0] - 2026-01-12
 
 ### Added
