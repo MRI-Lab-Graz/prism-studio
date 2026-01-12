@@ -10,7 +10,6 @@ from flask import Blueprint, render_template, request, jsonify, flash, redirect,
 from werkzeug.utils import secure_filename
 
 from src.web import (
-    is_system_file,
     format_validation_results,
     run_validation,
     update_progress,

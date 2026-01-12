@@ -138,6 +138,8 @@
     "Supervisor": "investigator"
   },
   "WB01": {
+    "AllowedValues": [],
+    "DataType": "integer",
     "Description": {
       "de": "Wie zufrieden sind Sie im Allgemeinen mit Ihrem Leben?",
       "en": "In general, how satisfied are you with your life?"
@@ -164,22 +166,19 @@
         "en": "Extremely satisfied"
       }
     },
-    "Units": "ordinal",
-    "AllowedValues": [
-      ""
-    ],
-    "DataType": "string",
-    "MaxValue": 0,
-    "MinValue": 0,
+    "MaxValue": null,
+    "MinValue": null,
     "Relevance": "",
     "RunHint": "",
     "SessionHint": "",
     "TermURL": "",
     "Unit": "",
+    "Units": "ordinal",
     "WarnMaxValue": 0,
     "WarnMinValue": 0
   },
   "WB02": {
+    "AllowedValues": [],
     "Description": {
       "de": "Wie oft fühlen Sie sich glücklich?",
       "en": "How often do you feel happy?"
@@ -206,9 +205,20 @@
         "en": "Always"
       }
     },
-    "Units": "ordinal"
+    "MaxValue": null,
+    "MinValue": null,
+    "Units": "ordinal",
+    "DataType": "integer",
+    "Relevance": "",
+    "RunHint": "",
+    "SessionHint": "",
+    "TermURL": "",
+    "Unit": "",
+    "WarnMaxValue": 0,
+    "WarnMinValue": 0
   },
   "WB03": {
+    "AllowedValues": [],
     "Description": {
       "de": "Wie würden Sie Ihr aktuelles Stressniveau einschätzen?",
       "en": "How would you rate your current stress level?"
@@ -235,12 +245,16 @@
         "en": "Very high stress"
       }
     },
+    "MaxValue": null,
+    "MinValue": null,
     "Scoring": {
       "Note": "This item is reverse-scored for the positive well-being subscale"
     },
-    "Units": "ordinal"
+    "Units": "ordinal",
+    "DataType": "integer"
   },
   "WB04": {
+    "AllowedValues": [],
     "Description": {
       "de": "Wie energiegeladen fühlen Sie sich an den meisten Tagen?",
       "en": "How energetic do you feel on most days?"
@@ -267,9 +281,13 @@
         "en": "Extremely energetic"
       }
     },
-    "Units": "ordinal"
+    "MaxValue": null,
+    "MinValue": null,
+    "Units": "ordinal",
+    "DataType": "integer"
   },
   "WB05": {
+    "AllowedValues": [],
     "Description": {
       "de": "Wie zufrieden sind Sie mit Ihrer Schlafqualität?",
       "en": "How satisfied are you with your sleep quality?"
@@ -296,6 +314,9 @@
         "en": "Extremely satisfied"
       }
     },
-    "Units": "ordinal"
+    "MaxValue": null,
+    "MinValue": null,
+    "Units": "ordinal",
+    "DataType": "integer"
   }
 }

@@ -4,7 +4,7 @@ import sys
 import os
 import shutil
 import json
-import csv
+import hashlib
 from pathlib import Path
 
 # Enforce running from the repo-local virtual environment (skip for frozen/packaged apps)
@@ -23,17 +23,16 @@ if not getattr(sys, "frozen", False) and not sys.prefix.startswith(venv_path):
 project_root = Path(__file__).resolve().parent
 sys.path.append(str(project_root))
 
-from src.utils.io import ensure_dir as _ensure_dir, read_json as _read_json, write_json as _write_json, read_tsv_rows as _read_tsv_rows, write_tsv_rows as _write_tsv_rows
-from src.utils.naming import sanitize_task_name
+from src.utils.io import ensure_dir as _ensure_dir, read_json as _read_json, write_json as _write_json  # noqa: E402
 
-from helpers.physio.convert_varioport import convert_varioport
-from src.library_validator import check_uniqueness
-from src.converters.limesurvey import convert_lsa_to_prism, batch_convert_lsa
-from src.converters.excel_to_survey import process_excel
-from src.converters.excel_to_biometrics import process_excel_biometrics
-from src.reporting import generate_methods_text
-from src.library_i18n import compile_survey_template, migrate_survey_template_to_i18n
-from src.recipes_surveys import compute_survey_recipes, SurveyRecipesResult
+from helpers.physio.convert_varioport import convert_varioport  # noqa: E402
+from src.library_validator import check_uniqueness  # noqa: E402
+from src.converters.limesurvey import convert_lsa_to_prism, batch_convert_lsa  # noqa: E402
+from src.converters.excel_to_survey import process_excel  # noqa: E402
+from src.converters.excel_to_biometrics import process_excel_biometrics  # noqa: E402
+from src.reporting import generate_methods_text  # noqa: E402
+from src.library_i18n import compile_survey_template, migrate_survey_template_to_i18n  # noqa: E402
+from src.recipes_surveys import compute_survey_recipes  # noqa: E402
 
 
 def _normalize_survey_key(raw: str) -> str:
@@ -198,9 +197,6 @@ def sanitize_id(id_str):
     for char, repl in replacements.items():
         id_str = id_str.replace(char, repl)
     return id_str
-
-
-import hashlib
 
 
 def get_json_hash(json_path):
@@ -481,7 +477,7 @@ def cmd_survey_convert(args):
         tmp = tempfile.TemporaryDirectory(prefix=f"prism_survey_library_{lang}_")
         out_dir = Path(tmp.name)
         _ensure_dir(out_dir)
-        fallback_langs = [l for l in ["de", "en"] if l != lang]
+        fallback_langs = [lang_code for lang_code in ["de", "en"] if lang_code != lang]
 
         for p in sorted(src_dir.glob("survey-*.json")):
             compiled = compile_survey_template(

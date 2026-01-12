@@ -4,7 +4,7 @@ Reporting and formatting utilities for PRISM web interface.
 
 import os
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 from src.web.path_utils import (
     strip_temp_path, 
     strip_temp_path_from_message, 

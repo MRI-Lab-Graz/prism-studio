@@ -22,7 +22,7 @@ except (ImportError, ValueError):
     from survey_base import load_survey_library as load_schemas
     from excel_base import sanitize_task_name
 
-from .csv import process_dataframe
+from .csv import process_dataframe  # noqa: E402
 
 
 # LimeSurvey question type codes mapped to human-readable names
@@ -1103,7 +1103,6 @@ def convert_lsa_to_dataset(
         # Continue without timings
         pass
 
-    task_hint = task_name or sanitize_task_name(Path(lsa_path).stem)
     schemas = load_schemas(library_path)
     if not schemas:
         print(f"No schemas found in {library_path}, cannot build dataset.")
@@ -1209,12 +1208,7 @@ def convert_lsa_to_dataset(
             task_df["SurveyDuration"] = task_df[granular_col]
 
             # Debug: Compare durations
-            try:
-                avg_task = pd.to_numeric(task_df[granular_col], errors="coerce").mean()
-                avg_global = pd.to_numeric(df["SurveyDuration"], errors="coerce").mean()
-                # print(f"  -> Duration Check for {t_name}: Avg Task = {avg_task:.2f}s vs Avg Global = {avg_global:.2f}min")
-            except Exception:
-                pass
+            pass
 
         # 4. Process this single task
         # print(f"DEBUG: Processing task {t_name}")
