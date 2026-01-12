@@ -68,4 +68,10 @@ from .path_utils import (
 # Reporting utilities re-exported from specialized module
 from .reporting_utils import (
     format_validation_results,
+    sanitize_jsonable,
+)
+
+# Survey utilities re-exported from specialized module
+from .survey_utils import (
+    list_survey_template_languages,
 )
