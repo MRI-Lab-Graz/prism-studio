@@ -3068,9 +3068,17 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(async response => {
             const contentType = response.headers.get('content-type') || '';
+            let data = null;
             
             if (contentType.includes('application/json')) {
-                const data = await response.json();
+                data = await response.json();
+                // Process logs even if response is not ok
+                if (data.log && Array.isArray(data.log)) {
+                    data.log.forEach(entry => {
+                        appendLog(entry.message, entry.type || entry.level || 'info');
+                    });
+                }
+                
                 if (!response.ok) {
                     throw new Error(data.error || 'Conversion failed');
                 }
@@ -3085,12 +3093,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .then(data => {
-            if (data.log && Array.isArray(data.log)) {
-                data.log.forEach(entry => {
-                    appendLog(entry.message, entry.type || 'info');
-                });
-            }
-
+            // Logs already processed above for JSON responses
             if (data.validation) {
                 const v = data.validation;
                 const errorCount = (v.errors || []).length;
@@ -3341,18 +3344,21 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(async response => {
                 const data = await response.json();
+                
+                // Process logs even if response is not ok
+                if (data.log && Array.isArray(data.log)) {
+                    data.log.forEach(entry => {
+                        appendLog(entry.message, entry.type || entry.level || 'info', biometricsLog);
+                    });
+                }
+
                 if (!response.ok) {
                     throw new Error(data.error || 'Conversion failed');
                 }
                 return data;
             })
             .then(data => {
-                if (data.log && Array.isArray(data.log)) {
-                    data.log.forEach(entry => {
-                        appendLog(entry.message, entry.type || 'info', biometricsLog);
-                    });
-                }
-
+                // Logs already processed above
                 if (data.validation) {
                     const v = data.validation;
                     const errorCount = (v.errors || []).length;
