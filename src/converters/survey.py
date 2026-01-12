@@ -25,6 +25,7 @@ except ImportError:
 
 from ..utils.io import ensure_dir as _ensure_dir, read_json as _read_json, write_json as _write_json
 from ..utils.naming import sanitize_id
+from ..bids_integration import check_and_update_bidsignore
 
 _NON_ITEM_TOPLEVEL_KEYS = {
     "Technical",
@@ -720,6 +721,10 @@ def _convert_survey_dataframe_to_prism_dataset(
                 f"Task '{task}': Numeric values for items [{shown}{more}] were accepted via range tolerance."
             )
 
+    # Automatically update .bidsignore to exclude PRISM-specific metadata/folders
+    # that standard BIDS validators don't recognize.
+    check_and_update_bidsignore(output_root, ["survey"])
+
     return SurveyConvertResult(
         tasks_included=sorted(tasks_with_data),
         unknown_columns=unknown_cols,
@@ -858,7 +863,9 @@ def _write_survey_description(output_root: Path, name: str | None, authors: list
         "BIDSVersion": "1.10.1",
         "DatasetType": "raw",
         "Authors": authors or ["PRISM Survey Converter"],
+        "Acknowledgements": "This dataset was created using the PRISM framework.",
         "HowToAcknowledge": "Please cite the original survey publication and the PRISM framework.",
+        "Keywords": ["psychology", "survey", "PRISM"],
         "GeneratedBy": [
             {
                 "Name": "PRISM Survey Converter",
