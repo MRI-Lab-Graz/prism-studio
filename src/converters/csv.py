@@ -12,11 +12,9 @@ if str(project_root) not in sys.path:
 
 try:
     from .survey_base import load_survey_library as load_schemas, get_allowed_values
-    from .excel_base import sanitize_task_name
 except (ImportError, ValueError):
     # Fallback for different execution contexts
     from survey_base import load_survey_library as load_schemas, get_allowed_values
-    from excel_base import sanitize_task_name
 
 
 IGNORE_PARTICIPANT_COLS = {

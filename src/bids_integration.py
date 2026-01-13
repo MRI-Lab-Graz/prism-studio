@@ -31,6 +31,14 @@ EXTRA_BIDSIGNORE_RULES = {
     ".upload_manifest.json",
     "survey/",      # Root survey definition folder
     "derivatives/", # Explicitly ignore derivatives if needed
+    "*_survey.*",   # Ignore any survey related data/sidecars
+    "*_biometrics.*", # Ignore any biometrics related data/sidecars
+    "*_physio.*",     # Ignore any custom physio data/sidecars
+    "*_eyetrack.*",   # Ignore any custom eyetracking data/sidecars
+    "task-*_survey.json", # Root task templates
+    "task-*_biometrics.json",
+    "task-*_physio.json",
+    "task-*_eyetrack.json",
 }
 
 

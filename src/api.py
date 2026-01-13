@@ -26,7 +26,7 @@ if current_dir not in sys.path:
 try:
     from runner import validate_dataset
     from schema_manager import get_available_schema_versions, load_all_schemas
-    from issues import tuple_to_issue, issues_to_dict, summarize_issues, Issue
+    from issues import tuple_to_issue, issues_to_dict, summarize_issues
 except ImportError as e:
     print(f"⚠️  API import error: {e}")
     validate_dataset = None
@@ -55,7 +55,7 @@ def create_api_blueprint(schema_dir: Optional[str] = None):
             {
                 "status": "healthy",
                 "service": "prism",
-                "version": "1.6.6",
+                "version": "1.7.1",
                 "timestamp": datetime.utcnow().isoformat() + "Z",
             }
         )

@@ -1,0 +1,11 @@
+participant_id	session	age	sex	education	WB01	WB02	WB03	WB04	WB05
+sub-001	ses-01	28	f	4	4	5	2	4	5
+sub-002	ses-01	34	m	5	99	-5	300	0	10
+sub-003	ses-02	22	f	3	5	5	1	5	5
+sub-004	ses-01	25	m	4	44	55	66	77	88
+sub-005	ses-02	30	f	5	-1	-2	-3	-4	-5
+sub-006	ses-03	40	m	2	1000	2000	3000	4000	5000
+sub-007	ses-01	19	f	1	6	7	8	9	0
+sub-008	ses-02	55	m	6	123	456	789	0	999
+sub-009	ses-03	27	f	3	4.5	5.5	1.1	2.2	3.3
+sub-010	ses-01	33	m	4	10	20	30	40	50

@@ -1,5 +1,5 @@
 {
-  "globalTemplateLibraryPath": "/Volumes/Evo/software/psycho-validator/library/",
+  "globalTemplateLibraryPath": "/Users/karl/work/github/psycho-validator/demo/workshop/library/",
   "defaultModalities": [
     "survey",
     "biometrics"

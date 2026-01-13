@@ -4,7 +4,7 @@ import sys
 import os
 import shutil
 import json
-import csv
+import hashlib
 from pathlib import Path
 
 # Enforce running from the repo-local virtual environment (skip for frozen/packaged apps)
@@ -23,17 +23,16 @@ if not getattr(sys, "frozen", False) and not sys.prefix.startswith(venv_path):
 project_root = Path(__file__).resolve().parent
 sys.path.append(str(project_root))
 
-from src.utils.io import ensure_dir as _ensure_dir, read_json as _read_json, write_json as _write_json, read_tsv_rows as _read_tsv_rows, write_tsv_rows as _write_tsv_rows
-from src.utils.naming import sanitize_task_name
+from src.utils.io import ensure_dir as _ensure_dir, read_json as _read_json, write_json as _write_json  # noqa: E402
 
-from helpers.physio.convert_varioport import convert_varioport
-from src.library_validator import check_uniqueness
-from src.converters.limesurvey import convert_lsa_to_prism, batch_convert_lsa
-from src.converters.excel_to_survey import process_excel
-from src.converters.excel_to_biometrics import process_excel_biometrics
-from src.reporting import generate_methods_text
-from src.library_i18n import compile_survey_template, migrate_survey_template_to_i18n
-from src.recipes_surveys import compute_survey_recipes, SurveyRecipesResult
+from helpers.physio.convert_varioport import convert_varioport  # noqa: E402
+from src.library_validator import check_uniqueness  # noqa: E402
+from src.converters.limesurvey import convert_lsa_to_prism, batch_convert_lsa  # noqa: E402
+from src.converters.excel_to_survey import process_excel  # noqa: E402
+from src.converters.excel_to_biometrics import process_excel_biometrics  # noqa: E402
+from src.reporting import generate_methods_text  # noqa: E402
+from src.library_i18n import compile_survey_template, migrate_survey_template_to_i18n  # noqa: E402
+from src.recipes_surveys import compute_survey_recipes  # noqa: E402
 
 
 def _normalize_survey_key(raw: str) -> str:
@@ -102,6 +101,7 @@ def cmd_recipes_surveys(args):
         sys.exit(1)
 
     out_format = str(getattr(args, "format", "flat") or "flat").strip().lower()
+    recipe_dir = (str(args.recipes).strip() if getattr(args, "recipes", None) else "") or None
     survey_filter = (str(args.survey).strip() if getattr(args, "survey", None) else "") or None
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
@@ -112,6 +112,7 @@ def cmd_recipes_surveys(args):
         result = compute_survey_recipes(
             prism_root=prism_root,
             repo_root=repo_root,
+            recipe_dir=recipe_dir,
             survey=survey_filter,
             out_format=out_format,
             modality="survey",
@@ -151,6 +152,7 @@ def cmd_recipes_biometrics(args):
         sys.exit(1)
 
     out_format = str(getattr(args, "format", "flat") or "flat").strip().lower()
+    recipe_dir = (str(args.recipes).strip() if getattr(args, "recipes", None) else "") or None
     biometric_filter = (str(args.biometric).strip() if getattr(args, "biometric", None) else "") or None
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
@@ -159,6 +161,7 @@ def cmd_recipes_biometrics(args):
         result = compute_survey_recipes(
             prism_root=prism_root,
             repo_root=repo_root,
+            recipe_dir=recipe_dir,
             survey=biometric_filter,
             out_format=out_format,
             modality="biometrics",
@@ -198,9 +201,6 @@ def sanitize_id(id_str):
     for char, repl in replacements.items():
         id_str = id_str.replace(char, repl)
     return id_str
-
-
-import hashlib
 
 
 def get_json_hash(json_path):
@@ -481,7 +481,7 @@ def cmd_survey_convert(args):
         tmp = tempfile.TemporaryDirectory(prefix=f"prism_survey_library_{lang}_")
         out_dir = Path(tmp.name)
         _ensure_dir(out_dir)
-        fallback_langs = [l for l in ["de", "en"] if l != lang]
+        fallback_langs = [lang_code for lang_code in ["de", "en"] if lang_code != lang]
 
         for p in sorted(src_dir.glob("survey-*.json")):
             compiled = compile_survey_template(
@@ -1291,6 +1291,10 @@ def main():
         ),
     )
     parser_deriv_surveys.add_argument(
+        "--recipes",
+        help="Optional path to a custom folder containing recipe JSONs. Overrides default repository folder.",
+    )
+    parser_deriv_surveys.add_argument(
         "--survey",
         help="Optional comma-separated recipe selection (e.g., 'ADS'). Default: run all matching recipes.",
     )
@@ -1380,6 +1384,10 @@ def main():
             "Path to the PRISM tools repository root (used to locate recipe JSONs under "
             "recipes/biometrics/*.json). Default: this script's folder."
         ),
+    )
+    parser_deriv_biometrics.add_argument(
+        "--recipes",
+        help="Optional path to a custom folder containing recipe JSONs. Overrides default repository folder.",
     )
     parser_deriv_biometrics.add_argument(
         "--biometric",

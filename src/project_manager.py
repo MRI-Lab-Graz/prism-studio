@@ -24,7 +24,6 @@ Usage:
     result = pm.apply_fixes("/path/to/project")
 """
 
-import os
 import json
 import re
 import shutil
@@ -32,8 +31,8 @@ from pathlib import Path
 from datetime import date
 from typing import Dict, List, Any, Optional
 
-from src.fixer import DatasetFixer, get_fixable_issues
-from src.cross_platform import CrossPlatformFile, safe_path_join
+from src.fixer import DatasetFixer
+from src.cross_platform import CrossPlatformFile
 
 
 # Available PRISM modalities

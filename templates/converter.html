@@ -546,6 +546,18 @@
                                     </button>
                                 </div>
 
+                                {% if current_project.path %}
+                                <div class="col-12 mt-2">
+                                    <div class="form-check form-switch badge bg-primary bg-opacity-10 text-dark p-2 w-100 text-start border border-primary border-opacity-25" style="border-radius: 8px;">
+                                        <input class="form-check-input ms-0 me-2" type="checkbox" id="convertSaveToProject" checked>
+                                        <label class="form-check-label fw-bold" for="convertSaveToProject">
+                                            <i class="fas fa-folder-plus text-primary me-1"></i>Save directly to project: <span class="text-primary">{{ current_project.name }}</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-text mt-1 px-1 small text-muted">Files will be merged into {{ current_project.path }}</div>
+                                </div>
+                                {% endif %}
+
                                 <div class="col-12">
                                     <a class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" href="#surveyAdvancedOptions" role="button" aria-expanded="false">
                                         <i class="fas fa-cog me-1"></i>Advanced options
@@ -577,6 +589,7 @@
                                                 <input class="form-check-input" type="checkbox" id="convertStrictLevels">
                                                 <label class="form-check-label" for="convertStrictLevels">Strict Levels Validation</label>
                                             </div>
+                                            <div class="form-check form-switch mt-2 d-none">
                                             <div class="form-text">If enabled, values must match the template's enumerated Levels exactly. For .lsa inputs, leave this off to allow numeric scale values (e.g., 1) with detailed warnings.</div>
                                         </div>
                                     </div>
@@ -816,6 +829,18 @@
                                     </button>
                                 </div>
 
+                                {% if current_project.path %}
+                                <div class="col-12 mt-2">
+                                    <div class="form-check form-switch badge bg-primary bg-opacity-10 text-dark p-2 w-100 text-start border border-primary border-opacity-25" style="border-radius: 8px;">
+                                        <input class="form-check-input ms-0 me-2" type="checkbox" id="biometricsSaveToProject" checked>
+                                        <label class="form-check-label fw-bold" for="biometricsSaveToProject">
+                                            <i class="fas fa-folder-plus text-primary me-1"></i>Save directly to project: <span class="text-primary">{{ current_project.name }}</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-text mt-1 px-1 small text-muted">Files will be merged into {{ current_project.path }}</div>
+                                </div>
+                                {% endif %}
+
                                 <div class="col-12">
                                     <a class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" href="#biometricsAdvancedOptions" role="button" aria-expanded="false">
                                         <i class="fas fa-cog me-1"></i>Advanced options
@@ -841,6 +866,7 @@
                                                 <option value="error">Stop on unknown</option>
                                             </select>
                                         </div>
+                                        <div class="col-md-12 d-none">
                                     </div>
                                 </div>
                             </div>
@@ -3005,6 +3031,12 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('dataset_name', convertDatasetName.value.trim());
         formData.append('unknown', convertUnknown.value);
 
+        const saveToProjectEl = document.getElementById('convertSaveToProject');
+        if (saveToProjectEl && saveToProjectEl.checked) {
+            formData.append('save_to_project', 'true');
+            appendLog('Saving output directly to project', 'step');
+        }
+
         // Add ID column if selected
         const idColumn = document.getElementById('convertIdColumn')?.value;
         if (idColumn && idColumn !== 'auto') {
@@ -3036,9 +3068,17 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(async response => {
             const contentType = response.headers.get('content-type') || '';
+            let data = null;
             
             if (contentType.includes('application/json')) {
-                const data = await response.json();
+                data = await response.json();
+                // Process logs even if response is not ok
+                if (data.log && Array.isArray(data.log)) {
+                    data.log.forEach(entry => {
+                        appendLog(entry.message, entry.type || entry.level || 'info');
+                    });
+                }
+                
                 if (!response.ok) {
                     throw new Error(data.error || 'Conversion failed');
                 }
@@ -3053,12 +3093,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .then(data => {
-            if (data.log && Array.isArray(data.log)) {
-                data.log.forEach(entry => {
-                    appendLog(entry.message, entry.type || 'info');
-                });
-            }
-
+            // Logs already processed above for JSON responses
             if (data.validation) {
                 const v = data.validation;
                 const errorCount = (v.errors || []).length;
@@ -3285,6 +3320,12 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('dataset_name', biometricsDatasetName.value.trim());
             formData.append('unknown', biometricsUnknown.value);
 
+            const saveToProjectEl = document.getElementById('biometricsSaveToProject');
+            if (saveToProjectEl && saveToProjectEl.checked) {
+                formData.append('save_to_project', 'true');
+                appendLog('Saving output directly to project', 'step', biometricsLog);
+            }
+
             const sessionVal = document.getElementById('biometricsSession') ? document.getElementById('biometricsSession').value.trim() : '';
             if (sessionVal) {
                 formData.append('session', sessionVal);
@@ -3303,18 +3344,21 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(async response => {
                 const data = await response.json();
+                
+                // Process logs even if response is not ok
+                if (data.log && Array.isArray(data.log)) {
+                    data.log.forEach(entry => {
+                        appendLog(entry.message, entry.type || entry.level || 'info', biometricsLog);
+                    });
+                }
+
                 if (!response.ok) {
                     throw new Error(data.error || 'Conversion failed');
                 }
                 return data;
             })
             .then(data => {
-                if (data.log && Array.isArray(data.log)) {
-                    data.log.forEach(entry => {
-                        appendLog(entry.message, entry.type || 'info', biometricsLog);
-                    });
-                }
-
+                // Logs already processed above
                 if (data.validation) {
                     const v = data.validation;
                     const errorCount = (v.errors || []).length;

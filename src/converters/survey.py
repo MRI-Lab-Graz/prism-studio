@@ -12,15 +12,20 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 import csv
-import json
 import zipfile
 import xml.etree.ElementTree as ET
 from copy import deepcopy
 import re
 from typing import Iterable
 
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
 from ..utils.io import ensure_dir as _ensure_dir, read_json as _read_json, write_json as _write_json
 from ..utils.naming import sanitize_id
+from ..bids_integration import check_and_update_bidsignore
 
 _NON_ITEM_TOPLEVEL_KEYS = {
     "Technical",
@@ -35,6 +40,19 @@ _NON_ITEM_TOPLEVEL_KEYS = {
 
 _MISSING_TOKEN = "n/a"
 _LANGUAGE_KEY_RE = re.compile(r"^[a-z]{2}(?:-[a-z]{2})?$", re.IGNORECASE)
+
+
+def _strip_internal_keys(sidecar: dict) -> dict:
+    """Remove internal underscore-prefixed keys that would fail schema validation."""
+    if not isinstance(sidecar, dict):
+        return sidecar
+    # Create a copy to avoid side effects
+    out = dict(sidecar)
+    # Filter keys matching internal patterns
+    for k in list(out.keys()):
+        if str(k).startswith("_"):
+            del out[k]
+    return out
 
 
 @dataclass(frozen=True)
@@ -400,13 +418,13 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
             # If the single column name contains semicolons or commas, likely wrong delimiter
             if ";" in col_name:
                 raise ValueError(
-                    f"TSV file appears to use semicolons (;) as delimiter instead of tabs. "
-                    f"Please convert to tab-separated format or save as CSV."
+                    "TSV file appears to use semicolons (;) as delimiter instead of tabs. "
+                    "Please convert to tab-separated format or save as CSV."
                 )
             elif "," in col_name:
                 raise ValueError(
-                    f"TSV file appears to use commas as delimiter instead of tabs. "
-                    f"Please save as .csv file or convert to tab-separated format."
+                    "TSV file appears to use commas as delimiter instead of tabs. "
+                    "Please save as .csv file or convert to tab-separated format."
                 )
 
         return df.rename(columns={c: str(c).strip() for c in df.columns})
@@ -651,7 +669,9 @@ def _convert_survey_dataframe_to_prism_dataset(
             localized = _inject_missing_token(localized, token=_MISSING_TOKEN)
             if technical_overrides:
                 localized = _apply_technical_overrides(localized, technical_overrides)
-            _write_json(sidecar_path, localized)
+            # Remove internal keys before writing to avoid schema validation errors
+            cleaned = _strip_internal_keys(localized)
+            _write_json(sidecar_path, cleaned)
 
     # --- Process and Write Responses ---
     missing_cells_by_subject: dict[str, int] = {}
@@ -700,6 +720,10 @@ def _convert_survey_dataframe_to_prism_dataset(
             conversion_warnings.append(
                 f"Task '{task}': Numeric values for items [{shown}{more}] were accepted via range tolerance."
             )
+
+    # Automatically update .bidsignore to exclude PRISM-specific metadata/folders
+    # that standard BIDS validators don't recognize.
+    check_and_update_bidsignore(output_root, ["survey"])
 
     return SurveyConvertResult(
         tasks_included=sorted(tasks_with_data),
@@ -839,7 +863,9 @@ def _write_survey_description(output_root: Path, name: str | None, authors: list
         "BIDSVersion": "1.10.1",
         "DatasetType": "raw",
         "Authors": authors or ["PRISM Survey Converter"],
+        "Acknowledgements": "This dataset was created using the PRISM framework.",
         "HowToAcknowledge": "Please cite the original survey publication and the PRISM framework.",
+        "Keywords": ["psychology", "survey", "PRISM"],
         "GeneratedBy": [
             {
                 "Name": "PRISM Survey Converter",
@@ -871,7 +897,7 @@ def _write_survey_participants(
     # Determine extra columns from template + standard fallbacks
     extra_cols: list[str] = []
     template_cols = set(participant_template.keys()) if participant_template else set()
-    for col in (template_cols | {"age", "sex", "gender", "education", "handedness"}):
+    for col in (template_cols | {"age", "sex", "gender", "education", "handedness", "completion_date"}):
         if col in lower_to_col:
             actual = lower_to_col[col]
             if actual not in {id_col, ses_col}:
@@ -1079,6 +1105,28 @@ def _validate_survey_item_value(
     raise ValueError(f"Invalid value '{val}' for '{item_id}' (Sub: {sub_id}, Task: {task}). Expected: {allowed}")
 
 
+def _inject_missing_token(sidecar: dict, *, token: str) -> dict:
+    """Ensure every item Levels includes the missing-value token."""
+    if not isinstance(sidecar, dict):
+        return sidecar
+
+    for key, item in sidecar.items():
+        if key in _NON_ITEM_TOPLEVEL_KEYS:
+            continue
+        if not isinstance(item, dict):
+            continue
+
+        levels = item.get("Levels")
+        if isinstance(levels, dict):
+            if token not in levels:
+                levels[token] = "Missing/Not provided"
+                item["Levels"] = levels
+        else:
+            item["Levels"] = {token: "Missing/Not provided"}
+
+    return sidecar
+
+
 def _read_alias_rows(path: Path) -> list[list[str]]:
     rows: list[list[str]] = []
     with open(path, "r", encoding="utf-8") as f:
@@ -1144,7 +1192,7 @@ def _apply_alias_file_to_dataframe(*, df, alias_file: str | Path) -> "object":
     """
 
     try:
-        import pandas as pd
+        pass
     except Exception as e:  # pragma: no cover
         raise RuntimeError(
             "pandas is required for survey conversion. Ensure dependencies are installed via setup.sh"

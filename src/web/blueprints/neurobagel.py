@@ -8,7 +8,6 @@ import json
 import pandas as pd
 from flask import Blueprint, jsonify, request, current_app
 from src.web.neurobagel import fetch_neurobagel_participants, augment_neurobagel_data
-from src.cross_platform import normalize_path
 
 neurobagel_bp = Blueprint('neurobagel', __name__)
 

@@ -5,7 +5,6 @@ Shared logic for CSV and LimeSurvey conversion.
 
 import os
 import json
-import pandas as pd
 from typing import Dict, Any, List, Optional
 
 
