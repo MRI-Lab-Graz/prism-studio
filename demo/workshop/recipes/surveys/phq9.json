@@ -1,0 +1,38 @@
+{
+  "RecipeVersion": "1.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "Patient Health Questionnaire-9",
+    "TaskName": "phq9",
+    "Description": "9-item self-report questionnaire for depression screening and severity measurement. Assesses the presence and frequency of depressive symptoms over the past two weeks.",
+    "Citation": "Kroenke K, Spitzer RL, Williams JB. The PHQ-9: validity of a brief depression severity measure. J Gen Intern Med. 2001;16(9):606-613. doi:10.1046/j.1525-1497.2001.016009606.x",
+    "URL": "https://www.phqscreeners.com/",
+    "Authors": ["Kurt Kroenke", "Robert L. Spitzer", "Janet B.W. Williams"],
+    "License": "Public Domain"
+  },
+  "Transforms": {
+    "Invert": {
+      "Items": [],
+      "Scale": {"min": 0, "max": 3}
+    },
+    "Derived": []
+  },
+  "Scores": [
+    {
+      "Name": "phq9_total",
+      "Method": "sum",
+      "Items": ["phq9_01", "phq9_02", "phq9_03", "phq9_04", "phq9_05", "phq9_06", "phq9_07", "phq9_08", "phq9_09"],
+      "Description": "Total depression severity score (sum of all 9 items)",
+      "Range": {"min": 0, "max": 27},
+      "Interpretation": {
+        "0-4": "Minimal depression",
+        "5-9": "Mild depression",
+        "10-14": "Moderate depression",
+        "15-19": "Moderately severe depression",
+        "20-27": "Severe depression"
+      },
+      "Missing": "ignore",
+      "Note": "Higher scores indicate greater depression severity. Clinical cutoffs: minimal (0-4), mild (5-9), moderate (10-14), moderately severe (15-19), severe (20-27)"
+    }
+  ]
+}

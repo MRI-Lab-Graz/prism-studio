@@ -87,5 +87,9 @@ test_dataset/
 node_modules
 recipes/
 derivatives/
+
+# Workshop exceptions (must be after global ignores)
+!demo/workshop/library/
+!demo/workshop/recipes/
 # Harvest script
 scripts/harvest_testarchiv.py
