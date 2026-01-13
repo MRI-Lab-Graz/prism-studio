@@ -1,1 +1,318 @@
-
+{
+  "I18n": {
+    "DefaultLanguage": "en",
+    "Languages": [
+      "de",
+      "en"
+    ],
+    "Note": "Multilingual demo template for testing purposes",
+    "TranslationMethod": "forward-backward"
+  },
+  "Metadata": {
+    "CreationDate": "2025-12-19",
+    "Creator": "Prism Demo Generator",
+    "SchemaVersion": "1.1.1"
+  },
+  "Normative": {
+    "Percentiles": {},
+    "ReferencePopulation": "",
+    "ReferenceSource": ""
+  },
+  "Scoring": {
+    "Cutoffs": {},
+    "CutoffsSource": {},
+    "NormsSource": {},
+    "ReverseCodedItems": [
+      ""
+    ],
+    "ReverseCodingScale": {
+      "max": 0,
+      "min": 0
+    },
+    "ScoreRange": {
+      "max": 0,
+      "min": 0
+    },
+    "ScoringMethod": "",
+    "Subscales": [
+      {
+        "Items": [
+          ""
+        ],
+        "Method": "sum",
+        "Name": {},
+        "Note": {},
+        "Range": {
+          "max": 0,
+          "min": 0
+        },
+        "ReverseCodedItems": [
+          ""
+        ]
+      }
+    ]
+  },
+  "Study": {
+    "Access": "permission-required",
+    "AdministrationTime": {
+      "max": 15,
+      "min": 10
+    },
+    "AgeRange": {
+      "max": 99,
+      "min": 18
+    },
+    "Authors": [
+      ""
+    ],
+    "Citation": "Demo Questionnaire for PRISM Testing",
+    "Construct": {},
+    "CopyrightHolder": "",
+    "DOI": "",
+    "Description": {
+      "de": "5-Item Fragebogen zur Erfassung des allgemeinen Wohlbefindens (Demo-Daten)",
+      "en": "5-item questionnaire measuring general well-being (demo data)"
+    },
+    "Instructions": {},
+    "ItemCount": 0,
+    "Keywords": [
+      ""
+    ],
+    "License": "",
+    "LicenseID": "CC-BY-4.0",
+    "LicenseURL": "",
+    "Norming": {},
+    "OriginalName": {
+      "de": "Wohlbefindens-Kurzskala",
+      "en": "Well-Being Short Scale"
+    },
+    "PermissionsNote": {},
+    "PermissionsURL": "",
+    "References": [
+      {
+        "Citation": "Hautzinger, M., & Bailer, M. (1993). Allgemeine Depressionsskala (ADS).",
+        "DOI": "10.1007/978-3-642-34523-1",
+        "Notes": {
+          "en": "Original ADS manual"
+        },
+        "Type": "primary",
+        "URL": "https://doi.org/10.1007/978-3-642-34523-1",
+        "Year": 1993
+      }
+    ],
+    "Reliability": {},
+    "ScoringTime": {
+      "max": 5,
+      "min": 5
+    },
+    "ShortName": {},
+    "Subscales": [
+      ""
+    ],
+    "TaskName": "wellbeing",
+    "TermURL": "",
+    "Translation": {
+      "Method": "",
+      "Notes": {},
+      "Reference": "",
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false
+    },
+    "Validity": {},
+    "Version": "Demo 1.0"
+  },
+  "Technical": {
+    "AdministrationMethod": "online",
+    "CalibrationDate": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "FileFormat": "tsv",
+    "Language": "en",
+    "Location": "laboratory",
+    "Respondent": "self",
+    "SoftwarePlatform": "Generic",
+    "SoftwareVersion": "",
+    "StimulusType": "Questionnaire",
+    "Supervisor": "investigator"
+  },
+  "WB01": {
+    "AllowedValues": [],
+    "DataType": "integer",
+    "Description": {
+      "de": "Wie zufrieden sind Sie im Allgemeinen mit Ihrem Leben?",
+      "en": "In general, how satisfied are you with your life?"
+    },
+    "Levels": {
+      "1": {
+        "de": "Überhaupt nicht zufrieden",
+        "en": "Not at all satisfied"
+      },
+      "2": {
+        "de": "Wenig zufrieden",
+        "en": "Slightly satisfied"
+      },
+      "3": {
+        "de": "Mäßig zufrieden",
+        "en": "Moderately satisfied"
+      },
+      "4": {
+        "de": "Sehr zufrieden",
+        "en": "Very satisfied"
+      },
+      "5": {
+        "de": "Äußerst zufrieden",
+        "en": "Extremely satisfied"
+      }
+    },
+    "MaxValue": null,
+    "MinValue": null,
+    "Relevance": "",
+    "RunHint": "",
+    "SessionHint": "",
+    "TermURL": "",
+    "Unit": "",
+    "Units": "ordinal"
+  },
+  "WB02": {
+    "AllowedValues": [],
+    "Description": {
+      "de": "Wie oft fühlen Sie sich glücklich?",
+      "en": "How often do you feel happy?"
+    },
+    "Levels": {
+      "1": {
+        "de": "Nie",
+        "en": "Never"
+      },
+      "2": {
+        "de": "Selten",
+        "en": "Rarely"
+      },
+      "3": {
+        "de": "Manchmal",
+        "en": "Sometimes"
+      },
+      "4": {
+        "de": "Oft",
+        "en": "Often"
+      },
+      "5": {
+        "de": "Immer",
+        "en": "Always"
+      }
+    },
+    "MaxValue": null,
+    "MinValue": null,
+    "Units": "ordinal",
+    "DataType": "integer",
+    "Relevance": "",
+    "RunHint": "",
+    "SessionHint": "",
+    "TermURL": "",
+    "Unit": ""
+  },
+  "WB03": {
+    "AllowedValues": [],
+    "Description": {
+      "de": "Wie würden Sie Ihr aktuelles Stressniveau einschätzen?",
+      "en": "How would you rate your current stress level?"
+    },
+    "Levels": {
+      "1": {
+        "de": "Kein Stress",
+        "en": "No stress"
+      },
+      "2": {
+        "de": "Wenig Stress",
+        "en": "Low stress"
+      },
+      "3": {
+        "de": "Mäßiger Stress",
+        "en": "Moderate stress"
+      },
+      "4": {
+        "de": "Hoher Stress",
+        "en": "High stress"
+      },
+      "5": {
+        "de": "Sehr hoher Stress",
+        "en": "Very high stress"
+      }
+    },
+    "MaxValue": null,
+    "MinValue": null,
+    "Scoring": {
+      "Note": "This item is reverse-scored for the positive well-being subscale"
+    },
+    "Units": "ordinal",
+    "DataType": "integer"
+  },
+  "WB04": {
+    "AllowedValues": [],
+    "Description": {
+      "de": "Wie energiegeladen fühlen Sie sich an den meisten Tagen?",
+      "en": "How energetic do you feel on most days?"
+    },
+    "Levels": {
+      "1": {
+        "de": "Überhaupt nicht energiegeladen",
+        "en": "Not at all energetic"
+      },
+      "2": {
+        "de": "Wenig energiegeladen",
+        "en": "Slightly energetic"
+      },
+      "3": {
+        "de": "Mäßig energiegeladen",
+        "en": "Moderately energetic"
+      },
+      "4": {
+        "de": "Sehr energiegeladen",
+        "en": "Very energetic"
+      },
+      "5": {
+        "de": "Äußerst energiegeladen",
+        "en": "Extremely energetic"
+      }
+    },
+    "MaxValue": null,
+    "MinValue": null,
+    "Units": "ordinal",
+    "DataType": "integer"
+  },
+  "WB05": {
+    "AllowedValues": [],
+    "Description": {
+      "de": "Wie zufrieden sind Sie mit Ihrer Schlafqualität?",
+      "en": "How satisfied are you with your sleep quality?"
+    },
+    "Levels": {
+      "1": {
+        "de": "Überhaupt nicht zufrieden",
+        "en": "Not at all satisfied"
+      },
+      "2": {
+        "de": "Wenig zufrieden",
+        "en": "Slightly satisfied"
+      },
+      "3": {
+        "de": "Mäßig zufrieden",
+        "en": "Moderately satisfied"
+      },
+      "4": {
+        "de": "Sehr zufrieden",
+        "en": "Very satisfied"
+      },
+      "5": {
+        "de": "Äußerst zufrieden",
+        "en": "Extremely satisfied"
+      }
+    },
+    "MaxValue": null,
+    "MinValue": null,
+    "Units": "ordinal",
+    "DataType": "integer"
+  }
+}
