@@ -37,6 +37,18 @@
           </select>
         </div>
 
+        <!-- Custom Recipe Folder Option -->
+        <div class="col-md-8">
+            <label for="derivRecipeFolder" class="form-label">Custom Recipe Folder (optional)</label>
+            <div class="input-group">
+                <input type="text" class="form-control" id="derivRecipeFolder" placeholder="Leave empty to use repository default (recipes/)">
+                <button class="btn btn-outline-secondary" type="button" id="derivBrowseRecipeBtn" title="Browse Recipe Folder">
+                    <i class="fas fa-folder-open"></i>
+                </button>
+            </div>
+            <div class="form-text">Choose a custom folder containing your <code>.json</code> recipes.</div>
+        </div>
+
         <div class="col-md-4">
           <label for="derivFormat" class="form-label">Output Format</label>
           <select class="form-select" id="derivFormat">
@@ -151,6 +163,18 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   });
 
+  const derivRecipeFolder = document.getElementById('derivRecipeFolder');
+  const derivBrowseRecipeBtn = document.getElementById('derivBrowseRecipeBtn');
+  if (derivBrowseRecipeBtn) {
+    derivBrowseRecipeBtn.addEventListener('click', function() {
+      fetch('/api/browse-folder')
+        .then(r => r.json())
+        .then(data => {
+          if (data.path) derivRecipeFolder.value = data.path;
+        });
+    });
+  }
+
   derivRunBtn.addEventListener('click', function() {
     derivError.classList.add('d-none');
     derivInfo.classList.add('d-none');
@@ -167,6 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const payload = {
       dataset_path: datasetPath,
+      recipe_dir: derivRecipeFolder ? derivRecipeFolder.value.trim() : '',
       modality: document.getElementById('derivModality').value,
       format: derivFormat.value,
       survey: derivSurvey.value.trim(),

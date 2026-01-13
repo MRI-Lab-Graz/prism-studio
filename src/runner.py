@@ -6,7 +6,6 @@ without executing the top-level CLI script.
 
 import os
 import sys
-import subprocess
 import json
 from typing import Callable, Optional
 
@@ -74,7 +73,7 @@ def validate_dataset(
         version_tag = schema_version or "stable"
         print(f"📋 Loaded {len(schemas)} schemas (version: {version_tag})")
         print(f"📁 Validating PRISM modalities: {list(MODALITY_PATTERNS.keys())}")
-        print(f"📁 Pass-through BIDS modalities: anat, func, fmap, dwi, eeg (use BIDS validator for these)")
+        print("📁 Pass-through BIDS modalities: anat, func, fmap, dwi, eeg (use BIDS validator for these)")
 
 
     # Initialize validator

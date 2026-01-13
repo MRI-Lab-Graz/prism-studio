@@ -10,3 +10,28 @@ physio/
 
 # Added by prism
 eyetracking/
+
+# Added by prism
+**/biometrics/
+**/events/
+**/eyetracking/
+**/metadata/
+**/physio/
+**/physiological/
+**/survey/
+.upload_manifest.json
+derivatives/
+metadata/
+physiological/
+prism_summary.json
+validation_report.json
+
+# Added by prism
+*_biometrics.*
+*_eyetrack.*
+*_physio.*
+*_survey.*
+task-*_biometrics.json
+task-*_eyetrack.json
+task-*_physio.json
+task-*_survey.json

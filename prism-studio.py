@@ -11,17 +11,12 @@ This module has been refactored to use modular components from src/web/:
 
 import os
 import sys
-import json
-import re
-import tempfile
-import shutil
 import webbrowser
 import threading
 import socket
 import uuid
 from pathlib import Path
-from datetime import datetime
-from typing import Optional, Callable, Any, Dict
+from typing import Any, Dict
 from flask import (
     Flask,
     render_template,
@@ -33,11 +28,6 @@ from flask import (
     url_for,
     session,
 )
-from werkzeug.utils import secure_filename
-import zipfile
-import io
-import requests
-from functools import lru_cache
 
 # Ensure we can import core validator logic from src
 if getattr(sys, "frozen", False):
@@ -55,24 +45,12 @@ if str(SRC_DIR) not in sys.path:
 try:
     from src.web import (
         # Utils
-        is_system_file,
-        format_validation_results,
         get_error_description,
         get_error_documentation_url,
         shorten_path,
         get_filename_from_path,
         # Validation
         run_validation,
-        update_progress,
-        get_progress,
-        clear_progress,
-        SimpleStats,
-        # Upload
-        process_folder_upload as _process_folder_upload,
-        process_zip_upload as _process_zip_upload,
-        find_dataset_root,
-        METADATA_EXTENSIONS,
-        SKIP_EXTENSIONS,
     )
 
     print("✓ Web modules loaded from src/web/")

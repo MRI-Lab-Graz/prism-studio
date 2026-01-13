@@ -4,20 +4,8 @@ Common helper functions used across web routes.
 This module acts as a facade for specialized utility modules.
 """
 
-import os
-import re
-from typing import Optional, Any, Dict
 
 # Import from specialized modules
-from src.web.path_utils import (
-    strip_temp_path,
-    strip_temp_path_from_message,
-    extract_path_from_message,
-    shorten_path,
-    get_filename_from_path,
-)
-from src.web.survey_utils import list_survey_template_languages
-from src.web.reporting_utils import sanitize_jsonable, format_validation_results
 
 # Import system file filtering from core
 try:
@@ -67,3 +55,23 @@ def get_error_description(error_code: str) -> str:
 def get_error_documentation_url(error_code: str) -> str:
     """Get documentation URL for an error code."""
     return _get_error_documentation_url(error_code)
+
+
+# Path utilities re-exported from specialized module
+from .path_utils import (
+    strip_temp_path,
+    extract_path_from_message,
+    shorten_path,
+    get_filename_from_path,
+)
+
+# Reporting utilities re-exported from specialized module
+from .reporting_utils import (
+    format_validation_results,
+    sanitize_jsonable,
+)
+
+# Survey utilities re-exported from specialized module
+from .survey_utils import (
+    list_survey_template_languages,
+)

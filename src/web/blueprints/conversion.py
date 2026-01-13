@@ -6,8 +6,6 @@ Handles survey, biometrics, and physio conversion routes.
 import os
 import io
 import re
-import json
-import uuid
 import shutil
 import tempfile
 import zipfile
@@ -64,6 +62,39 @@ def _participant_json_candidates(library_root: Path, depth: int = 3):
     for parent in library_root.parents[:depth]:
         candidates.append(parent / "participants.json")
     return candidates
+
+def _log_file_head(input_path: Path, suffix: str, log_func):
+    """Helper to log the first few lines of a file to debug delimiter or structure issues."""
+    try:
+        if suffix in {".csv", ".tsv"}:
+            with open(input_path, "r", encoding="utf-8", errors="replace") as f:
+                head_lines = []
+                for i in range(4):
+                    line = f.readline()
+                    if not line:
+                        break
+                    head_lines.append(f"  L{i+1}: {line.strip()}")
+                if head_lines:
+                    log_func("Detected file content (first 4 lines):\n" + "\n".join(head_lines), "info")
+        elif suffix == ".xlsx":
+            try:
+                import pandas as pd
+                # Read only first few rows
+                df = pd.read_excel(input_path, nrows=4)
+                head_lines = []
+                # Header row
+                cols = [str(c) for c in df.columns]
+                head_lines.append("  H:  " + "\t".join(cols))
+                # Data rows
+                for i, row in df.iterrows():
+                    vals = [str(v) for v in row.values]
+                    head_lines.append(f"  R{i+1}: " + "\t".join(vals))
+                if head_lines:
+                    log_func("Detected Excel structure (first 4 rows):\n" + "\n".join(head_lines), "info")
+            except Exception as e:
+                log_func(f"Could not read Excel preview: {str(e)}", "warning")
+    except Exception as e:
+        log_func(f"Could not log file head: {str(e)}", "warning")
 
 @conversion_bp.route("/api/survey-languages", methods=["GET"])
 def api_survey_languages():
@@ -188,6 +219,7 @@ def api_survey_convert():
     language = (request.form.get("language") or "").strip() or None
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
+    save_to_project = request.form.get("save_to_project") == "true"
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_")
     try:
@@ -250,6 +282,20 @@ def api_survey_convert():
                 alias_file=alias_path,
                 strict_levels=True if strict_levels else None,
             )
+
+        # Save to project if requested
+        if save_to_project:
+            p_path = session.get("current_project_path")
+            if p_path:
+                p_path = Path(p_path)
+                if p_path.exists():
+                    # Merge output_root contents into project_path
+                    for item in output_root.rglob("*"):
+                        if item.is_file():
+                            rel_path = item.relative_to(output_root)
+                            dest = p_path / rel_path
+                            dest.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.copy2(item, dest)
 
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -324,6 +370,7 @@ def api_survey_convert_validate():
     language = (request.form.get("language") or "").strip() or None
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
+    save_to_project = request.form.get("save_to_project") == "true"
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_validate_")
     try:
@@ -339,20 +386,8 @@ def api_survey_convert_validate():
         output_root = tmp_dir_path / "prism_dataset"
         add_log("Starting data conversion...", "info")
 
-        # For text files, log the head to help debug delimiter issues
-        if suffix in {".csv", ".tsv"}:
-            try:
-                with open(input_path, "r", encoding="utf-8", errors="replace") as f:
-                    head_lines = []
-                    for i in range(4):
-                        line = f.readline()
-                        if not line:
-                            break
-                        head_lines.append(f"  [{i+1}] {line.strip()}")
-                    if head_lines:
-                        add_log("File head (first 4 lines):\n" + "\n".join(head_lines), "info")
-            except Exception:
-                pass
+        # Log the head to help debug delimiter/structure issues
+        _log_file_head(input_path, suffix, add_log)
 
         if strict_levels:
             add_log("Strict Levels Validation: enabled", "info")
@@ -460,11 +495,32 @@ def api_survey_convert_validate():
                 # Simple string list for non-formatted results
                 validation_result["warnings"].extend(conversion_warnings)
 
+        # Save to project if requested
+        if save_to_project:
+            project_path = session.get("current_project_path")
+            if project_path:
+                project_path = Path(project_path)
+                if project_path.exists():
+                    add_log(f"Saving output to project: {project_path.name}", "info")
+                    # Merge output_root contents into project_path
+                    for item in output_root.rglob("*"):
+                        if item.is_file():
+                            rel_path = item.relative_to(output_root)
+                            dest = project_path / rel_path
+                            dest.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.copy2(item, dest)
+                    add_log("Project updated successfully!", "success")
+                else:
+                    add_log(f"Project path not found: {project_path}", "error")
+            else:
+                add_log("No project selected in session. Cannot save directly.", "warning")
+
         # Create ZIP
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for p in output_root.rglob("*"):
-                if p.is_file(): zf.write(p, p.relative_to(output_root).as_posix())
+                if p.is_file():
+                    zf.write(p, p.relative_to(output_root).as_posix())
         mem.seek(0)
         zip_base64 = base64.b64encode(mem.read()).decode("utf-8")
 
@@ -481,7 +537,8 @@ def api_survey_convert_validate():
 def api_biometrics_check_library():
     """Check the structure of a biometrics template library folder."""
     library_path = (request.args.get("library_path") or "").strip()
-    if not library_path: return jsonify({"error": "No library path provided"}), 400
+    if not library_path:
+        return jsonify({"error": "No library path provided"}), 400
 
     library_root = Path(library_path)
     biometrics_dir = library_root / "biometrics"
@@ -496,8 +553,10 @@ def api_biometrics_check_library():
         "template_count": 0,
     }
 
-    if not structure_info["has_biometrics_folder"]: structure_info["missing_items"].append("biometrics/")
-    if not structure_info["has_participants_json"]: structure_info["missing_items"].append("participants.json (or ../participants.json)")
+    if not structure_info["has_biometrics_folder"]:
+        structure_info["missing_items"].append("biometrics/")
+    if not structure_info["has_participants_json"]:
+        structure_info["missing_items"].append("participants.json (or ../participants.json)")
     if biometrics_dir.is_dir():
         structure_info["template_count"] = len(list(biometrics_dir.glob("biometrics-*.json")))
 
@@ -577,6 +636,7 @@ def api_biometrics_convert():
     sheet = (request.form.get("sheet") or "0").strip() or 0
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
+    save_to_project = request.form.get("save_to_project") == "true"
     
     # Get tasks to export
     tasks_to_export = request.form.getlist("tasks[]")
@@ -598,20 +658,8 @@ def api_biometrics_convert():
 
         log_msg(f"Starting biometrics conversion for {filename}", "info")
         
-        # For text files, log the head to help debug delimiter issues
-        if suffix in {".csv", ".tsv"}:
-            try:
-                with open(input_path, "r", encoding="utf-8", errors="replace") as f:
-                    head_lines = []
-                    for i in range(4):
-                        line = f.readline()
-                        if not line:
-                            break
-                        head_lines.append(f"  [{i+1}] {line.strip()}")
-                    if head_lines:
-                        log_msg("File head (first 4 lines):\n" + "\n".join(head_lines), "info")
-            except Exception:
-                pass
+        # Log the head to help debug delimiter/structure issues
+        _log_file_head(input_path, suffix, log_msg)
 
         if tasks_to_export:
             log_msg(f"Exporting tasks: {', '.join(tasks_to_export)}", "step")
@@ -640,6 +688,26 @@ def api_biometrics_convert():
         if result.unknown_columns:
             for col in result.unknown_columns:
                 log_msg(f"Unknown column ignored: {col}", "warning")
+
+        # Save to project if requested
+        if save_to_project:
+            project_path = session.get("current_project_path")
+            if project_path:
+                project_path = Path(project_path)
+                if project_path.exists():
+                    log_msg(f"Saving output to project: {project_path.name}", "info")
+                    # Merge output_root contents into project_path
+                    for item in output_root.rglob("*"):
+                        if item.is_file():
+                            rel_path = item.relative_to(output_root)
+                            dest = project_path / rel_path
+                            dest.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.copy2(item, dest)
+                    log_msg("Project updated successfully!", "success")
+                else:
+                    log_msg(f"Project path not found: {project_path}", "error")
+            else:
+                log_msg("No project selected in session. Cannot save directly.", "warning")
 
         # Create ZIP
         mem = io.BytesIO()
@@ -793,7 +861,6 @@ def api_batch_convert():
     if not batch_convert_folder:
         return jsonify({"error": "Batch conversion not available"}), 500
 
-    job_id = str(uuid.uuid4())[:8]
     logs = []
 
     def log_callback(message: str, level: str = "info"):
@@ -802,7 +869,6 @@ def api_batch_convert():
     dataset_name = (request.form.get("dataset_name") or "Converted Dataset").strip()
     modality_filter = request.form.get("modality", "all")
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
-    return_format = request.form.get("format", "zip")
 
     try:
         sampling_rate = float(sampling_rate_str) if sampling_rate_str else None
@@ -817,7 +883,8 @@ def api_batch_convert():
     valid_extensions = {".raw", ".vpd", ".edf", ".tsv", ".csv", ".txt", ".json", ".nii", ".nii.gz", ".pdf", ".png", ".jpg", ".jpeg"}
     validated_files = []
     for f in files:
-        if not f or not f.filename: continue
+        if not f or not f.filename:
+            continue
         filename = secure_filename(f.filename)
         
         # Handle .nii.gz
@@ -837,7 +904,8 @@ def api_batch_convert():
         tmp_path = Path(tmp_dir)
         input_dir = tmp_path / "input"
         output_dir = tmp_path / "output"
-        input_dir.mkdir(); output_dir.mkdir()
+        input_dir.mkdir()
+        output_dir.mkdir()
 
         for f, filename in validated_files:
             f.save(str(input_dir / filename))
@@ -863,7 +931,7 @@ def api_batch_convert():
         
         return jsonify({
             "status": "success",
-            "log": "\n".join([l["message"] for l in logs]),
+            "log": "\n".join([log_entry["message"] for log_entry in logs]),
             "zip": zip_base64,
             "converted": result.success_count,
             "errors": result.error_count
@@ -915,7 +983,8 @@ def api_physio_rename():
                         sub = bids.get("sub")
                         ses = bids.get("ses")
                         parts = [sub]
-                        if ses: parts.append(ses)
+                        if ses:
+                            parts.append(ses)
                         parts.append(modality)
                         parts.append(new_name)
                         zip_path = "/".join(parts)
@@ -933,7 +1002,8 @@ def api_physio_rename():
     try:
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for f in files:
-                if not f or not f.filename: continue
+                if not f or not f.filename:
+                    continue
                 old_name = secure_filename(f.filename)
                 
                 try:

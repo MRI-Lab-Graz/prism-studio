@@ -21,7 +21,7 @@ import re
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal, Callable
+from typing import Callable
 
 # Pattern for BIDS-like filenames: sub-XXX_ses-YYY_task-ZZZ[_extra].<ext>
 BIDS_FILENAME_PATTERN = re.compile(

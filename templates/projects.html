@@ -412,6 +412,64 @@
         </div>
     </div>
 
+    <!-- Project Metadata Card -->
+    <div class="card shadow-sm mt-4" id="projectMetadataCard" style="display: none;">
+        <div class="card-header bg-primary bg-opacity-10">
+            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-tags text-primary me-2"></i>Dataset Description</span>
+                <span class="badge bg-primary">v1.10.1</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <form id="projectMetadataForm">
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Name</label>
+                        <input type="text" class="form-control" id="metadataName" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Authors (comma separated)</label>
+                        <input type="text" class="form-control" id="metadataAuthors" placeholder="Author 1, Author 2">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">License</label>
+                        <input type="text" class="form-control" id="metadataLicense" placeholder="CC0, CC BY 4.0, etc.">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Acknowledgements</label>
+                        <textarea class="form-control" id="metadataAcknowledgements" rows="2" placeholder="Funding, grants, people to thank..."></textarea>
+                    </div>
+                    <div class="col-md-12">
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-bs-toggle="collapse" data-bs-target="#metadataAdvanced">
+                            <i class="fas fa-chevron-down me-1"></i>More Fields (DOI, Ethics, Keywords...)
+                        </button>
+                        <div class="collapse mt-2" id="metadataAdvanced">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset DOI</label>
+                                    <input type="text" class="form-control" id="metadataDOI">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Ethics Approvals</label>
+                                    <input type="text" class="form-control" id="metadataEthics">
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Keywords (comma separated)</label>
+                                    <input type="text" class="form-control" id="metadataKeywords">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3 text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Participants Status Card (simplified - editing happens in Converter) -->
     <div class="card shadow-sm mt-4" id="participantsStatusCard" style="display: none;">
         <div class="card-header bg-info bg-opacity-10">
@@ -447,6 +505,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         loadGlobalSettings();
         loadLibraryInfo();
+        initParticipantsStatus();
+        loadProjectMetadata();
 
         // Update chevron icon on collapse toggle
         const settingsSection = document.getElementById('settingsSection');
@@ -1054,7 +1114,97 @@
         }
     }
 
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', initParticipantsStatus);
+    // ===== DATASET DESCRIPTION / METADATA =====
+
+    async function loadProjectMetadata() {
+        const card = document.getElementById('projectMetadataCard');
+        {% if not current_project.path %}
+            card.style.display = 'none';
+            return;
+        {% endif %}
+
+        try {
+            const response = await fetch('/api/projects/description');
+            const data = await response.json();
+
+            if (data.success && data.description) {
+                card.style.display = 'block';
+                const desc = data.description;
+
+                // Fill form fields
+                document.getElementById('metadataName').value = desc.Name || '';
+                document.getElementById('metadataAuthors').value = Array.isArray(desc.Authors) ? desc.Authors.join(', ') : (desc.Authors || '');
+                document.getElementById('metadataLicense').value = desc.License || 'CC0';
+                document.getElementById('metadataAcknowledgements').value = desc.Acknowledgements || '';
+                document.getElementById('metadataDOI').value = desc.DatasetDOI || '';
+                document.getElementById('metadataEthics').value = Array.isArray(desc.EthicsApprovals) ? desc.EthicsApprovals.join(', ') : (desc.EthicsApprovals || '');
+                document.getElementById('metadataKeywords').value = Array.isArray(desc.Keywords) ? desc.Keywords.join(', ') : (desc.Keywords || '');
+            } else {
+                card.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error loading project metadata:', error);
+            card.style.display = 'none';
+        }
+    }
+
+    // Handle Metadata Form Submission
+    document.getElementById('projectMetadataForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+        try {
+            // Reconstruct the JSON object
+            const description = {
+                Name: document.getElementById('metadataName').value,
+                Authors: document.getElementById('metadataAuthors').value.split(',').map(s => s.trim()).filter(s => s),
+                License: document.getElementById('metadataLicense').value,
+                Acknowledgements: document.getElementById('metadataAcknowledgements').value,
+                DatasetDOI: document.getElementById('metadataDOI').value,
+                EthicsApprovals: document.getElementById('metadataEthics').value.split(',').map(s => s.trim()).filter(s => s),
+                Keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
+                BIDSVersion: "1.10.1",
+                DatasetType: "raw"
+            };
+
+            const response = await fetch('/api/projects/description', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showToast('Metadata saved successfully', 'success');
+                // Optional: refresh page if name changed to update navbar
+                if (description.Name !== "{{ current_project.name }}") {
+                    setTimeout(() => window.location.reload(), 1000);
+                }
+            } else {
+                alert('Failed to save metadata: ' + result.error);
+            }
+        } catch (error) {
+            alert('Error saving project metadata: ' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    });
+
+    // Toast helper if not defined elsewhere
+    function showToast(message, type = 'success') {
+        const toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            const container = document.createElement('div');
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            document.body.appendChild(container);
+        }
+        
+        // Simple alert for now if Bootstrap toast is not set up
+        console.log(`[${type}] ${message}`);
+    }
 </script>
 {% endblock %}
