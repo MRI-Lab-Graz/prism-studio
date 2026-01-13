@@ -1,0 +1,33 @@
+{
+  "Technical": {
+    "StimulusType": "Survey",
+    "FileFormat": "tsv",
+    "ResponseType": [
+      "keypress"
+    ],
+    "SoftwarePlatform": "PsychoPy"
+  },
+  "Study": {
+    "TaskType": "reaction_time",
+    "ExperimentalDesign": "within_subjects",
+    "TrialStructure": {
+      "TrialCount": 100,
+      "BlockCount": 4,
+      "TrialsPerBlock": 25
+    }
+  },
+  "Categories": {
+    "CognitiveDomains": [
+      "attention",
+      "executive_function"
+    ],
+    "PerformanceMetrics": [
+      "reaction_time",
+      "accuracy"
+    ],
+    "TaskDifficulty": "moderate"
+  },
+  "Metadata": {
+    "SchemaVersion": "1.0.0"
+  }
+}

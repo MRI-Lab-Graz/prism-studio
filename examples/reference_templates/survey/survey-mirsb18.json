@@ -1,0 +1,630 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "mirsb18",
+    "OriginalName": {
+      "de": "Religi\u00f6s-Spirituellen Befinden",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "Das Multidimensionales Inventar zum Religi\u00f6s-Spirituellen Befinden: Kurzversion 18 Items (MI-RSB18) misst Religi\u00f6s-Spirituellen Befinden.",
+      "en": ""
+    },
+    "Instruction": {
+      "de": "Bevor Sie an die Beantwortung der Fragen gehen, bitte ich Sie folgende Dinge zu beachten:\nSie werden zum gro\u00dfen Teil Fragen bez\u00fcglich Ihres religi\u00f6sen Glaubens finden. Auch werden\nSie bei der Bearbeitung der einzelnen Fragen \u00f6fters auf den Begriff \u201eGott\u201c sto\u00dfen.\nDazu ist wichtig anzumerken:\n* Die hier gemachten Angaben dienen ausschlie\u00dflich der wissenschaftlichen Forschung und werden vollkommen anonym ausgewertet.\n* Diese Untersuchung wurde von keiner religi\u00f6sen Vereinigung oder Gemeinschaft gef\u00f6rdert, noch werden Daten an eine solche weitergegeben.\n* Der Begriff \u201eGott\u201c kann, muss aber nicht im christlich\u2013 konfessionellen Sinne verstanden werden.\n* Falls Sie den Begriff \u201eGott\u201c als unpassend empfinden, k\u00f6nnen Sie diesen gedanklich durch eine Formulierung wie \u201eh\u00f6here Macht\u201c ersetzen.\n* Die Beantwortung des Fragebogens ist trotz der v\u00f6lligen Ablehnung eines religi\u00f6sen Glaubens m\u00f6glich. Diese Haltung wird im Fragebogen ber\u00fccksichtigt.\nBitte beantworten Sie die Fragen spontan und halten Sie sich gedanklich nicht zu lange bei\neiner Frage auf.\nWeiters bitte ich Sie jede Frage zu beantworten, da nur so eine korrekte Auswertung m\u00f6glich ist.",
+      "en": ""
+    },
+    "Citation": "",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.0",
+    "CreationDate": "2025-12-21",
+    "Creator": "convert_legacy_resources.py"
+  },
+  "MIRSB18-01": {
+    "Description": {
+      "de": "Ich werde mit Gottes Hilfe alle Probleme bew\u00e4ltigen k\u00f6nnen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Subscale": "AR",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-02": {
+    "Description": {
+      "de": "Es gibt Dinge, die ich nicht verzeihen kann.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "VE",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-03": {
+    "Description": {
+      "de": "Ich blicke mit Optimismus in die Zukunft.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Subscale": "HI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-04": {
+    "Description": {
+      "de": "Ich glaube, nach meinem Tod wiedergeboren zu werden.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Subscale": "AL",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-05": {
+    "Description": {
+      "de": "Ich w\u00fcrde alles daran setzen, das Leben geliebter Menschen zu verl\u00e4ngern.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "HT",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-06": {
+    "Description": {
+      "de": "Ich habe die Erfahrung der Echtheit von Gef\u00fchlen gemacht.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Subscale": "BS",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-07": {
+    "Description": {
+      "de": "In gewissen Momenten in meinem Leben f\u00fchle ich mich Gott ganz nah.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Subscale": "AR",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-08": {
+    "Description": {
+      "de": "Es gibt Menschen, denen ich niemals verzeihen werde k\u00f6nnen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "VE",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-09": {
+    "Description": {
+      "de": "Ich glaube, mein Leben entwickelt sich in die richtige Richtung",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Subscale": "HI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-10": {
+    "Description": {
+      "de": "Ich habe Dinge erfahren, durch die mir bewusst wurde, dass nichts je richtig tot ist.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Subscale": "AL",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-11": {
+    "Description": {
+      "de": "Es f\u00e4llt mir schwer daran zu denken, dass von mir geliebte Menschen einmal nicht mehr leben werden.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "HT",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-12": {
+    "Description": {
+      "de": "Ich habe die Erfahrung tiefer Zuneigung gemacht.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Subscale": "BS",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-13": {
+    "Description": {
+      "de": "Ich werde mit Gottes Hilfe noch einmal gl\u00fccklich sein.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Subscale": "AR",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-14": {
+    "Description": {
+      "de": "Es gibt Dinge, die man nicht verzeihen soll.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "VE",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-15": {
+    "Description": {
+      "de": "Ich glaube, dass ich in Zukunft so leben werde, wie ich mir das vorstelle.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Subscale": "HI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-16": {
+    "Description": {
+      "de": "Ich glaube an eine Weiterexistenz nach dem Tode.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Subscale": "AL",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-17": {
+    "Description": {
+      "de": "Ich w\u00fcrde alles daran setzen, mein Leben zu verl\u00e4ngern.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "HT",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MIRSB18-18": {
+    "Description": {
+      "de": "Ich habe oftmals die Erfahrung von Offenheit und Ehrlichkeit gemacht.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Trifft gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "Trifft v\u00f6llig zu",
+        "en": ""
+      }
+    },
+    "Subscale": "BS",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [],
+    "DefaultLanguage": "",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

@@ -1,0 +1,513 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "spss",
+    "OriginalName": {
+      "de": "Stress",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "This Stress Perception Strategy Scale (SPSS) explores stress perception through a diverse set of items designed to capture participants' experiences over the past week. It includes a mix of standard and inverted scale items to assess varying dimensions of stress, such as anxiety, relaxation, irritability, concentration, and their perceived impact on physical health and daily activities. Additionally, open-ended questions prompt participants to provide qualitative insights into specific stress situations they have encountered. This approach aims to provide a comprehensive understanding of stress levels while accommodating individual responses and perspectives.",
+      "en": ""
+    },
+    "Instruction": {
+      "de": "Please rate each statement based on how you have felt during the past week, including today.",
+      "en": ""
+    },
+    "Citation": "",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.0",
+    "CreationDate": "2025-12-21",
+    "Creator": "convert_legacy_resources.py"
+  },
+  "SPSS-01": {
+    "Description": {
+      "de": "I felt nervous and anxious, like a squirrel at a coffee shop.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "Sometimes",
+        "en": ""
+      },
+      "4": {
+        "de": "Often",
+        "en": ""
+      },
+      "5": {
+        "de": "Constantly",
+        "en": ""
+      }
+    },
+    "Subscale": "Stress",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "SPSS-02": {
+    "Description": {
+      "de": "How often did you find it hard to relax, even when trying relaxation techniques like imagining floating on a cloud of marshmallows?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Rarely",
+        "en": ""
+      },
+      "3": {
+        "de": "Sometimes",
+        "en": ""
+      },
+      "4": {
+        "de": "Often",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "Stress",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "SPSS-03": {
+    "Description": {
+      "de": "I felt overwhelmed by my responsibilities, as if I were juggling flamingos instead of balls.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "Sometimes",
+        "en": ""
+      },
+      "4": {
+        "de": "Often",
+        "en": ""
+      },
+      "5": {
+        "de": "Constantly",
+        "en": ""
+      }
+    },
+    "Subscale": "Stress",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "SPSS-04": {
+    "Description": {
+      "de": "Describe a recent situation where you felt tense or \"on edge,\" like a cat in a room full of rocking chairs.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "Sometimes",
+        "en": ""
+      },
+      "4": {
+        "de": "Often",
+        "en": ""
+      },
+      "5": {
+        "de": "Constantly",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "SPSS-05": {
+    "Description": {
+      "de": "How often did you have trouble sleeping due to stress, as if your bed was filled with singing crickets?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Rarely",
+        "en": ""
+      },
+      "3": {
+        "de": "Sometimes",
+        "en": ""
+      },
+      "4": {
+        "de": "Often",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "Stress",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "SPSS-06": {
+    "Description": {
+      "de": "I felt irritable or easily angered, like a balloon ready to pop at any moment.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "Sometimes",
+        "en": ""
+      },
+      "4": {
+        "de": "Often",
+        "en": ""
+      },
+      "5": {
+        "de": "Constantly",
+        "en": ""
+      }
+    },
+    "Subscale": "Stress",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "SPSS-07": {
+    "Description": {
+      "de": "How often did you find it easy to concentrate despite stress, as if your thoughts were as clear as a quiet lake?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Rarely",
+        "en": ""
+      },
+      "3": {
+        "de": "Sometimes",
+        "en": ""
+      },
+      "4": {
+        "de": "Often",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Stress",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "SPSS-08": {
+    "Description": {
+      "de": "How often did you have difficulty concentrating because of stress, as if your thoughts were bouncing around like ping-pong balls?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Rarely",
+        "en": ""
+      },
+      "3": {
+        "de": "Sometimes",
+        "en": ""
+      },
+      "4": {
+        "de": "Often",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "Stress",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "SPSS-09": {
+    "Description": {
+      "de": "I felt that stress was affecting my physical health, like I was turning into a melting ice cream cone.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "Sometimes",
+        "en": ""
+      },
+      "4": {
+        "de": "Often",
+        "en": ""
+      },
+      "5": {
+        "de": "Constantly",
+        "en": ""
+      }
+    },
+    "Subscale": "Stress",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "SPSS-10": {
+    "Description": {
+      "de": "How often did stress positively impact your work or daily activities, like you were effortlessly gliding through tasks in a river of duck feathers?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Rarely",
+        "en": ""
+      },
+      "3": {
+        "de": "Sometimes",
+        "en": ""
+      },
+      "4": {
+        "de": "Often",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Stress",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [],
+    "DefaultLanguage": "",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

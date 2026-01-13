@@ -1,0 +1,1250 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "hferst",
+    "OriginalName": {
+      "de": "Emotion Regulation Strategies",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "The Heidelberg Form for Emotion Regulation Strategies (HFERST) is a newly developed questionnaire in German that includes eight ER strategies: rumination, experience suppression, expressive suppression, avoidance, activity and social support, reappraisal, problem solving, and acceptance.",
+      "en": ""
+    },
+    "Instruction": {
+      "de": "Please rate the extent to which the following statements applied to you within the past 4 weeks",
+      "en": ""
+    },
+    "Citation": "",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.0",
+    "CreationDate": "2025-12-21",
+    "Creator": "convert_legacy_resources.py"
+  },
+  "HFERST-01": {
+    "Description": {
+      "de": "Wenn ich negative Gef\u00fchle habe, gr\u00fcble ich h\u00e4ufig dar\u00fcber nach, warum ich mich so f\u00fchle.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "rumination",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-02": {
+    "Description": {
+      "de": "Nach emotionalen Erlebnissen/Situationen denke ich intensiv dar\u00fcber nach, was ich in der Situation getan und gesagt habe, um meine Gef\u00fchle besser zu verstehen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "rumination",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-03": {
+    "Description": {
+      "de": "Ich ertappe mich dabei, wie ich immer wieder \u00fcber etwas nachdenken muss, das mich ge\u00e4rgert oder traurig gemacht hat.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "rumination",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-04": {
+    "Description": {
+      "de": "Ich erinnere mich oft an vergangene Konflikte und \u00fcberlege, was ich h\u00e4tte anders tun k\u00f6nnen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "rumination",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-05": {
+    "Description": {
+      "de": "Wenn ich mich schlecht f\u00fchle, versuche ich die guten Aspekte einer Situation zu erkennen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "reappraisal",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-06": {
+    "Description": {
+      "de": "Wenn ich in eine stressige Situation gerate, \u00e4ndere ich meine Gedanken \u00fcber die Situation so, dass es mich beruhigt.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "reappraisal",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-07": {
+    "Description": {
+      "de": "Wenn ich mich besser f\u00fchlen m\u00f6chte, konzentriere ich mich auf die guten Seiten einer Situation.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "reappraisal",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-08": {
+    "Description": {
+      "de": "Ich \u00e4ndere meine Gef\u00fchle, indem ich \u00fcber meine aktuelle Situation anders nachdenke.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "reappraisal",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-09": {
+    "Description": {
+      "de": "Wenn ich etwas nicht \u00e4ndern kann, akzeptiere ich die Situation so wie sie ist.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "acceptance",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-10": {
+    "Description": {
+      "de": "Ich kann unangenehme Emotionen tolerieren und aushalten.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "acceptance",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-11": {
+    "Description": {
+      "de": "Ich bin gut in der Lage die Dinge zu akzeptieren, wie sie gerade sind.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "acceptance",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-12": {
+    "Description": {
+      "de": "Bei der Suche nach L\u00f6sungen f\u00fcr ein Problem verlasse ich mich nicht (nur) auf mein Bauchgef\u00fchl, sondern \u00fcberlege m\u00f6glichst rational.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "problem solving",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-13": {
+    "Description": {
+      "de": "Ich denke \u00fcber L\u00f6sungsm\u00f6glichkeiten nach, wie ich die Situation \u00e4ndern kann.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "problem solving",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-14": {
+    "Description": {
+      "de": "Bei Problemen \u00fcberlege ich mir genau, wie ich am besten mit der Situation umgehen kann.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "problem solving",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-15": {
+    "Description": {
+      "de": "Wenn ich eine Entscheidung treffen muss, w\u00e4ge ich die verschiedenen Alternativen sorgf\u00e4ltig gegeneinander ab.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "problem solving",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-16": {
+    "Description": {
+      "de": "Wenn mich etwas \u00e4rgert oder traurig macht, versuche ich meine Gef\u00fchle vor anderen nicht zu zeigen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "suppression of emotional expression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-17": {
+    "Description": {
+      "de": "K\u00f6rperliche Signale meiner Gef\u00fchle verberge ich meist.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "suppression of emotional expression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-18": {
+    "Description": {
+      "de": "Andere Personen k\u00f6nnen meistens schwer sagen, wie ich mich gerade f\u00fchle.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "suppression of emotional expression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-19": {
+    "Description": {
+      "de": "Auch wenn ich gerade sehr aufgeregt bin, gelingt es mir, \u00e4u\u00dferlich ruhig zu wirken.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "suppression of emotional expression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-20": {
+    "Description": {
+      "de": "Negative Emotionen versuche ich gar nicht erst zuzulassen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "suppression of emotional experience",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-21": {
+    "Description": {
+      "de": "Ich lasse meine Emotionen selten hochkochen, sondern halte sie zur\u00fcck.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "suppression of emotional experience",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-22": {
+    "Description": {
+      "de": "Ich vermeide, wann immer m\u00f6glich, meine Gef\u00fchle wahrzunehmen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "suppression of emotional experience",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-23": {
+    "Description": {
+      "de": "Wenn ich starke Emotionen habe, schiebe ich diese sofort beiseite.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "suppression of emotional experience",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-24": {
+    "Description": {
+      "de": "Situationen, die negative Gef\u00fchle in mir ausl\u00f6sen k\u00f6nnten, vermeide ich lieber.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "avoidance",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-25": {
+    "Description": {
+      "de": "Gedanken an Dinge, die mich belasten, versuche ich irgendwie zu vermeiden.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "avoidance",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-26": {
+    "Description": {
+      "de": "Ich sorge daf\u00fcr, dass ich nicht mit unangenehmen Situationen konfrontiert werde, wann immer dies m\u00f6glich ist.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "avoidance",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-27": {
+    "Description": {
+      "de": "Negative und positive Gef\u00fchle teile ich gern, indem ich andere anrufe oder mich mit ihnen treffe und dar\u00fcber rede.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "social support",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "HFERST-28": {
+    "Description": {
+      "de": "Ich rede oft mit meinem/r Partner/in oder meinen engsten Freunden \u00fcber meine Emotionen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Never",
+        "en": ""
+      },
+      "2": {
+        "de": "Occasionally",
+        "en": ""
+      },
+      "3": {
+        "de": "About half the time",
+        "en": ""
+      },
+      "4": {
+        "de": "Usually",
+        "en": ""
+      },
+      "5": {
+        "de": "Always",
+        "en": ""
+      }
+    },
+    "Subscale": "social support",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [],
+    "DefaultLanguage": "",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

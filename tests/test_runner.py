@@ -7,14 +7,14 @@ import sys
 import tempfile
 from pathlib import Path
 
-# Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "src"))
+# Add app/src to path for testing
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src"))
 
-from src.runner import validate_dataset
+from runner import validate_dataset
 
 # Path to demo folder for testing
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEMO_PRISM_DATASET = REPO_ROOT / "demo" / "prism_structure_example"
+DEMO_PRISM_DATASET = REPO_ROOT / "examples" / "demos" / "prism_structure_example"
 
 
 class TestValidateDataset:

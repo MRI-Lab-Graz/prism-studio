@@ -1,0 +1,972 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "derq",
+    "OriginalName": {
+      "de": "Digital Emotion Regulation",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "The Digital Emotion Regulation Questionnaire contains five realistic situations from daily life that participants should imagine themselves in (for a detailed example see Figure 1). Participants are then asked to indicate on a scale from 1 (uncharacteristic) to 7 (characteristic) how characteristic five different behaviours are for them. These behaviours reflect the five emotion regulation strategies avoidance, distraction, rumination, reappraisal and problem solving. There are between one and four situation-related examples for each behaviour. At the end of each situation, the participants rate on a scale from 1 (not negative) to 7 (very negative) how bad they would feel if the depicted situation actually happened to them.",
+      "en": ""
+    },
+    "Instruction": {
+      "de": "The following questionnaire describes various situations. Try to imagine yourself in this situation as best as possible. You will then be given behaviour patterns on how people can deal with these situations. The focus is on the use of digital media as an aid. Digital media are technological tools such as smartphones, televisions, radios, PCs, laptops, games consoles and e-readers. You will then be asked to indicate how characteristic these behaviours would be for you in this situation.",
+      "en": ""
+    },
+    "Citation": "",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.0",
+    "CreationDate": "2025-12-21",
+    "Creator": "convert_legacy_resources.py"
+  },
+  "DERQ-01-AV": {
+    "Description": {
+      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gef\u00fchle dazu auftreten, indem ich ein digitales Medium nutze.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "AV",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-01-DI": {
+    "Description": {
+      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gef\u00fchl ab, das diese Situation ausgel\u00f6st hat.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "DI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-01-RU": {
+    "Description": {
+      "de": "Ich besch\u00e4ftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gef\u00fchlen und Gedanken, die diese Situation hervorruft.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "RU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-01-RE": {
+    "Description": {
+      "de": "Ich versuche mithilfe von digitalen Medien an der Situation etwas Positives zu sehen oder sie als weniger schlimm umzudeuten.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "RE",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-01-PR": {
+    "Description": {
+      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu l\u00f6sen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "PR",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-01-V": {
+    "Description": {
+      "de": "Wie negativ w\u00fcrden Sie sich in dieser Situation f\u00fchlen?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "V",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-02-AV": {
+    "Description": {
+      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gef\u00fchle dazu auftreten, indem ich ein digitales Medium nutze.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "AV",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-02-DI": {
+    "Description": {
+      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gef\u00fchl ab, das diese Situation ausgel\u00f6st hat.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "DI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-02-RU": {
+    "Description": {
+      "de": "Ich besch\u00e4ftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gef\u00fchlen und Gedanken, die diese Situation hervorruft.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "RU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-02-RE": {
+    "Description": {
+      "de": "Ich versuche mithilfe von digitalen Medien an der Situation etwas Positives zu sehen oder sie als weniger schlimm umzudeuten.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "RE",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-02-PR": {
+    "Description": {
+      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu l\u00f6sen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "PR",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-02-V": {
+    "Description": {
+      "de": "Wie negativ w\u00fcrden Sie sich in dieser Situation f\u00fchlen?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "V",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-03-AV": {
+    "Description": {
+      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gef\u00fchle dazu auftreten, indem ich ein digitales Medium nutze.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "AV",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-03-DI": {
+    "Description": {
+      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gef\u00fchl ab, das diese Situation ausgel\u00f6st hat.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "DI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-03-RU": {
+    "Description": {
+      "de": "Ich besch\u00e4ftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gef\u00fchlen und Gedanken, die diese Situation hervorruft.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "RU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-03-RE": {
+    "Description": {
+      "de": "Ich versuche mithilfe von digitalen Medien an der Situation etwas Positives zu sehen oder sie als weniger schlimm umzudeuten.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "RE",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-03-PR": {
+    "Description": {
+      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu l\u00f6sen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "PR",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-03-V": {
+    "Description": {
+      "de": "Wie negativ w\u00fcrden Sie sich in dieser Situation f\u00fchlen?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "V",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-04-AV": {
+    "Description": {
+      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gef\u00fchle dazu auftreten, indem ich ein digitales Medium nutze.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "AV",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-04-DI": {
+    "Description": {
+      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gef\u00fchl ab, das diese Situation ausgel\u00f6st hat.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "DI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-04-RU": {
+    "Description": {
+      "de": "Ich besch\u00e4ftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gef\u00fchlen und Gedanken, die diese Situation hervorruft.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "RU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-04-RE": {
+    "Description": {
+      "de": "Ich versuche mithilfe von digitalen Medien an der Situation etwas Positives zu sehen oder sie als weniger schlimm umzudeuten.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "RE",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-04-PR": {
+    "Description": {
+      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu l\u00f6sen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "PR",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-04-V": {
+    "Description": {
+      "de": "Wie negativ w\u00fcrden Sie sich in dieser Situation f\u00fchlen?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "V",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-05-AV": {
+    "Description": {
+      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gef\u00fchle dazu auftreten, indem ich ein digitales Medium nutze.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "AV",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-05-DI": {
+    "Description": {
+      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gef\u00fchl ab, das diese Situation ausgel\u00f6st hat.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "DI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-05-RU": {
+    "Description": {
+      "de": "Ich besch\u00e4ftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gef\u00fchlen und Gedanken, die diese Situation hervorruft.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "RU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-05-RE": {
+    "Description": {
+      "de": "Ich versuche mithilfe von digitalen Medien an der Situation etwas Positives zu sehen oder sie als weniger schlimm umzudeuten.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "RE",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-05-PR": {
+    "Description": {
+      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu l\u00f6sen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "PR",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "DERQ-05-V": {
+    "Description": {
+      "de": "Wie negativ w\u00fcrden Sie sich in dieser Situation f\u00fchlen?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "untypisch",
+        "en": ""
+      },
+      "2": {
+        "de": "typisch",
+        "en": ""
+      }
+    },
+    "Subscale": "V",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [],
+    "DefaultLanguage": "",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

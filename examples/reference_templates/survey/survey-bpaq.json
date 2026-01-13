@@ -1,0 +1,594 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "bpaq",
+    "OriginalName": {
+      "de": "Aggression",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "The (BPAQ) is a self-report questionnaire designed to assess the extent of aggressive tendencies and hostile behaviors in individuals. It helps clinicians and researchers understand how individuals express and manage their aggressive impulses.\n\nThe BPAQ consists of 29 items that explore various domains associated with aggression, such as physical, verbal, anger, and hostility. Individuals rate each item on a 5-point Likert scale, typically ranging from 1 (extremely uncharacteristic of me) to 5 (extremely characteristic of me). The questionnaire addresses both reactive and proactive aggression, allowing for a comprehensive assessment of aggressive tendencies.",
+      "en": ""
+    },
+    "Instruction": {
+      "de": "Using this 5 point scale, indicate how uncharacteristic or characteristic each of the following statements is in describing you.",
+      "en": ""
+    },
+    "Citation": "",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.0",
+    "CreationDate": "2025-12-21",
+    "Creator": "convert_legacy_resources.py"
+  },
+  "BPAQ-03": {
+    "Description": {
+      "de": "I flare up quickly but get over it quickly.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "extremely uncharacteristic of me",
+        "en": ""
+      },
+      "2": {
+        "de": "somewhat uncharacteristic",
+        "en": ""
+      },
+      "3": {
+        "de": "neither uncharacteristic nor characteristic",
+        "en": ""
+      },
+      "4": {
+        "de": "somewhat characteristic",
+        "en": ""
+      },
+      "5": {
+        "de": "extremely characteristic of me",
+        "en": ""
+      }
+    },
+    "Subscale": "Anger",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BPAQ-05": {
+    "Description": {
+      "de": "Given enough provocation, I may hit another person.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "extremely uncharacteristic of me",
+        "en": ""
+      },
+      "2": {
+        "de": "somewhat uncharacteristic",
+        "en": ""
+      },
+      "3": {
+        "de": "neither uncharacteristic nor characteristic",
+        "en": ""
+      },
+      "4": {
+        "de": "somewhat characteristic",
+        "en": ""
+      },
+      "5": {
+        "de": "extremely characteristic of me",
+        "en": ""
+      }
+    },
+    "Subscale": "Physical.aggression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BPAQ-06": {
+    "Description": {
+      "de": "I often find myself disagreeing with people.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "extremely uncharacteristic of me",
+        "en": ""
+      },
+      "2": {
+        "de": "somewhat uncharacteristic",
+        "en": ""
+      },
+      "3": {
+        "de": "neither uncharacteristic nor characteristic",
+        "en": ""
+      },
+      "4": {
+        "de": "somewhat characteristic",
+        "en": ""
+      },
+      "5": {
+        "de": "extremely characteristic of me",
+        "en": ""
+      }
+    },
+    "Subscale": "Verbal.aggression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BPAQ-08": {
+    "Description": {
+      "de": "At times I feel I have gotten a raw deal out of life.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "extremely uncharacteristic of me",
+        "en": ""
+      },
+      "2": {
+        "de": "somewhat uncharacteristic",
+        "en": ""
+      },
+      "3": {
+        "de": "neither uncharacteristic nor characteristic",
+        "en": ""
+      },
+      "4": {
+        "de": "somewhat characteristic",
+        "en": ""
+      },
+      "5": {
+        "de": "extremely characteristic of me",
+        "en": ""
+      }
+    },
+    "Subscale": "Hostility",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BPAQ-11": {
+    "Description": {
+      "de": "Other people always seem to get the breaks.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "extremely uncharacteristic of me",
+        "en": ""
+      },
+      "2": {
+        "de": "somewhat uncharacteristic",
+        "en": ""
+      },
+      "3": {
+        "de": "neither uncharacteristic nor characteristic",
+        "en": ""
+      },
+      "4": {
+        "de": "somewhat characteristic",
+        "en": ""
+      },
+      "5": {
+        "de": "extremely characteristic of me",
+        "en": ""
+      }
+    },
+    "Subscale": "Hostility",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BPAQ-13": {
+    "Description": {
+      "de": "I can\u2019t help getting into arguments when people disagree with me.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "extremely uncharacteristic of me",
+        "en": ""
+      },
+      "2": {
+        "de": "somewhat uncharacteristic",
+        "en": ""
+      },
+      "3": {
+        "de": "neither uncharacteristic nor characteristic",
+        "en": ""
+      },
+      "4": {
+        "de": "somewhat characteristic",
+        "en": ""
+      },
+      "5": {
+        "de": "extremely characteristic of me",
+        "en": ""
+      }
+    },
+    "Subscale": "Verbal.aggression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BPAQ-15": {
+    "Description": {
+      "de": "I wonder why sometimes I feel so bitter about things.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "extremely uncharacteristic of me",
+        "en": ""
+      },
+      "2": {
+        "de": "somewhat uncharacteristic",
+        "en": ""
+      },
+      "3": {
+        "de": "neither uncharacteristic nor characteristic",
+        "en": ""
+      },
+      "4": {
+        "de": "somewhat characteristic",
+        "en": ""
+      },
+      "5": {
+        "de": "extremely characteristic of me",
+        "en": ""
+      }
+    },
+    "Subscale": "Hostility",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BPAQ-17": {
+    "Description": {
+      "de": "My friends say that I\u2019m somewhat argumentative.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "extremely uncharacteristic of me",
+        "en": ""
+      },
+      "2": {
+        "de": "somewhat uncharacteristic",
+        "en": ""
+      },
+      "3": {
+        "de": "neither uncharacteristic nor characteristic",
+        "en": ""
+      },
+      "4": {
+        "de": "somewhat characteristic",
+        "en": ""
+      },
+      "5": {
+        "de": "extremely characteristic of me",
+        "en": ""
+      }
+    },
+    "Subscale": "Verbal.aggression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BPAQ-19": {
+    "Description": {
+      "de": "There are people who pushed me so far that we came to blows.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "extremely uncharacteristic of me",
+        "en": ""
+      },
+      "2": {
+        "de": "somewhat uncharacteristic",
+        "en": ""
+      },
+      "3": {
+        "de": "neither uncharacteristic nor characteristic",
+        "en": ""
+      },
+      "4": {
+        "de": "somewhat characteristic",
+        "en": ""
+      },
+      "5": {
+        "de": "extremely characteristic of me",
+        "en": ""
+      }
+    },
+    "Subscale": "Physical.aggression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BPAQ-20": {
+    "Description": {
+      "de": "Sometimes I fly off the handle for no good reason.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "extremely uncharacteristic of me",
+        "en": ""
+      },
+      "2": {
+        "de": "somewhat uncharacteristic",
+        "en": ""
+      },
+      "3": {
+        "de": "neither uncharacteristic nor characteristic",
+        "en": ""
+      },
+      "4": {
+        "de": "somewhat characteristic",
+        "en": ""
+      },
+      "5": {
+        "de": "extremely characteristic of me",
+        "en": ""
+      }
+    },
+    "Subscale": "Anger",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BPAQ-23": {
+    "Description": {
+      "de": "I have trouble controlling my temper.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "extremely uncharacteristic of me",
+        "en": ""
+      },
+      "2": {
+        "de": "somewhat uncharacteristic",
+        "en": ""
+      },
+      "3": {
+        "de": "neither uncharacteristic nor characteristic",
+        "en": ""
+      },
+      "4": {
+        "de": "somewhat characteristic",
+        "en": ""
+      },
+      "5": {
+        "de": "extremely characteristic of me",
+        "en": ""
+      }
+    },
+    "Subscale": "Anger",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BPAQ-25": {
+    "Description": {
+      "de": "I have threatened people I know.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "extremely uncharacteristic of me",
+        "en": ""
+      },
+      "2": {
+        "de": "somewhat uncharacteristic",
+        "en": ""
+      },
+      "3": {
+        "de": "neither uncharacteristic nor characteristic",
+        "en": ""
+      },
+      "4": {
+        "de": "somewhat characteristic",
+        "en": ""
+      },
+      "5": {
+        "de": "extremely characteristic of me",
+        "en": ""
+      }
+    },
+    "Subscale": "Physical.aggression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [],
+    "DefaultLanguage": "",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

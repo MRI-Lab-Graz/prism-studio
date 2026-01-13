@@ -1,0 +1,1335 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "golddsi",
+    "OriginalName": {
+      "de": "golddsi Questionnaire",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "Imported golddsi survey data",
+      "en": ""
+    },
+    "ShortName": "",
+    "Authors": [],
+    "Citation": "",
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Instruction": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.0.0",
+    "CreationDate": "2025-12-09",
+    "Creator": "excel_to_library.py"
+  },
+  "GoldDSI01": {
+    "Description": {
+      "de": "Ich finde es leicht, neue Bewegungen zu erlernen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI02": {
+    "Description": {
+      "de": "Ich habe das Gef\u00fchl als h\u00e4tte ich zwei linke F\u00fc\u00dfe.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI03": {
+    "Description": {
+      "de": "Ich finde es leicht, meine Bewegungen zu kontrollieren.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI04": {
+    "Description": {
+      "de": "Ich bin nicht sehr geschickt, wenn ich mich bewege.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI05": {
+    "Description": {
+      "de": "Ich bin mir meines K\u00f6rpers und meiner Haltung bewusst.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI06": {
+    "Description": {
+      "de": "Mir f\u00e4llt es leicht, Bewegungen von anderen zu lernen oder nachzumachen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI07": {
+    "Description": {
+      "de": "Wenn mich jemand fragt, ob ich tanzen m\u00f6chte, sage ich normalerweise ja.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI08": {
+    "Description": {
+      "de": "Ich w\u00fcrde lieber in eine Bar als in einen Club gehen, um nicht tanzen zu m\u00fcssen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI09": {
+    "Description": {
+      "de": "Ich mag es vor anderen Leuten zu tanzen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI10": {
+    "Description": {
+      "de": "Ich finde Tanzen peinlich.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI11": {
+    "Description": {
+      "de": "Mit anderen Leuten zu tanzen ist eine tolle Ausgehm\u00f6glichkeit.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI12": {
+    "Description": {
+      "de": "Man muss mich normalerweise auf die Tanzfl\u00e4che schleifen, weil ich nicht wei\u00df, was ich tun soll.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI13": {
+    "Description": {
+      "de": "Wenn ich tanze, f\u00fchle ich mich besser.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI14": {
+    "Description": {
+      "de": "Ich verbringe nicht viel Zeit mit tanzbezogenen Aktivit\u00e4ten.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI15": {
+    "Description": {
+      "de": "Wenn ich einen tolles Musikst\u00fcck h\u00f6re, m\u00f6chte ich anfangen zu tanzen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI16": {
+    "Description": {
+      "de": "Wenn ich mir Musik im Kopf vorstelle, will mein K\u00f6rper anfangen sich zu bewegen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI17": {
+    "Description": {
+      "de": "Manchmal habe ich das Gef\u00fchl einfach tanzen zu m\u00fcssen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI18": {
+    "Description": {
+      "de": "Ich habe _ Jahr(e) w\u00f6chentlich Tanzunterricht erhalten.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "<1",
+        "en": ""
+      },
+      "2": {
+        "de": "1",
+        "en": ""
+      },
+      "3": {
+        "de": "2",
+        "en": ""
+      },
+      "4": {
+        "de": "3",
+        "en": ""
+      },
+      "5": {
+        "de": "4-5",
+        "en": ""
+      },
+      "6": {
+        "de": "6-9",
+        "en": ""
+      },
+      "7": {
+        "de": "10 oder mehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI19": {
+    "Description": {
+      "de": "Ich w\u00fcrde meine Erfahrung mit Tanzen wie folgt einordnen:",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "keine vorhanden",
+        "en": ""
+      },
+      "2": {
+        "de": "Anf\u00e4nger*in",
+        "en": ""
+      },
+      "3": {
+        "de": "mittel",
+        "en": ""
+      },
+      "4": {
+        "de": "fortgeschritten",
+        "en": ""
+      },
+      "5": {
+        "de": "professionell",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI20": {
+    "Description": {
+      "de": "Ich hatte formales Tanztraining f\u00fcr:",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "gar nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "0",
+        "en": ""
+      },
+      "3": {
+        "de": "1 Jahr",
+        "en": ""
+      },
+      "4": {
+        "de": "2 Jahre",
+        "en": ""
+      },
+      "5": {
+        "de": "3 Jahre",
+        "en": ""
+      },
+      "6": {
+        "de": "4-6 Jahre",
+        "en": ""
+      },
+      "7": {
+        "de": "7 oder mehr Jahre",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI21": {
+    "Description": {
+      "de": "Ich sehe Leuten gerne beim Tanzen zu.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI22": {
+    "Description": {
+      "de": "Wenn ich die Wahl h\u00e4tte, w\u00fcrde ich mir lieber ein Theaterst\u00fcck als eine Tanzauff\u00fchrung ansehen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI23": {
+    "Description": {
+      "de": "Wie oft sehen Sie sich Tanzauff\u00fchrungen/-shows/-videos im Fernsehen oder im Internet an?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "so gut wie nie",
+        "en": ""
+      },
+      "2": {
+        "de": "einmal im Jahr",
+        "en": ""
+      },
+      "3": {
+        "de": "alle paar Monate",
+        "en": ""
+      },
+      "4": {
+        "de": "einmal im Monat",
+        "en": ""
+      },
+      "5": {
+        "de": "mehrmals im Monat",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI24": {
+    "Description": {
+      "de": "Ich w\u00fcrde lieber gut singen als gut tanzen k\u00f6nnen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI25": {
+    "Description": {
+      "de": "Ich wei\u00df viel \u00fcber Tanz und Choreografie.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "GoldDSI26": {
+    "Description": {
+      "de": "Ich bin gewillt zu reisen, um eine Tanzauff\u00fchrung zu sehen oder an Tanzstunden teilzunehmen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme ganz und gar nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme eher nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme eher zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme voll und ganz zu",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [
+      "de",
+      "en"
+    ],
+    "DefaultLanguage": "de",
+    "Note": "Generated from single-language template; missing translations are empty strings.",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

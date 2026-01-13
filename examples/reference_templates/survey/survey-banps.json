@@ -1,0 +1,1471 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "banps",
+    "OriginalName": {
+      "de": "behavioral traits related to 6 affective neurobiological systems (play, seek, care, fear, anger, and sadness)",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "The BANPS represents a shortened version of the Affective Neuroscience Personality Scales (ANPS), a self\u2013report instrument to assess individual dispositions toward primary emotional systems as proposed by Jaak Panksepp.",
+      "en": ""
+    },
+    "Instruction": {
+      "de": "Use the scale shown below to indicate how much you agree or disagree with each statement. Please read each statement\ncarefully and respond as honestly as possible",
+      "en": ""
+    },
+    "Citation": "",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.0",
+    "CreationDate": "2025-12-21",
+    "Creator": "convert_legacy_resources.py"
+  },
+  "BANPS-01": {
+    "Description": {
+      "de": "People who know me would say I am a very fun-loving person.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Play",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-02": {
+    "Description": {
+      "de": "When I am frustrated, I usually get angry.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Anger",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-03": {
+    "Description": {
+      "de": "I am usually not highly curious.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Seek",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-04": {
+    "Description": {
+      "de": "I am the kind of person that likes to touch and hug people.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Care",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-05": {
+    "Description": {
+      "de": "I rarely get angry enough to want to hit someone.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Anger",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-06": {
+    "Description": {
+      "de": "I rarely worry about my future. ",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Fear",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-07": {
+    "Description": {
+      "de": "I rarely become sad.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Sadness",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-08": {
+    "Description": {
+      "de": "I seldom experience sadness or despair. ",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Sadness",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-09": {
+    "Description": {
+      "de": "I am very playful. ",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Play",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-10": {
+    "Description": {
+      "de": "I often have the feeling that I am going to cry.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Sadness",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-11": {
+    "Description": {
+      "de": "My friends would probably describe me as hotheaded.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Anger",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-12": {
+    "Description": {
+      "de": "I do not feel lonely very often",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Sadness",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-13": {
+    "Description": {
+      "de": "I like to kid around with other people.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Play",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-14": {
+    "Description": {
+      "de": "I often feel the urge to nurture those closest to me. ",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Care",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-15": {
+    "Description": {
+      "de": "I often worry about the future.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Fear",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-16": {
+    "Description": {
+      "de": "I am not particularly affectionate.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Care",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-17": {
+    "Description": {
+      "de": "There are very few things that make me anxious. ",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Fear",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-18": {
+    "Description": {
+      "de": "I often feel lonely.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Sadness",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-19": {
+    "Description": {
+      "de": "I am a person who is easily amused and laughs a lot. ",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Play",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-20": {
+    "Description": {
+      "de": "People who know me well would say I almost never become angry.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Anger",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-21": {
+    "Description": {
+      "de": "I am usually not interested in solving problems and puzzles just for the sake of solving them.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Seek",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-22": {
+    "Description": {
+      "de": "I do not particularly enjoy kidding around and exchanging 'wisecracks'.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Play",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-23": {
+    "Description": {
+      "de": "I sometimes cannot stop worrying about my problems. ",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Fear",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-24": {
+    "Description": {
+      "de": "I hardly ever become so angry at someone that I feel like yelling at them.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Anger",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-25": {
+    "Description": {
+      "de": "I am not an extremely inquisitive person.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Seek",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-26": {
+    "Description": {
+      "de": "When someone makes me angry, I tend to remain fired up for a long time.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Anger",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-27": {
+    "Description": {
+      "de": "I do not especially want people to be emotionally close to me.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Care",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-28": {
+    "Description": {
+      "de": "My curiosity drives me to do things.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Seek",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-29": {
+    "Description": {
+      "de": "My friends would probably describe me as being too serious. ",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Play",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-30": {
+    "Description": {
+      "de": "I have very few fears in my life.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "Fear",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-31": {
+    "Description": {
+      "de": "I enjoy finding new solutions to problems.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Seek",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-32": {
+    "Description": {
+      "de": "I often feel sad.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Sadness",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPS-33": {
+    "Description": {
+      "de": "I like to think outside of the box.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Subscale": "Seek",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [],
+    "DefaultLanguage": "",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

@@ -1,0 +1,667 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "banpsl",
+    "OriginalName": {
+      "de": "behavioral trait related to the affective neurobiological systems \"lust\"",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "The BANPSL is a subsdcale of the BANPS, which represents a shortened version of the Affective Neuroscience Personality Scales (ANPS), a self\u2013report instrument to assess individual dispositions toward primary emotional systems as proposed by Jaak Panksepp.",
+      "en": ""
+    },
+    "Instruction": {
+      "de": "Use the scale shown below to indicate how much you agree or disagree with each statement. Please read each statement\ncarefully and respond as honestly as possible",
+      "en": ""
+    },
+    "Citation": "",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.0",
+    "CreationDate": "2025-12-21",
+    "Creator": "convert_legacy_resources.py"
+  },
+  "BANPSL-01": {
+    "Description": {
+      "de": "Mir f\u00e4llt es leicht, mich erotischen Erfahrungen hinzugeben.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPSL-02": {
+    "Description": {
+      "de": "Ich empfinde meine Sexualit\u00e4t allgemein als befriedigend.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPSL-03": {
+    "Description": {
+      "de": "Ich kann das Aus\u00fcben von sexuellen Handlungen (Geschlechtsverkehr, Masturbation, etc.) voll und ganz genie\u00dfen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPSL-04": {
+    "Description": {
+      "de": "Ich stehe Sexualit\u00e4t nicht besonders offen gegen\u00fcber.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPSL-05": {
+    "Description": {
+      "de": "Mit meiner Sexualit\u00e4t habe ich h\u00e4ufig schlechte Erfahrungen gemacht.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPSL-06": {
+    "Description": {
+      "de": "Ich w\u00fcnsche mir das \u00d6fteren spontan Sex zu haben.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPSL-07": {
+    "Description": {
+      "de": "Ich f\u00fchle mich oftmals von meinen sexuellen Fantasien \u00fcberw\u00e4ltigt.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPSL-08": {
+    "Description": {
+      "de": "Es kommt vor, dass ich mich zu Menschen spontan sexuell hingezogen f\u00fchle.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPSL-09": {
+    "Description": {
+      "de": "Ich hatte schon einmal Sex mit einem v\u00f6llig fremden Menschen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPSL-10": {
+    "Description": {
+      "de": "Es macht mir Spa\u00df, mich erotisch zu kleiden.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPSL-11": {
+    "Description": {
+      "de": "Ich habe ein stark ausgepr\u00e4gtes sexuelles Verlangen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPSL-12": {
+    "Description": {
+      "de": "Sexualit\u00e4t spielt in meinem Leben nur eine geringe Rolle.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPSL-13": {
+    "Description": {
+      "de": "Es kommt nur selten vor, dass ich meine Sexualit\u00e4t auslebe.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BANPSL-14": {
+    "Description": {
+      "de": "Ich habe kaum erotische Fantasien.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Neither agree nor disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Agree",
+        "en": ""
+      },
+      "5": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [],
+    "DefaultLanguage": "",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

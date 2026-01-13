@@ -1,0 +1,286 @@
+{
+  "Metadata": {
+    "SchemaVersion": "1.1.0",
+    "CreationDate": "2025-12-21",
+    "Creator": "excel_to_biometrics_library.py"
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Study": {
+    "BiometricName": "sitreach",
+    "OriginalName": "Sit and Reach Test",
+    "Protocol": "The participant is seated with legs fully extended and feet flat against the box. With middle fingers stacked, the participant exhales and reaches forward as far as possible, holding the position for 2 seconds. Three trials are performed with a 30-second rest between trials.",
+    "Description": {
+      "en": "Measures posterior chain flexibility (hamstrings and lower back). The best of three trials is typically used for analysis.",
+      "de": "Misst die Flexibilit\u00e4t der hinteren Kette (Hamstrings und unterer R\u00fccken). In der Regel wird der Bestwert aus drei Versuchen f\u00fcr die Analyse verwendet."
+    },
+    "ShortName": "",
+    "Authors": [],
+    "Citation": "",
+    "DOI": "",
+    "Category": "",
+    "Keywords": [],
+    "Reliability": "",
+    "Validity": "",
+    "Instructions": "",
+    "Instruction": "",
+    "Reference": "",
+    "EstimatedDuration": "",
+    "TargetPopulation": "",
+    "ExclusionCriteria": "",
+    "WarmupProtocol": ""
+  },
+  "Technical": {
+    "Type": "Biometrics",
+    "FileFormat": "tsv",
+    "Equipment": "Baseline Sit n' Reach Trunk Flexibility Box (Fabrication Enterprises, Inc)",
+    "Supervisor": "investigator",
+    "SoftwarePlatform": "",
+    "SoftwareVersion": "",
+    "Language": "",
+    "Respondent": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Location": ""
+  },
+  "I18n": {
+    "Languages": [
+      "en",
+      "de"
+    ],
+    "DefaultLanguage": "en",
+    "TranslationMethod": ""
+  },
+  "pre_sitreach_1": {
+    "Description": {
+      "en": "Measures posterior chain flexibility (hamstrings and lower back) using the Sit-and-Reach test. Participant seated, legs fully extended, feet flat against the Sit-and-Reach box (Baseline Sit n' Reach Trunk Flexibility Box; Fabrication Enterprises, Inc), middle fingers stacked. Participant exhales and reaches forward as far as possible, holds 2 seconds. Rest 30 seconds between trials. Pre-intervention, trial 1",
+      "de": "Measures posterior chain flexibility (hamstrings and lower back) using the Sit-and-Reach test. Participant seated, legs fully extended, feet flat against the Sit-and-Reach box (Baseline Sit n' Reach Trunk Flexibility Box; Fabrication Enterprises, Inc), middle fingers stacked. Participant exhales and reaches forward as far as possible, holds 2 seconds. Rest 30 seconds between Durchgangs. Pre-intervention, Durchgang 1"
+    },
+    "Units": "cm",
+    "DataType": "float",
+    "MinValue": -10.0,
+    "MaxValue": 50.5,
+    "SessionHint": "ses-1",
+    "RunHint": "run-1",
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "Levels": {}
+  },
+  "pre_sitreach_2": {
+    "Description": {
+      "en": "Measures posterior chain flexibility (hamstrings and lower back) using the Sit-and-Reach test. Participant seated, legs fully extended, feet flat against the Sit-and-Reach box (Baseline Sit n' Reach Trunk Flexibility Box; Fabrication Enterprises, Inc), middle fingers stacked. Participant exhales and reaches forward as far as possible, holds 2 seconds. Rest 30 seconds between trials. Pre-intervention, trial 2",
+      "de": "Measures posterior chain flexibility (hamstrings and lower back) using the Sit-and-Reach test. Participant seated, legs fully extended, feet flat against the Sit-and-Reach box (Baseline Sit n' Reach Trunk Flexibility Box; Fabrication Enterprises, Inc), middle fingers stacked. Participant exhales and reaches forward as far as possible, holds 2 seconds. Rest 30 seconds between Durchgangs. Pre-intervention, Durchgang 2"
+    },
+    "Units": "cm",
+    "DataType": "float",
+    "MinValue": -10.0,
+    "MaxValue": 50.5,
+    "SessionHint": "ses-1",
+    "RunHint": "run-2",
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "Levels": {}
+  },
+  "pre_sitreach_3": {
+    "Description": {
+      "en": "Measures posterior chain flexibility (hamstrings and lower back) using the Sit-and-Reach test. Participant seated, legs fully extended, feet flat against the Sit-and-Reach box (Baseline Sit n' Reach Trunk Flexibility Box; Fabrication Enterprises, Inc), middle fingers stacked. Participant exhales and reaches forward as far as possible, holds 2 seconds. Rest 30 seconds between trials. Pre-intervention, trial 3",
+      "de": "Measures posterior chain flexibility (hamstrings and lower back) using the Sit-and-Reach test. Participant seated, legs fully extended, feet flat against the Sit-and-Reach box (Baseline Sit n' Reach Trunk Flexibility Box; Fabrication Enterprises, Inc), middle fingers stacked. Participant exhales and reaches forward as far as possible, holds 2 seconds. Rest 30 seconds between Durchgangs. Pre-intervention, Durchgang 3"
+    },
+    "Units": "cm",
+    "DataType": "float",
+    "MinValue": -10.0,
+    "MaxValue": 50.5,
+    "SessionHint": "ses-1",
+    "RunHint": "run-3",
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "Levels": {}
+  },
+  "pre_sitreach_sa": {
+    "Description": {
+      "en": "Participant self-assessment of posterior chain flexibility (hamstrings and lower back), pre-intervention, completed independently after trials, \"How well do you think you have performed this task?\"",
+      "de": "Selbsteinsch\u00e4tzung des Teilnehmers bez\u00fcglich posterior chain flexibility (hamstrings and lower back), vor der Intervention, completed independently after Durchgangs, \"Wie gut haben Sie diese Aufgabe Ihrer Meinung nach ausgef\u00fchrt?\""
+    },
+    "Units": "score",
+    "DataType": "string",
+    "AllowedValues": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10"
+    ],
+    "Levels": {
+      "1": {
+        "en": "very bad",
+        "de": "sehr schlecht"
+      },
+      "10": {
+        "en": "very good",
+        "de": "sehr gut"
+      }
+    },
+    "SessionHint": "ses-1",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "RunHint": ""
+  },
+  "mid_sitreach_1": {
+    "Description": {
+      "en": "mid_sitreach_1",
+      "de": "mid_sitreach_1"
+    },
+    "Units": "n/a",
+    "DataType": "string",
+    "SessionHint": "ses-2",
+    "RunHint": "run-1",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "Levels": {}
+  },
+  "mid_sitreach_2": {
+    "Description": {
+      "en": "mid_sitreach_2",
+      "de": "mid_sitreach_2"
+    },
+    "Units": "n/a",
+    "DataType": "string",
+    "SessionHint": "ses-2",
+    "RunHint": "run-2",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "Levels": {}
+  },
+  "mid_sitreach_3": {
+    "Description": {
+      "en": "mid_sitreach_3",
+      "de": "mid_sitreach_3"
+    },
+    "Units": "n/a",
+    "DataType": "string",
+    "SessionHint": "ses-2",
+    "RunHint": "run-3",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "Levels": {}
+  },
+  "mid_sitreach_sa": {
+    "Description": {
+      "en": "Participant self-assessment of sit and reach performance, mid-intervention, completed independently after trials, \"How well do you think you have performed this task?\"",
+      "de": "Selbsteinsch\u00e4tzung des Teilnehmers bez\u00fcglich der Sit-and-Reach-Leistung, w\u00e4hrend der Intervention, unabh\u00e4ngig nach den Versuchen ausgef\u00fcllt, \"Wie gut haben Sie diese Aufgabe Ihrer Meinung nach ausgef\u00fchrt?\""
+    },
+    "Units": "score",
+    "DataType": "string",
+    "SessionHint": "ses-2",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "Levels": {},
+    "RunHint": ""
+  },
+  "post_sitreach_1": {
+    "Description": {
+      "en": "post_sitreach_1",
+      "de": "post_sitreach_1"
+    },
+    "Units": "n/a",
+    "DataType": "string",
+    "SessionHint": "ses-3",
+    "RunHint": "run-1",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "Levels": {}
+  },
+  "post_sitreach_2": {
+    "Description": {
+      "en": "post_sitreach_2",
+      "de": "post_sitreach_2"
+    },
+    "Units": "n/a",
+    "DataType": "string",
+    "SessionHint": "ses-3",
+    "RunHint": "run-2",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "Levels": {}
+  },
+  "post_sitreach_3": {
+    "Description": {
+      "en": "post_sitreach_3",
+      "de": "post_sitreach_3"
+    },
+    "Units": "n/a",
+    "DataType": "string",
+    "SessionHint": "ses-3",
+    "RunHint": "run-3",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "Levels": {}
+  },
+  "post_sitreach_sa": {
+    "Description": {
+      "en": "Participant self-assessment of sit and reach performance, post-intervention, completed independently after trials, \"How well do you think you have performed this task?\"",
+      "de": "Selbsteinsch\u00e4tzung des Teilnehmers bez\u00fcglich der Sit-and-Reach-Leistung, nach der Intervention, unabh\u00e4ngig nach den Versuchen ausgef\u00fcllt, \"Wie gut haben Sie diese Aufgabe Ihrer Meinung nach ausgef\u00fchrt?\""
+    },
+    "Units": "score",
+    "DataType": "string",
+    "SessionHint": "ses-3",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "Levels": {},
+    "RunHint": ""
+  }
+}
