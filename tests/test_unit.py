@@ -11,8 +11,8 @@ import pytest
 import tempfile
 import shutil
 
-# Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "src"))
+# Add app/src to path for testing
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "src"))
 
 from issues import (
     Issue,
@@ -216,7 +216,8 @@ class TestSchemaManager:
     @pytest.fixture
     def schema_dir(self):
         """Get path to schemas directory"""
-        return os.path.join(os.path.dirname(os.path.dirname(__file__)), "schemas")
+        # After reorg, schemas are in app/schemas
+        return os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "schemas")
 
     def test_get_available_versions(self, schema_dir):
         """Test listing available schema versions"""
@@ -344,7 +345,8 @@ class TestAPI:
         from flask import Flask
 
         app = Flask(__name__)
-        schema_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "schemas")
+        # After reorg, schemas are in app/schemas
+        schema_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "schemas")
         api_bp = create_api_blueprint(schema_dir)
         app.register_blueprint(api_bp)
 

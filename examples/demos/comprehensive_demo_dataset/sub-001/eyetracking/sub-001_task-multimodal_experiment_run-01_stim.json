@@ -1,0 +1,38 @@
+{
+  "Technical": {
+    "StimulusType": "Eyetracking",
+    "FileFormat": "tsv",
+    "SamplingRate": 500,
+    "TrackingMode": "binocular",
+    "EyeTracked": "both",
+    "CalibrationMethod": "9_point",
+    "CalibrationAccuracy": 0.5,
+    "ScreenResolution": [
+      1920,
+      1080
+    ],
+    "ViewingDistance": 60
+  },
+  "Study": {
+    "ParadigmType": "free_viewing",
+    "StimulusPresentation": {
+      "Duration": 5.0,
+      "TrialCount": 50,
+      "InterTrialInterval": 1.0
+    }
+  },
+  "Categories": {
+    "AnalysisMetrics": [
+      "fixation_duration",
+      "saccade_amplitude"
+    ],
+    "CognitiveProcesses": [
+      "visual_search",
+      "attention"
+    ],
+    "DataQuality": "good"
+  },
+  "Metadata": {
+    "SchemaVersion": "1.0.0"
+  }
+}

@@ -1,0 +1,413 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "danceq",
+    "OriginalName": {
+      "de": "danceq Questionnaire",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "Imported danceq survey data",
+      "en": ""
+    },
+    "ShortName": "",
+    "Authors": [],
+    "Citation": "",
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Instruction": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.0.0",
+    "CreationDate": "2025-12-09",
+    "Creator": "excel_to_library.py"
+  },
+  "Interesse": {
+    "Description": {
+      "de": "Wie groß ist Ihr Interesse an Tanz?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "sehr gering",
+        "en": ""
+      },
+      "10": {
+        "de": "sehr groß",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "Motivation": {
+    "Description": {
+      "de": "Wie groß ist Ihre Motivation zur Teilnahme an Tanzstunden?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "sehr gering",
+        "en": ""
+      },
+      "10": {
+        "de": "sehr groß",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "Grund": {
+    "Description": {
+      "de": "Warum nehmen Sie an unseren Tanzstunden teil?",
+      "en": ""
+    },
+    "Levels": {},
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "Erwartungen": {
+    "Description": {
+      "de": "Was erwarten Sie sich von den Tanzstunden?",
+      "en": ""
+    },
+    "Levels": {},
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "Tanzstil": {
+    "Description": {
+      "de": "Wie hat Ihnen der Tanzstil der Einheiten gefallen?",
+      "en": ""
+    },
+    "Levels": {},
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "Ueben": {
+    "Description": {
+      "de": "Haben Sie während der letzten 6 Wochen außerhalb der Tanzeinheiten Übungen wiederholt oder geübt?",
+      "en": ""
+    },
+    "Levels": {
+      "Y": {
+        "de": "yes",
+        "en": ""
+      },
+      "N": {
+        "de": "no",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "Ueben2": {
+    "Description": {
+      "de": "Wie oft haben Sie außerhalb der Tanzeinheiten geübt?",
+      "en": ""
+    },
+    "Levels": {},
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "Erfahrung": {
+    "Description": {
+      "de": "Wie würden Sie Ihre persönliche Erfahrung der Tanzstunden im Detail zusammenfassen?",
+      "en": ""
+    },
+    "Levels": {},
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "music01": {
+    "Description": {
+      "de": "Wie bekannt waren Ihnen die Musikstücke?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "völlig unbekannt",
+        "en": ""
+      },
+      "10": {
+        "de": "sehr bekannt",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "music02": {
+    "Description": {
+      "de": "Wie gut haben Ihnen die Musikstücke gefallen?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "überhaupt nicht gefallen",
+        "en": ""
+      },
+      "10": {
+        "de": "sehr gut gefallen",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "music03": {
+    "Description": {
+      "de": "Wie motivierend fanden Sie die Musikstücke?",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "überhaupt nicht motivierend",
+        "en": ""
+      },
+      "10": {
+        "de": "sehr motivierend",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "Emotion": {
+    "Description": {
+      "de": "Haben die Musikstücke, die während der Tanzeinheiten verwendet wurden, etwas bei Ihnen ausgelöst (z.B. Emotionen, Erinnerungen etc.)?",
+      "en": ""
+    },
+    "Levels": {
+      "Y": {
+        "de": "yes",
+        "en": ""
+      },
+      "N": {
+        "de": "no",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "Emotion2": {
+    "Description": {
+      "de": "Wenn ja, beschreiben Sie bitte, was die Musikstücke bei Ihnen ausgelöst haben. Sie können Ihr Erlebtes allgemein oder in Bezug auf unterschiedliche Musikstücke beschreiben.",
+      "en": ""
+    },
+    "Levels": {},
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [
+      "de",
+      "en"
+    ],
+    "DefaultLanguage": "de",
+    "Note": "Generated from single-language template; missing translations are empty strings.",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

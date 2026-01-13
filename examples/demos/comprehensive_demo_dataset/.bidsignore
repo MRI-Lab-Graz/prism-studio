@@ -1,0 +1,8 @@
+# .bidsignore created by prism
+# Ignores custom modalities to ensure BIDS-App compatibility
+*_report_*.txt
+biometrics/
+events/
+eyetracking/
+physio/
+survey/

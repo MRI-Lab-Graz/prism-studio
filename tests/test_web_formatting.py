@@ -5,8 +5,8 @@ Unit tests for web formatting functions
 import os
 import sys
 
-# Add project root to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+# Add app to path
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "app"))
 
 from src.web.utils import (
     format_validation_results,

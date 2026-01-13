@@ -1,0 +1,2275 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "bsi",
+    "OriginalName": {
+      "de": "nine symptom\ndimensions: Somatization, Obsession-Compulsion, Interpersonal Sensitivity, Depression,\nAnxiety, Hostility, Phobic anxiety, Paranoid ideation and Psychoticism",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "The Brief Symptom Inventory (BSI) is a 53-item-self-report instrument. It is a short alternative to the complete Symptom Checklist-90-Revised (SCL-90-R). The BSI was designed to assess psychological symptoms during the last 7 days in medical patients, non-patients, and subjects for experimental studies. It can be used in both cross-sectional and longitudinal studies, and it can measure chronological sequences as well as pre- and post-ratings.\n\nThe BSI is composed of nine primary symptom dimensions (somatization, obsessive-compulsive, interpersonal sensitivity, depression, anxiety, hostility, phobic anxiety, paranoid ideation, and psychoticism).",
+      "en": ""
+    },
+    "Instruction": {
+      "de": "Using this 5 point scale, indicate how uncharacteristic or characteristic each of the following statements is in describing you.",
+      "en": ""
+    },
+    "Citation": "",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.0",
+    "CreationDate": "2025-12-21",
+    "Creator": "convert_legacy_resources.py"
+  },
+  "BSI-01": {
+    "Description": {
+      "de": "Nervousness or shakiness inside",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "anxiety",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-02": {
+    "Description": {
+      "de": "Faintness or dizziness",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "somatization",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-03": {
+    "Description": {
+      "de": "The idea that someone else can control your thoughts",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "psychoticism",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-04": {
+    "Description": {
+      "de": "Feeling others are to blame for most of your troubles",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "paranoid",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-05": {
+    "Description": {
+      "de": "Trouble remembering things",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "obsessive.compulsive",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-06": {
+    "Description": {
+      "de": "Feeling easily annoyed or irritated",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "hostility",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-07": {
+    "Description": {
+      "de": "Pains in the heart or chest",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "somatization",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-08": {
+    "Description": {
+      "de": "Feeling afraid in open spaces",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "phopic.anxiety",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-09": {
+    "Description": {
+      "de": "Thoughts of ending your life",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "depression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-10": {
+    "Description": {
+      "de": "Feeling that most people cannot be trusted",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "paranoid",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-11": {
+    "Description": {
+      "de": "Poor appetite",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "additional",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-12": {
+    "Description": {
+      "de": "Suddenly scared for no reason",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "anxiety",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-13": {
+    "Description": {
+      "de": "Temper outbursts that you could not control",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "hostility",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-14": {
+    "Description": {
+      "de": "Feeling lonely even when you are with people",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "psychoticism",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-15": {
+    "Description": {
+      "de": "Feeling blocked in getting things done",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "obsessive.compulsive",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-16": {
+    "Description": {
+      "de": "Feeling lonely",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "depression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-17": {
+    "Description": {
+      "de": "Feeling blue",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "depression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-18": {
+    "Description": {
+      "de": "Feeling no interest in things",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "depression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-19": {
+    "Description": {
+      "de": "Feeling fearful",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "anxiety",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-20": {
+    "Description": {
+      "de": "Your feelings being easily hurt ",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "interpersonal.sensivity",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-21": {
+    "Description": {
+      "de": "Feeling that people are unfriendly or dislike you",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "interpersonal.sensivity",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-22": {
+    "Description": {
+      "de": "Feeling inferior to others",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "interpersonal.sensivity",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-23": {
+    "Description": {
+      "de": "Nausea or upset stomach",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "somatization",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-24": {
+    "Description": {
+      "de": "Feeling that you are watched or talked about by others",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "paranoid",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-25": {
+    "Description": {
+      "de": "Trouble falling asleep",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "additional",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-26": {
+    "Description": {
+      "de": "Having to check and double check what you do",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "obsessive.compulsive",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-27": {
+    "Description": {
+      "de": "Difficulty making decisions",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "obsessive.compulsive",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-28": {
+    "Description": {
+      "de": "Feeling afraid to travel on buses, subways, or trains",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "phopic.anxiety",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-29": {
+    "Description": {
+      "de": "Trouble getting your breath",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "somatization",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-30": {
+    "Description": {
+      "de": "Hot or cold spells",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "somatization",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-31": {
+    "Description": {
+      "de": "Having to avoid certain things, places, or activities because they frighten you",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "phopic.anxiety",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-32": {
+    "Description": {
+      "de": "Your mind going blank",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "obsessive.compulsive",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-33": {
+    "Description": {
+      "de": "Numbness or tingling in parts of your body",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "somatization",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-34": {
+    "Description": {
+      "de": "The idea that you should be punished for your sins",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "psychoticism",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-35": {
+    "Description": {
+      "de": "Feeling hopeless about the future",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "depression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-36": {
+    "Description": {
+      "de": "Trouble concentrating",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "obsessive.compulsive",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-37": {
+    "Description": {
+      "de": "Feeling weak in parts of your body",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "somatization",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-38": {
+    "Description": {
+      "de": "Feeling tense or keyed up ",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "anxiety",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-39": {
+    "Description": {
+      "de": "Thoughts of death or dying",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "additional",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-40": {
+    "Description": {
+      "de": "Having urges to beat, injure, or harm someone",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "hostility",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-41": {
+    "Description": {
+      "de": "Having urges to break or smash things",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "hostility",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-42": {
+    "Description": {
+      "de": "Feeling very self-conscious with others",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "interpersonal.sensivity",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-43": {
+    "Description": {
+      "de": "Feeling uneasy in crowds",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "phopic.anxiety",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-44": {
+    "Description": {
+      "de": "Never feeling close to another person",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "psychoticism",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-45": {
+    "Description": {
+      "de": "Spells of terror or panic",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "anxiety",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-46": {
+    "Description": {
+      "de": "Getting into frequent arguments",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "hostility",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-47": {
+    "Description": {
+      "de": "Feeling nervous when you are left alone",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "phopic.anxiety",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-48": {
+    "Description": {
+      "de": "Others not giving you proper credit for your achievements",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "paranoid",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-49": {
+    "Description": {
+      "de": "Feeling so restless you couldn\u2019t sit still",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "anxiety",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-50": {
+    "Description": {
+      "de": "Feelings of worthlessness",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "depression",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-51": {
+    "Description": {
+      "de": "Feeling that people will take advantage of you if you let them",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "paranoid",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-52": {
+    "Description": {
+      "de": "feelings of guilt",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "additional",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "BSI-53": {
+    "Description": {
+      "de": "The idea that something is wrong with your mind",
+      "en": ""
+    },
+    "Levels": {
+      "0": {
+        "de": "Not at all",
+        "en": ""
+      },
+      "1": {
+        "de": "A little bit",
+        "en": ""
+      },
+      "2": {
+        "de": "Moderately",
+        "en": ""
+      },
+      "3": {
+        "de": "Quite a bit",
+        "en": ""
+      },
+      "4": {
+        "de": "Extremely",
+        "en": ""
+      }
+    },
+    "Subscale": "psychoticism",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [],
+    "DefaultLanguage": "",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

@@ -1,0 +1,342 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "swls",
+    "OriginalName": {
+      "de": "Life Satisfaction",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "The SWLS is a short 5-item instrument designed to measure global cognitive judgments of satisfaction with one's life. The scale usually requires only about one minute of a respondent's time, where respondents answer on a Likert scale.",
+      "en": ""
+    },
+    "Instruction": {
+      "de": "Below are five statements that you may agree or disagree with. Using the 1 -\n7 scale below, indicate your agreement with each item by placing the appropriate number\non the line preceding that item. Please be open and honest in your responding.",
+      "en": ""
+    },
+    "Citation": "",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.0",
+    "CreationDate": "2025-12-21",
+    "Creator": "convert_legacy_resources.py"
+  },
+  "SWLS-01": {
+    "Description": {
+      "de": "In most ways my life is close to my ideal.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Slightly disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Neither afree nor disagree",
+        "en": ""
+      },
+      "5": {
+        "de": "Slightly agree",
+        "en": ""
+      },
+      "6": {
+        "de": "Agree",
+        "en": ""
+      },
+      "7": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "SWLS-02": {
+    "Description": {
+      "de": "The conditions of my life are excellent.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Slightly disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Neither afree nor disagree",
+        "en": ""
+      },
+      "5": {
+        "de": "Slightly agree",
+        "en": ""
+      },
+      "6": {
+        "de": "Agree",
+        "en": ""
+      },
+      "7": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "SWLS-03": {
+    "Description": {
+      "de": "I am satisfied with my life.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Slightly disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Neither afree nor disagree",
+        "en": ""
+      },
+      "5": {
+        "de": "Slightly agree",
+        "en": ""
+      },
+      "6": {
+        "de": "Agree",
+        "en": ""
+      },
+      "7": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "SWLS-04": {
+    "Description": {
+      "de": "So far I have gotten the important things I want in life.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Slightly disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Neither afree nor disagree",
+        "en": ""
+      },
+      "5": {
+        "de": "Slightly agree",
+        "en": ""
+      },
+      "6": {
+        "de": "Agree",
+        "en": ""
+      },
+      "7": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "SWLS-05": {
+    "Description": {
+      "de": "If I could live my life over, I would change almost nothing.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "Strongly disagree",
+        "en": ""
+      },
+      "2": {
+        "de": "Disagree",
+        "en": ""
+      },
+      "3": {
+        "de": "Slightly disagree",
+        "en": ""
+      },
+      "4": {
+        "de": "Neither afree nor disagree",
+        "en": ""
+      },
+      "5": {
+        "de": "Slightly agree",
+        "en": ""
+      },
+      "6": {
+        "de": "Agree",
+        "en": ""
+      },
+      "7": {
+        "de": "Strongly agree",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [],
+    "DefaultLanguage": "",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

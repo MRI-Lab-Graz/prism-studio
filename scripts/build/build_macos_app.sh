@@ -31,10 +31,12 @@ python -c "import PyInstaller" >/dev/null 2>&1 || {
 }
 
 # Build the desktop GUI as a proper macOS app bundle.
+# Added --target-arch=universal2 to support both Intel and Apple Silicon Macs.
 python scripts/build/build_app.py \
-  --entry prism-validator-gui.py \
+  --entry app/prism-gui.py \
   --name PrismValidator \
   --mode onedir \
+  --target-arch universal2 \
   --clean-output
 
 echo "✅ Done. App bundle: dist/PrismValidator.app"

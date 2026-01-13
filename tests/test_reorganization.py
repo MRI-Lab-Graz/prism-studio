@@ -20,7 +20,7 @@ def test_streamlined_version():
         result = subprocess.run(
             [
                 sys.executable,
-                os.path.join(project_root, "prism.py"),
+                os.path.join(project_root, "app", "prism.py"),
                 "--help",
             ],
             capture_output=True,
@@ -47,9 +47,9 @@ def test_module_imports():
     """Test that our modules can be imported"""
     print("🧪 Testing module imports...")
 
-    # Add src to path
+    # Add app/src to path
     current_dir = os.path.dirname(os.path.dirname(__file__))
-    src_path = os.path.join(current_dir, "src")
+    src_path = os.path.join(current_dir, "app", "src")
     sys.path.insert(0, src_path)
 
     try:
@@ -88,8 +88,8 @@ def test_directory_structure():
     project_root = os.path.dirname(os.path.dirname(__file__))
     os.chdir(project_root)
 
-    expected_dirs = ["src", "scripts", "tests", "docs", "schemas"]
-    expected_files = ["prism.py", "README.md", "requirements.txt", "setup.py"]
+    expected_dirs = ["app", "examples", "scripts", "tests", "docs"]
+    expected_files = ["README.md", "requirements.txt", "setup.py"]
 
     missing_dirs = []
     missing_files = []

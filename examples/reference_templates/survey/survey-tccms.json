@@ -1,0 +1,1566 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "tccms",
+    "OriginalName": {
+      "de": "True Crime Consumption and Motivations",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "The TTCMS (McDonald et al., 2021) measures frequency of true crime consumption with different formats (books, movies, podcasts) on a scale from 1 (never) to 5 (very often), and motivations behind true crime consumption (excitement, authenticity, defensive vigilance; e.g., \u201eI like that true crime deals with taboo subjects\u201d on a 7-point Likert scale (1 = fully disagree to 7 = fully agree). ",
+      "en": ""
+    },
+    "Instruction": {
+      "de": "True Crime bezeichnet die mediale Aufarbeitung nicht-fiktiver Kriminalf\u00e4lle, welche die Ereignisse rund um ein reales Verbrechen beschreibt. Meistens konzentrieren sich diese Verbrechen auf Mord, Folter, Entf\u00fchrung, Vergewaltigung, oder Serienmorde.\n Bitte geben Sie an, wie oft Sie bestimmte True Crime Formate konsumieren. (Fragen 1 bis 8)\n\nBitte geben Sie an, aus welchen Beweggr\u00fcnden Sie True Crime Formate konsumieren. (Fragen 9 bis 30)\n\nWenn Sie True Crime \u00fcberhaupt nie konsumieren bzw. immer vermeiden, klicken Sie bitte \"kein True Crime Konsum\" an.",
+      "en": ""
+    },
+    "Citation": "",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.0",
+    "CreationDate": "2025-12-21",
+    "Creator": "convert_legacy_resources.py"
+  },
+  "TCCMS-01": {
+    "Description": {
+      "de": "Ich lese True Crime B\u00fccher",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "nie",
+        "en": ""
+      },
+      "2": {
+        "de": "selten",
+        "en": ""
+      },
+      "3": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "4": {
+        "de": "oft",
+        "en": ""
+      },
+      "5": {
+        "de": "sehr oft",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-02": {
+    "Description": {
+      "de": "Ich h\u00f6re True Crime Podcasts",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "nie",
+        "en": ""
+      },
+      "2": {
+        "de": "selten",
+        "en": ""
+      },
+      "3": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "4": {
+        "de": "oft",
+        "en": ""
+      },
+      "5": {
+        "de": "sehr oft",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-03": {
+    "Description": {
+      "de": "Ich schaue True Crime Fernsehserien",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "nie",
+        "en": ""
+      },
+      "2": {
+        "de": "selten",
+        "en": ""
+      },
+      "3": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "4": {
+        "de": "oft",
+        "en": ""
+      },
+      "5": {
+        "de": "sehr oft",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-04": {
+    "Description": {
+      "de": "Ich schaue True Crime Filme",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "nie",
+        "en": ""
+      },
+      "2": {
+        "de": "selten",
+        "en": ""
+      },
+      "3": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "4": {
+        "de": "oft",
+        "en": ""
+      },
+      "5": {
+        "de": "sehr oft",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-05": {
+    "Description": {
+      "de": "Ich verfolge in den Nachrichten Ermittlungen zu Serienmorden",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "nie",
+        "en": ""
+      },
+      "2": {
+        "de": "selten",
+        "en": ""
+      },
+      "3": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "4": {
+        "de": "oft",
+        "en": ""
+      },
+      "5": {
+        "de": "sehr oft",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-06": {
+    "Description": {
+      "de": "Ich verfolge in den Nachrichten Ermittlungen zu Vergewaltigungsf\u00e4llen oder sexuellen \u00dcbergriffen",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "nie",
+        "en": ""
+      },
+      "2": {
+        "de": "selten",
+        "en": ""
+      },
+      "3": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "4": {
+        "de": "oft",
+        "en": ""
+      },
+      "5": {
+        "de": "sehr oft",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-07": {
+    "Description": {
+      "de": "Ich verfolge in den Nachrichten Ermittlungen zu Entf\u00fchrungen",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "nie",
+        "en": ""
+      },
+      "2": {
+        "de": "selten",
+        "en": ""
+      },
+      "3": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "4": {
+        "de": "oft",
+        "en": ""
+      },
+      "5": {
+        "de": "sehr oft",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-08": {
+    "Description": {
+      "de": "Ich verfolge in den Nachrichten Ermittlungen zu Mordf\u00e4llen",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "nie",
+        "en": ""
+      },
+      "2": {
+        "de": "selten",
+        "en": ""
+      },
+      "3": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "4": {
+        "de": "oft",
+        "en": ""
+      },
+      "5": {
+        "de": "sehr oft",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-09": {
+    "Description": {
+      "de": "Ich schaue/lese oder h\u00f6re True Crime um zu lernen, was mir passieren k\u00f6nnte",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-10": {
+    "Description": {
+      "de": "Ich schaue/lese oder h\u00f6re True Crime um zu erfahren, was in der Welt passiert",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-11": {
+    "Description": {
+      "de": "Ich schaue/lese oder h\u00f6re True Crime um zu lernen, wie ich mich selbst gegen Angriffe sch\u00fctzen kann",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-12": {
+    "Description": {
+      "de": "Ich schaue/lese oder h\u00f6re True Crime um zu lernen, wie ich gewaltt\u00e4tige Angriffe vermeiden kann",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-13": {
+    "Description": {
+      "de": "Wenn ich True Crime Inhalte schaue/lese oder h\u00f6re, denke ich dar\u00fcber nach, was ich tun w\u00fcrde, wenn ich in der Situation des Opfers w\u00e4re",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-14": {
+    "Description": {
+      "de": "True Crime macht mir bewusst, welche Arten von Verbrechen gegen Frauen ver\u00fcbt werden",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-15": {
+    "Description": {
+      "de": "True Crime hat mich wachsamer gegen\u00fcber meiner Umwelt werden lassen",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-16": {
+    "Description": {
+      "de": "True Crime gibt mir Einblicke in die Psyche von M\u00e4nnern, die gewaltt\u00e4tige Verbrechen an Frauen ver\u00fcben",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-17": {
+    "Description": {
+      "de": "Ich mag True Crime, weil es aufregend und spannend ist",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-18": {
+    "Description": {
+      "de": "True Crime ist unterhaltsam, weil ich gewaltreiche Medien mag",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-19": {
+    "Description": {
+      "de": "True Crime ist mein Lieblingsgenre aller Medien (Fernsehsendungen, Filme, B\u00fccher, Podcasts)",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-20": {
+    "Description": {
+      "de": "True Crime interessiert mich, weil ich Inhalte mag, die die dunklere Seite der menschlichen Natur ansprechen",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-21": {
+    "Description": {
+      "de": "Ich mag True Crime Inhalte, weil mich Gewalt fasziniert",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-22": {
+    "Description": {
+      "de": "Ich mag es, dass True Crime Tabuthemen behandelt",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-23": {
+    "Description": {
+      "de": "True Crime ist unterhaltsam, weil es sich um reale Situationen und Geschichten handelt",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-24": {
+    "Description": {
+      "de": "Ich mag True Crime, weil ich es mag, wenn Geheimnisse und Mysterien aufgel\u00f6st werden",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-25": {
+    "Description": {
+      "de": "Die Psychologie von Kriminellen, die in True Crime behandelt wird, ist faszinierend",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-26": {
+    "Description": {
+      "de": "Es ist ein gro\u00dfartiger Aspekt von True Crime, dass der Gerechtigkeit Gen\u00fcge getan wird",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-27": {
+    "Description": {
+      "de": "Durch das Schauen/Lesen/H\u00f6ren von True Crime lerne ich, besser mit meinen negativen Gef\u00fchlen umzugehen",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-28": {
+    "Description": {
+      "de": "Das Schauen/Lesen/H\u00f6ren von True Crime hilft mir, meine eigenen Probleme aus einer anderen Perspektive zu betrachten",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-29": {
+    "Description": {
+      "de": "Beim Schauen/Lesen/H\u00f6ren von True Crime kann ich lernen, besser mit k\u00f6rperlicher Anspannung umzugehen",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "TCCMS-30": {
+    "Description": {
+      "de": "Das Schauen/Lesen/H\u00f6ren von True Crime bereitet mich darauf vor, besser mit Bedrohungen im echten Leben umzugehen",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "stimme \u00fcberhaupt nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "stimme nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "stimme etwas nicht zu",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "stimme etwas zu",
+        "en": ""
+      },
+      "6": {
+        "de": "stimme zu",
+        "en": ""
+      },
+      "7": {
+        "de": "stimme stark zu",
+        "en": ""
+      },
+      "8": {
+        "de": "kein True Crime Konsum",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [],
+    "DefaultLanguage": "",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

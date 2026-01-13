@@ -1,0 +1,15 @@
+{
+  "Study": {
+    "StudyID": "MULTI_MODAL_2024",
+    "TaskName": "multimodal_experiment"
+  },
+  "Categories": {
+    "StudyDomain": "cognitive"
+  },
+  "Metadata": {
+    "SchemaVersion": "1.0.0",
+    "Creator": "PRISM Demo Team",
+    "CreationDate": "2024-09-11",
+    "Institution": "University of Graz Psychology Institute"
+  }
+}

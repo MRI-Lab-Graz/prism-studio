@@ -1,0 +1,505 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Generic",
+    "Language": "en",
+    "Respondent": "self",
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "ResponseType": [],
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "pss10",
+    "OriginalName": {
+      "de": "Perceived Stress Scale (PSS-10)",
+      "en": "Perceived Stress Scale (PSS-10)"
+    },
+    "Version": {
+      "de": "",
+      "en": "1983"
+    },
+    "Description": {
+      "de": "10-Item Fragebogen zur Erfassung des wahrgenommenen Stresses im letzten Monat",
+      "en": "10-item questionnaire measuring perceived stress in the past month"
+    },
+    "Citation": "Cohen S, Kamarck T, Mermelstein R. A global measure of perceived stress. J Health Soc Behav. 1983;24(4):385-396.",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Instruction": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.0.0",
+    "CreationDate": "2025-12-18",
+    "Creator": "prism library"
+  },
+  "I18n": {
+    "Languages": [
+      "de",
+      "en"
+    ],
+    "DefaultLanguage": "en",
+    "Note": "Generated from single-language template; missing translations are empty strings.",
+    "TranslationMethod": ""
+  },
+  "pss_01": {
+    "Description": {
+      "de": "Wie oft hatten Sie sich im letzten Monat dar\u00fcber aufgeregt, dass etwas v\u00f6llig Unerwartetes eingetreten ist?",
+      "en": "In the last month, how often have you been upset because of something that happened unexpectedly?"
+    },
+    "Levels": {
+      "0": {
+        "de": "Nie",
+        "en": "Never"
+      },
+      "1": {
+        "de": "Fast nie",
+        "en": "Almost never"
+      },
+      "2": {
+        "de": "Manchmal",
+        "en": "Sometimes"
+      },
+      "3": {
+        "de": "Ziemlich oft",
+        "en": "Fairly often"
+      },
+      "4": {
+        "de": "Sehr oft",
+        "en": "Very often"
+      }
+    },
+    "Units": "ordinal",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "pss_02": {
+    "Description": {
+      "de": "Wie oft hatten Sie im letzten Monat das Gef\u00fchl, wichtige Dinge in Ihrem Leben nicht kontrollieren zu k\u00f6nnen?",
+      "en": "In the last month, how often have you felt that you were unable to control the important things in your life?"
+    },
+    "Levels": {
+      "0": {
+        "de": "Nie",
+        "en": "Never"
+      },
+      "1": {
+        "de": "Fast nie",
+        "en": "Almost never"
+      },
+      "2": {
+        "de": "Manchmal",
+        "en": "Sometimes"
+      },
+      "3": {
+        "de": "Ziemlich oft",
+        "en": "Fairly often"
+      },
+      "4": {
+        "de": "Sehr oft",
+        "en": "Very often"
+      }
+    },
+    "Units": "ordinal",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "pss_03": {
+    "Description": {
+      "de": "Wie oft hatten Sie sich im letzten Monat nerv\u00f6s und gestresst gef\u00fchlt?",
+      "en": "In the last month, how often have you felt nervous and stressed?"
+    },
+    "Levels": {
+      "0": {
+        "de": "Nie",
+        "en": "Never"
+      },
+      "1": {
+        "de": "Fast nie",
+        "en": "Almost never"
+      },
+      "2": {
+        "de": "Manchmal",
+        "en": "Sometimes"
+      },
+      "3": {
+        "de": "Ziemlich oft",
+        "en": "Fairly often"
+      },
+      "4": {
+        "de": "Sehr oft",
+        "en": "Very often"
+      }
+    },
+    "Units": "ordinal",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "pss_04": {
+    "Description": {
+      "de": "Wie oft hatten Sie im letzten Monat erfolgreich mit den allt\u00e4glichen Problemen und \u00c4rgernissen umgehen k\u00f6nnen?",
+      "en": "In the last month, how often have you felt confident about your ability to handle your personal problems?"
+    },
+    "Levels": {
+      "0": {
+        "de": "Nie",
+        "en": "Never"
+      },
+      "1": {
+        "de": "Fast nie",
+        "en": "Almost never"
+      },
+      "2": {
+        "de": "Manchmal",
+        "en": "Sometimes"
+      },
+      "3": {
+        "de": "Ziemlich oft",
+        "en": "Fairly often"
+      },
+      "4": {
+        "de": "Sehr oft",
+        "en": "Very often"
+      }
+    },
+    "Units": "ordinal",
+    "Scoring": "reverse",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "pss_05": {
+    "Description": {
+      "de": "Wie oft hatten Sie im letzten Monat das Gef\u00fchl, dass sich die Dinge nach Ihren Vorstellungen entwickeln?",
+      "en": "In the last month, how often have you felt that things were going your way?"
+    },
+    "Levels": {
+      "0": {
+        "de": "Nie",
+        "en": "Never"
+      },
+      "1": {
+        "de": "Fast nie",
+        "en": "Almost never"
+      },
+      "2": {
+        "de": "Manchmal",
+        "en": "Sometimes"
+      },
+      "3": {
+        "de": "Ziemlich oft",
+        "en": "Fairly often"
+      },
+      "4": {
+        "de": "Sehr oft",
+        "en": "Very often"
+      }
+    },
+    "Units": "ordinal",
+    "Scoring": "reverse",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "pss_06": {
+    "Description": {
+      "de": "Wie oft hatten Sie im letzten Monat das Gef\u00fchl gehabt, mit all den anstehenden Aufgaben und Problemen nicht richtig umgehen zu k\u00f6nnen?",
+      "en": "In the last month, how often have you found that you could not cope with all the things that you had to do?"
+    },
+    "Levels": {
+      "0": {
+        "de": "Nie",
+        "en": "Never"
+      },
+      "1": {
+        "de": "Fast nie",
+        "en": "Almost never"
+      },
+      "2": {
+        "de": "Manchmal",
+        "en": "Sometimes"
+      },
+      "3": {
+        "de": "Ziemlich oft",
+        "en": "Fairly often"
+      },
+      "4": {
+        "de": "Sehr oft",
+        "en": "Very often"
+      }
+    },
+    "Units": "ordinal",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "pss_07": {
+    "Description": {
+      "de": "Wie oft konnten Sie sich im letzten Monat \u00fcber Dinge freuen, die aufgetreten sind?",
+      "en": "In the last month, how often have you been able to control irritations in your life?"
+    },
+    "Levels": {
+      "0": {
+        "de": "Nie",
+        "en": "Never"
+      },
+      "1": {
+        "de": "Fast nie",
+        "en": "Almost never"
+      },
+      "2": {
+        "de": "Manchmal",
+        "en": "Sometimes"
+      },
+      "3": {
+        "de": "Ziemlich oft",
+        "en": "Fairly often"
+      },
+      "4": {
+        "de": "Sehr oft",
+        "en": "Very often"
+      }
+    },
+    "Units": "ordinal",
+    "Scoring": "reverse",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "pss_08": {
+    "Description": {
+      "de": "Wie oft hatten Sie im letzten Monat das Gef\u00fchl, alles im Griff zu haben?",
+      "en": "In the last month, how often have you felt that you were on top of things?"
+    },
+    "Levels": {
+      "0": {
+        "de": "Nie",
+        "en": "Never"
+      },
+      "1": {
+        "de": "Fast nie",
+        "en": "Almost never"
+      },
+      "2": {
+        "de": "Manchmal",
+        "en": "Sometimes"
+      },
+      "3": {
+        "de": "Ziemlich oft",
+        "en": "Fairly often"
+      },
+      "4": {
+        "de": "Sehr oft",
+        "en": "Very often"
+      }
+    },
+    "Units": "ordinal",
+    "Scoring": "reverse",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "pss_09": {
+    "Description": {
+      "de": "Wie oft hatten Sie sich im letzten Monat dar\u00fcber ge\u00e4rgert, Dinge nicht kontrollieren zu k\u00f6nnen, die au\u00dferhalb Ihres Einflussbereiches lagen?",
+      "en": "In the last month, how often have you been angered because of things that happened that were outside of your control?"
+    },
+    "Levels": {
+      "0": {
+        "de": "Nie",
+        "en": "Never"
+      },
+      "1": {
+        "de": "Fast nie",
+        "en": "Almost never"
+      },
+      "2": {
+        "de": "Manchmal",
+        "en": "Sometimes"
+      },
+      "3": {
+        "de": "Ziemlich oft",
+        "en": "Fairly often"
+      },
+      "4": {
+        "de": "Sehr oft",
+        "en": "Very often"
+      }
+    },
+    "Units": "ordinal",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "pss_10": {
+    "Description": {
+      "de": "Wie oft hatten Sie im letzten Monat das Gef\u00fchl, dass sich die Schwierigkeiten so aufgeh\u00e4uft haben, dass Sie sie nicht mehr bew\u00e4ltigen konnten?",
+      "en": "In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?"
+    },
+    "Levels": {
+      "0": {
+        "de": "Nie",
+        "en": "Never"
+      },
+      "1": {
+        "de": "Fast nie",
+        "en": "Almost never"
+      },
+      "2": {
+        "de": "Manchmal",
+        "en": "Sometimes"
+      },
+      "3": {
+        "de": "Ziemlich oft",
+        "en": "Fairly often"
+      },
+      "4": {
+        "de": "Sehr oft",
+        "en": "Very often"
+      }
+    },
+    "Units": "ordinal",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

@@ -1,0 +1,321 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Generic",
+    "Language": "en",
+    "Respondent": "self",
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "ResponseType": [],
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "who5",
+    "OriginalName": {
+      "de": "WHO-5 Wohlbefindens-Index",
+      "en": "WHO-5 Well-Being Index"
+    },
+    "Version": {
+      "de": "",
+      "en": "1998"
+    },
+    "Description": {
+      "de": "5-Item Fragebogen zur Erfassung des aktuellen psychischen Wohlbefindens",
+      "en": "5-item questionnaire measuring current mental well-being"
+    },
+    "Citation": "Topp CW, \u00d8stergaard SD, S\u00f8ndergaard S, Bech P. The WHO-5 Well-Being Index: a systematic review of the literature. Psychother Psychosom. 2015;84(3):167-176. doi:10.1159/000376585",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Instruction": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.0.0",
+    "CreationDate": "2025-12-18",
+    "Creator": "prism library"
+  },
+  "I18n": {
+    "Languages": [
+      "de",
+      "en"
+    ],
+    "DefaultLanguage": "en",
+    "Note": "Generated from single-language template; missing translations are empty strings.",
+    "TranslationMethod": ""
+  },
+  "who5_01": {
+    "Description": {
+      "de": "...war ich froh und guter Laune",
+      "en": "I have felt cheerful and in good spirits"
+    },
+    "Levels": {
+      "0": {
+        "de": "Zu keinem Zeitpunkt",
+        "en": "At no time"
+      },
+      "1": {
+        "de": "Ab und zu",
+        "en": "Some of the time"
+      },
+      "2": {
+        "de": "Etwas weniger als die H\u00e4lfte der Zeit",
+        "en": "Less than half of the time"
+      },
+      "3": {
+        "de": "Etwas mehr als die H\u00e4lfte der Zeit",
+        "en": "More than half of the time"
+      },
+      "4": {
+        "de": "Meistens",
+        "en": "Most of the time"
+      },
+      "5": {
+        "de": "Die ganze Zeit",
+        "en": "All of the time"
+      }
+    },
+    "Units": "ordinal",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "who5_02": {
+    "Description": {
+      "de": "...habe ich mich ruhig und entspannt gef\u00fchlt",
+      "en": "I have felt calm and relaxed"
+    },
+    "Levels": {
+      "0": {
+        "de": "Zu keinem Zeitpunkt",
+        "en": "At no time"
+      },
+      "1": {
+        "de": "Ab und zu",
+        "en": "Some of the time"
+      },
+      "2": {
+        "de": "Etwas weniger als die H\u00e4lfte der Zeit",
+        "en": "Less than half of the time"
+      },
+      "3": {
+        "de": "Etwas mehr als die H\u00e4lfte der Zeit",
+        "en": "More than half of the time"
+      },
+      "4": {
+        "de": "Meistens",
+        "en": "Most of the time"
+      },
+      "5": {
+        "de": "Die ganze Zeit",
+        "en": "All of the time"
+      }
+    },
+    "Units": "ordinal",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "who5_03": {
+    "Description": {
+      "de": "...habe ich mich aktiv und voller Energie gef\u00fchlt",
+      "en": "I have felt active and vigorous"
+    },
+    "Levels": {
+      "0": {
+        "de": "Zu keinem Zeitpunkt",
+        "en": "At no time"
+      },
+      "1": {
+        "de": "Ab und zu",
+        "en": "Some of the time"
+      },
+      "2": {
+        "de": "Etwas weniger als die H\u00e4lfte der Zeit",
+        "en": "Less than half of the time"
+      },
+      "3": {
+        "de": "Etwas mehr als die H\u00e4lfte der Zeit",
+        "en": "More than half of the time"
+      },
+      "4": {
+        "de": "Meistens",
+        "en": "Most of the time"
+      },
+      "5": {
+        "de": "Die ganze Zeit",
+        "en": "All of the time"
+      }
+    },
+    "Units": "ordinal",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "who5_04": {
+    "Description": {
+      "de": "...habe ich mich beim Aufwachen frisch und ausgeruht gef\u00fchlt",
+      "en": "I woke up feeling fresh and rested"
+    },
+    "Levels": {
+      "0": {
+        "de": "Zu keinem Zeitpunkt",
+        "en": "At no time"
+      },
+      "1": {
+        "de": "Ab und zu",
+        "en": "Some of the time"
+      },
+      "2": {
+        "de": "Etwas weniger als die H\u00e4lfte der Zeit",
+        "en": "Less than half of the time"
+      },
+      "3": {
+        "de": "Etwas mehr als die H\u00e4lfte der Zeit",
+        "en": "More than half of the time"
+      },
+      "4": {
+        "de": "Meistens",
+        "en": "Most of the time"
+      },
+      "5": {
+        "de": "Die ganze Zeit",
+        "en": "All of the time"
+      }
+    },
+    "Units": "ordinal",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "who5_05": {
+    "Description": {
+      "de": "...war mein Alltag voller Dinge, die mich interessieren",
+      "en": "My daily life has been filled with things that interest me"
+    },
+    "Levels": {
+      "0": {
+        "de": "Zu keinem Zeitpunkt",
+        "en": "At no time"
+      },
+      "1": {
+        "de": "Ab und zu",
+        "en": "Some of the time"
+      },
+      "2": {
+        "de": "Etwas weniger als die H\u00e4lfte der Zeit",
+        "en": "Less than half of the time"
+      },
+      "3": {
+        "de": "Etwas mehr als die H\u00e4lfte der Zeit",
+        "en": "More than half of the time"
+      },
+      "4": {
+        "de": "Meistens",
+        "en": "Most of the time"
+      },
+      "5": {
+        "de": "Die ganze Zeit",
+        "en": "All of the time"
+      }
+    },
+    "Units": "ordinal",
+    "Unit": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

@@ -17,9 +17,9 @@ def _maybe_rm_tree(path: Path) -> None:
 
 
 def _get_version() -> str:
-    """Extract version from src/__init__.py"""
+    """Extract version from app/src/__init__.py"""
     try:
-        init_path = Path(__file__).resolve().parents[2] / "src" / "__init__.py"
+        init_path = Path(__file__).resolve().parents[2] / "app" / "src" / "__init__.py"
         with open(init_path, "r") as f:
             for line in f:
                 if line.startswith("__version__"):
@@ -181,6 +181,12 @@ def main() -> int:
         action="store_true",
         help="Delete build/ and dist/ before building",
     )
+    parser.add_argument(
+        "--target-arch",
+        choices=["x86_64", "arm64", "universal2"],
+        default=None,
+        help="Target architecture for macOS (default: current architecture)",
+    )
     args = parser.parse_args()
 
     project_root = Path(__file__).resolve().parents[2]
@@ -208,14 +214,15 @@ def main() -> int:
     # On Windows use ; as separator, on Unix use :
     sep = ";" if os.name == "nt" else ":"
 
+    # Data paths are now in the app/ subdirectory
     datas = [
-        f"templates{sep}templates",
-        f"static{sep}static",
-        f"schemas{sep}schemas",
-        f"src{sep}src",
+        f"app{sep}templates{sep}templates",
+        f"app{sep}static{sep}static",
+        f"app{sep}schemas{sep}schemas",
+        f"app{sep}src{sep}src",
     ]
-    if (project_root / "survey_library").exists():
-        datas.append(f"survey_library{sep}survey_library")
+    if (project_root / "app" / "survey_library").exists():
+        datas.append(f"app{sep}survey_library{sep}survey_library")
         print("[OK] Including survey_library")
 
     pyinstaller_args = [
@@ -239,6 +246,9 @@ def main() -> int:
         pyinstaller_args.append(
             "--osx-bundle-identifier=at.ac.uni-graz.mri.prism-studio"
         )
+        if args.target_arch:
+            pyinstaller_args.append(f"--target-arch={args.target_arch}")
+            print(f"[BUILD] Setting target architecture to: {args.target_arch}")
 
     if icon_file:
         pyinstaller_args.append(f"--icon={icon_file}")

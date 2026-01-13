@@ -1,0 +1,774 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "mp",
+    "OriginalName": {
+      "de": "Musikpreferenzen",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "DER MP misst die Musikpreferenzen.",
+      "en": ""
+    },
+    "Instruction": {
+      "de": " Es gibt keine richtigen oder falschen Antworten - bitte antworten Sie nach Ihren pers\u00f6nlichen Vorlieben.",
+      "en": ""
+    },
+    "Citation": "",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.0",
+    "CreationDate": "2025-12-21",
+    "Creator": "convert_legacy_resources.py"
+  },
+  "MP-01": {
+    "Description": {
+      "de": "Klassik",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "mag ich \u00fcberhaupt nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "mag ich nicht",
+        "en": ""
+      },
+      "3": {
+        "de": "mag ich eher nicht",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "mag ich eher",
+        "en": ""
+      },
+      "6": {
+        "de": "mag ich",
+        "en": ""
+      },
+      "7": {
+        "de": "mag ich sehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MP-02": {
+    "Description": {
+      "de": "Blues",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "mag ich \u00fcberhaupt nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "mag ich nicht",
+        "en": ""
+      },
+      "3": {
+        "de": "mag ich eher nicht",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "mag ich eher",
+        "en": ""
+      },
+      "6": {
+        "de": "mag ich",
+        "en": ""
+      },
+      "7": {
+        "de": "mag ich sehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MP-03": {
+    "Description": {
+      "de": "Country",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "mag ich \u00fcberhaupt nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "mag ich nicht",
+        "en": ""
+      },
+      "3": {
+        "de": "mag ich eher nicht",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "mag ich eher",
+        "en": ""
+      },
+      "6": {
+        "de": "mag ich",
+        "en": ""
+      },
+      "7": {
+        "de": "mag ich sehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MP-04": {
+    "Description": {
+      "de": "Dance/Elektonik",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "mag ich \u00fcberhaupt nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "mag ich nicht",
+        "en": ""
+      },
+      "3": {
+        "de": "mag ich eher nicht",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "mag ich eher",
+        "en": ""
+      },
+      "6": {
+        "de": "mag ich",
+        "en": ""
+      },
+      "7": {
+        "de": "mag ich sehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MP-05": {
+    "Description": {
+      "de": "Volksmusik",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "mag ich \u00fcberhaupt nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "mag ich nicht",
+        "en": ""
+      },
+      "3": {
+        "de": "mag ich eher nicht",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "mag ich eher",
+        "en": ""
+      },
+      "6": {
+        "de": "mag ich",
+        "en": ""
+      },
+      "7": {
+        "de": "mag ich sehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MP-06": {
+    "Description": {
+      "de": "Rap/Hip-Hop",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "mag ich \u00fcberhaupt nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "mag ich nicht",
+        "en": ""
+      },
+      "3": {
+        "de": "mag ich eher nicht",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "mag ich eher",
+        "en": ""
+      },
+      "6": {
+        "de": "mag ich",
+        "en": ""
+      },
+      "7": {
+        "de": "mag ich sehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MP-07": {
+    "Description": {
+      "de": "Soul/Funk",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "mag ich \u00fcberhaupt nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "mag ich nicht",
+        "en": ""
+      },
+      "3": {
+        "de": "mag ich eher nicht",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "mag ich eher",
+        "en": ""
+      },
+      "6": {
+        "de": "mag ich",
+        "en": ""
+      },
+      "7": {
+        "de": "mag ich sehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MP-08": {
+    "Description": {
+      "de": "Religi\u00f6se Musik",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "mag ich \u00fcberhaupt nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "mag ich nicht",
+        "en": ""
+      },
+      "3": {
+        "de": "mag ich eher nicht",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "mag ich eher",
+        "en": ""
+      },
+      "6": {
+        "de": "mag ich",
+        "en": ""
+      },
+      "7": {
+        "de": "mag ich sehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MP-09": {
+    "Description": {
+      "de": "Alternative",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "mag ich \u00fcberhaupt nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "mag ich nicht",
+        "en": ""
+      },
+      "3": {
+        "de": "mag ich eher nicht",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "mag ich eher",
+        "en": ""
+      },
+      "6": {
+        "de": "mag ich",
+        "en": ""
+      },
+      "7": {
+        "de": "mag ich sehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MP-10": {
+    "Description": {
+      "de": "Jazz",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "mag ich \u00fcberhaupt nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "mag ich nicht",
+        "en": ""
+      },
+      "3": {
+        "de": "mag ich eher nicht",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "mag ich eher",
+        "en": ""
+      },
+      "6": {
+        "de": "mag ich",
+        "en": ""
+      },
+      "7": {
+        "de": "mag ich sehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MP-11": {
+    "Description": {
+      "de": "Rock",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "mag ich \u00fcberhaupt nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "mag ich nicht",
+        "en": ""
+      },
+      "3": {
+        "de": "mag ich eher nicht",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "mag ich eher",
+        "en": ""
+      },
+      "6": {
+        "de": "mag ich",
+        "en": ""
+      },
+      "7": {
+        "de": "mag ich sehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MP-12": {
+    "Description": {
+      "de": "Pop",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "mag ich \u00fcberhaupt nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "mag ich nicht",
+        "en": ""
+      },
+      "3": {
+        "de": "mag ich eher nicht",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "mag ich eher",
+        "en": ""
+      },
+      "6": {
+        "de": "mag ich",
+        "en": ""
+      },
+      "7": {
+        "de": "mag ich sehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MP-13": {
+    "Description": {
+      "de": "Heavy Metal",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "mag ich \u00fcberhaupt nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "mag ich nicht",
+        "en": ""
+      },
+      "3": {
+        "de": "mag ich eher nicht",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "mag ich eher",
+        "en": ""
+      },
+      "6": {
+        "de": "mag ich",
+        "en": ""
+      },
+      "7": {
+        "de": "mag ich sehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "MP-14": {
+    "Description": {
+      "de": "Soundtracks/Theme Songs",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "mag ich \u00fcberhaupt nicht",
+        "en": ""
+      },
+      "2": {
+        "de": "mag ich nicht",
+        "en": ""
+      },
+      "3": {
+        "de": "mag ich eher nicht",
+        "en": ""
+      },
+      "4": {
+        "de": "weder noch",
+        "en": ""
+      },
+      "5": {
+        "de": "mag ich eher",
+        "en": ""
+      },
+      "6": {
+        "de": "mag ich",
+        "en": ""
+      },
+      "7": {
+        "de": "mag ich sehr",
+        "en": ""
+      }
+    },
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [],
+    "DefaultLanguage": "",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

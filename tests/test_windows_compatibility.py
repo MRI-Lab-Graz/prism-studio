@@ -8,8 +8,8 @@ import sys
 import tempfile
 import json
 
-# Add src to path for testing
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+# Add app/src to path for testing
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app", "src"))
 
 try:
     from cross_platform import (

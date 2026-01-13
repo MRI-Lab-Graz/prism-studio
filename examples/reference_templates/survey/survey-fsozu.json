@@ -1,0 +1,2326 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "fsozu",
+    "OriginalName": {
+      "de": "Soziale Unterst\u00fctzung",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "The FSozU is a german questionnaire that messures social support",
+      "en": ""
+    },
+    "Instruction": {
+      "de": "In diesem Fragebogen geht es um Ihre Beziehungen zu wichtigen Menschen, also zum:zur Partner:in, zu Familienmitgliedern, Freund:innen und Bekannten, Kolleg:innen und Nachbar:innen. Es wird erhoben, wie Sie diese Beziehungen erleben und einsch\u00e4tzen. Der Fragebogen enth\u00e4lt eine Reihe von Aussagen. Neben jeder Aussage finden Sie f\u00fcnf Kreise. Kreuzen Sie bitte den Kreis an, der Ihrer Zustimmung entspricht. Ein Kreuz ganz rechts (trifft genau zu) w\u00fcrde beispielsweise bedeuten, dass die entsprechende Aussage f\u00fcr Sie genau zutrifft; ein Kreuz in der zweiten Spalte von links w\u00fcrde bedeuten, dass diese Aussage f\u00fcr Sie eher nicht zutrifft.",
+      "en": ""
+    },
+    "Citation": "",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.0",
+    "CreationDate": "2025-12-21",
+    "Creator": "convert_legacy_resources.py"
+  },
+  "FSozU-01": {
+    "Description": {
+      "de": "Ich habe Menschen, die sich um meine Wohnung (Blumen, Haustiere) k\u00fcmmern k\u00f6nnen, wenn ich mal nicht da bin.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "PU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-02": {
+    "Description": {
+      "de": "Es gibt Menschen, die mich so nehmen, wie ich bin.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "EU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-03": {
+    "Description": {
+      "de": "Meinen Freund:innen/Bekannten ist es wichtig, meine Meinung zu bestimmten Dingen zu erfahren.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "SI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-04": {
+    "Description": {
+      "de": "Manche meiner Bekannten/Freunde nutzen meine Hilfsbereitschaft aus.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Bel",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-05": {
+    "Description": {
+      "de": "Ich f\u00fchle mich von wichtigen Personen abgelehnt.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Bel",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-06": {
+    "Description": {
+      "de": "Bei Bedarf kann ich mir Werkzeug oder Lebensmittel ausleihen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "PU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-07": {
+    "Description": {
+      "de": "Es gibt viele Situationen, in denen ich um praktische Hilfe gebeten werde (z.B. etwas erledigen, mit etwas aushelfen)",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Rez",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-08": {
+    "Description": {
+      "de": "Die meisten Leute, die ich kenne, haben eine bessere Beziehung zu ihren Freunden als ich.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "SI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-09": {
+    "Description": {
+      "de": "Viele meiner Freunde/Angeh\u00f6rigen haben eine \u00e4hnliche Einstellung zum Leben wie ich.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "SI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-10": {
+    "Description": {
+      "de": "Wenn ich dringend und kurzfristig zu einem umliegenden Ort (ca. 20km) muss, wei\u00df ich, wen ich ohne Z\u00f6gern bitten kann, mich dorthin zu fahren.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "PU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-11": {
+    "Description": {
+      "de": "Ich k\u00f6nnte viel freier leben, wenn ich nicht immer auf meine Freude/Familie R\u00fccksicht nehmen m\u00fcsste.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Bel",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-12": {
+    "Description": {
+      "de": "Ich habe Freunde/Angeh\u00f6rige, die auch mal gut zuh\u00f6ren k\u00f6nnen, wenn ich mich aussprechen m\u00f6chte.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "EU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-13": {
+    "Description": {
+      "de": "Ich kenne fast niemanden, mit dem ich gern ausgehe.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "SI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-14": {
+    "Description": {
+      "de": "Nach manchen Gespr\u00e4chen f\u00fchle ich mich wirklich besser.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "EU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-15": {
+    "Description": {
+      "de": "Ich habe Freunde/Angeh\u00f6rige, die mich auch einfach mal umarmen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "EU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-16": {
+    "Description": {
+      "de": "Wenn ich wirklich mal unter Stress stehe, werden mir auch mal Aufgaben abgenommen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "PU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-17": {
+    "Description": {
+      "de": "Ich brauche mehr Menschen, mit denen ich etwas gemeinsam unternehmen kann.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "SI | Zuf",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-18": {
+    "Description": {
+      "de": "Manchmal habe ich das Gef\u00fchl, dass alle etwas an mir auszusetzen haben.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Bel",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-19": {
+    "Description": {
+      "de": "Wenn ich krank bin, kann ich ohne Z\u00f6gern Freunde/Angeh\u00f6rige bitten, wichtige Dinge (z. B. Einkaufen) f\u00fcr mich zu erledigen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "PU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-20": {
+    "Description": {
+      "de": "Wenn ich mal tief bedr\u00fcckt bin, wei\u00df ich, zu wem ich gehen kann.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "EU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-21": {
+    "Description": {
+      "de": "Ich habe einen Menschen, mit dem ich mich auch sexuell gut verstehe.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "EU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-22": {
+    "Description": {
+      "de": "Oft treffe ich zuf\u00e4llig Bekannte, mit denen ich erst mal ein Schw\u00e4tzchen halte.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "SI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-23": {
+    "Description": {
+      "de": "Ich w\u00fcnschte, man w\u00fcrde mir nicht \u00fcberall reinreden.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Bel",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-24": {
+    "Description": {
+      "de": "Ich f\u00fchle mich oft als Au\u00dfenseiter.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "SI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-25": {
+    "Description": {
+      "de": "Ich kann Freunde/Bekannte bitten, mir bei Amtsangelegenheiten (Beh\u00f6rden) zu helfen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "PU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-26": {
+    "Description": {
+      "de": "Es gibt Menschen, die Freude und Leid mit mir teilen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "EU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-27": {
+    "Description": {
+      "de": "Bei manchen Freunden/Angeh\u00f6rigen kann ich auch mal ganz ausgelassen sein.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "EU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-28": {
+    "Description": {
+      "de": "Ich f\u00fchle mich in meinem Leben von Freund:innen/Angeh\u00f6rigen bedr\u00e4ngt und eingeengt.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Bel",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-29": {
+    "Description": {
+      "de": "Ich habe einen mir vertrauten Menschen, mit dem ich alle pers\u00f6nlichen Dinge besprechen kann.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "EU | Vert",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-30": {
+    "Description": {
+      "de": "Ich w\u00fcnsche mir von anderen mehr Verst\u00e4ndnis und Zuwendung.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "SI | Zuf",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-31": {
+    "Description": {
+      "de": "Ich habe genug Menschen, die mir wirklich helfen, wenn ich mal nicht weiter wei\u00df.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "PU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-32": {
+    "Description": {
+      "de": "Es gibt Menschen, bei denen ich vor\u00fcbergehend wohnen k\u00f6nnte.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "PU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-33": {
+    "Description": {
+      "de": "Ich werde oft um Rat gefragt.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Rez",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-34": {
+    "Description": {
+      "de": "Ich w\u00fcnsche mir Geborgenheit und N\u00e4he.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "SI | Zuf",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-35": {
+    "Description": {
+      "de": "Oft denke ich, dass meine Freunde/Angeh\u00f6rigen zu viel von mir verlangen und erwarten.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Bel",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-36": {
+    "Description": {
+      "de": "Es gibt Menschen, die zu mir halten, auch wenn ich Fehler mache.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "EU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-37": {
+    "Description": {
+      "de": "Mit meinen Interessen und Hobbys stehe ich ganz alleine da.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "SI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-38": {
+    "Description": {
+      "de": "Meine Freunde/Angeh\u00f6rigen nehmen meine Gef\u00fchle nicht ernst.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Bel",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-39": {
+    "Description": {
+      "de": "Es gibt Menschen, die mir st\u00e4ndig ein schlechtes Gewissen machen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Bel",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-40": {
+    "Description": {
+      "de": "Es gibt genug Menschen, zu denen ich ein wirklich gutes Verh\u00e4ltnis habe.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "SI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-41": {
+    "Description": {
+      "de": "\u00dcber ganz intime Dinge kann ich eigentlich mit niemanden sprechen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "EU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-42": {
+    "Description": {
+      "de": "Ich habe einen sehr vertrauten Menschen, der f\u00fcr mich gut erreichbar ist.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "EU | Vert",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-43": {
+    "Description": {
+      "de": "Es gibt eine Gemeinschaft von Menschen (Freundeskreis, Clique), zu der ich mich zugeh\u00f6rig f\u00fchle.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "SI",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-44": {
+    "Description": {
+      "de": "Ich habe einen sehr vertrauten Menschen, mit dessen Hilfe ich in jedem Fall rechnen kann.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "EU | Vert",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-45": {
+    "Description": {
+      "de": "Ich w\u00fcnsche mir mehr Hilfsbereitschaft und praktische Unterst\u00fctzung.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "EU | Zuf",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-46": {
+    "Description": {
+      "de": "Meine Freunde/Angeh\u00f6rigen k\u00f6nnen nicht verstehen, dass ich auch mal etwas Zeit f\u00fcr mich alleine brauche.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Bel",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-47": {
+    "Description": {
+      "de": "Es gibt Menschen, die sich mit mir zusammen richtig wohlf\u00fchlen.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Rez",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-48": {
+    "Description": {
+      "de": "Durch meinen Freundes- und Bekanntenkreis erhalte ich oft gute Tipps (z.B. guter Arzt, Veranstaltungen).",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "PU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-49": {
+    "Description": {
+      "de": "Es gibt Menschen, die sich mit wichtigen pers\u00f6nlichen Problemen an mich wenden.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Rez",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-50": {
+    "Description": {
+      "de": "Ich kenne zu wenige Menschen, die ich bei Problemen um Rat fragen kann.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Inverted": true,
+    "Subscale": "SI |Zuf",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-51": {
+    "Description": {
+      "de": "Es gibt Menschen, denen ich alle meine Gef\u00fchle zeigen kann, ohne dass es peinlich wird.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "EU",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-52": {
+    "Description": {
+      "de": "Oft w\u00fcnsche ich mir, an einem Ort zu leben, wo mich keiner kennt.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Bel",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-53": {
+    "Description": {
+      "de": "Ich habe einen vertrauten Menschen, in dessen N\u00e4he ich mich sehr wohl f\u00fchle.",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "EU | Vert",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "FSozU-54": {
+    "Description": {
+      "de": "Wichtige Personen versuchen mir vorzuschreiben, wie ich zu denken und zu handeln habe",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "trifft nicht zu",
+        "en": ""
+      },
+      "2": {
+        "de": "trifft eher nicht zu",
+        "en": ""
+      },
+      "3": {
+        "de": "trifft teilweise zu",
+        "en": ""
+      },
+      "4": {
+        "de": "trifft zu",
+        "en": ""
+      },
+      "5": {
+        "de": "trifft genau zu",
+        "en": ""
+      }
+    },
+    "Subscale": "Bel",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [],
+    "DefaultLanguage": "",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}

@@ -1,0 +1,953 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "SoftwarePlatform": "Legacy/Imported",
+    "Language": "de",
+    "Respondent": "self",
+    "ResponseType": [
+      "paper-pencil"
+    ],
+    "SoftwareVersion": "",
+    "AdministrationMethod": "",
+    "Equipment": "",
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "CalibrationDate": "",
+    "Supervisor": "",
+    "Location": ""
+  },
+  "Study": {
+    "TaskName": "rsqd",
+    "OriginalName": {
+      "de": "Emotion Regulation Strategies",
+      "en": ""
+    },
+    "Version": {
+      "de": "1.0",
+      "en": ""
+    },
+    "Description": {
+      "de": "The RSQ provides scores for three coping and emotion regulation scales (i.e., primary control, secondary control, and disengagement coping), and two stress reactivity scales (i.e., involuntary engagement and involuntary disengagement).",
+      "en": ""
+    },
+    "Instruction": {
+      "de": "Wenn ich mich traurig oder niedergeschlagen f\u00fchle",
+      "en": ""
+    },
+    "Citation": "",
+    "ShortName": "",
+    "Authors": [],
+    "DOI": "",
+    "License": "",
+    "LicenseID": "",
+    "LicenseURL": "",
+    "CopyrightHolder": "",
+    "Access": "",
+    "PermissionsNote": "",
+    "PermissionsURL": "",
+    "TermURL": "",
+    "Construct": "",
+    "Keywords": [],
+    "Instructions": "",
+    "Reliability": "",
+    "Validity": "",
+    "Subscales": [],
+    "ItemCount": null,
+    "AgeRange": "",
+    "AdministrationTime": "",
+    "ScoringTime": "",
+    "Norming": "",
+    "References": [],
+    "Translation": {
+      "SourceLanguage": "",
+      "TargetLanguage": "",
+      "Validated": false,
+      "Method": "",
+      "Reference": "",
+      "Notes": ""
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.0",
+    "CreationDate": "2025-12-21",
+    "Creator": "convert_legacy_resources.py"
+  },
+  "RSQD-01": {
+    "Description": {
+      "de": "denke ich daran, wie allein ich mich f\u00fchle",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SELF",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-02": {
+    "Description": {
+      "de": "denke ich, \"ich werde nicht f\u00e4hig sein, meine Arbeit zu tun, weil ich mich so schlecht f\u00fchle\"",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SYM",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-03": {
+    "Description": {
+      "de": "denke ich daran, wie ersch\u00f6pft ich mich f\u00fchle",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SYM",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-04": {
+    "Description": {
+      "de": "denke ich, wie schwer es ist, mich zu konzentrieren",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SYM",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-05": {
+    "Description": {
+      "de": "versuche ich etwas Positives an der Situation zu finden oder etwas, was ich dabei gelernt habe",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "DIS",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-06": {
+    "Description": {
+      "de": "denke ich, \"ich werde jetzt etwas tun, um mich besser zu f\u00fchlen\"",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "DIS",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-07": {
+    "Description": {
+      "de": "helfe ich jemand anderem bei irgend etwas, um mich abzulenken",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "DIS",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-08": {
+    "Description": {
+      "de": "denke ich daran, wie passiv und unmotiviert ich bin",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SYM",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-09": {
+    "Description": {
+      "de": "sage ich mir, dass diese Gef\u00fchle nicht anhalten werden",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "DIS",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-10": {
+    "Description": {
+      "de": "denke ich daran, dass ich \u00fcberhaupt nichts mehr zu f\u00fchlen scheine",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SYM",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-11": {
+    "Description": {
+      "de": "denke ich, \"warum komme ich nicht in Schwung\"",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SYM",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-12": {
+    "Description": {
+      "de": "denke ich, \"warum reagiere ich immer so\"",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SYM",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-13": {
+    "Description": {
+      "de": "gehe ich an einen Lieblingsort, um mich von meinen Gef\u00fchlen abzulenken",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "DIS",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-14": {
+    "Description": {
+      "de": "denke ich, \"ich konzentriere mich jetzt auf etwas anderes als darauf, wie ich mich f\u00fchle\"",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "DIS",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-15": {
+    "Description": {
+      "de": "tue ich etwas, das mich in der Vergangenheit hat besser f\u00fchlen lassen",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "DIS",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-16": {
+    "Description": {
+      "de": "denke ich \u00fcber eine zur\u00fcckliegende Situation nach und w\u00fcnsche, dass diese besser gelaufen w\u00e4re",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SELF",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-17": {
+    "Description": {
+      "de": "denke ich, \"ich werde jetzt ausgehen und etwas Spa\u00df haben\"",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "DIS",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-18": {
+    "Description": {
+      "de": "denke ich daran, dass ich mich nicht stark genug f\u00fchle, um irgend etwas zu tun",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SYM",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-19": {
+    "Description": {
+      "de": "denke ich \u00fcber meine Pers\u00f6nlichkeit nach und versuche zu verstehen, weshalb ich depressiv bin",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SELF",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-20": {
+    "Description": {
+      "de": "gehe ich irgendwohin, wo ich alleine bin, um \u00fcber meine Gef\u00fchle nachzudenken",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SELF",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-21": {
+    "Description": {
+      "de": "h\u00f6re ich traurige Musik",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SELF",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-22": {
+    "Description": {
+      "de": "ziehe ich mich zur\u00fcck und denke \u00fcber die Gr\u00fcnde nach, weshalb ich mich so traurig f\u00fchle",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SELF",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "RSQD-23": {
+    "Description": {
+      "de": "versuche ich, mich selbst zu verstehen, indem ich mich auf meine depressiven Gef\u00fchle konzentriere",
+      "en": ""
+    },
+    "Levels": {
+      "1": {
+        "de": "fast nie",
+        "en": ""
+      },
+      "2": {
+        "de": "manchmal",
+        "en": ""
+      },
+      "3": {
+        "de": "oft",
+        "en": ""
+      },
+      "4": {
+        "de": "fast immer",
+        "en": ""
+      }
+    },
+    "Subscale": "SELF",
+    "Unit": "",
+    "Units": "",
+    "TermURL": "",
+    "Relevance": "",
+    "MinValue": null,
+    "MaxValue": null,
+    "WarnMinValue": null,
+    "WarnMaxValue": null,
+    "AllowedValues": [],
+    "DataType": "",
+    "SessionHint": "",
+    "RunHint": ""
+  },
+  "I18n": {
+    "Languages": [],
+    "DefaultLanguage": "",
+    "TranslationMethod": ""
+  },
+  "Scoring": {
+    "ScoringMethod": "",
+    "ScoreRange": {
+      "min": null,
+      "max": null
+    },
+    "Cutoffs": {},
+    "ReverseCodedItems": [],
+    "ReverseCodingScale": {
+      "min": null,
+      "max": null
+    },
+    "CutoffsSource": "",
+    "NormsSource": "",
+    "Subscales": []
+  },
+  "Normative": {
+    "ReferencePopulation": "",
+    "ReferenceSource": "",
+    "Percentiles": {}
+  }
+}
