@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Home - My Web App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="text-center mb-5">
+            <h2 class="mb-3">Welcome to My App</h2>
+            <p class="lead text-muted">A generic template based on PRISM Studio styling.</p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Feature Card Example -->
+            <div class="col-md-6">
+                <div class="card h-100 feature-card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-rocket text-primary me-2"></i>
+                            Feature One
+                        </h5>
+                        <p class="card-text">This is a feature card with a soft shadow and hover effect.</p>
+                        <a href="#" class="btn btn-outline-primary btn-sm">Learn More</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Area Example -->
+            <div class="col-md-12">
+                <div class="card feature-card border-success">
+                    <div class="card-body p-4">
+                        <h5 class="card-title mb-4">Upload Section</h5>
+                        <div class="upload-area border-success" id="dropZone">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-success opacity-50 mb-3"></i>
+                            <h5>Drop files here</h5>
+                            <p class="text-muted">or click to browse</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Items Example -->
+            <div class="col-md-12">
+                <div class="card feature-card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Status Examples</h5>
+                        <div class="error-item">
+                            <strong>Error:</strong> Something went wrong here.
+                        </div>
+                        <div class="warning-item">
+                            <strong>Warning:</strong> Better check this out.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const dropZone = document.getElementById('dropZone');
+    
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        alert('Files dropped!');
+    });
+
+    dropZone.addEventListener('click', () => {
+        alert('Browse clicked!');
+    });
+</script>
+{% endblock %}
