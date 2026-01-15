@@ -29,13 +29,30 @@ def _get_version() -> str:
     return "1.0.0"
 
 
+def _parse_version_tuple(version: str) -> tuple[int, int, int, int]:
+    """Convert semantic version (possibly with beta/rc suffix) into 4-int tuple.
+
+    Examples:
+    - "1.8.2b4" -> (1, 8, 2, 0)
+    - "1.8.2"   -> (1, 8, 2, 0)
+    - "1.8"     -> (1, 8, 0, 0)
+    """
+    raw_parts = version.split(".")
+    cleaned: list[int] = []
+    for part in raw_parts:
+        digits = "".join(ch for ch in part if ch.isdigit())
+        if digits == "":
+            cleaned.append(0)
+        else:
+            cleaned.append(int(digits))
+    while len(cleaned) < 4:
+        cleaned.append(0)
+    return tuple(cleaned[:4])
+
+
 def _generate_version_info(name: str, version: str) -> str:
     """Generates a Windows version info file for PyInstaller."""
-    # Convert version "1.7.1" to (1, 7, 1, 0)
-    v_parts = version.split(".")
-    while len(v_parts) < 4:
-        v_parts.append("0")
-    v_tuple = tuple(map(int, v_parts[:4]))
+    v_tuple = _parse_version_tuple(version)
 
     content = f"""# UTF-8
 VSVersionInfo(
