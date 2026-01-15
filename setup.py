@@ -21,7 +21,7 @@ def read_requirements(filename):
 
 setup(
     name="prism",
-    version="1.7.1",
+    version="1.8.0",
     description="PRISM - BIDS-inspired validation and tools for psychological research datasets",
     long_description=read_file("README.md"),
     long_description_content_type="text/markdown",
