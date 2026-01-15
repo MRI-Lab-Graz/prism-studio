@@ -14,16 +14,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
-            platform_name: MacOS Apple Silicon
-            artifact_name: PrismValidator-macOS-AppleSilicon
-            asset_name: PrismValidator-macOS-AppleSilicon.zip
-            target_arch: arm64
-          - os: macos-13
-            platform_name: MacOS Intel
-            artifact_name: PrismValidator-macOS-Intel
-            asset_name: PrismValidator-macOS-Intel.zip
-            target_arch: x86_64
+          - os: macos-latest
+            platform_name: MacOS (Universal2)
+            artifact_name: PrismValidator-macOS
+            asset_name: PrismValidator-macOS.zip
+            target_arch: universal2
           - os: windows-latest
             platform_name: Windows
             artifact_name: PrismValidator-Windows
