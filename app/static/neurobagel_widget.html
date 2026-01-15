@@ -207,9 +207,12 @@
     }
   </style>
 
-  <div style="margin-bottom: 10px;">
+  <div style="margin-bottom: 10px; display: flex; gap: 8px;">
     <button class="nb-toggle-btn" onclick="window.toggleNeurobagelWidget()">
-      🧠 Open NeuroBagel Annotation Tool
+      📝 Show/Hide Quick Editor
+    </button>
+    <button class="nb-btn" onclick="window.autoMatchNeurobagelConcepts()" style="background: #eef7ff; color: #0056b3; border-color: #cce5ff;">
+      <i class="fas fa-magic me-1"></i>Auto-Match Concepts
     </button>
   </div>
 
@@ -240,6 +243,146 @@ window.neurobagelWidgetState = {
   allColumns: {},
   selectedColumn: null,
   expanded: false
+};
+
+// Semantic enrichment common mappings
+window.neurobagelCommonMappings = {
+  "Sex": {
+    "standardized_variable": "biological_sex",
+    "term_url": "nb:Sex",
+    "data_type": "categorical",
+    "description": "Biological sex of the participant.",
+    "levels": {
+      "M": { "label": "Male", "uri": "snomed:248153007" },
+      "F": { "label": "Female", "uri": "snomed:248152002" },
+      "O": { "label": "Other", "uri": "snomed:447964000" }
+    }
+  },
+  "Age": {
+    "standardized_variable": "age",
+    "term_url": "nb:Age",
+    "data_type": "continuous",
+    "unit": "years",
+    "description": "Age of the participant at the time of session (usually in years)."
+  },
+  "Handedness": {
+    "standardized_variable": "handedness",
+    "term_url": "nb:Handedness",
+    "data_type": "categorical",
+    "description": "Handedness of the participant.",
+    "levels": {
+      "L": { "label": "Left", "uri": "snomed:87622008" },
+      "R": { "label": "Right", "uri": "snomed:78791000" },
+      "A": { "label": "Ambidextrous", "uri": "snomed:16022009" }
+    }
+  },
+  "Diagnosis": {
+    "standardized_variable": "diagnosis",
+    "term_url": "nb:Diagnosis",
+    "data_type": "categorical",
+    "description": "Clinical diagnosis or study group classification."
+  },
+  "Assessment": {
+    "standardized_variable": "assessment",
+    "term_url": "nb:Assessment",
+    "description": "Score or observation from a standardized assessment tool."
+  },
+  "ParticipantID": {
+    "standardized_variable": "participant_id",
+    "term_url": "nb:ParticipantID",
+    "data_type": "text",
+    "description": "Unique identifier for the participant."
+  },
+  "SessionID": {
+    "standardized_variable": "session_id",
+    "term_url": "nb:SessionID",
+    "data_type": "text",
+    "description": "Unique identifier for the study session."
+  }
+};
+
+window.applyNeurobagelEnrichment = function(colName) {
+  const concept = document.getElementById(`nb-map-${colName}`).value;
+  if (!concept) return;
+  
+  const mapping = window.neurobagelCommonMappings[concept];
+  if (!mapping) return;
+  
+  const colData = window.neurobagelWidgetState.allColumns[colName];
+  
+  // Apply the enrichment
+  colData.standardized_variable = mapping.standardized_variable;
+  colData.term_url = mapping.term_url;
+  colData.label = concept;
+  if (mapping.data_type) colData.data_type = mapping.data_type;
+  if (mapping.description && !colData.description) colData.description = mapping.description;
+  if (mapping.unit) colData.unit = mapping.unit;
+  
+  // For categorical, try to match existing level keys
+  if (mapping.levels && colData.levels) {
+    for (const [key, mappingLevel] of Object.entries(mapping.levels)) {
+      // Direct match
+      if (colData.levels[key]) {
+        colData.levels[key].label = mappingLevel.label;
+        colData.levels[key].uri = mappingLevel.uri;
+      } else {
+        // Case-insensitive match or label match
+        const existingKey = Object.keys(colData.levels).find(k => 
+          k.toLowerCase() === key.toLowerCase() || 
+          (colData.levels[k].label && colData.levels[k].label.toLowerCase() === mappingLevel.label.toLowerCase())
+        );
+        if (existingKey) {
+          colData.levels[existingKey].label = mappingLevel.label;
+          colData.levels[existingKey].uri = mappingLevel.uri;
+        }
+      }
+    }
+  }
+  
+  console.log(`✅ Applied ${concept} enrichment to ${colName}`);
+  window.renderNeurobagelEditor(colName, colData);
+};
+
+window.autoMatchNeurobagelConcepts = function() {
+  const allColumns = window.neurobagelWidgetState.allColumns;
+  let matches = 0;
+  
+  for (const [colName, colData] of Object.entries(allColumns)) {
+    const lowerName = colName.toLowerCase();
+    let bestMatch = null;
+    
+    // Fuzzy match logic
+    if (lowerName === 'sex' || lowerName === 'gender') bestMatch = 'Sex';
+    else if (lowerName === 'age' || lowerName === 'years') bestMatch = 'Age';
+    else if (lowerName === 'handedness' || lowerName === 'hand') bestMatch = 'Handedness';
+    else if (lowerName === 'group' || lowerName === 'diagnosis' || lowerName === 'dx') bestMatch = 'Diagnosis';
+    else if (lowerName === 'participant_id' || lowerName === 'subject_id' || lowerName === 'id') bestMatch = 'ParticipantID';
+    
+    if (bestMatch && !colData.standardized_variable) {
+      const mapping = window.neurobagelCommonMappings[bestMatch];
+      colData.standardized_variable = mapping.standardized_variable;
+      colData.term_url = mapping.term_url;
+      colData.label = bestMatch;
+      if (mapping.data_type) colData.data_type = mapping.data_type;
+      if (mapping.levels && colData.levels) {
+          // Quick level match
+          for (const [k, v] of Object.entries(mapping.levels)) {
+              if (colData.levels[k]) {
+                  colData.levels[k].label = v.label;
+                  colData.levels[k].uri = v.uri;
+              }
+          }
+      }
+      matches++;
+    }
+  }
+  
+  if (matches > 0) {
+    alert(`Auto-matched ${matches} concepts!`);
+    window.renderNeurobagelWidget();
+  } else {
+    alert("No obvious matches found based on column names.");
+  }
 };
 
 window.toggleNeurobagelWidget = function() {
@@ -361,6 +504,60 @@ window.renderNeurobagelWidget = async function() {
     console.log('ℹ️ No TSV data available - using NeuroBagel defaults only');
   }
   
+  // Merge existing participants.json data if available
+  if (window.existingParticipantsData) {
+    console.log('🔄 Merging existing participants.json data into widget');
+    for (const [colName, colMeta] of Object.entries(window.existingParticipantsData)) {
+      if (!enrichedData[colName]) {
+        // Add columns that exist in JSON but not in standard NeuroBagel/TSV
+        enrichedData[colName] = {
+          description: colMeta.Description || '',
+          data_type: 'unknown',
+          standardized_variable: null
+        };
+      }
+      
+      // Update with existing metadata
+      if (colMeta.Description) enrichedData[colName].description = colMeta.Description;
+      if (colMeta.Units) enrichedData[colName].unit = colMeta.Units;
+      
+      // NEUROBAGEL ENRICHMENT: Load existing annotations
+      if (colMeta.Annotations) {
+        if (colMeta.Annotations.IsAbout) {
+          enrichedData[colName].term_url = colMeta.Annotations.IsAbout.TermURL;
+          enrichedData[colName].label = colMeta.Annotations.IsAbout.Label;
+          // Reverse lookup matching concept if possible
+          if (colMeta.Annotations.IsAbout.Label) {
+              enrichedData[colName].standardized_variable = colMeta.Annotations.IsAbout.Label.toLowerCase();
+          }
+        }
+        if (colMeta.Annotations.VariableType) {
+          enrichedData[colName].data_type = colMeta.Annotations.VariableType.toLowerCase();
+        }
+      }
+      
+      if (colMeta.Levels) {
+        enrichedData[colName].data_type = 'categorical';
+        if (!enrichedData[colName].levels) enrichedData[colName].levels = {};
+        
+        for (const [levelKey, levelLabel] of Object.entries(colMeta.Levels)) {
+          if (!enrichedData[colName].levels[levelKey]) {
+            enrichedData[colName].levels[levelKey] = {
+              label: levelLabel,
+              description: '',
+              uri: (colMeta.Annotations && colMeta.Annotations.Levels && colMeta.Annotations.Levels[levelKey]) ? colMeta.Annotations.Levels[levelKey].TermURL : null
+            };
+          } else {
+            enrichedData[colName].levels[levelKey].label = levelLabel;
+            if (colMeta.Annotations && colMeta.Annotations.Levels && colMeta.Annotations.Levels[levelKey]) {
+                enrichedData[colName].levels[levelKey].uri = colMeta.Annotations.Levels[levelKey].TermURL;
+            }
+          }
+        }
+      }
+    }
+  }
+  
   window.neurobagelWidgetState.allColumns = enrichedData;
   
   // Categorize columns into AVAILABLE (in TSV) and TO ADD (suggestions)
@@ -474,7 +671,40 @@ window.renderNeurobagelEditor = function(colName, colData) {
       <div>
         <div class="nb-editor-title">${colName}</div>
       </div>
-      <div class="nb-editor-type-badge">${dataType}</div>
+      <div>
+        <span class="nb-editor-type-badge">${dataType}</span>
+        ${colData.standardized_variable ? `<span class="badge bg-success ms-1" style="font-size: 10px;">Enriched: ${colData.standardized_variable}</span>` : ''}
+      </div>
+    </div>
+    
+    <!-- Semantic Enrichment Section -->
+    <div class="nb-field-group" style="background: #eef7ff; padding: 12px; border-radius: 6px; border: 1px solid #cce5ff; margin-bottom: 20px;">
+      <label class="nb-field-label" style="color: #0056b3; display: flex; align-items: center;">
+        <i class="fas fa-magic me-2"></i>Semantic Enrichment
+      </label>
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <select class="nb-field-input" id="nb-map-${colName}" style="flex: 1; min-width: 0; padding: 6px; font-size: 13px;">
+          <option value="">-- Map to NeuroBagel Concept --</option>
+          <optgroup label="Demographics">
+            <option value="Sex" ${colData.standardized_variable === 'biological_sex' ? 'selected' : ''}>Sex / Gender</option>
+            <option value="Age" ${colData.standardized_variable === 'age' ? 'selected' : ''}>Age</option>
+            <option value="Handedness" ${colData.standardized_variable === 'handedness' ? 'selected' : ''}>Handedness</option>
+            <option value="Education" ${colData.standardized_variable === 'education' ? 'selected' : ''}>Education</option>
+          </optgroup>
+          <optgroup label="Clinical">
+            <option value="Diagnosis" ${colData.standardized_variable === 'participant_group' || colData.standardized_variable === 'diagnosis' ? 'selected' : ''}>Diagnosis / Group</option>
+            <option value="Assessment" ${colData.standardized_variable === 'assessment' ? 'selected' : ''}>Assessment / Score</option>
+          </optgroup>
+          <optgroup label="Identifiers">
+            <option value="ParticipantID" ${colData.standardized_variable === 'participant_id' ? 'selected' : ''}>Participant ID</option>
+            <option value="SessionID" ${colData.standardized_variable === 'session_id' ? 'selected' : ''}>Session ID</option>
+          </optgroup>
+        </select>
+        <button class="nb-btn nb-btn-primary" onclick="window.applyNeurobagelEnrichment('${colName}')" style="padding: 4px 10px;">
+          Map
+        </button>
+      </div>
+      ${colData.term_url ? `<div style="margin-top: 6px; font-size: 11px; color: #0056b3;">🔗 <code>${colData.term_url}</code></div>` : ''}
     </div>
     
     <!-- Editable Description Field -->

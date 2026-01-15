@@ -115,26 +115,37 @@
                     <a class="nav-link" href="{{ url_for('projects.projects_page') }}">
                         <i class="fas fa-folder-open me-1 text-primary"></i>Projects
                     </a>
-                    <a class="nav-link" href="{{ url_for('specifications') }}">
-                        <i class="fas fa-book me-1"></i>Specifications
-                    </a>
                     <a class="nav-link" href="{{ url_for('validation.validate_dataset') }}">
                         <i class="fas fa-check-circle me-1 text-success"></i>Validator
-                    </a>
-                    <a class="nav-link" href="{{ url_for('json_editor.editor_index') }}">
-                        <i class="fas fa-pen-fancy me-1 text-primary"></i>Metadata Editor
-                    </a>
-                    <a class="nav-link" href="{{ url_for('tools.recipes') }}">
-                        <i class="fas fa-calculator me-1 text-primary"></i>Recipes & Scoring
-                    </a>
-                    <a class="nav-link" href="{{ url_for('tools.survey_generator') }}">
-                        <i class="fas fa-poll-h me-1 text-info"></i>Survey & Boilerplate
                     </a>
                     <a class="nav-link" href="{{ url_for('tools.converter') }}">
                         <i class="fas fa-file-arrow-up me-1 text-warning"></i>Converter
                     </a>
-                    <a class="nav-link" href="{{ url_for('tools.template_editor') }}">
-                        <i class="fas fa-file-code me-1 text-primary"></i>Template Editor
+                    
+                    <!-- Tools Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="toolsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-toolbox me-1 text-info"></i>Tools
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="toolsDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('tools.survey_generator') }}">
+                                <i class="fas fa-poll-h me-2 text-info"></i>Survey & Boilerplate
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('tools.recipes') }}">
+                                <i class="fas fa-calculator me-2 text-primary"></i>Recipes & Scoring
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('tools.template_editor') }}">
+                                <i class="fas fa-file-code me-2 text-primary"></i>Template Editor
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('json_editor.editor_index') }}">
+                                <i class="fas fa-pen-fancy me-2 text-secondary"></i>JSON Editor (Advanced)
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <a class="nav-link" href="{{ url_for('specifications') }}">
+                        <i class="fas fa-book me-1"></i>Specs
                     </a>
                     <a class="nav-link" href="https://prism-studio.readthedocs.io/en/latest/" target="_blank" rel="noopener">
                         <i class="fas fa-book-open me-1"></i>Docs

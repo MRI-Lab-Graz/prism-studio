@@ -532,7 +532,7 @@
         </div>
     </div>
 
-    <!-- Participants Status Card (simplified - editing happens in Converter) -->
+    <!-- Participants Status Card (with NeuroBagel integration) -->
     <div class="card shadow-sm mt-4" id="participantsStatusCard" style="display: none;">
         <div class="card-header bg-info bg-opacity-10">
             <h5 class="mb-0 d-flex justify-content-between align-items-center">
@@ -546,7 +546,65 @@
                     <span class="text-muted">No fields defined yet</span>
                 </div>
             </div>
-            <div class="alert alert-light border mb-0">
+            
+            <!-- Quick Actions -->
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <a href="{{ url_for('json_editor.editor_index') }}" class="btn btn-sm btn-outline-primary" id="editParticipantsBtn">
+                    <i class="fas fa-edit me-1"></i>Edit participants.json
+                </a>
+                <button class="btn btn-sm btn-outline-info" id="openNeurobagelBtn">
+                    <i class="fas fa-brain me-1"></i>Annotate Participants
+                </button>
+            </div>
+            
+            <!-- NeuroBagel Widget (hidden by default) -->
+            <div id="neurobagelSection" style="display: none;">
+                <div class="card border-info mb-3">
+                    <div class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-brain text-info me-2"></i>
+                            Participant Annotation
+                        </h6>
+                        <button class="btn btn-sm btn-outline-secondary" id="closeNeurobagelBtn">
+                            <i class="fas fa-arrow-left me-1"></i>Back
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Full NeuroBagel Tool Link (for controlled vocabularies) -->
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Need SNOMED-CT, NIDM or other controlled vocabularies?</strong><br>
+                            <small class="text-muted">Use the official NeuroBagel tool for full semantic harmonization with ontology lookups:</small>
+                            <div class="mt-2">
+                                <a href="https://annotate.neurobagel.org/" target="_blank" class="btn btn-sm btn-info">
+                                    <i class="fas fa-external-link-alt me-1"></i>Open Full NeuroBagel Annotation Tool
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <p class="text-muted small mb-3">
+                            <strong>Quick Editor:</strong> Add descriptions and level labels to your participants.json. 
+                            This simplified editor auto-detects columns from your participants.tsv file.
+                        </p>
+                        
+                        <!-- Embedded NeuroBagel widget placeholder -->
+                        <div id="neurobagelWidgetContainer"></div>
+                        
+                        <div class="mt-3 d-flex gap-2">
+                            <button class="btn btn-success" id="saveNeurobagelBtn">
+                                <i class="fas fa-save me-1"></i>Save to participants.json
+                            </button>
+                            <button class="btn btn-outline-secondary" id="cancelNeurobagelBtn">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-light border mb-0" id="participantsHelp">
                 <i class="fas fa-info-circle text-info me-2"></i>
                 <strong>How to add participant fields:</strong>
                 <ol class="mb-0 mt-2 small">
@@ -562,6 +620,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/neurobagel.js') }}"></script>
 <script>
     let currentProjectPath = "{{ current_project.path or '' }}";
     let currentProjectName = "{{ current_project.name or '' }}";
@@ -1364,6 +1423,199 @@
         
         // Simple alert for now if Bootstrap toast is not set up
         console.log(`[${type}] ${message}`);
+    }
+
+    // ===== NEUROBAGEL INTEGRATION =====
+    
+    document.getElementById('openNeurobagelBtn')?.addEventListener('click', function() {
+        document.getElementById('neurobagelSection').style.display = 'block';
+        document.getElementById('participantsHelp').style.display = 'none';
+        loadNeurobagelWidget();
+    });
+    
+    document.getElementById('closeNeurobagelBtn')?.addEventListener('click', function() {
+        document.getElementById('neurobagelSection').style.display = 'none';
+        document.getElementById('participantsHelp').style.display = 'block';
+    });
+    
+    document.getElementById('cancelNeurobagelBtn')?.addEventListener('click', function() {
+        document.getElementById('neurobagelSection').style.display = 'none';
+        document.getElementById('participantsHelp').style.display = 'block';
+    });
+    
+    document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async function() {
+        // Get the current state of the NeuroBagel widget if it has state
+        const widgetState = window.neurobagelWidgetState || {};
+        const allColumns = widgetState.allColumns || {};
+        
+        // Build the annotated participants.json (BIDS + NeuroBagel Enrichment)
+        const annotatedData = {};
+        
+        for (const [colName, colData] of Object.entries(allColumns)) {
+            annotatedData[colName] = {
+                Description: colData.description || colData.Description || ""
+            };
+            
+            // BIDS Standard: Units
+            if (colData.unit) {
+                annotatedData[colName].Units = colData.unit;
+            }
+            
+            // BIDS Standard: Levels
+            if (colData.levels && Object.keys(colData.levels).length > 0) {
+                annotatedData[colName].Levels = {};
+                for (const [levelKey, levelData] of Object.entries(colData.levels)) {
+                    annotatedData[colName].Levels[levelKey] = levelData.label || levelKey;
+                }
+            }
+            
+            // NEUROBAGEL ENRICHMENT: Annotations Block
+            if (colData.standardized_variable || colData.data_type) {
+                annotatedData[colName].Annotations = {
+                    "IsAbout": {
+                        "TermURL": colData.term_url || (colData.standardized_variable ? `nb:${colData.standardized_variable}` : null),
+                        "Label": colData.label || colData.standardized_variable || null
+                    },
+                    "VariableType": colData.data_type ? colData.data_type.charAt(0).toUpperCase() + colData.data_type.slice(1) : "Unknown"
+                };
+                
+                // Add units to annotations if continuous
+                if (colData.data_type === 'continuous' && colData.unit) {
+                    annotatedData[colName].Annotations.Format = {
+                        "TermURL": "nb:FromFloat",
+                        "Label": "Float"
+                    };
+                }
+                
+                // Add levels to annotations if categorical
+                if (colData.data_type === 'categorical' && colData.levels) {
+                    annotatedData[colName].Annotations.Levels = {};
+                    for (const [levelKey, levelData] of Object.entries(colData.levels)) {
+                        if (levelData.uri) {
+                            annotatedData[colName].Annotations.Levels[levelKey] = {
+                                "TermURL": levelData.uri,
+                                "Label": levelData.label || levelKey
+                            };
+                        }
+                    }
+                }
+                
+                // Remove null/undefined from annotations
+                if (!annotatedData[colName].Annotations.IsAbout.TermURL) delete annotatedData[colName].Annotations.IsAbout;
+            }
+        }
+        
+        // Save to the project
+        try {
+            const response = await fetch('/api/projects/participants', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ schema: annotatedData })
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                showToast('Participants schema saved successfully', 'success');
+                document.getElementById('neurobagelSection').style.display = 'none';
+                document.getElementById('participantsHelp').style.display = 'block';
+                await loadParticipantsStatus();
+            } else {
+                alert('Failed to save: ' + result.error);
+            }
+        } catch (error) {
+            alert('Error saving participants schema: ' + error.message);
+        }
+    });
+    
+    async function loadNeurobagelWidget() {
+        const container = document.getElementById('neurobagelWidgetContainer');
+        if (!container) return;
+        
+        // Load existing participants.json if any to avoid data loss
+        try {
+            const schemaResponse = await fetch('/api/projects/participants');
+            const schemaData = await schemaResponse.json();
+            if (schemaData.success && schemaData.exists) {
+                window.existingParticipantsData = schemaData.schema;
+            }
+        } catch (error) {
+            console.warn('Could not load existing participants schema:', error);
+        }
+        
+        // Load local participants.tsv columns first for mapping
+        try {
+            const tsvResponse = await fetch('/api/projects/participants/columns');
+            const tsvData = await tsvResponse.json();
+            if (tsvData.columns) {
+                window.participantsTsvData = tsvData.columns;
+            }
+        } catch (error) {
+            console.warn('Could not load participants TSV columns:', error);
+        }
+        
+        // Check if widget is already loaded
+        if (container.querySelector('#neurobagelAnnotationWidget')) {
+            // Just re-render to update with latest TSV data if needed
+            if (window.renderNeurobagelWidget) {
+                await window.renderNeurobagelWidget();
+            }
+            return;
+        }
+        
+        try {
+            // Load the neurobagel widget HTML
+            const response = await fetch("{{ url_for('static', filename='neurobagel_widget.html') }}");
+            if (response.ok) {
+                const html = await response.text();
+                
+                // Parse HTML to separate markup from scripts
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Find and remove scripts
+                const scripts = doc.querySelectorAll('script');
+                const scriptTexts = [];
+                scripts.forEach(script => {
+                    scriptTexts.push(script.textContent);
+                    script.remove();
+                });
+                
+                // Insert the HTML without scripts
+                container.innerHTML = doc.body.innerHTML;
+                
+                // Execute scripts in order
+                scriptTexts.forEach(scriptText => {
+                    try {
+                        new Function(scriptText)();
+                    } catch (err) {
+                        console.error('Error executing widget script:', err);
+                    }
+                });
+                
+                // Initialize widget after a short delay
+                await new Promise(resolve => setTimeout(resolve, 100));
+                if (window.renderNeurobagelWidget) {
+                    await window.renderNeurobagelWidget();
+                }
+            } else {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Use the <a href="https://annotate.neurobagel.org/" target="_blank">NeuroBagel Annotation Tool</a> 
+                        to annotate your participants.json file, then import it back here.
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading NeuroBagel widget:', error);
+            container.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Could not load embedded widget. Use the external 
+                    <a href="https://annotate.neurobagel.org/" target="_blank">NeuroBagel Annotation Tool</a>.
+                </div>
+            `;
+        }
     }
 </script>
 {% endblock %}
