@@ -19,12 +19,11 @@ jobs:
             artifact_name: PrismValidator-macOS-AppleSilicon
             asset_name: PrismValidator-macOS-AppleSilicon.zip
             target_arch: arm64
-          - os: macos-14
+          - os: macos-13
             platform_name: MacOS Intel
             artifact_name: PrismValidator-macOS-Intel
             asset_name: PrismValidator-macOS-Intel.zip
             target_arch: x86_64
-            python_arch: x64
           - os: windows-latest
             platform_name: Windows
             artifact_name: PrismValidator-Windows
@@ -37,11 +36,20 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    # Install gettext for the macOS Intel runner (needed by the hosted x64 Python toolchain)
+    - name: Install gettext (macOS Intel)
+      if: matrix.platform_name == 'MacOS Intel'
+      run: |
+        brew update
+        brew install gettext
+        brew link gettext --force
+      shell: bash
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-        architecture: ${{ matrix.python_arch || '' }}
+        # No architecture override; each runner provides the correct native toolchain
 
     - name: Install dependencies
       run: |
