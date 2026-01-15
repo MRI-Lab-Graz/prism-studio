@@ -34,6 +34,8 @@ from typing import Dict, List, Any, Optional
 from src.fixer import DatasetFixer
 from src.cross_platform import CrossPlatformFile
 from src.issues import get_fix_hint
+from src.schema_manager import load_schema
+from jsonschema import validate, ValidationError, Draft7Validator
 
 
 # Available PRISM modalities
@@ -346,6 +348,51 @@ class ProjectManager:
                 "error": str(e),
                 "applied_fixes": []
             }
+
+    def validate_dataset_description(self, description: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Validate a dataset_description dictionary against the schema.
+        
+        Args:
+            description: The dataset_description content as a dict
+            
+        Returns:
+            List of issue dicts, empty if valid
+        """
+        issues = []
+        
+        # Load the schema
+        schema_dir = Path(__file__).parent.parent / "schemas"
+        schema = load_schema("dataset_description", str(schema_dir), version="stable")
+        
+        if not schema:
+            return [{"code": "SCHEMA_ERROR", "message": "Could not load dataset_description schema", "level": "ERROR"}]
+            
+        try:
+            # Use Draft7Validator to get all errors
+            validator = Draft7Validator(schema)
+            errors = sorted(validator.iter_errors(description), key=lambda e: e.path)
+            
+            for error in errors:
+                # Format the field path for better reporting
+                field_path = " -> ".join([str(p) for p in error.path])
+                msg = f"{field_path}: {error.message}" if field_path else error.message
+                
+                # Check for specific hints from issues.py
+                code = "PRISM301" # General schema error
+                if "too short" in error.message.lower() or "minlength" in error.message.lower() or "minitems" in error.message.lower():
+                    code = "PRISM301"
+                
+                issues.append({
+                    "code": code,
+                    "message": msg,
+                    "fix_hint": get_fix_hint(code, msg),
+                    "level": "ERROR"
+                })
+        except Exception as e:
+            issues.append({"code": "VALIDATION_ERROR", "message": str(e), "level": "ERROR"})
+            
+        return issues
 
     # =========================================================================
     # Private helper methods
