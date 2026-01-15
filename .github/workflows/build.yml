@@ -14,11 +14,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-latest
-            platform_name: MacOS (Universal2)
-            artifact_name: PrismValidator-macOS
-            asset_name: PrismValidator-macOS.zip
-            target_arch: universal2
+          - os: macos-14
+            platform_name: MacOS Apple Silicon
+            artifact_name: PrismValidator-macOS-AppleSilicon
+            asset_name: PrismValidator-macOS-AppleSilicon.zip
+            target_arch: arm64
+          - os: macos-14
+            platform_name: MacOS Intel
+            artifact_name: PrismValidator-macOS-Intel
+            asset_name: PrismValidator-macOS-Intel.zip
+            target_arch: x86_64
+            python_arch: x64
           - os: windows-latest
             platform_name: Windows
             artifact_name: PrismValidator-Windows
@@ -35,6 +41,7 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
+        architecture: ${{ matrix.python_arch || '' }}
 
     - name: Install dependencies
       run: |
