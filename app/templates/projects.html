@@ -1250,8 +1250,9 @@
                 } else {
                     container.innerHTML = fields.map(field => {
                         const isRequired = field === 'participant_id';
-                        const badgeClass = isRequired ? 'bg-danger' : 'bg-primary';
-                        return `<span class="badge ${badgeClass}">${field}</span>`;
+                        const badgeClass = isRequired ? 'bg-success' : 'bg-primary';
+                        const star = isRequired ? '<i class="fas fa-star me-1 small"></i>' : '';
+                        return `<span class="badge ${badgeClass}">${star}${field}</span>`;
                     }).join(' ');
                 }
             } else {
@@ -1611,7 +1612,7 @@
             container.innerHTML = `
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    Could not load embedded widget. Use the external 
+                    Could not load embedded widget (${error.message}). Use the external 
                     <a href="https://annotate.neurobagel.org/" target="_blank">NeuroBagel Annotation Tool</a>.
                 </div>
             `;
