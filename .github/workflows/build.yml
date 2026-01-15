@@ -44,6 +44,10 @@ jobs:
         brew update
         brew install gettext
         brew link gettext --force
+        sudo mkdir -p /usr/local/opt
+        if [ ! -e /usr/local/opt/gettext ]; then
+          sudo ln -s /opt/homebrew/opt/gettext /usr/local/opt/gettext
+        fi
       shell: bash
 
     - name: Set up Python
