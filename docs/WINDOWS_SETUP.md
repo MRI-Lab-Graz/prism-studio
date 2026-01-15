@@ -17,15 +17,24 @@ Install [Git for Windows](https://git-scm.com/download/win) if you want to clone
 
 ## Installation
 
-### Method 1: Automatic Setup (Recommended)
-1. Open Command Prompt or PowerShell
+### Method 1: Automatic Setup (Recommended for Power Users)
+1. Open PowerShell
 2. Navigate to the prism directory
 3. Run the setup script:
+   ```powershell
+   .\setup.ps1
+   ```
+   *For developers or those wanting to build the EXE, use: `.\setup.ps1 -Dev -Build`*
+
+### Method 2: Batch script (Simple Setup)
+1. Open Command Prompt or PowerShell
+2. Navigate to the prism directory
+3. Run the simple setup script:
    ```bat
-   scripts\setup-windows.bat
+   scripts\setup\setup-windows.bat
    ```
 
-### Method 2: Manual Setup
+### Method 3: Manual Setup
 1. Open Command Prompt in the project directory
 2. Create virtual environment:
    ```bat
