@@ -568,8 +568,11 @@ class DatasetValidator:
                 validate(instance=sidecar_data, schema=schema)
 
         except ValidationError as e:
+            # Format message to be more descriptive (include field path)
+            field_path = " -> ".join([str(p) for p in e.path])
+            prefix = f"{field_path}: " if field_path else ""
             issues.append(
-                ("ERROR", f"{normalize_path(sidecar_path)} schema error: {e.message}")
+                ("ERROR", f"{normalize_path(sidecar_path)} schema error: {prefix}{e.message}")
             )
         except json.JSONDecodeError as e:
             issues.append(

@@ -205,7 +205,7 @@
                                         <div class="col-md-6">
                                             <label for="projectAuthors" class="form-label fw-bold">Authors</label>
                                             <textarea class="form-control" id="projectAuthors" rows="2" placeholder="e.g. Paul Broca, Carl Wernicke"></textarea>
-                                            <small class="text-muted">Comma-separated list of contributors.</small>
+                                            <small class="text-muted">Comma-separated list. At least one author required.</small>
                                         </div>
                                         <div class="col-md-6">
                                             <label for="projectLicense" class="form-label fw-bold">License</label>
@@ -225,7 +225,7 @@
                                         <div class="col-md-6">
                                             <label for="projectKeywords" class="form-label fw-bold">Keywords</label>
                                             <input type="text" class="form-control" id="projectKeywords" placeholder="e.g. psychology, dance, prism">
-                                            <small class="text-muted">Comma-separated keywords.</small>
+                                            <small class="text-muted">Comma-separated. At least 3 keywords required for FAIR compliance.</small>
                                         </div>
                                         <div class="col-md-6">
                                             <label for="projectAcknowledgements" class="form-label fw-bold">Acknowledgements</label>
@@ -234,6 +234,34 @@
                                         <div class="col-md-6">
                                             <label for="projectEthics" class="form-label fw-bold">Ethics Approvals</label>
                                             <input type="text" class="form-control" id="projectEthics" placeholder="Ethics committee/protocol identifiers">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="projectFunding" class="form-label fw-bold">Funding</label>
+                                            <input type="text" class="form-control" id="projectFunding" placeholder="Grant numbers, agencies...">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="projectType" class="form-label fw-bold">Dataset Type</label>
+                                            <select class="form-select" id="projectType">
+                                                <option value="raw" selected>raw</option>
+                                                <option value="derivative">derivative</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="projectHED" class="form-label fw-bold">HED Version</label>
+                                            <input type="text" class="form-control" id="projectHED" placeholder="8.2.0">
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label for="projectDescription" class="form-label fw-bold">Dataset Description</label>
+                                            <textarea class="form-control" id="projectDescription" rows="2" placeholder="Scientific description..."></textarea>
+                                            <small class="text-muted">Minimum 50 characters requested for FAIR compliance.</small>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label for="projectHowToAcknowledge" class="form-label fw-bold">How to Acknowledge</label>
+                                            <textarea class="form-control" id="projectHowToAcknowledge" rows="2" placeholder="Instructions on how to acknowledge this dataset..."></textarea>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label for="projectReferences" class="form-label fw-bold">References and Links</label>
+                                            <textarea class="form-control" id="projectReferences" rows="2" placeholder="URLs or DOIs related to the dataset..."></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -431,6 +459,7 @@
                     <div class="col-md-6">
                         <label class="form-label fw-bold small text-muted text-uppercase mb-1">Authors (comma separated)</label>
                         <input type="text" class="form-control" id="metadataAuthors" placeholder="Author 1, Author 2">
+                        <small class="text-muted">At least one author required.</small>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold small text-muted text-uppercase mb-1">License</label>
@@ -441,6 +470,11 @@
                         <textarea class="form-control" id="metadataAcknowledgements" rows="2" placeholder="Funding, grants, people to thank..."></textarea>
                     </div>
                     <div class="col-md-12">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Description</label>
+                        <textarea class="form-control" id="metadataDescription" rows="3" placeholder="Detailed scientific description of the study..."></textarea>
+                        <small class="text-muted">Minimum 50 characters required for FAIR compliance.</small>
+                    </div>
+                    <div class="col-md-12">
                         <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-bs-toggle="collapse" data-bs-target="#metadataAdvanced">
                             <i class="fas fa-chevron-down me-1"></i>More Fields (DOI, Ethics, Keywords...)
                         </button>
@@ -448,15 +482,39 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset DOI</label>
-                                    <input type="text" class="form-control" id="metadataDOI">
+                                    <input type="text" class="form-control" id="metadataDOI" placeholder="10.5281/zenodo.1234567">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Ethics Approvals</label>
-                                    <input type="text" class="form-control" id="metadataEthics">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Type</label>
+                                    <select class="form-select" id="metadataType">
+                                        <option value="raw">raw</option>
+                                        <option value="derivative">derivative</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Ethics Approvals (comma separated)</label>
+                                    <input type="text" class="form-control" id="metadataEthics" placeholder="Ethics Committee A, Ref 123">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">HED Version</label>
+                                    <input type="text" class="form-control" id="metadataHED" placeholder="8.2.0">
                                 </div>
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">Keywords (comma separated)</label>
-                                    <input type="text" class="form-control" id="metadataKeywords">
+                                    <input type="text" class="form-control" id="metadataKeywords" placeholder="psychology, experiment, PRISM">
+                                    <small class="text-muted">At least 3 keywords required for FAIR compliance.</small>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Funding (comma separated)</label>
+                                    <input type="text" class="form-control" id="metadataFunding" placeholder="Grant agency 1, Grant number 2">
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">How to Acknowledge</label>
+                                    <textarea class="form-control" id="metadataHowToAcknowledge" rows="2" placeholder="Please cite the following paper..."></textarea>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">References and Links (comma separated)</label>
+                                    <textarea class="form-control" id="metadataReferences" rows="2" placeholder="https://doi.org/..., https://example.com/..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -502,6 +560,9 @@
 
 {% block scripts %}
 <script>
+    let currentProjectPath = "{{ current_project.path or '' }}";
+    let currentProjectName = "{{ current_project.name or '' }}";
+
     // Load global settings on page load
     document.addEventListener('DOMContentLoaded', function() {
         loadGlobalSettings();
@@ -796,7 +857,13 @@
             doi: document.getElementById('projectDOI').value.trim(),
             keywords: document.getElementById('projectKeywords').value.split(',').map(s => s.trim()).filter(s => s),
             acknowledgements: document.getElementById('projectAcknowledgements').value.trim(),
-            ethics_approvals: document.getElementById('projectEthics').value.split(',').map(s => s.trim()).filter(s => s)
+            ethics_approvals: document.getElementById('projectEthics').value.split(',').map(s => s.trim()).filter(s => s),
+            how_to_acknowledge: document.getElementById('projectHowToAcknowledge').value.trim(),
+            funding: document.getElementById('projectFunding').value.split(',').map(s => s.trim()).filter(s => s),
+            references_and_links: document.getElementById('projectReferences').value.split(',').map(s => s.trim()).filter(s => s),
+            hed_version: document.getElementById('projectHED').value.trim(),
+            dataset_type: document.getElementById('projectType').value,
+            description: document.getElementById('projectDescription').value.trim()
         };
 
         try {
@@ -835,6 +902,12 @@
                         </div>
                     </div>
                 `;
+
+                // Update local state and refresh dependent UI components
+                currentProjectPath = result.current_project.path;
+                currentProjectName = result.current_project.name;
+                await initParticipantsStatus();
+                await loadProjectMetadata();
             } else {
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
@@ -960,6 +1033,12 @@
                                 <div>
                                     <strong>${issue.code}</strong>: ${issue.message}
                                     ${issue.file_path ? `<br><small class="text-muted">${issue.file_path}</small>` : ''}
+                                    ${issue.fix_hint ? `
+                                        <div class="alert alert-info py-1 px-2 mt-2 mb-0 smaller d-flex align-items-center">
+                                            <i class="fas fa-lightbulb me-2 text-warning"></i>
+                                            <div><strong>Hint:</strong> ${issue.fix_hint}</div>
+                                        </div>
+                                    ` : ''}
                                 </div>
                                 ${issue.fixable ? `
                                     <button class="btn btn-sm btn-outline-warning" onclick="fixIssue('${path}', '${issue.code}')">
@@ -997,6 +1076,12 @@
 
             html += '</div>';
             resultDiv.innerHTML = html;
+
+            // Update local state and refresh dependent UI components
+            currentProjectPath = result.current_project.path;
+            currentProjectName = result.current_project.name;
+            await initParticipantsStatus();
+            await loadProjectMetadata();
 
         } catch (error) {
             document.getElementById('validationResult').innerHTML = `
@@ -1074,14 +1159,15 @@
     // Initialize participants status display when project is selected
     async function initParticipantsStatus() {
         const statusCard = document.getElementById('participantsStatusCard');
+        if (!statusCard) return;
 
         // Check if project is selected
-        {% if current_project.path %}
+        if (currentProjectPath) {
             statusCard.style.display = 'block';
             await loadParticipantsStatus();
-        {% else %}
+        } else {
             statusCard.style.display = 'none';
-        {% endif %}
+        }
     }
 
     // Load and display current participants.json fields
@@ -1119,10 +1205,12 @@
 
     async function loadProjectMetadata() {
         const card = document.getElementById('projectMetadataCard');
-        {% if not current_project.path %}
+        if (!card) return;
+
+        if (!currentProjectPath) {
             card.style.display = 'none';
             return;
-        {% endif %}
+        }
 
         try {
             const response = await fetch('/api/projects/description');
@@ -1137,9 +1225,15 @@
                 document.getElementById('metadataAuthors').value = Array.isArray(desc.Authors) ? desc.Authors.join(', ') : (desc.Authors || '');
                 document.getElementById('metadataLicense').value = desc.License || 'CC0';
                 document.getElementById('metadataAcknowledgements').value = desc.Acknowledgements || '';
+                document.getElementById('metadataDescription').value = desc.Description || '';
                 document.getElementById('metadataDOI').value = desc.DatasetDOI || '';
                 document.getElementById('metadataEthics').value = Array.isArray(desc.EthicsApprovals) ? desc.EthicsApprovals.join(', ') : (desc.EthicsApprovals || '');
                 document.getElementById('metadataKeywords').value = Array.isArray(desc.Keywords) ? desc.Keywords.join(', ') : (desc.Keywords || '');
+                document.getElementById('metadataType').value = desc.DatasetType || 'raw';
+                document.getElementById('metadataHED').value = Array.isArray(desc.HEDVersion) ? desc.HEDVersion.join(', ') : (desc.HEDVersion || '');
+                document.getElementById('metadataFunding').value = Array.isArray(desc.Funding) ? desc.Funding.join(', ') : (desc.Funding || '');
+                document.getElementById('metadataHowToAcknowledge').value = desc.HowToAcknowledge || '';
+                document.getElementById('metadataReferences').value = Array.isArray(desc.ReferencesAndLinks) ? desc.ReferencesAndLinks.join(', ') : (desc.ReferencesAndLinks || '');
             } else {
                 card.style.display = 'none';
             }
@@ -1164,12 +1258,30 @@
                 Authors: document.getElementById('metadataAuthors').value.split(',').map(s => s.trim()).filter(s => s),
                 License: document.getElementById('metadataLicense').value,
                 Acknowledgements: document.getElementById('metadataAcknowledgements').value,
+                Description: document.getElementById('metadataDescription').value,
                 DatasetDOI: document.getElementById('metadataDOI').value,
                 EthicsApprovals: document.getElementById('metadataEthics').value.split(',').map(s => s.trim()).filter(s => s),
                 Keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
                 BIDSVersion: "1.10.1",
-                DatasetType: "raw"
+                DatasetType: document.getElementById('metadataType').value,
+                HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
+                Funding: document.getElementById('metadataFunding').value.split(',').map(s => s.trim()).filter(s => s),
+                ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
+                HEDVersion: document.getElementById('metadataHED').value.trim()
             };
+
+            // Keep existing fields not in form (like GeneratedBy, SourceDatasets)
+            try {
+                const currentResp = await fetch('/api/projects/description');
+                const currentData = await currentResp.json();
+                if (currentData.success && currentData.description) {
+                    description.GeneratedBy = currentData.description.GeneratedBy;
+                    description.SourceDatasets = currentData.description.SourceDatasets;
+                    description.DatasetLinks = currentData.description.DatasetLinks;
+                }
+            } catch (e) {
+                console.warn('Could not merge with existing description', e);
+            }
 
             const response = await fetch('/api/projects/description', {
                 method: 'POST',
@@ -1181,7 +1293,7 @@
             if (result.success) {
                 showToast('Metadata saved successfully', 'success');
                 // Optional: refresh page if name changed to update navbar
-                if (description.Name !== "{{ current_project.name }}") {
+                if (description.Name !== currentProjectName) {
                     setTimeout(() => window.location.reload(), 1000);
                 }
             } else {

@@ -109,7 +109,13 @@ def create_project():
             "doi": data.get("doi"),
             "keywords": data.get("keywords"),
             "acknowledgements": data.get("acknowledgements"),
-            "ethics_approvals": data.get("ethics_approvals")
+            "ethics_approvals": data.get("ethics_approvals"),
+            "how_to_acknowledge": data.get("how_to_acknowledge"),
+            "funding": data.get("funding"),
+            "references_and_links": data.get("references_and_links"),
+            "hed_version": data.get("hed_version"),
+            "dataset_type": data.get("dataset_type"),
+            "description": data.get("description")
         }
 
         result = _project_manager.create_project(path, config)
