@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import json
 
 from ..utils.io import read_json as _read_json, write_json as _write_json
 from ..utils.naming import norm_key as _norm_key
@@ -273,17 +274,9 @@ def convert_biometrics_table_to_prism_dataset(
     output_root.mkdir(parents=True, exist_ok=True)
     dataset_description = {
         "Name": name or "PRISM Biometrics Dataset",
-        "BIDSVersion": "1.10.1",
+        "BIDSVersion": "1.8.0",
         "DatasetType": "raw",
-        "Authors": authors or ["PRISM Biometrics Converter"],
-        "GeneratedBy": [
-            {
-                "Name": "PRISM Biometrics Converter",
-                "Version": "1.1.1",
-                "Description": "Automated biometrics data conversion to PRISM format."
-            }
-        ],
-        "HEDVersion": "8.2.0"
+        "Authors": authors or ["prism-studio"],
     }
     _write_json(output_root / "dataset_description.json", dataset_description)
 
