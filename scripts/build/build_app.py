@@ -75,12 +75,17 @@ VSVersionInfo(
 def _generate_icon(name: str) -> str | None:
     """Best-effort icon generation.
 
-    - macOS: generates an .icns from static/img/MRI_Lab_Logo.png using sips + iconutil
+    - macOS: generates an .icns from app/static/img/MRI_Lab_Logo.png using sips + iconutil
     - Windows: uses the PNG directly (PyInstaller can convert)
     """
-    source_png = Path("static/img/MRI_Lab_Logo.png")
+    # Use absolute paths or correctly join with project root if needed
+    source_png = Path("app/static/img/MRI_Lab_Logo.png")
     if not source_png.exists():
-        print(f"[WARN] Icon source not found: {source_png}")
+        # Fallback to local if running from inside app/
+        source_png = Path("static/img/MRI_Lab_Logo.png")
+        
+    if not source_png.exists():
+        print(f"[WARN] Icon source not found at app/static/img/MRI_Lab_Logo.png or static/img/MRI_Lab_Logo.png")
         return None
 
     if sys.platform == "darwin":
@@ -211,28 +216,35 @@ def main() -> int:
     if sys.platform == "win32":
         version_file = _generate_version_info(args.name, version)
 
-    # On Windows use ; as separator, on Unix use :
+    # PyInstaller separator: ; on Windows, : on Unix
     sep = ";" if os.name == "nt" else ":"
 
     # Data paths are now in the app/ subdirectory
+    # We use os.path.join for the source path to be platform-neutral, 
+    # then the PyInstaller 'sep' to separate source and destination.
     datas = [
-        f"app{sep}templates{sep}templates",
-        f"app{sep}static{sep}static",
-        f"app{sep}schemas{sep}schemas",
-        f"app{sep}src{sep}src",
+        f"{os.path.join('app', 'templates')}{sep}templates",
+        f"{os.path.join('app', 'static')}{sep}static",
+        f"{os.path.join('app', 'schemas')}{sep}schemas",
+        f"{os.path.join('app', 'src')}{sep}src",
     ]
+    
+    # Check for optional directories and only add them if they exist
     if (project_root / "app" / "survey_library").exists():
-        datas.append(f"app{sep}survey_library{sep}survey_library")
+        datas.append(f"{os.path.join('app', 'survey_library')}{sep}survey_library")
         print("[OK] Including survey_library")
+    elif (project_root / "survey_library").exists():
+        datas.append(f"survey_library{sep}survey_library")
+        print("[OK] Including survey_library (from root)")
 
     pyinstaller_args = [
-        args.entry,
         f"--name={args.name}",
         "--clean",
         "--noconfirm",
         # Explicitly include hidden imports that PyInstaller might miss
         "--hidden-import=jsonschema",
         "--hidden-import=xml.etree.ElementTree",
+        "--hidden-import=flask",
     ]
 
     if not args.console:
@@ -247,7 +259,7 @@ def main() -> int:
             "--osx-bundle-identifier=at.ac.uni-graz.mri.prism-studio"
         )
         if args.target_arch:
-            pyinstaller_args.append(f"--target-arch={args.target_arch}")
+            pyinstaller_args.append(f"--target-architecture={args.target_arch}")
             print(f"[BUILD] Setting target architecture to: {args.target_arch}")
 
     if icon_file:
@@ -258,6 +270,9 @@ def main() -> int:
 
     for data in datas:
         pyinstaller_args.append(f"--add-data={data}")
+
+    # The entry script must be the last positional argument
+    pyinstaller_args.append(args.entry)
 
     print("Building with args:", pyinstaller_args)
     PyInstaller.__main__.run(pyinstaller_args)
