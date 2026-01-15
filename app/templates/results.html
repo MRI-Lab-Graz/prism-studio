@@ -99,10 +99,22 @@
                     <div class="col-6 col-md-3 border-end py-4 summary-card">
                         <div class="text-muted small text-uppercase fw-bold mb-1">Errors</div>
                         <div class="h2 mb-0 fw-bold text-danger">{{ results.summary.total_errors if results.summary else results.errors|length }}</div>
+                        {% if results.summary and (results.summary.bids_errors > 0 or results.summary.prism_errors > 0) %}
+                        <div class="x-small text-muted mt-1">
+                            <span class="text-info fw-bold">{{ results.summary.bids_errors }} BIDS</span> • 
+                            <span class="text-danger fw-bold">{{ results.summary.prism_errors }} PRISM</span>
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="col-6 col-md-3 py-4 summary-card">
                         <div class="text-muted small text-uppercase fw-bold mb-1">Warnings</div>
                         <div class="h2 mb-0 fw-bold text-warning">{{ results.summary.total_warnings if results.summary else results.warnings|length }}</div>
+                        {% if results.summary and (results.summary.bids_warnings > 0 or results.summary.prism_warnings > 0) %}
+                        <div class="x-small text-muted mt-1">
+                            <span class="text-info fw-bold">{{ results.summary.bids_warnings }} BIDS</span> • 
+                            <span class="text-warning fw-bold">{{ results.summary.prism_warnings }} PRISM</span>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% if results.summary %}
@@ -138,7 +150,15 @@
                                     <div>
                                         {% set error_count = results.summary.total_errors if results.summary else results.errors|length %}
                                         <h4 class="mb-1 fw-bold text-danger">Dataset has {{ error_count }} Error(s)</h4>
-                                        <p class="text-muted mb-0">Compliance issues were found that need attention.</p>
+                                        <p class="text-muted mb-0">
+                                            Compliance issues were found that need attention.
+                                            {% if results.summary %}
+                                            <span class="d-block mt-1 x-small fw-bold">
+                                                <span class="text-info">{{ results.summary.bids_errors }} BIDS issues</span> &bull; 
+                                                <span class="text-danger">{{ results.summary.prism_errors }} PRISM issues</span>
+                                            </span>
+                                            {% endif %}
+                                        </p>
                                     </div>
                                 {% endif %}
                             </div>
