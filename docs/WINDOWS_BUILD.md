@@ -15,11 +15,16 @@ This guide explains how to build the Prism Validator Windows application from so
 
 ### Option 1: Using PowerShell (Recommended)
 
-Open PowerShell in the project directory and run:
+1. **Setup the environment:**
+   Open PowerShell in the project directory and run:
+   ```powershell
+   .\setup.ps1 -Build
+   ```
 
-```powershell
-.\build_windows.ps1
-```
+2. **Build the application:**
+   ```powershell
+   .\scripts\build\build_windows.ps1
+   ```
 
 ### Option 2: Using Command Prompt
 

@@ -18,6 +18,9 @@ python prism-gui.py
 
 ```bash
 bash setup.sh    # One-time setup (macOS/Linux)
+# OR
+.\setup.ps1      # One-time setup (Windows)
+
 ./prism-studio.py
 ```
 
