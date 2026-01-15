@@ -5,6 +5,13 @@ All notable changes to the PRISM project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2026-01-15
+
+### Fixed
+- **Build**: Fixed PyInstaller `--add-data` syntax error on Unix-based systems.
+- **Build**: Corrected `--target-architecture` flag for macOS Silicon builds.
+- **Build**: Fixed missing icon source path in build script.
+
 ## [1.8.0] - 2026-01-15
 
 ### Added
