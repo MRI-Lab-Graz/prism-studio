@@ -592,6 +592,35 @@ def save_dataset_description():
         }), 500
 
 
+@projects_bp.route("/api/projects/participants/columns", methods=["GET"])
+def get_participants_columns():
+    """Extract unique values from project's participants.tsv."""
+    import pandas as pd
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"error": "No project selected"}), 400
+
+    project_path = Path(current["path"])
+    tsv_path = project_path / "participants.tsv"
+
+    if not tsv_path.exists():
+        return jsonify({"columns": {}})
+
+    try:
+        df = pd.read_csv(tsv_path, sep='\t')
+        result = {}
+        for col in df.columns:
+            # Only return unique values for non-ID columns with reasonable number of unique values
+            if col.lower() not in ['participant_id', 'id'] and df[col].nunique() < 50:
+                # Filter out NaNs and convert to strings
+                unique_vals = [str(v) for v in df[col].dropna().unique().tolist()]
+                result[col] = sorted(unique_vals)
+
+        return jsonify({"columns": result})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @projects_bp.route("/api/projects/participants/templates", methods=["GET"])
 def get_participants_templates():
     """Get predefined BIDS-compatible field templates.

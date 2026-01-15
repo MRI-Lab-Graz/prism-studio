@@ -75,6 +75,17 @@ def create_json_editor_blueprint(bids_folder=None):
 
     # ==================== BLUEPRINT ROUTES ====================
 
+    @bp.before_request
+    def sync_with_session_project():
+        """Ensure JSON editor is using the currently selected project from session"""
+        from flask import session
+        project_path = session.get('current_project_path')
+        if project_path and file_manager:
+            try:
+                file_manager.set_bids_folder(project_path)
+            except Exception as e:
+                print(f"⚠️ [JSON EDITOR] Could not set BIDS folder to {project_path}: {e}")
+
     @bp.route("/")
     @bp.route("/index.html")
     def editor_index():
