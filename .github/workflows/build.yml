@@ -19,7 +19,7 @@ jobs:
             artifact_name: PrismValidator-macOS-AppleSilicon
             asset_name: PrismValidator-macOS-AppleSilicon.zip
             target_arch: arm64
-          - os: macos-13
+          - os: macos-14
             platform_name: MacOS Intel
             artifact_name: PrismValidator-macOS-Intel
             asset_name: PrismValidator-macOS-Intel.zip
@@ -37,13 +37,14 @@ jobs:
     - uses: actions/checkout@v4
 
     # Install gettext for the macOS Intel runner (needed by the hosted x64 Python toolchain)
-    - name: Install gettext (macOS Intel)
-      if: matrix.platform_name == 'MacOS Intel'
-      run: |
-        brew update
-        brew install gettext
-        brew link gettext --force
-      shell: bash
+      - name: Prepare Rosetta + gettext (macOS Intel)
+        if: matrix.platform_name == 'MacOS Intel'
+        run: |
+          sudo softwareupdate --install-rosetta --agree-to-license || true
+          brew update
+          brew install gettext
+          brew link gettext --force
+        shell: bash
 
     - name: Set up Python
       uses: actions/setup-python@v5
