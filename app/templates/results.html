@@ -179,6 +179,13 @@
                         <span class="badge {% if error_code.startswith('BIDS') %}bg-info-soft text-info border-info{% else %}bg-danger-soft text-danger border-danger{% endif %} border">{{ error_group.count }} occurrences</span>
                     </div>
                     <p class="text-muted small mb-3">{{ error_group.description }}</p>
+
+                    {% if error_group.fix_hint %}
+                    <div class="alert alert-info py-2 px-3 small border-0 mb-3">
+                        <i class="fas fa-lightbulb me-2 text-warning"></i>
+                        <strong>Fix Hint:</strong> {{ error_group.fix_hint }}
+                    </div>
+                    {% endif %}
                     
                     <div class="bg-light rounded p-3">
                         {% if error_group.messages %}
@@ -282,6 +289,18 @@
                         {% endif %}
                         {{ warning_code }} ({{ warning_group.count }})
                     </h6>
+
+                    {% if warning_group.description %}
+                    <p class="text-muted small mb-3">{{ warning_group.description }}</p>
+                    {% endif %}
+
+                    {% if warning_group.fix_hint %}
+                    <div class="alert alert-info py-2 px-3 small border-0 mb-3">
+                        <i class="fas fa-lightbulb me-2 text-warning"></i>
+                        <strong>Fix Hint:</strong> {{ warning_group.fix_hint }}
+                    </div>
+                    {% endif %}
+
                     <div class="bg-light rounded p-3">
                         {% if warning_group.messages %}
                             {% for message, files in warning_group.messages.items() %}

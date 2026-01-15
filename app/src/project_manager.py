@@ -33,6 +33,7 @@ from typing import Dict, List, Any, Optional
 
 from src.fixer import DatasetFixer
 from src.cross_platform import CrossPlatformFile
+from src.issues import get_fix_hint
 
 
 # Available PRISM modalities
@@ -223,19 +224,25 @@ class ProjectManager:
         if (project_path / "dataset_description.json").exists():
             stats["has_dataset_description"] = True
         else:
+            code = "PRISM001"
+            msg = "Missing dataset_description.json"
             issues.append({
-                "code": "PRISM001",
-                "message": "Missing dataset_description.json",
+                "code": code,
+                "message": msg,
+                "fix_hint": get_fix_hint(code, msg),
                 "fixable": True
             })
-            fixable_issues.append("PRISM001")
+            fixable_issues.append(code)
 
         if (project_path / "participants.tsv").exists():
             stats["has_participants_tsv"] = True
         else:
+            code = "PRISM002"
+            msg = "Missing participants.tsv"
             issues.append({
-                "code": "PRISM002",
-                "message": "Missing participants.tsv",
+                "code": code,
+                "message": msg,
+                "fix_hint": get_fix_hint(code, msg),
                 "fixable": False
             })
 
@@ -279,6 +286,7 @@ class ProjectManager:
                         issues.append({
                             "code": fix.issue_code,
                             "message": fix.description,
+                            "fix_hint": get_fix_hint(fix.issue_code, fix.description),
                             "fixable": True,
                             "file_path": fix.file_path
                         })
@@ -351,7 +359,8 @@ class ProjectManager:
         return {
             "Name": name,
             "BIDSVersion": "1.10.1",
-            "DatasetType": "raw",
+            "DatasetType": config.get("dataset_type", "raw"),
+            "Description": config.get("description", "A PRISM-compatible dataset for psychological research."),
             "License": config.get("license", "CC0"),
             "Authors": config.get("authors", ["TODO: Add author names"]),
             "Acknowledgements": config.get("acknowledgements", ""),
@@ -360,8 +369,8 @@ class ProjectManager:
             "ReferencesAndLinks": config.get("references_and_links", []),
             "DatasetDOI": config.get("doi", ""),
             "EthicsApprovals": config.get("ethics_approvals", []),
-            "Keywords": config.get("keywords", []),
-            "HEDVersion": "8.2.0",
+            "Keywords": config.get("keywords", ["psychology", "experiment", "PRISM"]),
+            "HEDVersion": config.get("hed_version", "8.2.0"),
             "DatasetLinks": config.get("dataset_links", {}),
             "GeneratedBy": [
                 {

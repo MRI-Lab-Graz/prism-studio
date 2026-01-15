@@ -108,7 +108,10 @@ def validate_dataset(
                 issues.append(("ERROR", f"dataset_description.json is not valid JSON: {e}", dataset_desc_path))
         except ValidationError as e:
             if run_prism:
-                issues.append(("ERROR", f"dataset_description.json schema error: {e.message}", dataset_desc_path))
+                # Format message to be more descriptive (include field path)
+                field_path = " -> ".join([str(p) for p in e.path])
+                prefix = f"{field_path}: " if field_path else ""
+                issues.append(("ERROR", f"dataset_description.json schema error: {prefix}{e.message}", dataset_desc_path))
         except Exception as e:
             if run_prism:
                 issues.append(("ERROR", f"Error processing dataset_description.json: {e}", dataset_desc_path))
