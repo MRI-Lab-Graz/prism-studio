@@ -1,7 +1,7 @@
 """
 Survey template utilities for PRISM web interface.
 """
-
+from __future__ import annotations
 from pathlib import Path
 import json
 
