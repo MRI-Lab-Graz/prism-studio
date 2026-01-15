@@ -521,9 +521,13 @@ def get_dataset_description():
         with open(desc_path, "r", encoding="utf-8") as f:
             description = json.load(f)
 
+        # Validate on load
+        issues = _project_manager.validate_dataset_description(description)
+
         return jsonify({
             "success": True,
-            "description": description
+            "description": description,
+            "issues": issues
         })
     except Exception as e:
         return jsonify({
@@ -566,6 +570,9 @@ def save_dataset_description():
         if "BIDSVersion" not in description:
             description["BIDSVersion"] = "1.10.1"
 
+        # Validate before saving
+        issues = _project_manager.validate_dataset_description(description)
+
         with open(desc_path, "w", encoding="utf-8") as f:
             json.dump(description, f, indent=2, ensure_ascii=False)
 
@@ -575,7 +582,8 @@ def save_dataset_description():
 
         return jsonify({
             "success": True,
-            "message": "dataset_description.json saved successfully"
+            "message": "dataset_description.json saved successfully",
+            "issues": issues
         })
     except Exception as e:
         return jsonify({

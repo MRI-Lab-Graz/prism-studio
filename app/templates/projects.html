@@ -450,6 +450,9 @@
             </h5>
         </div>
         <div class="card-body">
+            <!-- Metadata Validation Feedback -->
+            <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
+            
             <form id="projectMetadataForm">
                 <div class="row g-3">
                     <div class="col-md-12">
@@ -1234,6 +1237,9 @@
                 document.getElementById('metadataFunding').value = Array.isArray(desc.Funding) ? desc.Funding.join(', ') : (desc.Funding || '');
                 document.getElementById('metadataHowToAcknowledge').value = desc.HowToAcknowledge || '';
                 document.getElementById('metadataReferences').value = Array.isArray(desc.ReferencesAndLinks) ? desc.ReferencesAndLinks.join(', ') : (desc.ReferencesAndLinks || '');
+                
+                // Show issues if any
+                displayMetadataIssues(data.issues || []);
             } else {
                 card.style.display = 'none';
             }
@@ -1241,6 +1247,42 @@
             console.error('Error loading project metadata:', error);
             card.style.display = 'none';
         }
+    }
+
+    // Display validation issues for dataset_description
+    function displayMetadataIssues(issues) {
+        const feedbackDiv = document.getElementById('metadataValidationFeedback');
+        if (!feedbackDiv) return;
+
+        if (!issues || issues.length === 0) {
+            feedbackDiv.style.display = 'none';
+            feedbackDiv.innerHTML = '';
+            return;
+        }
+
+        feedbackDiv.style.display = 'block';
+        let html = `
+            <div class="alert alert-warning py-2 mb-0">
+                <div class="fw-bold mb-1 small text-uppercase">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Dataset Description Issues (${issues.length})
+                </div>
+                <ul class="mb-0 ps-3 small">
+        `;
+
+        issues.forEach(issue => {
+            html += `
+                <li class="mb-1">
+                    <strong>${issue.message}</strong>
+                    ${issue.fix_hint ? `<div class="text-muted smaller"><i class="fas fa-lightbulb me-1"></i>${issue.fix_hint}</div>` : ''}
+                </li>
+            `;
+        });
+
+        html += `
+                </ul>
+            </div>
+        `;
+        feedbackDiv.innerHTML = html;
     }
 
     // Handle Metadata Form Submission
@@ -1292,9 +1334,13 @@
             const result = await response.json();
             if (result.success) {
                 showToast('Metadata saved successfully', 'success');
+                
+                // Show any remaining validation issues
+                displayMetadataIssues(result.issues || []);
+
                 // Optional: refresh page if name changed to update navbar
                 if (description.Name !== currentProjectName) {
-                    setTimeout(() => window.location.reload(), 1000);
+                    setTimeout(() => window.location.reload(), 2000);
                 }
             } else {
                 alert('Failed to save metadata: ' + result.error);
