@@ -5,6 +5,18 @@ All notable changes to the PRISM project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-01-15
+
+### Added
+- **Project Tab**: Enhanced participants.json management with required field highlighting and star indicators.
+- **NeuroBagel Widget**: Improved error handling instructions when the widget cannot be loaded.
+- **CI/CD**: Added multi-platform build support for macOS (Intel/Silicon), Linux, and Windows in GitHub Actions.
+- **Conversion**: Added file head preview in terminal and logs for TSV/CSV debugging to help diagnose delimiter issues.
+
+### Changed
+- **UI**: Removed confusing red error styling for mandatory fields in Project Tab.
+- **Workflow**: Updated build pipeline to generate specific artifacts for different architectures.
+
 ## [1.7.1] - 2026-01-12
 
 ### Added

@@ -8,17 +8,30 @@ on:
 
 jobs:
   build:
-    name: Build for ${{ matrix.os }}
+    name: Build for ${{ matrix.platform_name }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - os: macos-latest
-            artifact_name: PrismValidator-macOS
-            asset_name: PrismValidator.app.zip
+          - os: macos-14
+            platform_name: MacOS Apple Silicon
+            artifact_name: PrismValidator-macOS-AppleSilicon
+            asset_name: PrismValidator-macOS-AppleSilicon.zip
+            target_arch: arm64
+          - os: macos-13
+            platform_name: MacOS Intel
+            artifact_name: PrismValidator-macOS-Intel
+            asset_name: PrismValidator-macOS-Intel.zip
+            target_arch: x86_64
           - os: windows-latest
+            platform_name: Windows
             artifact_name: PrismValidator-Windows
             asset_name: PrismValidator-Windows.zip
+          - os: ubuntu-latest
+            platform_name: Linux
+            artifact_name: PrismValidator-Linux
+            asset_name: PrismValidator-Linux.zip
 
     steps:
     - uses: actions/checkout@v4
@@ -41,18 +54,27 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        python scripts/build/build_app.py
+        python scripts/build/build_app.py ${{ matrix.target_arch && format('--target-arch {0}', matrix.target_arch) || '' }}
 
+    # Windows Zip
+    - name: Zip Windows App
+      if: runner.os == 'Windows'
+      run: |
+        powershell Compress-Archive -Path dist\PrismValidator -DestinationPath ${{ matrix.asset_name }}
+
+    # macOS Zip
     - name: Zip macOS App
       if: runner.os == 'macOS'
       run: |
         cd dist
         zip -r ../${{ matrix.asset_name }} PrismValidator.app
 
-    - name: Zip Windows App
-      if: runner.os == 'Windows'
+    # Linux Zip
+    - name: Zip Linux App
+      if: runner.os == 'Linux'
       run: |
-        powershell Compress-Archive -Path dist\PrismValidator -DestinationPath ${{ matrix.asset_name }}
+        cd dist
+        zip -r ../${{ matrix.asset_name }} PrismValidator
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
@@ -73,11 +95,21 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: PrismValidator-Windows
-        
-    - name: Download macOS Artifact
+
+    - name: Download macOS Apple Silicon Artifact
       uses: actions/download-artifact@v4
       with:
-        name: PrismValidator-macOS
+        name: PrismValidator-macOS-AppleSilicon
+
+    - name: Download macOS Intel Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: PrismValidator-macOS-Intel
+
+    - name: Download Linux Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: PrismValidator-Linux
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
@@ -87,4 +119,6 @@ jobs:
         generate_release_notes: true
         files: |
           PrismValidator-Windows.zip
-          PrismValidator.app.zip
+          PrismValidator-macOS-AppleSilicon.zip
+          PrismValidator-macOS-Intel.zip
+          PrismValidator-Linux.zip
