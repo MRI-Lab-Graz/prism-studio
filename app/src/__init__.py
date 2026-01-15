@@ -7,5 +7,5 @@ This package provides validation tools for multi-modal psychological/experimenta
 following BIDS principles with custom schemas for different stimulus modalities.
 """
 
-__version__ = "1.8.2"
+__version__ = "1.8.3"
 __author__ = "MRI-Lab-Graz"
