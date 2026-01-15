@@ -16,14 +16,9 @@ jobs:
         include:
           - os: macos-14
             platform_name: MacOS Apple Silicon
-            artifact_name: PrismValidator-macOS-AppleSilicon
-            asset_name: PrismValidator-macOS-AppleSilicon.zip
+            artifact_name: PrismValidator-macOS
+            asset_name: PrismValidator-macOS.zip
             target_arch: arm64
-          - os: macos-14
-            platform_name: MacOS Intel
-            artifact_name: PrismValidator-macOS-Intel
-            asset_name: PrismValidator-macOS-Intel.zip
-            target_arch: x86_64
           - os: windows-latest
             platform_name: Windows
             artifact_name: PrismValidator-Windows
@@ -36,25 +31,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # Install Rosetta + gettext when building Intel binary on Apple Silicon runner
-    - name: Prepare Rosetta + gettext (macOS Intel)
-      if: matrix.platform_name == 'MacOS Intel'
-      run: |
-        sudo softwareupdate --install-rosetta --agree-to-license || true
-        brew update
-        brew install gettext
-        brew link gettext --force
-        sudo mkdir -p /usr/local/opt
-        if [ ! -e /usr/local/opt/gettext ]; then
-          sudo ln -s /opt/homebrew/opt/gettext /usr/local/opt/gettext
-        fi
-      shell: bash
-
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
-        architecture: ${{ matrix.platform_name == 'MacOS Intel' && 'x64' || '' }}
 
     - name: Install dependencies
       run: |
