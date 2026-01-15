@@ -163,6 +163,13 @@ def format_validation_results(
     total_errors = sum(group["count"] for group in error_groups.values())
     total_warnings = sum(group["count"] for group in warning_groups.values())
     
+    # Differentiate between BIDS and PRISM
+    bids_errors = sum(group["count"] for code, group in error_groups.items() if code.startswith("BIDS"))
+    prism_errors = total_errors - bids_errors
+    
+    bids_warnings = sum(group["count"] for code, group in warning_groups.items() if code.startswith("BIDS"))
+    prism_warnings = total_warnings - bids_warnings
+    
     # Calculate invalid_count excluding the dataset root itself (global errors)
     dataset_root_name = os.path.basename(dataset_path) if dataset_path else ""
     invalid_file_paths = {f["path"] for f in invalid_files if f.get("path")}
@@ -227,6 +234,10 @@ def format_validation_results(
             "invalid_files": invalid_count,
             "total_errors": total_errors,
             "total_warnings": total_warnings,
+            "bids_errors": bids_errors,
+            "prism_errors": prism_errors,
+            "bids_warnings": bids_warnings,
+            "prism_warnings": prism_warnings,
         },
         "error_groups": error_groups,
         "warning_groups": warning_groups,
