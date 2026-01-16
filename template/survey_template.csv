@@ -1,0 +1,5 @@
+id,question,levels,data_type,min,max,original_name,short_name,citation
+ADS1,I felt that I could not shake off the blues even with help from my family or friends.,"0=Rarely; 1=Some of the time; 2=Occasionally; 3=Most of the time",integer,0,3,Allgemeine Depressionsskala (ADS),ADS,"Hautzinger, M., & Bailer, M. (1993). ADS Manual."
+ADS2,I felt depressed.,"0=Rarely; 1=Some of the time; 2=Occasionally; 3=Most of the time",integer,0,3,Allgemeine Depressionsskala (ADS),ADS,"Hautzinger, M., & Bailer, M. (1993). ADS Manual."
+BDI1,I do not feel sad.,"0=0; 1=1; 2=2; 3=3",integer,0,3,Beck Depression Inventory (BDI-II),BDI-II,"Beck et al. (1996)."
+BDI2,I am not particularly discouraged about the future.,"0=0; 1=1; 2=2; 3=3",integer,0,3,Beck Depression Inventory (BDI-II),BDI-II,"Beck et al. (1996)."
