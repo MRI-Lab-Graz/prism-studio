@@ -1,0 +1,235 @@
+{
+  "I18n": {
+    "DefaultLanguage": "en",
+    "Languages": [
+      "de",
+      "en"
+    ],
+    "Note": "Multilingual demo template for testing purposes",
+    "TranslationMethod": "forward-backward"
+  },
+  "Metadata": {
+    "CreationDate": "2025-12-19",
+    "Creator": "Prism Demo Generator",
+    "SchemaVersion": "1.1.1"
+  },
+  "Normative": {
+    "Percentiles": {},
+    "ReferencePopulation": {},
+    "ReferenceSource": ""
+  },
+  "Scoring": {
+    "Cutoffs": {},
+    "CutoffsSource": {},
+    "NormsSource": {},
+    "ReverseCodedItems": [
+      ""
+    ],
+    "ReverseCodingScale": {
+      "max": 0,
+      "min": 0
+    },
+    "ScoreRange": {
+      "max": 0,
+      "min": 0
+    },
+    "ScoringMethod": {},
+    "Subscales": [
+      {
+        "Items": [
+          ""
+        ],
+        "Method": "sum",
+        "Name": {},
+        "Note": {},
+        "Range": {
+          "max": 0,
+          "min": 0
+        },
+        "ReverseCodedItems": [
+          ""
+        ]
+      }
+    ]
+  },
+  "Study": {
+    "AdministrationTime": {
+      "max": 30,
+      "min": 30
+    },
+    "AgeRange": {
+      "max": 65,
+      "min": 18
+    },
+    "Authors": [
+      "Demo Protocol"
+    ],
+    "BiometricName": "fitness",
+    "Category": "cardiorespiratory",
+    "Citation": "",
+    "DOI": "",
+    "Description": {
+      "de": "Eine umfassende Fitnessbewertung mit Ausdauer-, Kraft- und Flexibilitätsmessungen",
+      "en": "A comprehensive fitness assessment including cardio, strength, and flexibility measures"
+    },
+    "ExclusionCriteria": {
+      "de": "Akute Erkrankung, Herz-Kreislauf-Erkrankungen, kürzliche Verletzungen",
+      "en": "Acute illness, cardiovascular conditions, recent injuries"
+    },
+    "Instruction": {},
+    "Instructions": {
+      "de": "Führen Sie alle Tests der Reihe nach durch. Pausieren Sie 2 Minuten zwischen den Tests. Sorgen Sie für ein ordentliches Aufwärmen vor Beginn.",
+      "en": "Complete all tests in order. Rest 2 minutes between tests. Ensure proper warm-up before starting."
+    },
+    "Keywords": [
+      ""
+    ],
+    "OriginalName": {
+      "de": "Basis-Fitnessbewertung",
+      "en": "Basic Fitness Assessment Battery"
+    },
+    "Protocol": "Standard Fitness Test Protocol v1.0",
+    "Reference": "Demo Reference for PRISM Testing",
+    "Reliability": {},
+    "ShortName": {},
+    "TargetPopulation": {
+      "de": "Erwachsene 18-65 Jahre",
+      "en": "Adults 18-65 years"
+    },
+    "Validity": {},
+    "WarmupProtocol": {}
+  },
+  "Technical": {
+    "CalibrationDate": "",
+    "Equipment": {
+      "de": "Stoppuhr, Maßband, Herzfrequenzmesser, Dynamometer",
+      "en": "Stopwatch, Measuring Tape, Heart Rate Monitor, Dynamometer"
+    },
+    "EquipmentManufacturer": "",
+    "EquipmentModel": "",
+    "FileFormat": "tsv",
+    "Language": "",
+    "Location": "laboratory",
+    "Respondent": "self",
+    "SoftwarePlatform": "",
+    "SoftwareVersion": "",
+    "Supervisor": "investigator",
+    "Type": "Biometrics"
+  },
+  "grip_strength_left": {
+    "Description": {
+      "de": "Maximale Griffstärke mit der linken Hand mittels Dynamometer",
+      "en": "Maximum grip strength with left hand using dynamometer"
+    },
+    "Units": "kg",
+    "AllowedValues": [
+      ""
+    ],
+    "DataType": "string",
+    "Levels": {},
+    "MaxValue": 0,
+    "MinValue": 0,
+    "RunHint": "",
+    "SessionHint": "",
+    "WarnMaxValue": 0,
+    "WarnMinValue": 0
+  },
+  "grip_strength_right": {
+    "Description": {
+      "de": "Maximale Griffstärke mit der rechten Hand mittels Dynamometer",
+      "en": "Maximum grip strength with right hand using dynamometer"
+    },
+    "Units": "kg",
+    "AllowedValues": [
+      ""
+    ],
+    "DataType": "string",
+    "Levels": {},
+    "MaxValue": 0,
+    "MinValue": 0,
+    "RunHint": "",
+    "SessionHint": "",
+    "WarnMaxValue": 0,
+    "WarnMinValue": 0
+  },
+  "plank_duration": {
+    "Description": {
+      "de": "Maximale Dauer im Standard-Unterarmstütz",
+      "en": "Maximum duration holding a standard plank position"
+    },
+    "NormalRange": {
+      "max": 120,
+      "min": 30
+    },
+    "Units": "seconds",
+    "AllowedValues": [
+      ""
+    ],
+    "DataType": "string",
+    "Levels": {},
+    "MaxValue": 0,
+    "MinValue": 0,
+    "RunHint": "",
+    "SessionHint": "",
+    "WarnMaxValue": 0,
+    "WarnMinValue": 0
+  },
+  "recovery_hr_1min": {
+    "Description": {
+      "de": "Herzfrequenz 1 Minute nach Beendigung des Stufentests",
+      "en": "Heart rate 1 minute after step test completion"
+    },
+    "Units": "bpm",
+    "AllowedValues": [
+      ""
+    ],
+    "DataType": "string",
+    "Levels": {},
+    "MaxValue": 0,
+    "MinValue": 0,
+    "RunHint": "",
+    "SessionHint": "",
+    "WarnMaxValue": 0,
+    "WarnMinValue": 0
+  },
+  "resting_hr": {
+    "Description": {
+      "de": "Ruheherzfrequenz gemessen nach 5 Minuten sitzender Ruhe",
+      "en": "Resting heart rate measured after 5 minutes of seated rest"
+    },
+    "NormalRange": {
+      "max": 100,
+      "min": 60
+    },
+    "Units": "bpm",
+    "AllowedValues": [
+      ""
+    ],
+    "DataType": "integer",
+    "Levels": {},
+    "MaxValue": 0,
+    "MinValue": 0,
+    "RunHint": "",
+    "SessionHint": "",
+    "WarnMaxValue": 0,
+    "WarnMinValue": 0
+  },
+  "sit_and_reach": {
+    "Description": {
+      "de": "Flexibilitätsmessung mittels Sit-and-Reach-Test",
+      "en": "Flexibility measure using sit-and-reach test"
+    },
+    "NormalRange": {
+      "max": 30,
+      "min": 0
+    },
+    "Units": "cm"
+  },
+  "step_test_hr": {
+    "Description": {
+      "de": "Herzfrequenz unmittelbar nach dem 3-Minuten-Stufentest",
+      "en": "Heart rate immediately after 3-minute step test"
+    },
+    "Units": "bpm"
+  }
+}
