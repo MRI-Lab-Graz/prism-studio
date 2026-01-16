@@ -963,14 +963,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                // Parse header
-                const headers = lines[0].split('\t');
+                // Parse header - handle potential BOM and trim
+                let headerLine = lines[0];
+                if (headerLine.startsWith('\ufeff')) {
+                    headerLine = headerLine.substring(1);
+                }
+                const headers = headerLine.split('\t').map(h => h.trim());
                 console.log('TSV headers:', headers);
                 
                 // Extract unique values for each column
                 const columnValues = {};
                 headers.forEach(header => {
-                    columnValues[header] = new Set();
+                    if (header) columnValues[header] = new Set();
                 });
                 
                 // Process data rows

@@ -566,8 +566,15 @@ window.renderNeurobagelWidget = async function() {
   const toAdd = {};      // NeuroBagel suggestions not in TSV
   
   for (const [colName, colData] of Object.entries(enrichedData)) {
-    if (tsvColumns.includes(colName)) {
-      available[colName] = colData;
+    // Case-insensitive match for BIDS columns (e.g., participant_id vs ParticipantID)
+    const colNameLower = colName.toLowerCase().replace(/_/g, '');
+    const matchedTsvColumn = tsvColumns.find(c => {
+        const cLower = c.toLowerCase().replace(/_/g, '');
+        return cLower === colNameLower || cLower === colName.toLowerCase();
+    });
+
+    if (matchedTsvColumn) {
+      available[matchedTsvColumn] = colData;
     } else {
       toAdd[colName] = colData;
     }

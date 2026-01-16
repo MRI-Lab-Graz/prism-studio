@@ -610,11 +610,15 @@ def get_participants_columns():
         df = pd.read_csv(tsv_path, sep='\t')
         result = {}
         for col in df.columns:
-            # Only return unique values for non-ID columns with reasonable number of unique values
+            # Always include the column to signal its availability in TSV
+            # but only return unique values for categorical/low-cardinality columns
             if col.lower() not in ['participant_id', 'id'] and df[col].nunique() < 50:
                 # Filter out NaNs and convert to strings
                 unique_vals = [str(v) for v in df[col].dropna().unique().tolist()]
                 result[col] = sorted(unique_vals)
+            else:
+                # Still include the key so frontend knows it exists in TSV
+                result[col] = []
 
         return jsonify({"columns": result})
     except Exception as e:
