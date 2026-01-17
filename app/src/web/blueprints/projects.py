@@ -78,14 +78,12 @@ def set_current():
 @projects_bp.route("/api/projects/create", methods=["POST"])
 def create_project():
     """
-    Create a new PRISM project.
+    Create a new PRISM project (YODA layout).
 
     Expected JSON body:
     {
         "path": "/path/to/project",
-        "name": "My Study",
-        "sessions": 2,
-        "modalities": ["survey", "biometrics"]
+        "name": "My Study"
     }
     """
     try:
@@ -101,8 +99,6 @@ def create_project():
         # Build config from request
         config = {
             "name": data.get("name", Path(path).name),
-            "sessions": data.get("sessions", 0),
-            "modalities": data.get("modalities", ["survey", "biometrics"]),
             # Optional BIDS metadata
             "authors": data.get("authors"),
             "license": data.get("license"),
@@ -349,14 +345,17 @@ def get_library_path():
         app_root=str(app_root)
     )
 
-    # Project's own library folder
-    project_library = project_path / "code" / "library"
+    # Project's own library folder (YODA layout)
+    project_library = project_path / "library"
+    legacy_library = project_path / "code" / "library"
 
     # For legacy compatibility, provide a single "library_path" that works for conversion
     # Prefer project library if it exists, otherwise use external library
     legacy_library_path = None
     if project_library.exists():
         legacy_library_path = str(project_library)
+    elif legacy_library.exists():
+        legacy_library_path = str(legacy_library)
     elif library_info.get("effective_external_path"):
         legacy_library_path = library_info["effective_external_path"]
     else:
@@ -379,10 +378,10 @@ def get_library_path():
 
         # Structure info
         "structure": {
-            "has_project_library": project_library.exists(),
-            "has_survey": (project_library / "survey").exists() if project_library.exists() else False,
-            "has_biometrics": (project_library / "biometrics").exists() if project_library.exists() else False,
-            "has_participants": (project_path / "participants.json").exists(),
+            "has_project_library": project_library.exists() or legacy_library.exists(),
+            "has_survey": (project_library / "survey").exists() if project_library.exists() else (legacy_library / "survey").exists(),
+            "has_biometrics": (project_library / "biometrics").exists() if project_library.exists() else (legacy_library / "biometrics").exists(),
+            "has_participants": (project_path / "rawdata" / "participants.json").exists(),
             "has_external_library": library_info.get("effective_external_path") is not None,
         }
     })
@@ -404,7 +403,7 @@ def get_participants_schema():
         }), 400
 
     project_path = Path(current["path"])
-    participants_path = project_path / "participants.json"
+    participants_path = project_path / "rawdata" / "participants.json"
 
     if not participants_path.exists():
         return jsonify({
@@ -477,7 +476,7 @@ def save_participants_schema():
         schema = {"participant_id": {"Description": "Unique participant identifier"}, **schema}
 
     project_path = Path(current["path"])
-    participants_path = project_path / "participants.json"
+    participants_path = project_path / "rawdata" / "participants.json"
 
     try:
         with open(participants_path, "w", encoding="utf-8") as f:
@@ -509,7 +508,7 @@ def get_dataset_description():
         }), 400
 
     project_path = Path(current["path"])
-    desc_path = project_path / "dataset_description.json"
+    desc_path = project_path / "rawdata" / "dataset_description.json"
 
     if not desc_path.exists():
         return jsonify({
@@ -557,7 +556,7 @@ def save_dataset_description():
 
     description = data["description"]
     project_path = Path(current["path"])
-    desc_path = project_path / "dataset_description.json"
+    desc_path = project_path / "rawdata" / "dataset_description.json"
 
     try:
         # Ensure name remains standard BIDS 'Name' (case sensitivity)
@@ -601,7 +600,7 @@ def get_participants_columns():
         return jsonify({"error": "No project selected"}), 400
 
     project_path = Path(current["path"])
-    tsv_path = project_path / "participants.tsv"
+    tsv_path = project_path / "rawdata" / "participants.tsv"
 
     if not tsv_path.exists():
         return jsonify({"columns": {}})

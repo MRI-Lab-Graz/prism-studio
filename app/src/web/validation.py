@@ -102,6 +102,16 @@ def run_validation(
     Returns:
         Tuple of (issues list, stats object)
     """
+    # Support YODA layout: if dataset_path contains a rawdata/ folder, validate that instead
+    # but only if it contains a dataset_description.json (BIDS root marker)
+    orig_dataset_path = dataset_path
+    if os.path.isdir(os.path.join(dataset_path, "rawdata")):
+        raw_marker = os.path.join(dataset_path, "rawdata", "dataset_description.json")
+        if os.path.exists(raw_marker):
+            dataset_path = os.path.join(dataset_path, "rawdata")
+            if progress_callback:
+                progress_callback(0, "Detected YODA layout, validating rawdata/ folder...")
+
     core_validate = _get_core_validator()
 
     # Try to use core validator directly first

@@ -187,10 +187,17 @@
                             </div>
                             <small class="text-muted">Parent folder where the project will be created</small>
                         </div>
-                        <div class="col-md-6">
-                            <label for="projectSessions" class="form-label fw-bold">Number of Sessions</label>
-                            <input type="number" class="form-control" id="projectSessions" min="1" max="99" value="1">
-                            <small class="text-muted">Records how many sessions your study uses (shown in the README).</small>
+                        
+                        <div class="col-12">
+                            <div class="alert alert-info border-0 bg-info bg-opacity-10 mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>YODA Layout:</strong> This will create a project following 
+                                <a href="https://handbook.datalad.org/en/latest/basics/101-127-yoda.html" target="_blank">YODA principles</a>.
+                                Raw data goes into <code>rawdata/</code> (validation runs only there), code into <code>code/</code>, and results into <code>analysis/</code>.
+                                <div class="mt-2 small text-muted">
+                                    Includes <code>project.json</code>, <code>contributors.json</code>, <code>CITATION.cff</code>, and <code>derivatives/qc/</code> for scientific project governance.
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Modern BIDS Metadata Section -->
@@ -253,7 +260,7 @@
                                         <div class="col-md-12">
                                             <label for="projectDescription" class="form-label fw-bold">Dataset Description</label>
                                             <textarea class="form-control" id="projectDescription" rows="2" placeholder="Scientific description..."></textarea>
-                                            <small class="text-muted">Minimum 50 characters requested for FAIR compliance.</small>
+                                            <small class="text-muted">Saved to <code>rawdata/dataset_description.json</code> (BIDS). Minimum 50 characters requested for FAIR compliance.</small>
                                         </div>
                                         <div class="col-md-12">
                                             <label for="projectHowToAcknowledge" class="form-label fw-bold">How to Acknowledge</label>
@@ -268,47 +275,6 @@
                             </div>
                         </div>
 
-                        <div class="col-12">
-                            <label class="form-label fw-bold">Modalities</label>
-                            <small class="text-muted d-block mb-2">Select which data types your study will collect</small>
-                            <div class="row">
-                                <div class="col-md-4 col-lg-2">
-                                    <div class="form-check modality-checkbox">
-                                        <input class="form-check-input" type="checkbox" id="mod-survey" name="modalities" value="survey" checked>
-                                        <label class="form-check-label" for="mod-survey">survey</label>
-                                    </div>
-                                    <small class="text-muted ms-4">Questionnaires</small>
-                                </div>
-                                <div class="col-md-4 col-lg-2">
-                                    <div class="form-check modality-checkbox">
-                                        <input class="form-check-input" type="checkbox" id="mod-biometrics" name="modalities" value="biometrics" checked>
-                                        <label class="form-check-label" for="mod-biometrics">biometrics</label>
-                                    </div>
-                                    <small class="text-muted ms-4">Physical tests</small>
-                                </div>
-                                <div class="col-md-4 col-lg-2">
-                                    <div class="form-check modality-checkbox">
-                                        <input class="form-check-input" type="checkbox" id="mod-physio" name="modalities" value="physio" checked>
-                                        <label class="form-check-label" for="mod-physio">physio</label>
-                                    </div>
-                                    <small class="text-muted ms-4">ECG, EDA, etc.</small>
-                                </div>
-                                <div class="col-md-4 col-lg-2">
-                                    <div class="form-check modality-checkbox">
-                                        <input class="form-check-input" type="checkbox" id="mod-eyetracking" name="modalities" value="eyetracking" checked>
-                                        <label class="form-check-label" for="mod-eyetracking">eyetracking</label>
-                                    </div>
-                                    <small class="text-muted ms-4">Gaze data</small>
-                                </div>
-                                <div class="col-md-4 col-lg-2">
-                                    <div class="form-check modality-checkbox">
-                                        <input class="form-check-input" type="checkbox" id="mod-events" name="modalities" value="events" checked>
-                                        <label class="form-check-label" for="mod-events">events</label>
-                                    </div>
-                                    <small class="text-muted ms-4">Experiment timing</small>
-                                </div>
-                            </div>
-                        </div>
                         <div class="col-12 mt-4">
                             <button type="submit" class="btn btn-success btn-lg">
                                 <i class="fas fa-folder-plus me-2"></i>Create Project
@@ -427,7 +393,7 @@
                                     <div id="projectLibraryInfo" class="text-truncate">
                                         <span class="text-muted">Select a project</span>
                                     </div>
-                                    <small class="text-muted">Path: <code>project/code/library/survey/*.json</code> (legacy <code>project/library/survey/*.json</code>)</small>
+                                    <small class="text-muted">Path: <code>project/library/survey/*.json</code> (Root level)</small>
                                 </div>
                             </div>
                         </div>
@@ -445,13 +411,18 @@
     <div class="card shadow-sm mt-4" id="projectMetadataCard" style="display: none;">
         <div class="card-header bg-primary bg-opacity-10">
             <h5 class="mb-0 d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-tags text-primary me-2"></i>Dataset Description</span>
+                <span><i class="fas fa-tags text-primary me-2"></i>BIDS dataset_description.json (rawdata/)</span>
                 <span class="badge bg-primary">v1.10.1</span>
             </h5>
         </div>
         <div class="card-body">
             <!-- Metadata Validation Feedback -->
             <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
+            <div class="alert alert-info border-0 bg-info bg-opacity-10">
+                <i class="fas fa-info-circle me-2"></i>
+                This section edits <code>rawdata/dataset_description.json</code> and must remain BIDS-valid.
+                Project-level governance metadata is stored at the root (<code>project.json</code>, <code>contributors.json</code>, <code>CITATION.cff</code>).
+            </div>
             
             <form id="projectMetadataForm">
                 <div class="row g-3">
@@ -898,12 +869,6 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
         btn.disabled = true;
 
-        // Get selected modalities
-        const modalities = [];
-        document.querySelectorAll('input[name="modalities"]:checked').forEach(cb => {
-            modalities.push(cb.value);
-        });
-
         // Combine path and project name
         const separator = projectPath.includes('/') ? '/' : '\\';
         const fullPath = projectPath + separator + projectName;
@@ -911,8 +876,6 @@
         const data = {
             path: fullPath,
             name: projectName,
-            sessions: parseInt(document.getElementById('projectSessions').value),
-            modalities: modalities,
             // Modern BIDS metadata
             authors: document.getElementById('projectAuthors').value.split(',').map(s => s.trim()).filter(s => s),
             license: document.getElementById('projectLicense').value,
@@ -1047,7 +1010,10 @@
 
             let html = `
                 <div class="validation-result ${statusClass}">
-                    <h5><i class="fas fa-${statusIcon} me-2"></i>${statusText}</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0"><i class="fas fa-${statusIcon} me-2"></i>${statusText}</h5>
+                        ${stats.is_yoda ? '<span class="badge bg-info"><i class="fas fa-microchip me-1"></i>YODA Layout</span>' : ''}
+                    </div>
                     <p class="text-success mb-3"><i class="fas fa-folder-open me-1"></i>This project is now your current working project. <a href="${window.location.href}">Refresh</a> to see it in the navbar.</p>
 
                     <div class="stats-grid">

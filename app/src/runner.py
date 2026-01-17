@@ -63,6 +63,16 @@ def validate_dataset(
         if progress_callback:
             progress_callback(current, total, message, file_path)
 
+    # Support YODA layout: if root_dir contains a rawdata/ folder, validate that instead
+    # This ensures we skip analysis, paper, sourcedata, etc.
+    if os.path.isdir(os.path.join(root_dir, "rawdata")):
+        rawdata_marker = os.path.join(root_dir, "rawdata", "dataset_description.json")
+        if os.path.exists(rawdata_marker):
+            if verbose:
+                print(f"ℹ️  YODA layout detected. Focusing validation on {os.path.join(root_dir, 'rawdata')}")
+            root_dir = os.path.join(root_dir, "rawdata")
+            report_progress(0, 100, "Detected YODA layout, switching focus to rawdata/...")
+
     report_progress(0, 100, "Loading schemas...")
 
     # Load schemas with specified version

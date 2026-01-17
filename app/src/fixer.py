@@ -72,6 +72,15 @@ class DatasetFixer:
         """
         self.dataset_path = os.path.abspath(dataset_path)
         self.dry_run = dry_run
+        
+        # Determine BIDS root (support YODA layout)
+        self.bids_path = self.dataset_path
+        if os.path.isdir(os.path.join(self.dataset_path, "rawdata")):
+            # If rawdata exists AND (is empty OR contains BIDS markers), treat it as BIDS root
+            rawdata = os.path.join(self.dataset_path, "rawdata")
+            if not os.listdir(rawdata) or os.path.exists(os.path.join(rawdata, "dataset_description.json")):
+                self.bids_path = rawdata
+
         self.fixes: List[FixAction] = []
         self._analyzed = False
 
@@ -177,13 +186,13 @@ class DatasetFixer:
 
     def _check_dataset_description(self):
         """Check for missing dataset_description.json"""
-        desc_path = os.path.join(self.dataset_path, "dataset_description.json")
+        desc_path = os.path.join(self.bids_path, "dataset_description.json")
 
         if not os.path.exists(desc_path):
             # Create a template
             template = {
                 "Name": os.path.basename(self.dataset_path),
-                "BIDSVersion": "1.9.0",
+                "BIDSVersion": "1.10.1",
                 "DatasetType": "raw",
                 "License": "CC0",
                 "Authors": ["TODO: Add author names"],
@@ -206,10 +215,10 @@ class DatasetFixer:
 
     def _check_bidsignore(self):
         """Check for missing .bidsignore entries"""
-        bidsignore_path = os.path.join(self.dataset_path, ".bidsignore")
+        bidsignore_path = os.path.join(self.bids_path, ".bidsignore")
 
         # PRISM-specific folders that should be in .bidsignore
-        prism_folders = ["survey/", "biometrics/", "physio/", "eyetracking/"]
+        prism_folders = ["survey/", "biometrics/", "physio/", "eyetracking/", "events/"]
 
         existing_rules = set()
         if os.path.exists(bidsignore_path):
@@ -222,12 +231,12 @@ class DatasetFixer:
 
         missing_rules = [r for r in prism_folders if r not in existing_rules]
 
-        # Check if any PRISM folders actually exist
+        # Check if any PRISM folders actually exist in the BIDS root
         folders_present = []
         for folder in missing_rules:
             folder_name = folder.rstrip("/")
-            # Check if folder exists at any level
-            for root, dirs, files in os.walk(self.dataset_path):
+            # Check if folder exists at any level within BIDS root
+            for root, dirs, files in os.walk(self.bids_path):
                 if folder_name in dirs:
                     folders_present.append(folder)
                     break
@@ -266,13 +275,13 @@ class DatasetFixer:
         # Extensions that need sidecars
         data_extensions = {".tsv", ".edf", ".nii", ".nii.gz"}
 
-        for root, dirs, files in os.walk(self.dataset_path):
+        for root, dirs, files in os.walk(self.bids_path):
             # Skip hidden directories and common non-data directories
             dirs[:] = [
                 d
                 for d in dirs
                 if not d.startswith(".")
-                and d not in ["code", "recipes", "derivatives", "sourcedata"]
+                and d not in ["code", "library", "recipe", "recipes", "derivatives", "sourcedata", "analysis", "paper"]
             ]
 
             for filename in files:
@@ -330,7 +339,7 @@ class DatasetFixer:
         if not os.path.exists(config_path) and not os.path.exists(alt_config_path):
             config = {
                 "schemaVersion": "stable",
-                "ignorePaths": ["recipes/**", "derivatives/**", "sourcedata/**", "code/**"],
+                "ignorePaths": ["derivatives/**", "sourcedata/**", "analysis/**", "paper/**", "code/**"],
                 "strictMode": False,
                 "runBids": False,
             }
