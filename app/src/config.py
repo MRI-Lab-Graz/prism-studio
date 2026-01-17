@@ -34,9 +34,12 @@ from typing import Dict, List, Optional, Any
 CONFIG_FILENAMES = [".prismrc.json", "prism.config.json"]
 
 DEFAULT_IGNORE_PATTERNS = [
-    "recipes/**",
+    "library/**",
+    "recipe/**",
     "derivatives/**",
     "sourcedata/**",
+    "analysis/**",
+    "paper/**",
     "code/**",
     ".git/**",
     ".datalad/**",

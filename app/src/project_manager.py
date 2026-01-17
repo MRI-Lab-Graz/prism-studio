@@ -88,37 +88,37 @@ class ProjectManager:
                     "success": False,
                     "error": f"Directory '{path}' already exists and is not empty"
                 }
-        sessions = max(1, config.get("sessions", 1))  # Minimum 1 session
-        modalities = config.get("modalities", PRISM_MODALITIES)  # All modalities by default
-
-        # Validate modalities
-        invalid_mods = [m for m in modalities if m not in PRISM_MODALITIES]
-        if invalid_mods:
-            return {
-                "success": False,
-                "error": f"Invalid modalities: {invalid_mods}. Valid: {PRISM_MODALITIES}"
-            }
+        
+        # In the new YODA layout, sessions and modalities are not pre-selected.
+        # We always create a standard structure that is populated later.
+        sessions = 0  # Default to 0, since it's for later import
+        modalities = ["survey", "biometrics"] # Default core modalities for folders
 
         created_files = []
 
         try:
             # Create project root
             project_path.mkdir(parents=True, exist_ok=True)
+            
+            # Create BIDS root (rawdata/)
+            rawdata_path = project_path / "rawdata"
+            rawdata_path.mkdir(exist_ok=True)
+            created_files.append("rawdata/")
 
-            # 1. Create dataset_description.json
-            desc_path = project_path / "dataset_description.json"
+            # 1. Create dataset_description.json in rawdata/
+            desc_path = rawdata_path / "dataset_description.json"
             desc_content = self._create_dataset_description(name, config)
             CrossPlatformFile.write_text(str(desc_path), json.dumps(desc_content, indent=2))
-            created_files.append("dataset_description.json")
+            created_files.append("rawdata/dataset_description.json")
 
-            # 2. Create participants.tsv with example row
-            tsv_path = project_path / "participants.tsv"
+            # 2. Create participants.tsv in rawdata/
+            tsv_path = rawdata_path / "participants.tsv"
             tsv_content = self._create_participants_tsv()
             CrossPlatformFile.write_text(str(tsv_path), tsv_content)
-            created_files.append("participants.tsv")
+            created_files.append("rawdata/participants.tsv")
 
-            # 3. Copy participants.json template
-            json_path = project_path / "participants.json"
+            # 3. Copy participants.json template to rawdata/
+            json_path = rawdata_path / "participants.json"
             template_json = self.template_dir / "participants.json"
             if template_json.exists():
                 shutil.copy(str(template_json), str(json_path))
@@ -130,37 +130,63 @@ class ProjectManager:
                     "sex": {"Description": "Biological sex", "Levels": {"M": "Male", "F": "Female"}}
                 }
                 CrossPlatformFile.write_text(str(json_path), json.dumps(minimal, indent=2))
-            created_files.append("participants.json")
+            created_files.append("rawdata/participants.json")
 
-            # 4. Create .bidsignore
-            bidsignore_path = project_path / ".bidsignore"
+            # 4. Create .bidsignore in rawdata/
+            bidsignore_path = rawdata_path / ".bidsignore"
             bidsignore_content = self._create_bidsignore(modalities)
             CrossPlatformFile.write_text(str(bidsignore_path), bidsignore_content)
-            created_files.append(".bidsignore")
+            created_files.append("rawdata/.bidsignore")
 
-            # 5. Create .prismrc.json
+            # 5. Create .prismrc.json in root (controls project-wide validation)
             prismrc_path = project_path / ".prismrc.json"
             prismrc_content = self._create_prismrc()
             CrossPlatformFile.write_text(str(prismrc_path), json.dumps(prismrc_content, indent=2))
             created_files.append(".prismrc.json")
 
-            # 6. Create README.md with instructions
+            # 6. Create README.md in root
             readme_path = project_path / "README.md"
             readme_content = self._create_readme(name, sessions, modalities)
             CrossPlatformFile.write_text(str(readme_path), readme_content)
             created_files.append("README.md")
 
-            # 7. Create CHANGES file (Recommended by BIDS)
-            changes_path = project_path / "CHANGES"
+            # 7. Create project governance files in root
+            project_metadata_path = project_path / "project.json"
+            project_metadata = self._create_project_metadata(name, config)
+            CrossPlatformFile.write_text(
+                str(project_metadata_path), json.dumps(project_metadata, indent=2, ensure_ascii=False)
+            )
+            created_files.append("project.json")
+
+            contributors_path = project_path / "contributors.json"
+            contributors = self._create_contributors_template(config)
+            CrossPlatformFile.write_text(
+                str(contributors_path), json.dumps(contributors, indent=2, ensure_ascii=False)
+            )
+            created_files.append("contributors.json")
+
+            citation_path = project_path / "CITATION.cff"
+            citation_content = self._create_citation_cff(name, config)
+            CrossPlatformFile.write_text(str(citation_path), citation_content)
+            created_files.append("CITATION.cff")
+
+            # 8. Create CHANGES file in rawdata/
+            changes_path = rawdata_path / "CHANGES"
             changes_content = f"1.0.0 {date.today().isoformat()}\n  - Initial dataset structure created and validated via PRISM.\n"
             CrossPlatformFile.write_text(str(changes_path), changes_content)
-            created_files.append("CHANGES")
+            created_files.append("rawdata/CHANGES")
 
-            # 8. Create BIDS standard folders
-            bids_folders = self._create_bids_folders(project_path)
-            created_files.extend(bids_folders)
+            # 9. Create YODA standard folders (sourcedata, derivatives, analysis, paper, code)
+            yoda_folders = self._create_yoda_folders(project_path)
+            created_files.extend(yoda_folders)
 
-            # 9. Create library folder structure for templates
+            # 10. Create data dictionary template in sourcedata/
+            data_dictionary_path = project_path / "sourcedata" / "data_dictionary.tsv"
+            data_dictionary_content = self._create_data_dictionary()
+            CrossPlatformFile.write_text(str(data_dictionary_path), data_dictionary_content)
+            created_files.append("sourcedata/data_dictionary.tsv")
+
+            # 11. Create library & recipe folder structure in project root
             library_files = self._create_library_structure(project_path, modalities)
             created_files.extend(library_files)
 
@@ -219,11 +245,18 @@ class ProjectManager:
             "has_dataset_description": False,
             "has_participants_tsv": False,
             "has_participants_json": False,
-            "has_bidsignore": False
+            "has_bidsignore": False,
+            "is_yoda": False
         }
 
-        # Check root files
-        if (project_path / "dataset_description.json").exists():
+        # Determine BIDS root: check for rawdata/ first (YODA layout)
+        bids_root = project_path
+        if (project_path / "rawdata").is_dir() and (project_path / "rawdata" / "dataset_description.json").exists():
+            bids_root = project_path / "rawdata"
+            stats["is_yoda"] = True
+
+        # Check root files (in the identified BIDS root)
+        if (bids_root / "dataset_description.json").exists():
             stats["has_dataset_description"] = True
         else:
             code = "PRISM001"
@@ -236,7 +269,7 @@ class ProjectManager:
             })
             fixable_issues.append(code)
 
-        if (project_path / "participants.tsv").exists():
+        if (bids_root / "participants.tsv").exists():
             stats["has_participants_tsv"] = True
         else:
             code = "PRISM002"
@@ -248,14 +281,14 @@ class ProjectManager:
                 "fixable": False
             })
 
-        if (project_path / "participants.json").exists():
+        if (bids_root / "participants.json").exists():
             stats["has_participants_json"] = True
 
-        if (project_path / ".bidsignore").exists():
+        if (bids_root / ".bidsignore").exists():
             stats["has_bidsignore"] = True
 
-        # Scan for subjects
-        for item in project_path.iterdir():
+        # Scan for subjects in BIDS root
+        for item in bids_root.iterdir():
             if item.is_dir() and item.name.startswith("sub-"):
                 stats["subjects"] += 1
 
@@ -451,8 +484,12 @@ class ProjectManager:
             "strictMode": False,
             "runBids": False,
             "ignorePaths": [
+                "library/**",
+                "recipe/**",
                 "sourcedata/**",
                 "derivatives/**",
+                "analysis/**",
+                "paper/**",
                 "code/**"
             ]
         }
@@ -460,142 +497,101 @@ class ProjectManager:
     def _create_readme(
         self, name: str, sessions: int, modalities: List[str]
     ) -> str:
-        """Create README.md content with instructions."""
+        """Create README.md content with YODA instructions."""
         today = date.today().isoformat()
 
         content = f"""# {name}
 
-PRISM/BIDS-compatible dataset created on {today}.
+PRISM/BIDS-compatible dataset (YODA layout) created on {today}.
 
 ## Structure
 
-This project uses the PRISM framework for psychological research data.
+This project follows the YODA principles for data management, keeping raw data, code, and papers together.
 
-### Modalities included:
-"""
-        for mod in modalities:
-            content += f"- `{mod}/`\n"
-
-        if sessions > 0:
-            content += f"\n### Sessions: {sessions}\n"
-        else:
-            content += "\n### Sessions: None (single timepoint)\n"
-
-        content += """
-## Getting Started
-
-1. **Create subject folders**: Make `sub-<label>/` directories (add `ses-01/` … if your study uses sessions) and place modality TSV files beneath them.
-2. **Add metadata sidecars**: Every modality TSV needs a matching `.json` sidecar describing the data.
-3. **Populate participants.tsv**: Add each subject here and keep descriptions synchronized with `participants.json`.
-4. **Store raw & derived data**: Use the `sourcedata/` and `derivatives/` folders for source exports and processed outputs.
-5. **Validate**: Run PRISM validation to confirm structural and metadata compliance before sharing.
-
-## Project Structure
+### Project Layout
 
 ```
 project/
-├── dataset_description.json   # Dataset metadata (update Authors!)
-├── participants.tsv           # Participant demographics
-├── participants.json          # Column descriptions for participants.tsv
-├── .bidsignore                # Excludes PRISM folders from BIDS validation
-├── .prismrc.json              # PRISM validation settings
-├── README.md                  # This file
+├── rawdata/                # PRISM/BIDS compatible dataset (Validated)
+│   ├── dataset_description.json
+│   ├── participants.tsv
+│   └── sub-<label>/
 │
-├── sub-<label>/               # Create your subject folders here
-│   ├── ses-01/                # Session folder (if applicable)
-│   │   ├── survey/
-│   │   └── biometrics/
-│   └── ses-02/                # Add more sessions (if used)
-│       ├── survey/
-│       └── biometrics/
+├── sourcedata/             # Raw source files (LimeSurvey exports, etc.)
 │
-├── sourcedata/                # Raw source files (before BIDS conversion)
-│   └── README                 # Describe incoming formats (Excel, LimeSurvey, etc.)
+├── derivatives/            # Processed/derived outputs (scored surveys)
+│   └── qc/                 # Quality control reports
 │
-├── derivatives/               # Processed/derived outputs
-│   └── README                 # e.g., scoring, analysis, recipe exports
+├── analysis/               # Analysis scripts and results
 │
-├── code/                      # Analysis scripts
-│   └── README                 # R, Python, SPSS, etc.
+├── paper/                  # Manuscripts and figures
 │
-├── stimuli/                   # Stimulus files (images, audio, etc.)
+├── stimuli/                # Stimulus files (images, audio, etc.)
 │
-└── code/library/              # JSON templates for conversion
-    ├── survey/                # Survey JSON templates (LimeSurvey imports)
-    └── biometrics/            # Biometrics JSON templates
+├── library/                # JSON templates for conversion (Survey/Biometrics)
+│
+├── recipe/                 # Transformation recipes
+│
+├── code/                   # Project-specific scripts and tools
+│
+├── project.json            # Study-level metadata (funding, ethics, links)
+├── contributors.json       # CRediT roles and contributor list
+├── CITATION.cff            # Dataset citation metadata
+├── .prismrc.json           # PRISM validation settings
+└── README.md               # This file
 ```
 
-## BIDS Standard Folders
+## Getting Started
 
-- `sourcedata/` - Place original/raw data files here before converting to BIDS format
-- `derivatives/` - Processed outputs (Recipes & Scoring writes to `derivatives/recipes/`)
-- `code/` - Analysis scripts (R, Python, SPSS syntax, etc.)
-- `stimuli/` - Stimulus files used in the study (images, audio, etc.)
-
-## Library Folder
-
-The `code/library/` folder contains JSON templates for your questionnaires and biometrics.
-Use these with the Converter tool to process raw data into PRISM format.
-
-- `code/library/survey/` - Place survey JSON templates here (e.g., from LimeSurvey import)
-- `code/library/biometrics/` - Place biometrics JSON templates here
-
-Note: The root `participants.json` is used for both BIDS compliance and the library.
-When using the Converter, point "Template Library Root" to the `code/library/` folder.
+1. **Populate rawdata**: Use the PRISM Converter to move data from `sourcedata/` to `rawdata/`.
+2. **Use the Library**: Store your `.json` templates in `library/survey/` or `library/biometrics/`.
+3. **Define Recipes**: Use `recipe/` to store scoring logic and data transformations.
+4. **Validate**: Point the PRISM Validator to the `rawdata/` folder to check compliance.
 
 ## Resources
 
 - PRISM Documentation: https://prism-studio.readthedocs.io/
 - BIDS Specification: https://bids-specification.readthedocs.io/
+- YODA Principles: https://handbook.datalad.org/en/latest/basics/101-127-yoda.html
 """
         return content
 
-    def _create_bids_folders(self, project_path: Path) -> List[str]:
-        """Create standard BIDS folder structure."""
+    def _create_yoda_folders(self, project_path: Path) -> List[str]:
+        """Create standard YODA folder structure."""
         created = []
 
-        # sourcedata/ - for raw source files before BIDS conversion
-        sourcedata_path = project_path / "sourcedata"
-        sourcedata_path.mkdir(exist_ok=True)
-        created.append("sourcedata/")
+        # List of folders to create in the project root
+        folders = ["sourcedata", "derivatives", "analysis", "paper", "code"]
+        for folder in folders:
+            path = project_path / folder
+            path.mkdir(exist_ok=True)
+            created.append(f"{folder}/")
 
-        # Add README to sourcedata
-        sourcedata_readme = sourcedata_path / "README"
-        CrossPlatformFile.write_text(
-            str(sourcedata_readme),
-            "Place original/raw data files here before converting to BIDS format.\n"
-            "Examples: Excel exports, LimeSurvey archives (.lsa), raw physio recordings.\n"
-        )
-        created.append("sourcedata/README")
+            # Add README to each
+            readme_path = path / "README"
+            content = ""
+            if folder == "sourcedata":
+                content = "Place original/raw data files here before converting to BIDS/PRISM format.\n"
+            elif folder == "derivatives":
+                content = "Processed and derived data outputs (e.g. scored surveys) go here.\n"
+            elif folder == "analysis":
+                content = "Code and results for statistical analysis.\n"
+            elif folder == "paper":
+                content = "Manuscripts, figures, and publication-related files.\n"
+            elif folder == "code":
+                content = "Project-specific scripts and tools.\n"
+            
+            CrossPlatformFile.write_text(str(readme_path), content)
+            created.append(f"{folder}/README")
 
-        # derivatives/ - for processed/derived data
-        derivatives_path = project_path / "derivatives"
-        derivatives_path.mkdir(exist_ok=True)
-        created.append("derivatives/")
-
-        # Add README to derivatives
-        derivatives_readme = derivatives_path / "README"
-        CrossPlatformFile.write_text(
-            str(derivatives_readme),
-            "Processed and derived data outputs go here.\n"
-            "Examples: Scored survey data, computed metrics, analysis outputs.\n"
-            "The 'Recipes & Scoring' feature writes outputs to derivatives/recipes/.\n"
-        )
-        created.append("derivatives/README")
-
-        # code/ - for analysis scripts
-        code_path = project_path / "code"
-        code_path.mkdir(exist_ok=True)
-        created.append("code/")
-
-        # Add README to code
-        code_readme = code_path / "README"
-        CrossPlatformFile.write_text(
-            str(code_readme),
-            "Place your analysis scripts here.\n"
-            "Examples: R scripts, Python notebooks, SPSS syntax files.\n"
-        )
-        created.append("code/README")
+            if folder == "derivatives":
+                qc_path = path / "qc"
+                qc_path.mkdir(exist_ok=True)
+                created.append("derivatives/qc/")
+                qc_readme_path = qc_path / "README"
+                qc_content = "Quality control reports, validator outputs, and data snapshots.\n"
+                CrossPlatformFile.write_text(str(qc_readme_path), qc_content)
+                created.append("derivatives/qc/README")
 
         # stimuli/ - optional, for stimulus files
         stimuli_path = project_path / "stimuli"
@@ -607,46 +603,111 @@ When using the Converter, point "Template Library Root" to the `code/library/` f
     def _create_library_structure(
         self, project_path: Path, modalities: List[str]
     ) -> List[str]:
-        """Create library folder structure for templates."""
+        """Create library & recipe folder structure in project root."""
         created = []
-        library_root = project_path / "code" / "library"
-
-        # Create library root under the ignored code/ folder
+        
+        # 1. Library Root (JSON templates)
+        library_root = project_path / "library"
         library_root.mkdir(parents=True, exist_ok=True)
-        created.append("code/library/")
+        created.append("library/")
 
-        # Create modality subfolders
-        if "survey" in modalities:
-            survey_path = library_root / "survey"
-            survey_path.mkdir(exist_ok=True)
-            created.append("code/library/survey/")
+        # 2. Recipe Root (Transformation logic)
+        recipe_root = project_path / "recipe"
+        recipe_root.mkdir(parents=True, exist_ok=True)
+        created.append("recipe/")
 
-            # Create example survey template
-            example_survey = self._create_example_survey_template()
-            example_path = survey_path / "survey-example.json"
-            CrossPlatformFile.write_text(
-                str(example_path), json.dumps(example_survey, indent=2, ensure_ascii=False)
-            )
-            created.append("code/library/survey/survey-example.json")
+        # Create modality subfolders for both library and recipe
+        core_mods = ["survey", "biometrics"]
+        for mod in core_mods:
+            # Library folders
+            lib_mod_path = library_root / mod
+            lib_mod_path.mkdir(exist_ok=True)
+            created.append(f"library/{mod}/")
 
-        if "biometrics" in modalities:
-            biometrics_path = library_root / "biometrics"
-            biometrics_path.mkdir(exist_ok=True)
-            created.append("code/library/biometrics/")
+            if mod == "survey":
+                example_survey = self._create_example_survey_template()
+                lib_example_path = lib_mod_path / "survey-example.json"
+                CrossPlatformFile.write_text(
+                    str(lib_example_path), json.dumps(example_survey, indent=2, ensure_ascii=False)
+                )
+                created.append(f"library/{mod}/survey-example.json")
+            elif mod == "biometrics":
+                example_bio = self._create_example_biometrics_template()
+                lib_example_path = lib_mod_path / "biometrics-example.json"
+                CrossPlatformFile.write_text(
+                    str(lib_example_path), json.dumps(example_bio, indent=2, ensure_ascii=False)
+                )
+                created.append(f"library/{mod}/biometrics-example.json")
 
-            # Create example biometrics template
-            example_bio = self._create_example_biometrics_template()
-            example_path = biometrics_path / "biometrics-example.json"
-            CrossPlatformFile.write_text(
-                str(example_path), json.dumps(example_bio, indent=2, ensure_ascii=False)
-            )
-            created.append("code/library/biometrics/biometrics-example.json")
-
-        # Note: participants.json is NOT duplicated in code/library/
-        # The root-level participants.json (BIDS standard) is the single source of truth.
-        # The converter will look for it at the project root.
+            # Recipe folders
+            rec_mod_path = recipe_root / mod
+            rec_mod_path.mkdir(exist_ok=True)
+            created.append(f"recipe/{mod}/")
 
         return created
+
+    def _create_project_metadata(self, name: str, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Create project-level metadata template."""
+        return {
+            "project_name": name,
+            "created": date.today().isoformat(),
+            "funding": config.get("funding", []),
+            "ethics_approvals": config.get("ethics_approvals", []),
+            "contacts": [],
+            "preregistration": "",
+            "data_access": "",
+            "notes": ""
+        }
+
+    def _create_contributors_template(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        """Create contributors template with CRediT roles."""
+        authors = config.get("authors", []) or []
+        contributors = []
+        for author in authors:
+            contributors.append({
+                "name": author,
+                "roles": ["Conceptualization"],
+                "orcid": "",
+                "email": ""
+            })
+        if not contributors:
+            contributors.append({
+                "name": "",
+                "roles": [],
+                "orcid": "",
+                "email": ""
+            })
+        return {
+            "contributors": contributors,
+            "roles_reference": "https://credit.niso.org/"
+        }
+
+    def _create_citation_cff(self, name: str, config: Dict[str, Any]) -> str:
+        """Create a minimal CITATION.cff file."""
+        authors = config.get("authors", []) or []
+        author_lines = "\n".join(
+            [f"  - family-names: {author}\n    given-names: " for author in authors]
+        )
+        if not author_lines:
+            author_lines = "  - family-names: \n    given-names: "
+        title = config.get("name", name)
+        doi = config.get("doi", "")
+        return (
+            "cff-version: 1.2.0\n"
+            f"title: {title}\n"
+            "message: If you use this dataset, please cite it.\n"
+            f"date-released: {date.today().isoformat()}\n"
+            f"doi: {doi}\n"
+            "authors:\n"
+            f"{author_lines}\n"
+        )
+
+    def _create_data_dictionary(self) -> str:
+        """Create a minimal data dictionary template for sourcedata."""
+        return (
+            "file\tcolumn\tname\tunit\tlevels\tdescription\n"
+            "\t\t\t\t\t\n"
+        )
 
     def _create_example_survey_template(self) -> dict:
         """Create an example survey JSON template."""

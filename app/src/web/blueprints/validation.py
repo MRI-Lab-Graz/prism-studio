@@ -41,9 +41,15 @@ def validate_dataset():
     default_library_path = ""
     project_path = session.get("current_project_path")
     if project_path:
+        # Check root library location first (YODA layout)
         candidate = Path(project_path) / "library"
         if candidate.exists() and candidate.is_dir():
             default_library_path = str(candidate)
+        else:
+            # Fallback to legacy code/library location
+            candidate = Path(project_path) / "code" / "library"
+            if candidate.exists() and candidate.is_dir():
+                default_library_path = str(candidate)
 
     return render_template(
         "index.html",
