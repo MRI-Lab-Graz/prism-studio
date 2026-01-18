@@ -23,22 +23,6 @@
       "de": "Sleep Quality",
       "en": ""
     },
-    "Version": {
-      "de": "1.0",
-      "en": ""
-    },
-    "Description": {
-      "de": "The Pittsburgh Sleep Quality Index (PSQI) is a self-rated questionnaire which assesses sleep quality and disturbances over a 1-month time interval.",
-      "en": ""
-    },
-    "Instruction": {
-      "de": "The following questions relate to your usual sleep habits during the past month only. Your answers should indicate the most accurate reply for the majority of days and nights in the past month. Please answer all questions.",
-      "en": ""
-    },
-    "Citation": "",
-    "ShortName": "",
-    "Authors": [],
-    "DOI": "",
     "License": "",
     "LicenseID": "",
     "LicenseURL": "",
@@ -797,22 +781,6 @@
     "Languages": [],
     "DefaultLanguage": "",
     "TranslationMethod": ""
-  },
-  "Scoring": {
-    "ScoringMethod": "",
-    "ScoreRange": {
-      "min": null,
-      "max": null
-    },
-    "Cutoffs": {},
-    "ReverseCodedItems": [],
-    "ReverseCodingScale": {
-      "min": null,
-      "max": null
-    },
-    "CutoffsSource": "",
-    "NormsSource": "",
-    "Subscales": []
   },
   "Normative": {
     "ReferencePopulation": "",

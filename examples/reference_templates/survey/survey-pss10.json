@@ -225,7 +225,6 @@
       }
     },
     "Units": "ordinal",
-    "Scoring": "reverse",
     "Unit": "",
     "TermURL": "",
     "Relevance": "",
@@ -266,7 +265,6 @@
       }
     },
     "Units": "ordinal",
-    "Scoring": "reverse",
     "Unit": "",
     "TermURL": "",
     "Relevance": "",
@@ -347,7 +345,6 @@
       }
     },
     "Units": "ordinal",
-    "Scoring": "reverse",
     "Unit": "",
     "TermURL": "",
     "Relevance": "",
@@ -388,7 +385,6 @@
       }
     },
     "Units": "ordinal",
-    "Scoring": "reverse",
     "Unit": "",
     "TermURL": "",
     "Relevance": "",
@@ -480,22 +476,6 @@
     "DataType": "",
     "SessionHint": "",
     "RunHint": ""
-  },
-  "Scoring": {
-    "ScoringMethod": "",
-    "ScoreRange": {
-      "min": null,
-      "max": null
-    },
-    "Cutoffs": {},
-    "ReverseCodedItems": [],
-    "ReverseCodingScale": {
-      "min": null,
-      "max": null
-    },
-    "CutoffsSource": "",
-    "NormsSource": "",
-    "Subscales": []
   },
   "Normative": {
     "ReferencePopulation": "",

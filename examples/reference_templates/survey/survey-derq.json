@@ -948,22 +948,6 @@
     "DefaultLanguage": "",
     "TranslationMethod": ""
   },
-  "Scoring": {
-    "ScoringMethod": "",
-    "ScoreRange": {
-      "min": null,
-      "max": null
-    },
-    "Cutoffs": {},
-    "ReverseCodedItems": [],
-    "ReverseCodingScale": {
-      "min": null,
-      "max": null
-    },
-    "CutoffsSource": "",
-    "NormsSource": "",
-    "Subscales": []
-  },
   "Normative": {
     "ReferencePopulation": "",
     "ReferenceSource": "",

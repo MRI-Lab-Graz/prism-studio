@@ -23,22 +23,6 @@
       "de": "Aggression",
       "en": ""
     },
-    "Version": {
-      "de": "1.0",
-      "en": ""
-    },
-    "Description": {
-      "de": "The (BPAQ) is a self-report questionnaire designed to assess the extent of aggressive tendencies and hostile behaviors in individuals. It helps clinicians and researchers understand how individuals express and manage their aggressive impulses.\n\nThe BPAQ consists of 29 items that explore various domains associated with aggression, such as physical, verbal, anger, and hostility. Individuals rate each item on a 5-point Likert scale, typically ranging from 1 (extremely uncharacteristic of me) to 5 (extremely characteristic of me). The questionnaire addresses both reactive and proactive aggression, allowing for a comprehensive assessment of aggressive tendencies.",
-      "en": ""
-    },
-    "Instruction": {
-      "de": "Using this 5 point scale, indicate how uncharacteristic or characteristic each of the following statements is in describing you.",
-      "en": ""
-    },
-    "Citation": "",
-    "ShortName": "",
-    "Authors": [],
-    "DOI": "",
     "License": "",
     "LicenseID": "",
     "LicenseURL": "",
@@ -569,22 +553,6 @@
     "Languages": [],
     "DefaultLanguage": "",
     "TranslationMethod": ""
-  },
-  "Scoring": {
-    "ScoringMethod": "",
-    "ScoreRange": {
-      "min": null,
-      "max": null
-    },
-    "Cutoffs": {},
-    "ReverseCodedItems": [],
-    "ReverseCodingScale": {
-      "min": null,
-      "max": null
-    },
-    "CutoffsSource": "",
-    "NormsSource": "",
-    "Subscales": []
   },
   "Normative": {
     "ReferencePopulation": "",

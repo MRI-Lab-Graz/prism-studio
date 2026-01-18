@@ -23,22 +23,6 @@
       "de": "FFKA",
       "en": ""
     },
-    "Version": {
-      "de": "1.0",
-      "en": ""
-    },
-    "Description": {
-      "de": "FFKA",
-      "en": ""
-    },
-    "Instruction": {
-      "de": "Der Freiburger Fragebogen zur k\u00f6rperlichen Aktivit\u00e4t (FFKA) ist ein Fragebogen zur Messung der K\u00f6rperlichen Aktivit\u00e4t",
-      "en": ""
-    },
-    "Citation": "",
-    "ShortName": "",
-    "Authors": [],
-    "DOI": "",
     "License": "",
     "LicenseID": "",
     "LicenseURL": "",
@@ -1061,22 +1045,6 @@
     "Languages": [],
     "DefaultLanguage": "",
     "TranslationMethod": ""
-  },
-  "Scoring": {
-    "ScoringMethod": "",
-    "ScoreRange": {
-      "min": null,
-      "max": null
-    },
-    "Cutoffs": {},
-    "ReverseCodedItems": [],
-    "ReverseCodingScale": {
-      "min": null,
-      "max": null
-    },
-    "CutoffsSource": "",
-    "NormsSource": "",
-    "Subscales": []
   },
   "Normative": {
     "ReferencePopulation": "",

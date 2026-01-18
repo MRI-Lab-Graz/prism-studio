@@ -31,6 +31,8 @@ _NON_ITEM_TOPLEVEL_KEYS = {
     "Technical",
     "Study",
     "Metadata",
+    "Normative",
+    "Scoring",
     # Template metadata (not survey response columns)
     "I18n",
     "LimeSurvey",
