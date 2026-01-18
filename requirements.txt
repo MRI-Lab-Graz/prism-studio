@@ -10,6 +10,7 @@ bids-validator
 pandas
 openpyxl
 waitress
+pyreadstat
 
 # Documentation
 sphinx

@@ -42,6 +42,7 @@ PRISM is an independent, BIDS-compatible dataset validation tool for psychologic
    :caption: Understanding the Data
 
    SPECIFICATIONS
+   RECIPES
    specs/biometrics
    specs/events
    specs/survey

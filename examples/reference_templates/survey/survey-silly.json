@@ -69,7 +69,7 @@
     }
   },
   "Metadata": {
-    "SchemaVersion": "1.1.0",
+    "SchemaVersion": "1.1.1",
     "CreationDate": "2025-12-21",
     "Creator": "convert_legacy_resources.py"
   },

@@ -352,7 +352,9 @@ def cmd_convert_physio(args):
         # sub-XXX_ses-YYY_task-<task>_<suffix>.edf
         out_base = f"{sub_id}_{ses_id}_task-{args.task}_{args.suffix}"
         out_edf = target_dir / f"{out_base}.edf"
-        out_json = target_dir / f"{out_base}.json"
+        
+        # Root sidecar for BIDS inheritance
+        out_root_json = output_dir / f"task-{args.task}_{args.suffix}.json"
 
         print(f"Converting {filename} -> {out_base}.edf")
 
@@ -360,7 +362,7 @@ def cmd_convert_physio(args):
             convert_varioport(
                 str(raw_file),
                 str(out_edf),
-                str(out_json),
+                str(out_root_json),
                 task_name=args.task,
                 base_freq=args.sampling_rate,
             )
@@ -384,9 +386,8 @@ def cmd_convert_physio(args):
             print(f"Error converting {filename}: {e}")
             error_count += 1
 
-    # Consolidate sidecars if requested (or always?)
-    # BIDS inheritance principle
-    consolidate_sidecars(output_dir, args.task, args.suffix)
+    # BIDS inheritance is now handled directly by writing to root during conversion
+    # consolidate_sidecars(output_dir, args.task, args.suffix)
 
     print(f"\nConversion finished. Success: {success_count}, Errors: {error_count}")
 
@@ -1277,16 +1278,18 @@ def main():
 
     parser_deriv_surveys = recipes_subparsers.add_parser(
         "surveys",
+        aliases=["survey", "surves"],
         help="Compute survey scores (e.g., reverse coding, subscales) from TSVs",
     )
     parser_deriv_surveys.add_argument(
         "--prism",
+        "--dataset",
         required=True,
         help="Path to the PRISM dataset root (input + output target)",
     )
     parser_deriv_surveys.add_argument(
         "--repo",
-        default=str(project_root),
+        default=str(project_root.parent) if project_root.name == "app" else str(project_root),
         help=(
             "Path to the PRISM tools repository root (used to locate recipe JSONs under "
             "recipes/surveys/*.json). Default: this script's folder."
@@ -1298,6 +1301,7 @@ def main():
     )
     parser_deriv_surveys.add_argument(
         "--survey",
+        "--task",
         help="Optional comma-separated recipe selection (e.g., 'ADS'). Default: run all matching recipes.",
     )
     parser_deriv_surveys.add_argument(
@@ -1329,59 +1333,20 @@ def main():
         help="Generate a scientific methods boilerplate describing the scoring logic",
     )
 
-    # Backwards/typo-friendly alias matching common usage in docs/notes.
-    parser_deriv_surves = recipes_subparsers.add_parser(
-        "surves",
-        help="Alias for 'surveys'",
-    )
-    parser_deriv_surves.add_argument(
-        "--prism",
-        required=True,
-        help="Path to the PRISM dataset root (input + output target)",
-    )
-    parser_deriv_surves.add_argument(
-        "--repo",
-        default=str(project_root),
-        help=(
-            "Path to the PRISM tools repository root (used to locate recipe JSONs under "
-            "recipes/surveys/*.json). Default: this script's folder."
-        ),
-    )
-    parser_deriv_surves.add_argument(
-        "--survey",
-        help="Optional comma-separated recipe selection (e.g., 'ADS'). Default: run all matching recipes.",
-    )
-    parser_deriv_surves.add_argument(
-        "--format",
-        default="flat",
-        choices=["prism", "flat", "csv", "xlsx", "save", "r"],
-        help="Output format: 'flat' (default), 'prism', 'csv', 'xlsx', 'save' (SPSS), 'r' (feather)",
-    )
-    parser_deriv_surves.add_argument(
-        "--lang",
-        default="en",
-        choices=["en", "de"],
-        help="Language for metadata labels in export formats (default: en)",
-    )
-    parser_deriv_surves.add_argument(
-        "--layout",
-        default="long",
-        choices=["long", "wide"],
-        help="Layout for repeated measures: 'long' (one row per session) or 'wide' (one row per participant)",
-    )
-
     parser_deriv_biometrics = recipes_subparsers.add_parser(
         "biometrics",
+        aliases=["biometric"],
         help="Compute biometric scores (e.g., best of trials, composite scores) from TSVs",
     )
     parser_deriv_biometrics.add_argument(
         "--prism",
+        "--dataset",
         required=True,
         help="Path to the PRISM dataset root (input + output target)",
     )
     parser_deriv_biometrics.add_argument(
         "--repo",
-        default=str(project_root),
+        default=str(project_root.parent) if project_root.name == "app" else str(project_root),
         help=(
             "Path to the PRISM tools repository root (used to locate recipe JSONs under "
             "recipes/biometrics/*.json). Default: this script's folder."
@@ -1393,6 +1358,7 @@ def main():
     )
     parser_deriv_biometrics.add_argument(
         "--biometric",
+        "--task",
         help="Optional comma-separated recipe selection (e.g., 'y_balance'). Default: run all matching recipes.",
     )
     parser_deriv_biometrics.add_argument(
@@ -1707,9 +1673,9 @@ def main():
         else:
             parser_dataset.print_help()
     elif args.command == "recipes":
-        if args.kind in {"surveys", "surves"}:
+        if args.kind in {"surveys", "survey", "surves"}:
             cmd_recipes_surveys(args)
-        elif args.kind == "biometrics":
+        elif args.kind in {"biometrics", "biometric"}:
             cmd_recipes_biometrics(args)
         else:
             parser_recipes.print_help()

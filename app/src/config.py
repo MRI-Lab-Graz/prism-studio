@@ -261,6 +261,9 @@ class AppSettings:
     # Global template library path (shared, read-only templates from Nextcloud/GitLab)
     global_template_library_path: Optional[str] = None
 
+    # Global recipes path (shared scoring recipes)
+    global_recipes_path: Optional[str] = None
+
     # Default modalities for new projects
     default_modalities: List[str] = field(
         default_factory=lambda: ["survey", "biometrics"]
@@ -324,6 +327,7 @@ def load_app_settings(app_root: str = None) -> AppSettings:
 
         settings = AppSettings(
             global_template_library_path=data.get("globalTemplateLibraryPath"),
+            global_recipes_path=data.get("globalRecipesPath"),
             default_modalities=data.get("defaultModalities", ["survey", "biometrics"]),
         )
         settings._settings_path = settings_path
@@ -352,6 +356,7 @@ def save_app_settings(settings: AppSettings, app_root: str = None) -> str:
 
     data = {
         "globalTemplateLibraryPath": settings.global_template_library_path,
+        "globalRecipesPath": settings.global_recipes_path,
         "defaultModalities": settings.default_modalities,
     }
 

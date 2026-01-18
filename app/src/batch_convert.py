@@ -262,55 +262,58 @@ def convert_physio_file(
                 from helpers.physio.convert_varioport import convert_varioport
 
                 out_edf = out_folder / f"{base_name}.edf"
-                out_json = out_folder / f"{base_name}.json"
+                # Write sidecar to root for BIDS inheritance
+                out_root_json = output_dir / f"task-{task.replace('task-', '')}_physio.json"
 
                 convert_varioport(
                     str(source_path),
                     str(out_edf),
-                    str(out_json),
+                    str(out_root_json),
                     task_name=task.replace("task-", ""),
                     base_freq=base_freq,
                 )
 
                 if out_edf.exists():
                     output_files.append(out_edf)
-                if out_json.exists():
-                    output_files.append(out_json)
 
             except ImportError:
-                # Fallback: just copy file and create minimal sidecar
+                # Fallback: just copy file and create root sidecar
                 out_data = out_folder / f"{base_name}.{ext}"
-                out_json = out_folder / f"{base_name}.json"
+                out_root_json = output_dir / f"task-{task.replace('task-', '')}_physio.json"
 
                 shutil.copy2(source_path, out_data)
-                _create_physio_sidecar(
-                    source_path,
-                    out_json,
-                    task_name=task,
-                    sampling_rate=base_freq,
-                )
+                
+                if not out_root_json.exists():
+                    _create_physio_sidecar(
+                        source_path,
+                        out_root_json,
+                        task_name=task,
+                        sampling_rate=base_freq,
+                    )
 
-                output_files.extend([out_data, out_json])
+                output_files.extend([out_data])
         else:
             # For .edf or other formats already in physio-compatible format
             out_data = out_folder / f"{base_name}.{ext}"
-            out_json = out_folder / f"{base_name}.json"
+            out_root_json = output_dir / f"task-{task.replace('task-', '')}_physio.json"
 
             shutil.copy2(source_path, out_data)
 
-            # Extract metadata if it's an EDF file
-            edf_meta = {}
-            if ext == "edf":
-                edf_meta = _extract_edf_metadata(source_path)
+            # Extract metadata if it's an EDF file and root sidecar doesn't exist
+            if not out_root_json.exists():
+                edf_meta = {}
+                if ext == "edf":
+                    edf_meta = _extract_edf_metadata(source_path)
 
-            _create_physio_sidecar(
-                source_path,
-                out_json,
-                task_name=task,
-                sampling_rate=base_freq,
-                extra_meta=edf_meta,
-            )
-            output_files.extend([out_data, out_json])
+                _create_physio_sidecar(
+                    source_path,
+                    out_root_json,
+                    task_name=task,
+                    sampling_rate=base_freq,
+                    extra_meta=edf_meta,
+                )
+            
+            output_files.extend([out_data])
 
         return ConvertedFile(
             source_path=source_path,
@@ -366,7 +369,7 @@ def convert_eyetracking_file(
     base_name = "_".join(parts)
 
     out_edf = out_folder / f"{base_name}.edf"
-    out_json = out_folder / f"{base_name}.json"
+    out_root_json = output_dir / f"task-{task.replace('task-', '')}_eyetrack.json"
 
     output_files = []
 
@@ -375,34 +378,34 @@ def convert_eyetracking_file(
         shutil.copy2(source_path, out_edf)
         output_files.append(out_edf)
 
-        # Create sidecar
-        edf_meta = _extract_edf_metadata(source_path)
-        _create_eyetracking_sidecar(
-            source_path, out_json, task_name=task, extra_meta=edf_meta
-        )
-        output_files.append(out_json)
+        # Create root sidecar if missing
+        if not out_root_json.exists():
+            edf_meta = _extract_edf_metadata(source_path)
+            _create_eyetracking_sidecar(
+                source_path, out_root_json, task_name=task, extra_meta=edf_meta
+            )
 
-        # Try to enrich sidecar with EDF header info if pyedflib is available
-        try:
-            import pyedflib
-            with pyedflib.EdfReader(str(source_path)) as f:
-                with open(out_json, "r", encoding="utf-8") as jf:
-                    sidecar = json.load(jf)
-                
-                if "Technical" not in sidecar:
-                    sidecar["Technical"] = {}
-                
-                # Extract sampling rate (from first signal)
-                if f.signals_in_file > 0:
-                    sidecar["Technical"]["SamplingFrequency"] = f.getSampleFrequency(0)
-                
-                # Extract duration
-                sidecar["Technical"]["Duration"] = f.getFileDuration()
-                
-                with open(out_json, "w", encoding="utf-8") as jf:
-                    json.dump(sidecar, jf, indent=2)
-        except (ImportError, Exception):
-            pass
+            # Try to enrich root sidecar with EDF header info if pyedflib is available
+            try:
+                import pyedflib
+                with pyedflib.EdfReader(str(source_path)) as f:
+                    with open(out_root_json, "r", encoding="utf-8") as jf:
+                        sidecar = json.load(jf)
+                    
+                    if "Technical" not in sidecar:
+                        sidecar["Technical"] = {}
+                    
+                    # Extract sampling rate (from first signal)
+                    if f.signals_in_file > 0:
+                        sidecar["Technical"]["SamplingFrequency"] = f.getSampleFrequency(0)
+                    
+                    # Extract duration
+                    sidecar["Technical"]["Duration"] = f.getFileDuration()
+                    
+                    with open(out_root_json, "w", encoding="utf-8") as jf:
+                        json.dump(sidecar, jf, indent=2)
+            except (ImportError, Exception):
+                pass
 
         return ConvertedFile(
             source_path=source_path,
@@ -491,19 +494,19 @@ def convert_generic_file(
     try:
         shutil.copy2(source_path, out_data)
         
-        # Create a minimal sidecar if it's a data file (not already a json)
+        # Create a minimal root sidecar if it's a data file (not already a json)
         output_files = [out_data]
         if ext != "json":
-            out_json = out_folder / f"{base_name}.json"
-            sidecar = {
-                "Metadata": {
-                    "SourceFile": source_path.name,
-                    "OrganizedBy": "prism batch organizer",
+            out_root_json = output_dir / f"task-{task.replace('task-', '')}_{suffix}.json"
+            if not out_root_json.exists():
+                sidecar = {
+                    "Metadata": {
+                        "SourceFile": source_path.name,
+                        "OrganizedBy": "prism batch organizer",
+                    }
                 }
-            }
-            with open(out_json, "w", encoding="utf-8") as f:
-                json.dump(sidecar, f, indent=2)
-            output_files.append(out_json)
+                with open(out_root_json, "w", encoding="utf-8") as f:
+                    json.dump(sidecar, f, indent=2)
 
         return ConvertedFile(
             source_path=source_path,

@@ -60,6 +60,19 @@ def _strip_internal_keys(sidecar: dict) -> dict:
     return out
 
 
+def _resolve_dataset_root(output_root: Path) -> Path:
+    """Resolve dataset root to avoid writing sidecars into subject/session folders."""
+    parts = list(output_root.parts)
+    cut_idx = None
+    for idx, part in enumerate(parts):
+        if part.startswith("sub-") or part.startswith("ses-"):
+            cut_idx = idx
+            break
+    if cut_idx is None or cut_idx == 0:
+        return output_root
+    return Path(*parts[:cut_idx])
+
+
 @dataclass(frozen=True)
 class SurveyConvertResult:
     tasks_included: list[str]
@@ -679,10 +692,12 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     # --- Write Output ---
     _ensure_dir(output_root)
-    _write_survey_description(output_root, name, authors)
+    dataset_root = _resolve_dataset_root(output_root)
+    _ensure_dir(dataset_root)
+    _write_survey_description(dataset_root, name, authors)
     _write_survey_participants(
         df=df,
-        output_root=output_root,
+        output_root=dataset_root,
         id_col=res_id_col,
         ses_col=res_ses_col,
         participant_template=participant_template,
@@ -692,7 +707,7 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     # Write task sidecars
     for task in sorted(tasks_with_data):
-        sidecar_path = output_root / f"task-{task}_survey.json"
+        sidecar_path = dataset_root / f"task-{task}_survey.json"
         if not sidecar_path.exists() or force:
             localized = _localize_survey_template(templates[task]["json"], language=language)
             localized = _inject_missing_token(localized, token=_MISSING_TOKEN)
@@ -752,7 +767,7 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     # Automatically update .bidsignore to exclude PRISM-specific metadata/folders
     # that standard BIDS validators don't recognize.
-    check_and_update_bidsignore(output_root, ["survey"])
+    check_and_update_bidsignore(dataset_root, ["survey"])
 
     return SurveyConvertResult(
         tasks_included=sorted(tasks_with_data),

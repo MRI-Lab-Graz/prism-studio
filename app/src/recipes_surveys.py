@@ -69,13 +69,21 @@ def _write_json(path: Path, obj: dict) -> None:
         json.dump(obj, f, indent=2, ensure_ascii=False)
 
 
-def _get_sidecar_for_task(dataset_path: Path, prefix: str, name: str) -> dict:
+def _get_sidecar_for_task(dataset_path: Path, prefix: str, name: str, repo_root: Path | None = None) -> dict:
     """Find and load sidecar JSON for a given task/biometric."""
     candidates = [
         dataset_path / f"{prefix}-{name}.json",
         dataset_path / f"{prefix}s" / f"{prefix}-{name}.json",
         dataset_path / f"{name}.json",
     ]
+    
+    # Try library fallback if we have repo_root
+    if repo_root:
+        lib_path = repo_root / "library" / prefix
+        candidates.append(lib_path / f"{prefix}-{name}.json")
+        # Global library folder (outside app/ as well)
+        candidates.append(repo_root.parent / "library" / prefix / f"{prefix}-{name}.json")
+
     for p in candidates:
         if p.exists():
             try:
@@ -424,8 +432,18 @@ def _get_item_value(
     invert_items: set[str],
     invert_min: Any,
     invert_max: Any,
+    alias_map: dict[str, list[str]] = None,
 ) -> float | None:
+    # 1. Direct match
     raw = data.get(item_id)
+    
+    # 2. Try aliases if not found (e.g. item_id="MAIA16", but data has "MAI16")
+    if raw is None and alias_map and item_id in alias_map:
+        for alias_source in alias_map[item_id]:
+            raw = data.get(alias_source)
+            if raw is not None:
+                break
+
     v = _parse_numeric_cell(raw)
     if v is None:
         return None
@@ -465,6 +483,7 @@ def _calculate_derived_variables(
     invert_items: set[str],
     invert_min: Any,
     invert_max: Any,
+    alias_map: dict[str, list[str]] = None,
 ) -> None:
     """Compute derived variables (e.g., averages or formulas) and add to row."""
     for d in derived_cfg:
@@ -479,7 +498,7 @@ def _calculate_derived_variables(
             d_values = []
             for item_id in d_items:
                 v = _get_item_value(
-                    item_id, current_row, invert_items, invert_min, invert_max
+                    item_id, current_row, invert_items, invert_min, invert_max, alias_map=alias_map
                 )
                 if v is not None:
                     d_values.append(v)
@@ -501,7 +520,7 @@ def _calculate_derived_variables(
                 source = d_items[0]
             v = (
                 _get_item_value(
-                    str(source).strip(), current_row, invert_items, invert_min, invert_max
+                    str(source).strip(), current_row, invert_items, invert_min, invert_max, alias_map=alias_map
                 )
                 if source
                 else None
@@ -516,7 +535,7 @@ def _calculate_derived_variables(
                 any_missing = False
                 for item_id in d_items:
                     v = _get_item_value(
-                        item_id, current_row, invert_items, invert_min, invert_max
+                        item_id, current_row, invert_items, invert_min, invert_max, alias_map=alias_map
                     )
                     if v is None:
                         any_missing = True
@@ -539,6 +558,7 @@ def _calculate_scores(
     invert_items: set[str],
     invert_min: Any,
     invert_max: Any,
+    alias_map: dict[str, list[str]] = None,
 ) -> dict[str, str]:
     """Compute primary scores based on recipe methods."""
     out: dict[str, str] = {}
@@ -554,7 +574,7 @@ def _calculate_scores(
         any_missing = False
         for item_id in items:
             v = _get_item_value(
-                item_id, current_row, invert_items, invert_min, invert_max
+                item_id, current_row, invert_items, invert_min, invert_max, alias_map=alias_map
             )
             if v is None:
                 any_missing = True
@@ -571,7 +591,7 @@ def _calculate_scores(
                 # Replace {item_id} with value from current_row (which includes derived)
                 for item_id in items:
                     v = _get_item_value(
-                        item_id, current_row, invert_items, invert_min, invert_max
+                        item_id, current_row, invert_items, invert_min, invert_max, alias_map=alias_map
                     )
                     val_str = str(v) if v is not None else "0.0"
                     expr = expr.replace(f"{{{item_id}}}", val_str)
@@ -585,7 +605,7 @@ def _calculate_scores(
             mapping = score.get("Mapping")
             if source and mapping:
                 val = _get_item_value(
-                    source, current_row, invert_items, invert_min, invert_max
+                    source, current_row, invert_items, invert_min, invert_max, alias_map=alias_map
                 )
                 if val is not None:
                     result = _map_value_to_bucket(val, mapping)
@@ -605,7 +625,10 @@ def _calculate_scores(
 
 
 def _apply_survey_derivative_recipe_to_rows(
-    recipe: dict, rows: list[dict[str, str]], include_raw: bool = False
+    recipe: dict, 
+    rows: list[dict[str, str]], 
+    include_raw: bool = False,
+    sidecar_meta: dict = None
 ) -> tuple[list[str], list[dict[str, str]]]:
     transforms = recipe.get("Transforms", {}) or {}
     invert_cfg = transforms.get("Invert") or {}
@@ -613,6 +636,16 @@ def _apply_survey_derivative_recipe_to_rows(
     invert_scale = invert_cfg.get("Scale") or {}
     invert_min = invert_scale.get("min")
     invert_max = invert_scale.get("max")
+
+    # Build alias map: target_id -> list of source_ids (e.g. MAIA16 -> [MAI16, MAIA2_16])
+    alias_map: dict[str, list[str]] = {}
+    if sidecar_meta:
+        for k, v in sidecar_meta.items():
+            if isinstance(v, dict) and "AliasOf" in v:
+                alias_target = v["AliasOf"]
+                if alias_target not in alias_map:
+                    alias_map[alias_target] = []
+                alias_map[alias_target].append(k)
 
     # Support for Derived variables (e.g. best of trials)
     derived_cfg = transforms.get("Derived") or []
@@ -636,12 +669,12 @@ def _apply_survey_derivative_recipe_to_rows(
 
         # 1) Compute Derived variables first
         _calculate_derived_variables(
-            derived_cfg, current_row, invert_items, invert_min, invert_max
+            derived_cfg, current_row, invert_items, invert_min, invert_max, alias_map=alias_map
         )
 
         # 2) Compute Scores
         out = _calculate_scores(
-            scores, current_row, invert_items, invert_min, invert_max
+            scores, current_row, invert_items, invert_min, invert_max, alias_map=alias_map
         )
 
         if include_raw:
@@ -664,6 +697,9 @@ def _write_recipes_dataset_description(*, out_root: Path, modality: str, prism_r
 
     # Try to inherit some metadata from the root dataset_description.json
     root_desc_path = prism_root / "dataset_description.json"
+    if not root_desc_path.exists() and (prism_root / "rawdata" / "dataset_description.json").exists():
+        root_desc_path = prism_root / "rawdata" / "dataset_description.json"
+
     root_meta = {}
     if root_desc_path.exists():
         try:
@@ -993,19 +1029,25 @@ def _load_and_validate_recipes(
 
 def _find_tsv_files(prism_root: Path, modality: str) -> list[Path]:
     """Scan dataset for TSV files based on modality."""
+    # Handle BIDS project root (which contains rawdata/) vs. direct rawdata/ folder
+    search_roots = [prism_root]
+    if (prism_root / "rawdata").is_dir():
+        search_roots.append(prism_root / "rawdata")
+
     tsv_files: list[Path] = []
-    if modality == "survey":
-        # Search in survey/ and beh/ (BIDS standard)
-        for folder in ("survey", "beh"):
-            tsv_files.extend(prism_root.glob(f"sub-*/ses-*/{folder}/*.tsv"))
-            tsv_files.extend(prism_root.glob(f"sub-*/{folder}/*.tsv"))
-    elif modality == "biometrics":
-        tsv_files.extend(prism_root.glob("sub-*/ses-*/biometrics/*.tsv"))
-        tsv_files.extend(prism_root.glob("sub-*/biometrics/*.tsv"))
-    else:
-        # Fallback: search both
-        tsv_files.extend(prism_root.glob("sub-*/ses-*/*/*.tsv"))
-        tsv_files.extend(prism_root.glob("sub-*/*/*.tsv"))
+    for root in search_roots:
+        if modality == "survey":
+            # Search in survey/ and beh/ (BIDS standard)
+            for folder in ("survey", "beh"):
+                tsv_files.extend(root.glob(f"sub-*/ses-*/{folder}/*.tsv"))
+                tsv_files.extend(root.glob(f"sub-*/{folder}/*.tsv"))
+        elif modality == "biometrics":
+            tsv_files.extend(root.glob("sub-*/ses-*/biometrics/*.tsv"))
+            tsv_files.extend(root.glob("sub-*/biometrics/*.tsv"))
+        else:
+            # Fallback: search both
+            tsv_files.extend(root.glob("sub-*/ses-*/*/*.tsv"))
+            tsv_files.extend(root.glob("sub-*/*/*.tsv"))
 
     return sorted(set([p for p in tsv_files if p.is_file()]))
 
@@ -1017,6 +1059,11 @@ def _load_participants_data(prism_root: Path) -> tuple[Any, dict]:
 
     participants_tsv = prism_root / "participants.tsv"
     participants_json = prism_root / "participants.json"
+
+    # If not in root, check in rawdata/
+    if not participants_tsv.is_file() and (prism_root / "rawdata" / "participants.tsv").is_file():
+        participants_tsv = prism_root / "rawdata" / "participants.tsv"
+        participants_json = prism_root / "rawdata" / "participants.json"
 
     if participants_tsv.is_file():
         try:
@@ -1077,6 +1124,7 @@ def _export_recipe_aggregated(
     participants_meta: dict,
     output_prism_root: Path,
     survey_task: str,
+    repo_root: Path | None = None,
 ) -> tuple[int, int, Path | None, str | None, list[str]]:
     """Process all files for one recipe and write a single aggregated output file."""
     import pandas as pd
@@ -1084,6 +1132,9 @@ def _export_recipe_aggregated(
     rows_accum: list[dict[str, Any]] = []
     processed_count = 0
     final_header = []
+
+    # Pre-load sidecar for alias mapping support in scoring
+    sidecar_meta = _get_sidecar_for_task(output_prism_root, modality, survey_task, repo_root=repo_root)
 
     for in_path in matching:
         processed_count += 1
@@ -1098,7 +1149,7 @@ def _export_recipe_aggregated(
             continue
 
         out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
-            recipe, in_rows, include_raw=include_raw
+            recipe, in_rows, include_raw=include_raw, sidecar_meta=sidecar_meta
         )
         if not out_header:
             continue
@@ -1157,7 +1208,6 @@ def _export_recipe_aggregated(
             df = df.loc[:, [c for c in ordered_cols if c in df.columns]]
 
     # Metadata building
-    sidecar_meta = _get_sidecar_for_task(output_prism_root, modality, survey_task)
     var_labels, val_labels, score_details = _build_variable_metadata(
         list(df.columns),
         participants_meta,
@@ -1280,10 +1330,23 @@ def _export_recipe_legacy(
     include_raw: bool,
     flat_rows: list[dict],
     flat_key_to_idx: dict[tuple, int],
+    output_prism_root: Path | None = None,
+    repo_root: Path | None = None,
 ) -> tuple[int, int]:
     """Process all files for one recipe using legacy (PRISM/Flat) per-file logic."""
     processed_count = 0
     written_count = 0
+
+    # Extract task name to find sidecar
+    task_key = "BiometricName" if modality == "biometrics" else "TaskName"
+    info_key = "Biometrics" if modality == "biometrics" else "Survey"
+    survey_task = _normalize_survey_key(
+        (recipe.get(info_key, {}) or {}).get(task_key) or recipe_id
+    )
+
+    sidecar_meta = {}
+    if output_prism_root:
+        sidecar_meta = _get_sidecar_for_task(output_prism_root, modality, survey_task, repo_root=repo_root)
 
     for in_path in matching:
         processed_count += 1
@@ -1298,7 +1361,7 @@ def _export_recipe_legacy(
             continue
 
         out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
-            recipe, in_rows, include_raw=include_raw
+            recipe, in_rows, include_raw=include_raw, sidecar_meta=sidecar_meta
         )
         if not out_header:
             break
@@ -1346,7 +1409,8 @@ def _finalize_flat_output(
 
     fixed = ["participant_id", "session", modality]
     score_cols = sorted({k for r in flat_rows for k in r.keys() if k not in fixed})
-    flat_out_path = output_prism_root / "recipes" / f"{modality}_scores.tsv"
+    out_root = output_prism_root / "derivatives" / ( "survey" if modality == "survey" else "biometrics" )
+    flat_out_path = out_root / f"{modality}_scores.tsv"
 
     if layout == "wide":
         try:
@@ -1457,8 +1521,12 @@ def compute_survey_recipes(
     # 3. Load participants data (for merging demographic data)
     participants_df, participants_meta = _load_participants_data(output_prism_root)
 
-    # Output scores into BIDS-recipes folders; recipes remain the instruction set in the repo.
-    out_root = output_prism_root / "recipes" / ("surveys" if modality == "survey" else "biometrics")
+    # Output scores into BIDS derivatives folders; recipes remain the instruction set in the repo.
+    out_root = (
+        output_prism_root
+        / "derivatives"
+        / ("survey" if modality == "survey" else "biometrics")
+    )
     flat_rows: list[dict] = []
     flat_key_to_idx: dict[tuple, int] = {}
     nan_report: dict[str, list[str]] = {}
@@ -1514,6 +1582,7 @@ def compute_survey_recipes(
                 participants_meta=participants_meta,
                 output_prism_root=output_prism_root,
                 survey_task=survey_task,
+                repo_root=repo_root,
             )
             processed_files += p_count
             written_files += w_count
@@ -1539,6 +1608,8 @@ def compute_survey_recipes(
                 include_raw=include_raw,
                 flat_rows=flat_rows,
                 flat_key_to_idx=flat_key_to_idx,
+                output_prism_root=output_prism_root,
+                repo_root=repo_root,
             )
             processed_files += p_count
             written_files += w_count
