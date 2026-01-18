@@ -216,7 +216,7 @@
           "description": "Number of items in the instrument"
         },
         "AgeRange": {
-          "type": "object",
+          "type": ["object", "string"],
           "description": "Target age range for the instrument in years",
           "properties": {
             "min": { "type": "number", "description": "Minimum age in years" },
@@ -227,7 +227,7 @@
           "examples": [{ "min": 18, "max": 99 }]
         },
         "AdministrationTime": {
-          "type": "object",
+          "type": ["object", "string"],
           "description": "Estimated time to complete the instrument in minutes",
           "properties": {
             "min": { "type": "number", "description": "Minimum estimated minutes" },
@@ -238,7 +238,7 @@
           "examples": [{ "min": 10, "max": 15 }]
         },
         "ScoringTime": {
-          "type": "object",
+          "type": ["object", "string"],
           "description": "Estimated time to score the instrument in minutes",
           "properties": {
             "min": { "type": "number", "description": "Minimum estimated minutes" },
