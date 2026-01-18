@@ -232,7 +232,7 @@ def api_survey_convert():
             alias_path = tmp_dir_path / alias_filename
             alias_upload.save(str(alias_path))
 
-        output_root = tmp_dir_path / "prism_dataset"
+        output_root = tmp_dir_path / "rawdata"
         detected_language = None
         detected_platform = None
         detected_version = None
@@ -289,11 +289,14 @@ def api_survey_convert():
             if p_path:
                 p_path = Path(p_path)
                 if p_path.exists():
-                    # Merge output_root contents into project_path
+                    # Prefer rawdata/ if it exists (BIDS/YODA standard)
+                    dest_root = p_path / "rawdata" if (p_path / "rawdata").is_dir() else p_path
+                    
+                    # Merge output_root contents into dest_root
                     for item in output_root.rglob("*"):
                         if item.is_file():
                             rel_path = item.relative_to(output_root)
-                            dest = p_path / rel_path
+                            dest = dest_root / rel_path
                             dest.parent.mkdir(parents=True, exist_ok=True)
                             shutil.copy2(item, dest)
 
@@ -383,36 +386,45 @@ def api_survey_convert_validate():
             alias_path = tmp_dir_path / secure_filename(alias_upload.filename)
             alias_upload.save(str(alias_path))
 
-        output_root = tmp_dir_path / "prism_dataset"
+        output_root = tmp_dir_path / "rawdata"
+        output_root.mkdir(parents=True, exist_ok=True)
         add_log("Starting data conversion...", "info")
 
         # Log the head to help debug delimiter/structure issues
-        _log_file_head(input_path, suffix, add_log)
+        try:
+            _log_file_head(input_path, suffix, add_log)
+        except Exception as head_err:
+            add_log(f"Header preview failed: {head_err}", "warning")
 
         if strict_levels:
             add_log("Strict Levels Validation: enabled", "info")
 
         convert_result = None
-        if suffix in {".xlsx", ".csv", ".tsv"}:
-            convert_result = convert_survey_xlsx_to_prism_dataset(
-                input_path=input_path, library_dir=str(effective_survey_dir),
-                output_root=output_root, survey=survey_filter, id_column=id_column,
-                session_column=session_column, session=session_override,
-                sheet=sheet, unknown=unknown,
-                dry_run=False, force=True, name=dataset_name, authors=["prism-studio"],
-                language=language, alias_file=alias_path,
-            )
-        elif suffix == ".lsa":
-            convert_result = convert_survey_lsa_to_prism_dataset(
-                input_path=input_path, library_dir=str(effective_survey_dir),
-                output_root=output_root, survey=survey_filter, id_column=id_column,
-                session_column=session_column, session=session_override,
-                unknown=unknown, dry_run=False,
-                force=True, name=dataset_name, authors=["prism-studio"],
-                language=language, alias_file=alias_path,
-                strict_levels=True if strict_levels else None,
-            )
-        add_log("Conversion completed", "success")
+        try:
+            if suffix in {".xlsx", ".csv", ".tsv"}:
+                convert_result = convert_survey_xlsx_to_prism_dataset(
+                    input_path=input_path, library_dir=str(effective_survey_dir),
+                    output_root=output_root, survey=survey_filter, id_column=id_column,
+                    session_column=session_column, session=session_override,
+                    sheet=sheet, unknown=unknown,
+                    dry_run=False, force=True, name=dataset_name, authors=["prism-studio"],
+                    language=language, alias_file=alias_path,
+                )
+            elif suffix == ".lsa":
+                add_log(f"Processing LimeSurvey archive: {filename}", "info")
+                convert_result = convert_survey_lsa_to_prism_dataset(
+                    input_path=input_path, library_dir=str(effective_survey_dir),
+                    output_root=output_root, survey=survey_filter, id_column=id_column,
+                    session_column=session_column, session=session_override,
+                    unknown=unknown, dry_run=False,
+                    force=True, name=dataset_name, authors=["prism-studio"],
+                    language=language, alias_file=alias_path,
+                    strict_levels=True if strict_levels else None,
+                )
+            add_log("Conversion completed successfully", "success")
+        except Exception as conv_err:
+            add_log(f"Conversion engine failed: {str(conv_err)}", "error")
+            raise conv_err
 
         # Process warnings and missing cells
         if convert_result and getattr(convert_result, "missing_cells_by_subject", None):
@@ -501,12 +513,15 @@ def api_survey_convert_validate():
             if project_path:
                 project_path = Path(project_path)
                 if project_path.exists():
-                    add_log(f"Saving output to project: {project_path.name}", "info")
-                    # Merge output_root contents into project_path
+                    # Prefer rawdata/ if it exists (BIDS/YODA standard)
+                    dest_root = project_path / "rawdata" if (project_path / "rawdata").is_dir() else project_path
+                    add_log(f"Saving output to project: {project_path.name} (into {dest_root.name}/)", "info")
+                    
+                    # Merge output_root contents into dest_root
                     for item in output_root.rglob("*"):
                         if item.is_file():
                             rel_path = item.relative_to(output_root)
-                            dest = project_path / rel_path
+                            dest = dest_root / rel_path
                             dest.parent.mkdir(parents=True, exist_ok=True)
                             shutil.copy2(item, dest)
                     add_log("Project updated successfully!", "success")

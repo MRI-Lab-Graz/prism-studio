@@ -13,7 +13,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import csv
 import zipfile
-import xml.etree.ElementTree as ET
+try:
+    import defusedxml.ElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
 from copy import deepcopy
 import re
 from typing import Iterable
@@ -433,16 +436,7 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
 
     if kind == "lsa":
         def _normalize_lsa_columns(cols: list[str]) -> list[str]:
-            """Normalize LimeSurvey export column names.
-
-            LimeSurvey often uses SGQA-like identifiers in exports.
-            In our test dataset we see names like:
-              _569818X43541X590135ADS01
-            where the trailing part is the question code used in templates.
-            We strip the leading '_<digits>X<digits>X<digits>' prefix when a
-            non-empty suffix exists.
-            """
-
+            """Normalize LimeSurvey export column names."""
             pattern = re.compile(r"^_\d+X\d+X\d+(.*)$")
             used: set[str] = set()
             out_cols: list[str] = []
@@ -455,8 +449,11 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
                     if suffix:
                         candidate = suffix
                 # avoid collisions
-                if candidate in used:
-                    candidate = s
+                base_candidate = candidate
+                counter = 1
+                while candidate in used:
+                    candidate = f"{base_candidate}_{counter}"
+                    counter += 1
                 used.add(candidate)
                 out_cols.append(candidate)
             return out_cols
@@ -464,12 +461,29 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
         def _find_responses_member(zf: zipfile.ZipFile) -> str:
             matches = [name for name in zf.namelist() if name.endswith("_responses.lsr")]
             if not matches:
-                raise ValueError("No *_responses.lsr found inside the .lsa archive")
+                # Some LSA exports use different naming or case
+                matches = [name for name in zf.namelist() if "_responses" in name.lower()]
+            if not matches:
+                raise ValueError("No survey response file (e.g. *_responses.lsr) found inside the .lsa archive")
             matches.sort()
             return matches[0]
 
         def _parse_rows(xml_bytes: bytes) -> list[dict[str, str]]:
-            root = ET.fromstring(xml_bytes)
+            """Robust XML parsing for LimeSurvey LSR data."""
+            try:
+                # Try to handle potential encoding issues by decoding with replacement if it's not valid XML
+                # although ET.fromstring usually handles bytes with encoding declarations correctly.
+                root = ET.fromstring(xml_bytes)
+            except Exception as e:
+                # Fallback: try decoding as utf-8 and remove encoding declaration if ET failed
+                try:
+                    text = xml_bytes.decode("utf-8", errors="replace")
+                    # Remove XML declaration if it conflicts with our decoded string
+                    text = re.sub(r'<\?xml.*?\?>', '', text, 1)
+                    root = ET.fromstring(text.strip())
+                except Exception:
+                    raise ValueError(f"XML parsing failed: {e}")
+
             rows: list[dict[str, str]] = []
             for row in root.findall(".//row"):
                 record: dict[str, str] = {}
@@ -477,27 +491,40 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
                     tag = child.tag
                     if "}" in tag:
                         tag = tag.split("}", 1)[1]
-                    record[tag] = child.text or ""
-                rows.append(record)
+                    # Handle multiple children with same tag if they ever occur
+                    val = (child.text or "").strip()
+                    if tag in record and record[tag]:
+                        record[tag] = f"{record[tag]}; {val}"
+                    else:
+                        record[tag] = val
+                if record:
+                    rows.append(record)
             return rows
 
         try:
             with zipfile.ZipFile(input_path) as zf:
                 member = _find_responses_member(zf)
-                xml_bytes = zf.read(member)
+                try:
+                    xml_bytes = zf.read(member)
+                except Exception as e:
+                    raise ValueError(f"Failed to read member '{member}' from LSA: {e}")
         except zipfile.BadZipFile as e:
-            raise ValueError(f"Invalid .lsa archive: {e}") from e
+            raise ValueError(f"Invalid .lsa archive (not a valid zip file): {e}") from e
         except Exception as e:
-            raise ValueError(f"Failed to read .lsa archive: {e}") from e
+            raise ValueError(str(e)) from e
 
-        try:
-            rows = _parse_rows(xml_bytes)
-        except ET.ParseError as e:
-            raise ValueError(f"Failed to parse LimeSurvey responses XML: {e}") from e
+        rows = _parse_rows(xml_bytes)
+        if not rows:
+            raise ValueError("No response rows found in the LimeSurvey data.")
 
         df = pd.DataFrame(rows)
-        if df is None or df.empty:
-            raise ValueError("No response rows found inside the .lsa archive")
+        # Drop completely empty columns
+        df = df.dropna(axis=1, how='all')
+        
+        # Strip all string values
+        for col in df.columns:
+            if df[col].dtype == object:
+                df[col] = df[col].str.strip()
 
         df = df.rename(columns={c: str(c).strip() for c in df.columns})
         df.columns = _normalize_lsa_columns([str(c) for c in df.columns])
@@ -1362,29 +1389,41 @@ def infer_lsa_metadata(input_path: str | Path) -> dict:
                 return el.text.strip()
         return None
 
+    def _safe_parse_xml(xml_bytes: bytes) -> ET.Element | None:
+        try:
+            return ET.fromstring(xml_bytes)
+        except Exception:
+            try:
+                text = xml_bytes.decode("utf-8", errors="replace")
+                text = re.sub(r'<\?xml.*?\?>', '', text, 1)
+                return ET.fromstring(text.strip())
+            except Exception:
+                return None
+
     try:
         with zipfile.ZipFile(input_path) as zf:
             # responses (language per session)
             resp_members = [n for n in zf.namelist() if n.endswith("_responses.lsr")]
             resp_members.sort()
             if resp_members:
-                xml_bytes = zf.read(resp_members[0])
                 try:
-                    root = ET.fromstring(xml_bytes)
-                    vals: list[str] = []
-                    for row in root.findall(".//row"):
-                        for child in row:
-                            tag = child.tag
-                            if "}" in tag:
-                                tag = tag.split("}", 1)[1]
-                            if tag.lower() in {"startlanguage", "start_language"}:
-                                v = (child.text or "").strip()
-                                if v:
-                                    vals.append(v)
+                    xml_bytes = zf.read(resp_members[0])
+                    root = _safe_parse_xml(xml_bytes)
+                    if root is not None:
+                        vals: list[str] = []
+                        for row in root.findall(".//row"):
+                            for child in row:
+                                tag = child.tag
+                                if "}" in tag:
+                                    tag = tag.split("}", 1)[1]
+                                if tag.lower() in {"startlanguage", "start_language"}:
+                                    v = (child.text or "").strip()
+                                    if v:
+                                        vals.append(v)
+                                    break
+                            if len(vals) >= 2000:
                                 break
-                        if len(vals) >= 2000:
-                            break
-                    language = _mode(vals)
+                        language = _mode(vals)
                 except Exception:
                     pass
 
@@ -1392,22 +1431,23 @@ def infer_lsa_metadata(input_path: str | Path) -> dict:
             lss_members = [n for n in zf.namelist() if n.lower().endswith(".lss")]
             lss_members.sort()
             if lss_members:
-                lss_bytes = zf.read(lss_members[0])
                 try:
-                    root = ET.fromstring(lss_bytes)
-                    if not language:
-                        language = _find_first_text(
+                    lss_bytes = zf.read(lss_members[0])
+                    root = _safe_parse_xml(lss_bytes)
+                    if root is not None:
+                        if not language:
+                            language = _find_first_text(
+                                root,
+                                ".//surveys/rows/row/language",
+                                ".//surveys_languagesettings/rows/row/surveyls_language",
+                            )
+                        software_version = _find_first_text(
                             root,
-                            ".//surveys/rows/row/language",
-                            ".//surveys_languagesettings/rows/row/surveyls_language",
+                            ".//LimeSurveyVersion",
+                            ".//limesurveyversion",
+                            ".//dbversion",
+                            ".//DBVersion",
                         )
-                    software_version = _find_first_text(
-                        root,
-                        ".//LimeSurveyVersion",
-                        ".//limesurveyversion",
-                        ".//dbversion",
-                        ".//DBVersion",
-                    )
                 except Exception:
                     pass
     except Exception:
