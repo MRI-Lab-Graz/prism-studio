@@ -758,22 +758,6 @@
     "ReferencePopulation": "",
     "ReferenceSource": ""
   },
-  "Scoring": {
-    "Cutoffs": {},
-    "CutoffsSource": "",
-    "NormsSource": "",
-    "ReverseCodedItems": [],
-    "ReverseCodingScale": {
-      "max": null,
-      "min": null
-    },
-    "ScoreRange": {
-      "max": null,
-      "min": null
-    },
-    "ScoringMethod": "",
-    "Subscales": []
-  },
   "Study": {
     "Access": "",
     "AdministrationTime": "",

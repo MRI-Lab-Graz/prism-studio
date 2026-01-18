@@ -109,34 +109,6 @@
       },
       "required": ["TaskName", "OriginalName"]
     },
-    "Scoring": {
-      "type": "object",
-      "description": "Scoring and interpretation information",
-      "properties": {
-        "ScoringMethod": {
-          "type": "string",
-          "description": "How items are scored (e.g., sum, mean, weighted)"
-        },
-        "ScoreRange": {
-          "type": "object",
-          "properties": {
-            "min": {"type": "number"},
-            "max": {"type": "number"}
-          },
-          "description": "Possible score range"
-        },
-        "Cutoffs": {
-          "type": "object",
-          "description": "Clinical cutoff scores and their interpretations",
-          "additionalProperties": {"type": "string"}
-        },
-        "ReverseCodedItems": {
-          "type": "array",
-          "items": {"type": "string"},
-          "description": "List of reverse-coded item column names"
-        }
-      }
-    },
     "Metadata": {
       "type": "object",
       "description": "Administrative metadata",

@@ -26,7 +26,7 @@
       "en": "1965"
     },
     "Description": {
-      "de": "10-Item Fragebogen zur Erfassung des globalen Selbstwertgef\u00fchls",
+      "de": "10-Item Fragebogen zur Erfassung des globalen Selbstwertgefühls",
       "en": "10-item questionnaire measuring global self-esteem"
     },
     "Citation": "Rosenberg M. Society and the adolescent self-image. Princeton, NJ: Princeton University Press; 1965.",
@@ -137,7 +137,6 @@
       }
     },
     "Units": "ordinal",
-    "Scoring": "reverse",
     "Unit": "",
     "TermURL": "",
     "Relevance": "",
@@ -224,7 +223,7 @@
   },
   "rses_05": {
     "Description": {
-      "de": "Ich f\u00fcrchte, es gibt nicht viel, worauf ich stolz sein kann.",
+      "de": "Ich fürchte, es gibt nicht viel, worauf ich stolz sein kann.",
       "en": "I feel I do not have much to be proud of."
     },
     "Levels": {
@@ -246,7 +245,6 @@
       }
     },
     "Units": "ordinal",
-    "Scoring": "reverse",
     "Unit": "",
     "TermURL": "",
     "Relevance": "",
@@ -261,7 +259,7 @@
   },
   "rses_06": {
     "Description": {
-      "de": "Ich f\u00fchle mich von Zeit zu Zeit richtig nutzlos.",
+      "de": "Ich fühle mich von Zeit zu Zeit richtig nutzlos.",
       "en": "I certainly feel useless at times."
     },
     "Levels": {
@@ -283,7 +281,6 @@
       }
     },
     "Units": "ordinal",
-    "Scoring": "reverse",
     "Unit": "",
     "TermURL": "",
     "Relevance": "",
@@ -298,7 +295,7 @@
   },
   "rses_07": {
     "Description": {
-      "de": "Ich halte mich f\u00fcr einen wertvollen Menschen, jedenfalls bin ich nicht weniger wertvoll als andere auch.",
+      "de": "Ich halte mich für einen wertvollen Menschen, jedenfalls bin ich nicht weniger wertvoll als andere auch.",
       "en": "I feel that I'm a person of worth, at least on an equal plane with others."
     },
     "Levels": {
@@ -334,7 +331,7 @@
   },
   "rses_08": {
     "Description": {
-      "de": "Ich w\u00fcnschte, ich k\u00f6nnte vor mir selbst mehr Achtung haben.",
+      "de": "Ich wünschte, ich könnte vor mir selbst mehr Achtung haben.",
       "en": "I wish I could have more respect for myself."
     },
     "Levels": {
@@ -356,7 +353,6 @@
       }
     },
     "Units": "ordinal",
-    "Scoring": "reverse",
     "Unit": "",
     "TermURL": "",
     "Relevance": "",
@@ -371,7 +367,7 @@
   },
   "rses_09": {
     "Description": {
-      "de": "Alles in allem neige ich dazu, mich f\u00fcr einen Versager zu halten.",
+      "de": "Alles in allem neige ich dazu, mich für einen Versager zu halten.",
       "en": "All in all, I am inclined to feel that I am a failure."
     },
     "Levels": {
@@ -393,7 +389,6 @@
       }
     },
     "Units": "ordinal",
-    "Scoring": "reverse",
     "Unit": "",
     "TermURL": "",
     "Relevance": "",
@@ -441,22 +436,6 @@
     "DataType": "",
     "SessionHint": "",
     "RunHint": ""
-  },
-  "Scoring": {
-    "ScoringMethod": "",
-    "ScoreRange": {
-      "min": null,
-      "max": null
-    },
-    "Cutoffs": {},
-    "ReverseCodedItems": [],
-    "ReverseCodingScale": {
-      "min": null,
-      "max": null
-    },
-    "CutoffsSource": "",
-    "NormsSource": "",
-    "Subscales": []
   },
   "Normative": {
     "ReferencePopulation": "",

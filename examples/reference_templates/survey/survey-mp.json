@@ -32,7 +32,7 @@
       "en": ""
     },
     "Instruction": {
-      "de": " Es gibt keine richtigen oder falschen Antworten - bitte antworten Sie nach Ihren pers\u00f6nlichen Vorlieben.",
+      "de": " Es gibt keine richtigen oder falschen Antworten - bitte antworten Sie nach Ihren persönlichen Vorlieben.",
       "en": ""
     },
     "Citation": "",
@@ -80,7 +80,7 @@
     },
     "Levels": {
       "1": {
-        "de": "mag ich \u00fcberhaupt nicht",
+        "de": "mag ich überhaupt nicht",
         "en": ""
       },
       "2": {
@@ -128,7 +128,7 @@
     },
     "Levels": {
       "1": {
-        "de": "mag ich \u00fcberhaupt nicht",
+        "de": "mag ich überhaupt nicht",
         "en": ""
       },
       "2": {
@@ -176,7 +176,7 @@
     },
     "Levels": {
       "1": {
-        "de": "mag ich \u00fcberhaupt nicht",
+        "de": "mag ich überhaupt nicht",
         "en": ""
       },
       "2": {
@@ -224,7 +224,7 @@
     },
     "Levels": {
       "1": {
-        "de": "mag ich \u00fcberhaupt nicht",
+        "de": "mag ich überhaupt nicht",
         "en": ""
       },
       "2": {
@@ -272,7 +272,7 @@
     },
     "Levels": {
       "1": {
-        "de": "mag ich \u00fcberhaupt nicht",
+        "de": "mag ich überhaupt nicht",
         "en": ""
       },
       "2": {
@@ -320,7 +320,7 @@
     },
     "Levels": {
       "1": {
-        "de": "mag ich \u00fcberhaupt nicht",
+        "de": "mag ich überhaupt nicht",
         "en": ""
       },
       "2": {
@@ -368,7 +368,7 @@
     },
     "Levels": {
       "1": {
-        "de": "mag ich \u00fcberhaupt nicht",
+        "de": "mag ich überhaupt nicht",
         "en": ""
       },
       "2": {
@@ -411,12 +411,12 @@
   },
   "MP-08": {
     "Description": {
-      "de": "Religi\u00f6se Musik",
+      "de": "Religiöse Musik",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "mag ich \u00fcberhaupt nicht",
+        "de": "mag ich überhaupt nicht",
         "en": ""
       },
       "2": {
@@ -464,7 +464,7 @@
     },
     "Levels": {
       "1": {
-        "de": "mag ich \u00fcberhaupt nicht",
+        "de": "mag ich überhaupt nicht",
         "en": ""
       },
       "2": {
@@ -512,7 +512,7 @@
     },
     "Levels": {
       "1": {
-        "de": "mag ich \u00fcberhaupt nicht",
+        "de": "mag ich überhaupt nicht",
         "en": ""
       },
       "2": {
@@ -560,7 +560,7 @@
     },
     "Levels": {
       "1": {
-        "de": "mag ich \u00fcberhaupt nicht",
+        "de": "mag ich überhaupt nicht",
         "en": ""
       },
       "2": {
@@ -608,7 +608,7 @@
     },
     "Levels": {
       "1": {
-        "de": "mag ich \u00fcberhaupt nicht",
+        "de": "mag ich überhaupt nicht",
         "en": ""
       },
       "2": {
@@ -656,7 +656,7 @@
     },
     "Levels": {
       "1": {
-        "de": "mag ich \u00fcberhaupt nicht",
+        "de": "mag ich überhaupt nicht",
         "en": ""
       },
       "2": {
@@ -704,7 +704,7 @@
     },
     "Levels": {
       "1": {
-        "de": "mag ich \u00fcberhaupt nicht",
+        "de": "mag ich überhaupt nicht",
         "en": ""
       },
       "2": {
@@ -749,22 +749,6 @@
     "Languages": [],
     "DefaultLanguage": "",
     "TranslationMethod": ""
-  },
-  "Scoring": {
-    "ScoringMethod": "",
-    "ScoreRange": {
-      "min": null,
-      "max": null
-    },
-    "Cutoffs": {},
-    "ReverseCodedItems": [],
-    "ReverseCodingScale": {
-      "min": null,
-      "max": null
-    },
-    "CutoffsSource": "",
-    "NormsSource": "",
-    "Subscales": []
   },
   "Normative": {
     "ReferencePopulation": "",

@@ -110,7 +110,7 @@
   },
   "group": {
     "Description": {
-      "de": "Gruppenzugeh\u00f6rigkeit",
+      "de": "Gruppenzugehörigkeit",
       "en": ""
     },
     "Levels": {
@@ -170,7 +170,7 @@
         "en": ""
       },
       "2": {
-        "de": "m\u00e4nnlich",
+        "de": "männlich",
         "en": ""
       },
       "3": {
@@ -205,7 +205,7 @@
   },
   "education": {
     "Description": {
-      "de": "H\u00f6chste abgeschlossene Ausbildung",
+      "de": "Höchste abgeschlossene Ausbildung",
       "en": ""
     },
     "Levels": {
@@ -218,7 +218,7 @@
         "en": ""
       },
       "3": {
-        "de": "Matura (allgemeine oder berufsbildende h\u00f6here Schule)",
+        "de": "Matura (allgemeine oder berufsbildende höhere Schule)",
         "en": ""
       },
       "4": {
@@ -249,7 +249,7 @@
   },
   "height": {
     "Description": {
-      "de": "K\u00f6rpergr\u00f6\u00dfe",
+      "de": "Körpergröße",
       "en": ""
     },
     "Levels": {},
@@ -268,7 +268,7 @@
   },
   "weight": {
     "Description": {
-      "de": "K\u00f6rpergewicht",
+      "de": "Körpergewicht",
       "en": ""
     },
     "Levels": {},
@@ -334,7 +334,7 @@
   },
   "fitness": {
     "Description": {
-      "de": "Geben Sie an, wie viel Sport Sie regelm\u00e4\u00dfig in der Woche betreiben.",
+      "de": "Geben Sie an, wie viel Sport Sie regelmäßig in der Woche betreiben.",
       "en": ""
     },
     "Levels": {},
@@ -391,7 +391,7 @@
   },
   "Pille": {
     "Description": {
-      "de": "Nehmen Sie aktuell die Pille oder wenden Sie sonstige Hormonpr\u00e4parate an?",
+      "de": "Nehmen Sie aktuell die Pille oder wenden Sie sonstige Hormonpräparate an?",
       "en": ""
     },
     "Levels": {
@@ -447,7 +447,7 @@
   },
   "unregelm Blutung / regelmBlutung": {
     "Description": {
-      "de": "Ist Ihre Menstruationsblutung regelm\u00e4\u00dfig?",
+      "de": "Ist Ihre Menstruationsblutung regelmäßig?",
       "en": ""
     },
     "Levels": {
@@ -481,22 +481,6 @@
     "DefaultLanguage": "de",
     "Note": "Generated from single-language template; missing translations are empty strings.",
     "TranslationMethod": ""
-  },
-  "Scoring": {
-    "ScoringMethod": "",
-    "ScoreRange": {
-      "min": null,
-      "max": null
-    },
-    "Cutoffs": {},
-    "ReverseCodedItems": [],
-    "ReverseCodingScale": {
-      "min": null,
-      "max": null
-    },
-    "CutoffsSource": "",
-    "NormsSource": "",
-    "Subscales": []
   },
   "Normative": {
     "ReferencePopulation": "",

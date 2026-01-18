@@ -389,22 +389,6 @@
     "Note": "Generated from single-language template; missing translations are empty strings.",
     "TranslationMethod": ""
   },
-  "Scoring": {
-    "ScoringMethod": "",
-    "ScoreRange": {
-      "min": null,
-      "max": null
-    },
-    "Cutoffs": {},
-    "ReverseCodedItems": [],
-    "ReverseCodingScale": {
-      "min": null,
-      "max": null
-    },
-    "CutoffsSource": "",
-    "NormsSource": "",
-    "Subscales": []
-  },
   "Normative": {
     "ReferencePopulation": "",
     "ReferenceSource": "",
