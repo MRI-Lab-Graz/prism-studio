@@ -39,8 +39,8 @@
     "ShortName": "",
     "Authors": [],
     "DOI": "",
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -75,7 +75,7 @@
   },
   "HFERST-01": {
     "Description": {
-      "de": "Wenn ich negative Gef\u00fchle habe, gr\u00fcble ich h\u00e4ufig dar\u00fcber nach, warum ich mich so f\u00fchle.",
+      "de": "Wenn ich negative Gefühle habe, grüble ich häufig darüber nach, warum ich mich so fühle.",
       "en": ""
     },
     "Levels": {
@@ -116,7 +116,7 @@
   },
   "HFERST-02": {
     "Description": {
-      "de": "Nach emotionalen Erlebnissen/Situationen denke ich intensiv dar\u00fcber nach, was ich in der Situation getan und gesagt habe, um meine Gef\u00fchle besser zu verstehen.",
+      "de": "Nach emotionalen Erlebnissen/Situationen denke ich intensiv darüber nach, was ich in der Situation getan und gesagt habe, um meine Gefühle besser zu verstehen.",
       "en": ""
     },
     "Levels": {
@@ -157,7 +157,7 @@
   },
   "HFERST-03": {
     "Description": {
-      "de": "Ich ertappe mich dabei, wie ich immer wieder \u00fcber etwas nachdenken muss, das mich ge\u00e4rgert oder traurig gemacht hat.",
+      "de": "Ich ertappe mich dabei, wie ich immer wieder über etwas nachdenken muss, das mich geärgert oder traurig gemacht hat.",
       "en": ""
     },
     "Levels": {
@@ -198,7 +198,7 @@
   },
   "HFERST-04": {
     "Description": {
-      "de": "Ich erinnere mich oft an vergangene Konflikte und \u00fcberlege, was ich h\u00e4tte anders tun k\u00f6nnen.",
+      "de": "Ich erinnere mich oft an vergangene Konflikte und überlege, was ich hätte anders tun können.",
       "en": ""
     },
     "Levels": {
@@ -239,7 +239,7 @@
   },
   "HFERST-05": {
     "Description": {
-      "de": "Wenn ich mich schlecht f\u00fchle, versuche ich die guten Aspekte einer Situation zu erkennen.",
+      "de": "Wenn ich mich schlecht fühle, versuche ich die guten Aspekte einer Situation zu erkennen.",
       "en": ""
     },
     "Levels": {
@@ -280,7 +280,7 @@
   },
   "HFERST-06": {
     "Description": {
-      "de": "Wenn ich in eine stressige Situation gerate, \u00e4ndere ich meine Gedanken \u00fcber die Situation so, dass es mich beruhigt.",
+      "de": "Wenn ich in eine stressige Situation gerate, ändere ich meine Gedanken über die Situation so, dass es mich beruhigt.",
       "en": ""
     },
     "Levels": {
@@ -321,7 +321,7 @@
   },
   "HFERST-07": {
     "Description": {
-      "de": "Wenn ich mich besser f\u00fchlen m\u00f6chte, konzentriere ich mich auf die guten Seiten einer Situation.",
+      "de": "Wenn ich mich besser fühlen möchte, konzentriere ich mich auf die guten Seiten einer Situation.",
       "en": ""
     },
     "Levels": {
@@ -362,7 +362,7 @@
   },
   "HFERST-08": {
     "Description": {
-      "de": "Ich \u00e4ndere meine Gef\u00fchle, indem ich \u00fcber meine aktuelle Situation anders nachdenke.",
+      "de": "Ich ändere meine Gefühle, indem ich über meine aktuelle Situation anders nachdenke.",
       "en": ""
     },
     "Levels": {
@@ -403,7 +403,7 @@
   },
   "HFERST-09": {
     "Description": {
-      "de": "Wenn ich etwas nicht \u00e4ndern kann, akzeptiere ich die Situation so wie sie ist.",
+      "de": "Wenn ich etwas nicht ändern kann, akzeptiere ich die Situation so wie sie ist.",
       "en": ""
     },
     "Levels": {
@@ -526,7 +526,7 @@
   },
   "HFERST-12": {
     "Description": {
-      "de": "Bei der Suche nach L\u00f6sungen f\u00fcr ein Problem verlasse ich mich nicht (nur) auf mein Bauchgef\u00fchl, sondern \u00fcberlege m\u00f6glichst rational.",
+      "de": "Bei der Suche nach Lösungen für ein Problem verlasse ich mich nicht (nur) auf mein Bauchgefühl, sondern überlege möglichst rational.",
       "en": ""
     },
     "Levels": {
@@ -567,7 +567,7 @@
   },
   "HFERST-13": {
     "Description": {
-      "de": "Ich denke \u00fcber L\u00f6sungsm\u00f6glichkeiten nach, wie ich die Situation \u00e4ndern kann.",
+      "de": "Ich denke über Lösungsmöglichkeiten nach, wie ich die Situation ändern kann.",
       "en": ""
     },
     "Levels": {
@@ -608,7 +608,7 @@
   },
   "HFERST-14": {
     "Description": {
-      "de": "Bei Problemen \u00fcberlege ich mir genau, wie ich am besten mit der Situation umgehen kann.",
+      "de": "Bei Problemen überlege ich mir genau, wie ich am besten mit der Situation umgehen kann.",
       "en": ""
     },
     "Levels": {
@@ -649,7 +649,7 @@
   },
   "HFERST-15": {
     "Description": {
-      "de": "Wenn ich eine Entscheidung treffen muss, w\u00e4ge ich die verschiedenen Alternativen sorgf\u00e4ltig gegeneinander ab.",
+      "de": "Wenn ich eine Entscheidung treffen muss, wäge ich die verschiedenen Alternativen sorgfältig gegeneinander ab.",
       "en": ""
     },
     "Levels": {
@@ -690,7 +690,7 @@
   },
   "HFERST-16": {
     "Description": {
-      "de": "Wenn mich etwas \u00e4rgert oder traurig macht, versuche ich meine Gef\u00fchle vor anderen nicht zu zeigen.",
+      "de": "Wenn mich etwas ärgert oder traurig macht, versuche ich meine Gefühle vor anderen nicht zu zeigen.",
       "en": ""
     },
     "Levels": {
@@ -731,7 +731,7 @@
   },
   "HFERST-17": {
     "Description": {
-      "de": "K\u00f6rperliche Signale meiner Gef\u00fchle verberge ich meist.",
+      "de": "Körperliche Signale meiner Gefühle verberge ich meist.",
       "en": ""
     },
     "Levels": {
@@ -772,7 +772,7 @@
   },
   "HFERST-18": {
     "Description": {
-      "de": "Andere Personen k\u00f6nnen meistens schwer sagen, wie ich mich gerade f\u00fchle.",
+      "de": "Andere Personen können meistens schwer sagen, wie ich mich gerade fühle.",
       "en": ""
     },
     "Levels": {
@@ -813,7 +813,7 @@
   },
   "HFERST-19": {
     "Description": {
-      "de": "Auch wenn ich gerade sehr aufgeregt bin, gelingt es mir, \u00e4u\u00dferlich ruhig zu wirken.",
+      "de": "Auch wenn ich gerade sehr aufgeregt bin, gelingt es mir, äußerlich ruhig zu wirken.",
       "en": ""
     },
     "Levels": {
@@ -895,7 +895,7 @@
   },
   "HFERST-21": {
     "Description": {
-      "de": "Ich lasse meine Emotionen selten hochkochen, sondern halte sie zur\u00fcck.",
+      "de": "Ich lasse meine Emotionen selten hochkochen, sondern halte sie zurück.",
       "en": ""
     },
     "Levels": {
@@ -936,7 +936,7 @@
   },
   "HFERST-22": {
     "Description": {
-      "de": "Ich vermeide, wann immer m\u00f6glich, meine Gef\u00fchle wahrzunehmen.",
+      "de": "Ich vermeide, wann immer möglich, meine Gefühle wahrzunehmen.",
       "en": ""
     },
     "Levels": {
@@ -1018,7 +1018,7 @@
   },
   "HFERST-24": {
     "Description": {
-      "de": "Situationen, die negative Gef\u00fchle in mir ausl\u00f6sen k\u00f6nnten, vermeide ich lieber.",
+      "de": "Situationen, die negative Gefühle in mir auslösen könnten, vermeide ich lieber.",
       "en": ""
     },
     "Levels": {
@@ -1100,7 +1100,7 @@
   },
   "HFERST-26": {
     "Description": {
-      "de": "Ich sorge daf\u00fcr, dass ich nicht mit unangenehmen Situationen konfrontiert werde, wann immer dies m\u00f6glich ist.",
+      "de": "Ich sorge dafür, dass ich nicht mit unangenehmen Situationen konfrontiert werde, wann immer dies möglich ist.",
       "en": ""
     },
     "Levels": {
@@ -1141,7 +1141,7 @@
   },
   "HFERST-27": {
     "Description": {
-      "de": "Negative und positive Gef\u00fchle teile ich gern, indem ich andere anrufe oder mich mit ihnen treffe und dar\u00fcber rede.",
+      "de": "Negative und positive Gefühle teile ich gern, indem ich andere anrufe oder mich mit ihnen treffe und darüber rede.",
       "en": ""
     },
     "Levels": {
@@ -1182,7 +1182,7 @@
   },
   "HFERST-28": {
     "Description": {
-      "de": "Ich rede oft mit meinem/r Partner/in oder meinen engsten Freunden \u00fcber meine Emotionen.",
+      "de": "Ich rede oft mit meinem/r Partner/in oder meinen engsten Freunden über meine Emotionen.",
       "en": ""
     },
     "Levels": {

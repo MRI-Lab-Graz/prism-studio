@@ -28,7 +28,7 @@
       "en": ""
     },
     "Description": {
-      "de": "The BANPS represents a shortened version of the Affective Neuroscience Personality Scales (ANPS), a self\u2013report instrument to assess individual dispositions toward primary emotional systems as proposed by Jaak Panksepp.",
+      "de": "The BANPS represents a shortened version of the Affective Neuroscience Personality Scales (ANPS), a self–report instrument to assess individual dispositions toward primary emotional systems as proposed by Jaak Panksepp.",
       "en": ""
     },
     "Instruction": {
@@ -39,8 +39,8 @@
     "ShortName": "",
     "Authors": [],
     "DOI": "",
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",

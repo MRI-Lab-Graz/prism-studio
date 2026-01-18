@@ -28,19 +28,19 @@
       "en": ""
     },
     "Description": {
-      "de": "The TTCMS (McDonald et al., 2021) measures frequency of true crime consumption with different formats (books, movies, podcasts) on a scale from 1 (never) to 5 (very often), and motivations behind true crime consumption (excitement, authenticity, defensive vigilance; e.g., \u201eI like that true crime deals with taboo subjects\u201d on a 7-point Likert scale (1 = fully disagree to 7 = fully agree). ",
+      "de": "The TTCMS (McDonald et al., 2021) measures frequency of true crime consumption with different formats (books, movies, podcasts) on a scale from 1 (never) to 5 (very often), and motivations behind true crime consumption (excitement, authenticity, defensive vigilance; e.g., „I like that true crime deals with taboo subjects” on a 7-point Likert scale (1 = fully disagree to 7 = fully agree). ",
       "en": ""
     },
     "Instruction": {
-      "de": "True Crime bezeichnet die mediale Aufarbeitung nicht-fiktiver Kriminalf\u00e4lle, welche die Ereignisse rund um ein reales Verbrechen beschreibt. Meistens konzentrieren sich diese Verbrechen auf Mord, Folter, Entf\u00fchrung, Vergewaltigung, oder Serienmorde.\n Bitte geben Sie an, wie oft Sie bestimmte True Crime Formate konsumieren. (Fragen 1 bis 8)\n\nBitte geben Sie an, aus welchen Beweggr\u00fcnden Sie True Crime Formate konsumieren. (Fragen 9 bis 30)\n\nWenn Sie True Crime \u00fcberhaupt nie konsumieren bzw. immer vermeiden, klicken Sie bitte \"kein True Crime Konsum\" an.",
+      "de": "True Crime bezeichnet die mediale Aufarbeitung nicht-fiktiver Kriminalfälle, welche die Ereignisse rund um ein reales Verbrechen beschreibt. Meistens konzentrieren sich diese Verbrechen auf Mord, Folter, Entführung, Vergewaltigung, oder Serienmorde.\n Bitte geben Sie an, wie oft Sie bestimmte True Crime Formate konsumieren. (Fragen 1 bis 8)\n\nBitte geben Sie an, aus welchen Beweggründen Sie True Crime Formate konsumieren. (Fragen 9 bis 30)\n\nWenn Sie True Crime überhaupt nie konsumieren bzw. immer vermeiden, klicken Sie bitte \"kein True Crime Konsum\" an.",
       "en": ""
     },
     "Citation": "",
     "ShortName": "",
     "Authors": [],
     "DOI": "",
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -75,7 +75,7 @@
   },
   "TCCMS-01": {
     "Description": {
-      "de": "Ich lese True Crime B\u00fccher",
+      "de": "Ich lese True Crime Bücher",
       "en": ""
     },
     "Levels": {
@@ -115,7 +115,7 @@
   },
   "TCCMS-02": {
     "Description": {
-      "de": "Ich h\u00f6re True Crime Podcasts",
+      "de": "Ich höre True Crime Podcasts",
       "en": ""
     },
     "Levels": {
@@ -275,7 +275,7 @@
   },
   "TCCMS-06": {
     "Description": {
-      "de": "Ich verfolge in den Nachrichten Ermittlungen zu Vergewaltigungsf\u00e4llen oder sexuellen \u00dcbergriffen",
+      "de": "Ich verfolge in den Nachrichten Ermittlungen zu Vergewaltigungsfällen oder sexuellen Übergriffen",
       "en": ""
     },
     "Levels": {
@@ -315,7 +315,7 @@
   },
   "TCCMS-07": {
     "Description": {
-      "de": "Ich verfolge in den Nachrichten Ermittlungen zu Entf\u00fchrungen",
+      "de": "Ich verfolge in den Nachrichten Ermittlungen zu Entführungen",
       "en": ""
     },
     "Levels": {
@@ -355,7 +355,7 @@
   },
   "TCCMS-08": {
     "Description": {
-      "de": "Ich verfolge in den Nachrichten Ermittlungen zu Mordf\u00e4llen",
+      "de": "Ich verfolge in den Nachrichten Ermittlungen zu Mordfällen",
       "en": ""
     },
     "Levels": {
@@ -395,12 +395,12 @@
   },
   "TCCMS-09": {
     "Description": {
-      "de": "Ich schaue/lese oder h\u00f6re True Crime um zu lernen, was mir passieren k\u00f6nnte",
+      "de": "Ich schaue/lese oder höre True Crime um zu lernen, was mir passieren könnte",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -447,12 +447,12 @@
   },
   "TCCMS-10": {
     "Description": {
-      "de": "Ich schaue/lese oder h\u00f6re True Crime um zu erfahren, was in der Welt passiert",
+      "de": "Ich schaue/lese oder höre True Crime um zu erfahren, was in der Welt passiert",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -499,12 +499,12 @@
   },
   "TCCMS-11": {
     "Description": {
-      "de": "Ich schaue/lese oder h\u00f6re True Crime um zu lernen, wie ich mich selbst gegen Angriffe sch\u00fctzen kann",
+      "de": "Ich schaue/lese oder höre True Crime um zu lernen, wie ich mich selbst gegen Angriffe schützen kann",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -551,12 +551,12 @@
   },
   "TCCMS-12": {
     "Description": {
-      "de": "Ich schaue/lese oder h\u00f6re True Crime um zu lernen, wie ich gewaltt\u00e4tige Angriffe vermeiden kann",
+      "de": "Ich schaue/lese oder höre True Crime um zu lernen, wie ich gewalttätige Angriffe vermeiden kann",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -603,12 +603,12 @@
   },
   "TCCMS-13": {
     "Description": {
-      "de": "Wenn ich True Crime Inhalte schaue/lese oder h\u00f6re, denke ich dar\u00fcber nach, was ich tun w\u00fcrde, wenn ich in der Situation des Opfers w\u00e4re",
+      "de": "Wenn ich True Crime Inhalte schaue/lese oder höre, denke ich darüber nach, was ich tun würde, wenn ich in der Situation des Opfers wäre",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -655,12 +655,12 @@
   },
   "TCCMS-14": {
     "Description": {
-      "de": "True Crime macht mir bewusst, welche Arten von Verbrechen gegen Frauen ver\u00fcbt werden",
+      "de": "True Crime macht mir bewusst, welche Arten von Verbrechen gegen Frauen verübt werden",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -707,12 +707,12 @@
   },
   "TCCMS-15": {
     "Description": {
-      "de": "True Crime hat mich wachsamer gegen\u00fcber meiner Umwelt werden lassen",
+      "de": "True Crime hat mich wachsamer gegenüber meiner Umwelt werden lassen",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -759,12 +759,12 @@
   },
   "TCCMS-16": {
     "Description": {
-      "de": "True Crime gibt mir Einblicke in die Psyche von M\u00e4nnern, die gewaltt\u00e4tige Verbrechen an Frauen ver\u00fcben",
+      "de": "True Crime gibt mir Einblicke in die Psyche von Männern, die gewalttätige Verbrechen an Frauen verüben",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -816,7 +816,7 @@
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -868,7 +868,7 @@
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -915,12 +915,12 @@
   },
   "TCCMS-19": {
     "Description": {
-      "de": "True Crime ist mein Lieblingsgenre aller Medien (Fernsehsendungen, Filme, B\u00fccher, Podcasts)",
+      "de": "True Crime ist mein Lieblingsgenre aller Medien (Fernsehsendungen, Filme, Bücher, Podcasts)",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -972,7 +972,7 @@
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -1024,7 +1024,7 @@
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -1076,7 +1076,7 @@
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -1128,7 +1128,7 @@
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -1175,12 +1175,12 @@
   },
   "TCCMS-24": {
     "Description": {
-      "de": "Ich mag True Crime, weil ich es mag, wenn Geheimnisse und Mysterien aufgel\u00f6st werden",
+      "de": "Ich mag True Crime, weil ich es mag, wenn Geheimnisse und Mysterien aufgelöst werden",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -1232,7 +1232,7 @@
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -1279,12 +1279,12 @@
   },
   "TCCMS-26": {
     "Description": {
-      "de": "Es ist ein gro\u00dfartiger Aspekt von True Crime, dass der Gerechtigkeit Gen\u00fcge getan wird",
+      "de": "Es ist ein großartiger Aspekt von True Crime, dass der Gerechtigkeit Genüge getan wird",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -1331,12 +1331,12 @@
   },
   "TCCMS-27": {
     "Description": {
-      "de": "Durch das Schauen/Lesen/H\u00f6ren von True Crime lerne ich, besser mit meinen negativen Gef\u00fchlen umzugehen",
+      "de": "Durch das Schauen/Lesen/Hören von True Crime lerne ich, besser mit meinen negativen Gefühlen umzugehen",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -1383,12 +1383,12 @@
   },
   "TCCMS-28": {
     "Description": {
-      "de": "Das Schauen/Lesen/H\u00f6ren von True Crime hilft mir, meine eigenen Probleme aus einer anderen Perspektive zu betrachten",
+      "de": "Das Schauen/Lesen/Hören von True Crime hilft mir, meine eigenen Probleme aus einer anderen Perspektive zu betrachten",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -1435,12 +1435,12 @@
   },
   "TCCMS-29": {
     "Description": {
-      "de": "Beim Schauen/Lesen/H\u00f6ren von True Crime kann ich lernen, besser mit k\u00f6rperlicher Anspannung umzugehen",
+      "de": "Beim Schauen/Lesen/Hören von True Crime kann ich lernen, besser mit körperlicher Anspannung umzugehen",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {
@@ -1487,12 +1487,12 @@
   },
   "TCCMS-30": {
     "Description": {
-      "de": "Das Schauen/Lesen/H\u00f6ren von True Crime bereitet mich darauf vor, besser mit Bedrohungen im echten Leben umzugehen",
+      "de": "Das Schauen/Lesen/Hören von True Crime bereitet mich darauf vor, besser mit Bedrohungen im echten Leben umzugehen",
       "en": ""
     },
     "Levels": {
       "1": {
-        "de": "stimme \u00fcberhaupt nicht zu",
+        "de": "stimme überhaupt nicht zu",
         "en": ""
       },
       "2": {

@@ -32,15 +32,15 @@
       "en": ""
     },
     "Instruction": {
-      "de": "Die folgenden Aussagen beziehen sich darauf, wie Sie sich in emotional\nbedeutsamen Partnerschaften f\u00fchlen. Von Interesse ist f\u00fcr uns dabei vor\nallem, wie Sie im Allgemeinen Partnerschaften erleben, nicht so sehr, was\ngerade in einer aktuellen Partnerschaft passiert. Bitte nehmen Sie zu jeder\nAussage Stellung, indem sie eine Zahl ankreuzen, um darzustellen, wie sehr\nsie der Aussage f\u00fcr sich zustimmen.",
+      "de": "Die folgenden Aussagen beziehen sich darauf, wie Sie sich in emotional\nbedeutsamen Partnerschaften fühlen. Von Interesse ist für uns dabei vor\nallem, wie Sie im Allgemeinen Partnerschaften erleben, nicht so sehr, was\ngerade in einer aktuellen Partnerschaft passiert. Bitte nehmen Sie zu jeder\nAussage Stellung, indem sie eine Zahl ankreuzen, um darzustellen, wie sehr\nsie der Aussage für sich zustimmen.",
       "en": ""
     },
     "Citation": "",
     "ShortName": "",
     "Authors": [],
     "DOI": "",
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -84,7 +84,7 @@
         "en": ""
       },
       "2": {
-        "de": "stimme v\u00f6llig zu",
+        "de": "stimme völlig zu",
         "en": ""
       }
     },
@@ -104,7 +104,7 @@
   },
   "ECRRD8-02": {
     "Description": {
-      "de": "Ich f\u00fchle mich wohl damit, meine privaten Gedanken und Gef\u00fchle mit meinem Partner/meiner Partnerin zu teilen. ",
+      "de": "Ich fühle mich wohl damit, meine privaten Gedanken und Gefühle mit meinem Partner/meiner Partnerin zu teilen. ",
       "en": ""
     },
     "Levels": {
@@ -113,7 +113,7 @@
         "en": ""
       },
       "2": {
-        "de": "stimme v\u00f6llig zu",
+        "de": "stimme völlig zu",
         "en": ""
       }
     },
@@ -134,7 +134,7 @@
   },
   "ECRRD8-03": {
     "Description": {
-      "de": "Es f\u00e4llt mir leicht, mich auf meinen Partner/meine Partnerin zu verlassen.",
+      "de": "Es fällt mir leicht, mich auf meinen Partner/meine Partnerin zu verlassen.",
       "en": ""
     },
     "Levels": {
@@ -143,7 +143,7 @@
         "en": ""
       },
       "2": {
-        "de": "stimme v\u00f6llig zu",
+        "de": "stimme völlig zu",
         "en": ""
       }
     },
@@ -164,7 +164,7 @@
   },
   "ECRRD8-04": {
     "Description": {
-      "de": "Ich bef\u00fcrchte, dass ich meinem Partner/meiner Partnerin weniger bedeute, als er/sie mir. ",
+      "de": "Ich befürchte, dass ich meinem Partner/meiner Partnerin weniger bedeute, als er/sie mir. ",
       "en": ""
     },
     "Levels": {
@@ -173,7 +173,7 @@
         "en": ""
       },
       "2": {
-        "de": "stimme v\u00f6llig zu",
+        "de": "stimme völlig zu",
         "en": ""
       }
     },
@@ -193,7 +193,7 @@
   },
   "ECRRD8-05": {
     "Description": {
-      "de": "Ich habe den Eindruck, dass mein Partner/meine Partnerin nicht so viel N\u00e4he m\u00f6chte wie ich.",
+      "de": "Ich habe den Eindruck, dass mein Partner/meine Partnerin nicht so viel Nähe möchte wie ich.",
       "en": ""
     },
     "Levels": {
@@ -202,7 +202,7 @@
         "en": ""
       },
       "2": {
-        "de": "stimme v\u00f6llig zu",
+        "de": "stimme völlig zu",
         "en": ""
       }
     },
@@ -231,7 +231,7 @@
         "en": ""
       },
       "2": {
-        "de": "stimme v\u00f6llig zu",
+        "de": "stimme völlig zu",
         "en": ""
       }
     },
@@ -252,7 +252,7 @@
   },
   "ECRRD8-07": {
     "Description": {
-      "de": "Es macht mich w\u00fctend, dass ich von meinem Partner/meiner Partnerin nicht die Zuneigung und Unterst\u00fctzung bekomme, die ich brauche.",
+      "de": "Es macht mich wütend, dass ich von meinem Partner/meiner Partnerin nicht die Zuneigung und Unterstützung bekomme, die ich brauche.",
       "en": ""
     },
     "Levels": {
@@ -261,7 +261,7 @@
         "en": ""
       },
       "2": {
-        "de": "stimme v\u00f6llig zu",
+        "de": "stimme völlig zu",
         "en": ""
       }
     },
@@ -281,7 +281,7 @@
   },
   "ECRRD8-08": {
     "Description": {
-      "de": "Es f\u00e4llt mir leicht, meinem Partner/meiner Partnerin gegen\u00fcber liebevoll zu sein.",
+      "de": "Es fällt mir leicht, meinem Partner/meiner Partnerin gegenüber liebevoll zu sein.",
       "en": ""
     },
     "Levels": {
@@ -290,7 +290,7 @@
         "en": ""
       },
       "2": {
-        "de": "stimme v\u00f6llig zu",
+        "de": "stimme völlig zu",
         "en": ""
       }
     },

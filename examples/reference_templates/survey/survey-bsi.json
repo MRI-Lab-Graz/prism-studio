@@ -39,8 +39,8 @@
     "ShortName": "",
     "Authors": [],
     "DOI": "",
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -2043,7 +2043,7 @@
   },
   "BSI-49": {
     "Description": {
-      "de": "Feeling so restless you couldn\u2019t sit still",
+      "de": "Feeling so restless you couldn’t sit still",
       "en": ""
     },
     "Levels": {

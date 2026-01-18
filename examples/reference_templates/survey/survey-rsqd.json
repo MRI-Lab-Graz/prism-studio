@@ -32,15 +32,15 @@
       "en": ""
     },
     "Instruction": {
-      "de": "Wenn ich mich traurig oder niedergeschlagen f\u00fchle",
+      "de": "Wenn ich mich traurig oder niedergeschlagen fühle",
       "en": ""
     },
     "Citation": "",
     "ShortName": "",
     "Authors": [],
     "DOI": "",
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -75,7 +75,7 @@
   },
   "RSQD-01": {
     "Description": {
-      "de": "denke ich daran, wie allein ich mich f\u00fchle",
+      "de": "denke ich daran, wie allein ich mich fühle",
       "en": ""
     },
     "Levels": {
@@ -112,7 +112,7 @@
   },
   "RSQD-02": {
     "Description": {
-      "de": "denke ich, \"ich werde nicht f\u00e4hig sein, meine Arbeit zu tun, weil ich mich so schlecht f\u00fchle\"",
+      "de": "denke ich, \"ich werde nicht fähig sein, meine Arbeit zu tun, weil ich mich so schlecht fühle\"",
       "en": ""
     },
     "Levels": {
@@ -149,7 +149,7 @@
   },
   "RSQD-03": {
     "Description": {
-      "de": "denke ich daran, wie ersch\u00f6pft ich mich f\u00fchle",
+      "de": "denke ich daran, wie erschöpft ich mich fühle",
       "en": ""
     },
     "Levels": {
@@ -260,7 +260,7 @@
   },
   "RSQD-06": {
     "Description": {
-      "de": "denke ich, \"ich werde jetzt etwas tun, um mich besser zu f\u00fchlen\"",
+      "de": "denke ich, \"ich werde jetzt etwas tun, um mich besser zu fühlen\"",
       "en": ""
     },
     "Levels": {
@@ -371,7 +371,7 @@
   },
   "RSQD-09": {
     "Description": {
-      "de": "sage ich mir, dass diese Gef\u00fchle nicht anhalten werden",
+      "de": "sage ich mir, dass diese Gefühle nicht anhalten werden",
       "en": ""
     },
     "Levels": {
@@ -408,7 +408,7 @@
   },
   "RSQD-10": {
     "Description": {
-      "de": "denke ich daran, dass ich \u00fcberhaupt nichts mehr zu f\u00fchlen scheine",
+      "de": "denke ich daran, dass ich überhaupt nichts mehr zu fühlen scheine",
       "en": ""
     },
     "Levels": {
@@ -519,7 +519,7 @@
   },
   "RSQD-13": {
     "Description": {
-      "de": "gehe ich an einen Lieblingsort, um mich von meinen Gef\u00fchlen abzulenken",
+      "de": "gehe ich an einen Lieblingsort, um mich von meinen Gefühlen abzulenken",
       "en": ""
     },
     "Levels": {
@@ -556,7 +556,7 @@
   },
   "RSQD-14": {
     "Description": {
-      "de": "denke ich, \"ich konzentriere mich jetzt auf etwas anderes als darauf, wie ich mich f\u00fchle\"",
+      "de": "denke ich, \"ich konzentriere mich jetzt auf etwas anderes als darauf, wie ich mich fühle\"",
       "en": ""
     },
     "Levels": {
@@ -593,7 +593,7 @@
   },
   "RSQD-15": {
     "Description": {
-      "de": "tue ich etwas, das mich in der Vergangenheit hat besser f\u00fchlen lassen",
+      "de": "tue ich etwas, das mich in der Vergangenheit hat besser fühlen lassen",
       "en": ""
     },
     "Levels": {
@@ -630,7 +630,7 @@
   },
   "RSQD-16": {
     "Description": {
-      "de": "denke ich \u00fcber eine zur\u00fcckliegende Situation nach und w\u00fcnsche, dass diese besser gelaufen w\u00e4re",
+      "de": "denke ich über eine zurückliegende Situation nach und wünsche, dass diese besser gelaufen wäre",
       "en": ""
     },
     "Levels": {
@@ -667,7 +667,7 @@
   },
   "RSQD-17": {
     "Description": {
-      "de": "denke ich, \"ich werde jetzt ausgehen und etwas Spa\u00df haben\"",
+      "de": "denke ich, \"ich werde jetzt ausgehen und etwas Spaß haben\"",
       "en": ""
     },
     "Levels": {
@@ -704,7 +704,7 @@
   },
   "RSQD-18": {
     "Description": {
-      "de": "denke ich daran, dass ich mich nicht stark genug f\u00fchle, um irgend etwas zu tun",
+      "de": "denke ich daran, dass ich mich nicht stark genug fühle, um irgend etwas zu tun",
       "en": ""
     },
     "Levels": {
@@ -741,7 +741,7 @@
   },
   "RSQD-19": {
     "Description": {
-      "de": "denke ich \u00fcber meine Pers\u00f6nlichkeit nach und versuche zu verstehen, weshalb ich depressiv bin",
+      "de": "denke ich über meine Persönlichkeit nach und versuche zu verstehen, weshalb ich depressiv bin",
       "en": ""
     },
     "Levels": {
@@ -778,7 +778,7 @@
   },
   "RSQD-20": {
     "Description": {
-      "de": "gehe ich irgendwohin, wo ich alleine bin, um \u00fcber meine Gef\u00fchle nachzudenken",
+      "de": "gehe ich irgendwohin, wo ich alleine bin, um über meine Gefühle nachzudenken",
       "en": ""
     },
     "Levels": {
@@ -815,7 +815,7 @@
   },
   "RSQD-21": {
     "Description": {
-      "de": "h\u00f6re ich traurige Musik",
+      "de": "höre ich traurige Musik",
       "en": ""
     },
     "Levels": {
@@ -852,7 +852,7 @@
   },
   "RSQD-22": {
     "Description": {
-      "de": "ziehe ich mich zur\u00fcck und denke \u00fcber die Gr\u00fcnde nach, weshalb ich mich so traurig f\u00fchle",
+      "de": "ziehe ich mich zurück und denke über die Gründe nach, weshalb ich mich so traurig fühle",
       "en": ""
     },
     "Levels": {
@@ -889,7 +889,7 @@
   },
   "RSQD-23": {
     "Description": {
-      "de": "versuche ich, mich selbst zu verstehen, indem ich mich auf meine depressiven Gef\u00fchle konzentriere",
+      "de": "versuche ich, mich selbst zu verstehen, indem ich mich auf meine depressiven Gefühle konzentriere",
       "en": ""
     },
     "Levels": {

@@ -39,8 +39,8 @@
     "ShortName": "",
     "Authors": [],
     "DOI": "",
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -75,7 +75,7 @@
   },
   "DERQ-01-AV": {
     "Description": {
-      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gef\u00fchle dazu auftreten, indem ich ein digitales Medium nutze.",
+      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gefühle dazu auftreten, indem ich ein digitales Medium nutze.",
       "en": ""
     },
     "Levels": {
@@ -104,7 +104,7 @@
   },
   "DERQ-01-DI": {
     "Description": {
-      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gef\u00fchl ab, das diese Situation ausgel\u00f6st hat.",
+      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gefühl ab, das diese Situation ausgelöst hat.",
       "en": ""
     },
     "Levels": {
@@ -133,7 +133,7 @@
   },
   "DERQ-01-RU": {
     "Description": {
-      "de": "Ich besch\u00e4ftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gef\u00fchlen und Gedanken, die diese Situation hervorruft.",
+      "de": "Ich beschäftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gefühlen und Gedanken, die diese Situation hervorruft.",
       "en": ""
     },
     "Levels": {
@@ -191,7 +191,7 @@
   },
   "DERQ-01-PR": {
     "Description": {
-      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu l\u00f6sen.",
+      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu lösen.",
       "en": ""
     },
     "Levels": {
@@ -220,7 +220,7 @@
   },
   "DERQ-01-V": {
     "Description": {
-      "de": "Wie negativ w\u00fcrden Sie sich in dieser Situation f\u00fchlen?",
+      "de": "Wie negativ würden Sie sich in dieser Situation fühlen?",
       "en": ""
     },
     "Levels": {
@@ -249,7 +249,7 @@
   },
   "DERQ-02-AV": {
     "Description": {
-      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gef\u00fchle dazu auftreten, indem ich ein digitales Medium nutze.",
+      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gefühle dazu auftreten, indem ich ein digitales Medium nutze.",
       "en": ""
     },
     "Levels": {
@@ -278,7 +278,7 @@
   },
   "DERQ-02-DI": {
     "Description": {
-      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gef\u00fchl ab, das diese Situation ausgel\u00f6st hat.",
+      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gefühl ab, das diese Situation ausgelöst hat.",
       "en": ""
     },
     "Levels": {
@@ -307,7 +307,7 @@
   },
   "DERQ-02-RU": {
     "Description": {
-      "de": "Ich besch\u00e4ftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gef\u00fchlen und Gedanken, die diese Situation hervorruft.",
+      "de": "Ich beschäftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gefühlen und Gedanken, die diese Situation hervorruft.",
       "en": ""
     },
     "Levels": {
@@ -365,7 +365,7 @@
   },
   "DERQ-02-PR": {
     "Description": {
-      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu l\u00f6sen.",
+      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu lösen.",
       "en": ""
     },
     "Levels": {
@@ -394,7 +394,7 @@
   },
   "DERQ-02-V": {
     "Description": {
-      "de": "Wie negativ w\u00fcrden Sie sich in dieser Situation f\u00fchlen?",
+      "de": "Wie negativ würden Sie sich in dieser Situation fühlen?",
       "en": ""
     },
     "Levels": {
@@ -423,7 +423,7 @@
   },
   "DERQ-03-AV": {
     "Description": {
-      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gef\u00fchle dazu auftreten, indem ich ein digitales Medium nutze.",
+      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gefühle dazu auftreten, indem ich ein digitales Medium nutze.",
       "en": ""
     },
     "Levels": {
@@ -452,7 +452,7 @@
   },
   "DERQ-03-DI": {
     "Description": {
-      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gef\u00fchl ab, das diese Situation ausgel\u00f6st hat.",
+      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gefühl ab, das diese Situation ausgelöst hat.",
       "en": ""
     },
     "Levels": {
@@ -481,7 +481,7 @@
   },
   "DERQ-03-RU": {
     "Description": {
-      "de": "Ich besch\u00e4ftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gef\u00fchlen und Gedanken, die diese Situation hervorruft.",
+      "de": "Ich beschäftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gefühlen und Gedanken, die diese Situation hervorruft.",
       "en": ""
     },
     "Levels": {
@@ -539,7 +539,7 @@
   },
   "DERQ-03-PR": {
     "Description": {
-      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu l\u00f6sen.",
+      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu lösen.",
       "en": ""
     },
     "Levels": {
@@ -568,7 +568,7 @@
   },
   "DERQ-03-V": {
     "Description": {
-      "de": "Wie negativ w\u00fcrden Sie sich in dieser Situation f\u00fchlen?",
+      "de": "Wie negativ würden Sie sich in dieser Situation fühlen?",
       "en": ""
     },
     "Levels": {
@@ -597,7 +597,7 @@
   },
   "DERQ-04-AV": {
     "Description": {
-      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gef\u00fchle dazu auftreten, indem ich ein digitales Medium nutze.",
+      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gefühle dazu auftreten, indem ich ein digitales Medium nutze.",
       "en": ""
     },
     "Levels": {
@@ -626,7 +626,7 @@
   },
   "DERQ-04-DI": {
     "Description": {
-      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gef\u00fchl ab, das diese Situation ausgel\u00f6st hat.",
+      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gefühl ab, das diese Situation ausgelöst hat.",
       "en": ""
     },
     "Levels": {
@@ -655,7 +655,7 @@
   },
   "DERQ-04-RU": {
     "Description": {
-      "de": "Ich besch\u00e4ftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gef\u00fchlen und Gedanken, die diese Situation hervorruft.",
+      "de": "Ich beschäftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gefühlen und Gedanken, die diese Situation hervorruft.",
       "en": ""
     },
     "Levels": {
@@ -713,7 +713,7 @@
   },
   "DERQ-04-PR": {
     "Description": {
-      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu l\u00f6sen.",
+      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu lösen.",
       "en": ""
     },
     "Levels": {
@@ -742,7 +742,7 @@
   },
   "DERQ-04-V": {
     "Description": {
-      "de": "Wie negativ w\u00fcrden Sie sich in dieser Situation f\u00fchlen?",
+      "de": "Wie negativ würden Sie sich in dieser Situation fühlen?",
       "en": ""
     },
     "Levels": {
@@ -771,7 +771,7 @@
   },
   "DERQ-05-AV": {
     "Description": {
-      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gef\u00fchle dazu auftreten, indem ich ein digitales Medium nutze.",
+      "de": "Ich versuche zu verhindern, dass ich an diese Situation denke und dass Gefühle dazu auftreten, indem ich ein digitales Medium nutze.",
       "en": ""
     },
     "Levels": {
@@ -800,7 +800,7 @@
   },
   "DERQ-05-DI": {
     "Description": {
-      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gef\u00fchl ab, das diese Situation ausgel\u00f6st hat.",
+      "de": "Ich lenke mich mithilfe eines digitalen Mediums von dem negativen Gefühl ab, das diese Situation ausgelöst hat.",
       "en": ""
     },
     "Levels": {
@@ -829,7 +829,7 @@
   },
   "DERQ-05-RU": {
     "Description": {
-      "de": "Ich besch\u00e4ftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gef\u00fchlen und Gedanken, die diese Situation hervorruft.",
+      "de": "Ich beschäftige mich mithilfe eines digitalen Mediums mehr mit den negativen Gefühlen und Gedanken, die diese Situation hervorruft.",
       "en": ""
     },
     "Levels": {
@@ -887,7 +887,7 @@
   },
   "DERQ-05-PR": {
     "Description": {
-      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu l\u00f6sen.",
+      "de": "Ich nutze digitale Medien, um das Problem, dass diese Situation verursacht, zu lösen.",
       "en": ""
     },
     "Levels": {
@@ -916,7 +916,7 @@
   },
   "DERQ-05-V": {
     "Description": {
-      "de": "Wie negativ w\u00fcrden Sie sich in dieser Situation f\u00fchlen?",
+      "de": "Wie negativ würden Sie sich in dieser Situation fühlen?",
       "en": ""
     },
     "Levels": {

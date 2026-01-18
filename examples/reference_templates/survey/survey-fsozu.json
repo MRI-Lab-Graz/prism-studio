@@ -20,7 +20,7 @@
   "Study": {
     "TaskName": "fsozu",
     "OriginalName": {
-      "de": "Soziale Unterst\u00fctzung",
+      "de": "Soziale Unterstützung",
       "en": ""
     },
     "Version": {
@@ -32,15 +32,15 @@
       "en": ""
     },
     "Instruction": {
-      "de": "In diesem Fragebogen geht es um Ihre Beziehungen zu wichtigen Menschen, also zum:zur Partner:in, zu Familienmitgliedern, Freund:innen und Bekannten, Kolleg:innen und Nachbar:innen. Es wird erhoben, wie Sie diese Beziehungen erleben und einsch\u00e4tzen. Der Fragebogen enth\u00e4lt eine Reihe von Aussagen. Neben jeder Aussage finden Sie f\u00fcnf Kreise. Kreuzen Sie bitte den Kreis an, der Ihrer Zustimmung entspricht. Ein Kreuz ganz rechts (trifft genau zu) w\u00fcrde beispielsweise bedeuten, dass die entsprechende Aussage f\u00fcr Sie genau zutrifft; ein Kreuz in der zweiten Spalte von links w\u00fcrde bedeuten, dass diese Aussage f\u00fcr Sie eher nicht zutrifft.",
+      "de": "In diesem Fragebogen geht es um Ihre Beziehungen zu wichtigen Menschen, also zum:zur Partner:in, zu Familienmitgliedern, Freund:innen und Bekannten, Kolleg:innen und Nachbar:innen. Es wird erhoben, wie Sie diese Beziehungen erleben und einschätzen. Der Fragebogen enthält eine Reihe von Aussagen. Neben jeder Aussage finden Sie fünf Kreise. Kreuzen Sie bitte den Kreis an, der Ihrer Zustimmung entspricht. Ein Kreuz ganz rechts (trifft genau zu) würde beispielsweise bedeuten, dass die entsprechende Aussage für Sie genau zutrifft; ein Kreuz in der zweiten Spalte von links würde bedeuten, dass diese Aussage für Sie eher nicht zutrifft.",
       "en": ""
     },
     "Citation": "",
     "ShortName": "",
     "Authors": [],
     "DOI": "",
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -75,7 +75,7 @@
   },
   "FSozU-01": {
     "Description": {
-      "de": "Ich habe Menschen, die sich um meine Wohnung (Blumen, Haustiere) k\u00fcmmern k\u00f6nnen, wenn ich mal nicht da bin.",
+      "de": "Ich habe Menschen, die sich um meine Wohnung (Blumen, Haustiere) kümmern können, wenn ich mal nicht da bin.",
       "en": ""
     },
     "Levels": {
@@ -239,7 +239,7 @@
   },
   "FSozU-05": {
     "Description": {
-      "de": "Ich f\u00fchle mich von wichtigen Personen abgelehnt.",
+      "de": "Ich fühle mich von wichtigen Personen abgelehnt.",
       "en": ""
     },
     "Levels": {
@@ -404,7 +404,7 @@
   },
   "FSozU-09": {
     "Description": {
-      "de": "Viele meiner Freunde/Angeh\u00f6rigen haben eine \u00e4hnliche Einstellung zum Leben wie ich.",
+      "de": "Viele meiner Freunde/Angehörigen haben eine ähnliche Einstellung zum Leben wie ich.",
       "en": ""
     },
     "Levels": {
@@ -445,7 +445,7 @@
   },
   "FSozU-10": {
     "Description": {
-      "de": "Wenn ich dringend und kurzfristig zu einem umliegenden Ort (ca. 20km) muss, wei\u00df ich, wen ich ohne Z\u00f6gern bitten kann, mich dorthin zu fahren.",
+      "de": "Wenn ich dringend und kurzfristig zu einem umliegenden Ort (ca. 20km) muss, weiß ich, wen ich ohne Zögern bitten kann, mich dorthin zu fahren.",
       "en": ""
     },
     "Levels": {
@@ -486,7 +486,7 @@
   },
   "FSozU-11": {
     "Description": {
-      "de": "Ich k\u00f6nnte viel freier leben, wenn ich nicht immer auf meine Freude/Familie R\u00fccksicht nehmen m\u00fcsste.",
+      "de": "Ich könnte viel freier leben, wenn ich nicht immer auf meine Freude/Familie Rücksicht nehmen müsste.",
       "en": ""
     },
     "Levels": {
@@ -527,7 +527,7 @@
   },
   "FSozU-12": {
     "Description": {
-      "de": "Ich habe Freunde/Angeh\u00f6rige, die auch mal gut zuh\u00f6ren k\u00f6nnen, wenn ich mich aussprechen m\u00f6chte.",
+      "de": "Ich habe Freunde/Angehörige, die auch mal gut zuhören können, wenn ich mich aussprechen möchte.",
       "en": ""
     },
     "Levels": {
@@ -610,7 +610,7 @@
   },
   "FSozU-14": {
     "Description": {
-      "de": "Nach manchen Gespr\u00e4chen f\u00fchle ich mich wirklich besser.",
+      "de": "Nach manchen Gesprächen fühle ich mich wirklich besser.",
       "en": ""
     },
     "Levels": {
@@ -651,7 +651,7 @@
   },
   "FSozU-15": {
     "Description": {
-      "de": "Ich habe Freunde/Angeh\u00f6rige, die mich auch einfach mal umarmen.",
+      "de": "Ich habe Freunde/Angehörige, die mich auch einfach mal umarmen.",
       "en": ""
     },
     "Levels": {
@@ -775,7 +775,7 @@
   },
   "FSozU-18": {
     "Description": {
-      "de": "Manchmal habe ich das Gef\u00fchl, dass alle etwas an mir auszusetzen haben.",
+      "de": "Manchmal habe ich das Gefühl, dass alle etwas an mir auszusetzen haben.",
       "en": ""
     },
     "Levels": {
@@ -816,7 +816,7 @@
   },
   "FSozU-19": {
     "Description": {
-      "de": "Wenn ich krank bin, kann ich ohne Z\u00f6gern Freunde/Angeh\u00f6rige bitten, wichtige Dinge (z. B. Einkaufen) f\u00fcr mich zu erledigen.",
+      "de": "Wenn ich krank bin, kann ich ohne Zögern Freunde/Angehörige bitten, wichtige Dinge (z. B. Einkaufen) für mich zu erledigen.",
       "en": ""
     },
     "Levels": {
@@ -857,7 +857,7 @@
   },
   "FSozU-20": {
     "Description": {
-      "de": "Wenn ich mal tief bedr\u00fcckt bin, wei\u00df ich, zu wem ich gehen kann.",
+      "de": "Wenn ich mal tief bedrückt bin, weiß ich, zu wem ich gehen kann.",
       "en": ""
     },
     "Levels": {
@@ -939,7 +939,7 @@
   },
   "FSozU-22": {
     "Description": {
-      "de": "Oft treffe ich zuf\u00e4llig Bekannte, mit denen ich erst mal ein Schw\u00e4tzchen halte.",
+      "de": "Oft treffe ich zufällig Bekannte, mit denen ich erst mal ein Schwätzchen halte.",
       "en": ""
     },
     "Levels": {
@@ -980,7 +980,7 @@
   },
   "FSozU-23": {
     "Description": {
-      "de": "Ich w\u00fcnschte, man w\u00fcrde mir nicht \u00fcberall reinreden.",
+      "de": "Ich wünschte, man würde mir nicht überall reinreden.",
       "en": ""
     },
     "Levels": {
@@ -1021,7 +1021,7 @@
   },
   "FSozU-24": {
     "Description": {
-      "de": "Ich f\u00fchle mich oft als Au\u00dfenseiter.",
+      "de": "Ich fühle mich oft als Außenseiter.",
       "en": ""
     },
     "Levels": {
@@ -1063,7 +1063,7 @@
   },
   "FSozU-25": {
     "Description": {
-      "de": "Ich kann Freunde/Bekannte bitten, mir bei Amtsangelegenheiten (Beh\u00f6rden) zu helfen.",
+      "de": "Ich kann Freunde/Bekannte bitten, mir bei Amtsangelegenheiten (Behörden) zu helfen.",
       "en": ""
     },
     "Levels": {
@@ -1145,7 +1145,7 @@
   },
   "FSozU-27": {
     "Description": {
-      "de": "Bei manchen Freunden/Angeh\u00f6rigen kann ich auch mal ganz ausgelassen sein.",
+      "de": "Bei manchen Freunden/Angehörigen kann ich auch mal ganz ausgelassen sein.",
       "en": ""
     },
     "Levels": {
@@ -1186,7 +1186,7 @@
   },
   "FSozU-28": {
     "Description": {
-      "de": "Ich f\u00fchle mich in meinem Leben von Freund:innen/Angeh\u00f6rigen bedr\u00e4ngt und eingeengt.",
+      "de": "Ich fühle mich in meinem Leben von Freund:innen/Angehörigen bedrängt und eingeengt.",
       "en": ""
     },
     "Levels": {
@@ -1227,7 +1227,7 @@
   },
   "FSozU-29": {
     "Description": {
-      "de": "Ich habe einen mir vertrauten Menschen, mit dem ich alle pers\u00f6nlichen Dinge besprechen kann.",
+      "de": "Ich habe einen mir vertrauten Menschen, mit dem ich alle persönlichen Dinge besprechen kann.",
       "en": ""
     },
     "Levels": {
@@ -1268,7 +1268,7 @@
   },
   "FSozU-30": {
     "Description": {
-      "de": "Ich w\u00fcnsche mir von anderen mehr Verst\u00e4ndnis und Zuwendung.",
+      "de": "Ich wünsche mir von anderen mehr Verständnis und Zuwendung.",
       "en": ""
     },
     "Levels": {
@@ -1310,7 +1310,7 @@
   },
   "FSozU-31": {
     "Description": {
-      "de": "Ich habe genug Menschen, die mir wirklich helfen, wenn ich mal nicht weiter wei\u00df.",
+      "de": "Ich habe genug Menschen, die mir wirklich helfen, wenn ich mal nicht weiter weiß.",
       "en": ""
     },
     "Levels": {
@@ -1351,7 +1351,7 @@
   },
   "FSozU-32": {
     "Description": {
-      "de": "Es gibt Menschen, bei denen ich vor\u00fcbergehend wohnen k\u00f6nnte.",
+      "de": "Es gibt Menschen, bei denen ich vorübergehend wohnen könnte.",
       "en": ""
     },
     "Levels": {
@@ -1433,7 +1433,7 @@
   },
   "FSozU-34": {
     "Description": {
-      "de": "Ich w\u00fcnsche mir Geborgenheit und N\u00e4he.",
+      "de": "Ich wünsche mir Geborgenheit und Nähe.",
       "en": ""
     },
     "Levels": {
@@ -1475,7 +1475,7 @@
   },
   "FSozU-35": {
     "Description": {
-      "de": "Oft denke ich, dass meine Freunde/Angeh\u00f6rigen zu viel von mir verlangen und erwarten.",
+      "de": "Oft denke ich, dass meine Freunde/Angehörigen zu viel von mir verlangen und erwarten.",
       "en": ""
     },
     "Levels": {
@@ -1599,7 +1599,7 @@
   },
   "FSozU-38": {
     "Description": {
-      "de": "Meine Freunde/Angeh\u00f6rigen nehmen meine Gef\u00fchle nicht ernst.",
+      "de": "Meine Freunde/Angehörigen nehmen meine Gefühle nicht ernst.",
       "en": ""
     },
     "Levels": {
@@ -1640,7 +1640,7 @@
   },
   "FSozU-39": {
     "Description": {
-      "de": "Es gibt Menschen, die mir st\u00e4ndig ein schlechtes Gewissen machen.",
+      "de": "Es gibt Menschen, die mir ständig ein schlechtes Gewissen machen.",
       "en": ""
     },
     "Levels": {
@@ -1681,7 +1681,7 @@
   },
   "FSozU-40": {
     "Description": {
-      "de": "Es gibt genug Menschen, zu denen ich ein wirklich gutes Verh\u00e4ltnis habe.",
+      "de": "Es gibt genug Menschen, zu denen ich ein wirklich gutes Verhältnis habe.",
       "en": ""
     },
     "Levels": {
@@ -1722,7 +1722,7 @@
   },
   "FSozU-41": {
     "Description": {
-      "de": "\u00dcber ganz intime Dinge kann ich eigentlich mit niemanden sprechen.",
+      "de": "Über ganz intime Dinge kann ich eigentlich mit niemanden sprechen.",
       "en": ""
     },
     "Levels": {
@@ -1764,7 +1764,7 @@
   },
   "FSozU-42": {
     "Description": {
-      "de": "Ich habe einen sehr vertrauten Menschen, der f\u00fcr mich gut erreichbar ist.",
+      "de": "Ich habe einen sehr vertrauten Menschen, der für mich gut erreichbar ist.",
       "en": ""
     },
     "Levels": {
@@ -1805,7 +1805,7 @@
   },
   "FSozU-43": {
     "Description": {
-      "de": "Es gibt eine Gemeinschaft von Menschen (Freundeskreis, Clique), zu der ich mich zugeh\u00f6rig f\u00fchle.",
+      "de": "Es gibt eine Gemeinschaft von Menschen (Freundeskreis, Clique), zu der ich mich zugehörig fühle.",
       "en": ""
     },
     "Levels": {
@@ -1887,7 +1887,7 @@
   },
   "FSozU-45": {
     "Description": {
-      "de": "Ich w\u00fcnsche mir mehr Hilfsbereitschaft und praktische Unterst\u00fctzung.",
+      "de": "Ich wünsche mir mehr Hilfsbereitschaft und praktische Unterstützung.",
       "en": ""
     },
     "Levels": {
@@ -1929,7 +1929,7 @@
   },
   "FSozU-46": {
     "Description": {
-      "de": "Meine Freunde/Angeh\u00f6rigen k\u00f6nnen nicht verstehen, dass ich auch mal etwas Zeit f\u00fcr mich alleine brauche.",
+      "de": "Meine Freunde/Angehörigen können nicht verstehen, dass ich auch mal etwas Zeit für mich alleine brauche.",
       "en": ""
     },
     "Levels": {
@@ -1970,7 +1970,7 @@
   },
   "FSozU-47": {
     "Description": {
-      "de": "Es gibt Menschen, die sich mit mir zusammen richtig wohlf\u00fchlen.",
+      "de": "Es gibt Menschen, die sich mit mir zusammen richtig wohlfühlen.",
       "en": ""
     },
     "Levels": {
@@ -2052,7 +2052,7 @@
   },
   "FSozU-49": {
     "Description": {
-      "de": "Es gibt Menschen, die sich mit wichtigen pers\u00f6nlichen Problemen an mich wenden.",
+      "de": "Es gibt Menschen, die sich mit wichtigen persönlichen Problemen an mich wenden.",
       "en": ""
     },
     "Levels": {
@@ -2135,7 +2135,7 @@
   },
   "FSozU-51": {
     "Description": {
-      "de": "Es gibt Menschen, denen ich alle meine Gef\u00fchle zeigen kann, ohne dass es peinlich wird.",
+      "de": "Es gibt Menschen, denen ich alle meine Gefühle zeigen kann, ohne dass es peinlich wird.",
       "en": ""
     },
     "Levels": {
@@ -2176,7 +2176,7 @@
   },
   "FSozU-52": {
     "Description": {
-      "de": "Oft w\u00fcnsche ich mir, an einem Ort zu leben, wo mich keiner kennt.",
+      "de": "Oft wünsche ich mir, an einem Ort zu leben, wo mich keiner kennt.",
       "en": ""
     },
     "Levels": {
@@ -2217,7 +2217,7 @@
   },
   "FSozU-53": {
     "Description": {
-      "de": "Ich habe einen vertrauten Menschen, in dessen N\u00e4he ich mich sehr wohl f\u00fchle.",
+      "de": "Ich habe einen vertrauten Menschen, in dessen Nähe ich mich sehr wohl fühle.",
       "en": ""
     },
     "Levels": {

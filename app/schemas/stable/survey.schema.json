@@ -151,7 +151,9 @@
             "BSD-3-Clause",
             "Unlicense",
             "PDDL-1.0",
-            "CC0-1.0"
+            "CC0-1.0",
+            "Proprietary",
+            "Other"
           ]
         },
         "LicenseURL": {
@@ -335,7 +337,7 @@
           }
         }
       },
-      "required": ["TaskName", "OriginalName"]
+      "required": ["TaskName", "OriginalName", "LicenseID", "License"]
     },
     "Normative": {
       "type": "object",
