@@ -436,7 +436,6 @@ def _get_item_value(
 ) -> float | None:
     # 1. Direct match
     raw = data.get(item_id)
-    
     # 2. Try aliases if not found (e.g. item_id="MAIA16", but data has "MAI16")
     if raw is None and alias_map and item_id in alias_map:
         for alias_source in alias_map[item_id]:
@@ -1236,12 +1235,6 @@ def _export_recipe_aggregated(
             val_labels,
             score_details,
         )
-        _write_jamovi_r_helper(
-            out_root / f"{recipe_id}_jamovi_helper.R",
-            f"{recipe_id}.csv",
-            var_labels,
-            val_labels,
-        )
     elif out_format == "xlsx":
         out_fname = out_root / f"{recipe_id}.xlsx"
         try:
@@ -1289,24 +1282,66 @@ def _export_recipe_aggregated(
         out_fname = out_root / f"{recipe_id}.sav"
         try:
             import pyreadstat
+            import numpy as np
+            
+            # Sanitize for SPSS: convert "n/a" to real NaNs so numeric cols remain numeric
+            df_sav = df.copy()
+            
+            # SPSS fails on illegal column names (no dashes allowed)
+            rename_map = {}
+            for col in df_sav.columns:
+                clean_col = col.replace("-", "_").replace(".", "_")
+                if clean_col != col:
+                    rename_map[col] = clean_col
+            
+            if rename_map:
+                df_sav = df_sav.rename(columns=rename_map)
+
+            for col in df_sav.columns:
+                df_sav[col] = df_sav[col].replace("n/a", np.nan)
+                # Try to convert to numeric if possible (SPSS prefers it)
+                try:
+                    df_sav[col] = pd.to_numeric(df_sav[col])
+                except (ValueError, TypeError):
+                    pass
+
+            sav_var_labels = {}
+            for col, label in var_labels.items():
+                new_col = rename_map.get(col, col)
+                sav_var_labels[new_col] = label
+
             sav_val_labels = {}
             for col, vals in val_labels.items():
-                if col in df.columns:
-                    try:
-                        sav_val_labels[col] = {float(k): v for k, v in vals.items()}
-                    except (ValueError, TypeError):
-                        sav_val_labels[col] = vals
+                new_col = rename_map.get(col, col)
+                if new_col in df_sav.columns:
+                    col_series = df_sav[new_col]
+                    # Only apply value labels if they match the column type (numeric vs string)
+                    is_numeric_col = pd.api.types.is_numeric_dtype(col_series)
+                    
+                    col_labels = {}
+                    for k, v in vals.items():
+                        try:
+                            f_k = float(k)
+                            if is_numeric_col:
+                                col_labels[f_k] = v
+                        except (ValueError, TypeError):
+                            if not is_numeric_col:
+                                col_labels[k] = v
+                    
+                    if col_labels:
+                        sav_val_labels[new_col] = col_labels
+            
             pyreadstat.write_sav(
-                df,
+                df_sav,
                 str(out_fname),
-                column_labels=var_labels if var_labels else None,
+                column_labels=sav_var_labels if sav_var_labels else None,
                 variable_value_labels=sav_val_labels if sav_val_labels else None,
             )
             _write_codebook_json(out_root / f"{recipe_id}_codebook.json", var_labels, val_labels, score_details, survey_meta)
-        except Exception:
+        except Exception as e:
             out_fname = out_root / f"{recipe_id}.csv"
             df.to_csv(out_fname, index=False)
-            fallback_note = "pyreadstat not available; wrote CSV instead of SAVE"
+            fallback_note = f"SPSS export failed: {str(e)}; wrote CSV instead"
     elif out_format == "r":
         out_fname = out_root / f"{recipe_id}.feather"
         try:
@@ -1330,12 +1365,21 @@ def _export_recipe_legacy(
     include_raw: bool,
     flat_rows: list[dict],
     flat_key_to_idx: dict[tuple, int],
+    participants_df: Optional[Any] = None,
     output_prism_root: Path | None = None,
     repo_root: Path | None = None,
 ) -> tuple[int, int]:
     """Process all files for one recipe using legacy (PRISM/Flat) per-file logic."""
     processed_count = 0
     written_count = 0
+
+    participant_lookup = {}
+    if participants_df is not None and "participant_id" in participants_df.columns:
+        import pandas as pd
+        for _, p_row in participants_df.iterrows():
+            p_id = p_row["participant_id"]
+            rest = {k: v for k, v in p_row.items() if k != "participant_id" and pd.notna(v)}
+            participant_lookup[p_id] = rest
 
     # Extract task name to find sidecar
     task_key = "BiometricName" if modality == "biometrics" else "TaskName"
@@ -1366,6 +1410,8 @@ def _export_recipe_legacy(
         if not out_header:
             break
 
+        participant_data = participant_lookup.get(sub_id, {})
+
         if out_format == "flat":
             prefix = f"{recipe_id}_"
             for row_index, score_row in enumerate(out_rows):
@@ -1378,6 +1424,8 @@ def _export_recipe_legacy(
                         "session": ses_id,
                         "survey": recipe_id,
                     }
+                    if participant_data:
+                        merged.update(participant_data)
                     flat_key_to_idx[key] = len(flat_rows)
                     flat_rows.append(merged)
 
@@ -1386,6 +1434,10 @@ def _export_recipe_legacy(
             written_count += 1
         else:
             # PRISM format: sub-*/ses-*/survey/*.tsv
+            if participant_data and participant_cols:
+                out_header = participant_cols + [c for c in out_header if c not in participant_cols]
+                for row in out_rows:
+                    row.update(participant_data)
             out_dir = out_root / recipe_id / sub_id / ses_id / modality
             stem = in_path.stem
             base_stem, _in_suffix = _strip_suffix(stem)
@@ -1403,11 +1455,16 @@ def _finalize_flat_output(
     layout: str,
     output_prism_root: Path,
     fallback_note: str | None,
+    participants_df: Optional[Any],
 ) -> tuple[Path, str | None, list[str]]:
     """Assemble the global flat_rows into a single TSV file (long or wide)."""
     import pandas as pd
 
-    fixed = ["participant_id", "session", modality]
+    participant_cols: list[str] = []
+    if participants_df is not None:
+        participant_cols = [c for c in participants_df.columns if c != "participant_id"]
+
+    fixed = ["participant_id"] + participant_cols + ["session", modality]
     score_cols = sorted({k for r in flat_rows for k in r.keys() if k not in fixed})
     out_root = output_prism_root / "derivatives" / ( "survey" if modality == "survey" else "biometrics" )
     flat_out_path = out_root / f"{modality}_scores.tsv"
@@ -1416,7 +1473,7 @@ def _finalize_flat_output(
         try:
             df_flat = pd.DataFrame(flat_rows)
             # Melt and Pivot to handle session-specific columns
-            id_vars = ["participant_id", "session", "survey"]
+            id_vars = ["participant_id", "session", "survey"] + participant_cols
             df_melt = df_flat.melt(id_vars=id_vars, value_vars=score_cols).dropna()
             df_melt["col_name"] = df_melt["session"] + "_" + df_melt["variable"]
 
@@ -1425,8 +1482,12 @@ def _finalize_flat_output(
             )
             df_flat = df_wide.reset_index().fillna("n/a")
 
-            flat_header = ["participant_id"] + sorted(
-                [c for c in df_flat.columns if c != "participant_id"]
+            if participant_cols:
+                participants_subset = participants_df[["participant_id"] + participant_cols]
+                df_flat = df_flat.merge(participants_subset, on="participant_id", how="left")
+
+            flat_header = ["participant_id"] + participant_cols + sorted(
+                [c for c in df_flat.columns if c not in {"participant_id", *participant_cols}]
             )
             final_rows = df_flat.to_dict("records")
         except Exception as e:
@@ -1608,6 +1669,7 @@ def compute_survey_recipes(
                 include_raw=include_raw,
                 flat_rows=flat_rows,
                 flat_key_to_idx=flat_key_to_idx,
+                participants_df=participants_df,
                 output_prism_root=output_prism_root,
                 repo_root=repo_root,
             )
@@ -1624,6 +1686,7 @@ def compute_survey_recipes(
             layout=layout,
             output_prism_root=output_prism_root,
             fallback_note=fallback_note,
+            participants_df=participants_df,
         )
         if flat_nan_cols:
             nan_report["flat_output"] = flat_nan_cols
@@ -1653,62 +1716,3 @@ def compute_survey_recipes(
     )
 
 
-def _write_jamovi_r_helper(
-    path: Path,
-    data_filename: str,
-    variable_labels: dict[str, str],
-    value_labels: dict[str, dict],
-) -> None:
-    """Generate an R script that applies factors and labels for Jamovi/R."""
-    lines = [
-        "# PRISM Jamovi/R Metadata Helper",
-        "# -------------------------------------------------------------------------",
-        "# OPTION A: Using Jamovi's 'Rj' Editor module",
-        "# 1. Install 'RjEditor' from the Jamovi library (Analyses -> jamovi library).",
-        "# 2. Paste this script into the Rj editor window.",
-        "# 3. Change 'df <- read.csv(...)' to 'df <- data' to use Jamovi's active sheet.",
-        "# -------------------------------------------------------------------------",
-        "# OPTION B: Standalone R / RStudio",
-        "# 1. Ensure the CSV and this script are in the same folder.",
-        "# 2. Run the script to create a labeled 'df' object for analysis.",
-        "# -------------------------------------------------------------------------",
-        "",
-        "# 1. Load the data",
-        f"df <- read.csv('{data_filename}', check.names=FALSE, stringsAsFactors=FALSE)",
-        "# df <- data  # Uncomment this to use the Jamovi spreadsheet directly",
-        "",
-        "# 2. Apply Value Labels (Factors)",
-    ]
-
-    for var in sorted(value_labels.keys()):
-        levels = value_labels[var]
-        if not levels:
-            continue
-        
-        # Prepare levels: if they look like numbers, we'll try to keep them flexible
-        # but in R c('0','1') is safest for CSV-imported data.
-        r_levels = ", ".join([f"'{k}'" for k in levels.keys()])
-        
-        # Avoid backslashes inside f-string expressions (Python < 3.12 compatibility)
-        processed_labels = [str(v).replace("'", "\\'") for v in levels.values()]
-        r_labels = ", ".join([f"'{v}'" for v in processed_labels])
-        
-        lines.append(f"if ('{var}' %in% colnames(df)) {{")
-        lines.append(f"  df[['{var}']] <- factor(df[['{var}']], levels=c({r_levels}), labels=c({r_labels}))")
-        lines.append("}")
-
-    lines.append("")
-    lines.append("# 3. Variable Descriptions (Reference)")
-    for var, label in sorted(variable_labels.items()):
-        if label:
-            clean_label = label.replace("\n", " ").strip()
-            lines.append(f"# {var}: {clean_label}")
-
-    lines.append("")
-    lines.append("# Display structure")
-    lines.append("str(df)")
-    lines.append("head(df)")
-
-    _ensure_dir(path.parent)
-    with open(path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")

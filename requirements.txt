@@ -22,5 +22,4 @@ ttkthemes
 
 pyedflib
 defusedxml
-pyreadstat
 pyarrow
