@@ -1,5 +1,6 @@
 {
   "globalTemplateLibraryPath": "/Volumes/Evo/software/psycho-validator/library/",
+  "globalRecipesPath": "/Volumes/Evo/software/psycho-validator/recipes/",
   "defaultModalities": [
     "survey",
     "biometrics"

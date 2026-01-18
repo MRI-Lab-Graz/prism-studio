@@ -561,6 +561,8 @@ def parse_lss_xml(xml_content, task_name=None):
             "Version": "1.0",
             "Description": description,
             "ItemCount": len(prism_json),
+            "LicenseID": "Proprietary",
+            "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
         },
         "Metadata": {
             "SchemaVersion": "1.1.1",
@@ -726,6 +728,8 @@ def parse_lss_xml_by_groups(xml_content):
                 "Description": study_description,
                 "GroupOrder": group_order,
                 "ItemCount": len(questions_dict),
+                "LicenseID": "Proprietary",
+                "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
             },
             "Metadata": {
                 "SchemaVersion": "1.1.1",
@@ -887,6 +891,8 @@ def parse_lss_xml_by_questions(xml_content):
                 "GroupOrder": group_order,
                 "Version": "1.0",
                 "Description": q_data["question"][:200] if q_data["question"] else "",
+                "LicenseID": "Proprietary",
+                "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
             },
             "Metadata": {
                 "SchemaVersion": "1.1.1",

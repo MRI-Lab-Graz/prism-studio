@@ -39,6 +39,25 @@ A recipe is a JSON file that defines how to transform raw items into scores.
 
 ---
 
+## Computation Logic: Derived vs. Scores
+
+The PRISM scoring engine uses a two-stage process to compute results. Understanding the difference between `Derived` variables and `Scores` is key to building complex recipes.
+
+### 1. The "Scratchpad" (`Transforms.Derived`)
+Variables defined in the `Derived` block act as an **internal scratchpad**.
+- **Internal Only**: These variables are computed in memory but are **not** written to the final output file.
+- **Sequential**: They are processed in the order they appear. A later derived variable can reference an earlier one.
+- **Multi-step Logic**: Ideal for intermediate steps, such as mapping categorical values to numbers or calculating trial averages before computing a final subscale.
+
+### 2. The Final Output (`Scores`)
+Variables defined in the `Scores` block are the **actual results**.
+- **Public Output**: These are the columns that will appear in your result files (TSV, Excel, SPSS).
+- **Referencing**: Scores can reference original raw item IDs (e.g., `PSS-01`) or any `Derived` variable computed in the first stage.
+
+**Summary**: Use `Derived` for **internal logic** and cleanup; use `Scores` for the **variables you want to analyze**.
+
+---
+
 ## Available Methods
 
 ### 1. `Transforms.Derived` (Intermediate Variables)

@@ -213,7 +213,7 @@ Once your dataset is valid, you can automatically compute scores (e.g., PHQ-9 to
     ```
 3.  **Check Results**: PRISM creates a `recipes/` folder in your dataset containing the computed scores and a BIDS-compliant `dataset_description.json`.
 
-For details on recipe syntax (including mathematical formulas), see [RECIPES.md](RECIPES.md).
+> **Tip**: Recipes distinguish between **Derived** variables (internal intermediate steps) and **Scores** (final output columns). For a full explanation of the "Scratchpad" concept and mathematical formula syntax, see [RECIPES.md](RECIPES.md).
 
 ---
 

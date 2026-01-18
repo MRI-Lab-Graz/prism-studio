@@ -37,6 +37,17 @@ def _global_survey_library_root() -> Path | None:
     return fallback if fallback.exists() else None
 
 
+def _global_recipes_root() -> Path | None:
+    base_dir = Path(current_app.root_path)
+    app_settings = load_app_settings(app_root=str(base_dir))
+
+    if app_settings.global_recipes_path:
+        candidate = Path(app_settings.global_recipes_path).expanduser()
+        if candidate.exists() and candidate.is_dir():
+            return candidate
+    return None
+
+
 def _resolve_library_root(library_path: str | None) -> Path:
     if library_path:
         p = Path(library_path).expanduser().resolve()
@@ -565,10 +576,50 @@ def api_recipes_surveys():
         validation_warning = f"Dataset has {len(error_issues)} validation error(s). First: {first}"
 
     try:
+        # Determine repo_root or recipe_dir
+        repo_root = current_app.root_path
+        global_recipes = _global_recipes_root()
+        
+        # If we have a global recipes path, we use it as the base repo_root 
+        # (which compute_survey_recipes will append 'recipes/<modality>' to) 
+        # OR we just set it as recipe_dir if it's already specific.
+        # Typically globalRecipesPath points to the 'recipes' folder itself.
+        
+        effective_recipe_dir = recipe_dir
+        if global_recipes and not recipe_dir:
+            # If global_recipes points to .../recipes, we use its parent as repo_root
+            if global_recipes.name == "recipes":
+                repo_root = str(global_recipes.parent)
+            else:
+                # If it's a specific folder (like recipes/surveys), we use it as recipe_dir
+                effective_recipe_dir = str(global_recipes)
+
+        # Construct CLI command for logging
+        cmd_parts = ["python", "prism_tools.py", "recipes", modality, f'--prism "{dataset_path}"']
+        if repo_root != current_app.root_path:
+            cmd_parts.append(f'--repo "{repo_root}"')
+        if effective_recipe_dir:
+            cmd_parts.append(f'--recipes "{effective_recipe_dir}"')
+        if survey_filter:
+            cmd_parts.append(f'--survey "{survey_filter}"')
+        if out_format != "flat":
+            cmd_parts.append(f'--format {out_format}')
+        if layout != "long":
+            cmd_parts.append(f'--layout {layout}')
+        if include_raw:
+            cmd_parts.append("--include-raw")
+        if boilerplate:
+            cmd_parts.append("--boilerplate")
+        if lang != "en":
+            cmd_parts.append(f'--lang {lang}')
+        
+        cli_cmd = " ".join(cmd_parts)
+        print(f"\n[BACKEND-ACTION] {cli_cmd}\n")
+
         result = compute_survey_recipes(
             prism_root=dataset_path,
-            repo_root=current_app.root_path,
-            recipe_dir=recipe_dir,
+            repo_root=repo_root,
+            recipe_dir=effective_recipe_dir,
             survey=survey_filter,
             out_format=out_format,
             modality=modality,

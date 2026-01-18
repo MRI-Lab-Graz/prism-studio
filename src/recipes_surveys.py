@@ -664,6 +664,9 @@ def _write_recipes_dataset_description(*, out_root: Path, modality: str, prism_r
 
     # Try to inherit some metadata from the root dataset_description.json
     root_desc_path = prism_root / "dataset_description.json"
+    if not root_desc_path.exists() and (prism_root / "rawdata" / "dataset_description.json").exists():
+        root_desc_path = prism_root / "rawdata" / "dataset_description.json"
+
     root_meta = {}
     if root_desc_path.exists():
         try:
@@ -993,19 +996,25 @@ def _load_and_validate_recipes(
 
 def _find_tsv_files(prism_root: Path, modality: str) -> list[Path]:
     """Scan dataset for TSV files based on modality."""
+    # Handle BIDS project root (which contains rawdata/) vs. direct rawdata/ folder
+    search_roots = [prism_root]
+    if (prism_root / "rawdata").is_dir():
+        search_roots.append(prism_root / "rawdata")
+
     tsv_files: list[Path] = []
-    if modality == "survey":
-        # Search in survey/ and beh/ (BIDS standard)
-        for folder in ("survey", "beh"):
-            tsv_files.extend(prism_root.glob(f"sub-*/ses-*/{folder}/*.tsv"))
-            tsv_files.extend(prism_root.glob(f"sub-*/{folder}/*.tsv"))
-    elif modality == "biometrics":
-        tsv_files.extend(prism_root.glob("sub-*/ses-*/biometrics/*.tsv"))
-        tsv_files.extend(prism_root.glob("sub-*/biometrics/*.tsv"))
-    else:
-        # Fallback: search both
-        tsv_files.extend(prism_root.glob("sub-*/ses-*/*/*.tsv"))
-        tsv_files.extend(prism_root.glob("sub-*/*/*.tsv"))
+    for root in search_roots:
+        if modality == "survey":
+            # Search in survey/ and beh/ (BIDS standard)
+            for folder in ("survey", "beh"):
+                tsv_files.extend(root.glob(f"sub-*/ses-*/{folder}/*.tsv"))
+                tsv_files.extend(root.glob(f"sub-*/{folder}/*.tsv"))
+        elif modality == "biometrics":
+            tsv_files.extend(root.glob("sub-*/ses-*/biometrics/*.tsv"))
+            tsv_files.extend(root.glob("sub-*/biometrics/*.tsv"))
+        else:
+            # Fallback: search both
+            tsv_files.extend(root.glob("sub-*/ses-*/*/*.tsv"))
+            tsv_files.extend(root.glob("sub-*/*/*.tsv"))
 
     return sorted(set([p for p in tsv_files if p.is_file()]))
 
@@ -1017,6 +1026,11 @@ def _load_participants_data(prism_root: Path) -> tuple[Any, dict]:
 
     participants_tsv = prism_root / "participants.tsv"
     participants_json = prism_root / "participants.json"
+
+    # If not in root, check in rawdata/
+    if not participants_tsv.is_file() and (prism_root / "rawdata" / "participants.tsv").is_file():
+        participants_tsv = prism_root / "rawdata" / "participants.tsv"
+        participants_json = prism_root / "rawdata" / "participants.json"
 
     if participants_tsv.is_file():
         try:
