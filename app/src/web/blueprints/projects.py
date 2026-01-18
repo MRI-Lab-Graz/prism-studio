@@ -243,10 +243,11 @@ def get_global_library_settings():
     from src.config import load_app_settings
     from flask import current_app
 
-    settings = load_app_settings()
+    # Always pass app_root to load from the correct consolidated app directory
+    app_root = Path(current_app.root_path)
+    settings = load_app_settings(app_root=str(app_root))
 
     # Default library path is the app's survey_library folder
-    app_root = Path(current_app.root_path)
     default_library_path = str(app_root / "survey_library")
 
     return jsonify({
@@ -267,8 +268,9 @@ def set_global_library_settings():
     if not data:
         return jsonify({"success": False, "error": "No data provided"}), 400
 
-    # Load current settings
-    settings = load_app_settings()
+    # Load current settings from app root
+    app_root = Path(current_app.root_path)
+    settings = load_app_settings(app_root=str(app_root))
 
     # Update settings
     if "global_template_library_path" in data:
@@ -316,10 +318,10 @@ def get_library_path():
     from flask import current_app
 
     current = get_current_project()
-    app_settings = load_app_settings()
+    app_root = Path(current_app.root_path)
+    app_settings = load_app_settings(app_root=str(app_root))
 
     # Default library path is the app's survey_library folder
-    app_root = Path(current_app.root_path)
     default_library_path = str(app_root / "survey_library")
 
     # Use configured global path or default to survey_library

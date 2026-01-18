@@ -18,7 +18,7 @@
   "Study": {
     "TaskName": "gad7",
     "OriginalName": {
-      "de": "Generalisierte Angstst\u00f6rung 7 (GAD-7)",
+      "de": "Generalisierte Angststörung 7 (GAD-7)",
       "en": "Generalized Anxiety Disorder 7 (GAD-7)"
     },
     "Version": {
@@ -26,15 +26,15 @@
       "en": "2006"
     },
     "Description": {
-      "de": "7-Item Screening-Instrument zur Erfassung generalisierter Angstst\u00f6rungen",
+      "de": "7-Item Screening-Instrument zur Erfassung generalisierter Angststörungen",
       "en": "7-item screening tool for generalized anxiety disorder"
     },
-    "Citation": "Spitzer RL, Kroenke K, Williams JBW, L\u00f6we B. A brief measure for assessing generalized anxiety disorder: the GAD-7. Arch Intern Med. 2006;166(10):1092-1097. doi:10.1001/archinte.166.10.1092",
+    "Citation": "Spitzer RL, Kroenke K, Williams JBW, Löwe B. A brief measure for assessing generalized anxiety disorder: the GAD-7. Arch Intern Med. 2006;166(10):1092-1097. doi:10.1001/archinte.166.10.1092",
     "ShortName": "",
     "Authors": [],
     "DOI": "",
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -79,12 +79,12 @@
   },
   "gad7_01": {
     "Description": {
-      "de": "Nervosit\u00e4t, \u00c4ngstlichkeit oder Anspannung",
+      "de": "Nervosität, Ängstlichkeit oder Anspannung",
       "en": "Feeling nervous, anxious, or on edge"
     },
     "Levels": {
       "0": {
-        "de": "\u00dcberhaupt nicht",
+        "de": "Überhaupt nicht",
         "en": "Not at all"
       },
       "1": {
@@ -92,7 +92,7 @@
         "en": "Several days"
       },
       "2": {
-        "de": "An mehr als der H\u00e4lfte der Tage",
+        "de": "An mehr als der Hälfte der Tage",
         "en": "More than half the days"
       },
       "3": {
@@ -120,7 +120,7 @@
     },
     "Levels": {
       "0": {
-        "de": "\u00dcberhaupt nicht",
+        "de": "Überhaupt nicht",
         "en": "Not at all"
       },
       "1": {
@@ -128,7 +128,7 @@
         "en": "Several days"
       },
       "2": {
-        "de": "An mehr als der H\u00e4lfte der Tage",
+        "de": "An mehr als der Hälfte der Tage",
         "en": "More than half the days"
       },
       "3": {
@@ -151,12 +151,12 @@
   },
   "gad7_03": {
     "Description": {
-      "de": "\u00dcberm\u00e4\u00dfige Sorgen bez\u00fcglich verschiedener Angelegenheiten",
+      "de": "Übermäßige Sorgen bezüglich verschiedener Angelegenheiten",
       "en": "Worrying too much about different things"
     },
     "Levels": {
       "0": {
-        "de": "\u00dcberhaupt nicht",
+        "de": "Überhaupt nicht",
         "en": "Not at all"
       },
       "1": {
@@ -164,7 +164,7 @@
         "en": "Several days"
       },
       "2": {
-        "de": "An mehr als der H\u00e4lfte der Tage",
+        "de": "An mehr als der Hälfte der Tage",
         "en": "More than half the days"
       },
       "3": {
@@ -192,7 +192,7 @@
     },
     "Levels": {
       "0": {
-        "de": "\u00dcberhaupt nicht",
+        "de": "Überhaupt nicht",
         "en": "Not at all"
       },
       "1": {
@@ -200,7 +200,7 @@
         "en": "Several days"
       },
       "2": {
-        "de": "An mehr als der H\u00e4lfte der Tage",
+        "de": "An mehr als der Hälfte der Tage",
         "en": "More than half the days"
       },
       "3": {
@@ -223,12 +223,12 @@
   },
   "gad7_05": {
     "Description": {
-      "de": "Rastlosigkeit, so dass Stillsitzen schwer f\u00e4llt",
+      "de": "Rastlosigkeit, so dass Stillsitzen schwer fällt",
       "en": "Being so restless that it's hard to sit still"
     },
     "Levels": {
       "0": {
-        "de": "\u00dcberhaupt nicht",
+        "de": "Überhaupt nicht",
         "en": "Not at all"
       },
       "1": {
@@ -236,7 +236,7 @@
         "en": "Several days"
       },
       "2": {
-        "de": "An mehr als der H\u00e4lfte der Tage",
+        "de": "An mehr als der Hälfte der Tage",
         "en": "More than half the days"
       },
       "3": {
@@ -259,12 +259,12 @@
   },
   "gad7_06": {
     "Description": {
-      "de": "Schnelle Ver\u00e4rgerung oder Gereiztheit",
+      "de": "Schnelle Verärgerung oder Gereiztheit",
       "en": "Becoming easily annoyed or irritable"
     },
     "Levels": {
       "0": {
-        "de": "\u00dcberhaupt nicht",
+        "de": "Überhaupt nicht",
         "en": "Not at all"
       },
       "1": {
@@ -272,7 +272,7 @@
         "en": "Several days"
       },
       "2": {
-        "de": "An mehr als der H\u00e4lfte der Tage",
+        "de": "An mehr als der Hälfte der Tage",
         "en": "More than half the days"
       },
       "3": {
@@ -295,12 +295,12 @@
   },
   "gad7_07": {
     "Description": {
-      "de": "Gef\u00fchl der Angst, so als w\u00fcrde etwas Schlimmes passieren",
+      "de": "Gefühl der Angst, so als würde etwas Schlimmes passieren",
       "en": "Feeling afraid as if something awful might happen"
     },
     "Levels": {
       "0": {
-        "de": "\u00dcberhaupt nicht",
+        "de": "Überhaupt nicht",
         "en": "Not at all"
       },
       "1": {
@@ -308,7 +308,7 @@
         "en": "Several days"
       },
       "2": {
-        "de": "An mehr als der H\u00e4lfte der Tage",
+        "de": "An mehr als der Hälfte der Tage",
         "en": "More than half the days"
       },
       "3": {
@@ -336,7 +336,7 @@
     },
     "Levels": {
       "0": {
-        "de": "\u00dcberhaupt nicht erschwert",
+        "de": "Überhaupt nicht erschwert",
         "en": "Not difficult at all"
       },
       "1": {

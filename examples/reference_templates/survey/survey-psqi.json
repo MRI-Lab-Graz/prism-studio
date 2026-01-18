@@ -23,8 +23,8 @@
       "de": "Sleep Quality",
       "en": ""
     },
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -167,7 +167,7 @@
   },
   "PSQI-04": {
     "Description": {
-      "de": "During the past month, how many hours of actual sleep did you get at night?\u00a0 (This may be different than the number of hours you spent in bed.)",
+      "de": "During the past month, how many hours of actual sleep did you get at night?  (This may be different than the number of hours you spent in bed.)",
       "en": ""
     },
     "Levels": {

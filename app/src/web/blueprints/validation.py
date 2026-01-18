@@ -51,6 +51,16 @@ def validate_dataset():
             if candidate.exists() and candidate.is_dir():
                 default_library_path = str(candidate)
 
+    # Use global settings if no project library found
+    if not default_library_path:
+        from src.config import load_app_settings
+        app_settings = load_app_settings(app_root=str(current_app.root_path))
+        if app_settings.global_template_library_path:
+            default_library_path = app_settings.global_template_library_path
+        else:
+            # Final fallback to app's built-in library
+            default_library_path = str(Path(current_app.root_path) / "survey_library")
+
     return render_template(
         "index.html",
         schema_versions=available_versions,

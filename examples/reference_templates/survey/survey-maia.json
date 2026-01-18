@@ -35,7 +35,7 @@
     "Authors": [],
     "Citation": "",
     "DOI": "",
-    "License": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -59,7 +59,8 @@
       "Method": "",
       "Reference": "",
       "Notes": ""
-    }
+    },
+    "LicenseID": "Proprietary"
   },
   "Metadata": {
     "SchemaVersion": "1.0.0",

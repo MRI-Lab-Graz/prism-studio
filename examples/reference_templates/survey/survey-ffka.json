@@ -23,8 +23,8 @@
       "de": "FFKA",
       "en": ""
     },
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -59,7 +59,7 @@
   },
   "FFKA-01": {
     "Description": {
-      "de": "Sind Sie berufst\u00e4tig (auch Hausfrau) oder in Ausbildung?",
+      "de": "Sind Sie berufstätig (auch Hausfrau) oder in Ausbildung?",
       "en": ""
     },
     "Levels": {
@@ -87,16 +87,16 @@
   },
   "FFKA-01-yes": {
     "Description": {
-      "de": "Ihre berufliche T\u00e4tigkeit beinhaltet haupts\u00e4chlich:",
+      "de": "Ihre berufliche Tätigkeit beinhaltet hauptsächlich:",
       "en": ""
     },
     "Levels": {
       "0": {
-        "de": "sitzende T\u00e4tigkeiten (z.B.: B\u00fcro, Student...)",
+        "de": "sitzende Tätigkeiten (z.B.: Büro, Student...)",
         "en": ""
       },
       "1": {
-        "de": "m\u00e4\u00dfige Bewegung (z.B.: Handwerker, Hausmeister, Hausfrau...)",
+        "de": "mäßige Bewegung (z.B.: Handwerker, Hausmeister, Hausfrau...)",
         "en": ""
       },
       "2": {
@@ -119,7 +119,7 @@
   },
   "FFKA-02a": {
     "Description": {
-      "de": "Waren Sie in der letzten Woche zu Fu\u00df unterwegs, auf dem Weg zur Arbeit oder zum Einkaufen usw.?",
+      "de": "Waren Sie in der letzten Woche zu Fuß unterwegs, auf dem Weg zur Arbeit oder zum Einkaufen usw.?",
       "en": ""
     },
     "Levels": {
@@ -175,7 +175,7 @@
   },
   "FFKA-02b": {
     "Description": {
-      "de": "Waren Sie in der letzten Woche zu Fu\u00df unterwegs, zum Spazierengehen?",
+      "de": "Waren Sie in der letzten Woche zu Fuß unterwegs, zum Spazierengehen?",
       "en": ""
     },
     "Levels": {
@@ -455,7 +455,7 @@
   },
   "FFKA-05": {
     "Description": {
-      "de": "Steigen Sie regelm\u00e4\u00dfig Treppen?",
+      "de": "Steigen Sie regelmäßig Treppen?",
       "en": ""
     },
     "Levels": {
@@ -623,7 +623,7 @@
   },
   "FFKA-07": {
     "Description": {
-      "de": "Haben Sie im letzten Monat Sportaktivit\u00e4ten betrieben? (z.B.: Walking, Jogging, Fu\u00dfball, Handball, Federball, Gymnastik, Tennis, Tischtennis usw.)",
+      "de": "Haben Sie im letzten Monat Sportaktivitäten betrieben? (z.B.: Walking, Jogging, Fußball, Handball, Federball, Gymnastik, Tennis, Tischtennis usw.)",
       "en": ""
     },
     "Levels": {

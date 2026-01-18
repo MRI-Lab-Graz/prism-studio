@@ -23,8 +23,8 @@
       "de": "Aggression",
       "en": ""
     },
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -264,7 +264,7 @@
   },
   "BPAQ-13": {
     "Description": {
-      "de": "I can\u2019t help getting into arguments when people disagree with me.",
+      "de": "I can’t help getting into arguments when people disagree with me.",
       "en": ""
     },
     "Levels": {
@@ -346,7 +346,7 @@
   },
   "BPAQ-17": {
     "Description": {
-      "de": "My friends say that I\u2019m somewhat argumentative.",
+      "de": "My friends say that I’m somewhat argumentative.",
       "en": ""
     },
     "Levels": {

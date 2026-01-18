@@ -32,15 +32,15 @@
       "en": ""
     },
     "Instruction": {
-      "de": "Consider each idea thoughtfully and rate it according to how likely you'd be to embrace or enjoy such playful suggestions in real life. There are no right or wrong answers\u2014simply respond based on your personal preferences and sense of humor. ",
+      "de": "Consider each idea thoughtfully and rate it according to how likely you'd be to embrace or enjoy such playful suggestions in real life. There are no right or wrong answers—simply respond based on your personal preferences and sense of humor. ",
       "en": ""
     },
     "Citation": "",
     "ShortName": "",
     "Authors": [],
     "DOI": "",
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -977,7 +977,7 @@
   },
   "SILLY-23": {
     "Description": {
-      "de": "I would prefer if my computer\u2019s startup sound was a motivational speech.",
+      "de": "I would prefer if my computer’s startup sound was a motivational speech.",
       "en": ""
     },
     "Levels": {

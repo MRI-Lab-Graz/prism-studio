@@ -20,7 +20,7 @@
   "Study": {
     "TaskName": "mirsb18",
     "OriginalName": {
-      "de": "Religi\u00f6s-Spirituellen Befinden",
+      "de": "Religiös-Spirituellen Befinden",
       "en": ""
     },
     "Version": {
@@ -28,19 +28,19 @@
       "en": ""
     },
     "Description": {
-      "de": "Das Multidimensionales Inventar zum Religi\u00f6s-Spirituellen Befinden: Kurzversion 18 Items (MI-RSB18) misst Religi\u00f6s-Spirituellen Befinden.",
+      "de": "Das Multidimensionales Inventar zum Religiös-Spirituellen Befinden: Kurzversion 18 Items (MI-RSB18) misst Religiös-Spirituellen Befinden.",
       "en": ""
     },
     "Instruction": {
-      "de": "Bevor Sie an die Beantwortung der Fragen gehen, bitte ich Sie folgende Dinge zu beachten:\nSie werden zum gro\u00dfen Teil Fragen bez\u00fcglich Ihres religi\u00f6sen Glaubens finden. Auch werden\nSie bei der Bearbeitung der einzelnen Fragen \u00f6fters auf den Begriff \u201eGott\u201c sto\u00dfen.\nDazu ist wichtig anzumerken:\n* Die hier gemachten Angaben dienen ausschlie\u00dflich der wissenschaftlichen Forschung und werden vollkommen anonym ausgewertet.\n* Diese Untersuchung wurde von keiner religi\u00f6sen Vereinigung oder Gemeinschaft gef\u00f6rdert, noch werden Daten an eine solche weitergegeben.\n* Der Begriff \u201eGott\u201c kann, muss aber nicht im christlich\u2013 konfessionellen Sinne verstanden werden.\n* Falls Sie den Begriff \u201eGott\u201c als unpassend empfinden, k\u00f6nnen Sie diesen gedanklich durch eine Formulierung wie \u201eh\u00f6here Macht\u201c ersetzen.\n* Die Beantwortung des Fragebogens ist trotz der v\u00f6lligen Ablehnung eines religi\u00f6sen Glaubens m\u00f6glich. Diese Haltung wird im Fragebogen ber\u00fccksichtigt.\nBitte beantworten Sie die Fragen spontan und halten Sie sich gedanklich nicht zu lange bei\neiner Frage auf.\nWeiters bitte ich Sie jede Frage zu beantworten, da nur so eine korrekte Auswertung m\u00f6glich ist.",
+      "de": "Bevor Sie an die Beantwortung der Fragen gehen, bitte ich Sie folgende Dinge zu beachten:\nSie werden zum großen Teil Fragen bezüglich Ihres religiösen Glaubens finden. Auch werden\nSie bei der Bearbeitung der einzelnen Fragen öfters auf den Begriff „Gott“ stoßen.\nDazu ist wichtig anzumerken:\n* Die hier gemachten Angaben dienen ausschließlich der wissenschaftlichen Forschung und werden vollkommen anonym ausgewertet.\n* Diese Untersuchung wurde von keiner religiösen Vereinigung oder Gemeinschaft gefördert, noch werden Daten an eine solche weitergegeben.\n* Der Begriff „Gott“ kann, muss aber nicht im christlich– konfessionellen Sinne verstanden werden.\n* Falls Sie den Begriff „Gott“ als unpassend empfinden, können Sie diesen gedanklich durch eine Formulierung wie „höhere Macht“ ersetzen.\n* Die Beantwortung des Fragebogens ist trotz der völligen Ablehnung eines religiösen Glaubens möglich. Diese Haltung wird im Fragebogen berücksichtigt.\nBitte beantworten Sie die Fragen spontan und halten Sie sich gedanklich nicht zu lange bei\neiner Frage auf.\nWeiters bitte ich Sie jede Frage zu beantworten, da nur so eine korrekte Auswertung möglich ist.",
       "en": ""
     },
     "Citation": "",
     "ShortName": "",
     "Authors": [],
     "DOI": "",
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -75,7 +75,7 @@
   },
   "MIRSB18-01": {
     "Description": {
-      "de": "Ich werde mit Gottes Hilfe alle Probleme bew\u00e4ltigen k\u00f6nnen.",
+      "de": "Ich werde mit Gottes Hilfe alle Probleme bewältigen können.",
       "en": ""
     },
     "Levels": {
@@ -84,7 +84,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -113,7 +113,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -143,7 +143,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -172,7 +172,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -192,7 +192,7 @@
   },
   "MIRSB18-05": {
     "Description": {
-      "de": "Ich w\u00fcrde alles daran setzen, das Leben geliebter Menschen zu verl\u00e4ngern.",
+      "de": "Ich würde alles daran setzen, das Leben geliebter Menschen zu verlängern.",
       "en": ""
     },
     "Levels": {
@@ -201,7 +201,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -222,7 +222,7 @@
   },
   "MIRSB18-06": {
     "Description": {
-      "de": "Ich habe die Erfahrung der Echtheit von Gef\u00fchlen gemacht.",
+      "de": "Ich habe die Erfahrung der Echtheit von Gefühlen gemacht.",
       "en": ""
     },
     "Levels": {
@@ -231,7 +231,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -251,7 +251,7 @@
   },
   "MIRSB18-07": {
     "Description": {
-      "de": "In gewissen Momenten in meinem Leben f\u00fchle ich mich Gott ganz nah.",
+      "de": "In gewissen Momenten in meinem Leben fühle ich mich Gott ganz nah.",
       "en": ""
     },
     "Levels": {
@@ -260,7 +260,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -280,7 +280,7 @@
   },
   "MIRSB18-08": {
     "Description": {
-      "de": "Es gibt Menschen, denen ich niemals verzeihen werde k\u00f6nnen.",
+      "de": "Es gibt Menschen, denen ich niemals verzeihen werde können.",
       "en": ""
     },
     "Levels": {
@@ -289,7 +289,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -319,7 +319,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -348,7 +348,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -368,7 +368,7 @@
   },
   "MIRSB18-11": {
     "Description": {
-      "de": "Es f\u00e4llt mir schwer daran zu denken, dass von mir geliebte Menschen einmal nicht mehr leben werden.",
+      "de": "Es fällt mir schwer daran zu denken, dass von mir geliebte Menschen einmal nicht mehr leben werden.",
       "en": ""
     },
     "Levels": {
@@ -377,7 +377,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -407,7 +407,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -427,7 +427,7 @@
   },
   "MIRSB18-13": {
     "Description": {
-      "de": "Ich werde mit Gottes Hilfe noch einmal gl\u00fccklich sein.",
+      "de": "Ich werde mit Gottes Hilfe noch einmal glücklich sein.",
       "en": ""
     },
     "Levels": {
@@ -436,7 +436,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -465,7 +465,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -495,7 +495,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -524,7 +524,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -544,7 +544,7 @@
   },
   "MIRSB18-17": {
     "Description": {
-      "de": "Ich w\u00fcrde alles daran setzen, mein Leben zu verl\u00e4ngern.",
+      "de": "Ich würde alles daran setzen, mein Leben zu verlängern.",
       "en": ""
     },
     "Levels": {
@@ -553,7 +553,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },
@@ -583,7 +583,7 @@
         "en": ""
       },
       "2": {
-        "de": "Trifft v\u00f6llig zu",
+        "de": "Trifft völlig zu",
         "en": ""
       }
     },

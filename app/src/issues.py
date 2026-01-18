@@ -210,15 +210,22 @@ def get_fix_hint(code: str, message: str = "") -> str:
     
     # Handle specific cases with regex if message is provided
     if message:
-        # Schema validation errors (PRISM301) - specifically "too short" cases
-        if code == "PRISM301" and "too short" in message.lower():
-            if "keyword" in message.lower():
-                return "PRISM recommends at least 3 keywords to ensure your dataset is discoverable (FAIR compliance). Add more keywords to the 'Keywords' array."
-            if "author" in message.lower():
-                return "BIDS requires at least one author in dataset_description.json. Ensure 'Authors' is a non-empty array."
-            if "description" in message.lower():
-                return "A descriptive study overview (minimum 50 characters) is required for FAIR compliance. Expand the 'Description' field in dataset_description.json."
-            return "A required field or array is too short according to the PRISM schema. Check the schema requirements for this field."
+        # Schema validation errors (PRISM301)
+        if code == "PRISM301":
+            if "licenseid" in message.lower() or "license" in message.lower():
+                # Try to extract the survey/task name from the message (e.g. task-danceq_survey.json)
+                task_match = re.search(r"task-([a-zA-Z0-9]+)_survey", message)
+                survey_name = task_match.group(1) if task_match else "this instrument"
+                return f"The PRISM schema requires a valid license for all survey instruments. You must specify a 'LicenseID' (e.g., 'Proprietary' or 'CC-BY-4.0') and a 'License' statement for survey '{survey_name}' in the metadata template."
+            
+            if "too short" in message.lower():
+                if "keyword" in message.lower():
+                    return "PRISM recommends at least 3 keywords to ensure your dataset is discoverable (FAIR compliance). Add more keywords to the 'Keywords' array."
+                if "author" in message.lower():
+                    return "BIDS requires at least one author in dataset_description.json. Ensure 'Authors' is a non-empty array."
+                if "description" in message.lower():
+                    return "A descriptive study overview (minimum 50 characters) is required for FAIR compliance. Expand the 'Description' field in dataset_description.json."
+                return "A required field or array is too short according to the PRISM schema. Check the schema requirements for this field."
 
         # Levels errors (PRISM402)
         if code == "PRISM402":

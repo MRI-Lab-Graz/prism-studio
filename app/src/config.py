@@ -390,7 +390,7 @@ def get_effective_template_library_path(
         - source: 'project', 'global', or 'default' indicating where external path came from
     """
     if app_settings is None:
-        app_settings = load_app_settings()
+        app_settings = load_app_settings(app_root=app_root)
 
     # Determine effective global path (configured or default)
     global_path = app_settings.global_template_library_path

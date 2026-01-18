@@ -29,12 +29,12 @@
       "de": "5-Item Fragebogen zur Erfassung des aktuellen psychischen Wohlbefindens",
       "en": "5-item questionnaire measuring current mental well-being"
     },
-    "Citation": "Topp CW, \u00d8stergaard SD, S\u00f8ndergaard S, Bech P. The WHO-5 Well-Being Index: a systematic review of the literature. Psychother Psychosom. 2015;84(3):167-176. doi:10.1159/000376585",
+    "Citation": "Topp CW, Østergaard SD, Søndergaard S, Bech P. The WHO-5 Well-Being Index: a systematic review of the literature. Psychother Psychosom. 2015;84(3):167-176. doi:10.1159/000376585",
     "ShortName": "",
     "Authors": [],
     "DOI": "",
-    "License": "",
-    "LicenseID": "",
+    "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+    "LicenseID": "Proprietary",
     "LicenseURL": "",
     "CopyrightHolder": "",
     "Access": "",
@@ -92,11 +92,11 @@
         "en": "Some of the time"
       },
       "2": {
-        "de": "Etwas weniger als die H\u00e4lfte der Zeit",
+        "de": "Etwas weniger als die Hälfte der Zeit",
         "en": "Less than half of the time"
       },
       "3": {
-        "de": "Etwas mehr als die H\u00e4lfte der Zeit",
+        "de": "Etwas mehr als die Hälfte der Zeit",
         "en": "More than half of the time"
       },
       "4": {
@@ -123,7 +123,7 @@
   },
   "who5_02": {
     "Description": {
-      "de": "...habe ich mich ruhig und entspannt gef\u00fchlt",
+      "de": "...habe ich mich ruhig und entspannt gefühlt",
       "en": "I have felt calm and relaxed"
     },
     "Levels": {
@@ -136,11 +136,11 @@
         "en": "Some of the time"
       },
       "2": {
-        "de": "Etwas weniger als die H\u00e4lfte der Zeit",
+        "de": "Etwas weniger als die Hälfte der Zeit",
         "en": "Less than half of the time"
       },
       "3": {
-        "de": "Etwas mehr als die H\u00e4lfte der Zeit",
+        "de": "Etwas mehr als die Hälfte der Zeit",
         "en": "More than half of the time"
       },
       "4": {
@@ -167,7 +167,7 @@
   },
   "who5_03": {
     "Description": {
-      "de": "...habe ich mich aktiv und voller Energie gef\u00fchlt",
+      "de": "...habe ich mich aktiv und voller Energie gefühlt",
       "en": "I have felt active and vigorous"
     },
     "Levels": {
@@ -180,11 +180,11 @@
         "en": "Some of the time"
       },
       "2": {
-        "de": "Etwas weniger als die H\u00e4lfte der Zeit",
+        "de": "Etwas weniger als die Hälfte der Zeit",
         "en": "Less than half of the time"
       },
       "3": {
-        "de": "Etwas mehr als die H\u00e4lfte der Zeit",
+        "de": "Etwas mehr als die Hälfte der Zeit",
         "en": "More than half of the time"
       },
       "4": {
@@ -211,7 +211,7 @@
   },
   "who5_04": {
     "Description": {
-      "de": "...habe ich mich beim Aufwachen frisch und ausgeruht gef\u00fchlt",
+      "de": "...habe ich mich beim Aufwachen frisch und ausgeruht gefühlt",
       "en": "I woke up feeling fresh and rested"
     },
     "Levels": {
@@ -224,11 +224,11 @@
         "en": "Some of the time"
       },
       "2": {
-        "de": "Etwas weniger als die H\u00e4lfte der Zeit",
+        "de": "Etwas weniger als die Hälfte der Zeit",
         "en": "Less than half of the time"
       },
       "3": {
-        "de": "Etwas mehr als die H\u00e4lfte der Zeit",
+        "de": "Etwas mehr als die Hälfte der Zeit",
         "en": "More than half of the time"
       },
       "4": {
@@ -268,11 +268,11 @@
         "en": "Some of the time"
       },
       "2": {
-        "de": "Etwas weniger als die H\u00e4lfte der Zeit",
+        "de": "Etwas weniger als die Hälfte der Zeit",
         "en": "Less than half of the time"
       },
       "3": {
-        "de": "Etwas mehr als die H\u00e4lfte der Zeit",
+        "de": "Etwas mehr als die Hälfte der Zeit",
         "en": "More than half of the time"
       },
       "4": {
