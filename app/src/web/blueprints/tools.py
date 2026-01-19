@@ -1024,7 +1024,7 @@ def limesurvey_to_prism():
         task_name = Path(file.filename).stem
 
     try:
-        from src.converters.excel_base import sanitize_task_name
+        from src.utils.naming import sanitize_task_name
         from jsonschema import validate, ValidationError
         from src.schema_manager import load_schema
         
