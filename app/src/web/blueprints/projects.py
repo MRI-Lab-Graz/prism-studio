@@ -247,8 +247,10 @@ def get_global_library_settings():
     app_root = Path(current_app.root_path)
     settings = load_app_settings(app_root=str(app_root))
 
-    # Default library path is the app's survey_library folder
-    default_library_path = str(app_root / "survey_library")
+    # Get effective library path from configuration
+    from src.config import get_effective_library_paths
+    lib_paths = get_effective_library_paths(app_root=str(app_root), app_settings=settings)
+    default_library_path = lib_paths["global_library_path"] or str(app_root / "survey_library")
 
     return jsonify({
         "success": True,
@@ -321,10 +323,12 @@ def get_library_path():
     app_root = Path(current_app.root_path)
     app_settings = load_app_settings(app_root=str(app_root))
 
-    # Default library path is the app's survey_library folder
-    default_library_path = str(app_root / "survey_library")
+    # Get effective library path from configuration
+    from src.config import get_effective_library_paths
+    lib_paths = get_effective_library_paths(app_root=str(app_root), app_settings=app_settings)
+    default_library_path = lib_paths["global_library_path"] or str(app_root / "survey_library")
 
-    # Use configured global path or default to survey_library
+    # Use configured global path or default
     effective_global_path = app_settings.global_template_library_path or default_library_path
 
     if not current.get("path"):

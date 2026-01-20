@@ -1,0 +1,65 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "OCI-R",
+    "Reference": "survey-oci-r.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for The ObsessiveâCompulsive Inventory (short version, OCI-R)",
+        "de": "Gesamtscore für The ObsessiveâCompulsive Inventory (short version, OCI-R)"
+      },
+      "Items": [
+        "OCI-R01",
+        "OCI-R02",
+        "OCI-R03",
+        "OCI-R04",
+        "OCI-R05",
+        "OCI-R06",
+        "OCI-R07",
+        "OCI-R08",
+        "OCI-R09",
+        "OCI-R10",
+        "OCI-R11",
+        "OCI-R12",
+        "OCI-R13",
+        "OCI-R14",
+        "OCI-R15",
+        "OCI-R16",
+        "OCI-R17",
+        "OCI-R18"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 18,
+        "max": 126
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

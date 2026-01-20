@@ -1,0 +1,136 @@
+{
+  "RecipeVersion": "1.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "Ten Item Personality Inventory",
+    "TaskName": "personality",
+    "Description": "Brief measure of the Big Five personality dimensions (OCEAN): Openness, Conscientiousness, Extraversion, Agreeableness, and emotional stability (Neuroticism inverted).",
+    "Citation": "Gosling, S. D., Rentfrow, P. J., & Swann Jr., W. B. (2003). A very brief measure of the Big-Five personality domains. Journal of Research in Personality, 37, 504-528.",
+    "DOI": "https://doi.org/10.1016/S0092-6566(03)00046-1",
+    "URL": "https://www.psytoolkit.org/survey-library/big5-tipi.html",
+    "Authors": ["S. D. Gosling", "P. J. Rentfrow", "W. B. Swann Jr."],
+    "License": "Freely available for research purposes"
+  },
+  "Transforms": {
+    "Invert": {
+      "Items": ["TIPI02", "TIPI04", "TIPI06", "TIPI08", "TIPI10"],
+      "Scale": {"min": 1, "max": 7}
+    },
+    "Derived": []
+  },
+  "Scores": [
+    {
+      "Name": "tipi_extraversion",
+      "Method": "mean",
+      "Items": ["TIPI01", "TIPI06"],
+      "Description": "Extraversion dimension (sociability, assertiveness, activity)",
+      "Range": {"min": 1, "max": 7},
+      "Missing": "ignore",
+      "Note": "TIPI06 is reverse-coded"
+    },
+    {
+      "Name": "tipi_agreeableness",
+      "Method": "mean",
+      "Items": ["TIPI02", "TIPI07"],
+      "Description": "Agreeableness dimension (cooperation, compassion, politeness)",
+      "Range": {"min": 1, "max": 7},
+      "Missing": "ignore",
+      "Note": "TIPI02 is reverse-coded"
+    },
+    {
+      "Name": "tipi_conscientiousness",
+      "Method": "mean",
+      "Items": ["TIPI03", "TIPI08"],
+      "Description": "Conscientiousness dimension (organization, responsibility, discipline)",
+      "Range": {"min": 1, "max": 7},
+      "Missing": "ignore",
+      "Note": "TIPI08 is reverse-coded"
+    },
+    {
+      "Name": "tipi_emotional_stability",
+      "Method": "mean",
+      "Items": ["TIPI04", "TIPI09"],
+      "Description": "Emotional stability dimension (low neuroticism, calmness)",
+      "Range": {"min": 1, "max": 7},
+      "Missing": "ignore",
+      "Note": "TIPI04 is reverse-coded"
+    },
+    {
+      "Name": "tipi_openness",
+      "Method": "mean",
+      "Items": ["TIPI05", "TIPI10"],
+      "Description": "Openness to experience dimension (curiosity, creativity, open-mindedness)",
+      "Range": {"min": 1, "max": 7},
+      "Missing": "ignore",
+      "Note": "TIPI10 is reverse-coded"
+    }
+  ],
+  "Psychometrics": {
+    "Reliability": {
+      "TestRetest": {
+        "Interval": "6 weeks",
+        "Values": {
+          "Extraversion": 0.77,
+          "Agreeableness": 0.71,
+          "Conscientiousness": 0.76,
+          "EmotionalStability": 0.70,
+          "Openness": 0.62
+        }
+      },
+      "ConvergentValidity": {
+        "Description": "Convergent correlations with Big Five Inventory (BFI-44)",
+        "Values": {
+          "Extraversion": 0.87,
+          "Agreeableness": 0.70,
+          "Conscientiousness": 0.75,
+          "EmotionalStability": 0.81,
+          "Openness": 0.65
+        }
+      }
+    },
+    "NormativeData": {
+      "Sample": "US university students (N=1812)",
+      "Year": 2003,
+      "Means": {
+        "All": {
+          "Extraversion": 4.44,
+          "Agreeableness": 5.23,
+          "Conscientiousness": 5.40,
+          "EmotionalStability": 4.83,
+          "Openness": 5.38
+        },
+        "Men": {
+          "Extraversion": 4.25,
+          "Agreeableness": 5.06,
+          "Conscientiousness": 5.19,
+          "EmotionalStability": 5.13,
+          "Openness": 5.34
+        },
+        "Women": {
+          "Extraversion": 4.54,
+          "Agreeableness": 5.32,
+          "Conscientiousness": 5.51,
+          "EmotionalStability": 4.66,
+          "Openness": 5.40
+        }
+      }
+    }
+  },
+  "Usage": {
+    "Recommendations": [
+      "Suitable for research when time is limited",
+      "Good for large-scale studies and online data collection",
+      "Appropriate for screening or preliminary assessment"
+    ],
+    "Limitations": [
+      "Only 2 items per dimension - lower reliability than longer measures",
+      "Not recommended for high-stakes individual assessment",
+      "Internal consistency lower than full Big Five measures"
+    ],
+    "AlternativeMeasures": [
+      "BFI-S (15 items) - Better reliability with modest time increase",
+      "BFI-44 - Full Big Five Inventory",
+      "NEO-PI-R (240 items) - Comprehensive personality assessment"
+    ]
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "NMP-Q",
+    "Reference": "survey-nmp-q.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Nomophobia Questionnaire (NMP-Q)",
+        "de": "Gesamtscore für Nomophobia Questionnaire (NMP-Q)"
+      },
+      "Items": [
+        "NMP-Q01",
+        "NMP-Q02",
+        "NMP-Q03",
+        "NMP-Q04",
+        "NMP-Q05",
+        "NMP-Q06",
+        "NMP-Q07",
+        "NMP-Q08",
+        "NMP-Q09"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 9,
+        "max": 63
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "DASS",
+    "Reference": "survey-dass.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Depression Anxiety Stress Scales (DASS)",
+        "de": "Gesamtscore für Depression Anxiety Stress Scales (DASS)"
+      },
+      "Items": [
+        "DASS01",
+        "DASS02",
+        "DASS03",
+        "DASS04",
+        "DASS05",
+        "DASS06",
+        "DASS07",
+        "DASS08",
+        "DASS09",
+        "DASS10",
+        "DASS11",
+        "DASS12",
+        "DASS13",
+        "DASS14",
+        "DASS15",
+        "DASS16",
+        "DASS17",
+        "DASS18",
+        "DASS19",
+        "DASS20",
+        "DASS21",
+        "DASS22",
+        "DASS23",
+        "DASS24",
+        "DASS25",
+        "DASS26",
+        "DASS27",
+        "DASS28",
+        "DASS29",
+        "DASS30",
+        "DASS31",
+        "DASS32",
+        "DASS33",
+        "DASS34",
+        "DASS35",
+        "DASS36",
+        "DASS37",
+        "DASS38",
+        "DASS39",
+        "DASS40",
+        "DASS41",
+        "DASS42"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 42,
+        "max": 294
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

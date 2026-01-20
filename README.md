@@ -26,6 +26,14 @@ bash setup.sh    # One-time setup (macOS/Linux)
 
 The web interface will open automatically at `http://localhost:5001`.
 
+**👉 Configure Global Library** (recommended):
+
+```bash
+python scripts/setup/configure_global_library.py
+```
+
+This sets up the global library paths to point to the `official/` folder, making all 109+ validated surveys and recipes available to all your projects automatically. See [Global Library Configuration](docs/GLOBAL_LIBRARY_CONFIG.md) for details.
+
 ---
 
 ## Citation

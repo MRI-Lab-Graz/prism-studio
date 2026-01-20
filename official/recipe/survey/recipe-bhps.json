@@ -1,0 +1,58 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "BHPS",
+    "Reference": "survey-bhps.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Brief Histrionic Personality Scale (BHPS)",
+        "de": "Gesamtscore für Brief Histrionic Personality Scale (BHPS)"
+      },
+      "Items": [
+        "BHPS01",
+        "BHPS02",
+        "BHPS03",
+        "BHPS04",
+        "BHPS05",
+        "BHPS06",
+        "BHPS07",
+        "BHPS08",
+        "BHPS09",
+        "BHPS10",
+        "BHPS11"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 11,
+        "max": 77
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

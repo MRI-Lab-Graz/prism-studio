@@ -1,0 +1,378 @@
+{
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "en",
+    "Respondent": "self",
+    "AdministrationMethod": "web"
+  },
+  "I18n": {
+    "Languages": ["en", "de"],
+    "DefaultLanguage": "en",
+    "TranslationMethod": "validated-translation"
+  },
+  "Study": {
+    "TaskName": "participants",
+    "OriginalName": {
+      "en": "PRISM Sociodemographics Template",
+      "de": "PRISM Soziodemographie-Vorlage"
+    },
+    "ShortName": "PARTICIPANTS",
+    "Description": {
+      "en": "Standardized sociodemographic variables for participants.tsv compatible with NeuroBagel harmonization.",
+      "de": "Standardisierte soziodemographische Variablen für participants.tsv kompatibel mit NeuroBagel-Harmonisierung."
+    },
+    "Version": "1.0.0",
+    "License": "CC0-1.0",
+    "LicenseID": "CC0-1.0",
+    "Access": "public",
+    "Instructions": {
+      "en": "Complete all applicable demographic information. Select 'n/a' or leave blank if not applicable or prefer not to answer.",
+      "de": "Füllen Sie alle zutreffenden demographischen Informationen aus. Wählen Sie 'n/a' oder lassen Sie das Feld leer, falls nicht zutreffend oder keine Angabe gewünscht."
+    }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.1",
+    "Creator": "PRISM Survey Library",
+    "CreationDate": "2026-01-20"
+  },
+  "participant_id": {
+    "Description": {
+      "en": "Unique participant identifier (BIDS sub- label)",
+      "de": "Eindeutige Teilnehmer-ID (BIDS sub- Label)"
+    },
+    "DataType": "string"
+  },
+  "age": {
+    "Description": {
+      "en": "Age of participant in years at time of data collection",
+      "de": "Alter des Teilnehmers in Jahren zum Zeitpunkt der Datenerhebung"
+    },
+    "Units": "years",
+    "MinValue": 0,
+    "MaxValue": 120,
+    "DataType": "integer"
+  },
+  "sex": {
+    "Description": {
+      "en": "Biological sex assigned at birth",
+      "de": "Biologisches Geschlecht bei Geburt"
+    },
+    "Levels": {
+      "M": {"en": "Male", "de": "Männlich"},
+      "F": {"en": "Female", "de": "Weiblich"},
+      "O": {"en": "Other/Intersex", "de": "Andere/Intersexuell"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
+    },
+    "DataType": "string"
+  },
+  "gender": {
+    "Description": {
+      "en": "Self-identified gender identity",
+      "de": "Selbstidentifizierte Geschlechtsidentität"
+    },
+    "Levels": {
+      "man": {"en": "Man", "de": "Mann"},
+      "woman": {"en": "Woman", "de": "Frau"},
+      "nonbinary": {"en": "Non-binary/Genderqueer", "de": "Nicht-binär/Genderqueer"},
+      "trans_man": {"en": "Transgender man", "de": "Transgender Mann"},
+      "trans_woman": {"en": "Transgender woman", "de": "Transgender Frau"},
+      "other": {"en": "Other", "de": "Andere"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
+    },
+    "DataType": "string"
+  },
+  "handedness": {
+    "Description": {
+      "en": "Dominant hand preference",
+      "de": "Händigkeit"
+    },
+    "Levels": {
+      "R": {"en": "Right-handed", "de": "Rechtshändig"},
+      "L": {"en": "Left-handed", "de": "Linkshändig"},
+      "A": {"en": "Ambidextrous", "de": "Beidhändig"},
+      "n/a": {"en": "Unknown", "de": "Unbekannt"}
+    },
+    "DataType": "string"
+  },
+  "education_level": {
+    "Description": {
+      "en": "Highest level of education completed (ISCED 2011)",
+      "de": "Höchster Bildungsabschluss (ISCED 2011)"
+    },
+    "Levels": {
+      "0": {"en": "Early childhood education", "de": "Frühkindliche Bildung"},
+      "1": {"en": "Primary education", "de": "Primarbereich (Grundschule)"},
+      "2": {"en": "Lower secondary education", "de": "Sekundarbereich I"},
+      "3": {"en": "Upper secondary education", "de": "Sekundarbereich II"},
+      "4": {"en": "Post-secondary non-tertiary education", "de": "Postsekundarer nicht-tertiärer Bereich"},
+      "5": {"en": "Short-cycle tertiary education", "de": "Kurzes tertiäres Studium"},
+      "6": {"en": "Bachelor or equivalent", "de": "Bachelor oder gleichwertig"},
+      "7": {"en": "Master or equivalent", "de": "Master oder gleichwertig"},
+      "8": {"en": "Doctoral or equivalent", "de": "Promotion oder gleichwertig"},
+      "n/a": {"en": "Not applicable", "de": "Nicht zutreffend"}
+    },
+    "DataType": "string"
+  },
+  "education_years": {
+    "Description": {
+      "en": "Total number of years in formal education",
+      "de": "Gesamtanzahl der Jahre in formaler Ausbildung"
+    },
+    "Units": "years",
+    "MinValue": 0,
+    "MaxValue": 30,
+    "DataType": "integer"
+  },
+  "employment_status": {
+    "Description": {
+      "en": "Current primary employment status",
+      "de": "Aktueller primärer Erwerbsstatus"
+    },
+    "Levels": {
+      "employed_fulltime": {"en": "Employed full-time", "de": "Vollzeit berufstätig"},
+      "employed_parttime": {"en": "Employed part-time", "de": "Teilzeit berufstätig"},
+      "self_employed": {"en": "Self-employed", "de": "Selbstständig"},
+      "student": {"en": "Student/In training", "de": "Student/In Ausbildung"},
+      "unemployed": {"en": "Unemployed", "de": "Arbeitslos"},
+      "retired": {"en": "Retired", "de": "Im Ruhestand"},
+      "homemaker": {"en": "Homemaker", "de": "Hausfrau/-mann"},
+      "unable_to_work": {"en": "Unable to work", "de": "Arbeitsunfähig"},
+      "other": {"en": "Other", "de": "Sonstiges"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
+    },
+    "DataType": "string"
+  },
+  "marital_status": {
+    "Description": {
+      "en": "Current marital or partnership status",
+      "de": "Aktueller Familienstand"
+    },
+    "Levels": {
+      "single": {"en": "Single/Never married", "de": "Ledig"},
+      "married": {"en": "Married", "de": "Verheiratet"},
+      "partnered": {"en": "Domestic partnership", "de": "Eingetragene Partnerschaft"},
+      "cohabiting": {"en": "Living with partner", "de": "Mit Partner zusammenlebend"},
+      "divorced": {"en": "Divorced", "de": "Geschieden"},
+      "separated": {"en": "Separated", "de": "Getrennt lebend"},
+      "widowed": {"en": "Widowed", "de": "Verwitwet"},
+      "other": {"en": "Other", "de": "Sonstiges"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
+    },
+    "DataType": "string"
+  },
+  "native_language": {
+    "Description": {
+      "en": "Primary native language(s) - ISO 639-1 codes (e.g., 'en', 'de')",
+      "de": "Primäre Muttersprache(n) - ISO 639-1 Codes (z.B. 'de', 'en')"
+    },
+    "DataType": "string"
+  },
+  "country_of_birth": {
+    "Description": {
+      "en": "Country of birth - ISO 3166-1 alpha-2 code (e.g., 'DE', 'US')",
+      "de": "Geburtsland - ISO 3166-1 Alpha-2 Code (z.B. 'DE', 'US')"
+    },
+    "DataType": "string"
+  },
+  "country_of_residence": {
+    "Description": {
+      "en": "Current country of residence - ISO 3166-1 alpha-2 code",
+      "de": "Aktuelles Wohnsitzland - ISO 3166-1 Alpha-2 Code"
+    },
+    "DataType": "string"
+  },
+  "ethnicity": {
+    "Description": {
+      "en": "Self-identified ethnic background (context-dependent, adjust as needed)",
+      "de": "Selbstidentifizierter ethnischer Hintergrund (kontextabhängig, bei Bedarf anpassen)"
+    },
+    "Levels": {
+      "white": {"en": "White/Caucasian", "de": "Weiß/Kaukasisch"},
+      "black": {"en": "Black/African/Caribbean", "de": "Schwarz/Afrikanisch/Karibisch"},
+      "asian": {"en": "Asian", "de": "Asiatisch"},
+      "hispanic": {"en": "Hispanic/Latino", "de": "Hispanisch/Latino"},
+      "indigenous": {"en": "Indigenous/Native", "de": "Indigen/Einheimisch"},
+      "middle_eastern": {"en": "Middle Eastern", "de": "Nahöstlich"},
+      "mixed": {"en": "Mixed/Multiple", "de": "Gemischt/Mehrere"},
+      "other": {"en": "Other", "de": "Andere"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
+    },
+    "DataType": "string"
+  },
+  "vision": {
+    "Description": {
+      "en": "Visual acuity status",
+      "de": "Sehvermögen"
+    },
+    "Levels": {
+      "normal": {"en": "Normal vision", "de": "Normales Sehvermögen"},
+      "corrected": {"en": "Corrected-to-normal (glasses/contacts)", "de": "Korrigiert auf normal (Brille/Kontaktlinsen)"},
+      "impaired": {"en": "Visually impaired", "de": "Sehbehindert"},
+      "n/a": {"en": "Unknown", "de": "Unbekannt"}
+    },
+    "DataType": "string"
+  },
+  "hearing": {
+    "Description": {
+      "en": "Hearing ability status",
+      "de": "Hörvermögen"
+    },
+    "Levels": {
+      "normal": {"en": "Normal hearing", "de": "Normales Hörvermögen"},
+      "impaired": {"en": "Hearing impaired", "de": "Hörgeschädigt"},
+      "deaf": {"en": "Deaf", "de": "Gehörlos"},
+      "n/a": {"en": "Unknown", "de": "Unbekannt"}
+    },
+    "DataType": "string"
+  },
+  "height": {
+    "Description": {
+      "en": "Body height in centimeters",
+      "de": "Körpergröße in Zentimetern"
+    },
+    "Units": "cm",
+    "MinValue": 50,
+    "MaxValue": 250,
+    "DataType": "number"
+  },
+  "weight": {
+    "Description": {
+      "en": "Body weight in kilograms",
+      "de": "Körpergewicht in Kilogramm"
+    },
+    "Units": "kg",
+    "MinValue": 20,
+    "MaxValue": 300,
+    "DataType": "number"
+  },
+  "bmi": {
+    "Description": {
+      "en": "Body Mass Index (weight/height²)",
+      "de": "Body-Mass-Index (Gewicht/Größe²)"
+    },
+    "Units": "kg/m²",
+    "MinValue": 10,
+    "MaxValue": 60,
+    "DataType": "number"
+  },
+  "smoking_status": {
+    "Description": {
+      "en": "Tobacco smoking history",
+      "de": "Raucheranamnese"
+    },
+    "Levels": {
+      "never": {"en": "Never smoked", "de": "Nie geraucht"},
+      "former": {"en": "Former smoker (quit >1 year)", "de": "Ehemaliger Raucher (>1 Jahr)"},
+      "recent_former": {"en": "Recent former smoker (quit <1 year)", "de": "Kürzlich aufgehört (<1 Jahr)"},
+      "current": {"en": "Current smoker", "de": "Aktueller Raucher"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
+    },
+    "DataType": "string"
+  },
+  "alcohol_consumption": {
+    "Description": {
+      "en": "Frequency of alcohol consumption",
+      "de": "Häufigkeit des Alkoholkonsums"
+    },
+    "Levels": {
+      "never": {"en": "Never", "de": "Nie"},
+      "rarely": {"en": "Rarely (few times per year)", "de": "Selten (ein paar Mal pro Jahr)"},
+      "monthly": {"en": "Monthly", "de": "Monatlich"},
+      "weekly": {"en": "Weekly (1-2 times)", "de": "Wöchentlich (1-2 Mal)"},
+      "frequent": {"en": "Several times per week", "de": "Mehrmals pro Woche"},
+      "daily": {"en": "Daily", "de": "Täglich"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
+    },
+    "DataType": "string"
+  },
+  "physical_activity": {
+    "Description": {
+      "en": "Frequency of moderate to vigorous physical activity (≥30 min)",
+      "de": "Häufigkeit von mäßiger bis intensiver körperlicher Aktivität (≥30 Min)"
+    },
+    "Levels": {
+      "none": {"en": "None/Sedentary", "de": "Keine/Sitzend"},
+      "rare": {"en": "Less than once per week", "de": "Weniger als einmal pro Woche"},
+      "1-2_weekly": {"en": "1-2 times per week", "de": "1-2 Mal pro Woche"},
+      "3-5_weekly": {"en": "3-5 times per week", "de": "3-5 Mal pro Woche"},
+      "daily": {"en": "Daily or almost daily", "de": "Täglich oder fast täglich"},
+      "n/a": {"en": "Unknown", "de": "Unbekannt"}
+    },
+    "DataType": "string"
+  },
+  "residence_type": {
+    "Description": {
+      "en": "Type of residential area",
+      "de": "Art des Wohngebiets"
+    },
+    "Levels": {
+      "urban": {"en": "Urban/City (>100k inhabitants)", "de": "Städtisch/Stadt (>100k Einwohner)"},
+      "suburban": {"en": "Suburban/Town", "de": "Vorstädtisch/Kleinstadt"},
+      "rural": {"en": "Rural/Village", "de": "Ländlich/Dorf"},
+      "n/a": {"en": "Unknown", "de": "Unbekannt"}
+    },
+    "DataType": "string"
+  },
+  "income_bracket": {
+    "Description": {
+      "en": "Annual household gross income (currency context-dependent)",
+      "de": "Jährliches Brutto-Haushaltseinkommen (Währung kontextabhängig)"
+    },
+    "Levels": {
+      "1": {"en": "<20k", "de": "<20k"},
+      "2": {"en": "20-40k", "de": "20-40k"},
+      "3": {"en": "40-60k", "de": "40-60k"},
+      "4": {"en": "60-80k", "de": "60-80k"},
+      "5": {"en": "80-100k", "de": "80-100k"},
+      "6": {"en": "100-150k", "de": "100-150k"},
+      "7": {"en": ">150k", "de": ">150k"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
+    },
+    "DataType": "string"
+  },
+  "medication_current": {
+    "Description": {
+      "en": "Currently taking any medications (prescription or OTC)",
+      "de": "Nimmt derzeit Medikamente ein (verschreibungspflichtig oder rezeptfrei)"
+    },
+    "Levels": {
+      "yes": {"en": "Yes", "de": "Ja"},
+      "no": {"en": "No", "de": "Nein"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
+    },
+    "DataType": "string"
+  },
+  "psychiatric_diagnosis": {
+    "Description": {
+      "en": "History of psychiatric/mental health diagnosis",
+      "de": "Psychiatrische/psychische Diagnose in der Anamnese"
+    },
+    "Levels": {
+      "yes": {"en": "Yes", "de": "Ja"},
+      "no": {"en": "No", "de": "Nein"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
+    },
+    "DataType": "string"
+  },
+  "neurological_diagnosis": {
+    "Description": {
+      "en": "History of neurological diagnosis",
+      "de": "Neurologische Diagnose in der Anamnese"
+    },
+    "Levels": {
+      "yes": {"en": "Yes", "de": "Ja"},
+      "no": {"en": "No", "de": "Nein"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
+    },
+    "DataType": "string"
+  },
+  "group": {
+    "Description": {
+      "en": "Study group assignment (e.g., control, patient, experimental)",
+      "de": "Studiengruppenzuordnung (z.B. Kontrolle, Patient, Experimental)"
+    },
+    "Levels": {},
+    "DataType": "string"
+  }
+}

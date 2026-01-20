@@ -1,0 +1,85 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "ZKPQ",
+    "Reference": "survey-zkpq.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for ZuckermanâKuhlman Personality Questionnaire (Shortened, ZKPQ-50-CC)",
+        "de": "Gesamtscore für ZuckermanâKuhlman Personality Questionnaire (Shortened, ZKPQ-50-CC)"
+      },
+      "Items": [
+        "ZKPQ01",
+        "ZKPQ02",
+        "ZKPQ03",
+        "ZKPQ04",
+        "ZKPQ05",
+        "ZKPQ06",
+        "ZKPQ07",
+        "ZKPQ08",
+        "ZKPQ09",
+        "ZKPQ10",
+        "ZKPQ11",
+        "ZKPQ12",
+        "ZKPQ13",
+        "ZKPQ14",
+        "ZKPQ15",
+        "ZKPQ16",
+        "ZKPQ17",
+        "ZKPQ18",
+        "ZKPQ19",
+        "ZKPQ20",
+        "ZKPQ21",
+        "ZKPQ22",
+        "ZKPQ23",
+        "ZKPQ24",
+        "ZKPQ25",
+        "ZKPQ26",
+        "ZKPQ27",
+        "ZKPQ28",
+        "ZKPQ29",
+        "ZKPQ30",
+        "ZKPQ31",
+        "ZKPQ32",
+        "ZKPQ33",
+        "ZKPQ34",
+        "ZKPQ35",
+        "ZKPQ36",
+        "ZKPQ37",
+        "ZKPQ38"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 38,
+        "max": 266
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

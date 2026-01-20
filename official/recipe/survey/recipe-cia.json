@@ -1,0 +1,63 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "CIA",
+    "Reference": "survey-cia.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Clinical Impairment Assessment Questionnaire (CIA 3.0)",
+        "de": "Gesamtscore für Clinical Impairment Assessment Questionnaire (CIA 3.0)"
+      },
+      "Items": [
+        "CIA01",
+        "CIA02",
+        "CIA03",
+        "CIA04",
+        "CIA05",
+        "CIA06",
+        "CIA07",
+        "CIA08",
+        "CIA09",
+        "CIA10",
+        "CIA11",
+        "CIA12",
+        "CIA13",
+        "CIA14",
+        "CIA15",
+        "CIA16"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 16,
+        "max": 112
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

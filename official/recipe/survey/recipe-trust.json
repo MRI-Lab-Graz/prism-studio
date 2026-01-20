@@ -1,0 +1,60 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "TRUST",
+    "Reference": "survey-trust.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Trust in close relationships",
+        "de": "Gesamtscore für Trust in close relationships"
+      },
+      "Items": [
+        "TRUST01",
+        "TRUST02",
+        "TRUST03",
+        "TRUST04",
+        "TRUST05",
+        "TRUST06",
+        "TRUST07",
+        "TRUST08",
+        "TRUST09",
+        "TRUST10",
+        "TRUST11",
+        "TRUST12",
+        "TRUST13"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 13,
+        "max": 91
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "UPLAS",
+    "Reference": "survey-uplas.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Loneliness (UPLAS)",
+        "de": "Gesamtscore für Loneliness (UPLAS)"
+      },
+      "Items": [
+        "UPLAS01",
+        "UPLAS02",
+        "UPLAS03",
+        "UPLAS04",
+        "UPLAS05",
+        "UPLAS06",
+        "UPLAS07",
+        "UPLAS08",
+        "UPLAS09",
+        "UPLAS10",
+        "UPLAS11",
+        "UPLAS12",
+        "UPLAS13",
+        "UPLAS14",
+        "UPLAS15",
+        "UPLAS16",
+        "UPLAS17",
+        "UPLAS18",
+        "UPLAS19",
+        "UPLAS20"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 20,
+        "max": 140
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

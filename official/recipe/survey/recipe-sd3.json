@@ -1,0 +1,69 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "SD3",
+    "Reference": "survey-sd3.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for A brief measure of dark personality traits (SD3)",
+        "de": "Gesamtscore für A brief measure of dark personality traits (SD3)"
+      },
+      "Items": [
+        "SD301",
+        "SD302",
+        "SD303",
+        "SD304",
+        "SD305",
+        "SD306",
+        "SD307",
+        "SD308",
+        "SD309",
+        "SD310",
+        "SD311",
+        "SD312",
+        "SD313",
+        "SD314",
+        "SD315",
+        "SD316",
+        "SD317",
+        "SD318",
+        "SD319",
+        "SD320",
+        "SD321",
+        "SD322"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 22,
+        "max": 154
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

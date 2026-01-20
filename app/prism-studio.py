@@ -97,8 +97,18 @@ app.config["MAX_FORM_PARTS"] = 20000  # Allow up to 20000 files/fields in upload
 # This keeps the initial landing page empty, even if an old session cookie exists.
 app.config["PRISM_STARTUP_ID"] = uuid.uuid4().hex
 
-# Initialize Survey Manager
-survey_library_path = BASE_DIR / "survey_library"
+# Initialize Survey Manager with global library paths
+from src.config import get_effective_library_paths
+
+lib_paths = get_effective_library_paths(app_root=str(BASE_DIR))
+if lib_paths["global_library_path"]:
+    survey_library_path = Path(lib_paths["global_library_path"])
+    print(f"ℹ️  Using global library: {survey_library_path}")
+else:
+    # Fallback to legacy survey_library folder
+    survey_library_path = BASE_DIR / "survey_library"
+    print(f"ℹ️  Using fallback library: {survey_library_path}")
+
 survey_manager = None
 if SurveyManager:
     survey_manager = SurveyManager(survey_library_path)

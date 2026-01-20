@@ -1,0 +1,67 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "BSRI",
+    "Reference": "survey-bsri.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Bem sex role inventory (BSRI)",
+        "de": "Gesamtscore für Bem sex role inventory (BSRI)"
+      },
+      "Items": [
+        "BSRI01",
+        "BSRI02",
+        "BSRI03",
+        "BSRI04",
+        "BSRI05",
+        "BSRI06",
+        "BSRI07",
+        "BSRI08",
+        "BSRI09",
+        "BSRI10",
+        "BSRI11",
+        "BSRI12",
+        "BSRI13",
+        "BSRI14",
+        "BSRI15",
+        "BSRI16",
+        "BSRI17",
+        "BSRI18",
+        "BSRI19",
+        "BSRI20"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 20,
+        "max": 140
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

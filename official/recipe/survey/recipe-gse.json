@@ -1,0 +1,57 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "GSE",
+    "Reference": "survey-gse.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Generalized Self Efficacy scale (GSE)",
+        "de": "Gesamtscore für Generalized Self Efficacy scale (GSE)"
+      },
+      "Items": [
+        "GSE01",
+        "GSE02",
+        "GSE03",
+        "GSE04",
+        "GSE05",
+        "GSE06",
+        "GSE07",
+        "GSE08",
+        "GSE09",
+        "GSE10"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 10,
+        "max": 70
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

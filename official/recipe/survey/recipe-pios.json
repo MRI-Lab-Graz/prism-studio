@@ -1,0 +1,66 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "PIOS",
+    "Reference": "survey-pios.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for The Penn Inventory of Scrupulosity (PIOS)",
+        "de": "Gesamtscore für The Penn Inventory of Scrupulosity (PIOS)"
+      },
+      "Items": [
+        "PIOS01",
+        "PIOS02",
+        "PIOS03",
+        "PIOS04",
+        "PIOS05",
+        "PIOS06",
+        "PIOS07",
+        "PIOS08",
+        "PIOS09",
+        "PIOS10",
+        "PIOS11",
+        "PIOS12",
+        "PIOS13",
+        "PIOS14",
+        "PIOS15",
+        "PIOS16",
+        "PIOS17",
+        "PIOS18",
+        "PIOS19"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 19,
+        "max": 133
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "CUDOS",
+    "Reference": "survey-cudos.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for A clinically useful depression outcome scale (CUDOS)",
+        "de": "Gesamtscore für A clinically useful depression outcome scale (CUDOS)"
+      },
+      "Items": [
+        "CUDOS01",
+        "CUDOS02",
+        "CUDOS03",
+        "CUDOS04",
+        "CUDOS05",
+        "CUDOS06",
+        "CUDOS07",
+        "CUDOS08",
+        "CUDOS09",
+        "CUDOS10",
+        "CUDOS11",
+        "CUDOS12",
+        "CUDOS13",
+        "CUDOS14",
+        "CUDOS15",
+        "CUDOS16"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 16,
+        "max": 112
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

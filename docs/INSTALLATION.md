@@ -22,20 +22,63 @@ bash scripts/setup/setup.sh
 
 ### Windows
 
-Open Command Prompt or PowerShell and run:
+**Choose one of two installation methods depending on your use case:**
 
-```bat
+#### Option 1: Pre-Built Version (Normal Users)
+
+If you just want to use PRISM for dataset validation:
+
+```powershell
+# Download the pre-built PrismValidator.exe from releases
+# https://github.com/MRI-Lab-Graz/prism-studio/releases
+
+# Extract the folder and run:
+PrismValidator.exe "C:\path\to\your\dataset"
+```
+
+**Advantages:**
+- No Python installation required
+- Simple, single executable
+- Minimal dependencies
+- Easiest setup for end users
+
+**Disadvantages:**
+- Cannot modify the code
+- Cannot install additional analysis tools
+- Larger file size
+
+#### Option 2: Development Installation (Developers)
+
+If you want to contribute, modify code, or use additional development tools:
+
+Open PowerShell and run:
+
+```powershell
 git clone https://github.com/MRI-Lab-Graz/prism-studio.git
 cd prism-studio
-scripts\setup\setup-windows.bat
+.\setup.ps1 -Dev
 ```
 
 This will:
 1.  Create a Python virtual environment (`.venv`).
-2.  Install all necessary dependencies.
-3.  Prepare the application for use.
+2.  Install all necessary dependencies for development.
+3.  Install testing and documentation tools.
+4.  Prepare the application for use and modification.
 
-Note: The CLI tools (`prism.py`, `prism_tools.py`) intentionally enforce running from the repository-local virtual environment at `./.venv`.
+**Advantages:**
+- Full source code access
+- Can modify and extend functionality
+- Includes development and testing tools
+- Suitable for contributions
+
+**Disadvantages:**
+- Requires Python 3.8+ installation
+- More dependencies to manage
+- Slightly longer setup time
+
+---
+
+**Note:** The CLI tools (`prism.py`, `prism_tools.py`) intentionally enforce running from the repository-local virtual environment at `./.venv`.
 
 ## Manual Installation
 

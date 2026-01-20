@@ -35,6 +35,7 @@ from src.converters.excel_to_biometrics import process_excel_biometrics  # noqa:
 from src.reporting import generate_methods_text  # noqa: E402
 from src.library_i18n import compile_survey_template, migrate_survey_template_to_i18n  # noqa: E402
 from src.recipes_surveys import compute_survey_recipes  # noqa: E402
+from src.config import get_effective_library_paths  # noqa: E402
 
 
 def _normalize_survey_key(raw: str) -> str:
@@ -97,7 +98,20 @@ def cmd_recipes_surveys(args):
         print(f"Error: --prism is not a directory: {prism_root}")
         sys.exit(1)
 
-    repo_root = Path(getattr(args, "repo", project_root)).resolve()
+    # Use global library paths if --repo not specified
+    if hasattr(args, "repo") and args.repo:
+        repo_root = Path(args.repo).resolve()
+    else:
+        # Get global recipe path from configuration
+        lib_paths = get_effective_library_paths(app_root=str(project_root))
+        if lib_paths["global_library_root"]:
+            repo_root = Path(lib_paths["global_library_root"]).resolve()
+            print(f"ℹ️  Using global library: {repo_root}")
+        else:
+            # Fallback to current directory
+            repo_root = Path(project_root).resolve()
+            print(f"ℹ️  Using default repository root: {repo_root}")
+    
     if not repo_root.exists() or not repo_root.is_dir():
         print(f"Error: --repo is not a directory: {repo_root}")
         sys.exit(1)
@@ -148,7 +162,20 @@ def cmd_recipes_biometrics(args):
         print(f"Error: --prism is not a directory: {prism_root}")
         sys.exit(1)
 
-    repo_root = Path(getattr(args, "repo", project_root)).resolve()
+    # Use global library paths if --repo not specified
+    if hasattr(args, "repo") and args.repo:
+        repo_root = Path(args.repo).resolve()
+    else:
+        # Get global recipe path from configuration
+        lib_paths = get_effective_library_paths(app_root=str(project_root))
+        if lib_paths["global_library_root"]:
+            repo_root = Path(lib_paths["global_library_root"]).resolve()
+            print(f"ℹ️  Using global library: {repo_root}")
+        else:
+            # Fallback to current directory
+            repo_root = Path(project_root).resolve()
+            print(f"ℹ️  Using default repository root: {repo_root}")
+    
     if not repo_root.exists() or not repo_root.is_dir():
         print(f"Error: --repo is not a directory: {repo_root}")
         sys.exit(1)

@@ -1,0 +1,58 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "LSRP",
+    "Reference": "survey-lsrp.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Psychopathy (LSRP)",
+        "de": "Gesamtscore für Psychopathy (LSRP)"
+      },
+      "Items": [
+        "LSRP01",
+        "LSRP02",
+        "LSRP03",
+        "LSRP04",
+        "LSRP05",
+        "LSRP06",
+        "LSRP07",
+        "LSRP08",
+        "LSRP09",
+        "LSRP10",
+        "LSRP11"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 11,
+        "max": 77
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

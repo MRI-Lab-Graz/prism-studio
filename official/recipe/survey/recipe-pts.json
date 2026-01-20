@@ -1,0 +1,58 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "PTS",
+    "Reference": "survey-pts.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Positive Thinking Scale",
+        "de": "Gesamtscore für Positive Thinking Scale"
+      },
+      "Items": [
+        "PTS01",
+        "PTS02",
+        "PTS03",
+        "PTS04",
+        "PTS05",
+        "PTS06",
+        "PTS07",
+        "PTS08",
+        "PTS09",
+        "PTS10",
+        "PTS11"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 11,
+        "max": 77
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

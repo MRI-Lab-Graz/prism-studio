@@ -1,0 +1,62 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "MASLOW",
+    "Reference": "survey-maslow.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Maslow’s Hierarchy of Needs",
+        "de": "Gesamtscore für Maslow’s Hierarchy of Needs"
+      },
+      "Items": [
+        "MASLOW01",
+        "MASLOW02",
+        "MASLOW03",
+        "MASLOW04",
+        "MASLOW05",
+        "MASLOW06",
+        "MASLOW07",
+        "MASLOW08",
+        "MASLOW09",
+        "MASLOW10",
+        "MASLOW11",
+        "MASLOW12",
+        "MASLOW13",
+        "MASLOW14",
+        "MASLOW15"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 15,
+        "max": 105
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

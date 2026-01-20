@@ -1,0 +1,67 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "DMQ-R",
+    "Reference": "survey-dmq-r.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Drinking Motives Questionnaire, Revised (DMQ-R)",
+        "de": "Gesamtscore für Drinking Motives Questionnaire, Revised (DMQ-R)"
+      },
+      "Items": [
+        "DMQ-R01",
+        "DMQ-R02",
+        "DMQ-R03",
+        "DMQ-R04",
+        "DMQ-R05",
+        "DMQ-R06",
+        "DMQ-R07",
+        "DMQ-R08",
+        "DMQ-R09",
+        "DMQ-R10",
+        "DMQ-R11",
+        "DMQ-R12",
+        "DMQ-R13",
+        "DMQ-R14",
+        "DMQ-R15",
+        "DMQ-R16",
+        "DMQ-R17",
+        "DMQ-R18",
+        "DMQ-R19",
+        "DMQ-R20"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 20,
+        "max": 140
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

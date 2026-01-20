@@ -1,0 +1,61 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "AISS",
+    "Reference": "survey-aiss.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Sensation seeking (AISS)",
+        "de": "Gesamtscore für Sensation seeking (AISS)"
+      },
+      "Items": [
+        "AISS01",
+        "AISS02",
+        "AISS03",
+        "AISS04",
+        "AISS05",
+        "AISS06",
+        "AISS07",
+        "AISS08",
+        "AISS09",
+        "AISS10",
+        "AISS11",
+        "AISS12",
+        "AISS13",
+        "AISS14"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 14,
+        "max": 98
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

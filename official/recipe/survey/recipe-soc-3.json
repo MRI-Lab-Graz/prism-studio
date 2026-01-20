@@ -1,0 +1,62 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "SOC-3",
+    "Reference": "survey-soc-3.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Spheres of Control Scale (SOC-3)",
+        "de": "Gesamtscore für Spheres of Control Scale (SOC-3)"
+      },
+      "Items": [
+        "SOC-301",
+        "SOC-302",
+        "SOC-303",
+        "SOC-304",
+        "SOC-305",
+        "SOC-306",
+        "SOC-307",
+        "SOC-308",
+        "SOC-309",
+        "SOC-310",
+        "SOC-311",
+        "SOC-312",
+        "SOC-313",
+        "SOC-314",
+        "SOC-315"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 15,
+        "max": 105
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}
