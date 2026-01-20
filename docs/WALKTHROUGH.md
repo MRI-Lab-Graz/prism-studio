@@ -57,13 +57,7 @@ python prism-studio.py
 ```
 Then open **http://localhost:5001** in your browser.
 
-### Option B: Desktop GUI
-A native application with a modern dark theme.
-```bash
-python prism-gui.py
-```
-
-### Option C: Terminal (CLI)
+### Option B: Terminal (CLI)
 For power users and automation.
 ```bash
 python prism.py --help
@@ -224,7 +218,6 @@ Once your dataset is valid, you can automatically compute scores (e.g., PHQ-9 to
 | `prism.py` | The core validator. Use this to check if your dataset is "PRISM-compliant". |
 | `prism_tools.py` | The "Swiss Army Knife". Use this for importing Excel, converting data, and generating text. |
 | `prism-studio.py` | The Web UI. Best for interactive work and visual validation. |
-| `prism-gui.py` | The Desktop App. A fast, local alternative to the web interface. |
 
 ---
 
