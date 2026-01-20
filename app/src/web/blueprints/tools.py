@@ -560,6 +560,10 @@ def api_recipes_surveys():
     layout = (data.get("layout") or "long").strip().lower() or "long"
     include_raw = bool(data.get("include_raw", False))
     boilerplate = bool(data.get("boilerplate", False))
+    anonymize = bool(data.get("anonymize", False))
+    mask_questions = bool(data.get("mask_questions", False))
+    id_length = int(data.get("id_length", 8))
+    random_ids = bool(data.get("random_ids", False))
 
     if not dataset_path or not os.path.exists(dataset_path) or not os.path.isdir(dataset_path):
         return jsonify({"error": "Invalid dataset path"}), 400
@@ -632,6 +636,71 @@ def api_recipes_surveys():
             include_raw=include_raw,
             boilerplate=boilerplate,
         )
+        
+        # Perform anonymization if requested
+        mapping_file = None
+        if anonymize:
+            try:
+                from src.anonymizer import (
+                    create_participant_mapping,
+                    anonymize_tsv_file,
+                )
+                import pandas as pd
+                
+                # Read participants.tsv to get participant IDs
+                participants_tsv = os.path.join(dataset_path, "participants.tsv")
+                if not os.path.exists(participants_tsv):
+                    raise FileNotFoundError(f"participants.tsv not found at {participants_tsv}")
+                
+                # Extract participant IDs
+                df = pd.read_csv(participants_tsv, sep='\t')
+                if 'participant_id' not in df.columns:
+                    raise ValueError("participants.tsv must have a 'participant_id' column")
+                participant_ids = df['participant_id'].tolist()
+                
+                # Setup output directory
+                output_dir = os.path.join(dataset_path, "derivatives", f"prism-export-{modality}")
+                os.makedirs(output_dir, exist_ok=True)
+                
+                # Create mapping file path
+                mapping_file = Path(output_dir) / "participants_mapping.json"
+                
+                # Create participant mapping
+                participant_mapping = create_participant_mapping(
+                    participant_ids,
+                    mapping_file,
+                    id_length=id_length,
+                    deterministic=not random_ids
+                )
+                
+                # Anonymize all TSV files in the output directory
+                for root, dirs, files in os.walk(output_dir):
+                    for file in files:
+                        if file.endswith('.tsv'):
+                            tsv_path = os.path.join(root, file)
+                            output_tsv = Path(tsv_path)
+                            
+                            # Read, anonymize, and write back
+                            df_data = pd.read_csv(tsv_path, sep='\t')
+                            if 'participant_id' in df_data.columns:
+                                df_data['participant_id'] = df_data['participant_id'].map(
+                                    lambda x: participant_mapping.get(x, x)
+                                )
+                            
+                            # Mask questions if requested
+                            if mask_questions and 'question' in df_data.columns:
+                                df_data['question'] = '[MASKED]'
+                            
+                            df_data.to_csv(tsv_path, sep='\t', index=False)
+                
+                print(f"[ANONYMIZATION] Created mapping: {mapping_file}")
+                if mask_questions:
+                    print("[ANONYMIZATION] Masked copyrighted question text")
+                mapping_file = str(mapping_file)
+                    
+            except Exception as anon_error:
+                return jsonify({"error": f"Anonymization failed: {str(anon_error)}"}), 500
+                
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -640,6 +709,12 @@ def api_recipes_surveys():
         msg = f"✅ Data processing complete: wrote {result.flat_out_path}"
     if result.fallback_note:
         msg += f" (note: {result.fallback_note})"
+    
+    if anonymize and mapping_file:
+        msg += f"\n🔒 Anonymized with {'random' if random_ids else 'deterministic'} IDs (length: {id_length})"
+        if mask_questions:
+            msg += "\n🔒 Masked copyrighted question text"
+        msg += f"\n⚠️  SECURITY: Keep mapping file secure: {os.path.basename(mapping_file)}"
     
     return jsonify({
         "ok": True,
@@ -651,6 +726,8 @@ def api_recipes_surveys():
         "out_root": str(result.out_root),
         "flat_out_path": str(result.flat_out_path) if result.flat_out_path else None,
         "boilerplate_path": str(result.boilerplate_path) if result.boilerplate_path else None,
+        "anonymized": anonymize,
+        "mapping_file": os.path.basename(mapping_file) if mapping_file else None,
         "boilerplate_html_path": str(result.boilerplate_html_path) if result.boilerplate_html_path else None,
         "nan_report": result.nan_report,
     })
