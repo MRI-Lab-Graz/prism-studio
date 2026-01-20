@@ -8,11 +8,6 @@ For a detailed guide on how to use PRISM, see the **[Comprehensive Walkthrough](
 
 ## �🚀 Quick Start
 
-**👉 Run the Desktop GUI** (recommended):
-
-```bash
-python prism-gui.py
-```
 
 **👉 Run the Web Interface (PRISM Studio)**:
 
@@ -57,12 +52,6 @@ PRISM is an **independent, BIDS-compatible** framework and toolkit designed to e
 - **Survey Modality (`survey/`)**: Full support for complex questionnaires (LimeSurvey integration), treating surveys as rich data with sidecar metadata.
 - **Biometrics Modality (`biometrics/`)**: Structured storage for physiological assessments (VO2max, planks, balance tests) that don't fit into standard `beh` or `physio` categories.
 - **Non-Destructive**: Your standard BIDS files (`participants.tsv`, `dataset_description.json`) remain untouched. We only validate the extensions.
-
-### 🖥️ Desktop GUI
-- **Native Application** - Fast and responsive interface with a modern dark/green theme.
-- **Dataset Validator** - Validate your BIDS/PRISM datasets with a single click.
-- **Survey Tools** - Browse the survey library and export questionnaires to LimeSurvey (.lss).
-- **Privacy First** - All processing happens locally on your machine.
 
 ### 🎯 Web Interface
 - **Drag & drop dataset upload** - Just drop a folder or ZIP file
