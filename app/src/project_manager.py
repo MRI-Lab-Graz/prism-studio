@@ -579,7 +579,13 @@ project/
             elif folder == "paper":
                 content = "Manuscripts, figures, and publication-related files.\n"
             elif folder == "code":
-                content = "Project-specific scripts and tools.\n"
+                content = """Project-specific scripts, templates, and recipes (YODA-compliant).
+
+Subfolders:
+  • library/{modality}/  - Custom templates (survey/biometrics JSON definitions)
+  • recipes/{modality}/  - Custom scoring recipes (transformation logic)
+  • scripts/             - Analysis and processing scripts
+"""
             
             CrossPlatformFile.write_text(str(readme_path), content)
             created.append(f"{folder}/README")
@@ -603,18 +609,22 @@ project/
     def _create_library_structure(
         self, project_path: Path, modalities: List[str]
     ) -> List[str]:
-        """Create library & recipe folder structure in project root."""
+        """Create library & recipe folder structure under code/ (YODA-compliant)."""
         created = []
         
+        # Everything goes under code/ to follow YODA principles
+        code_root = project_path / "code"
+        code_root.mkdir(parents=True, exist_ok=True)
+        
         # 1. Library Root (JSON templates)
-        library_root = project_path / "library"
+        library_root = code_root / "library"
         library_root.mkdir(parents=True, exist_ok=True)
-        created.append("library/")
+        created.append("code/library/")
 
         # 2. Recipe Root (Transformation logic)
-        recipe_root = project_path / "recipe"
+        recipe_root = code_root / "recipes"
         recipe_root.mkdir(parents=True, exist_ok=True)
-        created.append("recipe/")
+        created.append("code/recipes/")
 
         # Create modality subfolders for both library and recipe
         core_mods = ["survey", "biometrics"]
@@ -622,7 +632,7 @@ project/
             # Library folders
             lib_mod_path = library_root / mod
             lib_mod_path.mkdir(exist_ok=True)
-            created.append(f"library/{mod}/")
+            created.append(f"code/library/{mod}/")
 
             if mod == "survey":
                 example_survey = self._create_example_survey_template()
@@ -630,19 +640,19 @@ project/
                 CrossPlatformFile.write_text(
                     str(lib_example_path), json.dumps(example_survey, indent=2, ensure_ascii=False)
                 )
-                created.append(f"library/{mod}/survey-example.json")
+                created.append(f"code/library/{mod}/survey-example.json")
             elif mod == "biometrics":
                 example_bio = self._create_example_biometrics_template()
                 lib_example_path = lib_mod_path / "biometrics-example.json"
                 CrossPlatformFile.write_text(
                     str(lib_example_path), json.dumps(example_bio, indent=2, ensure_ascii=False)
                 )
-                created.append(f"library/{mod}/biometrics-example.json")
+                created.append(f"code/library/{mod}/biometrics-example.json")
 
             # Recipe folders
             rec_mod_path = recipe_root / mod
             rec_mod_path.mkdir(exist_ok=True)
-            created.append(f"recipe/{mod}/")
+            created.append(f"code/recipes/{mod}/")
 
         return created
 
