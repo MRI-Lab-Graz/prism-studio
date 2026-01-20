@@ -954,16 +954,26 @@ def _load_and_validate_recipes(
         if recipes_dir.is_dir() and not list(recipes_dir.glob("*.json")):
             if modality == "survey" and (recipes_dir / "surveys").is_dir():
                 recipes_dir = recipes_dir / "surveys"
+            elif modality == "survey" and (recipes_dir / "survey").is_dir():
+                recipes_dir = recipes_dir / "survey"
             elif modality == "biometrics" and (recipes_dir / "biometrics").is_dir():
                 recipes_dir = recipes_dir / "biometrics"
                 
         expected = str(recipes_dir / "*.json")
     elif modality == "survey":
-        recipes_dir = (repo_root / "recipe" / "survey").resolve()
-        expected = "recipe/survey/*.json"
+        # Try YODA-compliant location first (code/recipes/survey)
+        recipes_dir = (repo_root / "code" / "recipes" / "survey").resolve()
+        # Fallback to legacy location (recipe/survey) for backwards compatibility
+        if not recipes_dir.exists():
+            recipes_dir = (repo_root / "recipe" / "survey").resolve()
+        expected = "code/recipes/survey/*.json (or legacy recipe/survey/*.json)"
     elif modality == "biometrics":
-        recipes_dir = (repo_root / "recipe" / "biometrics").resolve()
-        expected = "recipe/biometrics/*.json"
+        # Try YODA-compliant location first (code/recipes/biometrics)
+        recipes_dir = (repo_root / "code" / "recipes" / "biometrics").resolve()
+        # Fallback to legacy location (recipe/biometrics) for backwards compatibility
+        if not recipes_dir.exists():
+            recipes_dir = (repo_root / "recipe" / "biometrics").resolve()
+        expected = "code/recipes/biometrics/*.json (or legacy recipe/biometrics/*.json)"
     else:
         raise ValueError("modality must be one of: survey, biometrics")
 

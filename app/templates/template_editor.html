@@ -57,7 +57,10 @@
                   <i class="fas fa-folder-open me-1"></i>Browse
                 </button>
               </div>
-              <div class="form-text mb-1">Template editing always writes into the current project's custom library (survey/biometrics subfolders); shared/global libraries remain read-only.</div>
+              <div class="form-text mb-1">
+                <strong>Important:</strong> All saves go to <code>project/code/library/{modality}/</code><br>
+                Global templates remain read-only. Editing a global template creates a project-local copy.
+              </div>
               <div id="projectLibraryStatus" class="form-text text-muted mt-1">Detecting writable custom library...</div>
             </div>
 
@@ -106,14 +109,17 @@
           <div class="col-md-6">
             <label class="form-label">Output filename</label>
             <input id="filename" type="text" class="form-control" placeholder="survey-mytemplate.json" />
-            <div class="form-text">Used for the downloaded file. Nothing is written to disk on the server.</div>
+            <div class="form-text">
+              Filename for saving to project library or downloading.<br>
+              <strong>Tip:</strong> Keep the same name as a global template to override it in your project.
+            </div>
           </div>
           <div class="col-md-6 d-flex gap-2 justify-content-end">
             <button class="btn btn-success" id="btnValidate" type="button">
               <i class="fas fa-check me-1"></i>Validate
             </button>
-            <button class="btn btn-primary" id="btnSave" type="button" disabled>
-              <i class="fas fa-save me-1"></i>Save to Library
+            <button class="btn btn-primary" id="btnSave" type="button" disabled data-bs-toggle="tooltip" title="Saves to project/code/library/{modality}/">
+              <i class="fas fa-save me-1"></i>Save to Project Library
             </button>
             <button class="btn btn-outline-secondary" id="btnDownload" type="button" disabled>
               <i class="fas fa-download me-1"></i>Download JSON
@@ -1417,7 +1423,11 @@
 
     // Show read-only warning for global/external templates
     if (meta && meta.readonly) {
-      showAlert('info', `This template is from a read-only source (${meta.source}). You can edit and download, but saving will require a different filename or project library.`);
+      const projectPath = projectLibraryRoot ? `<code>${projectLibraryRoot}/${modalityEl.value}/</code>` : 'your project library';
+      showAlert('info', `<strong>📚 Global Template Loaded (Read-Only)</strong><br>
+        Source: ${meta.source}<br>
+        <strong>Any edits you make will be saved to ${projectPath}</strong>, creating a project-local copy.<br>
+        The global template remains unchanged. Your project version will take priority.`);
     }
   }
 
@@ -1442,8 +1452,8 @@
     if (data.ok) {
       btnDownload.disabled = false;
       const successMessage = projectLibraryRoot
-        ? '✅ Valid template for the selected schema. You can download or save it now.'
-        : '✅ Valid template, but saving is disabled until a project library is active; only custom libraries are writable.';
+        ? `✅ Valid template! Ready to save to <code>${projectLibraryRoot}/${modalityEl.value}/</code>`
+        : '⚠️ Valid template, but <strong>no project selected</strong>. Select a project to enable saving, or download the JSON.';
       btnSave.disabled = !projectLibraryRoot;
       showAlert(projectLibraryRoot ? 'success' : 'warning', successMessage);
     } else {
@@ -1471,7 +1481,7 @@
 
     const modality = modalityEl.value;
     if (!projectLibraryRoot) {
-      showAlert('danger', 'Select or create a project first; saving changes only touches the project-specific library.');
+      showAlert('danger', '<strong>No project selected!</strong><br>All template saves go to <code>project/code/library/{modality}/</code><br>Please select or create a project first.');
       return;
     }
 
@@ -1482,7 +1492,7 @@
         filename,
         template: obj,
       });
-      showAlert('success', `✅ ${data.message}`);
+      showAlert('success', `✅ Saved to project library: <code>${projectLibraryRoot}/${modality}/${filename}</code><br><small>This project version will override any global template with the same name.</small>`);
       await refreshTemplateList();
     } catch (e) {
       showAlert('danger', `Save failed: ${e.message}`);
