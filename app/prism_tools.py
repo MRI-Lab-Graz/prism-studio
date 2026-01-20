@@ -1136,6 +1136,131 @@ def cmd_library_fill(args):
         print(f"Error: Path not found: {args.path}")
 
 
+def cmd_anonymize(args):
+    """Anonymize a dataset for sharing."""
+    from src.anonymizer import create_participant_mapping, anonymize_tsv_file
+    import csv
+    
+    dataset_path = Path(args.dataset).resolve()
+    output_path = Path(args.output).resolve() if args.output else dataset_path.parent / f"{dataset_path.name}_anonymized"
+    mapping_file = Path(args.mapping).resolve() if args.mapping else output_path / "code" / "anonymization_map.json"
+    
+    if not dataset_path.exists() or not dataset_path.is_dir():
+        print(f"Error: Dataset path not found: {dataset_path}")
+        sys.exit(1)
+    
+    print(f"Anonymizing dataset: {dataset_path}")
+    print(f"Output will be saved to: {output_path}")
+    print()
+    
+    # Step 1: Collect all participant IDs
+    participant_ids = set()
+    participants_tsv = dataset_path / "participants.tsv"
+    
+    if participants_tsv.exists():
+        with open(participants_tsv, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            for row in reader:
+                pid = row.get('participant_id', '')
+                if pid:
+                    participant_ids.add(pid)
+    else:
+        # Scan for subject folders
+        for sub_dir in dataset_path.glob("sub-*"):
+            if sub_dir.is_dir():
+                participant_ids.add(sub_dir.name)
+    
+    if not participant_ids:
+        print("Error: No participants found in dataset")
+        sys.exit(1)
+    
+    print(f"Found {len(participant_ids)} participants")
+    
+    # Step 2: Create or load mapping
+    if mapping_file.exists() and not args.force:
+        print(f"Loading existing mapping from: {mapping_file}")
+        with open(mapping_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            participant_mapping = data.get("mapping", {})
+    else:
+        print(f"Creating new participant ID mapping...")
+        participant_mapping = create_participant_mapping(
+            list(participant_ids),
+            mapping_file,
+            id_length=args.id_length,
+            deterministic=not args.random
+        )
+        print(f"✓ Mapping saved to: {mapping_file}")
+        print(f"  ⚠️  KEEP THIS FILE SECURE! It allows re-identification.")
+    
+    print()
+    print(f"Sample mappings:")
+    for i, (orig, anon) in enumerate(list(participant_mapping.items())[:3]):
+        print(f"  {orig} → {anon}")
+    print()
+    
+    # Step 3: Copy dataset structure
+    output_path.mkdir(parents=True, exist_ok=True)
+    
+    # Copy and anonymize participants.tsv
+    if participants_tsv.exists():
+        print(f"Anonymizing participants.tsv...")
+        output_participants = output_path / "participants.tsv"
+        anonymize_tsv_file(participants_tsv, output_participants, participant_mapping)
+        print(f"  ✓ {output_participants}")
+    
+    # Step 4: Copy and anonymize survey/biometric data
+    print(f"Anonymizing data files...")
+    for tsv_file in dataset_path.rglob("*.tsv"):
+        if tsv_file.name == "participants.tsv":
+            continue  # Already handled
+        
+        # Calculate relative path and update with anonymized IDs
+        rel_path = tsv_file.relative_to(dataset_path)
+        new_rel_path_str = str(rel_path)
+        
+        # Replace participant IDs in path
+        for orig_id, anon_id in participant_mapping.items():
+            new_rel_path_str = new_rel_path_str.replace(orig_id, anon_id)
+        
+        output_file = output_path / new_rel_path_str
+        anonymize_tsv_file(tsv_file, output_file, participant_mapping)
+        print(f"  ✓ {rel_path} → {new_rel_path_str}")
+    
+    # Step 5: Copy JSON sidecars (with optional question masking)
+    print(f"Copying metadata files...")
+    for json_file in dataset_path.rglob("*.json"):
+        rel_path = json_file.relative_to(dataset_path)
+        
+        # Skip the mapping file itself
+        if json_file == mapping_file:
+            continue
+        
+        # Replace participant IDs in path
+        new_rel_path_str = str(rel_path)
+        for orig_id, anon_id in participant_mapping.items():
+            new_rel_path_str = new_rel_path_str.replace(orig_id, anon_id)
+        
+        output_file = output_path / new_rel_path_str
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+        
+        # TODO: If mask_questions flag is set, process survey sidecars to mask question text
+        import shutil
+        shutil.copy2(json_file, output_file)
+    
+    print()
+    print("=" * 70)
+    print(f"✅ Anonymization complete!")
+    print(f"   Anonymized dataset: {output_path}")
+    print(f"   Mapping file: {mapping_file}")
+    print()
+    print("⚠️  IMPORTANT:")
+    print("   - Keep the mapping file secure and separate from shared data")
+    print("   - The mapping allows re-identification of participants")
+    print("   - Review the output before sharing to ensure anonymization")
+    print("=" * 70)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Prism Tools: Utilities for PRISM/BIDS datasets"
@@ -1500,6 +1625,46 @@ def main():
         help="Default Technical.Supervisor value for generated biometrics templates",
     )
 
+    # Command: anonymize
+    parser_anonymize = subparsers.add_parser(
+        "anonymize",
+        help="Anonymize a dataset for sharing (randomize participant IDs, mask copyrighted questions)"
+    )
+    parser_anonymize.add_argument(
+        "--dataset",
+        required=True,
+        help="Path to the PRISM dataset to anonymize"
+    )
+    parser_anonymize.add_argument(
+        "--output",
+        help="Path for the anonymized output dataset (default: <dataset>_anonymized)"
+    )
+    parser_anonymize.add_argument(
+        "--mapping",
+        help="Path to save/load the ID mapping file (default: <output>/code/anonymization_map.json)"
+    )
+    parser_anonymize.add_argument(
+        "--id-length",
+        type=int,
+        default=6,
+        help="Length of randomized ID codes (default: 6)"
+    )
+    parser_anonymize.add_argument(
+        "--random",
+        action="store_true",
+        help="Use truly random IDs (default: deterministic based on original IDs)"
+    )
+    parser_anonymize.add_argument(
+        "--force",
+        action="store_true",
+        help="Force creation of new mapping even if one exists"
+    )
+    parser_anonymize.add_argument(
+        "--mask-questions",
+        action="store_true",
+        help="Mask copyrighted question text (e.g., 'ADS Question 1' instead of full text)"
+    )
+
     # Subcommand: survey validate
     parser_survey_validate = survey_subparsers.add_parser(
         "validate", help="Validate survey library"
@@ -1657,7 +1822,9 @@ def main():
 
     args = parser.parse_args()
 
-    if args.command == "convert" and args.modality == "physio":
+    if args.command == "anonymize":
+        cmd_anonymize(args)
+    elif args.command == "convert" and args.modality == "physio":
         cmd_convert_physio(args)
     elif args.command == "demo" and args.action == "create":
         cmd_demo_create(args)

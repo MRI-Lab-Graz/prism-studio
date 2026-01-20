@@ -96,6 +96,58 @@
               Generate Methods Boilerplate
             </label>
           </div>
+        </div>
+
+        <!-- Anonymization Options -->
+        <div class="col-12">
+          <hr class="my-3">
+          <h6 class="mb-3"><i class="fas fa-user-secret me-2"></i>Data Sharing & Anonymization</h6>
+        </div>
+
+        <div class="col-md-6">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="derivAnonymize" checked>
+            <label class="form-check-label" for="derivAnonymize">
+              <strong>Anonymize for Sharing</strong>
+            </label>
+          </div>
+          <div class="form-text ms-4">
+            Randomize participant IDs (e.g., sub-001 → sub-R7X2K9) and create secure mapping file.
+            <strong>Recommended for public data sharing.</strong>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" id="derivMaskQuestions">
+            <label class="form-check-label" for="derivMaskQuestions">
+              Mask Copyrighted Questions
+            </label>
+          </div>
+          <div class="form-text ms-4">
+            Replace copyrighted survey text with generic labels (e.g., "ADS Question 1").
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="derivIdLength" class="form-label">Random ID Length</label>
+          <input type="number" class="form-control" id="derivIdLength" value="8" min="4" max="12">
+          <div class="form-text">Length of randomized codes (4-12 characters)</div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">&nbsp;</label>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="derivRandomIds">
+            <label class="form-check-label" for="derivRandomIds">
+              Use Truly Random IDs
+            </label>
+          </div>
+          <div class="form-text">Uncheck for deterministic/reproducible IDs (recommended)</div>
+        </div>
+
+        <!-- Run Button -->
+        <div class="col-12 mt-3">
           <button class="btn btn-primary w-100" type="button" id="derivRunBtn">
             <i class="fas fa-play me-2"></i>Run Processing
           </button>
@@ -198,7 +250,11 @@ document.addEventListener('DOMContentLoaded', function() {
       lang: document.getElementById('derivLang').value,
       layout: document.getElementById('derivLayout').value,
       include_raw: document.getElementById('derivIncludeRaw').checked,
-      boilerplate: document.getElementById('derivBoilerplate').checked
+      boilerplate: document.getElementById('derivBoilerplate').checked,
+      anonymize: document.getElementById('derivAnonymize').checked,
+      mask_questions: document.getElementById('derivMaskQuestions').checked,
+      id_length: parseInt(document.getElementById('derivIdLength').value) || 8,
+      random_ids: document.getElementById('derivRandomIds').checked
     };
 
     derivRunBtn.disabled = true;
@@ -206,6 +262,10 @@ document.addEventListener('DOMContentLoaded', function() {
     logToTerminal(`Modality: ${payload.modality}, Format: ${payload.format}, Language: ${payload.lang}, Layout: ${payload.layout}`);
     if (payload.include_raw) logToTerminal(`Including raw data columns`);
     if (payload.boilerplate) logToTerminal(`Generating methods boilerplate`);
+    if (payload.anonymize) {
+      logToTerminal(`🔒 Anonymizing participant IDs (length: ${payload.id_length}, ${payload.random_ids ? 'random' : 'deterministic'})`, 'warning');
+      if (payload.mask_questions) logToTerminal(`🔒 Masking copyrighted question text`, 'warning');
+    }
     if (payload.survey) logToTerminal(`Recipe filter: ${payload.survey}`);
     derivInfo.textContent = 'Running processing... this may take a moment.';
     derivInfo.classList.remove('d-none');
