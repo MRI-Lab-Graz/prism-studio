@@ -1,0 +1,65 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "PIUQ",
+    "Reference": "survey-piuq.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Problematic Internet Use Questionnaire (PIUQ)",
+        "de": "Gesamtscore für Problematic Internet Use Questionnaire (PIUQ)"
+      },
+      "Items": [
+        "PIUQ01",
+        "PIUQ02",
+        "PIUQ03",
+        "PIUQ04",
+        "PIUQ05",
+        "PIUQ06",
+        "PIUQ07",
+        "PIUQ08",
+        "PIUQ09",
+        "PIUQ10",
+        "PIUQ11",
+        "PIUQ12",
+        "PIUQ13",
+        "PIUQ14",
+        "PIUQ15",
+        "PIUQ16",
+        "PIUQ17",
+        "PIUQ18"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 18,
+        "max": 126
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

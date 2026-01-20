@@ -1,0 +1,59 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "TYPE-D",
+    "Reference": "survey-type-d.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Type D Personality (DS14)",
+        "de": "Gesamtscore für Type D Personality (DS14)"
+      },
+      "Items": [
+        "TYPE-D01",
+        "TYPE-D02",
+        "TYPE-D03",
+        "TYPE-D04",
+        "TYPE-D05",
+        "TYPE-D06",
+        "TYPE-D07",
+        "TYPE-D08",
+        "TYPE-D09",
+        "TYPE-D10",
+        "TYPE-D11",
+        "TYPE-D12"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 12,
+        "max": 84
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

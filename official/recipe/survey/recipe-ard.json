@@ -1,0 +1,69 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "ARD",
+    "Reference": "survey-ard.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Dominance Scale (for relationship research)",
+        "de": "Gesamtscore für Dominance Scale (for relationship research)"
+      },
+      "Items": [
+        "ARD01",
+        "ARD02",
+        "ARD03",
+        "ARD04",
+        "ARD05",
+        "ARD06",
+        "ARD07",
+        "ARD08",
+        "ARD09",
+        "ARD10",
+        "ARD11",
+        "ARD12",
+        "ARD13",
+        "ARD14",
+        "ARD15",
+        "ARD16",
+        "ARD17",
+        "ARD18",
+        "ARD19",
+        "ARD20",
+        "ARD21",
+        "ARD22"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 22,
+        "max": 154
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "MHC-SF",
+    "Reference": "survey-mhc-sf.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Mental Health Continuum Short Form (MHC-SF)",
+        "de": "Gesamtscore für Mental Health Continuum Short Form (MHC-SF)"
+      },
+      "Items": [
+        "MHC-SF01",
+        "MHC-SF02",
+        "MHC-SF03",
+        "MHC-SF04",
+        "MHC-SF05",
+        "MHC-SF06",
+        "MHC-SF07",
+        "MHC-SF08",
+        "MHC-SF09",
+        "MHC-SF10",
+        "MHC-SF11",
+        "MHC-SF12",
+        "MHC-SF13",
+        "MHC-SF14"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 14,
+        "max": 98
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

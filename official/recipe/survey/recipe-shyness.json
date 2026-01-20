@@ -1,0 +1,54 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "SHYNESS",
+    "Reference": "survey-shyness.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Shyness Scale (McCroskey)",
+        "de": "Gesamtscore für Shyness Scale (McCroskey)"
+      },
+      "Items": [
+        "SHYNESS01",
+        "SHYNESS02",
+        "SHYNESS03",
+        "SHYNESS04",
+        "SHYNESS05",
+        "SHYNESS06",
+        "SHYNESS07"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 7,
+        "max": 49
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

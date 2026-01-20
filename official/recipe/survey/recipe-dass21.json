@@ -1,0 +1,68 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "DASS21",
+    "Reference": "survey-dass21.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for The Depression, Anxiety, and Stress Scales with 21 items (DASS-21)",
+        "de": "Gesamtscore für The Depression, Anxiety, and Stress Scales with 21 items (DASS-21)"
+      },
+      "Items": [
+        "DASS2101",
+        "DASS2102",
+        "DASS2103",
+        "DASS2104",
+        "DASS2105",
+        "DASS2106",
+        "DASS2107",
+        "DASS2108",
+        "DASS2109",
+        "DASS2110",
+        "DASS2111",
+        "DASS2112",
+        "DASS2113",
+        "DASS2114",
+        "DASS2115",
+        "DASS2116",
+        "DASS2117",
+        "DASS2118",
+        "DASS2119",
+        "DASS2120",
+        "DASS2121"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 21,
+        "max": 147
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

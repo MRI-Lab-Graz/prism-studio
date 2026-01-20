@@ -1,0 +1,75 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "MASI",
+    "Reference": "survey-masi.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Measure of Anxiety in Selection Interviews (MASI)",
+        "de": "Gesamtscore für Measure of Anxiety in Selection Interviews (MASI)"
+      },
+      "Items": [
+        "MASI01",
+        "MASI02",
+        "MASI03",
+        "MASI04",
+        "MASI05",
+        "MASI06",
+        "MASI07",
+        "MASI08",
+        "MASI09",
+        "MASI10",
+        "MASI11",
+        "MASI12",
+        "MASI13",
+        "MASI14",
+        "MASI15",
+        "MASI16",
+        "MASI17",
+        "MASI18",
+        "MASI19",
+        "MASI20",
+        "MASI21",
+        "MASI22",
+        "MASI23",
+        "MASI24",
+        "MASI25",
+        "MASI26",
+        "MASI27",
+        "MASI28"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 28,
+        "max": 196
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

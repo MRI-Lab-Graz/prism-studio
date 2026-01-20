@@ -1,0 +1,70 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "BSAS",
+    "Reference": "survey-bsas.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for The brief sexual attitudes scale (BSAS)",
+        "de": "Gesamtscore für The brief sexual attitudes scale (BSAS)"
+      },
+      "Items": [
+        "BSAS01",
+        "BSAS02",
+        "BSAS03",
+        "BSAS04",
+        "BSAS05",
+        "BSAS06",
+        "BSAS07",
+        "BSAS08",
+        "BSAS09",
+        "BSAS10",
+        "BSAS11",
+        "BSAS12",
+        "BSAS13",
+        "BSAS14",
+        "BSAS15",
+        "BSAS16",
+        "BSAS17",
+        "BSAS18",
+        "BSAS19",
+        "BSAS20",
+        "BSAS21",
+        "BSAS22",
+        "BSAS23"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 23,
+        "max": 161
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

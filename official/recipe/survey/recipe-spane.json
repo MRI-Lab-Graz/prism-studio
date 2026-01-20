@@ -1,0 +1,59 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "SPANE",
+    "Reference": "survey-spane.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Scale of Positive and Negative Experience (SPANE)",
+        "de": "Gesamtscore für Scale of Positive and Negative Experience (SPANE)"
+      },
+      "Items": [
+        "SPANE01",
+        "SPANE02",
+        "SPANE03",
+        "SPANE04",
+        "SPANE05",
+        "SPANE06",
+        "SPANE07",
+        "SPANE08",
+        "SPANE09",
+        "SPANE10",
+        "SPANE11",
+        "SPANE12"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 12,
+        "max": 84
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

@@ -1,6 +1,5 @@
 {
-  "globalTemplateLibraryPath": "/Volumes/Evo/software/psycho-validator/library/",
-  "globalRecipesPath": "/Volumes/Evo/software/psycho-validator/recipes/",
+  "globalLibraryRoot": "/Users/karl/work/github/prism-studio/official",
   "defaultModalities": [
     "survey",
     "biometrics"

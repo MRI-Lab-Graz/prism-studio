@@ -1,0 +1,68 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "SAAM",
+    "Reference": "survey-saam.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for State Adult Attachment Measure (SAAM)",
+        "de": "Gesamtscore für State Adult Attachment Measure (SAAM)"
+      },
+      "Items": [
+        "SAAM01",
+        "SAAM02",
+        "SAAM03",
+        "SAAM04",
+        "SAAM05",
+        "SAAM06",
+        "SAAM07",
+        "SAAM08",
+        "SAAM09",
+        "SAAM10",
+        "SAAM11",
+        "SAAM12",
+        "SAAM13",
+        "SAAM14",
+        "SAAM15",
+        "SAAM16",
+        "SAAM17",
+        "SAAM18",
+        "SAAM19",
+        "SAAM20",
+        "SAAM21"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 21,
+        "max": 147
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}
