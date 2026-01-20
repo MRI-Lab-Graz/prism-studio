@@ -348,7 +348,7 @@ def _normalize_survey_key(raw: str) -> str:
     s = str(raw or "").strip().lower()
     if not s:
         return s
-    for prefix in ("survey-", "task-"):
+    for prefix in ("recipe-", "survey-", "task-"):
         if s.startswith(prefix):
             s = s[len(prefix) :]
     return s
@@ -1529,6 +1529,7 @@ def compute_survey_recipes(
     layout: str = "long",
     include_raw: bool = False,
     boilerplate: bool = False,
+    merge_all: bool = False,
 ) -> SurveyRecipesResult:
     """Compute survey scores in a PRISM dataset using recipes.
 
@@ -1542,6 +1543,7 @@ def compute_survey_recipes(
             layout: "long" (default) or "wide" for repeated measures.
             include_raw: If True, include original columns in the output.
             boilerplate: If True, generate a methods boilerplate.
+            merge_all: If True, combine all surveys into one output file.
 
     Raises:
             ValueError: For user errors (missing paths, unknown recipes, etc.).
@@ -1601,6 +1603,10 @@ def compute_survey_recipes(
     flat_out_path: Path | None = None
     fallback_note: str | None = None
 
+    # For merge_all mode, collect all DataFrames to merge later
+    merge_all_dfs: list[Any] = [] if merge_all else None
+    merge_all_metadata: dict = {} if merge_all else None
+
     # If modality=survey/biometrics we will write one flat file per survey/biometric (recipe)
     for recipe_id, rec in sorted(recipes.items()):
         recipe = rec["json"]
@@ -1623,39 +1629,86 @@ def compute_survey_recipes(
         applied_recipes_list.append(recipe)
 
         if out_format in ("csv", "xlsx", "save", "r"):
-            (
-                p_count,
-                w_count,
-                o_path,
-                f_note,
-                n_cols,
-            ) = _export_recipe_aggregated(
-                recipe_id=recipe_id,
-                recipe=recipe,
-                matching=matching,
-                out_root=out_root,
-                out_format=out_format,
-                modality=modality,
-                lang=lang,
-                layout=layout,
-                include_raw=include_raw,
-                participants_df=participants_df,
-                participants_meta=participants_meta,
-                output_prism_root=output_prism_root,
-                survey_task=survey_task,
-                repo_root=repo_root,
-            )
-            processed_files += p_count
-            written_files += w_count
-            if w_count > 0:
-                if written_files == 1:
-                    flat_out_path = o_path
-                else:
-                    flat_out_path = out_root
-            if f_note:
-                fallback_note = f_note
-            if n_cols:
-                nan_report[recipe_id] = n_cols
+            if merge_all:
+                # Collect data for merging instead of writing
+                import pandas as pd
+                rows_accum: list[dict[str, Any]] = []
+                sidecar_meta = _get_sidecar_for_task(output_prism_root, modality, survey_task, repo_root=repo_root)
+                
+                for in_path in matching:
+                    processed_files += 1
+                    sub_id, ses_id = _infer_sub_ses_from_path(in_path)
+                    if not sub_id:
+                        continue
+                    if not ses_id:
+                        ses_id = "ses-1"
+
+                    in_header, in_rows = _read_tsv_rows(in_path)
+                    if not in_header or not in_rows:
+                        continue
+
+                    out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
+                        recipe, in_rows, include_raw=include_raw, sidecar_meta=sidecar_meta
+                    )
+                    if not out_header:
+                        continue
+
+                    # Prefix columns with survey name to avoid conflicts
+                    for row_index, score_row in enumerate(out_rows):
+                        merged = {"participant_id": sub_id, "session": ses_id}
+                        for col in out_header:
+                            prefixed_col = f"{recipe_id}_{col}"
+                            merged[prefixed_col] = score_row.get(col, "n/a")
+                        rows_accum.append(merged)
+                
+                if rows_accum:
+                    df = pd.DataFrame(rows_accum)
+                    # Merge participant variables if this is the first recipe
+                    if participants_df is not None and len(merge_all_dfs) == 0:
+                        participant_cols = [c for c in participants_df.columns if c != "participant_id"]
+                        if participant_cols:
+                            df = df.merge(
+                                participants_df[["participant_id"] + participant_cols],
+                                on="participant_id",
+                                how="left",
+                            )
+                    merge_all_dfs.append(df)
+                    merge_all_metadata[recipe_id] = recipe
+            else:
+                # Normal mode: write separate file per recipe
+                (
+                    p_count,
+                    w_count,
+                    o_path,
+                    f_note,
+                    n_cols,
+                ) = _export_recipe_aggregated(
+                    recipe_id=recipe_id,
+                    recipe=recipe,
+                    matching=matching,
+                    out_root=out_root,
+                    out_format=out_format,
+                    modality=modality,
+                    lang=lang,
+                    layout=layout,
+                    include_raw=include_raw,
+                    participants_df=participants_df,
+                    participants_meta=participants_meta,
+                    output_prism_root=output_prism_root,
+                    survey_task=survey_task,
+                    repo_root=repo_root,
+                )
+                processed_files += p_count
+                written_files += w_count
+                if w_count > 0:
+                    if written_files == 1:
+                        flat_out_path = o_path
+                    else:
+                        flat_out_path = out_root
+                if f_note:
+                    fallback_note = f_note
+                if n_cols:
+                    nan_report[recipe_id] = n_cols
 
         else:
             # legacy behaviour (prism/flat per-participant outputs)
@@ -1676,6 +1729,45 @@ def compute_survey_recipes(
             processed_files += p_count
             written_files += w_count
 
+    # If merge_all mode, combine all collected DataFrames and write one file
+    if merge_all and merge_all_dfs:
+        import pandas as pd
+        
+        # Merge all DataFrames on participant_id and session
+        combined_df = merge_all_dfs[0]
+        for df in merge_all_dfs[1:]:
+            combined_df = combined_df.merge(df, on=["participant_id", "session"], how="outer", suffixes=("", "_dup"))
+        
+        # Write combined file
+        out_stem = f"combined_{modality}"
+        ext_map = {"csv": ".csv", "xlsx": ".xlsx", "save": ".sav", "r": ".feather"}
+        ext = ext_map.get(out_format, ".csv")
+        out_path = out_root / f"{out_stem}{ext}"
+        
+        _ensure_dir(out_root)
+        
+        if out_format == "csv":
+            combined_df.to_csv(out_path, index=False)
+        elif out_format == "xlsx":
+            combined_df.to_excel(out_path, index=False)
+        elif out_format == "save":
+            try:
+                import pyreadstat
+                pyreadstat.write_sav(combined_df, str(out_path))
+            except ImportError:
+                combined_df.to_csv(out_path.with_suffix(".csv"), index=False)
+                fallback_note = "pyreadstat not available, wrote CSV instead"
+        elif out_format == "r":
+            try:
+                combined_df.to_feather(out_path)
+            except Exception:
+                combined_df.to_csv(out_path.with_suffix(".csv"), index=False)
+                fallback_note = "feather writer not available, wrote CSV instead"
+        
+        written_files = 1
+        flat_out_path = out_path
+        print(f"✓ Combined {len(merge_all_dfs)} surveys into: {out_path.name}")
+    
     if written_files == 0:
         raise ValueError(f"No matching {modality} recipes applied.")
 
