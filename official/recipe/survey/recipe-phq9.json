@@ -1,0 +1,56 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "PHQ9",
+    "Reference": "survey-phq9.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Patient Health Questionnaire (PHQ-9)",
+        "de": "Gesamtscore für Patient Health Questionnaire (PHQ-9)"
+      },
+      "Items": [
+        "PHQ901",
+        "PHQ902",
+        "PHQ903",
+        "PHQ904",
+        "PHQ905",
+        "PHQ906",
+        "PHQ907",
+        "PHQ908",
+        "PHQ909"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 9,
+        "max": 63
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "SCSR",
+    "Reference": "survey-scsr.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Self-consciousness scale (revised version)",
+        "de": "Gesamtscore für Self-consciousness scale (revised version)"
+      },
+      "Items": [
+        "SCSR01",
+        "SCSR02",
+        "SCSR03",
+        "SCSR04",
+        "SCSR05",
+        "SCSR06",
+        "SCSR07",
+        "SCSR08",
+        "SCSR09",
+        "SCSR10",
+        "SCSR11",
+        "SCSR12",
+        "SCSR13",
+        "SCSR14",
+        "SCSR15",
+        "SCSR16",
+        "SCSR17",
+        "SCSR18",
+        "SCSR19"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 19,
+        "max": 133
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

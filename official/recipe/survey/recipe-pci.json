@@ -1,0 +1,65 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "PCI",
+    "Reference": "survey-pci.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Procrastinatory Cognitions Inventory (PCI)",
+        "de": "Gesamtscore für Procrastinatory Cognitions Inventory (PCI)"
+      },
+      "Items": [
+        "PCI01",
+        "PCI02",
+        "PCI03",
+        "PCI04",
+        "PCI05",
+        "PCI06",
+        "PCI07",
+        "PCI08",
+        "PCI09",
+        "PCI10",
+        "PCI11",
+        "PCI12",
+        "PCI13",
+        "PCI14",
+        "PCI15",
+        "PCI16",
+        "PCI17",
+        "PCI18"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 18,
+        "max": 126
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

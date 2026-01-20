@@ -1,0 +1,57 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "HS",
+    "Reference": "survey-hs.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Healthy Selfishness (HS)",
+        "de": "Gesamtscore für Healthy Selfishness (HS)"
+      },
+      "Items": [
+        "HS01",
+        "HS02",
+        "HS03",
+        "HS04",
+        "HS05",
+        "HS06",
+        "HS07",
+        "HS08",
+        "HS09",
+        "HS10"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 10,
+        "max": 70
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

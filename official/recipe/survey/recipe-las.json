@@ -1,0 +1,71 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "LAS",
+    "Reference": "survey-las.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Love Attitudes Scale (Short Form)",
+        "de": "Gesamtscore für Love Attitudes Scale (Short Form)"
+      },
+      "Items": [
+        "LAS01",
+        "LAS02",
+        "LAS03",
+        "LAS04",
+        "LAS05",
+        "LAS06",
+        "LAS07",
+        "LAS08",
+        "LAS09",
+        "LAS10",
+        "LAS11",
+        "LAS12",
+        "LAS13",
+        "LAS14",
+        "LAS15",
+        "LAS16",
+        "LAS17",
+        "LAS18",
+        "LAS19",
+        "LAS20",
+        "LAS21",
+        "LAS22",
+        "LAS23",
+        "LAS24"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 24,
+        "max": 168
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "SPQ",
+    "Reference": "survey-spq.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Spider Fear Questionnaire (SPQ)",
+        "de": "Gesamtscore für Spider Fear Questionnaire (SPQ)"
+      },
+      "Items": [
+        "SPQ01",
+        "SPQ02",
+        "SPQ03",
+        "SPQ04",
+        "SPQ05",
+        "SPQ06",
+        "SPQ07",
+        "SPQ08",
+        "SPQ09",
+        "SPQ10",
+        "SPQ11",
+        "SPQ12",
+        "SPQ13",
+        "SPQ14",
+        "SPQ15",
+        "SPQ16",
+        "SPQ17",
+        "SPQ18",
+        "SPQ19",
+        "SPQ20",
+        "SPQ21",
+        "SPQ22"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 22,
+        "max": 154
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

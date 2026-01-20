@@ -11,6 +11,7 @@ pandas
 openpyxl
 waitress
 pyreadstat
+beautifulsoup4
 
 # Documentation
 sphinx

@@ -332,7 +332,11 @@ class PrismValidatorGUI:
         ttk.Label(lib_frame, text="Library Path:").grid(
             row=0, column=0, sticky="w", pady=5
         )
-        self.lib_path_var = tk.StringVar(value=str(BASE_DIR / "survey_library"))
+        # Get global library path from configuration
+        from src.config import get_effective_library_paths
+        lib_paths = get_effective_library_paths(app_root=str(BASE_DIR))
+        default_lib = lib_paths["global_library_path"] or str(BASE_DIR / "survey_library")
+        self.lib_path_var = tk.StringVar(value=default_lib)
 
         entry_frame = ttk.Frame(lib_frame)
         entry_frame.grid(row=0, column=1, sticky="ew", padx=10)
@@ -564,9 +568,11 @@ class PrismValidatorGUI:
         try:
             _ = self.convert_library_var
         except AttributeError:
-            self.convert_library_var = tk.StringVar(
-                value=str(BASE_DIR / "survey_library")
-            )
+            # Get global library path from configuration
+            from src.config import get_effective_library_paths
+            lib_paths = get_effective_library_paths(app_root=str(BASE_DIR))
+            default_lib = lib_paths["global_library_path"] or str(BASE_DIR / "survey_library")
+            self.convert_library_var = tk.StringVar(value=default_lib)
         lib_entry = ttk.Entry(convert_frame, textvariable=self.convert_library_var)
         lib_entry.grid(row=1, column=1, sticky="ew", padx=10)
         ttk.Button(

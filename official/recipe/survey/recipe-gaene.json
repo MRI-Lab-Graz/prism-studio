@@ -1,0 +1,60 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "GAENE",
+    "Reference": "survey-gaene.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Generalized Acceptance of EvolutioN Evaluation (GAENE)",
+        "de": "Gesamtscore für Generalized Acceptance of EvolutioN Evaluation (GAENE)"
+      },
+      "Items": [
+        "GAENE01",
+        "GAENE02",
+        "GAENE03",
+        "GAENE04",
+        "GAENE05",
+        "GAENE06",
+        "GAENE07",
+        "GAENE08",
+        "GAENE09",
+        "GAENE10",
+        "GAENE11",
+        "GAENE12",
+        "GAENE13"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 13,
+        "max": 91
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "VAST",
+    "Reference": "survey-vast.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Varieties of Sadistic Tendencies (VAST)",
+        "de": "Gesamtscore für Varieties of Sadistic Tendencies (VAST)"
+      },
+      "Items": [
+        "VAST01",
+        "VAST02",
+        "VAST03",
+        "VAST04",
+        "VAST05",
+        "VAST06",
+        "VAST07",
+        "VAST08",
+        "VAST09",
+        "VAST10",
+        "VAST11",
+        "VAST12",
+        "VAST13",
+        "VAST14",
+        "VAST15",
+        "VAST16",
+        "VAST17",
+        "VAST18",
+        "VAST19",
+        "VAST20",
+        "VAST21",
+        "VAST22",
+        "VAST23"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 23,
+        "max": 161
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "RRS",
+    "Reference": "survey-rrs.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Rumination Response Scale (RRS)",
+        "de": "Gesamtscore für Rumination Response Scale (RRS)"
+      },
+      "Items": [
+        "RRS01",
+        "RRS02",
+        "RRS03",
+        "RRS04",
+        "RRS05",
+        "RRS06",
+        "RRS07",
+        "RRS08",
+        "RRS09",
+        "RRS10",
+        "RRS11",
+        "RRS12",
+        "RRS13",
+        "RRS14",
+        "RRS15",
+        "RRS16",
+        "RRS17",
+        "RRS18",
+        "RRS19",
+        "RRS20",
+        "RRS21",
+        "RRS22"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 22,
+        "max": 154
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

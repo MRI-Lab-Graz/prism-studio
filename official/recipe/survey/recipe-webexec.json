@@ -1,0 +1,53 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "WEBEXEC",
+    "Reference": "survey-webexec.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Problems with executive control (webexec)",
+        "de": "Gesamtscore für Problems with executive control (webexec)"
+      },
+      "Items": [
+        "WEBEXEC01",
+        "WEBEXEC02",
+        "WEBEXEC03",
+        "WEBEXEC04",
+        "WEBEXEC05",
+        "WEBEXEC06"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 6,
+        "max": 42
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

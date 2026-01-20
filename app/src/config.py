@@ -258,10 +258,15 @@ APP_SETTINGS_FILENAME = "prism_studio_settings.json"
 class AppSettings:
     """App-level settings for PRISM Studio (global defaults)"""
 
+    # Global library root (points to official folder containing library/ and recipe/ subdirs)
+    global_library_root: Optional[str] = None
+
     # Global template library path (shared, read-only templates from Nextcloud/GitLab)
+    # DEPRECATED: Use global_library_root instead
     global_template_library_path: Optional[str] = None
 
     # Global recipes path (shared scoring recipes)
+    # DEPRECATED: Use global_library_root instead
     global_recipes_path: Optional[str] = None
 
     # Default modalities for new projects
@@ -326,6 +331,7 @@ def load_app_settings(app_root: str = None) -> AppSettings:
             data = json.load(f)
 
         settings = AppSettings(
+            global_library_root=data.get("globalLibraryRoot"),
             global_template_library_path=data.get("globalTemplateLibraryPath"),
             global_recipes_path=data.get("globalRecipesPath"),
             default_modalities=data.get("defaultModalities", ["survey", "biometrics"]),
@@ -355,6 +361,7 @@ def save_app_settings(settings: AppSettings, app_root: str = None) -> str:
     settings_path = os.path.join(app_root, APP_SETTINGS_FILENAME)
 
     data = {
+        "globalLibraryRoot": settings.global_library_root,
         "globalTemplateLibraryPath": settings.global_template_library_path,
         "globalRecipesPath": settings.global_recipes_path,
         "defaultModalities": settings.default_modalities,
@@ -369,6 +376,79 @@ def save_app_settings(settings: AppSettings, app_root: str = None) -> str:
     return settings_path
 
 
+def get_effective_library_paths(
+    app_root: str = None,
+    app_settings: AppSettings = None
+) -> Dict[str, Optional[str]]:
+    """
+    Get the effective global library and recipe paths.
+
+    Resolution order for each type:
+    1. App-level globalLibraryRoot (if configured) -> official/library/ and official/recipe/
+    2. Legacy app-level globalTemplateLibraryPath or globalRecipesPath (if configured)
+    3. Default: app_root/official/ folder structure
+
+    Args:
+        app_root: Application root directory (defaults to parent of current directory)
+        app_settings: Pre-loaded app settings (optional, will load if not provided)
+
+    Returns:
+        Dictionary with:
+        - global_library_root: Root path containing library/ and recipe/ subdirs (official folder)
+        - global_library_path: Path to global library (official/library/)
+        - global_recipe_path: Path to global recipes (official/recipe/)
+        - source: 'configured' or 'default' indicating where paths came from
+    """
+    if app_settings is None:
+        app_settings = load_app_settings(app_root=app_root)
+
+    # Determine app root if not provided
+    if app_root is None:
+        # Use parent directory of the src folder (i.e., the app/ folder)
+        app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    result = {
+        "global_library_root": None,
+        "global_library_path": None,
+        "global_recipe_path": None,
+        "source": None,
+    }
+
+    # Priority 1: Use configured global_library_root
+    if app_settings.global_library_root:
+        root = app_settings.global_library_root
+        result["global_library_root"] = root
+        result["global_library_path"] = os.path.join(root, "library")
+        result["global_recipe_path"] = os.path.join(root, "recipe")
+        result["source"] = "configured"
+        return result
+
+    # Priority 2: Use legacy separate paths (backwards compatibility)
+    if app_settings.global_template_library_path or app_settings.global_recipes_path:
+        result["global_library_path"] = app_settings.global_template_library_path
+        result["global_recipe_path"] = app_settings.global_recipes_path
+        result["source"] = "configured-legacy"
+        return result
+
+    # Priority 3: Default to app_root/official/
+    official_root = os.path.join(app_root, "official")
+    if os.path.exists(official_root):
+        result["global_library_root"] = official_root
+        result["global_library_path"] = os.path.join(official_root, "library")
+        result["global_recipe_path"] = os.path.join(official_root, "recipe")
+        result["source"] = "default"
+    else:
+        # Fallback: Try parent directory's official folder (for running from app/ subfolder)
+        parent_official = os.path.join(os.path.dirname(app_root), "official")
+        if os.path.exists(parent_official):
+            result["global_library_root"] = parent_official
+            result["global_library_path"] = os.path.join(parent_official, "library")
+            result["global_recipe_path"] = os.path.join(parent_official, "recipe")
+            result["source"] = "default"
+
+    return result
+
+
 def get_effective_template_library_path(
     project_path: str = None,
     app_settings: AppSettings = None,
@@ -379,8 +459,9 @@ def get_effective_template_library_path(
 
     Resolution order:
     1. Project .prismrc.json templateLibraryPath (if set)
-    2. App-level globalTemplateLibraryPath (if configured)
-    3. Default: app's survey_library folder
+    2. App-level globalLibraryRoot/library/ (if configured)
+    3. App-level globalTemplateLibraryPath (if configured, legacy)
+    4. Default: app's official/library/survey/ folder
 
     Args:
         project_path: Path to current project (optional)
@@ -397,16 +478,10 @@ def get_effective_template_library_path(
     if app_settings is None:
         app_settings = load_app_settings(app_root=app_root)
 
-    # Determine effective global path (configured or default)
-    global_path = app_settings.global_template_library_path
-    source = "global" if global_path else None
-
-    # If no configured global, use default survey_library from app root
-    if not global_path and app_root:
-        default_path = os.path.join(app_root, "survey_library")
-        if os.path.exists(default_path):
-            global_path = default_path
-            source = "default"
+    # Get global library paths
+    lib_paths = get_effective_library_paths(app_root=app_root, app_settings=app_settings)
+    global_path = lib_paths["global_library_path"]
+    source = lib_paths["source"]
 
     result = {
         "global_library_path": global_path,

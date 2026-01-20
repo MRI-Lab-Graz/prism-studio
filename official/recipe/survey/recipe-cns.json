@@ -1,0 +1,58 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "CNS",
+    "Reference": "survey-cns.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Connectedness to Nature Scale (CNS)",
+        "de": "Gesamtscore für Connectedness to Nature Scale (CNS)"
+      },
+      "Items": [
+        "CNS01",
+        "CNS02",
+        "CNS03",
+        "CNS04",
+        "CNS05",
+        "CNS06",
+        "CNS07",
+        "CNS08",
+        "CNS09",
+        "CNS10",
+        "CNS11"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 11,
+        "max": 77
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

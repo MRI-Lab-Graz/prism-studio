@@ -1,0 +1,77 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "EI",
+    "Reference": "survey-ei.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Emotional Intelligence",
+        "de": "Gesamtscore für Emotional Intelligence"
+      },
+      "Items": [
+        "EI01",
+        "EI02",
+        "EI03",
+        "EI04",
+        "EI05",
+        "EI06",
+        "EI07",
+        "EI08",
+        "EI09",
+        "EI10",
+        "EI11",
+        "EI12",
+        "EI13",
+        "EI14",
+        "EI15",
+        "EI16",
+        "EI17",
+        "EI18",
+        "EI19",
+        "EI20",
+        "EI21",
+        "EI22",
+        "EI23",
+        "EI24",
+        "EI25",
+        "EI26",
+        "EI27",
+        "EI28",
+        "EI29",
+        "EI30"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 30,
+        "max": 210
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

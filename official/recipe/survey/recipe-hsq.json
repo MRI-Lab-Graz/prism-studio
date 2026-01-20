@@ -1,0 +1,68 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "HSQ",
+    "Reference": "survey-hsq.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Humor Styles Questionnaire (HSQ)",
+        "de": "Gesamtscore für Humor Styles Questionnaire (HSQ)"
+      },
+      "Items": [
+        "HSQ01",
+        "HSQ02",
+        "HSQ03",
+        "HSQ04",
+        "HSQ05",
+        "HSQ06",
+        "HSQ07",
+        "HSQ08",
+        "HSQ09",
+        "HSQ10",
+        "HSQ11",
+        "HSQ12",
+        "HSQ13",
+        "HSQ14",
+        "HSQ15",
+        "HSQ16",
+        "HSQ17",
+        "HSQ18",
+        "HSQ19",
+        "HSQ20",
+        "HSQ21"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 21,
+        "max": 147
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

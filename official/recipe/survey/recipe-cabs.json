@@ -1,0 +1,87 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "CABS",
+    "Reference": "survey-cabs.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Child Adolescent Bullying Scale (CABS)",
+        "de": "Gesamtscore für Child Adolescent Bullying Scale (CABS)"
+      },
+      "Items": [
+        "CABS01",
+        "CABS02",
+        "CABS03",
+        "CABS04",
+        "CABS05",
+        "CABS06",
+        "CABS07",
+        "CABS08",
+        "CABS09",
+        "CABS10",
+        "CABS11",
+        "CABS12",
+        "CABS13",
+        "CABS14",
+        "CABS15",
+        "CABS16",
+        "CABS17",
+        "CABS18",
+        "CABS19",
+        "CABS20",
+        "CABS21",
+        "CABS22",
+        "CABS23",
+        "CABS24",
+        "CABS25",
+        "CABS26",
+        "CABS27",
+        "CABS28",
+        "CABS29",
+        "CABS30",
+        "CABS31",
+        "CABS32",
+        "CABS33",
+        "CABS34",
+        "CABS35",
+        "CABS36",
+        "CABS37",
+        "CABS38",
+        "CABS39",
+        "CABS40"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 40,
+        "max": 280
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}

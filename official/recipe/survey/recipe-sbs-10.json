@@ -1,0 +1,57 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "SBS-10",
+    "Reference": "survey-sbs-10.json"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Supernatural Belief Scale",
+        "de": "Gesamtscore für Supernatural Belief Scale"
+      },
+      "Items": [
+        "SBS-1001",
+        "SBS-1002",
+        "SBS-1003",
+        "SBS-1004",
+        "SBS-1005",
+        "SBS-1006",
+        "SBS-1007",
+        "SBS-1008",
+        "SBS-1009",
+        "SBS-1010"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 10,
+        "max": 70
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Add reliability data from validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "Add validity evidence from original publication"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items. Higher scores indicate higher levels of the measured construct.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items. Höhere Werte bedeuten höhere Ausprägungen des gemessenen Konstrukts."
+    },
+    "InterpretationGuidelines": {
+      "en": "Refer to original publication for interpretation guidelines and norms.",
+      "de": "Siehe Originalpublikation für Interpretationsrichtlinien und Normen."
+    }
+  }
+}
