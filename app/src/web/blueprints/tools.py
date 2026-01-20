@@ -808,13 +808,8 @@ def api_browse_folder():
             except subprocess.CalledProcessError:
                 folder_path = ""
         else:
-            import tkinter as tk
-            from tkinter import filedialog
-            root = tk.Tk()
-            root.withdraw()
-            root.attributes("-topmost", True)
-            folder_path = filedialog.askdirectory()
-            root.destroy()
+            # No folder picker available for non-macOS systems in web interface
+            return jsonify({"error": "Folder picker not available. Please enter path manually."}), 501
 
         return jsonify({"path": folder_path})
     except Exception as e:
