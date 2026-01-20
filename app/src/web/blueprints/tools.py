@@ -21,11 +21,13 @@ def _default_library_root_for_templates(*, modality: str) -> Path:
 
 
 def _global_survey_library_root() -> Path | None:
+    """Get the global survey library path from configuration."""
     base_dir = Path(current_app.root_path)
-    app_settings = load_app_settings(app_root=str(base_dir))
+    from src.config import get_effective_library_paths
+    lib_paths = get_effective_library_paths(app_root=str(base_dir))
 
-    if app_settings.global_template_library_path:
-        candidate = Path(app_settings.global_template_library_path).expanduser()
+    if lib_paths["global_library_path"]:
+        candidate = Path(lib_paths["global_library_path"]).expanduser()
         if candidate.exists() and candidate.is_dir():
             return candidate
 
@@ -38,11 +40,13 @@ def _global_survey_library_root() -> Path | None:
 
 
 def _global_recipes_root() -> Path | None:
+    """Get the global recipes path from configuration."""
     base_dir = Path(current_app.root_path)
-    app_settings = load_app_settings(app_root=str(base_dir))
-
-    if app_settings.global_recipes_path:
-        candidate = Path(app_settings.global_recipes_path).expanduser()
+    from src.config import get_effective_library_paths
+    lib_paths = get_effective_library_paths(app_root=str(base_dir))
+    
+    if lib_paths["global_recipe_path"]:
+        candidate = Path(lib_paths["global_recipe_path"]).expanduser()
         if candidate.exists() and candidate.is_dir():
             return candidate
     return None

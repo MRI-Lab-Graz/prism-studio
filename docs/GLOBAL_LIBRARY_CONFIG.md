@@ -56,15 +56,20 @@ python scripts/setup/show_global_config.py
 
 ### Recipe Commands
 
-When using recipe commands, the `--repo` argument is now **optional**:
+When using recipe commands, both the library and recipe paths are automatically configured:
 
 ```bash
-# Uses global library automatically
+# Uses global library and recipes automatically
 prism_tools.py recipes surveys --prism /path/to/dataset
 
-# Override with specific repository
+# Override with specific repository (advanced)
 prism_tools.py recipes surveys --prism /path/to/dataset --repo /custom/repo
+
+# Override just the recipe folder (advanced)
+prism_tools.py recipes surveys --prism /path/to/dataset --recipes /custom/recipes
 ```
+
+The web interface also uses these global paths by default. When you open the "Dataset Recipes & Scoring" tool, leaving the "Custom Recipe Folder" field empty will automatically use the global recipe library from `official/recipe/`.
 
 ### Library Structure
 
