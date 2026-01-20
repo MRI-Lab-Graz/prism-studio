@@ -59,10 +59,26 @@
           </select>
         </div>
 
-        <div class="col-md-8">
+        <div class="col-md-4">
           <label for="derivSurvey" class="form-label">Recipe Filter (optional)</label>
           <input type="text" class="form-control" id="derivSurvey" placeholder="e.g. ads,psqi">
           <div class="form-text">Leave empty to run all matching recipes.</div>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">File Output</label>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="derivMerge" id="derivMergeSeparate" value="separate" checked>
+            <label class="form-check-label" for="derivMergeSeparate">
+              Separate file per survey
+            </label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="derivMerge" id="derivMergeCombined" value="combined">
+            <label class="form-check-label" for="derivMergeCombined">
+              One combined file (all surveys)
+            </label>
+          </div>
         </div>
 
         <div class="col-md-4">
@@ -130,20 +146,25 @@
         </div>
 
         <div class="col-md-6">
-          <label for="derivIdLength" class="form-label">Random ID Length</label>
-          <input type="number" class="form-control" id="derivIdLength" value="8" min="4" max="12">
-          <div class="form-text">Length of randomized codes (4-12 characters)</div>
-        </div>
-
-        <div class="col-md-6">
-          <label class="form-label">&nbsp;</label>
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" id="derivRandomIds">
-            <label class="form-check-label" for="derivRandomIds">
-              Use Truly Random IDs
-            </label>
+          <div class="row g-2 align-items-center">
+            <div class="col-auto">
+              <label for="derivIdLength" class="form-label mb-0">ID Length:</label>
+            </div>
+            <div class="col-auto">
+              <input type="number" class="form-control form-control-sm" id="derivIdLength" value="8" min="4" max="12" style="width: 70px;">
+            </div>
+            <div class="col">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="derivRandomIds">
+                <label class="form-check-label" for="derivRandomIds">
+                  Truly Random
+                </label>
+              </div>
+            </div>
           </div>
-          <div class="form-text">Uncheck for deterministic/reproducible IDs (recommended)</div>
+          <div class="form-text">
+            Code length (4-12 chars). Uncheck for deterministic/reproducible IDs.
+          </div>
         </div>
 
         <!-- Run Button -->
@@ -251,6 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
       layout: document.getElementById('derivLayout').value,
       include_raw: document.getElementById('derivIncludeRaw').checked,
       boilerplate: document.getElementById('derivBoilerplate').checked,
+      merge_all: document.getElementById('derivMergeCombined').checked,
       anonymize: document.getElementById('derivAnonymize').checked,
       mask_questions: document.getElementById('derivMaskQuestions').checked,
       id_length: parseInt(document.getElementById('derivIdLength').value) || 8,

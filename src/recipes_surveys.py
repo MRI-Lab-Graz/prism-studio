@@ -340,7 +340,7 @@ def _normalize_survey_key(raw: str) -> str:
     s = str(raw or "").strip().lower()
     if not s:
         return s
-    for prefix in ("survey-", "task-"):
+    for prefix in ("recipe-", "survey-", "task-"):
         if s.startswith(prefix):
             s = s[len(prefix) :]
     return s

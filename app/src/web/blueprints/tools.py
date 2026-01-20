@@ -560,6 +560,7 @@ def api_recipes_surveys():
     layout = (data.get("layout") or "long").strip().lower() or "long"
     include_raw = bool(data.get("include_raw", False))
     boilerplate = bool(data.get("boilerplate", False))
+    merge_all = bool(data.get("merge_all", False))
     anonymize = bool(data.get("anonymize", False))
     mask_questions = bool(data.get("mask_questions", False))
     id_length = int(data.get("id_length", 8))
@@ -635,17 +636,16 @@ def api_recipes_surveys():
             layout=layout,
             include_raw=include_raw,
             boilerplate=boilerplate,
+            merge_all=merge_all,
         )
         
         # Perform anonymization if requested
         mapping_file = None
         if anonymize:
             try:
-                from src.anonymizer import (
-                    create_participant_mapping,
-                    anonymize_tsv_file,
-                )
+                from src.anonymizer import create_participant_mapping
                 import pandas as pd
+                import json
                 
                 # Read participants.tsv to get participant IDs
                 participants_tsv = os.path.join(dataset_path, "participants.tsv")
@@ -658,47 +658,110 @@ def api_recipes_surveys():
                     raise ValueError("participants.tsv must have a 'participant_id' column")
                 participant_ids = df['participant_id'].tolist()
                 
-                # Setup output directory
-                output_dir = os.path.join(dataset_path, "derivatives", f"prism-export-{modality}")
-                os.makedirs(output_dir, exist_ok=True)
+                # Use the ACTUAL output directory from the recipe result
+                output_dir = str(result.out_root)
+                if not os.path.exists(output_dir):
+                    raise FileNotFoundError(f"Output directory not found: {output_dir}")
                 
                 # Create mapping file path
                 mapping_file = Path(output_dir) / "participants_mapping.json"
                 
-                # Create participant mapping
-                participant_mapping = create_participant_mapping(
-                    participant_ids,
-                    mapping_file,
-                    id_length=id_length,
-                    deterministic=not random_ids
-                )
+                # Load existing mapping if present, otherwise create new one
+                if mapping_file.exists():
+                    print(f"[ANONYMIZATION] Loading existing mapping from: {mapping_file}")
+                    with open(mapping_file, 'r', encoding='utf-8') as f:
+                        mapping_data = json.load(f)
+                        participant_mapping = mapping_data.get("mapping", {})
+                    print(f"[ANONYMIZATION] Loaded {len(participant_mapping)} existing ID mappings")
+                else:
+                    print(f"[ANONYMIZATION] Creating new participant mapping...")
+                    participant_mapping = create_participant_mapping(
+                        participant_ids,
+                        mapping_file,
+                        id_length=id_length,
+                        deterministic=not random_ids
+                    )
+                    print(f"[ANONYMIZATION] Created mapping: {mapping_file}")
                 
-                # Anonymize all TSV files in the output directory
-                for root, dirs, files in os.walk(output_dir):
-                    for file in files:
-                        if file.endswith('.tsv'):
-                            tsv_path = os.path.join(root, file)
-                            output_tsv = Path(tsv_path)
-                            
-                            # Read, anonymize, and write back
-                            df_data = pd.read_csv(tsv_path, sep='\t')
-                            if 'participant_id' in df_data.columns:
-                                df_data['participant_id'] = df_data['participant_id'].map(
-                                    lambda x: participant_mapping.get(x, x)
-                                )
-                            
-                            # Mask questions if requested
-                            if mask_questions and 'question' in df_data.columns:
-                                df_data['question'] = '[MASKED]'
-                            
-                            df_data.to_csv(tsv_path, sep='\t', index=False)
+                print(f"[ANONYMIZATION] Anonymizing files in: {output_dir}")
+                print(f"[ANONYMIZATION] Output format: {out_format}")
                 
-                print(f"[ANONYMIZATION] Created mapping: {mapping_file}")
+                # Anonymize files based on format
+                anonymized_count = 0
+                
+                if out_format in ('save', 'sav', 'spss'):
+                    # Handle SPSS .sav files
+                    try:
+                        import pyreadstat
+                    except ImportError:
+                        print("[ANONYMIZATION] WARNING: pyreadstat not available, cannot anonymize .sav files")
+                        print("[ANONYMIZATION] Install with: pip install pyreadstat")
+                        raise ImportError("pyreadstat required for anonymizing SPSS files")
+                    
+                    for root, dirs, files in os.walk(output_dir):
+                        for file in files:
+                            if file.endswith('.sav'):
+                                sav_path = os.path.join(root, file)
+                                print(f"  Processing: {file}")
+                                
+                                # Read SPSS file
+                                df_data, meta = pyreadstat.read_sav(sav_path)
+                                
+                                if 'participant_id' in df_data.columns:
+                                    original_ids = df_data['participant_id'].unique()
+                                    df_data['participant_id'] = df_data['participant_id'].map(
+                                        lambda x: participant_mapping.get(x, x)
+                                    )
+                                    anonymized_ids = df_data['participant_id'].unique()
+                                    print(f"    ✓ {len(original_ids)} IDs → {len(anonymized_ids)} anonymized")
+                                    anonymized_count += 1
+                                
+                                # Mask questions if requested
+                                if mask_questions:
+                                    question_cols = [col for col in df_data.columns if 'question' in col.lower()]
+                                    for col in question_cols:
+                                        if col in meta.column_names_to_labels:
+                                            meta.column_names_to_labels[col] = '[MASKED]'
+                                
+                                # Write back SPSS file
+                                pyreadstat.write_sav(df_data, sav_path, column_labels=meta.column_names_to_labels)
+                
+                elif out_format in ('csv', 'tsv', 'flat', 'prism'):
+                    # Handle TSV/CSV files
+                    for root, dirs, files in os.walk(output_dir):
+                        for file in files:
+                            if file.endswith(('.tsv', '.csv')):
+                                file_path = os.path.join(root, file)
+                                print(f"  Processing: {file}")
+                                
+                                # Determine separator
+                                sep = '\t' if file.endswith('.tsv') else ','
+                                
+                                # Read, anonymize, and write back
+                                df_data = pd.read_csv(file_path, sep=sep)
+                                if 'participant_id' in df_data.columns:
+                                    original_ids = df_data['participant_id'].unique()
+                                    df_data['participant_id'] = df_data['participant_id'].map(
+                                        lambda x: participant_mapping.get(x, x)
+                                    )
+                                    anonymized_ids = df_data['participant_id'].unique()
+                                    print(f"    ✓ {len(original_ids)} IDs → {len(anonymized_ids)} anonymized")
+                                    anonymized_count += 1
+                                
+                                # Mask questions if requested
+                                if mask_questions and 'question' in df_data.columns:
+                                    df_data['question'] = '[MASKED]'
+                                
+                                df_data.to_csv(file_path, sep=sep, index=False)
+                
+                print(f"[ANONYMIZATION] ✓ Anonymized {anonymized_count} file(s)")
                 if mask_questions:
-                    print("[ANONYMIZATION] Masked copyrighted question text")
+                    print("[ANONYMIZATION] ✓ Masked copyrighted question text")
                 mapping_file = str(mapping_file)
                     
             except Exception as anon_error:
+                import traceback
+                traceback.print_exc()
                 return jsonify({"error": f"Anonymization failed: {str(anon_error)}"}), 500
                 
     except Exception as e:
