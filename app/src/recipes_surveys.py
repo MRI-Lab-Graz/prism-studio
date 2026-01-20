@@ -69,6 +69,51 @@ def _write_json(path: Path, obj: dict) -> None:
         json.dump(obj, f, indent=2, ensure_ascii=False)
 
 
+def _copy_recipes_to_project(
+    *,
+    recipes: dict[str, dict],
+    dataset_root: Path,
+    modality: str
+) -> None:
+    """Copy used recipes to project's code/recipes/{modality}/ for reproducibility.
+    
+    Following YODA principles, this ensures the exact recipes used during processing
+    are preserved in the project, making it self-contained and reproducible.
+    
+    Args:
+        recipes: Dict of loaded recipes (recipe_id -> {path, json})
+        dataset_root: Root of the dataset (might be rawdata/ or project root)
+        modality: 'survey' or 'biometrics'
+    """
+    # Determine project root (parent of rawdata/ if it exists)
+    if dataset_root.name == "rawdata":
+        project_root = dataset_root.parent
+    else:
+        # Check if we have a rawdata/ subfolder
+        rawdata_path = dataset_root / "rawdata"
+        if rawdata_path.exists() and rawdata_path.is_dir():
+            project_root = dataset_root
+        else:
+            # Might be legacy structure or non-YODA, skip copying
+            return
+    
+    # Create code/recipes/{modality}/ folder (YODA-compliant)
+    recipes_dir = project_root / "code" / "recipes" / modality
+    recipes_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Copy each used recipe
+    for recipe_id, rec in recipes.items():
+        recipe_data = rec["json"]
+        
+        # Generate filename from recipe_id
+        output_filename = f"{recipe_id}.json"
+        output_path = recipes_dir / output_filename
+        
+        # Only copy if it doesn't already exist (don't overwrite user customizations)
+        if not output_path.exists():
+            _write_json(output_path, recipe_data)
+
+
 def _get_sidecar_for_task(dataset_path: Path, prefix: str, name: str, repo_root: Path | None = None) -> dict:
     """Find and load sidecar JSON for a given task/biometric."""
     candidates = [
@@ -1589,6 +1634,10 @@ def compute_survey_recipes(
 
     # 1. Load and validate recipes
     recipes = _load_and_validate_recipes(repo_root, modality, survey, recipe_dir=recipe_dir)
+
+    # Copy used recipes to project's code/recipes/ for reproducibility (YODA)
+    # This ensures the exact recipes used for scoring are preserved in the project
+    _copy_recipes_to_project(recipes=recipes, dataset_root=output_prism_root, modality=modality)
 
     # 2. Scan dataset for TSV files based on modality
     tsv_files = _find_tsv_files(prism_root, modality)

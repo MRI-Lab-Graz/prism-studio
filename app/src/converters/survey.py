@@ -191,6 +191,64 @@ def _normalize_language(lang: str | None) -> str | None:
     return norm or None
 
 
+def _copy_templates_to_project(
+    *,
+    templates: dict,
+    tasks_with_data: set[str],
+    dataset_root: Path,
+    language: str | None,
+    technical_overrides: dict | None
+) -> None:
+    """Copy used templates to project's code/library/survey/ for reproducibility.
+    
+    Following YODA principles, this ensures the exact templates used during conversion
+    are preserved in the project, making it self-contained and reproducible.
+    
+    Args:
+        templates: Dict of loaded templates (task -> {path, json})
+        tasks_with_data: Set of tasks that were actually used
+        dataset_root: Root of the dataset (parent of rawdata/)
+        language: Language used for localization
+        technical_overrides: Any technical field overrides applied
+    """
+    # Determine project root (parent of rawdata/)
+    if dataset_root.name == "rawdata":
+        project_root = dataset_root.parent
+    else:
+        # Dataset root might be the project root itself
+        rawdata_path = dataset_root / "rawdata"
+        if rawdata_path.exists() and rawdata_path.is_dir():
+            project_root = dataset_root
+        else:
+            # Can't determine project root, skip copying
+            return
+    
+    # Create code/library/survey/ folder (YODA-compliant)
+    library_dir = project_root / "code" / "library" / "survey"
+    library_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Copy each used template
+    for task in sorted(tasks_with_data):
+        if task not in templates:
+            continue
+            
+        template_data = templates[task]["json"]
+        output_filename = f"survey-{task}.json"
+        output_path = library_dir / output_filename
+        
+        # Only copy if it doesn't already exist (don't overwrite user customizations)
+        if not output_path.exists():
+            # Apply same transformations as the sidecar
+            localized = _localize_survey_template(template_data, language=language)
+            localized = _inject_missing_token(localized, token=_MISSING_TOKEN)
+            if technical_overrides:
+                localized = _apply_technical_overrides(localized, technical_overrides)
+            
+            # Keep internal keys in the library copy (unlike sidecars)
+            # This preserves all metadata for potential future use
+            _write_json(output_path, localized)
+
+
 def _default_language_from_template(template: dict) -> str:
     i18n = template.get("I18n")
     if isinstance(i18n, dict):
@@ -716,6 +774,16 @@ def _convert_survey_dataframe_to_prism_dataset(
             # Remove internal keys before writing to avoid schema validation errors
             cleaned = _strip_internal_keys(localized)
             _write_json(sidecar_path, cleaned)
+
+    # Copy used templates to project's code/library/ for reproducibility (YODA)
+    # This ensures the exact template used for conversion is preserved in the project
+    _copy_templates_to_project(
+        templates=templates,
+        tasks_with_data=tasks_with_data,
+        dataset_root=dataset_root,
+        language=language,
+        technical_overrides=technical_overrides
+    )
 
     # --- Process and Write Responses ---
     missing_cells_by_subject: dict[str, int] = {}

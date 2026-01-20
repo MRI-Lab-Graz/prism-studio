@@ -124,29 +124,37 @@ my_study/                           # Project root
 - **Structure**: `{modality}/` subfolders (survey, biometrics, etc.)
 - **Priority**: Overrides global templates with same filename
 - **Edit via**: Template Editor in PRISM Studio
+- **🔄 Auto-populated**: Templates are automatically copied here when converting data
 
 **Example Use Cases:**
 - Customizing a global survey template (e.g., paper-pencil vs. online)
 - Adding study-specific metadata fields
 - Creating new questionnaires not in global library
+- **Preserving exact templates used during data conversion** (auto-snapshot)
 
 **File Naming:**
 - `survey-{name}.json` for surveys
 - `biometrics-{name}.json` for biometrics
+
+> **Reproducibility Feature**: When you convert data (Excel, LimeSurvey, etc.) to BIDS/PRISM format, the converter **automatically copies** the templates it uses into this folder. This ensures your project is self-contained and the exact data structure used is preserved.
 
 #### `code/recipes/` - Scoring/Processing
 - **Purpose**: Project-specific scoring recipes and transformation logic
 - **Structure**: `{modality}/` subfolders (survey, biometrics, etc.)
 - **Priority**: Overrides global recipes with same filename
 - **Format**: JSON with scoring formulas, subscales, reverse coding
+- **🔄 Auto-populated**: Recipes are automatically copied here when processing/scoring data
 
 **Example Use Cases:**
 - Custom scoring rules for modified questionnaires
 - Study-specific cutoff values
 - Combined scores from multiple instruments
+- **Preserving exact recipes used during data processing** (auto-snapshot)
 
 **File Naming:**
 - `{recipe-name}.json` matching the survey/biometric name
+
+> **Reproducibility Feature**: When you run recipe processing/scoring, the system **automatically copies** the recipes it uses into this folder. This ensures your exact scoring logic is preserved with your project.
 
 #### `code/scripts/`
 - **Purpose**: Custom analysis and processing scripts
@@ -271,6 +279,45 @@ The validator checks for:
 - Code folder organization (recommendation, not enforced)
 
 ## Best Practices
+
+### 🔄 Automatic Reproducibility Snapshots
+
+PRISM automatically ensures your project is self-contained and reproducible by **copying templates and recipes** to your project during conversion and processing:
+
+**When you convert data** (Excel, LimeSurvey, etc. → BIDS/PRISM):
+- ✅ Used templates are automatically copied to `code/library/{modality}/`
+- ✅ Only templates that don't already exist are copied (preserves customizations)
+- ✅ Templates include all localization and technical overrides applied
+
+**When you run recipe processing** (scoring surveys/biometrics):
+- ✅ Used recipes are automatically copied to `code/recipes/{modality}/`
+- ✅ Only recipes that don't already exist are copied (preserves customizations)
+- ✅ Exact scoring logic is preserved with your data
+
+**Why this matters:**
+- 📦 **Self-contained**: Your project has everything needed to reproduce results
+- 🔒 **Version-locked**: Templates/recipes won't change even if global library updates
+- 📝 **Documentation**: Clear record of what was used
+- 🔀 **Shareable**: Others can see exactly what structure/scoring you used
+
+**Example workflow:**
+```bash
+# 1. Convert LimeSurvey data
+python prism_tools.py survey convert \
+  --input responses.xlsx \
+  --library official/library \
+  --output my_study/rawdata
+# → Templates automatically copied to my_study/code/library/survey/
+
+# 2. Score surveys
+python prism_tools.py recipes survey \
+  --prism my_study
+# → Recipes automatically copied to my_study/code/recipes/survey/
+
+# 3. Your project now contains everything needed!
+ls my_study/code/library/survey/    # survey-phq9.json, survey-gad7.json
+ls my_study/code/recipes/survey/    # phq9.json, gad7.json
+```
 
 ### ✅ DO:
 - **Keep `rawdata/` untouched** after initial collection
