@@ -54,6 +54,19 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
     Returns:
         list: List of rules added to .bidsignore
     """
+    # Skip creating .bidsignore in special directories (library folders, not datasets)
+    dataset_root_name = os.path.basename(os.path.normpath(dataset_root))
+    skip_folders = {"official", "library", "survey_library", "templates", "reference_templates"}
+    
+    if dataset_root_name in skip_folders:
+        return []
+    
+    # Also skip if path contains these folders (e.g., /path/to/official/something)
+    normalized_path = os.path.normpath(dataset_root)
+    if any(f"/{folder}/" in f"/{normalized_path}/" or normalized_path.endswith(f"/{folder}") 
+           for folder in skip_folders):
+        return []
+    
     bidsignore_path = os.path.join(dataset_root, ".bidsignore")
 
     # Determine which modalities are non-standard
