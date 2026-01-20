@@ -1444,7 +1444,7 @@ def main():
         default=str(project_root.parent) if project_root.name == "app" else str(project_root),
         help=(
             "Path to the PRISM tools repository root (used to locate recipe JSONs under "
-            "recipes/surveys/*.json). Default: this script's folder."
+            "recipe/survey/*.json). Default: this script's folder."
         ),
     )
     parser_deriv_surveys.add_argument(
@@ -1501,7 +1501,7 @@ def main():
         default=str(project_root.parent) if project_root.name == "app" else str(project_root),
         help=(
             "Path to the PRISM tools repository root (used to locate recipe JSONs under "
-            "recipes/biometrics/*.json). Default: this script's folder."
+            "recipe/biometrics/*.json). Default: this script's folder."
         ),
     )
     parser_deriv_biometrics.add_argument(

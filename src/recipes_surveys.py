@@ -3,7 +3,7 @@
 This module implements the logic behind `prism_tools.py recipes surveys` as a
 reusable API, so both the CLI and the Web/GUI can call the same code.
 
-It reads recipes from the repository's `recipes/surveys/*.json`
+It reads recipes from the repository's `recipe/survey/*.json`
 folder and writes outputs into the target dataset under:
 
 - `recipes/surveys/<recipe_id>/sub-*/ses-*/survey/*_desc-scores_beh.tsv` (format="prism")
@@ -927,11 +927,11 @@ def _load_and_validate_recipes(
                 
         expected = str(recipes_dir / "*.json")
     elif modality == "survey":
-        recipes_dir = (repo_root / "recipes" / "surveys").resolve()
-        expected = "recipes/surveys/*.json"
+        recipes_dir = (repo_root / "recipe" / "survey").resolve()
+        expected = "recipe/survey/*.json"
     elif modality == "biometrics":
-        recipes_dir = (repo_root / "recipes" / "biometrics").resolve()
-        expected = "recipes/biometrics/*.json"
+        recipes_dir = (repo_root / "recipe" / "biometrics").resolve()
+        expected = "recipe/biometrics/*.json"
     else:
         raise ValueError("modality must be one of: survey, biometrics")
 
