@@ -1459,8 +1459,8 @@ def main():
     parser_deriv_surveys.add_argument(
         "--format",
         default="flat",
-        choices=["prism", "flat", "csv", "xlsx", "save", "r"],
-        help="Output format: 'flat' (default), 'prism', 'csv', 'xlsx', 'save' (SPSS), 'r' (feather)",
+        choices=["prism", "flat", "csv", "xlsx", "sav", "r"],
+        help="Output format: 'flat' (default), 'prism', 'csv', 'xlsx', 'sav' (SPSS), 'r' (feather)",
     )
     parser_deriv_surveys.add_argument(
         "--lang",
@@ -1516,8 +1516,8 @@ def main():
     parser_deriv_biometrics.add_argument(
         "--format",
         default="flat",
-        choices=["prism", "flat", "csv", "xlsx", "save", "r"],
-        help="Output format: 'flat' (default), 'prism', 'csv', 'xlsx', 'save' (SPSS), 'r' (feather)",
+        choices=["prism", "flat", "csv", "xlsx", "sav", "r"],
+        help="Output format: 'flat' (default), 'prism', 'csv', 'xlsx', 'sav' (SPSS), 'r' (feather)",
     )
     parser_deriv_biometrics.add_argument(
         "--lang",
