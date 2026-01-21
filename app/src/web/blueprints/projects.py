@@ -462,7 +462,7 @@ def save_participants_schema():
     {
         "schema": {
             "participant_id": {"Description": "..."},
-            "age": {"Description": "...", "Units": "years"},
+            "age": {"Description": "...", "Unit": "years"},
             ...
         }
     }
@@ -664,7 +664,7 @@ def get_participants_templates():
         "demographics": {
             "age": {
                 "Description": "Age of participant",
-                "Units": "years",
+                "Unit": "years",
                 "_help": "Recommended. Can be exact age or age range for anonymity."
             },
             "sex": {
@@ -714,7 +714,7 @@ def get_participants_templates():
             },
             "education_years": {
                 "Description": "Years of formal education completed",
-                "Units": "years",
+                "Unit": "years",
                 "_help": "Continuous measure of education."
             }
         },
@@ -742,7 +742,7 @@ def get_participants_templates():
             },
             "household_size": {
                 "Description": "Number of people in the household",
-                "Units": "persons"
+                "Unit": "persons"
             }
         },
         "geographic": {
@@ -758,15 +758,15 @@ def get_participants_templates():
         "health": {
             "height": {
                 "Description": "Body height",
-                "Units": "cm"
+                "Unit": "cm"
             },
             "weight": {
                 "Description": "Body weight",
-                "Units": "kg"
+                "Unit": "kg"
             },
             "bmi": {
                 "Description": "Body mass index",
-                "Units": "kg/m^2"
+                "Unit": "kg/m^2"
             },
             "smoking_status": {
                 "Description": "Smoking status",
@@ -804,7 +804,7 @@ def get_participants_templates():
             },
             "session_date": {
                 "Description": "Date of data collection",
-                "Units": "ISO 8601 date",
+                "Unit": "ISO 8601 date",
                 "_help": "Format: YYYY-MM-DD"
             }
         }

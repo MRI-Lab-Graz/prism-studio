@@ -122,7 +122,9 @@ def augment_neurobagel_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
                 }
         elif col_name in ["age"]:
             aug_col["data_type"] = "continuous"
-            if "Units" in col_data:
+            if "Unit" in col_data:
+                aug_col["unit"] = col_data["Unit"]
+            elif "Units" in col_data:  # Legacy support
                 aug_col["unit"] = col_data["Units"]
         else:
             aug_col["data_type"] = "text"

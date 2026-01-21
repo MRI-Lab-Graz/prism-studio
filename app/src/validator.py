@@ -235,7 +235,7 @@ class DatasetValidator:
         dtype = col_def.get("DataType")
 
         # Check Units="date" if DataType is missing
-        if not dtype and col_def.get("Units") == "date":
+        if not dtype and col_def.get("Unit") == "date":
             dtype = "date"
 
         if not dtype:

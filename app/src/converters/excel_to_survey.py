@@ -608,7 +608,7 @@ def extract_excel_templates(excel_file, participants_prefix=None):
             entry["Levels"] = combined
 
         if _clean_cell(units):
-            entry["Units"] = _clean_cell(units)
+            entry["Unit"] = _clean_cell(units)
 
         if _clean_cell(dtype):
             dt = str(dtype).strip().lower()
@@ -659,7 +659,7 @@ def extract_excel_templates(excel_file, participants_prefix=None):
 
                 # Remove fields that match the alias target exactly
                 to_remove_fields = []
-                for field in ["Description", "Levels", "Units", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "AllowedValues", "TermURL", "Relevance"]:
+                for field in ["Description", "Levels", "Unit", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "AllowedValues", "TermURL", "Relevance"]:
                     if field in entry and field in target_entry:
                         if entry[field] == target_entry[field]:
                             to_remove_fields.append(field)

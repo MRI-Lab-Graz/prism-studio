@@ -126,7 +126,7 @@ class ProjectManager:
                 # Create minimal template if demo file doesn't exist
                 minimal = {
                     "participant_id": {"Description": "Unique participant identifier"},
-                    "age": {"Description": "Age of participant", "Units": "years"},
+                    "age": {"Description": "Age of participant", "Unit": "years"},
                     "sex": {"Description": "Biological sex", "Levels": {"M": "Male", "F": "Female"}}
                 }
                 CrossPlatformFile.write_text(str(json_path), json.dumps(minimal, indent=2))
@@ -783,15 +783,15 @@ Subfolders:
             },
             "height": {
                 "Description": "Height measurement",
-                "Units": "cm"
+                "Unit": "cm"
             },
             "weight": {
                 "Description": "Weight measurement",
-                "Units": "kg"
+                "Unit": "kg"
             },
             "heart_rate": {
                 "Description": "Resting heart rate",
-                "Units": "bpm"
+                "Unit": "bpm"
             }
         }
 
