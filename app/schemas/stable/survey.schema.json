@@ -407,10 +407,6 @@
         "type": "string",
         "description": "Unit of measurement (if applicable)"
       },
-      "Units": {
-        "type": "string",
-        "description": "Unit of measurement (if applicable)"
-      },
       "TermURL": {
         "type": "string",
         "description": "URL to a definition of the term"

@@ -161,7 +161,7 @@ def _participants_json_from_template(*, columns: list[str], template: dict | Non
             meta["Levels"] = levels
         unit = v.get("Units") or v.get("Unit")
         if unit:
-            meta["Units"] = unit
+            meta["Unit"] = unit
         return meta
 
     for col in columns:
@@ -177,7 +177,7 @@ def _participants_json_from_template(*, columns: list[str], template: dict | Non
             meta = {"Description": col}
             if col == "age":
                 meta["Description"] = "Age"
-                meta["Units"] = "years"
+                meta["Unit"] = "years"
 
         out[col] = dict(meta)
 

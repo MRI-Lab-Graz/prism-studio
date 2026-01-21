@@ -160,8 +160,8 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label small text-muted">Units</label>
-                        <input type="text" class="form-control question-units" value="${q.Units || ''}">
+                        <label class="form-label small text-muted">Unit</label>
+                        <input type="text" class="form-control question-units" value="${q.Unit || ''}">
                     </div>
                 </div>
 
@@ -244,7 +244,7 @@
             q.DataType = card.querySelector('.question-type').value;
             
             const units = card.querySelector('.question-units').value;
-            if (units) q.Units = units;
+            if (units) q.Unit = units;
 
             const min = card.querySelector('.question-min').value;
             if (min !== '') q.MinValue = Number(min);

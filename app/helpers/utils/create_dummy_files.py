@@ -79,7 +79,7 @@ def main():
     )
 
     participants_json = {
-        "age": {"Description": "Age of the participant", "Units": "years"},
+        "age": {"Description": "Age of the participant", "Unit": "years"},
         "sex": {
             "Description": "Sex of the participant",
             "Levels": {"M": "male", "F": "female"},
@@ -173,21 +173,21 @@ def main():
                 "MinValue": 1,
                 "MaxValue": 5,
             },
-            "q1_responseTime": {"Description": "Response time for q1", "Units": "s"},
+            "q1_responseTime": {"Description": "Response time for q1", "Unit": "s"},
             "q2": {
                 "Description": "Question 2",
                 "DataType": "integer",
                 "MinValue": 1,
                 "MaxValue": 5,
             },
-            "q2_responseTime": {"Description": "Response time for q2", "Units": "s"},
+            "q2_responseTime": {"Description": "Response time for q2", "Unit": "s"},
             "q3": {
                 "Description": "Question 3",
                 "DataType": "integer",
                 "MinValue": 1,
                 "MaxValue": 5,
             },
-            "q3_responseTime": {"Description": "Response time for q3", "Units": "s"},
+            "q3_responseTime": {"Description": "Response time for q3", "Unit": "s"},
         }
         create_json(
             os.path.join(survey_dir, f"{survey_filename}.json"), survey_metadata

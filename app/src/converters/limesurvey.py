@@ -1086,7 +1086,7 @@ def convert_lsa_to_dataset(
                         new_cols[col] = col_name
                         group_duration_fields[col_name] = {
                             "Description": f"Duration for question group '{title}'",
-                            "Units": "seconds",
+                            "Unit": "seconds",
                         }
 
             if new_cols:
@@ -1124,11 +1124,11 @@ def convert_lsa_to_dataset(
         "Technical": {"Description": "General metadata for the LimeSurvey session"},
         "SurveyDuration": {
             "Description": "Total duration of the LimeSurvey session in minutes (submitdate - startdate)",
-            "Units": "minutes",
+            "Unit": "minutes",
         },
         "SurveyStartTime": {
             "Description": "Start time of the LimeSurvey session (HH:MM:SS)",
-            "Units": "hh:mm:ss",
+            "Unit": "hh:mm:ss",
         },
         **group_duration_fields,
     }
@@ -1198,12 +1198,12 @@ def convert_lsa_to_dataset(
         if "SurveyDuration" not in t_schema:
             t_schema["SurveyDuration"] = {
                 "Description": f"Duration for task {t_name}",
-                "Units": "minutes",  # Default to global unit
+                "Unit": "minutes",  # Default to global unit
             }
         if "SurveyStartTime" not in t_schema:
             t_schema["SurveyStartTime"] = {
                 "Description": "Start time of the LimeSurvey session (HH:MM:SS)",
-                "Units": "hh:mm:ss",
+                "Unit": "hh:mm:ss",
             }
 
         # 3. Overwrite SurveyDuration with granular data if available
@@ -1211,7 +1211,7 @@ def convert_lsa_to_dataset(
             # Granular is in seconds, convert to minutes to match schema unit
             # or update schema unit to seconds.
             # Let's update schema to seconds for precision.
-            t_schema["SurveyDuration"]["Units"] = "seconds"
+            t_schema["SurveyDuration"]["Unit"] = "seconds"
             t_schema["SurveyDuration"]["Description"] = (
                 f"Duration for task {t_name} (derived from group timing)"
             )

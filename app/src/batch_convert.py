@@ -137,7 +137,7 @@ def _create_physio_sidecar(
             else "EDF",
         },
         "Columns": {
-            "time": {"Description": "Time in seconds", "Units": "s"},
+            "time": {"Description": "Time in seconds", "Unit": "s"},
         },
     }
 

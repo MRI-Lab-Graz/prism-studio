@@ -915,7 +915,7 @@ def _extract_template_info(full_path, filename):
                     "description": v.get("Description", ""),
                     "levels": v.get("Levels", {}),
                     "scale": v.get("Scale", ""),
-                    "units": v.get("Units", ""),
+                    "units": v.get("Unit", ""),
                     "min_value": v.get("MinValue"),
                     "max_value": v.get("MaxValue"),
                 }
