@@ -1,0 +1,59 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": "Wellbeing",
+    "Reference": "survey-wellbeing.json",
+    "Note": "Workshop version using WB01-WB05 column names (maps to WHO-5 items)"
+  },
+  "Transforms": {
+    "Invert": {}
+  },
+  "Scores": {
+    "Total": {
+      "Description": {
+        "en": "Total score for Wellbeing (WHO-5 Well-Being Index)",
+        "de": "Gesamtscore für Wohlbefinden (WHO-5 Well-Being Index)"
+      },
+      "Items": [
+        "WB01",
+        "WB02",
+        "WB03",
+        "WB04",
+        "WB05"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 5,
+        "max": 35
+      }
+    }
+  },
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": null,
+        "Note": "Based on WHO-5 Well-Being Index validation studies"
+      }
+    },
+    "Validity": {
+      "Note": "This is a workshop adaptation of the WHO-5 Well-Being Index"
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "Calculate total score by summing all items (WB01-WB05). Higher scores indicate higher wellbeing. Raw scores range from 5-35. For percentage score: multiply by 4 to get 0-100 scale.",
+      "de": "Berechnen Sie den Gesamtscore durch Summierung aller Items (WB01-WB05). Höhere Werte bedeuten höheres Wohlbefinden. Rohwerte reichen von 5-35. Für Prozentwert: mit 4 multiplizieren für 0-100 Skala."
+    },
+    "InterpretationGuidelines": {
+      "en": "Scores below 13 suggest poor wellbeing and are an indication for testing for depression. This is adapted from the WHO-5 Well-Being Index (Topp et al., 2015).",
+      "de": "Werte unter 13 deuten auf schlechtes Wohlbefinden hin und sind ein Hinweis für ein Depression-Screening. Adaptiert vom WHO-5 Well-Being Index (Topp et al., 2015)."
+    }
+  },
+  "References": [
+    {
+      "Citation": "Topp, C.W., Østergaard, S.D., Søndergaard, S., & Bech, P. (2015). The WHO-5 Well-Being Index: A Systematic Review of the Literature. Psychotherapy and Psychosomatics, 84, 167-176.",
+      "DOI": "10.1159/000376585"
+    }
+  ]
+}
