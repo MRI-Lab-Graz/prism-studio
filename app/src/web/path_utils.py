@@ -52,10 +52,13 @@ def strip_temp_path(
         return best_match
 
     # If it's a temp path, try to extract the relative path
-    temp_patterns = ["/tmp/", "/T/prism_validator_", "/var/folders/", "prism_validator_", "renamed_files"]
+    # Unix: /tmp/, /var/folders/, /T/
+    # Windows: C:\Users\...\AppData\Local\Temp\, C:\Temp\, etc.
+    temp_patterns = ["/tmp/", "/T/prism_validator_", "/var/folders/", "prism_validator_", "renamed_files", "/Temp/", "\\Temp\\", "\\AppData\\"]
     if any(p in file_path for p in temp_patterns):
-        if "/dataset/" in file_path:
-            parts = file_path.split("/dataset/", 1)
+        if "/dataset/" in file_path or "\\dataset\\" in file_path:
+            # Handle both Unix and Windows separators
+            parts = file_path.replace("\\", "/").split("/dataset/", 1)
             if len(parts) > 1:
                 return parts[1]
         
@@ -105,7 +108,8 @@ def strip_temp_path_from_message(msg: str, dataset_path: Optional[str] = None) -
 
     # Only apply heuristic marker-based stripping if we didn't do a dataset strip
     # or if the message STILL contains absolute system markers
-    has_system_markers = any(p in msg for p in ["/var/folders/", "/tmp/prism_", "/prism_validator_"])
+    # Check for both Unix (/var, /tmp) and Windows (C:\Users\AppData, \Temp) paths
+    has_system_markers = any(p in msg for p in ["/var/folders/", "/tmp/prism_", "/prism_validator_", "\\AppData\\", "\\Temp\\", "C:\\Users"])
     
     if not did_dataset_strip or has_system_markers:
         markers = ["sub-", "dataset_description.json", "participants.tsv", "task-", "survey-"]
@@ -120,11 +124,14 @@ def strip_temp_path_from_message(msg: str, dataset_path: Optional[str] = None) -
                 renamed_pattern = r"renamed_files[^/\s,:]*/" + re.escape(marker)
                 msg = re.sub(renamed_pattern, marker, msg)
 
+    # Patterns for Unix and Windows temp paths
     temp_patterns = [
         r"/var/folders/[^/\s,:]+/[^/\s,:]+/T/prism_validator_[^/\s,:]+/",
         r"/tmp/prism_validator_[^/\s,:]+/",
         r"prism_validator_[^/\s,:]+/",
-        r"renamed_files[^/\s,:]*/"
+        r"renamed_files[^/\s,:]*/",
+        r"[A-Z]:\\\\Users\\\\[^\\\\\s,:]+\\\\AppData\\\\Local\\\\Temp\\\\[^\\\\\s,:]+\\\\",  # Windows temp
+        r"[A-Z]:\\\\Temp\\\\[^\\\\\s,:]+\\\\",  # Alternative Windows temp
     ]
     
     for pattern in temp_patterns:

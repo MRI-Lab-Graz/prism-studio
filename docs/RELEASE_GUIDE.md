@@ -10,7 +10,7 @@
 ## Step 1: Commit All Changes
 
 ```bash
-cd /Users/karl/work/github/prism-studio
+cd /path/to/prism-studio  # Your local repository path
 
 # Add all new files
 git add schemas/stable/
@@ -261,7 +261,7 @@ git push origin --delete v1.0.0
 
 ```bash
 # Complete release workflow
-cd /Users/karl/work/github/prism-studio
+cd /path/to/prism-studio  # Your local repository path
 
 # 1. Commit everything
 git add .
