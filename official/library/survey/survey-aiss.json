@@ -1,0 +1,376 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Sensation seeking (AISS)",
+      "de": "Sensation seeking (AISS)"
+    },
+    "Abbreviation": "AISS",
+    "Authors": [
+      "Arnett",
+      "J"
+    ],
+    "Year": 1994,
+    "DOI": "",
+    "Citation": "Arnett, J. (1994). Sensation seeking: A new conceptualization and a new\nscale. Personality and Individual Differences, 16, 289-296.",
+    "NumberOfItems": 14,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/sensation-seeking-aiss.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "AISS01": {
+    "Description": {
+      "en": "I can see how it would be interesting to marry someone from a foreign country.",
+      "de": "I can see how it would be interesting to marry someone from a foreign country."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=4} describes me very well",
+        "de": "{score=4} describes me very well"
+      },
+      "1": {
+        "en": "{score=3} describes me somewhat",
+        "de": "{score=3} describes me somewhat"
+      },
+      "2": {
+        "en": "{score=2} does not describe me very well",
+        "de": "{score=2} does not describe me very well"
+      },
+      "3": {
+        "en": "{score=1} does not describe me at all",
+        "de": "{score=1} does not describe me at all"
+      }
+    }
+  },
+  "AISS02": {
+    "Description": {
+      "en": "When I listen to music, I like it to be loud.",
+      "de": "When I listen to music, I like it to be loud."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=4} describes me very well",
+        "de": "{score=4} describes me very well"
+      },
+      "1": {
+        "en": "{score=3} describes me somewhat",
+        "de": "{score=3} describes me somewhat"
+      },
+      "2": {
+        "en": "{score=2} does not describe me very well",
+        "de": "{score=2} does not describe me very well"
+      },
+      "3": {
+        "en": "{score=1} does not describe me at all",
+        "de": "{score=1} does not describe me at all"
+      }
+    }
+  },
+  "AISS03": {
+    "Description": {
+      "en": "When taking a trip, I think it is best to make as few plans as possible and just take it as it comes",
+      "de": "When taking a trip, I think it is best to make as few plans as possible and just take it as it comes"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=4} describes me very well",
+        "de": "{score=4} describes me very well"
+      },
+      "1": {
+        "en": "{score=3} describes me somewhat",
+        "de": "{score=3} describes me somewhat"
+      },
+      "2": {
+        "en": "{score=2} does not describe me very well",
+        "de": "{score=2} does not describe me very well"
+      },
+      "3": {
+        "en": "{score=1} does not describe me at all",
+        "de": "{score=1} does not describe me at all"
+      }
+    }
+  },
+  "AISS04": {
+    "Description": {
+      "en": "I think itâs fun and exciting to perform or speak before a group.",
+      "de": "I think itâs fun and exciting to perform or speak before a group."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=4} describes me very well",
+        "de": "{score=4} describes me very well"
+      },
+      "1": {
+        "en": "{score=3} describes me somewhat",
+        "de": "{score=3} describes me somewhat"
+      },
+      "2": {
+        "en": "{score=2} does not describe me very well",
+        "de": "{score=2} does not describe me very well"
+      },
+      "3": {
+        "en": "{score=1} does not describe me at all",
+        "de": "{score=1} does not describe me at all"
+      }
+    }
+  },
+  "AISS05": {
+    "Description": {
+      "en": "If I were to go to an amusement park, I would prefer to ride the rollercoaster or other fast rides.",
+      "de": "If I were to go to an amusement park, I would prefer to ride the rollercoaster or other fast rides."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=4} describes me very well",
+        "de": "{score=4} describes me very well"
+      },
+      "1": {
+        "en": "{score=3} describes me somewhat",
+        "de": "{score=3} describes me somewhat"
+      },
+      "2": {
+        "en": "{score=2} does not describe me very well",
+        "de": "{score=2} does not describe me very well"
+      },
+      "3": {
+        "en": "{score=1} does not describe me at all",
+        "de": "{score=1} does not describe me at all"
+      }
+    }
+  },
+  "AISS06": {
+    "Description": {
+      "en": "I would like to travel to places that are strange and far away.",
+      "de": "I would like to travel to places that are strange and far away."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=4} describes me very well",
+        "de": "{score=4} describes me very well"
+      },
+      "1": {
+        "en": "{score=3} describes me somewhat",
+        "de": "{score=3} describes me somewhat"
+      },
+      "2": {
+        "en": "{score=2} does not describe me very well",
+        "de": "{score=2} does not describe me very well"
+      },
+      "3": {
+        "en": "{score=1} does not describe me at all",
+        "de": "{score=1} does not describe me at all"
+      }
+    }
+  },
+  "AISS07": {
+    "Description": {
+      "en": "I would have enjoyed being one of the first explorers of an unknown land.",
+      "de": "I would have enjoyed being one of the first explorers of an unknown land."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=4} describes me very well",
+        "de": "{score=4} describes me very well"
+      },
+      "1": {
+        "en": "{score=3} describes me somewhat",
+        "de": "{score=3} describes me somewhat"
+      },
+      "2": {
+        "en": "{score=2} does not describe me very well",
+        "de": "{score=2} does not describe me very well"
+      },
+      "3": {
+        "en": "{score=1} does not describe me at all",
+        "de": "{score=1} does not describe me at all"
+      }
+    }
+  },
+  "AISS08": {
+    "Description": {
+      "en": "I like a movie where there are a lot of explosions and car chases.",
+      "de": "I like a movie where there are a lot of explosions and car chases."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=4} describes me very well",
+        "de": "{score=4} describes me very well"
+      },
+      "1": {
+        "en": "{score=3} describes me somewhat",
+        "de": "{score=3} describes me somewhat"
+      },
+      "2": {
+        "en": "{score=2} does not describe me very well",
+        "de": "{score=2} does not describe me very well"
+      },
+      "3": {
+        "en": "{score=1} does not describe me at all",
+        "de": "{score=1} does not describe me at all"
+      }
+    }
+  },
+  "AISS09": {
+    "Description": {
+      "en": "In general, I work better when Iâm under pressure.",
+      "de": "In general, I work better when Iâm under pressure."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=4} describes me very well",
+        "de": "{score=4} describes me very well"
+      },
+      "1": {
+        "en": "{score=3} describes me somewhat",
+        "de": "{score=3} describes me somewhat"
+      },
+      "2": {
+        "en": "{score=2} does not describe me very well",
+        "de": "{score=2} does not describe me very well"
+      },
+      "3": {
+        "en": "{score=1} does not describe me at all",
+        "de": "{score=1} does not describe me at all"
+      }
+    }
+  },
+  "AISS10": {
+    "Description": {
+      "en": "I often like to have the radio or TV on while Iâm doing something else, such as reading or cleaning up.",
+      "de": "I often like to have the radio or TV on while Iâm doing something else, such as reading or cleaning up."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=4} describes me very well",
+        "de": "{score=4} describes me very well"
+      },
+      "1": {
+        "en": "{score=3} describes me somewhat",
+        "de": "{score=3} describes me somewhat"
+      },
+      "2": {
+        "en": "{score=2} does not describe me very well",
+        "de": "{score=2} does not describe me very well"
+      },
+      "3": {
+        "en": "{score=1} does not describe me at all",
+        "de": "{score=1} does not describe me at all"
+      }
+    }
+  },
+  "AISS11": {
+    "Description": {
+      "en": "It would be interesting to see a car accident happen.",
+      "de": "It would be interesting to see a car accident happen."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=4} describes me very well",
+        "de": "{score=4} describes me very well"
+      },
+      "1": {
+        "en": "{score=3} describes me somewhat",
+        "de": "{score=3} describes me somewhat"
+      },
+      "2": {
+        "en": "{score=2} does not describe me very well",
+        "de": "{score=2} does not describe me very well"
+      },
+      "3": {
+        "en": "{score=1} does not describe me at all",
+        "de": "{score=1} does not describe me at all"
+      }
+    }
+  },
+  "AISS12": {
+    "Description": {
+      "en": "I like the feeling of standing next to the edge on a high place and looking down.",
+      "de": "I like the feeling of standing next to the edge on a high place and looking down."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=4} describes me very well",
+        "de": "{score=4} describes me very well"
+      },
+      "1": {
+        "en": "{score=3} describes me somewhat",
+        "de": "{score=3} describes me somewhat"
+      },
+      "2": {
+        "en": "{score=2} does not describe me very well",
+        "de": "{score=2} does not describe me very well"
+      },
+      "3": {
+        "en": "{score=1} does not describe me at all",
+        "de": "{score=1} does not describe me at all"
+      }
+    }
+  },
+  "AISS13": {
+    "Description": {
+      "en": "If it were possible to visit another planet or the moon for free, I would be among the first in line to sign up.",
+      "de": "If it were possible to visit another planet or the moon for free, I would be among the first in line to sign up."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=4} describes me very well",
+        "de": "{score=4} describes me very well"
+      },
+      "1": {
+        "en": "{score=3} describes me somewhat",
+        "de": "{score=3} describes me somewhat"
+      },
+      "2": {
+        "en": "{score=2} does not describe me very well",
+        "de": "{score=2} does not describe me very well"
+      },
+      "3": {
+        "en": "{score=1} does not describe me at all",
+        "de": "{score=1} does not describe me at all"
+      }
+    }
+  },
+  "AISS14": {
+    "Description": {
+      "en": "I can see how it must be exciting to be in a battle during a war.",
+      "de": "I can see how it must be exciting to be in a battle during a war."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=4} describes me very well",
+        "de": "{score=4} describes me very well"
+      },
+      "1": {
+        "en": "{score=3} describes me somewhat",
+        "de": "{score=3} describes me somewhat"
+      },
+      "2": {
+        "en": "{score=2} does not describe me very well",
+        "de": "{score=2} does not describe me very well"
+      },
+      "3": {
+        "en": "{score=1} does not describe me at all",
+        "de": "{score=1} does not describe me at all"
+      }
+    }
+  }
+}

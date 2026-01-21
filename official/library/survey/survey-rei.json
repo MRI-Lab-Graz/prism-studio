@@ -1,0 +1,317 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Rational Experiental Inventory (REI)",
+      "de": "Rational Experiental Inventory (REI)"
+    },
+    "Abbreviation": "REI",
+    "Authors": [
+      "Pacini",
+      "R. and Epstein",
+      "S"
+    ],
+    "Year": 1999,
+    "DOI": "",
+    "Citation": "Pacini, R. and Epstein, S. (1999). The Relation of Rational and\nExperiential Information Processing Styles to Personality, Basic\nBeliefs, and the Ratio-Bias Phenomenon. Personality and Individual\nDifferences, 76, 972-987.",
+    "NumberOfItems": 10,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/thinking-style-rei.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "REI01": {
+    "Description": {
+      "en": "I enjoy intellectual challenges",
+      "de": "I enjoy intellectual challenges"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "definitely not true of myself",
+        "de": "definitely not true of myself"
+      },
+      "1": {
+        "en": "somewhat not true of myself",
+        "de": "somewhat not true of myself"
+      },
+      "2": {
+        "en": "neither true nor untrue of myself",
+        "de": "neither true nor untrue of myself"
+      },
+      "3": {
+        "en": "somewhat true of myself",
+        "de": "somewhat true of myself"
+      },
+      "4": {
+        "en": "definitely true of myself",
+        "de": "definitely true of myself"
+      }
+    }
+  },
+  "REI02": {
+    "Description": {
+      "en": "I enjoy solving problems that require hard thinking",
+      "de": "I enjoy solving problems that require hard thinking"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "definitely not true of myself",
+        "de": "definitely not true of myself"
+      },
+      "1": {
+        "en": "somewhat not true of myself",
+        "de": "somewhat not true of myself"
+      },
+      "2": {
+        "en": "neither true nor untrue of myself",
+        "de": "neither true nor untrue of myself"
+      },
+      "3": {
+        "en": "somewhat true of myself",
+        "de": "somewhat true of myself"
+      },
+      "4": {
+        "en": "definitely true of myself",
+        "de": "definitely true of myself"
+      }
+    }
+  },
+  "REI03": {
+    "Description": {
+      "en": "I prefer complex problems to simple problems",
+      "de": "I prefer complex problems to simple problems"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "definitely not true of myself",
+        "de": "definitely not true of myself"
+      },
+      "1": {
+        "en": "somewhat not true of myself",
+        "de": "somewhat not true of myself"
+      },
+      "2": {
+        "en": "neither true nor untrue of myself",
+        "de": "neither true nor untrue of myself"
+      },
+      "3": {
+        "en": "somewhat true of myself",
+        "de": "somewhat true of myself"
+      },
+      "4": {
+        "en": "definitely true of myself",
+        "de": "definitely true of myself"
+      }
+    }
+  },
+  "REI04": {
+    "Description": {
+      "en": "I am much better at figuring things out logically than most people",
+      "de": "I am much better at figuring things out logically than most people"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "definitely not true of myself",
+        "de": "definitely not true of myself"
+      },
+      "1": {
+        "en": "somewhat not true of myself",
+        "de": "somewhat not true of myself"
+      },
+      "2": {
+        "en": "neither true nor untrue of myself",
+        "de": "neither true nor untrue of myself"
+      },
+      "3": {
+        "en": "somewhat true of myself",
+        "de": "somewhat true of myself"
+      },
+      "4": {
+        "en": "definitely true of myself",
+        "de": "definitely true of myself"
+      }
+    }
+  },
+  "REI05": {
+    "Description": {
+      "en": "I have a logical mind",
+      "de": "I have a logical mind"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "definitely not true of myself",
+        "de": "definitely not true of myself"
+      },
+      "1": {
+        "en": "somewhat not true of myself",
+        "de": "somewhat not true of myself"
+      },
+      "2": {
+        "en": "neither true nor untrue of myself",
+        "de": "neither true nor untrue of myself"
+      },
+      "3": {
+        "en": "somewhat true of myself",
+        "de": "somewhat true of myself"
+      },
+      "4": {
+        "en": "definitely true of myself",
+        "de": "definitely true of myself"
+      }
+    }
+  },
+  "REI06": {
+    "Description": {
+      "en": "I enjoy thinking in abstract terms",
+      "de": "I enjoy thinking in abstract terms"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "definitely not true of myself",
+        "de": "definitely not true of myself"
+      },
+      "1": {
+        "en": "somewhat not true of myself",
+        "de": "somewhat not true of myself"
+      },
+      "2": {
+        "en": "neither true nor untrue of myself",
+        "de": "neither true nor untrue of myself"
+      },
+      "3": {
+        "en": "somewhat true of myself",
+        "de": "somewhat true of myself"
+      },
+      "4": {
+        "en": "definitely true of myself",
+        "de": "definitely true of myself"
+      }
+    }
+  },
+  "REI07": {
+    "Description": {
+      "en": "I have no problem thinking things through carefully",
+      "de": "I have no problem thinking things through carefully"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "definitely not true of myself",
+        "de": "definitely not true of myself"
+      },
+      "1": {
+        "en": "somewhat not true of myself",
+        "de": "somewhat not true of myself"
+      },
+      "2": {
+        "en": "neither true nor untrue of myself",
+        "de": "neither true nor untrue of myself"
+      },
+      "3": {
+        "en": "somewhat true of myself",
+        "de": "somewhat true of myself"
+      },
+      "4": {
+        "en": "definitely true of myself",
+        "de": "definitely true of myself"
+      }
+    }
+  },
+  "REI08": {
+    "Description": {
+      "en": "Using logic usually works well for me in figuring out problems in my life",
+      "de": "Using logic usually works well for me in figuring out problems in my life"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "definitely not true of myself",
+        "de": "definitely not true of myself"
+      },
+      "1": {
+        "en": "somewhat not true of myself",
+        "de": "somewhat not true of myself"
+      },
+      "2": {
+        "en": "neither true nor untrue of myself",
+        "de": "neither true nor untrue of myself"
+      },
+      "3": {
+        "en": "somewhat true of myself",
+        "de": "somewhat true of myself"
+      },
+      "4": {
+        "en": "definitely true of myself",
+        "de": "definitely true of myself"
+      }
+    }
+  },
+  "REI09": {
+    "Description": {
+      "en": "I usually have clear, explainable reasons for my decisions",
+      "de": "I usually have clear, explainable reasons for my decisions"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "definitely not true of myself",
+        "de": "definitely not true of myself"
+      },
+      "1": {
+        "en": "somewhat not true of myself",
+        "de": "somewhat not true of myself"
+      },
+      "2": {
+        "en": "neither true nor untrue of myself",
+        "de": "neither true nor untrue of myself"
+      },
+      "3": {
+        "en": "somewhat true of myself",
+        "de": "somewhat true of myself"
+      },
+      "4": {
+        "en": "definitely true of myself",
+        "de": "definitely true of myself"
+      }
+    }
+  },
+  "REI10": {
+    "Description": {
+      "en": "Learning new ways to think would be very appealing to me",
+      "de": "Learning new ways to think would be very appealing to me"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "definitely not true of myself",
+        "de": "definitely not true of myself"
+      },
+      "1": {
+        "en": "somewhat not true of myself",
+        "de": "somewhat not true of myself"
+      },
+      "2": {
+        "en": "neither true nor untrue of myself",
+        "de": "neither true nor untrue of myself"
+      },
+      "3": {
+        "en": "somewhat true of myself",
+        "de": "somewhat true of myself"
+      },
+      "4": {
+        "en": "definitely true of myself",
+        "de": "definitely true of myself"
+      }
+    }
+  }
+}

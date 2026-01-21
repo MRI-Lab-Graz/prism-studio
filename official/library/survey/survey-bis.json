@@ -1,0 +1,150 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Barratt’s Impulsiveness scale (BIS)",
+      "de": "Barratt’s Impulsiveness scale (BIS)"
+    },
+    "Abbreviation": "BIS",
+    "Authors": [
+      "E. S. Barratt"
+    ],
+    "Year": 1965,
+    "DOI": "",
+    "Citation": "E. S. Barratt (1965). Factor analysis of some psychometric measures\nof impulsiveness and anxiety. Psychological Reports, 16, 547-554.",
+    "NumberOfItems": 5,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/impulsiveness-barratt.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "BIS01": {
+    "Description": {
+      "en": "I do things without thinking.",
+      "de": "I do things without thinking."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Rarely/Never",
+        "de": "Rarely/Never"
+      },
+      "1": {
+        "en": "Occasionally",
+        "de": "Occasionally"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Often"
+      },
+      "3": {
+        "en": "Almost Always/Always",
+        "de": "Almost Always/Always"
+      }
+    }
+  },
+  "BIS02": {
+    "Description": {
+      "en": "I make-up my mind quickly.",
+      "de": "I make-up my mind quickly."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Rarely/Never",
+        "de": "Rarely/Never"
+      },
+      "1": {
+        "en": "Occasionally",
+        "de": "Occasionally"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Often"
+      },
+      "3": {
+        "en": "Almost Always/Always",
+        "de": "Almost Always/Always"
+      }
+    }
+  },
+  "BIS03": {
+    "Description": {
+      "en": "I am happy-go-lucky.",
+      "de": "I am happy-go-lucky."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Rarely/Never",
+        "de": "Rarely/Never"
+      },
+      "1": {
+        "en": "Occasionally",
+        "de": "Occasionally"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Often"
+      },
+      "3": {
+        "en": "Almost Always/Always",
+        "de": "Almost Always/Always"
+      }
+    }
+  },
+  "BIS04": {
+    "Description": {
+      "en": "I don't \"pay attention.\"",
+      "de": "I don't \"pay attention.\""
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Rarely/Never",
+        "de": "Rarely/Never"
+      },
+      "1": {
+        "en": "Occasionally",
+        "de": "Occasionally"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Often"
+      },
+      "3": {
+        "en": "Almost Always/Always",
+        "de": "Almost Always/Always"
+      }
+    }
+  },
+  "BIS05": {
+    "Description": {
+      "en": "I have \"racing\" thoughts.",
+      "de": "I have \"racing\" thoughts."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Rarely/Never",
+        "de": "Rarely/Never"
+      },
+      "1": {
+        "en": "Occasionally",
+        "de": "Occasionally"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Often"
+      },
+      "3": {
+        "en": "Almost Always/Always",
+        "de": "Almost Always/Always"
+      }
+    }
+  }
+}

@@ -1,0 +1,510 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Trust in close relationships",
+      "de": "Trust in close relationships"
+    },
+    "Abbreviation": "TRUST",
+    "Authors": [
+      "Rempel",
+      "J.K",
+      "Holmes",
+      "J.G. & Zanna",
+      "M.P"
+    ],
+    "Year": 1985,
+    "DOI": "",
+    "Citation": "Rempel, J.K., Holmes, J.G. & Zanna, M.P. (1985). Trust in close relationships. Journal of\nPersonality and Social Psychology, 49, 95-112.",
+    "NumberOfItems": 13,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/trust.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "TRUST01": {
+    "Description": {
+      "en": "My partner has proven to be trustworthy and I am willing to let him/her engage in activities which other partners find too threatening.",
+      "de": "My partner has proven to be trustworthy and I am willing to let him/her engage in activities which other partners find too threatening."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "mildly disagree",
+        "de": "mildly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "mildly agree",
+        "de": "mildly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "TRUST02": {
+    "Description": {
+      "en": "I have found that my partner is unusually dependable, especially when it comes to things which are important to me.",
+      "de": "I have found that my partner is unusually dependable, especially when it comes to things which are important to me."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "mildly disagree",
+        "de": "mildly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "mildly agree",
+        "de": "mildly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "TRUST03": {
+    "Description": {
+      "en": "I am certain that my partner would not cheat on me, even if the opportunity arose and there was no chance that he/she would get caught.",
+      "de": "I am certain that my partner would not cheat on me, even if the opportunity arose and there was no chance that he/she would get caught."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "mildly disagree",
+        "de": "mildly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "mildly agree",
+        "de": "mildly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "TRUST04": {
+    "Description": {
+      "en": "I can rely on my partner to keep the promises he/she makes to me.",
+      "de": "I can rely on my partner to keep the promises he/she makes to me."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "mildly disagree",
+        "de": "mildly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "mildly agree",
+        "de": "mildly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "TRUST05": {
+    "Description": {
+      "en": "Even when my partner makes excuses which sound rather unlikely, I am confident that he/she is telling the truth.",
+      "de": "Even when my partner makes excuses which sound rather unlikely, I am confident that he/she is telling the truth."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "mildly disagree",
+        "de": "mildly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "mildly agree",
+        "de": "mildly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "TRUST06": {
+    "Description": {
+      "en": "Even when I don't know how my partner will react, I feel comfortable telling him/her anything about myself; even those things of which I am ashamed.",
+      "de": "Even when I don't know how my partner will react, I feel comfortable telling him/her anything about myself; even those things of which I am ashamed."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "mildly disagree",
+        "de": "mildly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "mildly agree",
+        "de": "mildly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "TRUST07": {
+    "Description": {
+      "en": "Though times may change and the future is uncertain; I know my partner will always be ready and willing to offer me strength and support.",
+      "de": "Though times may change and the future is uncertain; I know my partner will always be ready and willing to offer me strength and support."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "mildly disagree",
+        "de": "mildly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "mildly agree",
+        "de": "mildly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "TRUST08": {
+    "Description": {
+      "en": "Whenever we have to make an important decision in a situation we have never encountered before, I know my partner will be concerned about my welfare.",
+      "de": "Whenever we have to make an important decision in a situation we have never encountered before, I know my partner will be concerned about my welfare."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "mildly disagree",
+        "de": "mildly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "mildly agree",
+        "de": "mildly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "TRUST09": {
+    "Description": {
+      "en": "Even if I have no reason to expect my partner to share things with me, I still feel certain that he/she will.",
+      "de": "Even if I have no reason to expect my partner to share things with me, I still feel certain that he/she will."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "mildly disagree",
+        "de": "mildly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "mildly agree",
+        "de": "mildly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "TRUST10": {
+    "Description": {
+      "en": "I can rely on my partner to react in a positive way when I expose my weaknesses to him/her.",
+      "de": "I can rely on my partner to react in a positive way when I expose my weaknesses to him/her."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "mildly disagree",
+        "de": "mildly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "mildly agree",
+        "de": "mildly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "TRUST11": {
+    "Description": {
+      "en": "When I share my problems with my partner, I know he/she will respond in a loving way even before I say anything.",
+      "de": "When I share my problems with my partner, I know he/she will respond in a loving way even before I say anything."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "mildly disagree",
+        "de": "mildly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "mildly agree",
+        "de": "mildly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "TRUST12": {
+    "Description": {
+      "en": "When I am with my partner I feel secure in facing unknown new situations.",
+      "de": "When I am with my partner I feel secure in facing unknown new situations."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "mildly disagree",
+        "de": "mildly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "mildly agree",
+        "de": "mildly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "TRUST13": {
+    "Description": {
+      "en": "My partner behaves in a very consistent manner.",
+      "de": "My partner behaves in a very consistent manner."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "mildly disagree",
+        "de": "mildly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "mildly agree",
+        "de": "mildly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  }
+}

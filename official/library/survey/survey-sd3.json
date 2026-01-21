@@ -1,0 +1,666 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "A brief measure of dark personality traits (SD3)",
+      "de": "A brief measure of dark personality traits (SD3)"
+    },
+    "Abbreviation": "SD3",
+    "Authors": [
+      "Jones",
+      "D. N",
+      "& Paulhus",
+      "D. L"
+    ],
+    "Year": 2014,
+    "DOI": "",
+    "Citation": "Jones, D. N., & Paulhus, D. L. (2014).  Introducing the Short Dark Triad (SD3): A brief measure of dark personality traits.  Assessment, 21,  28-41.",
+    "NumberOfItems": 22,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/short-dark-triad.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "SD301": {
+    "Description": {
+      "en": "It's not wise to tell your secrets.",
+      "de": "It's not wise to tell your secrets."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD302": {
+    "Description": {
+      "en": "I like to use clever manipulation to get my way.",
+      "de": "I like to use clever manipulation to get my way."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD303": {
+    "Description": {
+      "en": "Whatever it takes, you must get the important people on your side.",
+      "de": "Whatever it takes, you must get the important people on your side."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD304": {
+    "Description": {
+      "en": "Avoid direct conflict with others because they may be useful in the future.",
+      "de": "Avoid direct conflict with others because they may be useful in the future."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD305": {
+    "Description": {
+      "en": "Itâs wise to keep track of information that you can use against people later.",
+      "de": "Itâs wise to keep track of information that you can use against people later."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD306": {
+    "Description": {
+      "en": "You should wait for the right time to get back at people.",
+      "de": "You should wait for the right time to get back at people."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD307": {
+    "Description": {
+      "en": "There are things you should hide from other people because they donât need to know.",
+      "de": "There are things you should hide from other people because they donât need to know."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD308": {
+    "Description": {
+      "en": "Make sure your plans benefit you, not others.",
+      "de": "Make sure your plans benefit you, not others."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD309": {
+    "Description": {
+      "en": "Most people can be manipulated.",
+      "de": "Most people can be manipulated."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD310": {
+    "Description": {
+      "en": "People see me as a natural leader.",
+      "de": "People see me as a natural leader."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD311": {
+    "Description": {
+      "en": "Many group activities tend to be dull without me.",
+      "de": "Many group activities tend to be dull without me."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD312": {
+    "Description": {
+      "en": "I know that I am special because everyone keeps telling me so.",
+      "de": "I know that I am special because everyone keeps telling me so."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD313": {
+    "Description": {
+      "en": "I like to get acquainted with important people.",
+      "de": "I like to get acquainted with important people."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD314": {
+    "Description": {
+      "en": "I have been compared to famous people.",
+      "de": "I have been compared to famous people."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD315": {
+    "Description": {
+      "en": "I insist on getting the respect I deserve.",
+      "de": "I insist on getting the respect I deserve."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD316": {
+    "Description": {
+      "en": "I like to get revenge on authorities.",
+      "de": "I like to get revenge on authorities."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD317": {
+    "Description": {
+      "en": "Payback needs to be quick and nasty.",
+      "de": "Payback needs to be quick and nasty."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD318": {
+    "Description": {
+      "en": "People often say Iâm out of control.",
+      "de": "People often say Iâm out of control."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD319": {
+    "Description": {
+      "en": "Itâs true that I can be mean to others.",
+      "de": "Itâs true that I can be mean to others."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD320": {
+    "Description": {
+      "en": "People who mess with me always regret it.",
+      "de": "People who mess with me always regret it."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD321": {
+    "Description": {
+      "en": "I enjoy having sex with people I hardly know",
+      "de": "I enjoy having sex with people I hardly know"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SD322": {
+    "Description": {
+      "en": "Iâll say anything to get what I want.",
+      "de": "Iâll say anything to get what I want."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "3": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "4": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  }
+}

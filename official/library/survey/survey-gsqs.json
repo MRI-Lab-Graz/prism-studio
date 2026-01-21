@@ -1,0 +1,234 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Groningen Sleep Quality Questionnaire",
+      "de": "Groningen Sleep Quality Questionnaire"
+    },
+    "Abbreviation": "GSQS",
+    "Authors": [
+      "Meijman",
+      "T. F",
+      "de Vries-Griever",
+      "A. H",
+      "de Vries",
+      "G"
+    ],
+    "Year": 1988,
+    "DOI": "",
+    "Citation": "Meijman, T. F., de Vries-Griever, A. H., de Vries, G. (1988): The\nevaluation of the Groningen Sleep Quality Scale. Groningen: Heymans\nBulletin (HB 88â13âEX).",
+    "NumberOfItems": 12,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/gsqs.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "GSQS01": {
+    "Description": {
+      "en": "I had a deep sleep last night",
+      "de": "I had a deep sleep last night"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "GSQS02": {
+    "Description": {
+      "en": "I feel like I slept poorly last night",
+      "de": "I feel like I slept poorly last night"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "GSQS03": {
+    "Description": {
+      "en": "It took me more than half an hour to fall asleep last night",
+      "de": "It took me more than half an hour to fall asleep last night"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "GSQS04": {
+    "Description": {
+      "en": "I felt tired after waking up this morning",
+      "de": "I felt tired after waking up this morning"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "GSQS05": {
+    "Description": {
+      "en": "I woke up several times last night",
+      "de": "I woke up several times last night"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "GSQS06": {
+    "Description": {
+      "en": "I feel like I didnât get enough sleep last night",
+      "de": "I feel like I didnât get enough sleep last night"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "GSQS07": {
+    "Description": {
+      "en": "I got up in the middle of the night",
+      "de": "I got up in the middle of the night"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "GSQS08": {
+    "Description": {
+      "en": "I feel like I only had a couple hours of sleep last night",
+      "de": "I feel like I only had a couple hours of sleep last night"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "GSQS09": {
+    "Description": {
+      "en": "I didnât sleep a wink last night",
+      "de": "I didnât sleep a wink last night"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "GSQS10": {
+    "Description": {
+      "en": "After I woke up last night, I had trouble falling asleep again",
+      "de": "After I woke up last night, I had trouble falling asleep again"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "GSQS11": {
+    "Description": {
+      "en": "I tossed and turned all night last night",
+      "de": "I tossed and turned all night last night"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "GSQS12": {
+    "Description": {
+      "en": "I didnât get more than 5 hours sleep last night",
+      "de": "I didnât get more than 5 hours sleep last night"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  }
+}

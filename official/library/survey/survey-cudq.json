@@ -1,0 +1,275 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Caffeine Use Disorder Questionnaire (CUDQ)",
+      "de": "Caffeine Use Disorder Questionnaire (CUDQ)"
+    },
+    "Abbreviation": "CUDQ",
+    "Authors": [
+      "Addicott M. A"
+    ],
+    "Year": 2014,
+    "DOI": "https://doi.org/10.1007/s40429-014-0024-9",
+    "Citation": "Addicott M. A. (2014). Caffeine Use Disorder: A Review of the\nEvidence and Future Implications. Current addiction reports, 1(3),\n186-192. https://doi.org/10.1007/s40429-014-0024-9",
+    "NumberOfItems": 10,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/caffeine-cudq.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "CUDQ01": {
+    "Description": {
+      "en": "Did you feel a strong desire or had unsuccessful attempts to reduce or control your caffeine consumption?",
+      "de": "Did you feel a strong desire or had unsuccessful attempts to reduce or control your caffeine consumption?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=1} Often",
+        "de": "{score=1} Often"
+      },
+      "3": {
+        "en": "{score=1} Very often",
+        "de": "{score=1} Very often"
+      }
+    }
+  },
+  "CUDQ02": {
+    "Description": {
+      "en": "Did you consume caffeine despite you knew that it can cause permanent or recurrent physical or psychological consequences?",
+      "de": "Did you consume caffeine despite you knew that it can cause permanent or recurrent physical or psychological consequences?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=1} Often",
+        "de": "{score=1} Often"
+      },
+      "3": {
+        "en": "{score=1} Very often",
+        "de": "{score=1} Very often"
+      }
+    }
+  },
+  "CUDQ03": {
+    "Description": {
+      "en": "Did you consume caffeine in order to avoid one or more caffeine withdrawal symptoms (e. g. headache, nausea, fatigue)?",
+      "de": "Did you consume caffeine in order to avoid one or more caffeine withdrawal symptoms (e. g. headache, nausea, fatigue)?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=1} Often",
+        "de": "{score=1} Often"
+      },
+      "3": {
+        "en": "{score=1} Very often",
+        "de": "{score=1} Very often"
+      }
+    }
+  },
+  "CUDQ04": {
+    "Description": {
+      "en": "Did you consume more caffeine or did you consume caffeine longer than you intended?",
+      "de": "Did you consume more caffeine or did you consume caffeine longer than you intended?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=1} Often",
+        "de": "{score=1} Often"
+      },
+      "3": {
+        "en": "{score=1} Very often",
+        "de": "{score=1} Very often"
+      }
+    }
+  },
+  "CUDQ05": {
+    "Description": {
+      "en": "Because of caffeine use, did you fail to fulfill any major work, school or home responsibilities (e. g. repeated absences from work or school due to caffeine consumption or withdrawal symptoms)?",
+      "de": "Because of caffeine use, did you fail to fulfill any major work, school or home responsibilities (e. g. repeated absences from work or school due to caffeine consumption or withdrawal symptoms)?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=1} Often",
+        "de": "{score=1} Often"
+      },
+      "3": {
+        "en": "{score=1} Very often",
+        "de": "{score=1} Very often"
+      }
+    }
+  },
+  "CUDQ06": {
+    "Description": {
+      "en": "Did you consume caffeine despite you knew that it can cause permanent or recurrent social problems or exacerbate them (e. g. debate with spouse because of the consequences, medical problems and costs due to caffeine use)?",
+      "de": "Did you consume caffeine despite you knew that it can cause permanent or recurrent social problems or exacerbate them (e. g. debate with spouse because of the consequences, medical problems and costs due to caffeine use)?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=1} Often",
+        "de": "{score=1} Often"
+      },
+      "3": {
+        "en": "{score=1} Very often",
+        "de": "{score=1} Very often"
+      }
+    }
+  },
+  "CUDQ07": {
+    "Description": {
+      "en": "Did you have to consume more caffeine than earlier in order to reach the same effect or did you experience that the same amount of caffeine did not have the desired effect anymore?",
+      "de": "Did you have to consume more caffeine than earlier in order to reach the same effect or did you experience that the same amount of caffeine did not have the desired effect anymore?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=1} Often",
+        "de": "{score=1} Often"
+      },
+      "3": {
+        "en": "{score=1} Very often",
+        "de": "{score=1} Very often"
+      }
+    }
+  },
+  "CUDQ08": {
+    "Description": {
+      "en": "Did you spend a significant amount of time with consuming or obtaining caffeine?",
+      "de": "Did you spend a significant amount of time with consuming or obtaining caffeine?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=1} Often",
+        "de": "{score=1} Often"
+      },
+      "3": {
+        "en": "{score=1} Very often",
+        "de": "{score=1} Very often"
+      }
+    }
+  },
+  "CUDQ09": {
+    "Description": {
+      "en": "Did you feel a strong desire or urge to consume caffeine?",
+      "de": "Did you feel a strong desire or urge to consume caffeine?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=1} Often",
+        "de": "{score=1} Often"
+      },
+      "3": {
+        "en": "{score=1} Very often",
+        "de": "{score=1} Very often"
+      }
+    }
+  },
+  "CUDQ10": {
+    "Description": {
+      "en": "Did the before mentioned phenomena, which you experienced, cause you significant inconvenience or suffering in your everyday life?",
+      "de": "Did the before mentioned phenomena, which you experienced, cause you significant inconvenience or suffering in your everyday life?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=1} Often",
+        "de": "{score=1} Often"
+      },
+      "3": {
+        "en": "{score=1} Very often",
+        "de": "{score=1} Very often"
+      }
+    }
+  }
+}

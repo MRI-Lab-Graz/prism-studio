@@ -1,0 +1,231 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Shyness Scale (McCroskey)",
+      "de": "Shyness Scale (McCroskey)"
+    },
+    "Abbreviation": "SHYNESS",
+    "Authors": [
+      "McCroskey",
+      "J. C",
+      "& Richmond",
+      "V. P"
+    ],
+    "Year": 1982,
+    "DOI": "",
+    "Citation": "McCroskey, J. C., & Richmond, V. P. (1982). Communication apprehension\nand shyness: Conceptual and operational distinctions. Central States\nSpeech Journal, 33, 458-468.",
+    "NumberOfItems": 7,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/shyness-mcss.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "SHYNESS01": {
+    "Description": {
+      "en": "I am a shy person.",
+      "de": "I am a shy person."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Neutral",
+        "de": "Neutral"
+      },
+      "3": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "4": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "SHYNESS02": {
+    "Description": {
+      "en": "Other people think I am shy.",
+      "de": "Other people think I am shy."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Neutral",
+        "de": "Neutral"
+      },
+      "3": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "4": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "SHYNESS03": {
+    "Description": {
+      "en": "I tend to be very quiet in class.",
+      "de": "I tend to be very quiet in class."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Neutral",
+        "de": "Neutral"
+      },
+      "3": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "4": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "SHYNESS04": {
+    "Description": {
+      "en": "I don't talk much.",
+      "de": "I don't talk much."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Neutral",
+        "de": "Neutral"
+      },
+      "3": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "4": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "SHYNESS05": {
+    "Description": {
+      "en": "I am a quiet person.",
+      "de": "I am a quiet person."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Neutral",
+        "de": "Neutral"
+      },
+      "3": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "4": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "SHYNESS06": {
+    "Description": {
+      "en": "Most people talk more than I do.",
+      "de": "Most people talk more than I do."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Neutral",
+        "de": "Neutral"
+      },
+      "3": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "4": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "SHYNESS07": {
+    "Description": {
+      "en": "Other people think I am very quiet.",
+      "de": "Other people think I am very quiet."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Neutral",
+        "de": "Neutral"
+      },
+      "3": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "4": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  }
+}

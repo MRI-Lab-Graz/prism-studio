@@ -1,0 +1,27 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Dyslexia checklist",
+      "de": "Dyslexia checklist"
+    },
+    "Abbreviation": "DYSLEXIA",
+    "Authors": [
+      "Smythe",
+      "I. and Everatt",
+      "J"
+    ],
+    "Year": 2001,
+    "DOI": "",
+    "Citation": "Smythe, I. and Everatt, J. (2001). Retrieved from http://www.bdadyslexia.org.uk/common/ckeditor/filemanager/userfiles/Adult-Checklist.pdf",
+    "NumberOfItems": 0,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/dyslexia-bda.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  }
+}

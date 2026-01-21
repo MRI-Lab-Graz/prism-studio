@@ -1,0 +1,436 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Clinical Impairment Assessment Questionnaire (CIA 3.0)",
+      "de": "Clinical Impairment Assessment Questionnaire (CIA 3.0)"
+    },
+    "Abbreviation": "CIA",
+    "Authors": [
+      "Bohn",
+      "K",
+      "Doll",
+      "H. A",
+      "Cooper",
+      "Z",
+      "O’Connor",
+      "M",
+      "Palmer",
+      "R. L",
+      "& Fairburn",
+      "C. G"
+    ],
+    "Year": 2008,
+    "DOI": "",
+    "Citation": "Bohn, K., Doll, H. A., Cooper, Z., O’Connor, M., Palmer, R. L., & Fairburn, C. G. (2008). The measurement of impairment due to eating disorder psychopathology. Behaviour research and therapy, 46, 1105-1110. This is an open-access paper, click here to download.",
+    "NumberOfItems": 16,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/eating-cia.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "CIA01": {
+    "Description": {
+      "en": "made it difficult to concentrate?",
+      "de": "made it difficult to concentrate?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA02": {
+    "Description": {
+      "en": "made you feel critical of yourself?",
+      "de": "made you feel critical of yourself?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA03": {
+    "Description": {
+      "en": "stopped you going out with others?",
+      "de": "stopped you going out with others?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA04": {
+    "Description": {
+      "en": "affected your work performance (if applicable)?",
+      "de": "affected your work performance (if applicable)?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA05": {
+    "Description": {
+      "en": "made you forgetful?",
+      "de": "made you forgetful?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA06": {
+    "Description": {
+      "en": "affected your ability to make everyday decisions?",
+      "de": "affected your ability to make everyday decisions?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA07": {
+    "Description": {
+      "en": "interfered with meals with family or friends?",
+      "de": "interfered with meals with family or friends?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA08": {
+    "Description": {
+      "en": "made you upset?",
+      "de": "made you upset?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA09": {
+    "Description": {
+      "en": "made you feel ashamed of yourself?",
+      "de": "made you feel ashamed of yourself?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA10": {
+    "Description": {
+      "en": "made it difficult to eat out with others?",
+      "de": "made it difficult to eat out with others?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA11": {
+    "Description": {
+      "en": "made you feel guilty?",
+      "de": "made you feel guilty?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA12": {
+    "Description": {
+      "en": "interfered with you doing things you used to enjoy?",
+      "de": "interfered with you doing things you used to enjoy?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA13": {
+    "Description": {
+      "en": "made you absent-minded?",
+      "de": "made you absent-minded?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA14": {
+    "Description": {
+      "en": "made you feel a failure?",
+      "de": "made you feel a failure?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA15": {
+    "Description": {
+      "en": "interfered with your relationship with others?",
+      "de": "interfered with your relationship with others?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  },
+  "CIA16": {
+    "Description": {
+      "en": "made you worry?",
+      "de": "made you worry?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} a little",
+        "de": "{score=1} a little"
+      },
+      "2": {
+        "en": "{score=2} quite a bit",
+        "de": "{score=2} quite a bit"
+      },
+      "3": {
+        "en": "{score=3} a lot",
+        "de": "{score=3} a lot"
+      }
+    }
+  }
+}

@@ -1,0 +1,323 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Short revised almost perfect scale (SAPS)",
+      "de": "Short revised almost perfect scale (SAPS)"
+    },
+    "Abbreviation": "SAPS",
+    "Authors": [
+      "K. G. Rice",
+      "C. M. E. Richardson",
+      "& S. Tueller"
+    ],
+    "Year": 2014,
+    "DOI": "",
+    "Citation": "K. G. Rice, C. M. E. Richardson, & S. Tueller. (2014). The Short Form of the Revised\nAlmost Perfect Scale. Journal of Personality Assessment, 96(3), 368-379.",
+    "NumberOfItems": 8,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/perfectionism-saps.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "SAPS01": {
+    "Description": {
+      "en": "I have high expectations for myself",
+      "de": "I have high expectations for myself"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SAPS02": {
+    "Description": {
+      "en": "Doing my best never seems to be enough.",
+      "de": "Doing my best never seems to be enough."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SAPS03": {
+    "Description": {
+      "en": "I set very high standards for myself.",
+      "de": "I set very high standards for myself."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SAPS04": {
+    "Description": {
+      "en": "I often feel disappointment after completing a task because I know I could have done better.",
+      "de": "I often feel disappointment after completing a task because I know I could have done better."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SAPS05": {
+    "Description": {
+      "en": "I have a strong need to strive for excellence.",
+      "de": "I have a strong need to strive for excellence."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SAPS06": {
+    "Description": {
+      "en": "My performance rarely measures up to my standards.",
+      "de": "My performance rarely measures up to my standards."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SAPS07": {
+    "Description": {
+      "en": "I expect the best from myself.",
+      "de": "I expect the best from myself."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "SAPS08": {
+    "Description": {
+      "en": "I am hardly ever satisfied with my performance.",
+      "de": "I am hardly ever satisfied with my performance."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "disagree",
+        "de": "disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "agree",
+        "de": "agree"
+      },
+      "6": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  }
+}

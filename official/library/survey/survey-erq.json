@@ -1,0 +1,398 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Emotional regulation questionnaire (ERQ)",
+      "de": "Emotional regulation questionnaire (ERQ)"
+    },
+    "Abbreviation": "ERQ",
+    "Authors": [
+      "Gross",
+      "J.J",
+      "& John",
+      "O.P"
+    ],
+    "Year": 2003,
+    "DOI": "",
+    "Citation": "Gross, J.J., & John, O.P. (2003). Individual differences in two\nemotion regulation processes: Implications for affect, relationships,\nand well-being. Journal of Personality and Social Psychology, 85,\n348-362.",
+    "NumberOfItems": 10,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/emotional-regulation-erq.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "ERQ01": {
+    "Description": {
+      "en": "When I want to feel more positive emotion (such as joy or amusement), I change what Iâm thinking about.",
+      "de": "When I want to feel more positive emotion (such as joy or amusement), I change what Iâm thinking about."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly<br>disagree",
+        "de": "strongly<br>disagree"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "strongly<br>agree",
+        "de": "strongly<br>agree"
+      }
+    }
+  },
+  "ERQ02": {
+    "Description": {
+      "en": "I keep my emotions to myself.",
+      "de": "I keep my emotions to myself."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly<br>disagree",
+        "de": "strongly<br>disagree"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "strongly<br>agree",
+        "de": "strongly<br>agree"
+      }
+    }
+  },
+  "ERQ03": {
+    "Description": {
+      "en": "When I want to feel less negative emotion (such as sadness or anger), I change what Iâm thinking about.",
+      "de": "When I want to feel less negative emotion (such as sadness or anger), I change what Iâm thinking about."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly<br>disagree",
+        "de": "strongly<br>disagree"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "strongly<br>agree",
+        "de": "strongly<br>agree"
+      }
+    }
+  },
+  "ERQ04": {
+    "Description": {
+      "en": "When I am feeling positive emotions, I am careful not to express them.",
+      "de": "When I am feeling positive emotions, I am careful not to express them."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly<br>disagree",
+        "de": "strongly<br>disagree"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "strongly<br>agree",
+        "de": "strongly<br>agree"
+      }
+    }
+  },
+  "ERQ05": {
+    "Description": {
+      "en": "When Iâm faced with a stressful situation, I make myself think about it in a way that helps me stay calm.",
+      "de": "When Iâm faced with a stressful situation, I make myself think about it in a way that helps me stay calm."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly<br>disagree",
+        "de": "strongly<br>disagree"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "strongly<br>agree",
+        "de": "strongly<br>agree"
+      }
+    }
+  },
+  "ERQ06": {
+    "Description": {
+      "en": "I control my emotions by not expressing them.",
+      "de": "I control my emotions by not expressing them."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly<br>disagree",
+        "de": "strongly<br>disagree"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "strongly<br>agree",
+        "de": "strongly<br>agree"
+      }
+    }
+  },
+  "ERQ07": {
+    "Description": {
+      "en": "When I want to feel more positive emotion, I change the way Iâm thinking about the situation.",
+      "de": "When I want to feel more positive emotion, I change the way Iâm thinking about the situation."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly<br>disagree",
+        "de": "strongly<br>disagree"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "strongly<br>agree",
+        "de": "strongly<br>agree"
+      }
+    }
+  },
+  "ERQ08": {
+    "Description": {
+      "en": "I control my emotions by changing the way I think about the situation Iâm in.",
+      "de": "I control my emotions by changing the way I think about the situation Iâm in."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly<br>disagree",
+        "de": "strongly<br>disagree"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "strongly<br>agree",
+        "de": "strongly<br>agree"
+      }
+    }
+  },
+  "ERQ09": {
+    "Description": {
+      "en": "When I am feeling negative emotions, I make sure not to express them.",
+      "de": "When I am feeling negative emotions, I make sure not to express them."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly<br>disagree",
+        "de": "strongly<br>disagree"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "strongly<br>agree",
+        "de": "strongly<br>agree"
+      }
+    }
+  },
+  "ERQ10": {
+    "Description": {
+      "en": "When I want to feel less negative emotion, I change the way Iâm thinking about the situation.",
+      "de": "When I want to feel less negative emotion, I change the way Iâm thinking about the situation."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly<br>disagree",
+        "de": "strongly<br>disagree"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "strongly<br>agree",
+        "de": "strongly<br>agree"
+      }
+    }
+  }
+}

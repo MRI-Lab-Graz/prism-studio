@@ -1,0 +1,408 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Spider Fear Questionnaire (SPQ)",
+      "de": "Spider Fear Questionnaire (SPQ)"
+    },
+    "Abbreviation": "SPQ",
+    "Authors": [
+      "Klorman",
+      "R",
+      "Weerts",
+      "T. C",
+      "Hastings",
+      "J. E",
+      "Melamed",
+      "B. G",
+      "Lang",
+      "P. J"
+    ],
+    "Year": 1974,
+    "DOI": "",
+    "Citation": "Klorman, R., Weerts, T. C., Hastings, J. E., Melamed, B. G., Lang, P. J. (1974). Psychometric descriptions of some specific fear questionnaires. Behavior Therapy, 5, 401-409.",
+    "NumberOfItems": 22,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/spider-fear-spq.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "SPQ01": {
+    "Description": {
+      "en": "I avoid going to parks or on camping trips because there may be spiders about.",
+      "de": "I avoid going to parks or on camping trips because there may be spiders about."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ02": {
+    "Description": {
+      "en": "I would feel some anxiety holding a toy spider in my hand.",
+      "de": "I would feel some anxiety holding a toy spider in my hand."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ03": {
+    "Description": {
+      "en": "If a picture of a spider crawling on a person appears on the screen during a motion picture, I turn my head away.",
+      "de": "If a picture of a spider crawling on a person appears on the screen during a motion picture, I turn my head away."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ04": {
+    "Description": {
+      "en": "I dislike looking at pictures of spiders in a magazine.",
+      "de": "I dislike looking at pictures of spiders in a magazine."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ05": {
+    "Description": {
+      "en": "If there is a spider on the ceiling over my bed, I cannot go to sleep unless someone kills it for me.",
+      "de": "If there is a spider on the ceiling over my bed, I cannot go to sleep unless someone kills it for me."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ06": {
+    "Description": {
+      "en": "I am terrified by the thought of touching a harmless spider.",
+      "de": "I am terrified by the thought of touching a harmless spider."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ07": {
+    "Description": {
+      "en": "If someone says that there are spiders anywhere about, I become alert and edgy",
+      "de": "If someone says that there are spiders anywhere about, I become alert and edgy"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ08": {
+    "Description": {
+      "en": "I would not go down to the basement to get something if I thought there might be spiders down there.",
+      "de": "I would not go down to the basement to get something if I thought there might be spiders down there."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ09": {
+    "Description": {
+      "en": "I would feel uncomfortable if a spider crawled out of my shoe as I took it out of the closet to put it on.",
+      "de": "I would feel uncomfortable if a spider crawled out of my shoe as I took it out of the closet to put it on."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ10": {
+    "Description": {
+      "en": "When I see a spider, I feel tense and restless.",
+      "de": "When I see a spider, I feel tense and restless."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ11": {
+    "Description": {
+      "en": "I feel sick when I see a spider.",
+      "de": "I feel sick when I see a spider."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ12": {
+    "Description": {
+      "en": "I shudder when I think of spiders.",
+      "de": "I shudder when I think of spiders."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ13": {
+    "Description": {
+      "en": "I don't believe anyone could hold a spider without some fear.",
+      "de": "I don't believe anyone could hold a spider without some fear."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ14": {
+    "Description": {
+      "en": "The way spiders move is repulsive.",
+      "de": "The way spiders move is repulsive."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ15": {
+    "Description": {
+      "en": "If I came upon a spider while cleaning the attic I would probably run.",
+      "de": "If I came upon a spider while cleaning the attic I would probably run."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ16": {
+    "Description": {
+      "en": "I'm probably more afraid of spiders than of any other animal.",
+      "de": "I'm probably more afraid of spiders than of any other animal."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ17": {
+    "Description": {
+      "en": "I would not want to travel to Mexico or Central America because of the greater prevalence of tarantulas.",
+      "de": "I would not want to travel to Mexico or Central America because of the greater prevalence of tarantulas."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ18": {
+    "Description": {
+      "en": "I am cautious when buying fruit because bananas may attract spiders.",
+      "de": "I am cautious when buying fruit because bananas may attract spiders."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ19": {
+    "Description": {
+      "en": "I wouldn't take a course in biology if I thought I might have to handle live spiders.",
+      "de": "I wouldn't take a course in biology if I thought I might have to handle live spiders."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ20": {
+    "Description": {
+      "en": "I would prefer not to finish a story if something about spiders was introduced into the plot.",
+      "de": "I would prefer not to finish a story if something about spiders was introduced into the plot."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ21": {
+    "Description": {
+      "en": "Not only am I afraid of spiders but millipedes and caterpillars make me feel anxious.",
+      "de": "Not only am I afraid of spiders but millipedes and caterpillars make me feel anxious."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  },
+  "SPQ22": {
+    "Description": {
+      "en": "Even if I was late for a very important appointment, the thought of spiders would stop me from taking a shortcut through an underpass.",
+      "de": "Even if I was late for a very important appointment, the thought of spiders would stop me from taking a shortcut through an underpass."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} True",
+        "de": "{score=1} True"
+      },
+      "1": {
+        "en": "{score=0} False",
+        "de": "{score=0} False"
+      }
+    }
+  }
+}

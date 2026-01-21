@@ -1,0 +1,87 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Single-Item Sleep Quality Scale (SQS)",
+      "de": "Single-Item Sleep Quality Scale (SQS)"
+    },
+    "Abbreviation": "SQS",
+    "Authors": [
+      "Snyder",
+      "E",
+      "Cai",
+      "B",
+      "DeMuro",
+      "C",
+      "Morrison",
+      "M. F",
+      "& Ball",
+      "W"
+    ],
+    "Year": 2018,
+    "DOI": "",
+    "Citation": "Snyder, E., Cai, B., DeMuro, C., Morrison, M. F., & Ball, W. (2018). A new single-item sleep quality scale: results of psychometric evaluation in patients with chronic primary insomnia and depression. Journal of Clinical Sleep Medicine, 14(11), 1849-1857. Read full article for free here",
+    "NumberOfItems": 1,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/single-item-sleep-quality-scale.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "SQS01": {
+    "Description": {
+      "en": "During the <b>past 7 days</b>, how would you rate your sleep quality overall?",
+      "de": "During the <b>past 7 days</b>, how would you rate your sleep quality overall?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "<B>Terrible</B><BR>0",
+        "de": "<B>Terrible</B><BR>0"
+      },
+      "1": {
+        "en": "<B>Poor</B><BR>1",
+        "de": "<B>Poor</B><BR>1"
+      },
+      "2": {
+        "en": "<B>Poor</B><BR>2",
+        "de": "<B>Poor</B><BR>2"
+      },
+      "3": {
+        "en": "<B>Poor</B><BR>3",
+        "de": "<B>Poor</B><BR>3"
+      },
+      "4": {
+        "en": "<B>Fair</B><BR>4",
+        "de": "<B>Fair</B><BR>4"
+      },
+      "5": {
+        "en": "<B>Fair</B><BR>5",
+        "de": "<B>Fair</B><BR>5"
+      },
+      "6": {
+        "en": "<B>Fair</B><BR>6",
+        "de": "<B>Fair</B><BR>6"
+      },
+      "7": {
+        "en": "<B>Good</B><BR>7",
+        "de": "<B>Good</B><BR>7"
+      },
+      "8": {
+        "en": "<B>Good</B><BR>8",
+        "de": "<B>Good</B><BR>8"
+      },
+      "9": {
+        "en": "<B>Good</B><BR>9",
+        "de": "<B>Good</B><BR>9"
+      },
+      "10": {
+        "en": "<B>Excellent</B><BR>10",
+        "de": "<B>Excellent</B><BR>10"
+      }
+    }
+  }
+}

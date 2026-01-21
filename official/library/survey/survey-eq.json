@@ -1,0 +1,29 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Empathy Quotient (EQ)",
+      "de": "Empathy Quotient (EQ)"
+    },
+    "Abbreviation": "EQ",
+    "Authors": [
+      "E. J. Lawrence",
+      "P. Shaw",
+      "D. Baker",
+      "S. Baron-Cohen and A. S. David",
+      ""
+    ],
+    "Year": 2004,
+    "DOI": "",
+    "Citation": "E. J. Lawrence, P. Shaw, D. Baker, S. Baron-Cohen and A. S. David,\n(2004) Measuring Empathy - reliability and validity of the empathy\nquotient Psychological Medicine 34:911-919",
+    "NumberOfItems": 0,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/empathy-arc.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  }
+}

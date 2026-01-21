@@ -1,0 +1,90 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Loneliness (TILS)",
+      "de": "Loneliness (TILS)"
+    },
+    "Abbreviation": "LONELINESS-3",
+    "Authors": [
+      "Ernst",
+      "J.M. & Cacioppo",
+      "J.T"
+    ],
+    "Year": 1999,
+    "DOI": "",
+    "Citation": "Ernst, J.M. & Cacioppo, J.T. (1999). Lonely hearts: Psychological perspectives on loneliness. Applied & Preventative Psychology, 8 (1), 1-22.",
+    "NumberOfItems": 3,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/loneliness-tils.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "LONELINESS-301": {
+    "Description": {
+      "en": "How often do you feel that you lack companionship?",
+      "de": "How often do you feel that you lack companionship?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Hardly ever",
+        "de": "Hardly ever"
+      },
+      "1": {
+        "en": "Some of the time",
+        "de": "Some of the time"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Often"
+      }
+    }
+  },
+  "LONELINESS-302": {
+    "Description": {
+      "en": "How often do you feel left out?",
+      "de": "How often do you feel left out?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Hardly ever",
+        "de": "Hardly ever"
+      },
+      "1": {
+        "en": "Some of the time",
+        "de": "Some of the time"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Often"
+      }
+    }
+  },
+  "LONELINESS-303": {
+    "Description": {
+      "en": "How often do you feel isolated from others?",
+      "de": "How often do you feel isolated from others?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Hardly ever",
+        "de": "Hardly ever"
+      },
+      "1": {
+        "en": "Some of the time",
+        "de": "Some of the time"
+      },
+      "2": {
+        "en": "Often",
+        "de": "Often"
+      }
+    }
+  }
+}

@@ -1,0 +1,321 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Relationship satisfaction (PN-SMD)",
+      "de": "Relationship satisfaction (PN-SMD)"
+    },
+    "Abbreviation": "PNSMD",
+    "Authors": [
+      "Mattson",
+      "R. E",
+      "Rogge",
+      "R. D",
+      "Johnson",
+      "M. D",
+      "Davidson",
+      "E. K. B",
+      "& Fincham",
+      "F. D"
+    ],
+    "Year": 2013,
+    "DOI": "",
+    "Citation": "Mattson, R. E., Rogge, R. D., Johnson, M. D., Davidson, E. K. B., & Fincham, F. D. (2013). The positive and negative semantic dimensions of relationship satisfaction. Personal Relationships, 20, 328-355.",
+    "NumberOfItems": 7,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/relationship-satisfaction-pnsmd.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "PNSMD01": {
+    "Description": {
+      "en": "Interesting",
+      "de": "Interesting"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A tiny bit",
+        "de": "{score=1} A tiny bit"
+      },
+      "2": {
+        "en": "{score=2} A little",
+        "de": "{score=2} A little"
+      },
+      "3": {
+        "en": "{score=3} Somewhat",
+        "de": "{score=3} Somewhat"
+      },
+      "4": {
+        "en": "{score=4} Mostly",
+        "de": "{score=4} Mostly"
+      },
+      "5": {
+        "en": "{score=5} Very",
+        "de": "{score=5} Very"
+      },
+      "6": {
+        "en": "{score=6} Extremely",
+        "de": "{score=6} Extremely"
+      },
+      "7": {
+        "en": "{score=7} Completely",
+        "de": "{score=7} Completely"
+      }
+    }
+  },
+  "PNSMD02": {
+    "Description": {
+      "en": "Full",
+      "de": "Full"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A tiny bit",
+        "de": "{score=1} A tiny bit"
+      },
+      "2": {
+        "en": "{score=2} A little",
+        "de": "{score=2} A little"
+      },
+      "3": {
+        "en": "{score=3} Somewhat",
+        "de": "{score=3} Somewhat"
+      },
+      "4": {
+        "en": "{score=4} Mostly",
+        "de": "{score=4} Mostly"
+      },
+      "5": {
+        "en": "{score=5} Very",
+        "de": "{score=5} Very"
+      },
+      "6": {
+        "en": "{score=6} Extremely",
+        "de": "{score=6} Extremely"
+      },
+      "7": {
+        "en": "{score=7} Completely",
+        "de": "{score=7} Completely"
+      }
+    }
+  },
+  "PNSMD03": {
+    "Description": {
+      "en": "Sturdy",
+      "de": "Sturdy"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A tiny bit",
+        "de": "{score=1} A tiny bit"
+      },
+      "2": {
+        "en": "{score=2} A little",
+        "de": "{score=2} A little"
+      },
+      "3": {
+        "en": "{score=3} Somewhat",
+        "de": "{score=3} Somewhat"
+      },
+      "4": {
+        "en": "{score=4} Mostly",
+        "de": "{score=4} Mostly"
+      },
+      "5": {
+        "en": "{score=5} Very",
+        "de": "{score=5} Very"
+      },
+      "6": {
+        "en": "{score=6} Extremely",
+        "de": "{score=6} Extremely"
+      },
+      "7": {
+        "en": "{score=7} Completely",
+        "de": "{score=7} Completely"
+      }
+    }
+  },
+  "PNSMD04": {
+    "Description": {
+      "en": "Enjoyable",
+      "de": "Enjoyable"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A tiny bit",
+        "de": "{score=1} A tiny bit"
+      },
+      "2": {
+        "en": "{score=2} A little",
+        "de": "{score=2} A little"
+      },
+      "3": {
+        "en": "{score=3} Somewhat",
+        "de": "{score=3} Somewhat"
+      },
+      "4": {
+        "en": "{score=4} Mostly",
+        "de": "{score=4} Mostly"
+      },
+      "5": {
+        "en": "{score=5} Very",
+        "de": "{score=5} Very"
+      },
+      "6": {
+        "en": "{score=6} Extremely",
+        "de": "{score=6} Extremely"
+      },
+      "7": {
+        "en": "{score=7} Completely",
+        "de": "{score=7} Completely"
+      }
+    }
+  },
+  "PNSMD05": {
+    "Description": {
+      "en": "Good",
+      "de": "Good"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A tiny bit",
+        "de": "{score=1} A tiny bit"
+      },
+      "2": {
+        "en": "{score=2} A little",
+        "de": "{score=2} A little"
+      },
+      "3": {
+        "en": "{score=3} Somewhat",
+        "de": "{score=3} Somewhat"
+      },
+      "4": {
+        "en": "{score=4} Mostly",
+        "de": "{score=4} Mostly"
+      },
+      "5": {
+        "en": "{score=5} Very",
+        "de": "{score=5} Very"
+      },
+      "6": {
+        "en": "{score=6} Extremely",
+        "de": "{score=6} Extremely"
+      },
+      "7": {
+        "en": "{score=7} Completely",
+        "de": "{score=7} Completely"
+      }
+    }
+  },
+  "PNSMD06": {
+    "Description": {
+      "en": "Friendly",
+      "de": "Friendly"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A tiny bit",
+        "de": "{score=1} A tiny bit"
+      },
+      "2": {
+        "en": "{score=2} A little",
+        "de": "{score=2} A little"
+      },
+      "3": {
+        "en": "{score=3} Somewhat",
+        "de": "{score=3} Somewhat"
+      },
+      "4": {
+        "en": "{score=4} Mostly",
+        "de": "{score=4} Mostly"
+      },
+      "5": {
+        "en": "{score=5} Very",
+        "de": "{score=5} Very"
+      },
+      "6": {
+        "en": "{score=6} Extremely",
+        "de": "{score=6} Extremely"
+      },
+      "7": {
+        "en": "{score=7} Completely",
+        "de": "{score=7} Completely"
+      }
+    }
+  },
+  "PNSMD07": {
+    "Description": {
+      "en": "Hopeful",
+      "de": "Hopeful"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A tiny bit",
+        "de": "{score=1} A tiny bit"
+      },
+      "2": {
+        "en": "{score=2} A little",
+        "de": "{score=2} A little"
+      },
+      "3": {
+        "en": "{score=3} Somewhat",
+        "de": "{score=3} Somewhat"
+      },
+      "4": {
+        "en": "{score=4} Mostly",
+        "de": "{score=4} Mostly"
+      },
+      "5": {
+        "en": "{score=5} Very",
+        "de": "{score=5} Very"
+      },
+      "6": {
+        "en": "{score=6} Extremely",
+        "de": "{score=6} Extremely"
+      },
+      "7": {
+        "en": "{score=7} Completely",
+        "de": "{score=7} Completely"
+      }
+    }
+  }
+}
