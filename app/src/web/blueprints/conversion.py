@@ -131,9 +131,17 @@ def api_survey_languages():
         "missing_items": [],
     }
 
-    # Check for expected items
-    survey_dir = library_root / "survey"
-    biometrics_dir = library_root / "biometrics"
+    # Check for expected items - handle official/library/survey structure
+    if (library_root / "library" / "survey").is_dir():
+        survey_dir = library_root / "library" / "survey"
+    else:
+        survey_dir = library_root / "survey"
+    
+    if (library_root / "library" / "biometrics").is_dir():
+        biometrics_dir = library_root / "library" / "biometrics"
+    else:
+        biometrics_dir = library_root / "biometrics"
+    
     participant_candidates = _participant_json_candidates(library_root)
 
     structure_info["has_survey_folder"] = survey_dir.is_dir()
@@ -202,8 +210,17 @@ def api_survey_convert():
         return jsonify({"error": f"Library path is not a directory: {library_path}"}), 400
 
     library_root = Path(library_path)
-    survey_dir = library_root / "survey"
-    effective_survey_dir = survey_dir if survey_dir.is_dir() else library_root
+    # Check for official structure: official/library/survey
+    if (library_root / "library" / "survey").is_dir():
+        survey_dir = library_root / "library" / "survey"
+    # Check for standard structure: library/survey
+    elif (library_root / "survey").is_dir():
+        survey_dir = library_root / "survey"
+    # Fall back to root
+    else:
+        survey_dir = library_root
+    
+    effective_survey_dir = survey_dir
 
     survey_templates = list(effective_survey_dir.glob("survey-*.json"))
     if not survey_templates:
@@ -356,8 +373,17 @@ def api_survey_convert_validate():
         return jsonify({"error": "Valid library path is required.", "log": log_messages}), 400
 
     library_root = Path(library_path)
-    survey_dir = library_root / "survey"
-    effective_survey_dir = survey_dir if survey_dir.is_dir() else library_root
+    # Check for official structure: official/library/survey
+    if (library_root / "library" / "survey").is_dir():
+        survey_dir = library_root / "library" / "survey"
+    # Check for standard structure: library/survey
+    elif (library_root / "survey").is_dir():
+        survey_dir = library_root / "survey"
+    # Fall back to root
+    else:
+        survey_dir = library_root
+    
+    effective_survey_dir = survey_dir
 
     survey_templates = list(effective_survey_dir.glob("survey-*.json"))
     if not survey_templates:
@@ -556,12 +582,23 @@ def api_biometrics_check_library():
         return jsonify({"error": "No library path provided"}), 400
 
     library_root = Path(library_path)
-    biometrics_dir = library_root / "biometrics"
+    # Handle official/library/biometrics structure
+    if (library_root / "library" / "biometrics").is_dir():
+        biometrics_dir = library_root / "library" / "biometrics"
+    else:
+        biometrics_dir = library_root / "biometrics"
+    
+    # Handle official/library/survey structure
+    if (library_root / "library" / "survey").is_dir():
+        survey_dir = library_root / "library" / "survey"
+    else:
+        survey_dir = library_root / "survey"
+    
     participant_candidates = _participant_json_candidates(library_root)
     has_participants = any(p.is_file() for p in participant_candidates)
 
     structure_info = {
-        "has_survey_folder": (library_root / "survey").is_dir(),
+        "has_survey_folder": survey_dir.is_dir(),
         "has_biometrics_folder": biometrics_dir.is_dir(),
         "has_participants_json": has_participants,
         "missing_items": [],
