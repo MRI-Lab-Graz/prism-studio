@@ -295,7 +295,7 @@
             <div class="card-header bg-primary bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#openProjectSection"
                  role="button" aria-expanded="true" aria-controls="openProjectSection">
                 <h5 class="mb-0 d-flex justify-content-between align-items-center">
-                    <span><i class="fas fa-folder-open text-primary me-2"></i>Open Existing Project</span>
+                    <span><i class="fas fa-folder-open text-primary me-2"></i>Project</span>
                     <i class="fas fa-chevron-down text-muted" id="openProjectChevron"></i>
                 </h5>
             </div>
@@ -365,7 +365,17 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold small text-muted text-uppercase mb-1">License</label>
-                        <input type="text" class="form-control" id="metadataLicense" placeholder="CC0, CC BY 4.0, etc.">
+                        <select class="form-select" id="metadataLicense">
+                            <option value="">Select a license...</option>
+                            <option value="CC0">CC0 (Public Domain)</option>
+                            <option value="CC BY 4.0">CC BY 4.0</option>
+                            <option value="CC BY-SA 4.0">CC BY-SA 4.0</option>
+                            <option value="CC BY-NC 4.0">CC BY-NC 4.0</option>
+                            <option value="CC BY-NC-SA 4.0">CC BY-NC-SA 4.0</option>
+                            <option value="ODbL 1.0">Open Database License (ODbL)</option>
+                            <option value="PDDL 1.0">Public Domain Dedication and License (PDDL)</option>
+                            <option value="Other">Other/Proprietary</option>
+                        </select>
                     </div>
                     <div class="col-md-12">
                         <label class="form-label fw-bold small text-muted text-uppercase mb-1">Acknowledgements</label>
@@ -432,12 +442,12 @@
         </div>
     </div>
 
-    <!-- Participants Schema Card -->
+    <!-- Participants Annotation Card -->
     <div class="card shadow-sm mt-4" id="participantsStatusCard" style="display: none;">
         <div class="card-header bg-info bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#participantsSection"
              role="button" aria-expanded="false" aria-controls="participantsSection">
             <h5 class="mb-0 d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-users text-info me-2"></i>Participants Schema</span>
+                <span><i class="fas fa-users text-info me-2"></i>Participants Annotation</span>
                 <div>
                     <span class="badge bg-info me-2" id="participantsFieldCount">0 fields</span>
                     <i class="fas fa-chevron-down text-muted" id="participantsChevron"></i>
@@ -520,6 +530,157 @@
                 </ol>
             </div>
         </div>
+        </div>
+    </div>
+
+    <!-- Data Export/Share Card -->
+    <div class="card shadow-sm mt-4" id="exportProjectCard" style="display: none;">
+        <div class="card-header bg-warning bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#exportSection"
+             role="button" aria-expanded="false" aria-controls="exportSection">
+            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-share-alt text-warning me-2"></i>Data Export / Share</span>
+                <i class="fas fa-chevron-down text-muted" id="exportChevron"></i>
+            </h5>
+        </div>
+        <div class="collapse" id="exportSection">
+            <div class="card-body">
+                <div class="alert alert-warning border-warning mb-4">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Important:</strong> Before sharing data publicly, consider copyright (survey questions) and anonymity (participant IDs).
+                    This tool helps you create a shareable, anonymized version of your dataset.
+                </div>
+
+                <form id="exportProjectForm">
+                    <div class="row g-3">
+                        <!-- Anonymization Options -->
+                        <div class="col-12">
+                            <h6 class="mb-3"><i class="fas fa-user-secret me-2"></i>Anonymization</h6>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="exportAnonymize" checked>
+                                <label class="form-check-label fw-bold" for="exportAnonymize">
+                                    Randomize Participant IDs
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Transform subject codes (e.g., sub-001 → sub-R7X2K9) throughout the entire dataset.
+                                A secure mapping file will be included in the export for re-identification if needed.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="exportIdLength" class="form-label">Random ID Length</label>
+                            <select class="form-select form-select-sm" id="exportIdLength">
+                                <option value="6">6 characters (64K combinations)</option>
+                                <option value="8" selected>8 characters (2.8M combinations)</option>
+                                <option value="10">10 characters (100M combinations)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="exportMaskQuestions">
+                                <label class="form-check-label fw-bold" for="exportMaskQuestions">
+                                    Mask Copyrighted Question Text
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Strip original question descriptions from JSON sidecars (survey/biometrics).
+                                Replaces with generic labels like "Question 1", "Question 2", etc.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="exportDeterministic" checked>
+                                <label class="form-check-label" for="exportDeterministic">
+                                    Deterministic Mapping
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Same input always generates same random IDs (useful for reproducibility).
+                            </div>
+                        </div>
+
+                        <!-- Content Options -->
+                        <div class="col-12 mt-4">
+                            <hr>
+                            <h6 class="mb-3"><i class="fas fa-archive me-2"></i>Export Content</h6>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Include in Export:</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportRawdata" checked disabled>
+                                <label class="form-check-label" for="exportRawdata">
+                                    <code>rawdata/</code> - Raw experimental data
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportDerivatives" checked>
+                                <label class="form-check-label" for="exportDerivatives">
+                                    <code>derivatives/</code> - Processed data
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportCode" checked>
+                                <label class="form-check-label" for="exportCode">
+                                    <code>code/</code> - Analysis scripts and recipes
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportAnalysis">
+                                <label class="form-check-label" for="exportAnalysis">
+                                    <code>analysis/</code> - Results and reports
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Metadata:</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportMetadata" checked disabled>
+                                <label class="form-check-label" for="exportMetadata">
+                                    Project metadata files (dataset_description.json, README, etc.)
+                                </label>
+                            </div>
+                            <div class="form-text small text-muted ms-4">
+                                Mapping file will always be included if anonymization is enabled.
+                            </div>
+                        </div>
+
+                        <!-- Export Button -->
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="fas fa-download me-2"></i>Export & Download Project
+                            </button>
+                            <div class="form-text mt-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                This will create a ZIP file with your selected options. Large datasets may take a few minutes.
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Export Progress -->
+                <div id="exportProgress" class="mt-4" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-spinner fa-spin me-2"></i>
+                        <span id="exportStatusText">Preparing export...</span>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" id="exportProgressBar" style="width: 0%">
+                            <span id="exportProgressText">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Result -->
+                <div id="exportResult" class="mt-4" style="display: none;"></div>
+            </div>
         </div>
     </div>
 
@@ -1001,6 +1162,7 @@
                 currentProjectName = result.current_project.name;
                 await initParticipantsStatus();
                 await loadProjectMetadata();
+                showExportCard();
             } else {
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
@@ -1178,6 +1340,7 @@
             currentProjectName = result.current_project.name;
             await initParticipantsStatus();
             await loadProjectMetadata();
+            showExportCard();
 
         } catch (error) {
             document.getElementById('validationResult').innerHTML = `
@@ -1652,5 +1815,111 @@
             `;
         }
     }
+
+    // ===== DATA EXPORT / SHARE =====
+    function showExportCard() {
+        const card = document.getElementById('exportProjectCard');
+        if (!card) return;
+        
+        if (currentProjectPath) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    }
+
+    // Handle Export Form Submission
+    document.getElementById('exportProjectForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        if (!currentProjectPath) {
+            alert('No project is currently loaded');
+            return;
+        }
+
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Preparing Export...';
+
+        // Show progress UI
+        const progressDiv = document.getElementById('exportProgress');
+        const resultDiv = document.getElementById('exportResult');
+        progressDiv.style.display = 'block';
+        resultDiv.style.display = 'none';
+
+        const data = {
+            project_path: currentProjectPath,
+            anonymize: document.getElementById('exportAnonymize').checked,
+            mask_questions: document.getElementById('exportMaskQuestions').checked,
+            id_length: parseInt(document.getElementById('exportIdLength').value),
+            deterministic: document.getElementById('exportDeterministic').checked,
+            include_derivatives: document.getElementById('exportDerivatives').checked,
+            include_code: document.getElementById('exportCode').checked,
+            include_analysis: document.getElementById('exportAnalysis').checked
+        };
+
+        try {
+            const response = await fetch('/api/projects/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Export failed');
+            }
+
+            // Get the filename from response headers
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = 'project-export.zip';
+            if (contentDisposition) {
+                const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+                if (matches && matches[1]) {
+                    filename = matches[1].replace(/['"]/g, '');
+                }
+            }
+
+            // Download the file
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            progressDiv.style.display = 'none';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-check-circle me-2"></i>Export Successful!</h5>
+                    <p class="mb-2">Your project has been exported to: <strong>${filename}</strong></p>
+                    ${data.anonymize ? `
+                        <div class="alert alert-warning py-2 mt-2 mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Security Notice:</strong> The export includes a <code>participants_mapping.json</code> file 
+                            that can be used to re-identify participants. Keep this file secure!
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        } catch (error) {
+            progressDiv.style.display = 'none';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>Export Failed</h5>
+                    <p class="mb-0">${error.message}</p>
+                </div>
+            `;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    });
 </script>
 {% endblock %}

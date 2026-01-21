@@ -845,3 +845,87 @@ def get_participants_templates():
         "tips": tips,
         "categories": list(templates.keys())
     })
+
+
+@projects_bp.route("/api/projects/export", methods=["POST"])
+def export_project():
+    """
+    Export the current project as a ZIP file with optional anonymization.
+    
+    Expected JSON body:
+    {
+        "project_path": "/path/to/project",  
+        "anonymize": true,
+        "mask_questions": true,
+        "id_length": 8,
+        "deterministic": true,
+        "include_derivatives": true,
+        "include_code": true,
+        "include_analysis": false
+    }
+    """
+    import tempfile
+    from flask import send_file
+    from src.web.export_project import export_project as do_export
+    
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+        
+        project_path = data.get("project_path")
+        if not project_path or not os.path.exists(project_path):
+            return jsonify({"error": "Invalid project path"}), 400
+        
+        project_path = Path(project_path)
+        
+        # Get export options
+        anonymize = bool(data.get("anonymize", True))
+        mask_questions = bool(data.get("mask_questions", True))
+        id_length = int(data.get("id_length", 8))
+        deterministic = bool(data.get("deterministic", True))
+        include_derivatives = bool(data.get("include_derivatives", True))
+        include_code = bool(data.get("include_code", True))
+        include_analysis = bool(data.get("include_analysis", False))
+        
+        # Create temporary file for ZIP
+        temp_fd, temp_path = tempfile.mkstemp(suffix='.zip')
+        os.close(temp_fd)
+        
+        try:
+            # Perform export
+            stats = do_export(
+                project_path=project_path,
+                output_zip=Path(temp_path),
+                anonymize=anonymize,
+                mask_questions=mask_questions,
+                id_length=id_length,
+                deterministic=deterministic,
+                include_derivatives=include_derivatives,
+                include_code=include_code,
+                include_analysis=include_analysis
+            )
+            
+            # Generate filename
+            project_name = project_path.name
+            anon_suffix = "_anonymized" if anonymize else ""
+            filename = f"{project_name}{anon_suffix}_export.zip"
+            
+            # Send file
+            return send_file(
+                temp_path,
+                mimetype='application/zip',
+                as_attachment=True,
+                download_name=filename
+            )
+            
+        except Exception as e:
+            # Clean up temp file on error
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+            raise
+            
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
