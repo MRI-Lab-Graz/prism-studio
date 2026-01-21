@@ -895,9 +895,12 @@
             const data = await response.json();
             if (data.path) {
                 document.getElementById('globalLibraryPath').value = data.path;
+            } else if (data.error) {
+                alert('Folder picker unavailable: ' + data.error);
             }
         } catch (error) {
             console.error('Browse error:', error);
+            alert('Failed to open folder picker. Please enter path manually.');
         }
     });
 
@@ -908,9 +911,12 @@
             const data = await response.json();
             if (data.path) {
                 document.getElementById('globalRecipesPath').value = data.path;
+            } else if (data.error) {
+                alert('Folder picker unavailable: ' + data.error);
             }
         } catch (error) {
             console.error('Browse error:', error);
+            alert('Failed to open folder picker. Please enter path manually.');
         }
     });
 
@@ -1046,9 +1052,12 @@
             const data = await response.json();
             if (data.path) {
                 document.getElementById('projectPath').value = data.path;
+            } else if (data.error) {
+                alert('Folder picker unavailable: ' + data.error);
             }
         } catch (error) {
             console.error('Browse error:', error);
+            alert('Failed to open folder picker. Please enter path manually.');
         }
     });
 
@@ -1059,9 +1068,12 @@
             const data = await response.json();
             if (data.path) {
                 document.getElementById('existingPath').value = data.path;
+            } else if (data.error) {
+                alert('Folder picker unavailable: ' + data.error);
             }
         } catch (error) {
             console.error('Browse error:', error);
+            alert('Failed to open folder picker. Please enter path manually.');
         }
     });
 

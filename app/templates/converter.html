@@ -1650,7 +1650,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.path) {
                         convertLibraryPathInput.value = data.path;
                         refreshConvertLanguages();
+                    } else if (data.error) {
+                        alert('Folder picker unavailable: ' + data.error);
                     }
+                })
+                .catch(err => {
+                    console.error('Browse error:', err);
+                    alert('Failed to open folder picker. Please enter path manually.');
                 });
         });
     }
@@ -1662,7 +1668,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     if (data.path && biometricsLibraryPathInput) {
                         biometricsLibraryPathInput.value = data.path;
+                    } else if (data.error) {
+                        alert('Folder picker unavailable: ' + data.error);
                     }
+                })
+                .catch(err => {
+                    console.error('Browse error:', err);
+                    alert('Failed to open folder picker. Please enter path manually.');
                 });
         });
     }

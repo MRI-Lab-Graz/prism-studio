@@ -235,7 +235,15 @@ document.addEventListener('DOMContentLoaded', function() {
     fetch('/api/browse-folder')
       .then(r => r.json())
       .then(data => {
-        if (data.path) derivDatasetPath.value = data.path;
+        if (data.path) {
+          derivDatasetPath.value = data.path;
+        } else if (data.error) {
+          alert('Folder picker unavailable: ' + data.error);
+        }
+      })
+      .catch(err => {
+        console.error('Browse error:', err);
+        alert('Failed to open folder picker. Please enter path manually.');
       });
   });
 
@@ -246,8 +254,17 @@ document.addEventListener('DOMContentLoaded', function() {
       fetch('/api/browse-folder')
         .then(r => r.json())
         .then(data => {
-          if (data.path) derivRecipeFolder.value = data.path;
+          if (data.path) {
+            derivRecipeFolder.value = data.path;
+          } else if (data.error) {
+            alert('Folder picker unavailable: ' + data.error);
+          }
+        })
+        .catch(err => {
+          console.error('Browse error:', err);
+          alert('Failed to open folder picker. Please enter path manually.');
         });
+    });
     });
   }
 

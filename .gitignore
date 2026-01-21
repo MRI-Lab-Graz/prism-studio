@@ -81,6 +81,7 @@ test_dataset/Biometrics_dummy_data_long.csv
 consistent_test_dataset/
 test_dataset/
 .local/
+backup/*
 
 # Added by fix script
 .env
