@@ -5,9 +5,10 @@
 .DESCRIPTION
     This script will:
     1. Check if 'uv' is installed.
-    2. Create a virtual environment in .\.venv
-    3. Install dependencies from requirements.txt into the virtual environment.
-    4. Optional: Install build and/or developer dependencies.
+    2. Check if tkinter is available (required for folder picker).
+    3. Create a virtual environment in .\.venv
+    4. Install dependencies from requirements.txt into the virtual environment.
+    5. Optional: Install build and/or developer dependencies.
 
 .PARAMETER Build
     Include dependencies required for building the standalone executable.
@@ -49,6 +50,11 @@ function Write-Success {
     Write-Host "✅ $Message" -ForegroundColor Green
 }
 
+function Write-Warning {
+    param([string]$Message)
+    Write-Host "⚠️  $Message" -ForegroundColor Yellow
+}
+
 # --- Main Script ---
 Write-Info "Starting project setup for prism (Windows)..."
 
@@ -78,6 +84,20 @@ if (-not (Get-Command "uv" -ErrorAction SilentlyContinue)) {
 } else {
     Write-Info "'uv' is installed."
     $UseUv = $true
+}
+
+# 1b. Check for tkinter (required for folder picker in web interface)
+Write-Info "Checking for tkinter (required for folder picker)..."
+$tkinterCheck = python -c "import tkinter; print('OK')" 2>&1
+if ($tkinterCheck -match "OK") {
+    Write-Success "tkinter is available"
+} else {
+    Write-Warning "tkinter is NOT available"
+    Write-Warning "The web interface folder picker will not work."
+    Write-Warning "To fix: Reinstall Python and ensure 'tcl/tk and IDLE' is checked."
+    Write-Warning "Or continue without it - you can enter paths manually."
+    Write-Info "Press Enter to continue anyway, or Ctrl+C to abort..."
+    Read-Host
 }
 
 # --- Common logic for using uv or python ---

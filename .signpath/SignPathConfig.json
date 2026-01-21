@@ -1,0 +1,29 @@
+{
+  "$schema": "https://signpath.io/schemas/SignPathConfig-v1.json",
+  "ElementTypes": [
+    {
+      "Name": "PrismValidator",
+      "Kind": "PortableExecutable"
+    }
+  ],
+  "ArtifactConfigurations": [
+    {
+      "Id": "windows-executable",
+      "Description": "PRISM Validator Windows Executable",
+      "PathMatching": {
+        "Include": [
+          "dist/PrismValidator/PrismValidator.exe"
+        ]
+      },
+      "ElementsConfiguration": {
+        "Elements": [
+          {
+            "Type": "PrismValidator",
+            "Path": "PrismValidator.exe",
+            "DeepSign": true
+          }
+        ]
+      }
+    }
+  ]
+}

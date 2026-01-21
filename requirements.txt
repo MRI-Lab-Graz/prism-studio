@@ -1,3 +1,4 @@
+# Core dependencies
 jsonschema
 Pillow
 numpy
@@ -12,6 +13,11 @@ openpyxl
 waitress
 pyreadstat
 beautifulsoup4
+
+# Note: tkinter (required for folder picker on Windows/Linux) is part of Python's
+# standard library but requires system installation. Cannot be installed via pip.
+# Windows: Ensure "tcl/tk and IDLE" is checked when installing Python
+# Linux: Install python3-tk package (e.g., sudo apt-get install python3-tk)
 
 # Documentation
 sphinx
