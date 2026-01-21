@@ -111,46 +111,25 @@ class ProjectManager:
             CrossPlatformFile.write_text(str(desc_path), json.dumps(desc_content, indent=2))
             created_files.append("rawdata/dataset_description.json")
 
-            # 2. Create participants.tsv in rawdata/
-            tsv_path = rawdata_path / "participants.tsv"
-            tsv_content = self._create_participants_tsv()
-            CrossPlatformFile.write_text(str(tsv_path), tsv_content)
-            created_files.append("rawdata/participants.tsv")
-
-            # 3. Copy participants.json template to rawdata/
-            json_path = rawdata_path / "participants.json"
-            template_json = self.template_dir / "participants.json"
-            if template_json.exists():
-                shutil.copy(str(template_json), str(json_path))
-            else:
-                # Create minimal template if demo file doesn't exist
-                minimal = {
-                    "participant_id": {"Description": "Unique participant identifier"},
-                    "age": {"Description": "Age of participant", "Unit": "years"},
-                    "sex": {"Description": "Biological sex", "Levels": {"M": "Male", "F": "Female"}}
-                }
-                CrossPlatformFile.write_text(str(json_path), json.dumps(minimal, indent=2))
-            created_files.append("rawdata/participants.json")
-
-            # 4. Create .bidsignore in rawdata/
+            # 2. Create .bidsignore in rawdata/
             bidsignore_path = rawdata_path / ".bidsignore"
             bidsignore_content = self._create_bidsignore(modalities)
             CrossPlatformFile.write_text(str(bidsignore_path), bidsignore_content)
             created_files.append("rawdata/.bidsignore")
 
-            # 5. Create .prismrc.json in root (controls project-wide validation)
+            # 3. Create .prismrc.json in root (controls project-wide validation)
             prismrc_path = project_path / ".prismrc.json"
             prismrc_content = self._create_prismrc()
             CrossPlatformFile.write_text(str(prismrc_path), json.dumps(prismrc_content, indent=2))
             created_files.append(".prismrc.json")
 
-            # 6. Create README.md in root
+            # 4. Create README.md in root
             readme_path = project_path / "README.md"
             readme_content = self._create_readme(name, sessions, modalities)
             CrossPlatformFile.write_text(str(readme_path), readme_content)
             created_files.append("README.md")
 
-            # 7. Create project governance files in root
+            # 5. Create project governance files in root
             project_metadata_path = project_path / "project.json"
             project_metadata = self._create_project_metadata(name, config)
             CrossPlatformFile.write_text(
@@ -170,25 +149,27 @@ class ProjectManager:
             CrossPlatformFile.write_text(str(citation_path), citation_content)
             created_files.append("CITATION.cff")
 
-            # 8. Create CHANGES file in rawdata/
+            # 6. Create CHANGES file in rawdata/
             changes_path = rawdata_path / "CHANGES"
             changes_content = f"1.0.0 {date.today().isoformat()}\n  - Initial dataset structure created and validated via PRISM.\n"
             CrossPlatformFile.write_text(str(changes_path), changes_content)
             created_files.append("rawdata/CHANGES")
 
-            # 9. Create YODA standard folders (sourcedata, derivatives, analysis, paper, code)
-            yoda_folders = self._create_yoda_folders(project_path)
-            created_files.extend(yoda_folders)
+            # 7. Create essential folders only (sourcedata, derivatives)
+            # sourcedata/
+            sourcedata_path = project_path / "sourcedata"
+            sourcedata_path.mkdir(exist_ok=True)
+            created_files.append("sourcedata/")
 
-            # 10. Create data dictionary template in sourcedata/
-            data_dictionary_path = project_path / "sourcedata" / "data_dictionary.tsv"
-            data_dictionary_content = self._create_data_dictionary()
-            CrossPlatformFile.write_text(str(data_dictionary_path), data_dictionary_content)
-            created_files.append("sourcedata/data_dictionary.tsv")
+            # derivatives/
+            derivatives_path = project_path / "derivatives"
+            derivatives_path.mkdir(exist_ok=True)
+            created_files.append("derivatives/")
 
-            # 11. Create library & recipe folder structure in project root
-            library_files = self._create_library_structure(project_path, modalities)
-            created_files.extend(library_files)
+            # code/ - minimal, for user scripts
+            code_path = project_path / "code"
+            code_path.mkdir(exist_ok=True)
+            created_files.append("code/")
 
             return {
                 "success": True,
