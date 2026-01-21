@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
 Test script to verify SPSS .sav file anonymization with existing mapping.
+
+Usage:
+    python test_sav_anonymization.py <dataset_path> [sav_filename]
 """
 import sys
 import json
@@ -12,11 +15,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 import pandas as pd
 import pyreadstat
 
-def test_sav_anonymization():
-    """Test anonymization on a single .sav file."""
+def test_sav_anonymization(dataset_path: str, sav_filename: str = "recipe-maia.sav"):
+    """Test anonymization on a single .sav file.
+    
+    Args:
+        dataset_path: Path to the dataset root directory
+        sav_filename: Name of the .sav file to test (default: recipe-maia.sav)
+    """
     
     # Paths
-    dataset = Path("/Users/karl/work/Dann_and_Brain")
+    dataset = Path(dataset_path)
     derivatives = dataset / "derivatives" / "survey"
     mapping_file = derivatives / "participants_mapping.json"
     sav_file = derivatives / "recipe-maia.sav"
@@ -87,14 +95,20 @@ def test_sav_anonymization():
     return True
 
 
-if __name__ == "__main__":
-    print("=" * 70)
+if __name__ == "__main__":    if len(sys.argv) < 2:
+        print("Usage: python test_sav_anonymization.py <dataset_path> [sav_filename]")
+        print("Example: python test_sav_anonymization.py /path/to/Dann_and_Brain recipe-maia.sav")
+        sys.exit(1)
+    
+    dataset_path = sys.argv[1]
+    sav_filename = sys.argv[2] if len(sys.argv) > 2 else "recipe-maia.sav"
+        print("=" * 70)
     print("SPSS File Anonymization Test")
     print("=" * 70)
     print()
     
     try:
-        success = test_sav_anonymization()
+        success = test_sav_anonymization(dataset_path, sav_filename)
         sys.exit(0 if success else 1)
     except Exception as e:
         print(f"\n❌ Error: {e}")
