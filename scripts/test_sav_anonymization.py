@@ -95,14 +95,15 @@ def test_sav_anonymization(dataset_path: str, sav_filename: str = "recipe-maia.s
     return True
 
 
-if __name__ == "__main__":    if len(sys.argv) < 2:
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
         print("Usage: python test_sav_anonymization.py <dataset_path> [sav_filename]")
         print("Example: python test_sav_anonymization.py /path/to/Dann_and_Brain recipe-maia.sav")
         sys.exit(1)
     
     dataset_path = sys.argv[1]
     sav_filename = sys.argv[2] if len(sys.argv) > 2 else "recipe-maia.sav"
-        print("=" * 70)
+    print("=" * 70)
     print("SPSS File Anonymization Test")
     print("=" * 70)
     print()
