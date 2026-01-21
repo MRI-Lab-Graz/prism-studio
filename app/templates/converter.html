@@ -448,27 +448,35 @@
                                 </div>
                             </div>
 
-                            <div class="row g-3 align-items-end">
-                                <div class="col-md-4">
+                            <!-- Row 1: File upload -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-12">
                                     <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa, .lss)</label>
                                     <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv,.lss">
                                     <div class="form-text" id="convertFileHint">
                                         <span class="text-info"><i class="fas fa-info-circle me-1"></i>LimeSurvey (.lss/.lsa) or Data Dictionary (.xlsx/.csv/.tsv)</span>
                                     </div>
                                 </div>
-                                <div class="col-md-4" id="convertDatasetNameGroup">
+                            </div>
+
+                            <!-- Row 2: Dataset name and language -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-12" id="convertDatasetNameGroup">
                                     <label for="convertDatasetName" class="form-label">Dataset/Survey Name (optional)</label>
                                     <input type="text" class="form-control" id="convertDatasetName" placeholder="e.g. phq9">
                                 </div>
-                                <div class="col-md-4" id="convertLanguageGroup">
+                                <div class="col-md-6" id="convertLanguageGroup">
                                     <label for="convertLanguage" class="form-label">Language</label>
                                     <select class="form-select" id="convertLanguage">
                                         <option value="auto" selected>Auto (template default)</option>
                                     </select>
                                 </div>
+                            </div>
 
+                            <!-- Row 3: Participant ID (data conversion) or Template export (template generation) -->
+                            <div class="row g-3 mb-3">
                                 <!-- Participant ID selector (for data conversion) -->
-                                <div class="col-md-4" id="convertIdColumnGroup">
+                                <div class="col-12" id="convertIdColumnGroup">
                                     <label for="convertIdColumn" class="form-label">
                                         Participant ID Column
                                         <span id="idColumnStatus" class="ms-2 small"></span>
@@ -482,7 +490,7 @@
                                 </div>
 
                                 <!-- Template export mode (for template generation) -->
-                                <div class="col-md-4 d-none" id="convertTemplateExportGroup">
+                                <div class="col-12 d-none" id="convertTemplateExportGroup">
                                     <label class="form-label">Template Export</label>
                                     <select class="form-select" id="convertTemplateExport">
                                         <option value="groups" selected>By questionnaire group</option>
@@ -490,12 +498,16 @@
                                         <option value="combined">Combined (single file)</option>
                                     </select>
                                 </div>
+                            </div>
 
-                                <div class="col-md-4">
+                            <!-- Row 4: Convert button -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-12">
                                     <button class="btn btn-warning text-white w-100" type="button" id="convertBtn" disabled>
                                         <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
                                     </button>
                                 </div>
+                            </div>
 
                                 {% if current_project.path %}
                                 <div class="col-12 mt-2">
