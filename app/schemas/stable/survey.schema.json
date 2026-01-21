@@ -387,14 +387,14 @@
       },
       "AliasOf": {
         "type": "string",
-        "description": "Column name of the canonical item this is an alias for (used during conversion)"
+        "description": "If this item is just another name for an existing item, specify the canonical item ID here. Use when the same question appears with different IDs in your data (e.g., 'depression_q1' → 'phq9_q1'). Leave empty for canonical items."
       },
       "Aliases": {
         "type": "array",
         "items": {
           "type": "string"
         },
-        "description": "Alternative column names that use this same definition"
+        "description": "List of alternative IDs that refer to this same item. Only needed if you're the canonical item and want to document other names used elsewhere (opposite of AliasOf)."
       },
       "Levels": {
         "type": "object",
