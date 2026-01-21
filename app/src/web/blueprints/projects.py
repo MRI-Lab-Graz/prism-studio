@@ -366,15 +366,17 @@ def get_library_path():
         app_root=str(app_root)
     )
 
-    # Project's own library folder (YODA layout)
-    project_library = project_path / "library"
-    legacy_library = project_path / "code" / "library"
+    # Project's own library folder
+    # YODA-compliant: code/library (preferred)
+    # Legacy: library/ at root (for backward compatibility only)
+    yoda_library = project_path / "code" / "library"
+    legacy_library = project_path / "library"
 
     # For legacy compatibility, provide a single "library_path" that works for conversion
-    # Prefer project library if it exists, otherwise use external library
+    # ALWAYS prefer YODA layout (code/library) if it exists
     legacy_library_path = None
-    if project_library.exists():
-        legacy_library_path = str(project_library)
+    if yoda_library.exists():
+        legacy_library_path = str(yoda_library)
     elif legacy_library.exists():
         legacy_library_path = str(legacy_library)
     elif library_info.get("effective_external_path"):
