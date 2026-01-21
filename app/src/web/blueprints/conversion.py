@@ -306,8 +306,9 @@ def api_survey_convert():
             if p_path:
                 p_path = Path(p_path)
                 if p_path.exists():
-                    # Prefer rawdata/ if it exists (BIDS/YODA standard)
-                    dest_root = p_path / "rawdata" if (p_path / "rawdata").is_dir() else p_path
+                    # Prefer rawdata/ (BIDS/YODA standard), create if needed
+                    dest_root = p_path / "rawdata"
+                    dest_root.mkdir(parents=True, exist_ok=True)
                     
                     # Merge output_root contents into dest_root
                     for item in output_root.rglob("*"):
@@ -539,8 +540,9 @@ def api_survey_convert_validate():
             if project_path:
                 project_path = Path(project_path)
                 if project_path.exists():
-                    # Prefer rawdata/ if it exists (BIDS/YODA standard)
-                    dest_root = project_path / "rawdata" if (project_path / "rawdata").is_dir() else project_path
+                    # Prefer rawdata/ (BIDS/YODA standard), create if needed
+                    dest_root = project_path / "rawdata"
+                    dest_root.mkdir(parents=True, exist_ok=True)
                     add_log(f"Saving output to project: {project_path.name} (into {dest_root.name}/)", "info")
                     
                     # Merge output_root contents into dest_root
