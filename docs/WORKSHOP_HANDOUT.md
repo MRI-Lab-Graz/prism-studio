@@ -1,13 +1,28 @@
-# PRISM Workshop Handout: GUI-Based Data Workflow
+# PRISM Workshop Handout: Wellbeing Survey Analysis
 
 Welcome to the PRISM Hands-on Workshop! This handout contains all the step-by-step instructions you need to complete the workshop exercises using the graphical interface (PRISM Studio).
 
 **Workshop Goals:**
-- Convert raw research data to BIDS/PRISM structure
+- Set up a research project following YODA principles
+- Convert raw wellbeing survey data (Excel) to BIDS/PRISM structure
 - Create proper JSON metadata (sidecars)
-- Use recipes to calculate scores and export to SPSS
+- Use recipes to calculate wellbeing scores and export to SPSS
 
+**Example Dataset:** WHO-5 Well-Being Index survey data  
 **All tasks will be completed through the GUI - no command line required!**
+
+---
+
+## 0. Workshop Overview
+
+This workshop follows a complete research data workflow:
+
+| Exercise | Task | Time | Outcome |
+|----------|------|------|---------|
+| **0** | Project Setup (YODA) | 15 min | Organized project structure |
+| **1** | Convert Raw Data | 30 min | PRISM-formatted dataset |
+| **2** | Validate & Fix Metadata | 25 min | Complete, valid metadata |
+| **3** | Apply Recipes & Export | 20 min | SPSS file with calculated scores |
 
 ---
 
@@ -15,18 +30,22 @@ Welcome to the PRISM Hands-on Workshop! This handout contains all the step-by-st
 
 ### Launching PRISM Studio
 
-**If you have PRISM installed locally:**
+**Windows Users:**
+1. Locate the **`PrismValidator.exe`** file
+2. Double-click to launch
+3. Your browser should open to: **`http://localhost:5001`**
+
+**If you installed from source:**
+```powershell
+# Windows PowerShell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+.\.venv\Scripts\Activate.ps1
+python prism-studio.py
+```
+
 ```bash
-# Navigate to the PRISM directory
-cd /path/to/psycho-validator
-
-# Activate the virtual environment
-# macOS/Linux:
+# macOS/Linux
 source .venv/bin/activate
-# Windows:
-.\.venv\Scripts\activate
-
-# Launch PRISM Studio
 python prism-studio.py
 ```
 
@@ -37,17 +56,72 @@ Your instructor will provide the URL (e.g., `http://workshop-server:5001`)
 
 ---
 
-## 2. Exercise 1: Converting Raw Data to BIDS Structure
+## 2. Exercise 0: Project Setup with YODA
+
+**Time:** ~15 minutes  
+**Goal:** Create an organized research project following YODA principles
+
+### What is YODA?
+
+**YODA** (Yet anOther Data Analysis) is a project organization framework:
+- **Separates** raw data, analysis code, and results
+- **Preserves** original data files (never modified)
+- **Enables** reproducibility and version control
+- **Simplifies** collaboration and sharing
+
+### Step-by-Step: Create Your Project
+
+#### Step 1: Navigate to Projects Page
+1. In PRISM Studio, click on **"Projects"** in the sidebar
+2. Or go to: **http://localhost:5001/projects**
+
+#### Step 2: Create New Project
+1. Find the **"Create New Project"** section
+2. **Project Name:** `Wellbeing_Study_Workshop`
+3. **Location:** Choose a folder (e.g., Desktop or Documents)
+4. **Template:** Select **"YODA Structure"** (if available)
+5. Click **"Create & Activate"**
+
+#### Step 3: Review the Structure
+Your project now has this folder structure:
+```
+Wellbeing_Study_Workshop/
+├── sourcedata/          # Original Excel/CSV files (never edit!)
+├── rawdata/             # PRISM-formatted BIDS data
+│   ├── dataset_description.json
+│   └── participants.tsv
+├── code/                # Analysis scripts
+├── derivatives/         # Computed results (scores, SPSS exports)
+└── README.md
+```
+
+**What goes where:**
+- **sourcedata/** - Your original `wellbeing.xlsx` file
+- **rawdata/** - Converted PRISM format (Exercise 1)
+- **derivatives/** - Calculated scores and exports (Exercise 3)
+
+#### Step 4: Verify Active Project
+Check that the top of the screen shows: **Active Project: Wellbeing_Study_Workshop**
+
+**✓ Exercise 0 Complete!** You now have a properly organized research project.
+
+---
+
+## 3. Exercise 1: Converting Raw Data to PRISM
 
 **Time:** ~30 minutes  
-**Goal:** Transform unstructured CSV files into a valid BIDS/PRISM dataset
+**Goal:** Transform Excel wellbeing survey data into BIDS/PRISM format
 
 ### Starting Materials
-Navigate to: `demo/workshop/exercise_1_raw_to_bids/raw_data/`
-- `participants_raw.tsv` - Demographic information (tab-delimited, matches template IDs)
-- `phq9_scores.tsv` - Depression questionnaire responses (tab-delimited, columns `phq9_01`–`phq9_09`)
-### Backups (Original CSVs)
-Need to restore a clean workspace?
+Location: `examples/workshop/exercise_1_raw_data/raw_data/`
+- **wellbeing.xlsx** (or wellbeing.tsv) - WHO-5 survey responses
+
+**File contents:**
+- `participant_id` - Subject identifiers (DEMO001, DEMO002, ...)
+- `session` - Session labels (baseline)
+- Demographics: `age`, `sex`, `education`, `handedness`
+- Survey items: `WB01`, `WB02`, `WB03`, `WB04`, `WB05`
+- `completion_date` - When survey was completed
 - `demo/workshop/raw_material/participants_raw.csv`
 - `demo/workshop/raw_material/phq9_scores.csv`
 
