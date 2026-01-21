@@ -1,5 +1,7 @@
 {
   "globalLibraryRoot": "",
+  "globalTemplateLibraryPath": "/Users/karl/work/github/psycho-validator/official/",
+  "globalRecipesPath": "/Users/karl/work/github/psycho-validator/official/",
   "defaultModalities": [
     "survey",
     "biometrics"

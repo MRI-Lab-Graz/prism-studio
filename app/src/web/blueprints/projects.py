@@ -390,8 +390,8 @@ def get_library_path():
         "project_name": current.get("name"),
 
         # Dual library system
-        "project_library_path": str(project_library),
-        "project_library_exists": project_library.exists(),
+        "project_library_path": str(yoda_library) if yoda_library.exists() else (str(legacy_library) if legacy_library.exists() else None),
+        "project_library_exists": yoda_library.exists() or legacy_library.exists(),
         "global_library_path": library_info.get("global_library_path") or effective_global_path,
         "effective_external_path": library_info.get("effective_external_path"),
         "external_source": library_info.get("source"),  # 'project', 'global', or 'default'
@@ -401,9 +401,9 @@ def get_library_path():
 
         # Structure info
         "structure": {
-            "has_project_library": project_library.exists() or legacy_library.exists(),
-            "has_survey": (project_library / "survey").exists() if project_library.exists() else (legacy_library / "survey").exists(),
-            "has_biometrics": (project_library / "biometrics").exists() if project_library.exists() else (legacy_library / "biometrics").exists(),
+            "has_project_library": yoda_library.exists() or legacy_library.exists(),
+            "has_survey": (yoda_library / "survey").exists() if yoda_library.exists() else (legacy_library / "survey").exists(),
+            "has_biometrics": (yoda_library / "biometrics").exists() if yoda_library.exists() else (legacy_library / "biometrics").exists(),
             "has_participants": (project_path / "rawdata" / "participants.json").exists(),
             "has_external_library": library_info.get("effective_external_path") is not None,
         }

@@ -960,6 +960,13 @@
                 `;
             }
 
+            // Broadcast event so other pages can refresh
+            if (result.success) {
+                window.dispatchEvent(new CustomEvent('prism-library-settings-changed', {
+                    detail: { global_library_path: document.getElementById('globalLibraryPath').value }
+                }));
+            }
+
             // Auto-hide success message after 3 seconds
             setTimeout(() => {
                 if (result.success) {
@@ -1021,6 +1028,11 @@
                     </div>
                 `;
                 updateLibraryInfoPanel(null, null);
+
+                // Broadcast event so other pages can refresh
+                window.dispatchEvent(new CustomEvent('prism-library-settings-changed', {
+                    detail: { global_library_path: null }
+                }));
 
                 setTimeout(() => {
                     document.getElementById('libraryStatusMessage').innerHTML = '';
