@@ -358,9 +358,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     annotatedData[colName].Description = desc;
                 }
                 
-                // Add units if available (for continuous variables)
+                // Add unit if available (for continuous variables)
                 if (colData.unit) {
-                    annotatedData[colName].Units = colData.unit;
+                    annotatedData[colName].Unit = colData.unit;
                 }
                 
                 // Add levels if available (for categorical variables)

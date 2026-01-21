@@ -798,6 +798,7 @@
         loadLibraryInfo();
         initParticipantsStatus();
         loadProjectMetadata();
+        showExportCard();
 
         // Update chevron icons on collapse toggle
         const sections = [
@@ -1666,9 +1667,9 @@
                 Description: colData.description || colData.Description || ""
             };
             
-            // BIDS Standard: Units
+            // BIDS Standard: Unit
             if (colData.unit) {
-                annotatedData[colName].Units = colData.unit;
+                annotatedData[colName].Unit = colData.unit;
             }
             
             // BIDS Standard: Levels

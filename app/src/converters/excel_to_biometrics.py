@@ -507,7 +507,7 @@ def process_excel_biometrics(
                 and not (isinstance(description, float) and pd.isna(description))
                 else var_name
             ),
-            "Units": units,
+            "Unit": units,
             "DataType": dtype,
         }
 
