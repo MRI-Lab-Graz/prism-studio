@@ -1,20 +1,15 @@
 {
-  "RecipeVersion": "1.0.0",
+  "RecipeVersion": "1.0",
   "Kind": "survey",
   "Survey": {
     "Name": "Wellbeing",
-    "Reference": "survey-wellbeing.json",
-    "Note": "Workshop version using WB01-WB05 column names (maps to WHO-5 items)"
+    "TaskName": "wellbeing",
+    "Description": "WHO-5 Well-Being Index adaptation for workshop"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Wellbeing (WHO-5 Well-Being Index)",
-        "de": "Gesamtscore für Wohlbefinden (WHO-5 Well-Being Index)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Wellbeing (WHO-5 Well-Being Index)",
       "Items": [
         "WB01",
         "WB02",
@@ -28,7 +23,7 @@
         "max": 35
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {
