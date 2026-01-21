@@ -1,28 +1,79 @@
 # PRISM Workshop Demo Data
 
-This folder contains materials for the PRISM hands-on workshop.
+This folder contains materials for the PRISM hands-on workshop focused on **wellbeing survey analysis** using the WHO-5 Well-Being Index.
 
-## Exercises
+## 📚 Workshop Documentation
 
-### 0. Exercise 0: Project Setup
-- **Goal:** Launch app and create project.
-- **Key URL:** http://localhost:5001/projects
+- **[WORKSHOP_HANDOUT_WELLBEING.md](WORKSHOP_HANDOUT_WELLBEING.md)** - Complete step-by-step guide for participants
+- **[PREPARATION.md](PREPARATION.md)** - Setup checklist for instructors
+- **[STRUCTURE.md](STRUCTURE.md)** - Technical details about folder organization
 
-### 1. Exercise 1: Handling Raw Data
-- **Goal:** Convert \`wellbeing.tsv\` and \`fitness_data.tsv\` to BIDS.
-- **Materials:** \`exercise_1_raw_data/raw_data/\`
+## 🎯 Exercises Overview
 
-### 2. Exercise 2: Hunting for Errors
-- **Goal:** Explore 13 messy files to learn about validation.
-- **Materials:** \`exercise_2_hunting_errors/bad_examples/\`
+### Exercise 0: Project Setup (YODA)
+- **Goal:** Create organized research project following YODA principles
+- **Duration:** 15 minutes
+- **Folder:** `exercise_0_project_setup/`
+- **Key Concept:** Separation of raw data, analysis, and results
 
-### 3. Exercise 3: Using Recipes
-- **Goal:** Scoring and SPSS export.
-- **Materials:** Uses data from Exercise 1 and recipes in \`recipes/\`.
+### Exercise 1: Data Conversion
+- **Goal:** Convert `wellbeing.xlsx` to PRISM format
+- **Duration:** 30 minutes  
+- **Materials:** `exercise_1_raw_data/raw_data/wellbeing.xlsx` & `wellbeing.tsv`
+- **Output:** BIDS-structured dataset with participants and survey files
 
-### 4. Exercise 4: Making & Editing Templates
-- **Goal:** Use the Template Editor (Tools menu).
-- **Key URL:** http://localhost:5001/tools/template-editor
+### Exercise 2: Metadata & Validation
+- **Goal:** Add item descriptions and validate dataset
+- **Duration:** 25 minutes
+- **Template:** `exercise_4_templates/survey-wellbeing.json`
+- **Key Concept:** Making data self-documenting and reusable
 
-## Reference Implementation
-- **Folder:** \`reference_solution/\` contains what the dataset should look like after Exercise 1.
+### Exercise 3: Scoring & Export
+- **Goal:** Calculate wellbeing scores and export to SPSS
+- **Duration:** 20 minutes
+- **Recipe:** `exercise_3_using_recipes/recipe-wellbeing.json`
+- **Output:** SPSS file with calculated total scores
+
+## 📁 Quick Reference
+
+### Raw Data
+- **Location:** `exercise_1_raw_data/raw_data/`
+- **Files:** 
+  - `wellbeing.xlsx` - Excel format (recommended for workshop)
+  - `wellbeing.tsv` - Tab-delimited alternative
+  - `fitness_data.tsv` - Optional additional exercise
+
+### Survey Information
+- **Instrument:** WHO-5 Well-Being Index (5 items)
+- **Columns:** WB01, WB02, WB03, WB04, WB05
+- **Scale:** 0-5 (0 = At no time, 5 = All of the time)
+- **Score Range:** 5-35 (sum of all items)
+
+### Templates & Recipes
+- **Survey Template:** `exercise_4_templates/survey-wellbeing.json`
+- **Recipe:** `exercise_3_using_recipes/recipe-wellbeing.json`
+- **Official Library:** `../../official/library/survey/survey-who5.json`
+- **Official Recipe:** `../../official/recipe/survey/recipe-who5.json`
+
+## 🚀 Getting Started
+
+1. **Read:** [WORKSHOP_HANDOUT_WELLBEING.md](WORKSHOP_HANDOUT_WELLBEING.md)
+2. **Launch:** PRISM Studio (`python prism-studio.py`)
+3. **Start:** Exercise 0 - Create your project
+4. **Follow:** Step-by-step instructions in each exercise folder
+
+## 💡 Tips for Instructors
+
+- Allow 90-120 minutes total for all exercises
+- Emphasize YODA principles in Exercise 0
+- Show the raw data file first so participants understand what they're converting
+- Have participants validate after Exercise 1 to see what's missing
+- Use Exercise 2 to teach importance of metadata
+- Demonstrate SPSS export in Exercise 3 with value labels
+
+## 📖 Additional Resources
+
+- **CLI Reference:** `../../docs/CLI_REFERENCE.md`
+- **Web Interface Guide:** `../../docs/WEB_INTERFACE.md`
+- **Survey Library:** `../../docs/SURVEY_LIBRARY.md`
+- **Recipe Creation:** `../../docs/RECIPES.md`

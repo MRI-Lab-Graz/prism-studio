@@ -1,0 +1,197 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Wellbeing Survey (WHO-5 adapted)",
+      "de": "Wohlbefindens-Fragebogen (WHO-5 adaptiert)"
+    },
+    "Abbreviation": "WB",
+    "Authors": [
+      "Topp",
+      "C.W.",
+      "Østergaard",
+      "S.D.",
+      "Søndergaard",
+      "S.",
+      "Bech",
+      "P."
+    ],
+    "Year": 2015,
+    "DOI": "10.1159/000376585",
+    "Citation": "Topp, C.W., Østergaard, S.D., Søndergaard, S., & Bech, P. (2015). The WHO-5 Well-Being Index: A Systematic Review of the Literature. Psychotherapy and Psychosomatics, 84, 167-176.",
+    "NumberOfItems": 5,
+    "License": {
+      "en": "Freely available for research purposes",
+      "de": "Frei verfügbar für Forschungszwecke"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/who5.html",
+    "Instructions": {
+      "en": "Please indicate for each of the five statements which is closest to how you have been feeling over the last two weeks. Notice that higher numbers mean better well-being.",
+      "de": "Bitte geben Sie für jede der fünf Aussagen an, welche am ehesten beschreibt, wie Sie sich in den letzten zwei Wochen gefühlt haben. Beachten Sie, dass höhere Zahlen besseres Wohlbefinden bedeuten."
+    }
+  },
+  "WB01": {
+    "Description": {
+      "en": "I have felt cheerful and in good spirits",
+      "de": "Ich habe mich froh und guter Laune gefühlt"
+    },
+    "Reversed": false,
+    "Levels": {
+      "5": {
+        "en": "All of the time",
+        "de": "Die ganze Zeit"
+      },
+      "4": {
+        "en": "Most of the time",
+        "de": "Meistens"
+      },
+      "3": {
+        "en": "More than half the time",
+        "de": "Etwas mehr als die Hälfte der Zeit"
+      },
+      "2": {
+        "en": "Less than half the time",
+        "de": "Etwas weniger als die Hälfte der Zeit"
+      },
+      "1": {
+        "en": "Some of the time",
+        "de": "Ab und zu"
+      },
+      "0": {
+        "en": "At no time",
+        "de": "Zu keinem Zeitpunkt"
+      }
+    }
+  },
+  "WB02": {
+    "Description": {
+      "en": "I have felt calm and relaxed",
+      "de": "Ich habe mich ruhig und entspannt gefühlt"
+    },
+    "Reversed": false,
+    "Levels": {
+      "5": {
+        "en": "All of the time",
+        "de": "Die ganze Zeit"
+      },
+      "4": {
+        "en": "Most of the time",
+        "de": "Meistens"
+      },
+      "3": {
+        "en": "More than half the time",
+        "de": "Etwas mehr als die Hälfte der Zeit"
+      },
+      "2": {
+        "en": "Less than half the time",
+        "de": "Etwas weniger als die Hälfte der Zeit"
+      },
+      "1": {
+        "en": "Some of the time",
+        "de": "Ab und zu"
+      },
+      "0": {
+        "en": "At no time",
+        "de": "Zu keinem Zeitpunkt"
+      }
+    }
+  },
+  "WB03": {
+    "Description": {
+      "en": "I have felt active and vigorous",
+      "de": "Ich habe mich energisch und aktiv gefühlt"
+    },
+    "Reversed": false,
+    "Levels": {
+      "5": {
+        "en": "All of the time",
+        "de": "Die ganze Zeit"
+      },
+      "4": {
+        "en": "Most of the time",
+        "de": "Meistens"
+      },
+      "3": {
+        "en": "More than half the time",
+        "de": "Etwas mehr als die Hälfte der Zeit"
+      },
+      "2": {
+        "en": "Less than half the time",
+        "de": "Etwas weniger als die Hälfte der Zeit"
+      },
+      "1": {
+        "en": "Some of the time",
+        "de": "Ab und zu"
+      },
+      "0": {
+        "en": "At no time",
+        "de": "Zu keinem Zeitpunkt"
+      }
+    }
+  },
+  "WB04": {
+    "Description": {
+      "en": "I woke up feeling fresh and rested",
+      "de": "Ich bin frisch und ausgeruht aufgewacht"
+    },
+    "Reversed": false,
+    "Levels": {
+      "5": {
+        "en": "All of the time",
+        "de": "Die ganze Zeit"
+      },
+      "4": {
+        "en": "Most of the time",
+        "de": "Meistens"
+      },
+      "3": {
+        "en": "More than half the time",
+        "de": "Etwas mehr als die Hälfte der Zeit"
+      },
+      "2": {
+        "en": "Less than half the time",
+        "de": "Etwas weniger als die Hälfte der Zeit"
+      },
+      "1": {
+        "en": "Some of the time",
+        "de": "Ab und zu"
+      },
+      "0": {
+        "en": "At no time",
+        "de": "Zu keinem Zeitpunkt"
+      }
+    }
+  },
+  "WB05": {
+    "Description": {
+      "en": "My daily life has been filled with things that interest me",
+      "de": "Mein Alltag war voller Dinge, die mich interessieren"
+    },
+    "Reversed": false,
+    "Levels": {
+      "5": {
+        "en": "All of the time",
+        "de": "Die ganze Zeit"
+      },
+      "4": {
+        "en": "Most of the time",
+        "de": "Meistens"
+      },
+      "3": {
+        "en": "More than half the time",
+        "de": "Etwas mehr als die Hälfte der Zeit"
+      },
+      "2": {
+        "en": "Less than half the time",
+        "de": "Etwas weniger als die Hälfte der Zeit"
+      },
+      "1": {
+        "en": "Some of the time",
+        "de": "Ab und zu"
+      },
+      "0": {
+        "en": "At no time",
+        "de": "Zu keinem Zeitpunkt"
+      }
+    }
+  }
+}

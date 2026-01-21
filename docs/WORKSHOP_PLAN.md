@@ -2,12 +2,14 @@
 
 This document outlines the strategy for a 2-hour hands-on workshop designed to introduce new users to PRISM using the graphical interface (PRISM Studio).
 
+**Workshop Theme:** Wellbeing Survey Analysis (WHO-5 Well-Being Index)
+
 ## Workshop Objectives
 Participants will learn to:
-- Understand data structure fundamentals in BIDS and PRISM
-- Prepare raw data files and convert them to BIDS/PRISM format
-- Create basic JSON metadata templates (sidecars)
-- Use recipes to generate analysis-ready outputs (SPSS, Excel, CSV)
+- Apply YODA principles for organized, reproducible research projects
+- Convert raw survey data (Excel) to BIDS/PRISM format
+- Create comprehensive JSON metadata (sidecars) for documentation
+- Use recipes to calculate scores and export to SPSS
 - Complete the entire workflow using only the GUI - no command line required
 
 ## Target Audience
@@ -16,88 +18,74 @@ Researchers in psychology and neuroscience who:
 - Want to standardize their data for sharing and analysis
 - Prefer visual interfaces over command-line tools
 - Need to export data to statistical software (SPSS, R, Jamovi)
+- Value reproducibility and open science practices
 
 ## Schedule (Total: 120 Minutes)
 
 | Time | Duration | Activity | Description |
 | :--- | :--- | :--- | :--- |
-| **00:00** | 15 min | **Introduction** | Theory: Why data structure matters. BIDS basics and PRISM extensions. The hierarchy concept (Dataset → Subject → Session → Files). |
-| **00:15** | 10 min | **GUI Setup & Tour** | Launch PRISM Studio. Tour of main sections: Home, Projects, Converter, Library, Recipes. |
-| **00:25** | 30 min | **Hands-on 1: Raw to BIDS** | Convert raw CSV/Excel data to BIDS structure. Map columns, generate files, and validate. Learn about file naming conventions. |
+| **00:00** | 10 min | **Introduction** | Why data structure matters. BIDS basics and PRISM extensions. YODA principles for project organization. |
+| **00:10** | 15 min | **Exercise 0: Project Setup** | Create YODA-structured project. Understanding sourcedata/, rawdata/, code/, derivatives/ folders. |
+| **00:25** | 30 min | **Exercise 1: Data Conversion** | Convert `wellbeing.xlsx` to BIDS/PRISM. Map columns, generate BIDS structure, understand file naming. |
 | **00:55** | 10 min | **Break** | Coffee and informal Q&A. |
-| **01:05** | 25 min | **Hands-on 2: JSON Templates** | Create and edit JSON sidecars. Understand required vs. optional metadata fields. Use the template editor and library. |
-| **01:30** | 20 min | **Hands-on 3: Recipes & Export** | Apply recipes to calculate scores and subscales. Export to SPSS (.sav) with value labels. Preview results in Excel. |
-| **01:50** | 10 min | **Wrap-up & Resources** | Review of workflow. Where to find help. How to contribute templates. Next steps for their own data. |
+| **01:05** | 25 min | **Exercise 2: Metadata & Validation** | Add item descriptions and response labels. Copy from template library. Validate dataset. |
+| **01:30** | 20 min | **Exercise 3: Recipes & Export** | Apply wellbeing recipe to calculate total scores. Export to SPSS with value labels. |
+| **01:50** | 10 min | **Wrap-up & Resources** | Review complete workflow. Where to find help. How to use with own data. |
 
 ---
 
 ## Detailed Hands-on Scenarios
 
-### Scenario 1: From Raw Data to BIDS Structure (25-30 min)
-**Goal:** Transform unstructured research data into a valid PRISM dataset.
+### Exercise 0: Project Setup with YODA (15 min)
+**Goal:** Create an organized research project following YODA principles
 
-**Starting Materials:** `demo/workshop/exercise_1_raw_to_bids/raw_data/`
-- `participants_raw.tsv` (tab-delimited, matches template column IDs)
-- `phq9_scores.tsv` (tab-delimited, columns `phq9_01`–`phq9_09`)
-**Backup Copies:** `demo/workshop/raw_material/`
-- `participants_raw.csv`
-- `phq9_scores.csv`
-- Maybe additional: `gad7_anxiety.xlsx`, `sleep_diary.csv`
+**Concept: YODA (Yet anOther Data Analysis)**
+- **sourcedata/** - Original files (preserved, never modified)
+- **rawdata/** - Standardized BIDS/PRISM format
+- **code/** - Analysis scripts (Python, R, etc.)
+- **derivatives/** - Results and processed outputs
 
 **GUI Steps:**
-1. **Open Converter Tool**
-   - Navigate to "Converter" in PRISM Studio
-   - Select "Raw Data to BIDS/PRISM"
+1. **Navigate to Projects**
+   - Click "Projects" in PRISM Studio sidebar
+   - URL: http://localhost:5001/projects
 
-2. **Load Raw Data**
-   - Upload or browse to `demo/workshop/exercise_1_raw_to_bids/raw_data/phq9_scores.tsv`
-   - System detects columns and data types
+2. **Create New Project**
+   - Project Name: `Wellbeing_Study_Workshop`
+   - Location: Choose directory (Desktop, Documents, etc.)
+   - Template: "YODA Structure" (if available)
+   - Click "Create & Activate"
 
-3. **Map to BIDS Structure**
-   - Assign participant ID column (e.g., `ID` → `participant_id`)
-   - Assign session if available (e.g., `visit` → `session`)
-   - Select survey/task name: `phq9`
-   - Choose modality: `survey`
-
-4. **Configure Output**
-   - Set output directory (creates proper folder structure automatically)
-   - Choose filename pattern: `sub-{id}_ses-{session}_task-phq9_survey.tsv`
-   - Preview the structure before generating
-
-5. **Generate & Validate**
-   - Click "Convert" - system creates:
-     - `sub-01/ses-01/survey/sub-01_ses-01_task-phq9_survey.tsv`
-     - Corresponding `.json` sidecar (basic template)
-     - `participants.tsv` from demographics
-     - `dataset_description.json`
-   - Run quick validation to ensure structure is correct
+3. **Verify Structure**
+   - Explore created folders in file browser
+   - Understand purpose of each directory
+   - Check "Active Project" indicator at top of screen
 
 **Learning Outcomes:**
-- Understand BIDS folder hierarchy
-- Learn proper file naming with `sub-`, `ses-`, `task-` entities
-- See how metadata flows from source to structure
+- Understand importance of project organization
+- Recognize YODA folder structure
+- Know where different file types belong
+- Appreciate separation of raw data from analysis
 
 ---
 
-### Scenario 2: Creating JSON Metadata Templates (25 min)
-**Goal:** Enrich data with proper metadata using JSON sidecars.
+### Exercise 1: Convert Raw Survey Data (30 min)
+**Goal:** Transform `wellbeing.xlsx` into BIDS/PRISM format
 
-**Starting Point:** The dataset created in Scenario 1 (or `demo/workshop/messy_dataset/`)
+**Starting Material:** `examples/workshop/exercise_1_raw_data/raw_data/wellbeing.xlsx`
 
-**GUI Steps:**
-1. **Open Template Editor**
-   - Navigate to "Library" → "Template Editor"
-   - Or use the inline editor in the validation results
+**File Contents:**
+- `participant_id` - Subject IDs (DEMO001, DEMO002, ...)
+- `session` - Session labels (baseline)
+- Demographics: `age`, `sex`, `education`, `handedness`
+- Survey items: `WB01` through `WB05` (WHO-5 items, 0-5 scale)
+- `completion_date` - When survey was completed
 
-2. **Edit Survey Sidecar**
-   - Open `sub-01_ses-01_task-phq9_survey.json`
-   - Fill in required PRISM fields:
-     - `General.Name`: "Patient Health Questionnaire-9"
-     - `General.Description`: "9-item depression screening tool"
-     - `General.Instructions`: How participants completed it
-   - Add technical details:
-     - `Technical.Version`: "1.0"
-     - `Technical.Language`: "en"
+**WHO-5 Well-Being Index:**
+- 5 items measuring subjective wellbeing
+- Response scale: 0 (At no time) to 5 (All of the time)
+- Total score range: 5-35 (higher = better wellbeing)
+- Scores <13 suggest depression screening indicated
 
 3. **Add Item-Level Metadata**
    - For each column (PHQ9_1, PHQ9_2, etc.), add:
