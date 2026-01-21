@@ -246,6 +246,11 @@ def main() -> int:
         f"{os.path.join('app', 'src')}{sep}src",
     ]
     
+    # Include official library and recipe folders
+    if (project_root / "official").exists():
+        datas.append(f"official{sep}official")
+        print("[OK] Including official/ folder (library and recipes)")
+    
     # Check for optional directories and only add them if they exist
     if (project_root / "app" / "survey_library").exists():
         datas.append(f"{os.path.join('app', 'survey_library')}{sep}survey_library")
