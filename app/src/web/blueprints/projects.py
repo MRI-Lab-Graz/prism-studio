@@ -255,6 +255,7 @@ def get_global_library_settings():
     return jsonify({
         "success": True,
         "global_template_library_path": settings.global_template_library_path,
+        "global_recipes_path": settings.global_recipes_path,
         "default_library_path": default_library_path,
         "default_modalities": settings.default_modalities,
     })
@@ -288,6 +289,20 @@ def set_global_library_settings():
             settings.global_template_library_path = path
         else:
             settings.global_template_library_path = None
+
+    if "global_recipes_path" in data:
+        path = data["global_recipes_path"]
+        # Allow empty/null to clear the setting
+        if path and path.strip():
+            # Validate path exists
+            if not os.path.exists(path):
+                return jsonify({
+                    "success": False,
+                    "error": f"Path does not exist: {path}"
+                }), 400
+            settings.global_recipes_path = path
+        else:
+            settings.global_recipes_path = None
 
     if "default_modalities" in data:
         settings.default_modalities = data["default_modalities"]
