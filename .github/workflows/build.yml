@@ -16,17 +16,17 @@ jobs:
         include:
           - os: macos-14
             platform_name: MacOS Apple Silicon
-            artifact_name: PrismValidator-macOS
-            asset_name: PrismValidator-macOS.zip
+            artifact_name: prism-studio-macOS
+            asset_name: prism-studio-macOS.zip
             target_arch: arm64
           - os: windows-latest
             platform_name: Windows
-            artifact_name: PrismValidator-Windows
-            asset_name: PrismValidator-Windows.zip
+            artifact_name: prism-studio-Windows
+            asset_name: prism-studio-Windows.zip
           - os: ubuntu-latest
             platform_name: Linux
-            artifact_name: PrismValidator-Linux
-            asset_name: PrismValidator-Linux.zip
+            artifact_name: prism-studio-Linux
+            asset_name: prism-studio-Linux.zip
 
     steps:
     - uses: actions/checkout@v4
@@ -53,7 +53,9 @@ jobs:
 
     # Windows Code Signing (Free for Open Source via SignPath)
     - name: Sign Windows Executable
-      if: runner.os == 'Windows' && secrets.SIGNPATH_API_TOKEN != ''
+      if: runner.os == 'Windows' && env.SIGNPATH_API_TOKEN != ''
+      env:
+        SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
       uses: signpath/github-action-submit-signing-request@v0.3
       with:
         api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -103,17 +105,17 @@ jobs:
     - name: Download Windows Artifact
       uses: actions/download-artifact@v4
       with:
-        name: PrismValidator-Windows
+        name: prism-studio-Windows
 
     - name: Download macOS Artifact
       uses: actions/download-artifact@v4
       with:
-        name: PrismValidator-macOS
+        name: prism-studio-macOS
 
     - name: Download Linux Artifact
       uses: actions/download-artifact@v4
       with:
-        name: PrismValidator-Linux
+        name: prism-studio-Linux
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
@@ -122,6 +124,6 @@ jobs:
         prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
         generate_release_notes: true
         files: |
-          PrismValidator-Windows.zip
-          PrismValidator-macOS.zip
-          PrismValidator-Linux.zip
+          prism-studio-Windows.zip
+          prism-studio-macOS.zip
+          prism-studio-Linux.zip
