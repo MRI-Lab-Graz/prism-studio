@@ -8,7 +8,6 @@
     2. Create a virtual environment in .\.venv
     3. Install dependencies from requirements.txt into the virtual environment.
     4. Optional: Install build and/or developer dependencies.
-    5. Install the project in development mode.
 
 .PARAMETER Build
     Include dependencies required for building the standalone executable.
