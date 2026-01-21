@@ -4208,6 +4208,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Auto-fill from project (async, doesn't block)
     initializeLibraryPathsFromProject();
+
+    // Listen for library settings changes from other tabs/pages
+    window.addEventListener('prism-library-settings-changed', function(event) {
+        console.log('Library settings changed, refreshing paths...');
+        // Re-initialize library paths to pick up new global/project settings
+        initializeLibraryPathsFromProject();
+    });
 });
 </script>
 {% endblock %}
