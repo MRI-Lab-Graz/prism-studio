@@ -92,5 +92,6 @@ derivatives/
 # Workshop exceptions (must be after global ignores)
 !demo/workshop/library/
 !demo/workshop/recipes/
+!official/library/
 # Harvest script
 scripts/harvest_testarchiv.py
