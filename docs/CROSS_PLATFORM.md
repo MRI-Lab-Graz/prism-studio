@@ -178,7 +178,18 @@ else:
 
 When adding new features, always:
 1. Use `pathlib.Path` or `os.path` for file operations
-2. Test on at least two different platforms
+2. Test on at least two different platforms (or use GitHub Actions)
 3. Avoid hardcoded path separators in strings
 4. Use platform checks (`sys.platform`) only when absolutely necessary
 5. Document any platform-specific behavior
+
+### Developing on macOS for Windows Users
+
+If you develop on macOS but your users are primarily on Windows, see the comprehensive guide: **[Developing for Windows Users on macOS](DEVELOPING_FOR_WINDOWS_ON_MACOS.md)**
+
+Key recommendations:
+- Use a Windows VM (Parallels Desktop or UTM) for testing
+- Rely on GitHub Actions for automated Windows testing
+- Always use `pathlib.Path()` or `os.path.join()` for paths
+- Check Windows-specific log files when users report issues (`C:\Users\<username>\prism_studio.log`)
+- Test compiled executables on real Windows before releases

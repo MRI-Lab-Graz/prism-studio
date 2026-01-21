@@ -73,6 +73,20 @@ else
     echo_info "Deno is already installed."
 fi
 
+# 2b. Check for tkinter (required for folder picker on Linux)
+echo_info "Checking for tkinter (required for folder picker)..."
+if python3 -c "import tkinter" 2>/dev/null; then
+    echo_success "tkinter is available"
+else
+    echo "⚠️  WARNING: tkinter is NOT available"
+    echo "⚠️  The web interface folder picker will not work."
+    echo "⚠️  To fix on Ubuntu/Debian: sudo apt-get install python3-tk"
+    echo "⚠️  To fix on Fedora/RHEL: sudo dnf install python3-tkinter"
+    echo "⚠️  Or continue without it - you can enter paths manually."
+    echo "Press Enter to continue anyway, or Ctrl+C to abort..."
+    read -r
+fi
+
 # 3. Check for requirements.txt
 if [ ! -f "$REQUIREMENTS_FILE" ]; then
     echo_error "'$REQUIREMENTS_FILE' not found."
