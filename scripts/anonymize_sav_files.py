@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
 Apply anonymization to all SPSS files in derivatives/survey using existing mapping.
+
+Usage:
+    python anonymize_sav_files.py <dataset_path>
 """
 import sys
 import json
@@ -11,11 +14,15 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 import pandas as pd
 import pyreadstat
 
-def anonymize_all_sav_files():
-    """Anonymize all .sav files in derivatives/survey."""
+def anonymize_all_sav_files(dataset_path: str):
+    """Anonymize all .sav files in derivatives/survey.
+    
+    Args:
+        dataset_path: Path to the dataset root directory
+    """
     
     # Paths
-    dataset = Path("/Users/karl/work/Dann_and_Brain")
+    dataset = Path(dataset_path)
     derivatives = dataset / "derivatives" / "survey"
     mapping_file = derivatives / "participants_mapping.json"
     
@@ -76,13 +83,19 @@ def anonymize_all_sav_files():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python anonymize_sav_files.py <dataset_path>")
+        print("Example: python anonymize_sav_files.py /path/to/Dann_and_Brain")
+        sys.exit(1)
+    
+    dataset_path = sys.argv[1]
     print("=" * 70)
     print("Anonymize All SPSS Files in Dataset")
     print("=" * 70)
     print()
     
     try:
-        success = anonymize_all_sav_files()
+        success = anonymize_all_sav_files(dataset_path)
         sys.exit(0 if success else 1)
     except Exception as e:
         print(f"\n❌ Error: {e}")

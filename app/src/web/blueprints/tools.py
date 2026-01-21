@@ -814,27 +814,44 @@ def api_browse_folder():
 
                 root = tk.Tk()
                 root.withdraw()
+                root.attributes('-topmost', True)  # Bring dialog to front
                 folder_path = filedialog.askdirectory(title="Select folder for PRISM")
                 root.destroy()
+                
+                # User cancelled the dialog
+                if not folder_path:
+                    return jsonify({"path": ""}), 200
+            except ImportError:
+                print("Windows folder picker failed: tkinter not available")
+                return jsonify({"error": "Folder picker requires tkinter. Please install Python with tcl/tk support, or enter path manually."}), 500
             except Exception as win_err:
                 print(f"Windows folder picker failed: {win_err}")
                 return jsonify({"error": "Folder picker not available. Please enter path manually."}), 500
         else:
+            # Linux/Unix
             try:
-                import tkinter as tk
-                from tkinter import filedialog
-
                 # Avoid hard crash when no display is available (e.g., headless server)
                 if not os.environ.get("DISPLAY"):
                     return jsonify({"error": "Folder picker requires a desktop session. Please enter path manually."}), 501
 
+                import tkinter as tk
+                from tkinter import filedialog
+
                 root = tk.Tk()
                 root.withdraw()
+                root.attributes('-topmost', True)  # Bring dialog to front
                 folder_path = filedialog.askdirectory(title="Select folder for PRISM")
                 root.destroy()
+                
+                # User cancelled the dialog
+                if not folder_path:
+                    return jsonify({"path": ""}), 200
+            except ImportError:
+                print("Linux folder picker failed: tkinter not available")
+                return jsonify({"error": "Folder picker requires python3-tk package. Install it or enter path manually."}), 500
             except Exception as linux_err:
                 print(f"Linux folder picker failed: {linux_err}")
-                return jsonify({"error": "Folder picker not available. Please enter path manually."}), 500
+                return jsonify({"error": f"Folder picker not available: {str(linux_err)}. Please enter path manually."}), 500
 
         return jsonify({"path": folder_path})
     except Exception as e:
