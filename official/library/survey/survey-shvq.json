@@ -1,0 +1,26 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Short Hypermasculinity Values Questionnaire (HVQ)",
+      "de": "Short Hypermasculinity Values Questionnaire (HVQ)"
+    },
+    "Abbreviation": "SHVQ",
+    "Authors": [
+      "Archer",
+      "J"
+    ],
+    "Year": 2010,
+    "DOI": "",
+    "Citation": "Archer, J. (2010). Derivation and assessment of a hypermasculine values questionnaire. British Journal of Social Psychology, 49(3), 525-551. Link behind paywall.",
+    "NumberOfItems": 0,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/hypermasculinity-shvq.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  }
+}

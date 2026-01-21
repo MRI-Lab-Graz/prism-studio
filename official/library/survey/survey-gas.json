@@ -1,0 +1,232 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Gaming Addiction Scale",
+      "de": "Gaming Addiction Scale"
+    },
+    "Abbreviation": "GAS",
+    "Authors": [
+      "Lemmens",
+      "J.S",
+      "Valkenburg",
+      "P.M. & Peter",
+      "J"
+    ],
+    "Year": 2009,
+    "DOI": "",
+    "Citation": "Lemmens, J.S., Valkenburg, P.M. & Peter, J. (2009). Development and validation of a game addiction scale for adolescents. Media Psychology, 12(1), 77-95.",
+    "NumberOfItems": 7,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/addiction-gaming-gas.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "GAS01": {
+    "Description": {
+      "en": "did you think about playing a game all day long?",
+      "de": "did you think about playing a game all day long?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=0} rarely",
+        "de": "{score=0} rarely"
+      },
+      "2": {
+        "en": "{score=1} sometimes",
+        "de": "{score=1} sometimes"
+      },
+      "3": {
+        "en": "{score=1} often",
+        "de": "{score=1} often"
+      },
+      "4": {
+        "en": "{score=1} very often",
+        "de": "{score=1} very often"
+      }
+    }
+  },
+  "GAS02": {
+    "Description": {
+      "en": "did you spend increasing amounts of time on games?",
+      "de": "did you spend increasing amounts of time on games?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=0} rarely",
+        "de": "{score=0} rarely"
+      },
+      "2": {
+        "en": "{score=1} sometimes",
+        "de": "{score=1} sometimes"
+      },
+      "3": {
+        "en": "{score=1} often",
+        "de": "{score=1} often"
+      },
+      "4": {
+        "en": "{score=1} very often",
+        "de": "{score=1} very often"
+      }
+    }
+  },
+  "GAS03": {
+    "Description": {
+      "en": "did you play games to forget about real life?",
+      "de": "did you play games to forget about real life?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=0} rarely",
+        "de": "{score=0} rarely"
+      },
+      "2": {
+        "en": "{score=1} sometimes",
+        "de": "{score=1} sometimes"
+      },
+      "3": {
+        "en": "{score=1} often",
+        "de": "{score=1} often"
+      },
+      "4": {
+        "en": "{score=1} very often",
+        "de": "{score=1} very often"
+      }
+    }
+  },
+  "GAS04": {
+    "Description": {
+      "en": "have others unsuccessfully tried to reduce your game use?",
+      "de": "have others unsuccessfully tried to reduce your game use?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=0} rarely",
+        "de": "{score=0} rarely"
+      },
+      "2": {
+        "en": "{score=1} sometimes",
+        "de": "{score=1} sometimes"
+      },
+      "3": {
+        "en": "{score=1} often",
+        "de": "{score=1} often"
+      },
+      "4": {
+        "en": "{score=1} very often",
+        "de": "{score=1} very often"
+      }
+    }
+  },
+  "GAS05": {
+    "Description": {
+      "en": "have you felt bad when you were unable to play?",
+      "de": "have you felt bad when you were unable to play?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=0} rarely",
+        "de": "{score=0} rarely"
+      },
+      "2": {
+        "en": "{score=1} sometimes",
+        "de": "{score=1} sometimes"
+      },
+      "3": {
+        "en": "{score=1} often",
+        "de": "{score=1} often"
+      },
+      "4": {
+        "en": "{score=1} very often",
+        "de": "{score=1} very often"
+      }
+    }
+  },
+  "GAS06": {
+    "Description": {
+      "en": "did you have fights with others (e.g., family, friends) over your time spent on games?",
+      "de": "did you have fights with others (e.g., family, friends) over your time spent on games?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=0} rarely",
+        "de": "{score=0} rarely"
+      },
+      "2": {
+        "en": "{score=1} sometimes",
+        "de": "{score=1} sometimes"
+      },
+      "3": {
+        "en": "{score=1} often",
+        "de": "{score=1} often"
+      },
+      "4": {
+        "en": "{score=1} very often",
+        "de": "{score=1} very often"
+      }
+    }
+  },
+  "GAS07": {
+    "Description": {
+      "en": "have you neglected other important activities (e.g., school, work, sports) to play games?",
+      "de": "have you neglected other important activities (e.g., school, work, sports) to play games?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=0} rarely",
+        "de": "{score=0} rarely"
+      },
+      "2": {
+        "en": "{score=1} sometimes",
+        "de": "{score=1} sometimes"
+      },
+      "3": {
+        "en": "{score=1} often",
+        "de": "{score=1} often"
+      },
+      "4": {
+        "en": "{score=1} very often",
+        "de": "{score=1} very often"
+      }
+    }
+  }
+}

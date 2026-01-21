@@ -1,0 +1,144 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Resilience (BRCS)",
+      "de": "Resilience (BRCS)"
+    },
+    "Abbreviation": "BRCS",
+    "Authors": [
+      "Sinclair",
+      "V. G",
+      "& Wallston",
+      "K.A"
+    ],
+    "Year": 2004,
+    "DOI": "",
+    "Citation": "Sinclair, V. G., & Wallston, K.A. (2004). The development and psychometric evaluation of the\nBrief Resilient Coping Scale. Assessment, 11 (1), 94-101.",
+    "NumberOfItems": 4,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/resilience-brcs.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "BRCS01": {
+    "Description": {
+      "en": "I look for creative ways to alter difficult situations.",
+      "de": "I look for creative ways to alter difficult situations."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Does <b>not</b> describe me at all",
+        "de": "Does <b>not</b> describe me at all"
+      },
+      "1": {
+        "en": "Does not describe me",
+        "de": "Does not describe me"
+      },
+      "2": {
+        "en": "Neutral",
+        "de": "Neutral"
+      },
+      "3": {
+        "en": "Describes me",
+        "de": "Describes me"
+      },
+      "4": {
+        "en": "Describes me <b>very well</b>",
+        "de": "Describes me <b>very well</b>"
+      }
+    }
+  },
+  "BRCS02": {
+    "Description": {
+      "en": "Regardless of what happens to me, I believe I can control my reaction to it.",
+      "de": "Regardless of what happens to me, I believe I can control my reaction to it."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Does <b>not</b> describe me at all",
+        "de": "Does <b>not</b> describe me at all"
+      },
+      "1": {
+        "en": "Does not describe me",
+        "de": "Does not describe me"
+      },
+      "2": {
+        "en": "Neutral",
+        "de": "Neutral"
+      },
+      "3": {
+        "en": "Describes me",
+        "de": "Describes me"
+      },
+      "4": {
+        "en": "Describes me <b>very well</b>",
+        "de": "Describes me <b>very well</b>"
+      }
+    }
+  },
+  "BRCS03": {
+    "Description": {
+      "en": "I believe that I can grow in positive ways by dealing with difficult situations.",
+      "de": "I believe that I can grow in positive ways by dealing with difficult situations."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Does <b>not</b> describe me at all",
+        "de": "Does <b>not</b> describe me at all"
+      },
+      "1": {
+        "en": "Does not describe me",
+        "de": "Does not describe me"
+      },
+      "2": {
+        "en": "Neutral",
+        "de": "Neutral"
+      },
+      "3": {
+        "en": "Describes me",
+        "de": "Describes me"
+      },
+      "4": {
+        "en": "Describes me <b>very well</b>",
+        "de": "Describes me <b>very well</b>"
+      }
+    }
+  },
+  "BRCS04": {
+    "Description": {
+      "en": "I actively look for ways to replace the losses I encounter in life.",
+      "de": "I actively look for ways to replace the losses I encounter in life."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Does <b>not</b> describe me at all",
+        "de": "Does <b>not</b> describe me at all"
+      },
+      "1": {
+        "en": "Does not describe me",
+        "de": "Does not describe me"
+      },
+      "2": {
+        "en": "Neutral",
+        "de": "Neutral"
+      },
+      "3": {
+        "en": "Describes me",
+        "de": "Describes me"
+      },
+      "4": {
+        "en": "Describes me <b>very well</b>",
+        "de": "Describes me <b>very well</b>"
+      }
+    }
+  }
+}

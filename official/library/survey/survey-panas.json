@@ -1,0 +1,27 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Positive and Negative Affect Schedule (PANAS)",
+      "de": "Positive and Negative Affect Schedule (PANAS)"
+    },
+    "Abbreviation": "PANAS",
+    "Authors": [
+      "D. Watson",
+      "L.A. Clark",
+      "& A. Tellegen"
+    ],
+    "Year": 1988,
+    "DOI": "",
+    "Citation": "D. Watson, L.A. Clark, & A. Tellegen (1988). Development and\nValidation of Brief Measures of Positive and Negative Affect: The\nPANAS Scales. Journal of Personality and Social Psychology, 54,\n1063-1070. link to PDF here",
+    "NumberOfItems": 0,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/panas.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  }
+}

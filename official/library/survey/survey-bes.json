@@ -1,0 +1,84 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Body Esteem Scale (BES)",
+      "de": "Body Esteem Scale (BES)"
+    },
+    "Abbreviation": "BES",
+    "Authors": [
+      "Franzoi",
+      "S.L"
+    ],
+    "Year": 1994,
+    "DOI": "",
+    "Citation": "Franzoi, S.L. (1994). Further evidence of the reliability and validity of the body esteem scale.\nJournal of Clinical Psychology, 50, 237-239.",
+    "NumberOfItems": 2,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/body-esteem-bes.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "BES01": {
+    "Description": {
+      "en": "Man",
+      "de": "Man"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strong negative feelings",
+        "de": "strong negative feelings"
+      },
+      "1": {
+        "en": "moderate negative feelings",
+        "de": "moderate negative feelings"
+      },
+      "2": {
+        "en": "no feeling one way or the other",
+        "de": "no feeling one way or the other"
+      },
+      "3": {
+        "en": "moderate positive feelings",
+        "de": "moderate positive feelings"
+      },
+      "4": {
+        "en": "strong positive feelings",
+        "de": "strong positive feelings"
+      }
+    }
+  },
+  "BES02": {
+    "Description": {
+      "en": "Woman",
+      "de": "Woman"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strong negative feelings",
+        "de": "strong negative feelings"
+      },
+      "1": {
+        "en": "moderate negative feelings",
+        "de": "moderate negative feelings"
+      },
+      "2": {
+        "en": "no feeling one way or the other",
+        "de": "no feeling one way or the other"
+      },
+      "3": {
+        "en": "moderate positive feelings",
+        "de": "moderate positive feelings"
+      },
+      "4": {
+        "en": "strong positive feelings",
+        "de": "strong positive feelings"
+      }
+    }
+  }
+}

@@ -1,0 +1,606 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Drinking Motives Questionnaire, Revised (DMQ-R)",
+      "de": "Drinking Motives Questionnaire, Revised (DMQ-R)"
+    },
+    "Abbreviation": "DMQ-R",
+    "Authors": [
+      "Cooper",
+      "M. L"
+    ],
+    "Year": 1994,
+    "DOI": "",
+    "Citation": "Cooper, M. L. (1994). Motivations for Alcohol Use Among Adolescents: Development and Validation of a Four-Factor Model. Psychological Assessment, 6(2), 117-128.",
+    "NumberOfItems": 20,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/alcohol-dmq-r.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "DMQ-R01": {
+    "Description": {
+      "en": "To forget your worries.",
+      "de": "To forget your worries."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R02": {
+    "Description": {
+      "en": "Because your friends pressure you to drink.",
+      "de": "Because your friends pressure you to drink."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R03": {
+    "Description": {
+      "en": "Because it helps you enjoy a party.",
+      "de": "Because it helps you enjoy a party."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R04": {
+    "Description": {
+      "en": "Because it helps you when you feel depressed or nervous.",
+      "de": "Because it helps you when you feel depressed or nervous."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R05": {
+    "Description": {
+      "en": "To be sociable.",
+      "de": "To be sociable."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R06": {
+    "Description": {
+      "en": "To cheer up when you are in a bad mood.",
+      "de": "To cheer up when you are in a bad mood."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R07": {
+    "Description": {
+      "en": "Because you like the feeling.",
+      "de": "Because you like the feeling."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R08": {
+    "Description": {
+      "en": "So that others wonât kid you about not drinking",
+      "de": "So that others wonât kid you about not drinking"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R09": {
+    "Description": {
+      "en": "Because itâs exciting.",
+      "de": "Because itâs exciting."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R10": {
+    "Description": {
+      "en": "To get high.",
+      "de": "To get high."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R11": {
+    "Description": {
+      "en": "Because it makes social gatherings more fun.",
+      "de": "Because it makes social gatherings more fun."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R12": {
+    "Description": {
+      "en": "To fit in with a group you like.",
+      "de": "To fit in with a group you like."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R13": {
+    "Description": {
+      "en": "Because it gives you a pleasant feeling.",
+      "de": "Because it gives you a pleasant feeling."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R14": {
+    "Description": {
+      "en": "Because it improves parties and celebrations.",
+      "de": "Because it improves parties and celebrations."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R15": {
+    "Description": {
+      "en": "Because you feel more self-confident and sure of yourself.",
+      "de": "Because you feel more self-confident and sure of yourself."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R16": {
+    "Description": {
+      "en": "To celebrate a special occasion with friends.",
+      "de": "To celebrate a special occasion with friends."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R17": {
+    "Description": {
+      "en": "To forget about your problems.",
+      "de": "To forget about your problems."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R18": {
+    "Description": {
+      "en": "Because itâs fun.",
+      "de": "Because itâs fun."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R19": {
+    "Description": {
+      "en": "To be liked.",
+      "de": "To be liked."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  },
+  "DMQ-R20": {
+    "Description": {
+      "en": "So you wonât feel left out.",
+      "de": "So you wonât feel left out."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost never/never",
+        "de": "almost never/never"
+      },
+      "1": {
+        "en": "some of the time",
+        "de": "some of the time"
+      },
+      "2": {
+        "en": "half of the time",
+        "de": "half of the time"
+      },
+      "3": {
+        "en": "most of the time",
+        "de": "most of the time"
+      },
+      "4": {
+        "en": "almost always/always",
+        "de": "almost always/always"
+      }
+    }
+  }
+}

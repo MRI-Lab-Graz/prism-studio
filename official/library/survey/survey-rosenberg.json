@@ -1,0 +1,148 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Rosenberg Self-Esteem Scale (RSES)",
+      "de": "Rosenberg Self-Esteem Scale (RSES)"
+    },
+    "Abbreviation": "ROSENBERG",
+    "Authors": [],
+    "Year": null,
+    "DOI": "",
+    "Citation": "http://www.socy.umd.edu/quick-links/rosenberg-self-esteem-scale[Detailed\ndescription of scale at the University of Maryland, where Professor\nRosenberg worked.[",
+    "NumberOfItems": 5,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/self-esteem-rosenberg.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "ROSENBERG01": {
+    "Description": {
+      "en": "At times, I think I am no good at all.",
+      "de": "At times, I think I am no good at all."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} strongly agree",
+        "de": "{score=0} strongly agree"
+      },
+      "1": {
+        "en": "{score=1} agree",
+        "de": "{score=1} agree"
+      },
+      "2": {
+        "en": "{score=2} disagree",
+        "de": "{score=2} disagree"
+      },
+      "3": {
+        "en": "{score=3} strongly disagree",
+        "de": "{score=3} strongly disagree"
+      }
+    }
+  },
+  "ROSENBERG02": {
+    "Description": {
+      "en": "I feel I do not have much to be proud of.",
+      "de": "I feel I do not have much to be proud of."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} strongly agree",
+        "de": "{score=0} strongly agree"
+      },
+      "1": {
+        "en": "{score=1} agree",
+        "de": "{score=1} agree"
+      },
+      "2": {
+        "en": "{score=2} disagree",
+        "de": "{score=2} disagree"
+      },
+      "3": {
+        "en": "{score=3} strongly disagree",
+        "de": "{score=3} strongly disagree"
+      }
+    }
+  },
+  "ROSENBERG03": {
+    "Description": {
+      "en": "I certainly feel useless at times.",
+      "de": "I certainly feel useless at times."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} strongly agree",
+        "de": "{score=0} strongly agree"
+      },
+      "1": {
+        "en": "{score=1} agree",
+        "de": "{score=1} agree"
+      },
+      "2": {
+        "en": "{score=2} disagree",
+        "de": "{score=2} disagree"
+      },
+      "3": {
+        "en": "{score=3} strongly disagree",
+        "de": "{score=3} strongly disagree"
+      }
+    }
+  },
+  "ROSENBERG04": {
+    "Description": {
+      "en": "I wish I could have more respect for myself.",
+      "de": "I wish I could have more respect for myself."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} strongly agree",
+        "de": "{score=0} strongly agree"
+      },
+      "1": {
+        "en": "{score=1} agree",
+        "de": "{score=1} agree"
+      },
+      "2": {
+        "en": "{score=2} disagree",
+        "de": "{score=2} disagree"
+      },
+      "3": {
+        "en": "{score=3} strongly disagree",
+        "de": "{score=3} strongly disagree"
+      }
+    }
+  },
+  "ROSENBERG05": {
+    "Description": {
+      "en": "All in all, I am inclined to feel that I am a failure.",
+      "de": "All in all, I am inclined to feel that I am a failure."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} strongly agree",
+        "de": "{score=0} strongly agree"
+      },
+      "1": {
+        "en": "{score=1} agree",
+        "de": "{score=1} agree"
+      },
+      "2": {
+        "en": "{score=2} disagree",
+        "de": "{score=2} disagree"
+      },
+      "3": {
+        "en": "{score=3} strongly disagree",
+        "de": "{score=3} strongly disagree"
+      }
+    }
+  }
+}

@@ -1,0 +1,234 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Short Oxford-Liverpool Inventory of Feelings and Experiences (O-LIFE).",
+      "de": "Short Oxford-Liverpool Inventory of Feelings and Experiences (O-LIFE)."
+    },
+    "Abbreviation": "O-LIFE",
+    "Authors": [
+      "Mason",
+      "O",
+      "Linney",
+      "Y",
+      "& Claridge",
+      "G"
+    ],
+    "Year": 2005,
+    "DOI": "",
+    "Citation": "Mason, O., Linney, Y., & Claridge, G. (2005). Short scales for\nmeasuring schizotypy. Schizophrenia Research, 78, 293-296.",
+    "NumberOfItems": 12,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/schizotypy-short-olife.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "O-LIFE01": {
+    "Description": {
+      "en": "When in the dark do you often see shapes and forms even though there is nothing there?",
+      "de": "When in the dark do you often see shapes and forms even though there is nothing there?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "O-LIFE02": {
+    "Description": {
+      "en": "Are your thoughts sometimes so strong that you can almost hear them?",
+      "de": "Are your thoughts sometimes so strong that you can almost hear them?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "O-LIFE03": {
+    "Description": {
+      "en": "Have you ever thought that you had special, almost magical powers?",
+      "de": "Have you ever thought that you had special, almost magical powers?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "O-LIFE04": {
+    "Description": {
+      "en": "Have you sometimes sensed an evil presence around you, even though you could not see it?",
+      "de": "Have you sometimes sensed an evil presence around you, even though you could not see it?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "O-LIFE05": {
+    "Description": {
+      "en": "Do you think that you could learn to read otherâs minds if you wanted to?",
+      "de": "Do you think that you could learn to read otherâs minds if you wanted to?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "O-LIFE06": {
+    "Description": {
+      "en": "When you look in the mirror does your face sometimes seem quite different from usual?",
+      "de": "When you look in the mirror does your face sometimes seem quite different from usual?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "O-LIFE07": {
+    "Description": {
+      "en": "Do ideas and insights sometimes come to you so fast that you cannot express them all?",
+      "de": "Do ideas and insights sometimes come to you so fast that you cannot express them all?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "O-LIFE08": {
+    "Description": {
+      "en": "Can some people make you aware of them just by thinking about you?",
+      "de": "Can some people make you aware of them just by thinking about you?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "O-LIFE09": {
+    "Description": {
+      "en": "Does a passing thought ever seem so real it frightens you?",
+      "de": "Does a passing thought ever seem so real it frightens you?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "O-LIFE10": {
+    "Description": {
+      "en": "Do you feel that your accidents are caused by mysterious forces?",
+      "de": "Do you feel that your accidents are caused by mysterious forces?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "O-LIFE11": {
+    "Description": {
+      "en": "Do you ever have a sense of vague danger or sudden dread for reasons that you do not understand?",
+      "de": "Do you ever have a sense of vague danger or sudden dread for reasons that you do not understand?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "O-LIFE12": {
+    "Description": {
+      "en": "Does your sense of smell sometimes become unusually strong?",
+      "de": "Does your sense of smell sometimes become unusually strong?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  }
+}

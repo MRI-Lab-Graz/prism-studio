@@ -1,0 +1,502 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Green et al. Paranoid Thought Scales (GPTS)",
+      "de": "Green et al. Paranoid Thought Scales (GPTS)"
+    },
+    "Abbreviation": "GTPS",
+    "Authors": [
+      "Green",
+      "C. E. L",
+      "Freeman",
+      "D",
+      "Kuipers",
+      "E",
+      "Bebbington",
+      "P",
+      "Fowler",
+      "D",
+      "Dunn",
+      "G",
+      "& Garety",
+      "P. A"
+    ],
+    "Year": 2008,
+    "DOI": "",
+    "Citation": "Green, C. E. L., Freeman, D., Kuipers, E., Bebbington, P., Fowler, D., Dunn, G., & Garety, P. A. (2008). Measuring ideas of persecution and social reference: the Green et al. Paranoid Thought Scales (GPTS). Psychological medicine, 38, 101-111.",
+    "NumberOfItems": 16,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/paranoia-gpts.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "GTPS01": {
+    "Description": {
+      "en": "I spent time thinking about friends gossiping about me",
+      "de": "I spent time thinking about friends gossiping about me"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS02": {
+    "Description": {
+      "en": "I often heard people referring to me",
+      "de": "I often heard people referring to me"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS03": {
+    "Description": {
+      "en": "I have been upset by friends and colleagues judging me critically",
+      "de": "I have been upset by friends and colleagues judging me critically"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS04": {
+    "Description": {
+      "en": "People definitely laughed at me behind my back",
+      "de": "People definitely laughed at me behind my back"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS05": {
+    "Description": {
+      "en": "I have been thinking a lot about people avoiding me",
+      "de": "I have been thinking a lot about people avoiding me"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS06": {
+    "Description": {
+      "en": "People have been dropping hints for me",
+      "de": "People have been dropping hints for me"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS07": {
+    "Description": {
+      "en": "I believed that certain people were not what they seemed",
+      "de": "I believed that certain people were not what they seemed"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS08": {
+    "Description": {
+      "en": "People talking about me behind my back upset me",
+      "de": "People talking about me behind my back upset me"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS09": {
+    "Description": {
+      "en": "I was convinced that people were singling me out",
+      "de": "I was convinced that people were singling me out"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS10": {
+    "Description": {
+      "en": "I was certain that people have followed me",
+      "de": "I was certain that people have followed me"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS11": {
+    "Description": {
+      "en": "Certain people were hostile towards me personally",
+      "de": "Certain people were hostile towards me personally"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS12": {
+    "Description": {
+      "en": "People have been checking up on me",
+      "de": "People have been checking up on me"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS13": {
+    "Description": {
+      "en": "I was stressed out by people watching me",
+      "de": "I was stressed out by people watching me"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS14": {
+    "Description": {
+      "en": "I was frustrated by people laughing at me",
+      "de": "I was frustrated by people laughing at me"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS15": {
+    "Description": {
+      "en": "I was worried by peopleâs undue interest in me",
+      "de": "I was worried by peopleâs undue interest in me"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  },
+  "GTPS16": {
+    "Description": {
+      "en": "It was hard to stop thinking about people talking about me behind my back",
+      "de": "It was hard to stop thinking about people talking about me behind my back"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": "Somewhat",
+        "de": "Somewhat"
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": "Totally",
+        "de": "Totally"
+      }
+    }
+  }
+}

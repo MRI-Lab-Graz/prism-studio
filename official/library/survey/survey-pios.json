@@ -1,0 +1,584 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "The Penn Inventory of Scrupulosity (PIOS)",
+      "de": "The Penn Inventory of Scrupulosity (PIOS)"
+    },
+    "Abbreviation": "PIOS",
+    "Authors": [
+      "Abramowitz",
+      "J.S",
+      "Hupper",
+      "J.D",
+      "Cohen",
+      "A.B",
+      "Tolin",
+      "D.F. & Cahill",
+      "S.P"
+    ],
+    "Year": 2002,
+    "DOI": "",
+    "Citation": "Abramowitz, J.S., Hupper, J.D., Cohen, A.B., Tolin, D.F. & Cahill,\nS.P. (2002). Religious obsessions and compulsions in a non-clinical\nsample: the Penn Inventory of Scrupulosity (PIOS). Behaviour Research\nand Therapy, 40, 825-838.",
+    "NumberOfItems": 19,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/scrupulosity-pios.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "PIOS01": {
+    "Description": {
+      "en": "I worry I must act morally at all times or I will be punished",
+      "de": "I worry I must act morally at all times or I will be punished"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS02": {
+    "Description": {
+      "en": "I feel guilty about immoral thoughts I have had",
+      "de": "I feel guilty about immoral thoughts I have had"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS03": {
+    "Description": {
+      "en": "I feel urges to confess sins over and over again",
+      "de": "I feel urges to confess sins over and over again"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS04": {
+    "Description": {
+      "en": "I fear I have acted inappropriately without realizing it",
+      "de": "I fear I have acted inappropriately without realizing it"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS05": {
+    "Description": {
+      "en": "I fear I will act immorally",
+      "de": "I fear I will act immorally"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS06": {
+    "Description": {
+      "en": "I am afraid of having sexual thoughts",
+      "de": "I am afraid of having sexual thoughts"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS07": {
+    "Description": {
+      "en": "Feeling guilty interferes with my ability to enjoy things I would like to enjoy",
+      "de": "Feeling guilty interferes with my ability to enjoy things I would like to enjoy"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS08": {
+    "Description": {
+      "en": "Immoral thoughts come into my head and I canât get rid of them",
+      "de": "Immoral thoughts come into my head and I canât get rid of them"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS09": {
+    "Description": {
+      "en": "I must try hard to avoid having certain immoral thoughts",
+      "de": "I must try hard to avoid having certain immoral thoughts"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS10": {
+    "Description": {
+      "en": "I worry that I might have dishonest thoughts",
+      "de": "I worry that I might have dishonest thoughts"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS11": {
+    "Description": {
+      "en": "I am afraid of having immoral thoughts",
+      "de": "I am afraid of having immoral thoughts"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS12": {
+    "Description": {
+      "en": "I am very worried that things I did may have been dishonest",
+      "de": "I am very worried that things I did may have been dishonest"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS13": {
+    "Description": {
+      "en": "I am afraid my behavior is unacceptable to God",
+      "de": "I am afraid my behavior is unacceptable to God"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS14": {
+    "Description": {
+      "en": "I worry about Heaven and Hell",
+      "de": "I worry about Heaven and Hell"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS15": {
+    "Description": {
+      "en": "I am afraid my thoughts are unacceptable to God",
+      "de": "I am afraid my thoughts are unacceptable to God"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS16": {
+    "Description": {
+      "en": "I worry I will never have a good relationship with God",
+      "de": "I worry I will never have a good relationship with God"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS17": {
+    "Description": {
+      "en": "I am afraid that I will disobey Godâs rules/laws",
+      "de": "I am afraid that I will disobey Godâs rules/laws"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS18": {
+    "Description": {
+      "en": "I worry that God is upset with me",
+      "de": "I worry that God is upset with me"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  },
+  "PIOS19": {
+    "Description": {
+      "en": "I fear that I might be an evil person",
+      "de": "I fear that I might be an evil person"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} never",
+        "de": "{score=0} never"
+      },
+      "1": {
+        "en": "{score=1} rarely/<br>almost never",
+        "de": "{score=1} rarely/<br>almost never"
+      },
+      "2": {
+        "en": "{score=2} sometimes",
+        "de": "{score=2} sometimes"
+      },
+      "3": {
+        "en": "{score=3} often",
+        "de": "{score=3} often"
+      },
+      "4": {
+        "en": "{score=4} constantly",
+        "de": "{score=4} constantly"
+      }
+    }
+  }
+}

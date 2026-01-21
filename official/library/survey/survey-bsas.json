@@ -1,0 +1,697 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "The brief sexual attitudes scale (BSAS)",
+      "de": "The brief sexual attitudes scale (BSAS)"
+    },
+    "Abbreviation": "BSAS",
+    "Authors": [
+      "Hendrick",
+      "C",
+      "Hendrick",
+      "S. S",
+      "& Reich",
+      "D. A"
+    ],
+    "Year": 2006,
+    "DOI": "",
+    "Citation": "Hendrick, C., Hendrick, S. S., & Reich, D. A. (2006). The Journal of Sex Research, 43, 76-86.",
+    "NumberOfItems": 23,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/sexual-attitudes-scale-bsas.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "BSAS01": {
+    "Description": {
+      "en": "I do not need to be committed to a person to have sex with him/her.",
+      "de": "I do not need to be committed to a person to have sex with him/her."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS02": {
+    "Description": {
+      "en": "Casual sex is acceptable.",
+      "de": "Casual sex is acceptable."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS03": {
+    "Description": {
+      "en": "I would like to have sex with many partners.",
+      "de": "I would like to have sex with many partners."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS04": {
+    "Description": {
+      "en": "One-night stands are sometimes very enjoyable.",
+      "de": "One-night stands are sometimes very enjoyable."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS05": {
+    "Description": {
+      "en": "It is okay to have ongoing sexual relationships with more than one person at a time.",
+      "de": "It is okay to have ongoing sexual relationships with more than one person at a time."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS06": {
+    "Description": {
+      "en": "Sex as a simple exchange of favors is okay if both people agree to it.",
+      "de": "Sex as a simple exchange of favors is okay if both people agree to it."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS07": {
+    "Description": {
+      "en": "The best sex is with no strings attached.",
+      "de": "The best sex is with no strings attached."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS08": {
+    "Description": {
+      "en": "Life would have fewer problems if people could have sex more freely.",
+      "de": "Life would have fewer problems if people could have sex more freely."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS09": {
+    "Description": {
+      "en": "It is possible to enjoy sex with a person and not like that person very much.",
+      "de": "It is possible to enjoy sex with a person and not like that person very much."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS10": {
+    "Description": {
+      "en": "It is okay for sex to be just good physical release.",
+      "de": "It is okay for sex to be just good physical release."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS11": {
+    "Description": {
+      "en": "Birth control is part of responsible sexuality.",
+      "de": "Birth control is part of responsible sexuality."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS12": {
+    "Description": {
+      "en": "A woman should share responsibility for birth control.",
+      "de": "A woman should share responsibility for birth control."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS13": {
+    "Description": {
+      "en": "A man should share responsibility for birth control.",
+      "de": "A man should share responsibility for birth control."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS14": {
+    "Description": {
+      "en": "Sex is the closest form of communication between two people.",
+      "de": "Sex is the closest form of communication between two people."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS15": {
+    "Description": {
+      "en": "A sexual encounter between two people deeply in love is the ultimate human interaction.",
+      "de": "A sexual encounter between two people deeply in love is the ultimate human interaction."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS16": {
+    "Description": {
+      "en": "At its best, sex seems to be the merging of two souls.",
+      "de": "At its best, sex seems to be the merging of two souls."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS17": {
+    "Description": {
+      "en": "Sex is a very important part of life.",
+      "de": "Sex is a very important part of life."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS18": {
+    "Description": {
+      "en": "Sex is usually an intensive, almost overwhelming experience.",
+      "de": "Sex is usually an intensive, almost overwhelming experience."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS19": {
+    "Description": {
+      "en": "Sex is best when you let yourself go and focus on your own pleasure.",
+      "de": "Sex is best when you let yourself go and focus on your own pleasure."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS20": {
+    "Description": {
+      "en": "Sex is primarily the taking of pleasure from another person.",
+      "de": "Sex is primarily the taking of pleasure from another person."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS21": {
+    "Description": {
+      "en": "The main purpose of sex is to enjoy oneself.",
+      "de": "The main purpose of sex is to enjoy oneself."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS22": {
+    "Description": {
+      "en": "Sex is primarily physical.",
+      "de": "Sex is primarily physical."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  },
+  "BSAS23": {
+    "Description": {
+      "en": "Sex is primarily a bodily function, like eating.",
+      "de": "Sex is primarily a bodily function, like eating."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      },
+      "1": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "4": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      }
+    }
+  }
+}

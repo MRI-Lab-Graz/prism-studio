@@ -1,0 +1,729 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Cooperative/Competitive Strategy Scale (CCSS)",
+      "de": "Cooperative/Competitive Strategy Scale (CCSS)"
+    },
+    "Abbreviation": "CCSS",
+    "Authors": [
+      "Tang",
+      "S"
+    ],
+    "Year": 1999,
+    "DOI": "",
+    "Citation": "Tang, S. (1999). Cooperation or competition: A comparison of U.S. and Chinese College students. The Journal of Psychology, 133, 413-423.",
+    "NumberOfItems": 19,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/coop-comp-ccss.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "CCSS01": {
+    "Description": {
+      "en": "Individual success can be achieved while working with others",
+      "de": "Individual success can be achieved while working with others"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS02": {
+    "Description": {
+      "en": "Joint effort is the best way to achieve success",
+      "de": "Joint effort is the best way to achieve success"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS03": {
+    "Description": {
+      "en": "To succeed, one must cooperate with others",
+      "de": "To succeed, one must cooperate with others"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS04": {
+    "Description": {
+      "en": "Success is only achieved through individual effort",
+      "de": "Success is only achieved through individual effort"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS05": {
+    "Description": {
+      "en": "Success is best achieved through cooperation rather than through competition",
+      "de": "Success is best achieved through cooperation rather than through competition"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS06": {
+    "Description": {
+      "en": "In the end, cooperation with others is not compatible with success",
+      "de": "In the end, cooperation with others is not compatible with success"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS07": {
+    "Description": {
+      "en": "Shared efforts can lead to both individual and group success",
+      "de": "Shared efforts can lead to both individual and group success"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS08": {
+    "Description": {
+      "en": "I enjoy working with others to achieve joint success",
+      "de": "I enjoy working with others to achieve joint success"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS09": {
+    "Description": {
+      "en": "It is important to me to do better than others",
+      "de": "It is important to me to do better than others"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS10": {
+    "Description": {
+      "en": "Success is not very important to me",
+      "de": "Success is not very important to me"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS11": {
+    "Description": {
+      "en": "By achieving success I also get other things which are important to me",
+      "de": "By achieving success I also get other things which are important to me"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS12": {
+    "Description": {
+      "en": "To succeed, one must compete against others",
+      "de": "To succeed, one must compete against others"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS13": {
+    "Description": {
+      "en": "People who succeed are more likely to have satisfying lives",
+      "de": "People who succeed are more likely to have satisfying lives"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS14": {
+    "Description": {
+      "en": "Success is something I am willing to work hard for",
+      "de": "Success is something I am willing to work hard for"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS15": {
+    "Description": {
+      "en": "I enjoy the challenge of competing against others to succeed",
+      "de": "I enjoy the challenge of competing against others to succeed"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS16": {
+    "Description": {
+      "en": "The rewards of success outweigh the costs",
+      "de": "The rewards of success outweigh the costs"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS17": {
+    "Description": {
+      "en": "Success is my major goal in life",
+      "de": "Success is my major goal in life"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS18": {
+    "Description": {
+      "en": "I am happier when I am not striving to succeed",
+      "de": "I am happier when I am not striving to succeed"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  },
+  "CCSS19": {
+    "Description": {
+      "en": "I feel better about myself when I am working toward success",
+      "de": "I feel better about myself when I am working toward success"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "always",
+        "de": "always"
+      },
+      "1": {
+        "en": ".",
+        "de": "."
+      },
+      "2": {
+        "en": ".",
+        "de": "."
+      },
+      "3": {
+        "en": ".",
+        "de": "."
+      },
+      "4": {
+        "en": ".",
+        "de": "."
+      },
+      "5": {
+        "en": ".",
+        "de": "."
+      },
+      "6": {
+        "en": "never",
+        "de": "never"
+      }
+    }
+  }
+}

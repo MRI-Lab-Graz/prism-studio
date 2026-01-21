@@ -1,0 +1,552 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Problematic Internet Use Questionnaire (PIUQ)",
+      "de": "Problematic Internet Use Questionnaire (PIUQ)"
+    },
+    "Abbreviation": "PIUQ",
+    "Authors": [
+      "Demetrovics",
+      "Z",
+      "Szeredi",
+      "B",
+      "& RÃ³zsa",
+      "S"
+    ],
+    "Year": 2008,
+    "DOI": "",
+    "Citation": "Demetrovics, Z., Szeredi, B., & RÃ³zsa, S. (2008). The three-factor model of Internet addiction: The development of the Problematic Internet Use Questionnaire. Behavior Research Methods, 40, 563-574.",
+    "NumberOfItems": 18,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/addiction-internet-piuq.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "PIUQ01": {
+    "Description": {
+      "en": "How often do you fantasize about the Internet, or think about what it would be like to be online when you are not on the Internet?",
+      "de": "How often do you fantasize about the Internet, or think about what it would be like to be online when you are not on the Internet?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ02": {
+    "Description": {
+      "en": "How often do you neglect household chores to spend more time online?",
+      "de": "How often do you neglect household chores to spend more time online?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ03": {
+    "Description": {
+      "en": "How often do you feel that you should decrease the amount of time spent online?",
+      "de": "How often do you feel that you should decrease the amount of time spent online?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ04": {
+    "Description": {
+      "en": "How often do you daydream about the Internet?",
+      "de": "How often do you daydream about the Internet?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ05": {
+    "Description": {
+      "en": "How often do you spend time online when youâd rather sleep?",
+      "de": "How often do you spend time online when youâd rather sleep?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ06": {
+    "Description": {
+      "en": "How often does it happen to you that you wish to decrease the amount of time spent online but you do not succeed?",
+      "de": "How often does it happen to you that you wish to decrease the amount of time spent online but you do not succeed?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ07": {
+    "Description": {
+      "en": "How often do you feel tense, irritated, or stressed if you cannot use the Internet for as long as you want to?",
+      "de": "How often do you feel tense, irritated, or stressed if you cannot use the Internet for as long as you want to?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ08": {
+    "Description": {
+      "en": "How often do you choose the Internet rather than being with your partner?",
+      "de": "How often do you choose the Internet rather than being with your partner?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ09": {
+    "Description": {
+      "en": "How often do you try to conceal the amount of time spent online?",
+      "de": "How often do you try to conceal the amount of time spent online?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ10": {
+    "Description": {
+      "en": "How often do you feel tense, irritated, or stressed if you cannot use the Internet for several days?",
+      "de": "How often do you feel tense, irritated, or stressed if you cannot use the Internet for several days?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ11": {
+    "Description": {
+      "en": "How often does the use of Internet impair your work or your efficacy?",
+      "de": "How often does the use of Internet impair your work or your efficacy?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ12": {
+    "Description": {
+      "en": "How often do you feel that your Internet usage causes problems for you?",
+      "de": "How often do you feel that your Internet usage causes problems for you?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ13": {
+    "Description": {
+      "en": "How often does it happen to you that you feel depressed, moody, or nervous when you are not on the Internet and these feelings stop once you are back online?",
+      "de": "How often does it happen to you that you feel depressed, moody, or nervous when you are not on the Internet and these feelings stop once you are back online?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ14": {
+    "Description": {
+      "en": "How often do people in your life complain about spending too much time online?",
+      "de": "How often do people in your life complain about spending too much time online?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ15": {
+    "Description": {
+      "en": "How often do you realize saying when you are online, âjust a couple of more minutes and I will stopâ?",
+      "de": "How often do you realize saying when you are online, âjust a couple of more minutes and I will stopâ?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ16": {
+    "Description": {
+      "en": "How often do you dream about the Internet?",
+      "de": "How often do you dream about the Internet?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ17": {
+    "Description": {
+      "en": "How often do you choose the Internet rather than going out with somebody to have some fun?",
+      "de": "How often do you choose the Internet rather than going out with somebody to have some fun?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  },
+  "PIUQ18": {
+    "Description": {
+      "en": "How often do you think that you should ask for help in relation to your Internet use?",
+      "de": "How often do you think that you should ask for help in relation to your Internet use?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "never",
+        "de": "never"
+      },
+      "1": {
+        "en": "rarely",
+        "de": "rarely"
+      },
+      "2": {
+        "en": "sometimes",
+        "de": "sometimes"
+      },
+      "3": {
+        "en": "often",
+        "de": "often"
+      },
+      "4": {
+        "en": "always",
+        "de": "always"
+      }
+    }
+  }
+}
