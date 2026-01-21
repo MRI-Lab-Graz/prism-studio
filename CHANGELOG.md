@@ -5,6 +5,34 @@ All notable changes to the PRISM project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-01-21
+
+### Added
+- **Cross-Platform**: Native folder picker for Windows and Linux using tkinter with graceful fallbacks.
+- **Windows Support**: Platform-specific browser launching with Windows fallback (cmd /c start).
+- **Logging**: Comprehensive logging system for compiled Windows builds (prism_studio.log in user home directory).
+- **Windows UI**: Startup notification dialog showing application URL when browser doesn't auto-launch.
+- **Code Signing**: Integrated free SignPath.io code signing for Windows executables in GitHub Actions.
+- **Path Handling**: Added Windows-specific temp path recognition in error messages.
+- **Error Feedback**: Enhanced error alerts for failed folder picker operations in all templates.
+- **Documentation**: Added comprehensive cross-platform development guides (CROSS_PLATFORM.md, DEVELOPING_FOR_WINDOWS_ON_MACOS.md, CODE_SIGNING_SETUP.md).
+- **Setup Scripts**: Added tkinter availability checks with installation instructions in setup.ps1 and setup.sh.
+
+### Changed
+- **Folder Picker**: Improved platform detection and error handling in /api/browse-folder endpoint.
+- **Windows Compatibility**: All templates (projects.html, recipes.html, survey_generator.html, converter.html) now show error messages when folder picker fails.
+- **Build Workflow**: GitHub Actions now automatically signs Windows executables when SignPath credentials are configured.
+
+### Fixed
+- **Windows Paths**: Removed all hardcoded Unix paths (/Users/karl/work/) from codebase.
+- **Temp Paths**: Fixed Windows temp directory patterns in path_utils.py (\Temp\, \AppData\, C:\Users).
+- **Browser Launch**: Fixed browser not opening on Windows compiled version.
+- **Silent Errors**: Fixed folder picker failing silently without user feedback.
+- **Console Output**: Fixed missing console output in Windows compiled builds using log redirection.
+
+### Security
+- **Code Signing**: Windows executables are now digitally signed by trusted CA (SignPath) for IT department compliance.
+
 ## [1.8.1] - 2026-01-15
 
 ### Fixed
