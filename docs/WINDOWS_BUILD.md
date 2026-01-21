@@ -1,6 +1,6 @@
-# Building Prism Validator on Windows
+# Building and Signing Prism Validator on Windows
 
-This guide explains how to build the Prism Validator Windows application from source.
+This guide explains how to build the Prism Validator Windows application from source and sign it for distribution to IT departments.
 
 ## Prerequisites
 
@@ -11,7 +11,117 @@ This guide explains how to build the Prism Validator Windows application from so
 2. **Git** (if cloning the repository)
    - Download from: https://git-scm.com/download/win
 
-## Quick Start
+## Code Signing for IT Departments
+
+IT departments often require signed executables. Here's how to sign your Windows build **for free** (for open source projects):
+
+### Option 1: SignPath.io (Recommended - FREE for Open Source)
+
+SignPath provides **free code signing** for open source projects and integrates with GitHub Actions.
+
+#### Setup Steps:
+
+1. **Apply for Free OSS Signing**:
+   - Go to: https://about.signpath.io/product/open-source
+   - Fill out application with your GitHub repo URL
+   - Approval usually takes 1-2 business days
+   - You'll receive an organization ID and API token
+
+2. **Add Secrets to GitHub**:
+   ```
+   Repository Settings → Secrets and variables → Actions → New repository secret
+   ```
+   Add:
+   - `SIGNPATH_API_TOKEN`: Your API token from SignPath
+   - `SIGNPATH_ORGANIZATION_ID`: Your organization ID from SignPath
+
+3. **The Workflow Automatically Signs**:
+   - Already configured in `.github/workflows/build.yml`
+   - Signing happens automatically when you create a release tag
+   - Only signs if secrets are present (gracefully skips if not)
+
+4. **Create a Release**:
+   ```bash
+   git tag -a v1.0.0 -m "Release v1.0.0"
+   git push origin v1.0.0
+   ```
+   
+   The signed executable will be in the GitHub release artifacts.
+
+#### What Gets Signed:
+- ✅ `PrismValidator.exe` - Main executable
+- ✅ Certificate chain validates to trusted root
+- ✅ SmartScreen won't block (after reputation builds)
+- ✅ IT departments can verify signature
+
+### Option 2: Self-Signed Certificate (FREE but LIMITED)
+
+**Pros**: Completely free, can do locally
+**Cons**: Windows SmartScreen will still warn, IT departments may not accept
+
+Only use if SignPath doesn't work for your needs.
+
+#### Create Self-Signed Certificate:
+
+```powershell
+# Run PowerShell as Administrator
+$cert = New-SelfSignedCertificate `
+    -Type Custom `
+    -Subject "CN=PRISM Validator, O=MRI Lab Graz, C=AT" `
+    -KeyUsage DigitalSignature `
+    -FriendlyName "PRISM Validator Code Signing" `
+    -CertStoreLocation "Cert:\CurrentUser\My" `
+    -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3", "2.5.29.19={text}")
+
+# Export certificate
+$password = ConvertTo-SecureString -String "YourPassword" -Force -AsPlainText
+Export-PfxCertificate `
+    -Cert "Cert:\CurrentUser\My\$($cert.Thumbprint)" `
+    -FilePath "PrismValidator-CodeSigning.pfx" `
+    -Password $password
+```
+
+#### Sign the Executable:
+
+```powershell
+# After building with PyInstaller
+signtool sign /f "PrismValidator-CodeSigning.pfx" /p "YourPassword" /t http://timestamp.digicert.com "dist\PrismValidator\PrismValidator.exe"
+```
+
+**Note**: You'll need to distribute the certificate to IT departments who will need to manually trust it.
+
+### Option 3: Submit to Microsoft for SmartScreen Reputation
+
+Even with a valid signature, Windows SmartScreen may warn until your app builds reputation:
+
+1. **Sign with SignPath** (or paid certificate)
+2. **Submit to Microsoft**:
+   - Go to: https://www.microsoft.com/en-us/wdsi/filesubmission
+   - Upload your signed executable
+   - Request reputation review
+3. **Build Reputation**:
+   - Downloads from many users over time
+   - SmartScreen warnings decrease automatically
+
+### Verifying the Signature
+
+After signing, verify it works:
+
+```powershell
+# Check signature
+Get-AuthenticodeSignature "dist\PrismValidator\PrismValidator.exe"
+
+# Should show:
+# Status: Valid
+# SignerCertificate: [Your certificate]
+```
+
+In Windows Explorer:
+1. Right-click the `.exe` file
+2. Properties → Digital Signatures tab
+3. Should show valid signature
+
+## Quick Start (Building)
 
 ### Option 1: Using PowerShell (Recommended)
 

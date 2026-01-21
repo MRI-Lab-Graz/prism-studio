@@ -29,6 +29,35 @@ from flask import (
     session,
 )
 
+# Setup logging for compiled version (no console on Windows)
+if getattr(sys, "frozen", False):
+    import logging
+    log_file = Path.home() / "prism_studio.log"
+    logging.basicConfig(
+        filename=str(log_file),
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+    
+    # Redirect stdout/stderr to log file for compiled version
+    class LogWriter:
+        def __init__(self, logger, level):
+            self.logger = logger
+            self.level = level
+            
+        def write(self, message):
+            if message.strip():
+                self.logger.log(self.level, message.strip())
+                
+        def flush(self):
+            pass
+    
+    logger = logging.getLogger()
+    sys.stdout = LogWriter(logger, logging.INFO)
+    sys.stderr = LogWriter(logger, logging.ERROR)
+    
+    print(f"PRISM Studio starting... Log file: {log_file}")
+
 # Ensure we can import core validator logic from src
 if getattr(sys, "frozen", False):
     # Running in a PyInstaller bundle
@@ -356,21 +385,65 @@ def main():
     if args.public:
         print("⚠️  Warning: Running in public mode - accessible from other computers")
     print("💡 Press Ctrl+C to stop the server")
+    
+    # Show log location for compiled version
+    if getattr(sys, "frozen", False):
+        log_file = Path.home() / "prism_studio.log"
+        print(f"📄 Log file: {log_file}")
     print()
+    
+    # On Windows compiled version, show a startup notification
+    if getattr(sys, "frozen", False) and sys.platform.startswith('win') and not args.no_browser:
+        try:
+            import ctypes
+            MessageBox = ctypes.windll.user32.MessageBoxW
+            threading.Thread(
+                target=lambda: MessageBox(
+                    0,
+                    f"PRISM Studio is starting...\n\nOpening browser at:\n{url}\n\nIf browser doesn't open automatically,\nplease visit the URL manually.",
+                    "PRISM Studio",
+                    0x40  # MB_ICONINFORMATION
+                ),
+                daemon=True
+            ).start()
+        except Exception as e:
+            print(f"Could not show startup notification: {e}")
 
     # Open browser in a separate thread to avoid blocking the Flask server
     if not args.no_browser:
 
         def open_browser():
             import time
+            import subprocess
 
-            time.sleep(1)  # Wait for server to start
+            time.sleep(1.5)  # Wait for server to start (increased for compiled version)
             try:
-                webbrowser.open(url)
-                print("✅ Browser opened automatically")
+                # Try standard webbrowser module first
+                if webbrowser.open(url):
+                    print("✅ Browser opened automatically")
+                else:
+                    # If webbrowser.open() returns False, try platform-specific fallback
+                    raise Exception("webbrowser.open() returned False")
             except Exception as e:
-                print(f"ℹ️  Could not open browser automatically: {e}")
-                print(f"   Please visit {url} manually")
+                print(f"ℹ️  Standard browser open failed: {e}")
+                
+                # Platform-specific fallback
+                try:
+                    if sys.platform.startswith('win'):
+                        # Windows fallback: use start command
+                        subprocess.Popen(['cmd', '/c', 'start', '', url], shell=True)
+                        print("✅ Browser opened via Windows fallback")
+                    elif sys.platform == 'darwin':
+                        # macOS fallback
+                        subprocess.Popen(['open', url])
+                        print("✅ Browser opened via macOS fallback")
+                    else:
+                        # Linux fallback
+                        subprocess.Popen(['xdg-open', url])
+                        print("✅ Browser opened via Linux fallback")
+                except Exception as fallback_err:
+                    print(f"⚠️  Could not open browser automatically: {fallback_err}")
+                    print(f"   Please visit {url} manually")
 
         browser_thread = threading.Thread(target=open_browser, daemon=True)
         browser_thread.start()
