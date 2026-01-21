@@ -1,5 +1,12 @@
 {
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "en",
+    "Respondent": "self"
+  },
   "Study": {
+    "TaskName": "wellbeing",
     "OriginalName": {
       "en": "Wellbeing Survey (WHO-5 adapted)",
       "de": "Wohlbefindens-Fragebogen (WHO-5 adaptiert)"
@@ -23,6 +30,7 @@
       "en": "Freely available for research purposes",
       "de": "Frei verfügbar für Forschungszwecke"
     },
+    "LicenseID": "CC-BY-4.0",
     "Source": "https://www.psytoolkit.org/survey-library/who5.html",
     "Instructions": {
       "en": "Please indicate for each of the five statements which is closest to how you have been feeling over the last two weeks. Notice that higher numbers mean better well-being.",
@@ -193,5 +201,10 @@
         "de": "Zu keinem Zeitpunkt"
       }
     }
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.1",
+    "CreationDate": "2026-01-21",
+    "Creator": "PRISM Workshop"
   }
 }
