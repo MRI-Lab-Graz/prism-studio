@@ -642,7 +642,13 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if(data.path) {
                     libraryPathInput.value = data.path;
+                } else if (data.error) {
+                    alert('Folder picker unavailable: ' + data.error);
                 }
+            })
+            .catch(err => {
+                console.error('Browse error:', err);
+                alert('Failed to open folder picker. Please enter path manually.');
             });
     });
 
