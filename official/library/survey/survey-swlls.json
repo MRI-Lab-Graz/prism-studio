@@ -1,0 +1,211 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Satisfaction with love life scale (SWLLS)",
+      "de": "Satisfaction with love life scale (SWLLS)"
+    },
+    "Abbreviation": "SWLLS",
+    "Authors": [
+      "Neto",
+      "F"
+    ],
+    "Year": 2005,
+    "DOI": "",
+    "Citation": "Neto, F. (2005). The Satisfaction With Love Life Scale. Measurement and evaluation in counseling and development, 38, 2-13.",
+    "NumberOfItems": 5,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/love-satisfaction-swlls.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "SWLLS01": {
+    "Description": {
+      "en": "In most ways my love life is close to my ideal.",
+      "de": "In most ways my love life is close to my ideal."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=7} Strongly agree",
+        "de": "{score=7} Strongly agree"
+      },
+      "1": {
+        "en": "{score=6} Agree",
+        "de": "{score=6} Agree"
+      },
+      "2": {
+        "en": "{score=5} Slightly agree",
+        "de": "{score=5} Slightly agree"
+      },
+      "3": {
+        "en": "{score=4} Neither agree nor disagree",
+        "de": "{score=4} Neither agree nor disagree"
+      },
+      "4": {
+        "en": "{score=3} Slightly disagree",
+        "de": "{score=3} Slightly disagree"
+      },
+      "5": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "6": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  },
+  "SWLLS02": {
+    "Description": {
+      "en": "The conditions of my love life are excellent.",
+      "de": "The conditions of my love life are excellent."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=7} Strongly agree",
+        "de": "{score=7} Strongly agree"
+      },
+      "1": {
+        "en": "{score=6} Agree",
+        "de": "{score=6} Agree"
+      },
+      "2": {
+        "en": "{score=5} Slightly agree",
+        "de": "{score=5} Slightly agree"
+      },
+      "3": {
+        "en": "{score=4} Neither agree nor disagree",
+        "de": "{score=4} Neither agree nor disagree"
+      },
+      "4": {
+        "en": "{score=3} Slightly disagree",
+        "de": "{score=3} Slightly disagree"
+      },
+      "5": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "6": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  },
+  "SWLLS03": {
+    "Description": {
+      "en": "I am satisfied with my love life.",
+      "de": "I am satisfied with my love life."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=7} Strongly agree",
+        "de": "{score=7} Strongly agree"
+      },
+      "1": {
+        "en": "{score=6} Agree",
+        "de": "{score=6} Agree"
+      },
+      "2": {
+        "en": "{score=5} Slightly agree",
+        "de": "{score=5} Slightly agree"
+      },
+      "3": {
+        "en": "{score=4} Neither agree nor disagree",
+        "de": "{score=4} Neither agree nor disagree"
+      },
+      "4": {
+        "en": "{score=3} Slightly disagree",
+        "de": "{score=3} Slightly disagree"
+      },
+      "5": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "6": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  },
+  "SWLLS04": {
+    "Description": {
+      "en": "So far I have gotten the important things I want in love life.",
+      "de": "So far I have gotten the important things I want in love life."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=7} Strongly agree",
+        "de": "{score=7} Strongly agree"
+      },
+      "1": {
+        "en": "{score=6} Agree",
+        "de": "{score=6} Agree"
+      },
+      "2": {
+        "en": "{score=5} Slightly agree",
+        "de": "{score=5} Slightly agree"
+      },
+      "3": {
+        "en": "{score=4} Neither agree nor disagree",
+        "de": "{score=4} Neither agree nor disagree"
+      },
+      "4": {
+        "en": "{score=3} Slightly disagree",
+        "de": "{score=3} Slightly disagree"
+      },
+      "5": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "6": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  },
+  "SWLLS05": {
+    "Description": {
+      "en": "If I could live my love life over, I would change almost nothing.",
+      "de": "If I could live my love life over, I would change almost nothing."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=7} Strongly agree",
+        "de": "{score=7} Strongly agree"
+      },
+      "1": {
+        "en": "{score=6} Agree",
+        "de": "{score=6} Agree"
+      },
+      "2": {
+        "en": "{score=5} Slightly agree",
+        "de": "{score=5} Slightly agree"
+      },
+      "3": {
+        "en": "{score=4} Neither agree nor disagree",
+        "de": "{score=4} Neither agree nor disagree"
+      },
+      "4": {
+        "en": "{score=3} Slightly disagree",
+        "de": "{score=3} Slightly disagree"
+      },
+      "5": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "6": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  }
+}

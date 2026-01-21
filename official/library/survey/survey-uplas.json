@@ -1,0 +1,526 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Loneliness (UPLAS)",
+      "de": "Loneliness (UPLAS)"
+    },
+    "Abbreviation": "UPLAS",
+    "Authors": [
+      "Tharayil",
+      "D.P"
+    ],
+    "Year": 2012,
+    "DOI": "",
+    "Citation": "Tharayil, D.P. (2012). Developing the University of the Philippines\nLoneliness Assessment Scale: A Cross-Cultural Measurement. Social\nIndicators Research, 106 (2), 307-321.",
+    "NumberOfItems": 20,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/loneliness-uplas.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "UPLAS01": {
+    "Description": {
+      "en": "I feel that I am always being left alone.",
+      "de": "I feel that I am always being left alone."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS02": {
+    "Description": {
+      "en": "I feel that I am misunderstood.",
+      "de": "I feel that I am misunderstood."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS03": {
+    "Description": {
+      "en": "I feel that others reject me.",
+      "de": "I feel that others reject me."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS04": {
+    "Description": {
+      "en": "I sense that people are not interested in making friends with me.",
+      "de": "I sense that people are not interested in making friends with me."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS05": {
+    "Description": {
+      "en": "I feel that nobody likes me.",
+      "de": "I feel that nobody likes me."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS06": {
+    "Description": {
+      "en": "I donât have a meaningful relationship with people.",
+      "de": "I donât have a meaningful relationship with people."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS07": {
+    "Description": {
+      "en": "I pity myself.",
+      "de": "I pity myself."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS08": {
+    "Description": {
+      "en": "I feel that nobody appreciates me.",
+      "de": "I feel that nobody appreciates me."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS09": {
+    "Description": {
+      "en": "I am dissatisfied with my relationships.",
+      "de": "I am dissatisfied with my relationships."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS10": {
+    "Description": {
+      "en": "I feel alone even in a group.",
+      "de": "I feel alone even in a group."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS11": {
+    "Description": {
+      "en": "I feel hopeless about the misfortunes of my life.",
+      "de": "I feel hopeless about the misfortunes of my life."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS12": {
+    "Description": {
+      "en": "I feel worthless.",
+      "de": "I feel worthless."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS13": {
+    "Description": {
+      "en": "I have no confidence to get involved in relationships.",
+      "de": "I have no confidence to get involved in relationships."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS14": {
+    "Description": {
+      "en": "I feel that others always look at my faults.",
+      "de": "I feel that others always look at my faults."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS15": {
+    "Description": {
+      "en": "I feel that I am a failure in life.",
+      "de": "I feel that I am a failure in life."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS16": {
+    "Description": {
+      "en": "I feel disconnected with people.",
+      "de": "I feel disconnected with people."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS17": {
+    "Description": {
+      "en": "I usually think of sad things in life.",
+      "de": "I usually think of sad things in life."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS18": {
+    "Description": {
+      "en": "I am helpless when I think about the future.",
+      "de": "I am helpless when I think about the future."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS19": {
+    "Description": {
+      "en": "I feel inadequate when it comes to relationships.",
+      "de": "I feel inadequate when it comes to relationships."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  },
+  "UPLAS20": {
+    "Description": {
+      "en": "I feel empty even if I do many things.",
+      "de": "I feel empty even if I do many things."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly Disagree",
+        "de": "Strongly Disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "3": {
+        "en": "Strongly Agree",
+        "de": "Strongly Agree"
+      }
+    }
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Short Autism Spectrum Quotient",
+      "de": "Short Autism Spectrum Quotient"
+    },
+    "Abbreviation": "AQ10",
+    "Authors": [
+      "Allison",
+      "C",
+      "Auyeung",
+      "B",
+      "& Baron-Cohen",
+      "S"
+    ],
+    "Year": 2012,
+    "DOI": "",
+    "Citation": "Allison, C., Auyeung, B., & Baron-Cohen, S. (2012). Toward Brief\n\"Red Flags\" for Autism Screening: The Short Autism Spectrum Quotient\nand the Short Quantitative Checklist in 1,000 Cases and 3,000 Controls.\nJournal of the American Acad of Child & Adolescent Psychiatry, 51(2), 202-212.",
+    "NumberOfItems": 4,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/short-autism-spectrum-quotient.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "AQ1001": {
+    "Description": {
+      "en": "I often notice small sounds when others do not",
+      "de": "I often notice small sounds when others do not"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Definitely agree",
+        "de": "{score=1} Definitely agree"
+      },
+      "1": {
+        "en": "{score=1} Slightly agree",
+        "de": "{score=1} Slightly agree"
+      },
+      "2": {
+        "en": "{score=0} Slightly disagree",
+        "de": "{score=0} Slightly disagree"
+      },
+      "3": {
+        "en": "{score=0} Definitely disagree",
+        "de": "{score=0} Definitely disagree"
+      }
+    }
+  },
+  "AQ1002": {
+    "Description": {
+      "en": "When Iâm reading a story I find it difficult to work out the charactersâ intentions",
+      "de": "When Iâm reading a story I find it difficult to work out the charactersâ intentions"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Definitely agree",
+        "de": "{score=1} Definitely agree"
+      },
+      "1": {
+        "en": "{score=1} Slightly agree",
+        "de": "{score=1} Slightly agree"
+      },
+      "2": {
+        "en": "{score=0} Slightly disagree",
+        "de": "{score=0} Slightly disagree"
+      },
+      "3": {
+        "en": "{score=0} Definitely disagree",
+        "de": "{score=0} Definitely disagree"
+      }
+    }
+  },
+  "AQ1003": {
+    "Description": {
+      "en": "I like to collect information about categories of things (e.g. types of car, types of bird, types of train, types of plant etc)",
+      "de": "I like to collect information about categories of things (e.g. types of car, types of bird, types of train, types of plant etc)"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Definitely agree",
+        "de": "{score=1} Definitely agree"
+      },
+      "1": {
+        "en": "{score=1} Slightly agree",
+        "de": "{score=1} Slightly agree"
+      },
+      "2": {
+        "en": "{score=0} Slightly disagree",
+        "de": "{score=0} Slightly disagree"
+      },
+      "3": {
+        "en": "{score=0} Definitely disagree",
+        "de": "{score=0} Definitely disagree"
+      }
+    }
+  },
+  "AQ1004": {
+    "Description": {
+      "en": "I find it difficult to work out peopleâs intentions",
+      "de": "I find it difficult to work out peopleâs intentions"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Definitely agree",
+        "de": "{score=1} Definitely agree"
+      },
+      "1": {
+        "en": "{score=1} Slightly agree",
+        "de": "{score=1} Slightly agree"
+      },
+      "2": {
+        "en": "{score=0} Slightly disagree",
+        "de": "{score=0} Slightly disagree"
+      },
+      "3": {
+        "en": "{score=0} Definitely disagree",
+        "de": "{score=0} Definitely disagree"
+      }
+    }
+  }
+}

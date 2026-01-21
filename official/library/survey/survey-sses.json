@@ -1,0 +1,226 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "The State Self Esteem Scale (SSES)",
+      "de": "The State Self Esteem Scale (SSES)"
+    },
+    "Abbreviation": "SSES",
+    "Authors": [],
+    "Year": null,
+    "DOI": "",
+    "Citation": "Heatherton, T.F. and Polivy, J. Development and Validation of a Scale\nfor Measuring State Self-Esteem. Journal of Personality and Social\nPsychology, 60,\n895-910. Retrieved\nfrom here.",
+    "NumberOfItems": 7,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/self-esteem-sses.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "SSES01": {
+    "Description": {
+      "en": "I feel confident about my abilities.",
+      "de": "I feel confident about my abilities."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all",
+        "de": "not at all"
+      },
+      "1": {
+        "en": "a little bit",
+        "de": "a little bit"
+      },
+      "2": {
+        "en": "somewhat",
+        "de": "somewhat"
+      },
+      "3": {
+        "en": "very much",
+        "de": "very much"
+      },
+      "4": {
+        "en": "extremely",
+        "de": "extremely"
+      }
+    }
+  },
+  "SSES02": {
+    "Description": {
+      "en": "I feel satisfied with the way my body looks right now.",
+      "de": "I feel satisfied with the way my body looks right now."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all",
+        "de": "not at all"
+      },
+      "1": {
+        "en": "a little bit",
+        "de": "a little bit"
+      },
+      "2": {
+        "en": "somewhat",
+        "de": "somewhat"
+      },
+      "3": {
+        "en": "very much",
+        "de": "very much"
+      },
+      "4": {
+        "en": "extremely",
+        "de": "extremely"
+      }
+    }
+  },
+  "SSES03": {
+    "Description": {
+      "en": "I feel that others respect and admire me.",
+      "de": "I feel that others respect and admire me."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all",
+        "de": "not at all"
+      },
+      "1": {
+        "en": "a little bit",
+        "de": "a little bit"
+      },
+      "2": {
+        "en": "somewhat",
+        "de": "somewhat"
+      },
+      "3": {
+        "en": "very much",
+        "de": "very much"
+      },
+      "4": {
+        "en": "extremely",
+        "de": "extremely"
+      }
+    }
+  },
+  "SSES04": {
+    "Description": {
+      "en": "I feel as smart as others.",
+      "de": "I feel as smart as others."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all",
+        "de": "not at all"
+      },
+      "1": {
+        "en": "a little bit",
+        "de": "a little bit"
+      },
+      "2": {
+        "en": "somewhat",
+        "de": "somewhat"
+      },
+      "3": {
+        "en": "very much",
+        "de": "very much"
+      },
+      "4": {
+        "en": "extremely",
+        "de": "extremely"
+      }
+    }
+  },
+  "SSES05": {
+    "Description": {
+      "en": "I feel good about myself.",
+      "de": "I feel good about myself."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all",
+        "de": "not at all"
+      },
+      "1": {
+        "en": "a little bit",
+        "de": "a little bit"
+      },
+      "2": {
+        "en": "somewhat",
+        "de": "somewhat"
+      },
+      "3": {
+        "en": "very much",
+        "de": "very much"
+      },
+      "4": {
+        "en": "extremely",
+        "de": "extremely"
+      }
+    }
+  },
+  "SSES06": {
+    "Description": {
+      "en": "I am pleased with my appearance right now.",
+      "de": "I am pleased with my appearance right now."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all",
+        "de": "not at all"
+      },
+      "1": {
+        "en": "a little bit",
+        "de": "a little bit"
+      },
+      "2": {
+        "en": "somewhat",
+        "de": "somewhat"
+      },
+      "3": {
+        "en": "very much",
+        "de": "very much"
+      },
+      "4": {
+        "en": "extremely",
+        "de": "extremely"
+      }
+    }
+  },
+  "SSES07": {
+    "Description": {
+      "en": "I feel confident that I understand things.",
+      "de": "I feel confident that I understand things."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all",
+        "de": "not at all"
+      },
+      "1": {
+        "en": "a little bit",
+        "de": "a little bit"
+      },
+      "2": {
+        "en": "somewhat",
+        "de": "somewhat"
+      },
+      "3": {
+        "en": "very much",
+        "de": "very much"
+      },
+      "4": {
+        "en": "extremely",
+        "de": "extremely"
+      }
+    }
+  }
+}

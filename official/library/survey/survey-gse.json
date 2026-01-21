@@ -1,0 +1,276 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Generalized Self Efficacy scale (GSE)",
+      "de": "Generalized Self Efficacy scale (GSE)"
+    },
+    "Abbreviation": "GSE",
+    "Authors": [
+      "Bandura",
+      "A"
+    ],
+    "Year": 1986,
+    "DOI": "",
+    "Citation": "Bandura, A. (1986). Social foundations of thought and action: A social cognitive theory.\nEnglewood Cliffs, NJ: Prentice Hall.",
+    "NumberOfItems": 10,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/generalized-self-efficacy-gse.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "GSE01": {
+    "Description": {
+      "en": "I can always manage to solve difficult problems if I try hard enough.",
+      "de": "I can always manage to solve difficult problems if I try hard enough."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all true",
+        "de": "not at all true"
+      },
+      "1": {
+        "en": "hardly true",
+        "de": "hardly true"
+      },
+      "2": {
+        "en": "moderately true",
+        "de": "moderately true"
+      },
+      "3": {
+        "en": "exactly true",
+        "de": "exactly true"
+      }
+    }
+  },
+  "GSE02": {
+    "Description": {
+      "en": "If someone opposes me, I can find the means and ways to get what I want.",
+      "de": "If someone opposes me, I can find the means and ways to get what I want."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all true",
+        "de": "not at all true"
+      },
+      "1": {
+        "en": "hardly true",
+        "de": "hardly true"
+      },
+      "2": {
+        "en": "moderately true",
+        "de": "moderately true"
+      },
+      "3": {
+        "en": "exactly true",
+        "de": "exactly true"
+      }
+    }
+  },
+  "GSE03": {
+    "Description": {
+      "en": "I am certain that I can accomplish my goals.",
+      "de": "I am certain that I can accomplish my goals."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all true",
+        "de": "not at all true"
+      },
+      "1": {
+        "en": "hardly true",
+        "de": "hardly true"
+      },
+      "2": {
+        "en": "moderately true",
+        "de": "moderately true"
+      },
+      "3": {
+        "en": "exactly true",
+        "de": "exactly true"
+      }
+    }
+  },
+  "GSE04": {
+    "Description": {
+      "en": "I am confident that I could deal efficiently with unexpected events.",
+      "de": "I am confident that I could deal efficiently with unexpected events."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all true",
+        "de": "not at all true"
+      },
+      "1": {
+        "en": "hardly true",
+        "de": "hardly true"
+      },
+      "2": {
+        "en": "moderately true",
+        "de": "moderately true"
+      },
+      "3": {
+        "en": "exactly true",
+        "de": "exactly true"
+      }
+    }
+  },
+  "GSE05": {
+    "Description": {
+      "en": "Thanks to my resourcefulness, I can handle unforeseen situations.",
+      "de": "Thanks to my resourcefulness, I can handle unforeseen situations."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all true",
+        "de": "not at all true"
+      },
+      "1": {
+        "en": "hardly true",
+        "de": "hardly true"
+      },
+      "2": {
+        "en": "moderately true",
+        "de": "moderately true"
+      },
+      "3": {
+        "en": "exactly true",
+        "de": "exactly true"
+      }
+    }
+  },
+  "GSE06": {
+    "Description": {
+      "en": "I can solve most problems if I invest the necessary effort.",
+      "de": "I can solve most problems if I invest the necessary effort."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all true",
+        "de": "not at all true"
+      },
+      "1": {
+        "en": "hardly true",
+        "de": "hardly true"
+      },
+      "2": {
+        "en": "moderately true",
+        "de": "moderately true"
+      },
+      "3": {
+        "en": "exactly true",
+        "de": "exactly true"
+      }
+    }
+  },
+  "GSE07": {
+    "Description": {
+      "en": "I can remain calm when facing difficulties because I can rely on my coping abilities.",
+      "de": "I can remain calm when facing difficulties because I can rely on my coping abilities."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all true",
+        "de": "not at all true"
+      },
+      "1": {
+        "en": "hardly true",
+        "de": "hardly true"
+      },
+      "2": {
+        "en": "moderately true",
+        "de": "moderately true"
+      },
+      "3": {
+        "en": "exactly true",
+        "de": "exactly true"
+      }
+    }
+  },
+  "GSE08": {
+    "Description": {
+      "en": "When I am confronted with a problem, I can find several solutions.",
+      "de": "When I am confronted with a problem, I can find several solutions."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all true",
+        "de": "not at all true"
+      },
+      "1": {
+        "en": "hardly true",
+        "de": "hardly true"
+      },
+      "2": {
+        "en": "moderately true",
+        "de": "moderately true"
+      },
+      "3": {
+        "en": "exactly true",
+        "de": "exactly true"
+      }
+    }
+  },
+  "GSE09": {
+    "Description": {
+      "en": "If I am in trouble, I can think of a good solution.",
+      "de": "If I am in trouble, I can think of a good solution."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all true",
+        "de": "not at all true"
+      },
+      "1": {
+        "en": "hardly true",
+        "de": "hardly true"
+      },
+      "2": {
+        "en": "moderately true",
+        "de": "moderately true"
+      },
+      "3": {
+        "en": "exactly true",
+        "de": "exactly true"
+      }
+    }
+  },
+  "GSE10": {
+    "Description": {
+      "en": "I can handle whatever comes my way.",
+      "de": "I can handle whatever comes my way."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "not at all true",
+        "de": "not at all true"
+      },
+      "1": {
+        "en": "hardly true",
+        "de": "hardly true"
+      },
+      "2": {
+        "en": "moderately true",
+        "de": "moderately true"
+      },
+      "3": {
+        "en": "exactly true",
+        "de": "exactly true"
+      }
+    }
+  }
+}

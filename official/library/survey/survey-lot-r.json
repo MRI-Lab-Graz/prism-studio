@@ -1,0 +1,231 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Optimism (LOT-R)",
+      "de": "Optimism (LOT-R)"
+    },
+    "Abbreviation": "LOT-R",
+    "Authors": [
+      "Scheier",
+      "M. F",
+      "& Carver",
+      "C. S"
+    ],
+    "Year": 1992,
+    "DOI": "",
+    "Citation": "Scheier, M. F., & Carver, C. S. (1992). Effects of optimism on psychological and physical well-being:\nTheoretical overview and empirical update. Cognitive Therapy and Research, 16, 201-228.",
+    "NumberOfItems": 7,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/optimism-lotr.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "LOT-R01": {
+    "Description": {
+      "en": "In uncertain times, I usually expect the best.",
+      "de": "In uncertain times, I usually expect the best."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} strongly disagree",
+        "de": "{score=0} strongly disagree"
+      },
+      "1": {
+        "en": "{score=1} disagree",
+        "de": "{score=1} disagree"
+      },
+      "2": {
+        "en": "{score=2} neutral",
+        "de": "{score=2} neutral"
+      },
+      "3": {
+        "en": "{score=3} agree",
+        "de": "{score=3} agree"
+      },
+      "4": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "LOT-R02": {
+    "Description": {
+      "en": "It's easy for me to relax.",
+      "de": "It's easy for me to relax."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} strongly disagree",
+        "de": "{score=0} strongly disagree"
+      },
+      "1": {
+        "en": "{score=1} disagree",
+        "de": "{score=1} disagree"
+      },
+      "2": {
+        "en": "{score=2} neutral",
+        "de": "{score=2} neutral"
+      },
+      "3": {
+        "en": "{score=3} agree",
+        "de": "{score=3} agree"
+      },
+      "4": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "LOT-R03": {
+    "Description": {
+      "en": "I'm always optimistic about my future.",
+      "de": "I'm always optimistic about my future."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} strongly disagree",
+        "de": "{score=0} strongly disagree"
+      },
+      "1": {
+        "en": "{score=1} disagree",
+        "de": "{score=1} disagree"
+      },
+      "2": {
+        "en": "{score=2} neutral",
+        "de": "{score=2} neutral"
+      },
+      "3": {
+        "en": "{score=3} agree",
+        "de": "{score=3} agree"
+      },
+      "4": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "LOT-R04": {
+    "Description": {
+      "en": "I enjoy my friends a lot.",
+      "de": "I enjoy my friends a lot."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} strongly disagree",
+        "de": "{score=0} strongly disagree"
+      },
+      "1": {
+        "en": "{score=1} disagree",
+        "de": "{score=1} disagree"
+      },
+      "2": {
+        "en": "{score=2} neutral",
+        "de": "{score=2} neutral"
+      },
+      "3": {
+        "en": "{score=3} agree",
+        "de": "{score=3} agree"
+      },
+      "4": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "LOT-R05": {
+    "Description": {
+      "en": "It's important for me to keep busy.",
+      "de": "It's important for me to keep busy."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} strongly disagree",
+        "de": "{score=0} strongly disagree"
+      },
+      "1": {
+        "en": "{score=1} disagree",
+        "de": "{score=1} disagree"
+      },
+      "2": {
+        "en": "{score=2} neutral",
+        "de": "{score=2} neutral"
+      },
+      "3": {
+        "en": "{score=3} agree",
+        "de": "{score=3} agree"
+      },
+      "4": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "LOT-R06": {
+    "Description": {
+      "en": "I don't get upset too easily.",
+      "de": "I don't get upset too easily."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} strongly disagree",
+        "de": "{score=0} strongly disagree"
+      },
+      "1": {
+        "en": "{score=1} disagree",
+        "de": "{score=1} disagree"
+      },
+      "2": {
+        "en": "{score=2} neutral",
+        "de": "{score=2} neutral"
+      },
+      "3": {
+        "en": "{score=3} agree",
+        "de": "{score=3} agree"
+      },
+      "4": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "LOT-R07": {
+    "Description": {
+      "en": "Overall, I expect more good things to happen to me than bad.",
+      "de": "Overall, I expect more good things to happen to me than bad."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} strongly disagree",
+        "de": "{score=0} strongly disagree"
+      },
+      "1": {
+        "en": "{score=1} disagree",
+        "de": "{score=1} disagree"
+      },
+      "2": {
+        "en": "{score=2} neutral",
+        "de": "{score=2} neutral"
+      },
+      "3": {
+        "en": "{score=3} agree",
+        "de": "{score=3} agree"
+      },
+      "4": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  }
+}

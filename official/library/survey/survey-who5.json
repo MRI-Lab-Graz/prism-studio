@@ -1,0 +1,197 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "The WHO-5 Well-Being Index",
+      "de": "The WHO-5 Well-Being Index"
+    },
+    "Abbreviation": "WHO5",
+    "Authors": [
+      "Topp",
+      "C.W",
+      "Ãstergaard",
+      "S.D",
+      "SÃ¸ndergaard",
+      "S",
+      "& Bech",
+      "P"
+    ],
+    "Year": 2015,
+    "DOI": "",
+    "Citation": "Topp, C.W., Ãstergaard, S.D., SÃ¸ndergaard, S., & Bech, P. (2015). The WHO-5 Well-Being Index: A Systematic Review of the Literature. Psychotherapy and Psychosomatics, 84, 167-176. Open access link",
+    "NumberOfItems": 5,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/who5.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "WHO501": {
+    "Description": {
+      "en": "... I have felt cheerful in good spirits.",
+      "de": "... I have felt cheerful in good spirits."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} All of the time",
+        "de": "{score=5} All of the time"
+      },
+      "1": {
+        "en": "{score=4} Most of the time",
+        "de": "{score=4} Most of the time"
+      },
+      "2": {
+        "en": "{score=3} More than half the time",
+        "de": "{score=3} More than half the time"
+      },
+      "3": {
+        "en": "{score=2} Less than half the time",
+        "de": "{score=2} Less than half the time"
+      },
+      "4": {
+        "en": "{score=1} Some of the time",
+        "de": "{score=1} Some of the time"
+      },
+      "5": {
+        "en": "{score=0} At no time",
+        "de": "{score=0} At no time"
+      }
+    }
+  },
+  "WHO502": {
+    "Description": {
+      "en": "... I have felt calm and relaxed.",
+      "de": "... I have felt calm and relaxed."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} All of the time",
+        "de": "{score=5} All of the time"
+      },
+      "1": {
+        "en": "{score=4} Most of the time",
+        "de": "{score=4} Most of the time"
+      },
+      "2": {
+        "en": "{score=3} More than half the time",
+        "de": "{score=3} More than half the time"
+      },
+      "3": {
+        "en": "{score=2} Less than half the time",
+        "de": "{score=2} Less than half the time"
+      },
+      "4": {
+        "en": "{score=1} Some of the time",
+        "de": "{score=1} Some of the time"
+      },
+      "5": {
+        "en": "{score=0} At no time",
+        "de": "{score=0} At no time"
+      }
+    }
+  },
+  "WHO503": {
+    "Description": {
+      "en": "... I have felt active and vigorous.",
+      "de": "... I have felt active and vigorous."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} All of the time",
+        "de": "{score=5} All of the time"
+      },
+      "1": {
+        "en": "{score=4} Most of the time",
+        "de": "{score=4} Most of the time"
+      },
+      "2": {
+        "en": "{score=3} More than half the time",
+        "de": "{score=3} More than half the time"
+      },
+      "3": {
+        "en": "{score=2} Less than half the time",
+        "de": "{score=2} Less than half the time"
+      },
+      "4": {
+        "en": "{score=1} Some of the time",
+        "de": "{score=1} Some of the time"
+      },
+      "5": {
+        "en": "{score=0} At no time",
+        "de": "{score=0} At no time"
+      }
+    }
+  },
+  "WHO504": {
+    "Description": {
+      "en": "... I woke up feeling fresh and rested.",
+      "de": "... I woke up feeling fresh and rested."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} All of the time",
+        "de": "{score=5} All of the time"
+      },
+      "1": {
+        "en": "{score=4} Most of the time",
+        "de": "{score=4} Most of the time"
+      },
+      "2": {
+        "en": "{score=3} More than half the time",
+        "de": "{score=3} More than half the time"
+      },
+      "3": {
+        "en": "{score=2} Less than half the time",
+        "de": "{score=2} Less than half the time"
+      },
+      "4": {
+        "en": "{score=1} Some of the time",
+        "de": "{score=1} Some of the time"
+      },
+      "5": {
+        "en": "{score=0} At no time",
+        "de": "{score=0} At no time"
+      }
+    }
+  },
+  "WHO505": {
+    "Description": {
+      "en": "... My daily life has been filled with things that interest me.",
+      "de": "... My daily life has been filled with things that interest me."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} All of the time",
+        "de": "{score=5} All of the time"
+      },
+      "1": {
+        "en": "{score=4} Most of the time",
+        "de": "{score=4} Most of the time"
+      },
+      "2": {
+        "en": "{score=3} More than half the time",
+        "de": "{score=3} More than half the time"
+      },
+      "3": {
+        "en": "{score=2} Less than half the time",
+        "de": "{score=2} Less than half the time"
+      },
+      "4": {
+        "en": "{score=1} Some of the time",
+        "de": "{score=1} Some of the time"
+      },
+      "5": {
+        "en": "{score=0} At no time",
+        "de": "{score=0} At no time"
+      }
+    }
+  }
+}

@@ -1,0 +1,480 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Supernatural Belief Scale",
+      "de": "Supernatural Belief Scale"
+    },
+    "Abbreviation": "SBS-10",
+    "Authors": [
+      "Jong",
+      "J",
+      "Bluemke",
+      "M",
+      "& Halberstadt",
+      "J"
+    ],
+    "Year": 2013,
+    "DOI": "",
+    "Citation": "Jong, J., Bluemke, M., & Halberstadt, J. (2013). Fear of death and supernatural beliefs: Developing a new supernatural belief scale to test the relationship. European Journal of Personality, 27, 495-506.",
+    "NumberOfItems": 10,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/supernatural-sbs.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "SBS-1001": {
+    "Description": {
+      "en": "There exists an all-powerful, all-knowing, loving God.",
+      "de": "There exists an all-powerful, all-knowing, loving God."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=-4} strongly disagree",
+        "de": "{score=-4} strongly disagree"
+      },
+      "1": {
+        "en": "{score=-3} .",
+        "de": "{score=-3} ."
+      },
+      "2": {
+        "en": "{score=-2} .",
+        "de": "{score=-2} ."
+      },
+      "3": {
+        "en": "{score=-1} .",
+        "de": "{score=-1} ."
+      },
+      "4": {
+        "en": "{score=0} neither agree nor disagree",
+        "de": "{score=0} neither agree nor disagree"
+      },
+      "5": {
+        "en": "{score=1} .",
+        "de": "{score=1} ."
+      },
+      "6": {
+        "en": "{score=2} .",
+        "de": "{score=2} ."
+      },
+      "7": {
+        "en": "{score=3} .",
+        "de": "{score=3} ."
+      },
+      "8": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "SBS-1002": {
+    "Description": {
+      "en": "There exists an evil personal spiritual being, whom we might call the Devil.",
+      "de": "There exists an evil personal spiritual being, whom we might call the Devil."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=-4} strongly disagree",
+        "de": "{score=-4} strongly disagree"
+      },
+      "1": {
+        "en": "{score=-3} .",
+        "de": "{score=-3} ."
+      },
+      "2": {
+        "en": "{score=-2} .",
+        "de": "{score=-2} ."
+      },
+      "3": {
+        "en": "{score=-1} .",
+        "de": "{score=-1} ."
+      },
+      "4": {
+        "en": "{score=0} neither agree nor disagree",
+        "de": "{score=0} neither agree nor disagree"
+      },
+      "5": {
+        "en": "{score=1} .",
+        "de": "{score=1} ."
+      },
+      "6": {
+        "en": "{score=2} .",
+        "de": "{score=2} ."
+      },
+      "7": {
+        "en": "{score=3} .",
+        "de": "{score=3} ."
+      },
+      "8": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "SBS-1003": {
+    "Description": {
+      "en": "There exist good personal spiritual beings, whom we might call angels.",
+      "de": "There exist good personal spiritual beings, whom we might call angels."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=-4} strongly disagree",
+        "de": "{score=-4} strongly disagree"
+      },
+      "1": {
+        "en": "{score=-3} .",
+        "de": "{score=-3} ."
+      },
+      "2": {
+        "en": "{score=-2} .",
+        "de": "{score=-2} ."
+      },
+      "3": {
+        "en": "{score=-1} .",
+        "de": "{score=-1} ."
+      },
+      "4": {
+        "en": "{score=0} neither agree nor disagree",
+        "de": "{score=0} neither agree nor disagree"
+      },
+      "5": {
+        "en": "{score=1} .",
+        "de": "{score=1} ."
+      },
+      "6": {
+        "en": "{score=2} .",
+        "de": "{score=2} ."
+      },
+      "7": {
+        "en": "{score=3} .",
+        "de": "{score=3} ."
+      },
+      "8": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "SBS-1004": {
+    "Description": {
+      "en": "There exist evil, personal spiritual beings, whom we might call demons.",
+      "de": "There exist evil, personal spiritual beings, whom we might call demons."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=-4} strongly disagree",
+        "de": "{score=-4} strongly disagree"
+      },
+      "1": {
+        "en": "{score=-3} .",
+        "de": "{score=-3} ."
+      },
+      "2": {
+        "en": "{score=-2} .",
+        "de": "{score=-2} ."
+      },
+      "3": {
+        "en": "{score=-1} .",
+        "de": "{score=-1} ."
+      },
+      "4": {
+        "en": "{score=0} neither agree nor disagree",
+        "de": "{score=0} neither agree nor disagree"
+      },
+      "5": {
+        "en": "{score=1} .",
+        "de": "{score=1} ."
+      },
+      "6": {
+        "en": "{score=2} .",
+        "de": "{score=2} ."
+      },
+      "7": {
+        "en": "{score=3} .",
+        "de": "{score=3} ."
+      },
+      "8": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "SBS-1005": {
+    "Description": {
+      "en": "Human beings have immaterial, immortal souls.",
+      "de": "Human beings have immaterial, immortal souls."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=-4} strongly disagree",
+        "de": "{score=-4} strongly disagree"
+      },
+      "1": {
+        "en": "{score=-3} .",
+        "de": "{score=-3} ."
+      },
+      "2": {
+        "en": "{score=-2} .",
+        "de": "{score=-2} ."
+      },
+      "3": {
+        "en": "{score=-1} .",
+        "de": "{score=-1} ."
+      },
+      "4": {
+        "en": "{score=0} neither agree nor disagree",
+        "de": "{score=0} neither agree nor disagree"
+      },
+      "5": {
+        "en": "{score=1} .",
+        "de": "{score=1} ."
+      },
+      "6": {
+        "en": "{score=2} .",
+        "de": "{score=2} ."
+      },
+      "7": {
+        "en": "{score=3} .",
+        "de": "{score=3} ."
+      },
+      "8": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "SBS-1006": {
+    "Description": {
+      "en": "There is a spiritual realm besides the physical one.",
+      "de": "There is a spiritual realm besides the physical one."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=-4} strongly disagree",
+        "de": "{score=-4} strongly disagree"
+      },
+      "1": {
+        "en": "{score=-3} .",
+        "de": "{score=-3} ."
+      },
+      "2": {
+        "en": "{score=-2} .",
+        "de": "{score=-2} ."
+      },
+      "3": {
+        "en": "{score=-1} .",
+        "de": "{score=-1} ."
+      },
+      "4": {
+        "en": "{score=0} neither agree nor disagree",
+        "de": "{score=0} neither agree nor disagree"
+      },
+      "5": {
+        "en": "{score=1} .",
+        "de": "{score=1} ."
+      },
+      "6": {
+        "en": "{score=2} .",
+        "de": "{score=2} ."
+      },
+      "7": {
+        "en": "{score=3} .",
+        "de": "{score=3} ."
+      },
+      "8": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "SBS-1007": {
+    "Description": {
+      "en": "Some people will be rewarded in an afterlife when they die.",
+      "de": "Some people will be rewarded in an afterlife when they die."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=-4} strongly disagree",
+        "de": "{score=-4} strongly disagree"
+      },
+      "1": {
+        "en": "{score=-3} .",
+        "de": "{score=-3} ."
+      },
+      "2": {
+        "en": "{score=-2} .",
+        "de": "{score=-2} ."
+      },
+      "3": {
+        "en": "{score=-1} .",
+        "de": "{score=-1} ."
+      },
+      "4": {
+        "en": "{score=0} neither agree nor disagree",
+        "de": "{score=0} neither agree nor disagree"
+      },
+      "5": {
+        "en": "{score=1} .",
+        "de": "{score=1} ."
+      },
+      "6": {
+        "en": "{score=2} .",
+        "de": "{score=2} ."
+      },
+      "7": {
+        "en": "{score=3} .",
+        "de": "{score=3} ."
+      },
+      "8": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "SBS-1008": {
+    "Description": {
+      "en": "Some people will be punished in an afterlife when they die.",
+      "de": "Some people will be punished in an afterlife when they die."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=-4} strongly disagree",
+        "de": "{score=-4} strongly disagree"
+      },
+      "1": {
+        "en": "{score=-3} .",
+        "de": "{score=-3} ."
+      },
+      "2": {
+        "en": "{score=-2} .",
+        "de": "{score=-2} ."
+      },
+      "3": {
+        "en": "{score=-1} .",
+        "de": "{score=-1} ."
+      },
+      "4": {
+        "en": "{score=0} neither agree nor disagree",
+        "de": "{score=0} neither agree nor disagree"
+      },
+      "5": {
+        "en": "{score=1} .",
+        "de": "{score=1} ."
+      },
+      "6": {
+        "en": "{score=2} .",
+        "de": "{score=2} ."
+      },
+      "7": {
+        "en": "{score=3} .",
+        "de": "{score=3} ."
+      },
+      "8": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "SBS-1009": {
+    "Description": {
+      "en": "Miraclesâdivinely-caused events that have no natural explanationâcan and do happen.",
+      "de": "Miraclesâdivinely-caused events that have no natural explanationâcan and do happen."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=-4} strongly disagree",
+        "de": "{score=-4} strongly disagree"
+      },
+      "1": {
+        "en": "{score=-3} .",
+        "de": "{score=-3} ."
+      },
+      "2": {
+        "en": "{score=-2} .",
+        "de": "{score=-2} ."
+      },
+      "3": {
+        "en": "{score=-1} .",
+        "de": "{score=-1} ."
+      },
+      "4": {
+        "en": "{score=0} neither agree nor disagree",
+        "de": "{score=0} neither agree nor disagree"
+      },
+      "5": {
+        "en": "{score=1} .",
+        "de": "{score=1} ."
+      },
+      "6": {
+        "en": "{score=2} .",
+        "de": "{score=2} ."
+      },
+      "7": {
+        "en": "{score=3} .",
+        "de": "{score=3} ."
+      },
+      "8": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  },
+  "SBS-1010": {
+    "Description": {
+      "en": "There are individuals who are messengers of God and/or can foresee the future.",
+      "de": "There are individuals who are messengers of God and/or can foresee the future."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=-4} strongly disagree",
+        "de": "{score=-4} strongly disagree"
+      },
+      "1": {
+        "en": "{score=-3} .",
+        "de": "{score=-3} ."
+      },
+      "2": {
+        "en": "{score=-2} .",
+        "de": "{score=-2} ."
+      },
+      "3": {
+        "en": "{score=-1} .",
+        "de": "{score=-1} ."
+      },
+      "4": {
+        "en": "{score=0} neither agree nor disagree",
+        "de": "{score=0} neither agree nor disagree"
+      },
+      "5": {
+        "en": "{score=1} .",
+        "de": "{score=1} ."
+      },
+      "6": {
+        "en": "{score=2} .",
+        "de": "{score=2} ."
+      },
+      "7": {
+        "en": "{score=3} .",
+        "de": "{score=3} ."
+      },
+      "8": {
+        "en": "{score=4} strongly agree",
+        "de": "{score=4} strongly agree"
+      }
+    }
+  }
+}

@@ -1,0 +1,316 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "General Procrastination Scale",
+      "de": "General Procrastination Scale"
+    },
+    "Abbreviation": "GP",
+    "Authors": [
+      "Lay",
+      "C.H"
+    ],
+    "Year": 1986,
+    "DOI": "",
+    "Citation": "Lay, C.H. (1986). At Last, My Research Article on\nProcrastination. Journal of Research in Personality, 20, 474-495.",
+    "NumberOfItems": 10,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/procrastination-gp.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "GP01": {
+    "Description": {
+      "en": "I often find myself performing tasks that I had intended to do days before.",
+      "de": "I often find myself performing tasks that I had intended to do days before."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "extremely uncharacteristic",
+        "de": "extremely uncharacteristic"
+      },
+      "1": {
+        "en": "moderately uncharacteristic",
+        "de": "moderately uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately characteristic",
+        "de": "moderately characteristic"
+      },
+      "4": {
+        "en": "extremely characteristic",
+        "de": "extremely characteristic"
+      }
+    }
+  },
+  "GP02": {
+    "Description": {
+      "en": "I do not do assignments until just before they are to be handed in.",
+      "de": "I do not do assignments until just before they are to be handed in."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "extremely uncharacteristic",
+        "de": "extremely uncharacteristic"
+      },
+      "1": {
+        "en": "moderately uncharacteristic",
+        "de": "moderately uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately characteristic",
+        "de": "moderately characteristic"
+      },
+      "4": {
+        "en": "extremely characteristic",
+        "de": "extremely characteristic"
+      }
+    }
+  },
+  "GP03": {
+    "Description": {
+      "en": "A letter may sit for days after I write it before mailing it.",
+      "de": "A letter may sit for days after I write it before mailing it."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "extremely uncharacteristic",
+        "de": "extremely uncharacteristic"
+      },
+      "1": {
+        "en": "moderately uncharacteristic",
+        "de": "moderately uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately characteristic",
+        "de": "moderately characteristic"
+      },
+      "4": {
+        "en": "extremely characteristic",
+        "de": "extremely characteristic"
+      }
+    }
+  },
+  "GP04": {
+    "Description": {
+      "en": "Even with jobs that require little else except sitting down and doing them, I find they seldom get done for days.",
+      "de": "Even with jobs that require little else except sitting down and doing them, I find they seldom get done for days."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "extremely uncharacteristic",
+        "de": "extremely uncharacteristic"
+      },
+      "1": {
+        "en": "moderately uncharacteristic",
+        "de": "moderately uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately characteristic",
+        "de": "moderately characteristic"
+      },
+      "4": {
+        "en": "extremely characteristic",
+        "de": "extremely characteristic"
+      }
+    }
+  },
+  "GP05": {
+    "Description": {
+      "en": "I generally delay before starting on work I have to do.",
+      "de": "I generally delay before starting on work I have to do."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "extremely uncharacteristic",
+        "de": "extremely uncharacteristic"
+      },
+      "1": {
+        "en": "moderately uncharacteristic",
+        "de": "moderately uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately characteristic",
+        "de": "moderately characteristic"
+      },
+      "4": {
+        "en": "extremely characteristic",
+        "de": "extremely characteristic"
+      }
+    }
+  },
+  "GP06": {
+    "Description": {
+      "en": "I usually have to rush to complete a task on time.",
+      "de": "I usually have to rush to complete a task on time."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "extremely uncharacteristic",
+        "de": "extremely uncharacteristic"
+      },
+      "1": {
+        "en": "moderately uncharacteristic",
+        "de": "moderately uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately characteristic",
+        "de": "moderately characteristic"
+      },
+      "4": {
+        "en": "extremely characteristic",
+        "de": "extremely characteristic"
+      }
+    }
+  },
+  "GP07": {
+    "Description": {
+      "en": "In preparing for some deadline, I often waste time by doing other things.",
+      "de": "In preparing for some deadline, I often waste time by doing other things."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "extremely uncharacteristic",
+        "de": "extremely uncharacteristic"
+      },
+      "1": {
+        "en": "moderately uncharacteristic",
+        "de": "moderately uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately characteristic",
+        "de": "moderately characteristic"
+      },
+      "4": {
+        "en": "extremely characteristic",
+        "de": "extremely characteristic"
+      }
+    }
+  },
+  "GP08": {
+    "Description": {
+      "en": "I always seem to end up shopping for birthday or Christmas gifts at the last minute.",
+      "de": "I always seem to end up shopping for birthday or Christmas gifts at the last minute."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "extremely uncharacteristic",
+        "de": "extremely uncharacteristic"
+      },
+      "1": {
+        "en": "moderately uncharacteristic",
+        "de": "moderately uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately characteristic",
+        "de": "moderately characteristic"
+      },
+      "4": {
+        "en": "extremely characteristic",
+        "de": "extremely characteristic"
+      }
+    }
+  },
+  "GP09": {
+    "Description": {
+      "en": "I usually buy even an essential item at the last minute.",
+      "de": "I usually buy even an essential item at the last minute."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "extremely uncharacteristic",
+        "de": "extremely uncharacteristic"
+      },
+      "1": {
+        "en": "moderately uncharacteristic",
+        "de": "moderately uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately characteristic",
+        "de": "moderately characteristic"
+      },
+      "4": {
+        "en": "extremely characteristic",
+        "de": "extremely characteristic"
+      }
+    }
+  },
+  "GP10": {
+    "Description": {
+      "en": "I am continually saying \"I'll do it tomorrow\".",
+      "de": "I am continually saying \"I'll do it tomorrow\"."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "extremely uncharacteristic",
+        "de": "extremely uncharacteristic"
+      },
+      "1": {
+        "en": "moderately uncharacteristic",
+        "de": "moderately uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "moderately characteristic",
+        "de": "moderately characteristic"
+      },
+      "4": {
+        "en": "extremely characteristic",
+        "de": "extremely characteristic"
+      }
+    }
+  }
+}

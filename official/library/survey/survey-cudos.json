@@ -1,0 +1,495 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "A clinically useful depression outcome scale (CUDOS)",
+      "de": "A clinically useful depression outcome scale (CUDOS)"
+    },
+    "Abbreviation": "CUDOS",
+    "Authors": [
+      "Zimmerman",
+      "M",
+      "Chelminski",
+      "I",
+      "McGlinchey",
+      "J. B. and Posternak",
+      "M. A"
+    ],
+    "Year": 2008,
+    "DOI": "",
+    "Citation": "Zimmerman, M., Chelminski, I, McGlinchey, J. B. and Posternak, M. A.\n(2008). A clinically useful depression outcome scale. Comprehensive\nPsychiatry, 49, 131-140.",
+    "NumberOfItems": 16,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/depression-cudos.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "CUDOS01": {
+    "Description": {
+      "en": "I felt sad or depressed",
+      "de": "I felt sad or depressed"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS02": {
+    "Description": {
+      "en": "I was not as interested in my usual activities",
+      "de": "I was not as interested in my usual activities"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS03": {
+    "Description": {
+      "en": "My appetite was poor and I didn't feel like eating",
+      "de": "My appetite was poor and I didn't feel like eating"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS04": {
+    "Description": {
+      "en": "My appetite was much greater than usual",
+      "de": "My appetite was much greater than usual"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS05": {
+    "Description": {
+      "en": "I had difficulty sleeping",
+      "de": "I had difficulty sleeping"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS06": {
+    "Description": {
+      "en": "I was sleeping too much",
+      "de": "I was sleeping too much"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS07": {
+    "Description": {
+      "en": "I felt very fidgety, making it difficult to sit still",
+      "de": "I felt very fidgety, making it difficult to sit still"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS08": {
+    "Description": {
+      "en": "I felt physically slowed down, like my body was stuck in mud",
+      "de": "I felt physically slowed down, like my body was stuck in mud"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS09": {
+    "Description": {
+      "en": "My energy level was low",
+      "de": "My energy level was low"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS10": {
+    "Description": {
+      "en": "I felt guilty",
+      "de": "I felt guilty"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS11": {
+    "Description": {
+      "en": "I thought I was a failure",
+      "de": "I thought I was a failure"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS12": {
+    "Description": {
+      "en": "I had problems concentrating",
+      "de": "I had problems concentrating"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS13": {
+    "Description": {
+      "en": "I had more difficulties making decisions than usual",
+      "de": "I had more difficulties making decisions than usual"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS14": {
+    "Description": {
+      "en": "I wished I was dead",
+      "de": "I wished I was dead"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS15": {
+    "Description": {
+      "en": "I thought about killing myself",
+      "de": "I thought about killing myself"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  },
+  "CUDOS16": {
+    "Description": {
+      "en": "I thought that the future looked hopeless",
+      "de": "I thought that the future looked hopeless"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all true (0 days)",
+        "de": "{score=0} not at all true (0 days)"
+      },
+      "1": {
+        "en": "{score=1} rarely true (1-2 days)",
+        "de": "{score=1} rarely true (1-2 days)"
+      },
+      "2": {
+        "en": "{score=2} sometimes true (3-4 days)",
+        "de": "{score=2} sometimes true (3-4 days)"
+      },
+      "3": {
+        "en": "{score=3} often true (5-6 days)",
+        "de": "{score=3} often true (5-6 days)"
+      },
+      "4": {
+        "en": "{score=4} almost always true (every day)",
+        "de": "{score=4} almost always true (every day)"
+      }
+    }
+  }
+}

@@ -1,0 +1,317 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Measure of Acceptance of the Theory of Evolution (MATE)",
+      "de": "Measure of Acceptance of the Theory of Evolution (MATE)"
+    },
+    "Abbreviation": "MATE",
+    "Authors": [
+      "Rutledge",
+      "M .L . & Warden",
+      "M .A "
+    ],
+    "Year": 1999,
+    "DOI": "",
+    "Citation": "Rutledge, M .L . & Warden, M .A . (1999). The development and validation of the Measure of Acceptance of the Theory of Evolution Instrument. School Science and Mathematics, 99(1), 13-18.",
+    "NumberOfItems": 10,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/evolution-mate.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "MATE01": {
+    "Description": {
+      "en": "Organisms existing today are the result of evolutionary processes that have occurred over millions of years",
+      "de": "Organisms existing today are the result of evolutionary processes that have occurred over millions of years"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} Strongly agree",
+        "de": "{score=5} Strongly agree"
+      },
+      "1": {
+        "en": "{score=4} Agree",
+        "de": "{score=4} Agree"
+      },
+      "2": {
+        "en": "{score=3} Undecided",
+        "de": "{score=3} Undecided"
+      },
+      "3": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "4": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  },
+  "MATE02": {
+    "Description": {
+      "en": "Modern humans are the product of evolutionary processes that have occurred over millions of years",
+      "de": "Modern humans are the product of evolutionary processes that have occurred over millions of years"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} Strongly agree",
+        "de": "{score=5} Strongly agree"
+      },
+      "1": {
+        "en": "{score=4} Agree",
+        "de": "{score=4} Agree"
+      },
+      "2": {
+        "en": "{score=3} Undecided",
+        "de": "{score=3} Undecided"
+      },
+      "3": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "4": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  },
+  "MATE03": {
+    "Description": {
+      "en": "Most scientists accept evolutionary theory to be a scientifically valid theory",
+      "de": "Most scientists accept evolutionary theory to be a scientifically valid theory"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} Strongly agree",
+        "de": "{score=5} Strongly agree"
+      },
+      "1": {
+        "en": "{score=4} Agree",
+        "de": "{score=4} Agree"
+      },
+      "2": {
+        "en": "{score=3} Undecided",
+        "de": "{score=3} Undecided"
+      },
+      "3": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "4": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  },
+  "MATE04": {
+    "Description": {
+      "en": "There is a significant body of data that supports evolutionary theory",
+      "de": "There is a significant body of data that supports evolutionary theory"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} Strongly agree",
+        "de": "{score=5} Strongly agree"
+      },
+      "1": {
+        "en": "{score=4} Agree",
+        "de": "{score=4} Agree"
+      },
+      "2": {
+        "en": "{score=3} Undecided",
+        "de": "{score=3} Undecided"
+      },
+      "3": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "4": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  },
+  "MATE05": {
+    "Description": {
+      "en": "The age of the earth is at least 4 billion years",
+      "de": "The age of the earth is at least 4 billion years"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} Strongly agree",
+        "de": "{score=5} Strongly agree"
+      },
+      "1": {
+        "en": "{score=4} Agree",
+        "de": "{score=4} Agree"
+      },
+      "2": {
+        "en": "{score=3} Undecided",
+        "de": "{score=3} Undecided"
+      },
+      "3": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "4": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  },
+  "MATE06": {
+    "Description": {
+      "en": "Current evolutionary theory is the result of sound scientific research and methodology",
+      "de": "Current evolutionary theory is the result of sound scientific research and methodology"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} Strongly agree",
+        "de": "{score=5} Strongly agree"
+      },
+      "1": {
+        "en": "{score=4} Agree",
+        "de": "{score=4} Agree"
+      },
+      "2": {
+        "en": "{score=3} Undecided",
+        "de": "{score=3} Undecided"
+      },
+      "3": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "4": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  },
+  "MATE07": {
+    "Description": {
+      "en": "Evolutionary theory generates testable predictions with respect to the characteristics of life",
+      "de": "Evolutionary theory generates testable predictions with respect to the characteristics of life"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} Strongly agree",
+        "de": "{score=5} Strongly agree"
+      },
+      "1": {
+        "en": "{score=4} Agree",
+        "de": "{score=4} Agree"
+      },
+      "2": {
+        "en": "{score=3} Undecided",
+        "de": "{score=3} Undecided"
+      },
+      "3": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "4": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  },
+  "MATE08": {
+    "Description": {
+      "en": "Evolutionary theory is supported by factual historical and laboratory data",
+      "de": "Evolutionary theory is supported by factual historical and laboratory data"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} Strongly agree",
+        "de": "{score=5} Strongly agree"
+      },
+      "1": {
+        "en": "{score=4} Agree",
+        "de": "{score=4} Agree"
+      },
+      "2": {
+        "en": "{score=3} Undecided",
+        "de": "{score=3} Undecided"
+      },
+      "3": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "4": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  },
+  "MATE09": {
+    "Description": {
+      "en": "The theory of evolution brings meaning to the diverse characteristics and behaviors observed in living forms",
+      "de": "The theory of evolution brings meaning to the diverse characteristics and behaviors observed in living forms"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} Strongly agree",
+        "de": "{score=5} Strongly agree"
+      },
+      "1": {
+        "en": "{score=4} Agree",
+        "de": "{score=4} Agree"
+      },
+      "2": {
+        "en": "{score=3} Undecided",
+        "de": "{score=3} Undecided"
+      },
+      "3": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "4": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  },
+  "MATE10": {
+    "Description": {
+      "en": "Evolution is a scientifically valid theory",
+      "de": "Evolution is a scientifically valid theory"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=5} Strongly agree",
+        "de": "{score=5} Strongly agree"
+      },
+      "1": {
+        "en": "{score=4} Agree",
+        "de": "{score=4} Agree"
+      },
+      "2": {
+        "en": "{score=3} Undecided",
+        "de": "{score=3} Undecided"
+      },
+      "3": {
+        "en": "{score=2} Disagree",
+        "de": "{score=2} Disagree"
+      },
+      "4": {
+        "en": "{score=1} Strongly disagree",
+        "de": "{score=1} Strongly disagree"
+      }
+    }
+  }
+}

@@ -1,0 +1,811 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Humor Styles Questionnaire (HSQ)",
+      "de": "Humor Styles Questionnaire (HSQ)"
+    },
+    "Abbreviation": "HSQ",
+    "Authors": [
+      "Martin",
+      "R.A",
+      "Puhlik-Doris",
+      "P",
+      "Larsen",
+      "G",
+      "Gray",
+      "J",
+      "and Weir",
+      "K"
+    ],
+    "Year": 2003,
+    "DOI": "",
+    "Citation": "Martin, R.A., Puhlik-Doris, P., Larsen, G., Gray, J., and Weir, K. (2003). Individual differences in uses of humor and their relation to psychological well-being: Development of the Humor Styles Questionnaire. Journal of Research in Personality, 37, 48-75.",
+    "NumberOfItems": 21,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/humor-hsq.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "HSQ01": {
+    "Description": {
+      "en": "If I am feeling depressed, I can usually cheer myself up with humor.",
+      "de": "If I am feeling depressed, I can usually cheer myself up with humor."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ02": {
+    "Description": {
+      "en": "If someone makes a mistake, I will often tease them about it.",
+      "de": "If someone makes a mistake, I will often tease them about it."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ03": {
+    "Description": {
+      "en": "I let people laugh at me or make fun at my expense more than I should.",
+      "de": "I let people laugh at me or make fun at my expense more than I should."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ04": {
+    "Description": {
+      "en": "I don't have to work very hard at making other people laugh -- I seem to be a naturally humorous person.",
+      "de": "I don't have to work very hard at making other people laugh -- I seem to be a naturally humorous person."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ05": {
+    "Description": {
+      "en": "Even when Iâm by myself, Iâm often amused by the absurdities of life.",
+      "de": "Even when Iâm by myself, Iâm often amused by the absurdities of life."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ06": {
+    "Description": {
+      "en": "I will often get carried away in putting myself down if it makes my family or friends laugh.",
+      "de": "I will often get carried away in putting myself down if it makes my family or friends laugh."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ07": {
+    "Description": {
+      "en": "If I am feeling upset or unhappy I usually try to think of something funny about the situation to make myself feel better.",
+      "de": "If I am feeling upset or unhappy I usually try to think of something funny about the situation to make myself feel better."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ08": {
+    "Description": {
+      "en": "When telling jokes or saying funny things, I am usually not very concerned about how other people are taking it.",
+      "de": "When telling jokes or saying funny things, I am usually not very concerned about how other people are taking it."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ09": {
+    "Description": {
+      "en": "I often try to make people like or accept me more by saying something funny about my own weaknesses, blunders, or faults.",
+      "de": "I often try to make people like or accept me more by saying something funny about my own weaknesses, blunders, or faults."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ10": {
+    "Description": {
+      "en": "I laugh and joke a lot with my friends.",
+      "de": "I laugh and joke a lot with my friends."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ11": {
+    "Description": {
+      "en": "My humorous outlook on life keeps me from getting overly upset or depressed about things.",
+      "de": "My humorous outlook on life keeps me from getting overly upset or depressed about things."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ12": {
+    "Description": {
+      "en": "If Iâm by myself and Iâm feeling unhappy, I make an effort to think of something funny to cheer myself up.",
+      "de": "If Iâm by myself and Iâm feeling unhappy, I make an effort to think of something funny to cheer myself up."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ13": {
+    "Description": {
+      "en": "Sometimes I think of something that is so funny that I canât stop myself from saying it, even if it is not appropriate for the situation.",
+      "de": "Sometimes I think of something that is so funny that I canât stop myself from saying it, even if it is not appropriate for the situation."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ14": {
+    "Description": {
+      "en": "I often go overboard in putting myself down when I am making jokes or trying to be funny.",
+      "de": "I often go overboard in putting myself down when I am making jokes or trying to be funny."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ15": {
+    "Description": {
+      "en": "I enjoy making people laugh.",
+      "de": "I enjoy making people laugh."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ16": {
+    "Description": {
+      "en": "When I am with friends or family, I often seem to be the one that other people make fun of or joke about.",
+      "de": "When I am with friends or family, I often seem to be the one that other people make fun of or joke about."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ17": {
+    "Description": {
+      "en": "It is my experience that thinking about some amusing aspect of a situation is often a very effective way of coping with problems.",
+      "de": "It is my experience that thinking about some amusing aspect of a situation is often a very effective way of coping with problems."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ18": {
+    "Description": {
+      "en": "If I don't like someone, I often use humor or teasing to put them down.",
+      "de": "If I don't like someone, I often use humor or teasing to put them down."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ19": {
+    "Description": {
+      "en": "If I am having problems or feeling unhappy, I often cover it up by joking around, so that even my closest friends donât know how I really feel.",
+      "de": "If I am having problems or feeling unhappy, I often cover it up by joking around, so that even my closest friends donât know how I really feel."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ20": {
+    "Description": {
+      "en": "I donât need to be with other people to feel amused -- I can usually find things to laugh about even when Iâm by myself.",
+      "de": "I donât need to be with other people to feel amused -- I can usually find things to laugh about even when Iâm by myself."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  },
+  "HSQ21": {
+    "Description": {
+      "en": "Letting others laugh at me is my way of keeping my friends and family in good spirits.",
+      "de": "Letting others laugh at me is my way of keeping my friends and family in good spirits."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "totally disagree",
+        "de": "totally disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "neither agree nor disagree",
+        "de": "neither agree nor disagree"
+      },
+      "4": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "5": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "6": {
+        "en": "totally agree",
+        "de": "totally agree"
+      }
+    }
+  }
+}

@@ -1,0 +1,548 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "The Depression, Anxiety, and Stress Scales with 21 items (DASS-21)",
+      "de": "The Depression, Anxiety, and Stress Scales with 21 items (DASS-21)"
+    },
+    "Abbreviation": "DASS21",
+    "Authors": [],
+    "Year": null,
+    "DOI": "",
+    "Citation": "Official webpage",
+    "NumberOfItems": 21,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/dass21.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "DASS2101": {
+    "Description": {
+      "en": "I found it hard to wind down",
+      "de": "I found it hard to wind down"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2102": {
+    "Description": {
+      "en": "I was aware of dryness of my mouth",
+      "de": "I was aware of dryness of my mouth"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2103": {
+    "Description": {
+      "en": "I couldnât seem to experience any positive feeling at all",
+      "de": "I couldnât seem to experience any positive feeling at all"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2104": {
+    "Description": {
+      "en": "I experienced breathing difficulty (for example, excessively rapid breathing, breathlessness in the absence of physical exertion)",
+      "de": "I experienced breathing difficulty (for example, excessively rapid breathing, breathlessness in the absence of physical exertion)"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2105": {
+    "Description": {
+      "en": "I found it difficult to work up the initiative to do things",
+      "de": "I found it difficult to work up the initiative to do things"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2106": {
+    "Description": {
+      "en": "I tended to over-react to situations",
+      "de": "I tended to over-react to situations"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2107": {
+    "Description": {
+      "en": "I experienced trembling (for example, in the hands)",
+      "de": "I experienced trembling (for example, in the hands)"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2108": {
+    "Description": {
+      "en": "I felt that I was using a lot of nervous energy",
+      "de": "I felt that I was using a lot of nervous energy"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2109": {
+    "Description": {
+      "en": "I was worried about situations in which I might panic and make a fool of myself",
+      "de": "I was worried about situations in which I might panic and make a fool of myself"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2110": {
+    "Description": {
+      "en": "I felt that I had nothing to look forward to",
+      "de": "I felt that I had nothing to look forward to"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2111": {
+    "Description": {
+      "en": "I found myself getting agitated",
+      "de": "I found myself getting agitated"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2112": {
+    "Description": {
+      "en": "I found it difficult to relax",
+      "de": "I found it difficult to relax"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2113": {
+    "Description": {
+      "en": "I felt down-hearted and blue",
+      "de": "I felt down-hearted and blue"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2114": {
+    "Description": {
+      "en": "I was intolerant of anything that kept me from getting on with what I was doing",
+      "de": "I was intolerant of anything that kept me from getting on with what I was doing"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2115": {
+    "Description": {
+      "en": "I felt I was close to panic",
+      "de": "I felt I was close to panic"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2116": {
+    "Description": {
+      "en": "I was unable to become enthusiastic about anything",
+      "de": "I was unable to become enthusiastic about anything"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2117": {
+    "Description": {
+      "en": "I felt I wasnât worth much as a person",
+      "de": "I felt I wasnât worth much as a person"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2118": {
+    "Description": {
+      "en": "I felt that I was rather touchy",
+      "de": "I felt that I was rather touchy"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2119": {
+    "Description": {
+      "en": "I was aware of the action of my heart in the absence of physicalexertion (for example, sense of heart rate increase, heart missing a beat)",
+      "de": "I was aware of the action of my heart in the absence of physicalexertion (for example, sense of heart rate increase, heart missing a beat)"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2120": {
+    "Description": {
+      "en": "I felt scared without any good reason",
+      "de": "I felt scared without any good reason"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  },
+  "DASS2121": {
+    "Description": {
+      "en": "I felt that life was meaningless",
+      "de": "I felt that life was meaningless"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Never",
+        "de": "{score=0} Never"
+      },
+      "1": {
+        "en": "{score=1} Sometimes",
+        "de": "{score=1} Sometimes"
+      },
+      "2": {
+        "en": "{score=2} Often",
+        "de": "{score=2} Often"
+      },
+      "3": {
+        "en": "{score=3} Almost always",
+        "de": "{score=3} Almost always"
+      }
+    }
+  }
+}

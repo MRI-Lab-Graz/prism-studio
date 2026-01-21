@@ -1,0 +1,318 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Hypersensitive Narcissism Scale (HSNS)",
+      "de": "Hypersensitive Narcissism Scale (HSNS)"
+    },
+    "Abbreviation": "HSNS",
+    "Authors": [
+      "Hendin",
+      "H.M",
+      "& Cheek",
+      "J.M"
+    ],
+    "Year": 1997,
+    "DOI": "",
+    "Citation": "Hendin, H.M., & Cheek, J.M. (1997). Assessing Hypersensitive Narcissism: A Re-examination of Murray’s Narcissism Scale. Journal of Research in Personality, 31, 588-599.",
+    "NumberOfItems": 10,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/narcism-hsns.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "HSNS01": {
+    "Description": {
+      "en": "I can become entirely absorbed in thinking about my personal affairs, my health, my cares or my relations to others.",
+      "de": "I can become entirely absorbed in thinking about my personal affairs, my health, my cares or my relations to others."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "very uncharacteristic or untrue, strongly disagree"
+      },
+      "1": {
+        "en": "uncharacteristic",
+        "de": "uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "characteristic",
+        "de": "characteristic"
+      },
+      "4": {
+        "en": "very characteristic or true, strongly agree",
+        "de": "very characteristic or true, strongly agree"
+      }
+    }
+  },
+  "HSNS02": {
+    "Description": {
+      "en": "My feelings are easily hurt by ridicule or the slighting remarks of others.",
+      "de": "My feelings are easily hurt by ridicule or the slighting remarks of others."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "very uncharacteristic or untrue, strongly disagree"
+      },
+      "1": {
+        "en": "uncharacteristic",
+        "de": "uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "characteristic",
+        "de": "characteristic"
+      },
+      "4": {
+        "en": "very characteristic or true, strongly agree",
+        "de": "very characteristic or true, strongly agree"
+      }
+    }
+  },
+  "HSNS03": {
+    "Description": {
+      "en": "When I enter a room I often become self-conscious and feel that the eyes of others are upon me.",
+      "de": "When I enter a room I often become self-conscious and feel that the eyes of others are upon me."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "very uncharacteristic or untrue, strongly disagree"
+      },
+      "1": {
+        "en": "uncharacteristic",
+        "de": "uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "characteristic",
+        "de": "characteristic"
+      },
+      "4": {
+        "en": "very characteristic or true, strongly agree",
+        "de": "very characteristic or true, strongly agree"
+      }
+    }
+  },
+  "HSNS04": {
+    "Description": {
+      "en": "I dislike sharing the credit of an achievement with others.",
+      "de": "I dislike sharing the credit of an achievement with others."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "very uncharacteristic or untrue, strongly disagree"
+      },
+      "1": {
+        "en": "uncharacteristic",
+        "de": "uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "characteristic",
+        "de": "characteristic"
+      },
+      "4": {
+        "en": "very characteristic or true, strongly agree",
+        "de": "very characteristic or true, strongly agree"
+      }
+    }
+  },
+  "HSNS05": {
+    "Description": {
+      "en": "I feel that I have enough on my hands without worrying about other people's troubles.",
+      "de": "I feel that I have enough on my hands without worrying about other people's troubles."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "very uncharacteristic or untrue, strongly disagree"
+      },
+      "1": {
+        "en": "uncharacteristic",
+        "de": "uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "characteristic",
+        "de": "characteristic"
+      },
+      "4": {
+        "en": "very characteristic or true, strongly agree",
+        "de": "very characteristic or true, strongly agree"
+      }
+    }
+  },
+  "HSNS06": {
+    "Description": {
+      "en": "I feel that I am temperamentally different from most people.",
+      "de": "I feel that I am temperamentally different from most people."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "very uncharacteristic or untrue, strongly disagree"
+      },
+      "1": {
+        "en": "uncharacteristic",
+        "de": "uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "characteristic",
+        "de": "characteristic"
+      },
+      "4": {
+        "en": "very characteristic or true, strongly agree",
+        "de": "very characteristic or true, strongly agree"
+      }
+    }
+  },
+  "HSNS07": {
+    "Description": {
+      "en": "I often interpret the remarks of others in a personal way.",
+      "de": "I often interpret the remarks of others in a personal way."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "very uncharacteristic or untrue, strongly disagree"
+      },
+      "1": {
+        "en": "uncharacteristic",
+        "de": "uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "characteristic",
+        "de": "characteristic"
+      },
+      "4": {
+        "en": "very characteristic or true, strongly agree",
+        "de": "very characteristic or true, strongly agree"
+      }
+    }
+  },
+  "HSNS08": {
+    "Description": {
+      "en": "I easily become wrapped up in my own interests and forget the existence of others.",
+      "de": "I easily become wrapped up in my own interests and forget the existence of others."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "very uncharacteristic or untrue, strongly disagree"
+      },
+      "1": {
+        "en": "uncharacteristic",
+        "de": "uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "characteristic",
+        "de": "characteristic"
+      },
+      "4": {
+        "en": "very characteristic or true, strongly agree",
+        "de": "very characteristic or true, strongly agree"
+      }
+    }
+  },
+  "HSNS09": {
+    "Description": {
+      "en": "I dislike being with a group unless I know that I am appreciated by at least one of those present.",
+      "de": "I dislike being with a group unless I know that I am appreciated by at least one of those present."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "very uncharacteristic or untrue, strongly disagree"
+      },
+      "1": {
+        "en": "uncharacteristic",
+        "de": "uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "characteristic",
+        "de": "characteristic"
+      },
+      "4": {
+        "en": "very characteristic or true, strongly agree",
+        "de": "very characteristic or true, strongly agree"
+      }
+    }
+  },
+  "HSNS10": {
+    "Description": {
+      "en": "I am secretly \"put out\" or annoyed when other people come to me with their troubles, asking me for my time and sympathy.",
+      "de": "I am secretly \"put out\" or annoyed when other people come to me with their troubles, asking me for my time and sympathy."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "very uncharacteristic or untrue, strongly disagree",
+        "de": "very uncharacteristic or untrue, strongly disagree"
+      },
+      "1": {
+        "en": "uncharacteristic",
+        "de": "uncharacteristic"
+      },
+      "2": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "3": {
+        "en": "characteristic",
+        "de": "characteristic"
+      },
+      "4": {
+        "en": "very characteristic or true, strongly agree",
+        "de": "very characteristic or true, strongly agree"
+      }
+    }
+  }
+}

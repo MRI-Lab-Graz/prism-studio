@@ -1,0 +1,36 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Adult ADHD Self-Report Scale (ASRS)",
+      "de": "Adult ADHD Self-Report Scale (ASRS)"
+    },
+    "Abbreviation": "ASRS",
+    "Authors": [
+      "Kessler RC",
+      "Adler L",
+      "Ames M",
+      "Demler O",
+      "Faraone S",
+      "Hiripi E",
+      "Howes\nMJ",
+      "Jin R",
+      "Secnik K",
+      "Spencer T",
+      "Ustun TB",
+      "Walters EE"
+    ],
+    "Year": 2005,
+    "DOI": "",
+    "Citation": "Kessler RC, Adler L, Ames M, Demler O, Faraone S, Hiripi E, Howes\nMJ, Jin R, Secnik K, Spencer T, Ustun TB, Walters EE (2005). The World\nHealth Organization Adult ADHD Self-Report Scale (ASRS): a short\nscreening scale for use in the general population. Psychol Medince,\n,35(2), 245-56. Link to paper",
+    "NumberOfItems": 0,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/asrs.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  }
+}

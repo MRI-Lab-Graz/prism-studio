@@ -1,0 +1,255 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Patient Health Questionnaire (PHQ-9)",
+      "de": "Patient Health Questionnaire (PHQ-9)"
+    },
+    "Abbreviation": "PHQ9",
+    "Authors": [
+      "Kroenke",
+      "K",
+      "Spitzer",
+      "R. L",
+      "& Williams",
+      "J. B. W"
+    ],
+    "Year": 2001,
+    "DOI": "",
+    "Citation": "Kroenke, K., Spitzer, R. L., & Williams, J. B. W. (2001). The PHQ-9 - Validity of a brief depression severity measure. Journal of General Internal Medicine, 16, 606-613.",
+    "NumberOfItems": 9,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/depression-phq.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "PHQ901": {
+    "Description": {
+      "en": "Little interest or pleasure in doing things",
+      "de": "Little interest or pleasure in doing things"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} several days",
+        "de": "{score=1} several days"
+      },
+      "2": {
+        "en": "{score=2} more than half the days",
+        "de": "{score=2} more than half the days"
+      },
+      "3": {
+        "en": "{score=3} nearly every day",
+        "de": "{score=3} nearly every day"
+      }
+    }
+  },
+  "PHQ902": {
+    "Description": {
+      "en": "Feeling down, depressed, or hopeless",
+      "de": "Feeling down, depressed, or hopeless"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} several days",
+        "de": "{score=1} several days"
+      },
+      "2": {
+        "en": "{score=2} more than half the days",
+        "de": "{score=2} more than half the days"
+      },
+      "3": {
+        "en": "{score=3} nearly every day",
+        "de": "{score=3} nearly every day"
+      }
+    }
+  },
+  "PHQ903": {
+    "Description": {
+      "en": "Trouble falling or staying asleep, or sleeping too much",
+      "de": "Trouble falling or staying asleep, or sleeping too much"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} several days",
+        "de": "{score=1} several days"
+      },
+      "2": {
+        "en": "{score=2} more than half the days",
+        "de": "{score=2} more than half the days"
+      },
+      "3": {
+        "en": "{score=3} nearly every day",
+        "de": "{score=3} nearly every day"
+      }
+    }
+  },
+  "PHQ904": {
+    "Description": {
+      "en": "Feeling tired or having little energy",
+      "de": "Feeling tired or having little energy"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} several days",
+        "de": "{score=1} several days"
+      },
+      "2": {
+        "en": "{score=2} more than half the days",
+        "de": "{score=2} more than half the days"
+      },
+      "3": {
+        "en": "{score=3} nearly every day",
+        "de": "{score=3} nearly every day"
+      }
+    }
+  },
+  "PHQ905": {
+    "Description": {
+      "en": "Poor appetite or overeating",
+      "de": "Poor appetite or overeating"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} several days",
+        "de": "{score=1} several days"
+      },
+      "2": {
+        "en": "{score=2} more than half the days",
+        "de": "{score=2} more than half the days"
+      },
+      "3": {
+        "en": "{score=3} nearly every day",
+        "de": "{score=3} nearly every day"
+      }
+    }
+  },
+  "PHQ906": {
+    "Description": {
+      "en": "Feeling bad about yourself - or that you are a failure or have let yourself or your family down",
+      "de": "Feeling bad about yourself - or that you are a failure or have let yourself or your family down"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} several days",
+        "de": "{score=1} several days"
+      },
+      "2": {
+        "en": "{score=2} more than half the days",
+        "de": "{score=2} more than half the days"
+      },
+      "3": {
+        "en": "{score=3} nearly every day",
+        "de": "{score=3} nearly every day"
+      }
+    }
+  },
+  "PHQ907": {
+    "Description": {
+      "en": "Trouble concentrating on things, such as reading the newspaper or watching television",
+      "de": "Trouble concentrating on things, such as reading the newspaper or watching television"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} several days",
+        "de": "{score=1} several days"
+      },
+      "2": {
+        "en": "{score=2} more than half the days",
+        "de": "{score=2} more than half the days"
+      },
+      "3": {
+        "en": "{score=3} nearly every day",
+        "de": "{score=3} nearly every day"
+      }
+    }
+  },
+  "PHQ908": {
+    "Description": {
+      "en": "Moving or speaking so slowly that other people could have noticed? Or the opposite - being so fidgety or restless that you have been moving around a lot more than usual",
+      "de": "Moving or speaking so slowly that other people could have noticed? Or the opposite - being so fidgety or restless that you have been moving around a lot more than usual"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} several days",
+        "de": "{score=1} several days"
+      },
+      "2": {
+        "en": "{score=2} more than half the days",
+        "de": "{score=2} more than half the days"
+      },
+      "3": {
+        "en": "{score=3} nearly every day",
+        "de": "{score=3} nearly every day"
+      }
+    }
+  },
+  "PHQ909": {
+    "Description": {
+      "en": "Thoughts that you would be better off dead or of hurting yourself in some way",
+      "de": "Thoughts that you would be better off dead or of hurting yourself in some way"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} not at all",
+        "de": "{score=0} not at all"
+      },
+      "1": {
+        "en": "{score=1} several days",
+        "de": "{score=1} several days"
+      },
+      "2": {
+        "en": "{score=2} more than half the days",
+        "de": "{score=2} more than half the days"
+      },
+      "3": {
+        "en": "{score=3} nearly every day",
+        "de": "{score=3} nearly every day"
+      }
+    }
+  }
+}

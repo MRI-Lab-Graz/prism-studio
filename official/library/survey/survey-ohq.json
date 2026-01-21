@@ -1,0 +1,588 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Oxford Happiness Scale",
+      "de": "Oxford Happiness Scale"
+    },
+    "Abbreviation": "OHQ",
+    "Authors": [
+      "Hills",
+      "P. & Argyle",
+      "M"
+    ],
+    "Year": 2002,
+    "DOI": "",
+    "Citation": "Hills, P. & Argyle, M. (2002). The Oxford Happiness Questionnaire: a compact scale for the measurement of psychological well-being. Personality and Individual Differences, 33, 1073-1082.",
+    "NumberOfItems": 17,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/happiness-ohq.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "OHQ01": {
+    "Description": {
+      "en": "I am intensely interested in other people",
+      "de": "I am intensely interested in other people"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ02": {
+    "Description": {
+      "en": "I feel that life is very rewarding",
+      "de": "I feel that life is very rewarding"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ03": {
+    "Description": {
+      "en": "I have very warm feelings towards almost everyone",
+      "de": "I have very warm feelings towards almost everyone"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ04": {
+    "Description": {
+      "en": "I find most things amusing",
+      "de": "I find most things amusing"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ05": {
+    "Description": {
+      "en": "I am always committed and involved",
+      "de": "I am always committed and involved"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ06": {
+    "Description": {
+      "en": "Life is good",
+      "de": "Life is good"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ07": {
+    "Description": {
+      "en": "I laugh a lot",
+      "de": "I laugh a lot"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ08": {
+    "Description": {
+      "en": "I am well satisfied about everything in my life",
+      "de": "I am well satisfied about everything in my life"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ09": {
+    "Description": {
+      "en": "I am very happy",
+      "de": "I am very happy"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ10": {
+    "Description": {
+      "en": "I find beauty in some things",
+      "de": "I find beauty in some things"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ11": {
+    "Description": {
+      "en": "I always have a cheerful effect on others",
+      "de": "I always have a cheerful effect on others"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ12": {
+    "Description": {
+      "en": "I can fit in everything I want to",
+      "de": "I can fit in everything I want to"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ13": {
+    "Description": {
+      "en": "I feel able to take anything on",
+      "de": "I feel able to take anything on"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ14": {
+    "Description": {
+      "en": "I feel fully mentally alert",
+      "de": "I feel fully mentally alert"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ15": {
+    "Description": {
+      "en": "I often experience joy and elation",
+      "de": "I often experience joy and elation"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ16": {
+    "Description": {
+      "en": "I feel I have a great deal of energy",
+      "de": "I feel I have a great deal of energy"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  },
+  "OHQ17": {
+    "Description": {
+      "en": "I usually have a good influence on events",
+      "de": "I usually have a good influence on events"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "strongly disagree",
+        "de": "strongly disagree"
+      },
+      "1": {
+        "en": "moderately disagree",
+        "de": "moderately disagree"
+      },
+      "2": {
+        "en": "slightly disagree",
+        "de": "slightly disagree"
+      },
+      "3": {
+        "en": "slightly agree",
+        "de": "slightly agree"
+      },
+      "4": {
+        "en": "moderately agree",
+        "de": "moderately agree"
+      },
+      "5": {
+        "en": "strongly agree",
+        "de": "strongly agree"
+      }
+    }
+  }
+}

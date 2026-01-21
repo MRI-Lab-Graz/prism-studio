@@ -1,0 +1,766 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Bem sex role inventory (BSRI)",
+      "de": "Bem sex role inventory (BSRI)"
+    },
+    "Abbreviation": "BSRI",
+    "Authors": [
+      "Bem",
+      "S. L"
+    ],
+    "Year": 1974,
+    "DOI": "",
+    "Citation": "Bem, S. L. (1974) The measurement of psychological\nandrogyny. Journal of Consulting and Clinical Psychology, 42,\n155-162.",
+    "NumberOfItems": 20,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/sex-role-bem.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "BSRI01": {
+    "Description": {
+      "en": "yielding",
+      "de": "yielding"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI02": {
+    "Description": {
+      "en": "cheerful",
+      "de": "cheerful"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI03": {
+    "Description": {
+      "en": "shy",
+      "de": "shy"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI04": {
+    "Description": {
+      "en": "affectionate",
+      "de": "affectionate"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI05": {
+    "Description": {
+      "en": "flatterable",
+      "de": "flatterable"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI06": {
+    "Description": {
+      "en": "loyal",
+      "de": "loyal"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI07": {
+    "Description": {
+      "en": "feminine",
+      "de": "feminine"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI08": {
+    "Description": {
+      "en": "sympathetic",
+      "de": "sympathetic"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI09": {
+    "Description": {
+      "en": "sensitive to other's needs",
+      "de": "sensitive to other's needs"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI10": {
+    "Description": {
+      "en": "understanding",
+      "de": "understanding"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI11": {
+    "Description": {
+      "en": "compassionate",
+      "de": "compassionate"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI12": {
+    "Description": {
+      "en": "eager to soothe hurt feelings",
+      "de": "eager to soothe hurt feelings"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI13": {
+    "Description": {
+      "en": "soft spoken",
+      "de": "soft spoken"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI14": {
+    "Description": {
+      "en": "warm",
+      "de": "warm"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI15": {
+    "Description": {
+      "en": "tender",
+      "de": "tender"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI16": {
+    "Description": {
+      "en": "gullible",
+      "de": "gullible"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI17": {
+    "Description": {
+      "en": "childlike",
+      "de": "childlike"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI18": {
+    "Description": {
+      "en": "does not use harsh language",
+      "de": "does not use harsh language"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI19": {
+    "Description": {
+      "en": "loves children",
+      "de": "loves children"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  },
+  "BSRI20": {
+    "Description": {
+      "en": "gentle",
+      "de": "gentle"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "almost<br>never true",
+        "de": "almost<br>never true"
+      },
+      "1": {
+        "en": "rarely true",
+        "de": "rarely true"
+      },
+      "2": {
+        "en": "less than<br>half the times true",
+        "de": "less than<br>half the times true"
+      },
+      "3": {
+        "en": "neutral",
+        "de": "neutral"
+      },
+      "4": {
+        "en": "more than<br>half the times true",
+        "de": "more than<br>half the times true"
+      },
+      "5": {
+        "en": "often true",
+        "de": "often true"
+      },
+      "6": {
+        "en": "almost<br>always true",
+        "de": "almost<br>always true"
+      }
+    }
+  }
+}

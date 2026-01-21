@@ -1,0 +1,206 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Facebook Addition Scale (BFAS)",
+      "de": "Facebook Addition Scale (BFAS)"
+    },
+    "Abbreviation": "BFAS",
+    "Authors": [
+      "Andreassen",
+      "C.S",
+      "Torsheim",
+      "T",
+      "Brunborg",
+      "G.S",
+      "& Pallesen",
+      "S"
+    ],
+    "Year": 2010,
+    "DOI": "",
+    "Citation": "Andreassen, C.S., Torsheim, T., Brunborg, G.S., & Pallesen, S. (2010). Development of a Facebook addiction scale. Psychological Reports, 110, 2, 501-517.",
+    "NumberOfItems": 6,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/addiction-bergen-facebook.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "BFAS01": {
+    "Description": {
+      "en": "spent a lot of time thinking about Facebook or planned use of Facebook?",
+      "de": "spent a lot of time thinking about Facebook or planned use of Facebook?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} very rarely",
+        "de": "{score=0} very rarely"
+      },
+      "1": {
+        "en": "{score=0} rarely",
+        "de": "{score=0} rarely"
+      },
+      "2": {
+        "en": "{score=1} sometimes",
+        "de": "{score=1} sometimes"
+      },
+      "3": {
+        "en": "{score=1} often",
+        "de": "{score=1} often"
+      },
+      "4": {
+        "en": "{score=1} very often",
+        "de": "{score=1} very often"
+      }
+    }
+  },
+  "BFAS02": {
+    "Description": {
+      "en": "felt an urge to use Facebook more and more?",
+      "de": "felt an urge to use Facebook more and more?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} very rarely",
+        "de": "{score=0} very rarely"
+      },
+      "1": {
+        "en": "{score=0} rarely",
+        "de": "{score=0} rarely"
+      },
+      "2": {
+        "en": "{score=1} sometimes",
+        "de": "{score=1} sometimes"
+      },
+      "3": {
+        "en": "{score=1} often",
+        "de": "{score=1} often"
+      },
+      "4": {
+        "en": "{score=1} very often",
+        "de": "{score=1} very often"
+      }
+    }
+  },
+  "BFAS03": {
+    "Description": {
+      "en": "used Facebook in order to forget about personal problems?",
+      "de": "used Facebook in order to forget about personal problems?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} very rarely",
+        "de": "{score=0} very rarely"
+      },
+      "1": {
+        "en": "{score=0} rarely",
+        "de": "{score=0} rarely"
+      },
+      "2": {
+        "en": "{score=1} sometimes",
+        "de": "{score=1} sometimes"
+      },
+      "3": {
+        "en": "{score=1} often",
+        "de": "{score=1} often"
+      },
+      "4": {
+        "en": "{score=1} very often",
+        "de": "{score=1} very often"
+      }
+    }
+  },
+  "BFAS04": {
+    "Description": {
+      "en": "tried to cut down on the use of Facebook without success?",
+      "de": "tried to cut down on the use of Facebook without success?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} very rarely",
+        "de": "{score=0} very rarely"
+      },
+      "1": {
+        "en": "{score=0} rarely",
+        "de": "{score=0} rarely"
+      },
+      "2": {
+        "en": "{score=1} sometimes",
+        "de": "{score=1} sometimes"
+      },
+      "3": {
+        "en": "{score=1} often",
+        "de": "{score=1} often"
+      },
+      "4": {
+        "en": "{score=1} very often",
+        "de": "{score=1} very often"
+      }
+    }
+  },
+  "BFAS05": {
+    "Description": {
+      "en": "become restless or troubled if you have been prohibited from using Facebook?",
+      "de": "become restless or troubled if you have been prohibited from using Facebook?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} very rarely",
+        "de": "{score=0} very rarely"
+      },
+      "1": {
+        "en": "{score=0} rarely",
+        "de": "{score=0} rarely"
+      },
+      "2": {
+        "en": "{score=1} sometimes",
+        "de": "{score=1} sometimes"
+      },
+      "3": {
+        "en": "{score=1} often",
+        "de": "{score=1} often"
+      },
+      "4": {
+        "en": "{score=1} very often",
+        "de": "{score=1} very often"
+      }
+    }
+  },
+  "BFAS06": {
+    "Description": {
+      "en": "used Facebook so much that it has had a negative impact on your job/studies?",
+      "de": "used Facebook so much that it has had a negative impact on your job/studies?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} very rarely",
+        "de": "{score=0} very rarely"
+      },
+      "1": {
+        "en": "{score=0} rarely",
+        "de": "{score=0} rarely"
+      },
+      "2": {
+        "en": "{score=1} sometimes",
+        "de": "{score=1} sometimes"
+      },
+      "3": {
+        "en": "{score=1} often",
+        "de": "{score=1} often"
+      },
+      "4": {
+        "en": "{score=1} very often",
+        "de": "{score=1} very often"
+      }
+    }
+  }
+}

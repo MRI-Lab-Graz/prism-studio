@@ -1,0 +1,212 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "BIG5 Ten Item Personality Inventory (TIPI)",
+      "de": "BIG5 Ten Item Personality Inventory (TIPI)"
+    },
+    "Abbreviation": "TIPI",
+    "Authors": [
+      "S. D. Gosling",
+      "P. J. Rentfrow",
+      "and W. B. Swann Jr"
+    ],
+    "Year": 2003,
+    "DOI": "",
+    "Citation": "S. D. Gosling, P. J. Rentfrow, and W. B. Swann Jr. (2003). A very\nbrief measure of the Big-Five personality domains. Journal of Research\nin Personality, 37, 504-528.",
+    "NumberOfItems": 5,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/big5-tipi.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "TIPI01": {
+    "Description": {
+      "en": "Extroverted, enthusiastic",
+      "de": "Extroverted, enthusiastic"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Disagree strongly",
+        "de": "Disagree strongly"
+      },
+      "1": {
+        "en": "Disagree moderately",
+        "de": "Disagree moderately"
+      },
+      "2": {
+        "en": "Disagree a little",
+        "de": "Disagree a little"
+      },
+      "3": {
+        "en": "Neither agree nor disagree",
+        "de": "Neither agree nor disagree"
+      },
+      "4": {
+        "en": "Agree a little",
+        "de": "Agree a little"
+      },
+      "5": {
+        "en": "Agree moderately",
+        "de": "Agree moderately"
+      },
+      "6": {
+        "en": "Agree strongly",
+        "de": "Agree strongly"
+      }
+    }
+  },
+  "TIPI02": {
+    "Description": {
+      "en": "Dependable, self-disciplined",
+      "de": "Dependable, self-disciplined"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Disagree strongly",
+        "de": "Disagree strongly"
+      },
+      "1": {
+        "en": "Disagree moderately",
+        "de": "Disagree moderately"
+      },
+      "2": {
+        "en": "Disagree a little",
+        "de": "Disagree a little"
+      },
+      "3": {
+        "en": "Neither agree nor disagree",
+        "de": "Neither agree nor disagree"
+      },
+      "4": {
+        "en": "Agree a little",
+        "de": "Agree a little"
+      },
+      "5": {
+        "en": "Agree moderately",
+        "de": "Agree moderately"
+      },
+      "6": {
+        "en": "Agree strongly",
+        "de": "Agree strongly"
+      }
+    }
+  },
+  "TIPI03": {
+    "Description": {
+      "en": "Open to new experiences, complex",
+      "de": "Open to new experiences, complex"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Disagree strongly",
+        "de": "Disagree strongly"
+      },
+      "1": {
+        "en": "Disagree moderately",
+        "de": "Disagree moderately"
+      },
+      "2": {
+        "en": "Disagree a little",
+        "de": "Disagree a little"
+      },
+      "3": {
+        "en": "Neither agree nor disagree",
+        "de": "Neither agree nor disagree"
+      },
+      "4": {
+        "en": "Agree a little",
+        "de": "Agree a little"
+      },
+      "5": {
+        "en": "Agree moderately",
+        "de": "Agree moderately"
+      },
+      "6": {
+        "en": "Agree strongly",
+        "de": "Agree strongly"
+      }
+    }
+  },
+  "TIPI04": {
+    "Description": {
+      "en": "Sympathetic, warm",
+      "de": "Sympathetic, warm"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Disagree strongly",
+        "de": "Disagree strongly"
+      },
+      "1": {
+        "en": "Disagree moderately",
+        "de": "Disagree moderately"
+      },
+      "2": {
+        "en": "Disagree a little",
+        "de": "Disagree a little"
+      },
+      "3": {
+        "en": "Neither agree nor disagree",
+        "de": "Neither agree nor disagree"
+      },
+      "4": {
+        "en": "Agree a little",
+        "de": "Agree a little"
+      },
+      "5": {
+        "en": "Agree moderately",
+        "de": "Agree moderately"
+      },
+      "6": {
+        "en": "Agree strongly",
+        "de": "Agree strongly"
+      }
+    }
+  },
+  "TIPI05": {
+    "Description": {
+      "en": "Calm, emotionally stable",
+      "de": "Calm, emotionally stable"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Disagree strongly",
+        "de": "Disagree strongly"
+      },
+      "1": {
+        "en": "Disagree moderately",
+        "de": "Disagree moderately"
+      },
+      "2": {
+        "en": "Disagree a little",
+        "de": "Disagree a little"
+      },
+      "3": {
+        "en": "Neither agree nor disagree",
+        "de": "Neither agree nor disagree"
+      },
+      "4": {
+        "en": "Agree a little",
+        "de": "Agree a little"
+      },
+      "5": {
+        "en": "Agree moderately",
+        "de": "Agree moderately"
+      },
+      "6": {
+        "en": "Agree strongly",
+        "de": "Agree strongly"
+      }
+    }
+  }
+}

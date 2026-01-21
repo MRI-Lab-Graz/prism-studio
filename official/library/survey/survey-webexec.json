@@ -1,0 +1,186 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Problems with executive control (webexec)",
+      "de": "Problems with executive control (webexec)"
+    },
+    "Abbreviation": "WEBEXEC",
+    "Authors": [
+      "Buchanan",
+      "T",
+      "Heffernan",
+      "T. M",
+      "Parrott",
+      "A. C",
+      "Ling",
+      "J",
+      "Rodgers",
+      "J",
+      "& Scholey",
+      "A. B"
+    ],
+    "Year": 2010,
+    "DOI": "",
+    "Citation": "Buchanan, T., Heffernan, T. M., Parrott, A. C., Ling, J., Rodgers, J., & Scholey, A. B. (2010). A short self-report measure of problems with executive function suitable for administration via the Internet. Behavior Research Methods, 42, 709-714.",
+    "NumberOfItems": 6,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/webexec.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "WEBEXEC01": {
+    "Description": {
+      "en": "Do you find it difficult to keep your attention on a particular task?",
+      "de": "Do you find it difficult to keep your attention on a particular task?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "no problems experienced",
+        "de": "no problems experienced"
+      },
+      "1": {
+        "en": "a few problems experienced",
+        "de": "a few problems experienced"
+      },
+      "2": {
+        "en": "more than a few problems experienced",
+        "de": "more than a few problems experienced"
+      },
+      "3": {
+        "en": "a great many problems experienced",
+        "de": "a great many problems experienced"
+      }
+    }
+  },
+  "WEBEXEC02": {
+    "Description": {
+      "en": "Do you find yourself having problems concentrating on a task?",
+      "de": "Do you find yourself having problems concentrating on a task?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "no problems experienced",
+        "de": "no problems experienced"
+      },
+      "1": {
+        "en": "a few problems experienced",
+        "de": "a few problems experienced"
+      },
+      "2": {
+        "en": "more than a few problems experienced",
+        "de": "more than a few problems experienced"
+      },
+      "3": {
+        "en": "a great many problems experienced",
+        "de": "a great many problems experienced"
+      }
+    }
+  },
+  "WEBEXEC03": {
+    "Description": {
+      "en": "Do you have difficulty carrying out more than one task at a time?",
+      "de": "Do you have difficulty carrying out more than one task at a time?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "no problems experienced",
+        "de": "no problems experienced"
+      },
+      "1": {
+        "en": "a few problems experienced",
+        "de": "a few problems experienced"
+      },
+      "2": {
+        "en": "more than a few problems experienced",
+        "de": "more than a few problems experienced"
+      },
+      "3": {
+        "en": "a great many problems experienced",
+        "de": "a great many problems experienced"
+      }
+    }
+  },
+  "WEBEXEC04": {
+    "Description": {
+      "en": "Do you tend to âloseâ your train of thoughts?",
+      "de": "Do you tend to âloseâ your train of thoughts?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "no problems experienced",
+        "de": "no problems experienced"
+      },
+      "1": {
+        "en": "a few problems experienced",
+        "de": "a few problems experienced"
+      },
+      "2": {
+        "en": "more than a few problems experienced",
+        "de": "more than a few problems experienced"
+      },
+      "3": {
+        "en": "a great many problems experienced",
+        "de": "a great many problems experienced"
+      }
+    }
+  },
+  "WEBEXEC05": {
+    "Description": {
+      "en": "Do you have difficulty seeing through something that you have started?",
+      "de": "Do you have difficulty seeing through something that you have started?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "no problems experienced",
+        "de": "no problems experienced"
+      },
+      "1": {
+        "en": "a few problems experienced",
+        "de": "a few problems experienced"
+      },
+      "2": {
+        "en": "more than a few problems experienced",
+        "de": "more than a few problems experienced"
+      },
+      "3": {
+        "en": "a great many problems experienced",
+        "de": "a great many problems experienced"
+      }
+    }
+  },
+  "WEBEXEC06": {
+    "Description": {
+      "en": "Do you find yourself acting on âimpulseâ?",
+      "de": "Do you find yourself acting on âimpulseâ?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "no problems experienced",
+        "de": "no problems experienced"
+      },
+      "1": {
+        "en": "a few problems experienced",
+        "de": "a few problems experienced"
+      },
+      "2": {
+        "en": "more than a few problems experienced",
+        "de": "more than a few problems experienced"
+      },
+      "3": {
+        "en": "a great many problems experienced",
+        "de": "a great many problems experienced"
+      }
+    }
+  }
+}

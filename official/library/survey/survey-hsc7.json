@@ -1,0 +1,204 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Hypoglycemia Symptoms Checklist (HSC-7)",
+      "de": "Hypoglycemia Symptoms Checklist (HSC-7)"
+    },
+    "Abbreviation": "HSC7",
+    "Authors": [
+      "Barry",
+      "J.A",
+      "Bouloux",
+      "P. & Hardiman",
+      "P.J"
+    ],
+    "Year": 2011,
+    "DOI": "",
+    "Citation": "Barry, J.A., Bouloux, P. & Hardiman, P.J. (2011). The impact of\neating behavior on psychological symptoms typical of reactive\nhypoglycemia. A pilot study comparing women with polycystic ovary\nsyndrome to controls. Appetite, 57, 73-76.",
+    "NumberOfItems": 7,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/hypoglycemia-hsc7.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "HSC701": {
+    "Description": {
+      "en": "Clumsy",
+      "de": "Clumsy"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": "A little",
+        "de": "A little"
+      },
+      "2": {
+        "en": "Fairly",
+        "de": "Fairly"
+      },
+      "3": {
+        "en": "Very",
+        "de": "Very"
+      }
+    }
+  },
+  "HSC702": {
+    "Description": {
+      "en": "Confused",
+      "de": "Confused"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": "A little",
+        "de": "A little"
+      },
+      "2": {
+        "en": "Fairly",
+        "de": "Fairly"
+      },
+      "3": {
+        "en": "Very",
+        "de": "Very"
+      }
+    }
+  },
+  "HSC703": {
+    "Description": {
+      "en": "Difficulty in speaking",
+      "de": "Difficulty in speaking"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": "A little",
+        "de": "A little"
+      },
+      "2": {
+        "en": "Fairly",
+        "de": "Fairly"
+      },
+      "3": {
+        "en": "Very",
+        "de": "Very"
+      }
+    }
+  },
+  "HSC704": {
+    "Description": {
+      "en": "Weak",
+      "de": "Weak"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": "A little",
+        "de": "A little"
+      },
+      "2": {
+        "en": "Fairly",
+        "de": "Fairly"
+      },
+      "3": {
+        "en": "Very",
+        "de": "Very"
+      }
+    }
+  },
+  "HSC705": {
+    "Description": {
+      "en": "Heart beating",
+      "de": "Heart beating"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": "A little",
+        "de": "A little"
+      },
+      "2": {
+        "en": "Fairly",
+        "de": "Fairly"
+      },
+      "3": {
+        "en": "Very",
+        "de": "Very"
+      }
+    }
+  },
+  "HSC706": {
+    "Description": {
+      "en": "Shivering",
+      "de": "Shivering"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": "A little",
+        "de": "A little"
+      },
+      "2": {
+        "en": "Fairly",
+        "de": "Fairly"
+      },
+      "3": {
+        "en": "Very",
+        "de": "Very"
+      }
+    }
+  },
+  "HSC707": {
+    "Description": {
+      "en": "Sweating",
+      "de": "Sweating"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Not at all",
+        "de": "Not at all"
+      },
+      "1": {
+        "en": "A little",
+        "de": "A little"
+      },
+      "2": {
+        "en": "Fairly",
+        "de": "Fairly"
+      },
+      "3": {
+        "en": "Very",
+        "de": "Very"
+      }
+    }
+  }
+}

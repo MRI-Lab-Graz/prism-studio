@@ -1,0 +1,83 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Chronotype: Circadian Energy Scale (CIRENS)",
+      "de": "Chronotype: Circadian Energy Scale (CIRENS)"
+    },
+    "Abbreviation": "CIRENS",
+    "Authors": [
+      "Reference to the original MEQ: Horne and Ostberg"
+    ],
+    "Year": 1976,
+    "DOI": "",
+    "Citation": "Reference to the original MEQ: Horne and Ostberg (1976). A\nself-assessment questionnaire to determine morningness-eveningness in\nhuman circadian rhythms.  International Journal of Chronobiology, 4,\n97â110.",
+    "NumberOfItems": 2,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/chronotype-cirens.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "CIRENS01": {
+    "Description": {
+      "en": "In the <b>morning</b>",
+      "de": "In the <b>morning</b>"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "very low",
+        "de": "very low"
+      },
+      "1": {
+        "en": "low",
+        "de": "low"
+      },
+      "2": {
+        "en": "moderate",
+        "de": "moderate"
+      },
+      "3": {
+        "en": "high",
+        "de": "high"
+      },
+      "4": {
+        "en": "very high",
+        "de": "very high"
+      }
+    }
+  },
+  "CIRENS02": {
+    "Description": {
+      "en": "In the <b>evening</b>",
+      "de": "In the <b>evening</b>"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "very low",
+        "de": "very low"
+      },
+      "1": {
+        "en": "low",
+        "de": "low"
+      },
+      "2": {
+        "en": "moderate",
+        "de": "moderate"
+      },
+      "3": {
+        "en": "high",
+        "de": "high"
+      },
+      "4": {
+        "en": "very high",
+        "de": "very high"
+      }
+    }
+  }
+}

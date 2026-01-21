@@ -1,0 +1,122 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Resilience (BRS)",
+      "de": "Resilience (BRS)"
+    },
+    "Abbreviation": "BRS",
+    "Authors": [
+      "Smith",
+      "B.W",
+      "Dalen",
+      "J",
+      "Wiggins",
+      "K",
+      "Tooley",
+      "E",
+      "Christopher",
+      "P. and\nBernard",
+      "J"
+    ],
+    "Year": 2008,
+    "DOI": "",
+    "Citation": "Smith, B.W., Dalen, J., Wiggins, K., Tooley, E., Christopher, P. and\nBernard, J. (2008). The Brief Resilience Scale: Assessing the\nAbility to Bounce Back. International Journal of Behavioral\nMedicine,15, 194-200.",
+    "NumberOfItems": 3,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/resilience-brs.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "BRS01": {
+    "Description": {
+      "en": "I tend to bounce back quickly after hard times",
+      "de": "I tend to bounce back quickly after hard times"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly disagree",
+        "de": "Strongly disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Neutral",
+        "de": "Neutral"
+      },
+      "3": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "4": {
+        "en": "Strongly agree",
+        "de": "Strongly agree"
+      }
+    }
+  },
+  "BRS02": {
+    "Description": {
+      "en": "It does not take me long to recover from a stressful event",
+      "de": "It does not take me long to recover from a stressful event"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly disagree",
+        "de": "Strongly disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Neutral",
+        "de": "Neutral"
+      },
+      "3": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "4": {
+        "en": "Strongly agree",
+        "de": "Strongly agree"
+      }
+    }
+  },
+  "BRS03": {
+    "Description": {
+      "en": "I usually come through difficult times with little trouble",
+      "de": "I usually come through difficult times with little trouble"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "Strongly disagree",
+        "de": "Strongly disagree"
+      },
+      "1": {
+        "en": "Disagree",
+        "de": "Disagree"
+      },
+      "2": {
+        "en": "Neutral",
+        "de": "Neutral"
+      },
+      "3": {
+        "en": "Agree",
+        "de": "Agree"
+      },
+      "4": {
+        "en": "Strongly agree",
+        "de": "Strongly agree"
+      }
+    }
+  }
+}

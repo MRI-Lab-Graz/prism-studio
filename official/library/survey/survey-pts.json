@@ -1,0 +1,224 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Positive Thinking Scale",
+      "de": "Positive Thinking Scale"
+    },
+    "Abbreviation": "PTS",
+    "Authors": [
+      "Diener",
+      "E",
+      "Wirtz",
+      "D",
+      "Tov",
+      "W",
+      "Kim-Prieto",
+      "C",
+      "Choi. D",
+      "Oishi",
+      "S",
+      "& Biswas-Diener",
+      "R"
+    ],
+    "Year": 2009,
+    "DOI": "",
+    "Citation": "Diener, E., Wirtz, D., Tov, W., Kim-Prieto, C., Choi. D., Oishi, S.,\n& Biswas-Diener, R. (2009). New measures of well-being: Flourishing\nand positive and negative feelings. Social Indicators Research,\n39,\n247-266. Online\navailable here.",
+    "NumberOfItems": 11,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/pts.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "PTS01": {
+    "Description": {
+      "en": "I see much beauty around me.",
+      "de": "I see much beauty around me."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Yes",
+        "de": "{score=1} Yes"
+      },
+      "1": {
+        "en": "{score=0} No",
+        "de": "{score=0} No"
+      }
+    }
+  },
+  "PTS02": {
+    "Description": {
+      "en": "I see the good in most people.",
+      "de": "I see the good in most people."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Yes",
+        "de": "{score=1} Yes"
+      },
+      "1": {
+        "en": "{score=0} No",
+        "de": "{score=0} No"
+      }
+    }
+  },
+  "PTS03": {
+    "Description": {
+      "en": "I think of myself as a person with many strengths.",
+      "de": "I think of myself as a person with many strengths."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Yes",
+        "de": "{score=1} Yes"
+      },
+      "1": {
+        "en": "{score=0} No",
+        "de": "{score=0} No"
+      }
+    }
+  },
+  "PTS04": {
+    "Description": {
+      "en": "I am optimistic about my future.",
+      "de": "I am optimistic about my future."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Yes",
+        "de": "{score=1} Yes"
+      },
+      "1": {
+        "en": "{score=0} No",
+        "de": "{score=0} No"
+      }
+    }
+  },
+  "PTS05": {
+    "Description": {
+      "en": "When something bad happens, I often see a âsilver lining,â something good in the bad event.",
+      "de": "When something bad happens, I often see a âsilver lining,â something good in the bad event."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Yes",
+        "de": "{score=1} Yes"
+      },
+      "1": {
+        "en": "{score=0} No",
+        "de": "{score=0} No"
+      }
+    }
+  },
+  "PTS06": {
+    "Description": {
+      "en": "I sometimes think about how fortunate I have been in life.",
+      "de": "I sometimes think about how fortunate I have been in life."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Yes",
+        "de": "{score=1} Yes"
+      },
+      "1": {
+        "en": "{score=0} No",
+        "de": "{score=0} No"
+      }
+    }
+  },
+  "PTS07": {
+    "Description": {
+      "en": "When I think of the past, the happy times are most salient to me.",
+      "de": "When I think of the past, the happy times are most salient to me."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Yes",
+        "de": "{score=1} Yes"
+      },
+      "1": {
+        "en": "{score=0} No",
+        "de": "{score=0} No"
+      }
+    }
+  },
+  "PTS08": {
+    "Description": {
+      "en": "I savor memories of pleasant past times.",
+      "de": "I savor memories of pleasant past times."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Yes",
+        "de": "{score=1} Yes"
+      },
+      "1": {
+        "en": "{score=0} No",
+        "de": "{score=0} No"
+      }
+    }
+  },
+  "PTS09": {
+    "Description": {
+      "en": "When I see others prosper, even strangers, I am happy for them.",
+      "de": "When I see others prosper, even strangers, I am happy for them."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Yes",
+        "de": "{score=1} Yes"
+      },
+      "1": {
+        "en": "{score=0} No",
+        "de": "{score=0} No"
+      }
+    }
+  },
+  "PTS10": {
+    "Description": {
+      "en": "I know the world has problems, but it seems like a wonderful place anyway.",
+      "de": "I know the world has problems, but it seems like a wonderful place anyway."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Yes",
+        "de": "{score=1} Yes"
+      },
+      "1": {
+        "en": "{score=0} No",
+        "de": "{score=0} No"
+      }
+    }
+  },
+  "PTS11": {
+    "Description": {
+      "en": "I believe in the good qualities of other people.",
+      "de": "I believe in the good qualities of other people."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} Yes",
+        "de": "{score=1} Yes"
+      },
+      "1": {
+        "en": "{score=0} No",
+        "de": "{score=0} No"
+      }
+    }
+  }
+}

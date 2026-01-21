@@ -1,0 +1,29 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Bullshitting Frequency Scale (BFS)",
+      "de": "Bullshitting Frequency Scale (BFS)"
+    },
+    "Abbreviation": "BFS",
+    "Authors": [
+      "Littrell",
+      "S",
+      "Risko",
+      "E.F. and Fugelsang",
+      "J.A"
+    ],
+    "Year": 2021,
+    "DOI": "https://doi.org/10.1111/bjso.12379",
+    "Citation": "Littrell, S., Risko, E.F. and Fugelsang, J.A. (2021), The\nBullshitting Frequency Scale: Development and psychometric\nproperties. Br. J. Soc. Psychol., 60: 248-270\ne12379. https://doi.org/10.1111/bjso.12379",
+    "NumberOfItems": 0,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/bfs.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  }
+}

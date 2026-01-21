@@ -1,0 +1,559 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "The ObsessiveâCompulsive Inventory (short version, OCI-R)",
+      "de": "The ObsessiveâCompulsive Inventory (short version, OCI-R)"
+    },
+    "Abbreviation": "OCI-R",
+    "Authors": [
+      "Foa",
+      "E.B",
+      "Huppert",
+      "J.D",
+      "Leiberg",
+      "S. Langner",
+      "R",
+      "Kichic",
+      "R",
+      "Hajcak",
+      "G",
+      "and Salkovskis",
+      "P.M"
+    ],
+    "Year": 2002,
+    "DOI": "",
+    "Citation": "Foa, E.B., Huppert, J.D., Leiberg, S. Langner, R., Kichic, R., Hajcak,\nG., and Salkovskis, P.M. (2002). The obsessiveâcompulsive inventory:\nDevelopment and validation of a short version. Psychological\nAssessment, 14, 485-496.",
+    "NumberOfItems": 18,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/obsessiveness-oci-r.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "OCI-R01": {
+    "Description": {
+      "en": "I have saved up so many things that they get in the way.",
+      "de": "I have saved up so many things that they get in the way."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R02": {
+    "Description": {
+      "en": "I check things more often than necessary.",
+      "de": "I check things more often than necessary."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R03": {
+    "Description": {
+      "en": "I get upset if objects are not arranged properly.",
+      "de": "I get upset if objects are not arranged properly."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R04": {
+    "Description": {
+      "en": "I feel compelled to count while I am doing things.",
+      "de": "I feel compelled to count while I am doing things."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R05": {
+    "Description": {
+      "en": "I find it difficult to touch an object when I know it has been touched by strangers or certain people.",
+      "de": "I find it difficult to touch an object when I know it has been touched by strangers or certain people."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R06": {
+    "Description": {
+      "en": "I find it difficult to control my own thoughts.",
+      "de": "I find it difficult to control my own thoughts."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R07": {
+    "Description": {
+      "en": "I collect things I donât need.",
+      "de": "I collect things I donât need."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R08": {
+    "Description": {
+      "en": "I repeatedly check doors, windows, drawers, etc.",
+      "de": "I repeatedly check doors, windows, drawers, etc."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R09": {
+    "Description": {
+      "en": "I get upset if others change the way I have arranged things.",
+      "de": "I get upset if others change the way I have arranged things."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R10": {
+    "Description": {
+      "en": "I feel I have to repeat certain numbers.",
+      "de": "I feel I have to repeat certain numbers."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R11": {
+    "Description": {
+      "en": "I sometimes have to wash or clean myself simply because I feel contaminated.",
+      "de": "I sometimes have to wash or clean myself simply because I feel contaminated."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R12": {
+    "Description": {
+      "en": "I am upset by unpleasant thoughts that come into my mind against my will.",
+      "de": "I am upset by unpleasant thoughts that come into my mind against my will."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R13": {
+    "Description": {
+      "en": "I avoid throwing things away because I am afraid I might need them later.",
+      "de": "I avoid throwing things away because I am afraid I might need them later."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R14": {
+    "Description": {
+      "en": "I repeatedly check gas and water taps and light switches after turning them off.",
+      "de": "I repeatedly check gas and water taps and light switches after turning them off."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R15": {
+    "Description": {
+      "en": "I need things to be arranged in a particular way.",
+      "de": "I need things to be arranged in a particular way."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R16": {
+    "Description": {
+      "en": "I feel that there are good and bad numbers.",
+      "de": "I feel that there are good and bad numbers."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R17": {
+    "Description": {
+      "en": "I wash my hands more often and longer than necessary.",
+      "de": "I wash my hands more often and longer than necessary."
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  },
+  "OCI-R18": {
+    "Description": {
+      "en": "I frequently get nasty thoughts and have difficulty in getting rid of them",
+      "de": "I frequently get nasty thoughts and have difficulty in getting rid of them"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=0} Not at all",
+        "de": "{score=0} Not at all"
+      },
+      "1": {
+        "en": "{score=1} A little",
+        "de": "{score=1} A little"
+      },
+      "2": {
+        "en": "{score=2} Moderately",
+        "de": "{score=2} Moderately"
+      },
+      "3": {
+        "en": "{score=3} A lot",
+        "de": "{score=3} A lot"
+      },
+      "4": {
+        "en": "{score=4} Extremely",
+        "de": "{score=4} Extremely"
+      }
+    }
+  }
+}

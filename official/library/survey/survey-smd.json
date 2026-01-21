@@ -1,0 +1,183 @@
+{
+  "Study": {
+    "OriginalName": {
+      "en": "Social Media Disorder Scale (SMD)",
+      "de": "Social Media Disorder Scale (SMD)"
+    },
+    "Abbreviation": "SMD",
+    "Authors": [
+      "van der Eijnden",
+      "R.J.J.M",
+      "Lemmens",
+      "J.S",
+      "& Valkenburg",
+      "P.M"
+    ],
+    "Year": 2016,
+    "DOI": "",
+    "Citation": "van der Eijnden, R.J.J.M, Lemmens, J.S., & Valkenburg, P.M. (2016). The Social Media Disorder Scale. Computers in Human Behavior, 61, 478-487.",
+    "NumberOfItems": 9,
+    "License": {
+      "en": "Freely available for research purposes (verify with original publication)",
+      "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+    },
+    "Source": "https://www.psytoolkit.org/survey-library/social-media-disorder-scale.html",
+    "Instructions": {
+      "en": "Please read each statement and select the response that best describes you.",
+      "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
+    }
+  },
+  "SMD01": {
+    "Description": {
+      "en": "regularly found that you can't think of anything else but the moment that you will be able to use social media again?",
+      "de": "regularly found that you can't think of anything else but the moment that you will be able to use social media again?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "SMD02": {
+    "Description": {
+      "en": "regularly felt dissatisfied because you wanted to spend more time on social media?",
+      "de": "regularly felt dissatisfied because you wanted to spend more time on social media?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "SMD03": {
+    "Description": {
+      "en": "often felt bad when you could not use social media?",
+      "de": "often felt bad when you could not use social media?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "SMD04": {
+    "Description": {
+      "en": "tried to spend less time on social media, but failed?",
+      "de": "tried to spend less time on social media, but failed?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "SMD05": {
+    "Description": {
+      "en": "regularly neglected other activities (e.g. hobbies, sport) because you wanted to use social media?",
+      "de": "regularly neglected other activities (e.g. hobbies, sport) because you wanted to use social media?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "SMD06": {
+    "Description": {
+      "en": "regularly had arguments with others because of your social media use?",
+      "de": "regularly had arguments with others because of your social media use?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "SMD07": {
+    "Description": {
+      "en": "regularly lied to your parents or friends about the amount of time you spend on social media?",
+      "de": "regularly lied to your parents or friends about the amount of time you spend on social media?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "SMD08": {
+    "Description": {
+      "en": "often used social media to escape from negative feelings?",
+      "de": "often used social media to escape from negative feelings?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  },
+  "SMD09": {
+    "Description": {
+      "en": "had serious conflict with your parents, brother(s) or sister(s) because of your social media use?",
+      "de": "had serious conflict with your parents, brother(s) or sister(s) because of your social media use?"
+    },
+    "Reversed": false,
+    "Levels": {
+      "0": {
+        "en": "{score=1} yes",
+        "de": "{score=1} yes"
+      },
+      "1": {
+        "en": "{score=0} no",
+        "de": "{score=0} no"
+      }
+    }
+  }
+}
