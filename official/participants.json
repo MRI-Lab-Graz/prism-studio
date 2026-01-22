@@ -1,4 +1,14 @@
 {
+  "@context": {
+    "nb": "http://neurobagel.org/vocab/",
+    "ncit": "http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#",
+    "snomed": "http://purl.bioontology.org/ontology/SNOMEDCT/",
+    "snomedct": "http://snomed.info/id/",
+    "iso639": "http://purl.org/iso/iso639#",
+    "iso3166": "http://purl.org/iso/iso3166#",
+    "cde": "https://cde.nlm.nih.gov/cdeResultsFull.action?CDE_ID=",
+    "hed": "https://www.hedtags.org/display_hed.html?version=latest&search="
+  },
   "Technical": {
     "StimulusType": "Questionnaire",
     "FileFormat": "tsv",
@@ -22,26 +32,34 @@
       "en": "Standardized sociodemographic variables for participants.tsv compatible with NeuroBagel harmonization.",
       "de": "Standardisierte soziodemographische Variablen für participants.tsv kompatibel mit NeuroBagel-Harmonisierung."
     },
-    "Version": "1.0.0",
+    "Version": "1.1.0",
     "License": "CC0-1.0",
     "LicenseID": "CC0-1.0",
     "Access": "public",
     "Instructions": {
       "en": "Complete all applicable demographic information. Select 'n/a' or leave blank if not applicable or prefer not to answer.",
       "de": "Füllen Sie alle zutreffenden demographischen Informationen aus. Wählen Sie 'n/a' oder lassen Sie das Feld leer, falls nicht zutreffend oder keine Angabe gewünscht."
-    }
+    },
+    "NeuroBagelHarmonization": "This template follows NeuroBagel participant metadata standards with semantic annotations for machine-readability."
   },
   "Metadata": {
-    "SchemaVersion": "1.1.1",
+    "SchemaVersion": "1.2.0",
     "Creator": "PRISM Survey Library",
-    "CreationDate": "2026-01-20"
+    "CreationDate": "2026-01-22",
+    "ConformsTo": "NeuroBagel Participant Metadata Standard (v1.0)"
   },
   "participant_id": {
     "Description": {
       "en": "Unique participant identifier (BIDS sub- label)",
       "de": "Eindeutige Teilnehmer-ID (BIDS sub- Label)"
     },
-    "DataType": "string"
+    "DataType": "string",
+    "VariableType": "Identifier",
+    "Annotations": {
+      "IsAbout": "snomed:14421000",
+      "Relationship": "instance_of",
+      "Label": "Person (ID)"
+    }
   },
   "age": {
     "Description": {
@@ -51,7 +69,13 @@
     "Units": "years",
     "MinValue": 0,
     "MaxValue": 120,
-    "DataType": "integer"
+    "DataType": "integer",
+    "VariableType": "Continuous",
+    "Annotations": {
+      "IsAbout": "snomed:397669002",
+      "Label": "Age",
+      "DictionarySourceURI": "cde:5057201"
+    }
   },
   "sex": {
     "Description": {
@@ -59,12 +83,33 @@
       "de": "Biologisches Geschlecht bei Geburt"
     },
     "Levels": {
-      "M": {"en": "Male", "de": "Männlich"},
-      "F": {"en": "Female", "de": "Weiblich"},
-      "O": {"en": "Other/Intersex", "de": "Andere/Intersexuell"},
+      "M": {
+        "en": "Male",
+        "de": "Männlich",
+        "SnomedCode": "snomed:248153007",
+        "IRI": "http://snomed.info/id/248153007"
+      },
+      "F": {
+        "en": "Female",
+        "de": "Weiblich",
+        "SnomedCode": "snomed:248152002",
+        "IRI": "http://snomed.info/id/248152002"
+      },
+      "O": {
+        "en": "Other/Intersex",
+        "de": "Andere/Intersexuell",
+        "SnomedCode": "snomed:34000006",
+        "IRI": "http://snomed.info/id/34000006"
+      },
       "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
-    "DataType": "string"
+    "DataType": "string",
+    "VariableType": "Categorical",
+    "Annotations": {
+      "IsAbout": "snomed:263495000",
+      "Label": "Biological sex",
+      "DictionarySourceURI": "cde:5057211"
+    }
   },
   "gender": {
     "Description": {
@@ -72,15 +117,40 @@
       "de": "Selbstidentifizierte Geschlechtsidentität"
     },
     "Levels": {
-      "man": {"en": "Man", "de": "Mann"},
-      "woman": {"en": "Woman", "de": "Frau"},
-      "nonbinary": {"en": "Non-binary/Genderqueer", "de": "Nicht-binär/Genderqueer"},
-      "trans_man": {"en": "Transgender man", "de": "Transgender Mann"},
-      "trans_woman": {"en": "Transgender woman", "de": "Transgender Frau"},
+      "man": {
+        "en": "Man",
+        "de": "Mann",
+        "SnomedCode": "snomed:248153007"
+      },
+      "woman": {
+        "en": "Woman",
+        "de": "Frau",
+        "SnomedCode": "snomed:248152002"
+      },
+      "nonbinary": {
+        "en": "Non-binary/Genderqueer",
+        "de": "Nicht-binär/Genderqueer",
+        "SnomedCode": "snomed:33791000087105"
+      },
+      "trans_man": {
+        "en": "Transgender man",
+        "de": "Transgender Mann",
+        "SnomedCode": "snomed:407376001"
+      },
+      "trans_woman": {
+        "en": "Transgender woman",
+        "de": "Transgender Frau",
+        "SnomedCode": "snomed:407377005"
+      },
       "other": {"en": "Other", "de": "Andere"},
       "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
-    "DataType": "string"
+    "DataType": "string",
+    "VariableType": "Categorical",
+    "Annotations": {
+      "IsAbout": "snomed:14647231000119105",
+      "Label": "Gender identity"
+    }
   },
   "handedness": {
     "Description": {
@@ -88,12 +158,29 @@
       "de": "Händigkeit"
     },
     "Levels": {
-      "R": {"en": "Right-handed", "de": "Rechtshändig"},
-      "L": {"en": "Left-handed", "de": "Linkshändig"},
-      "A": {"en": "Ambidextrous", "de": "Beidhändig"},
+      "R": {
+        "en": "Right-handed",
+        "de": "Rechtshändig",
+        "SnomedCode": "snomed:9640002"
+      },
+      "L": {
+        "en": "Left-handed",
+        "de": "Linkshändig",
+        "SnomedCode": "snomed:19935008"
+      },
+      "A": {
+        "en": "Ambidextrous",
+        "de": "Beidhändig",
+        "SnomedCode": "snomed:23481009"
+      },
       "n/a": {"en": "Unknown", "de": "Unbekannt"}
     },
-    "DataType": "string"
+    "DataType": "string",
+    "VariableType": "Categorical",
+    "Annotations": {
+      "IsAbout": "snomed:20863000",
+      "Label": "Handedness"
+    }
   },
   "education_level": {
     "Description": {
@@ -112,7 +199,14 @@
       "8": {"en": "Doctoral or equivalent", "de": "Promotion oder gleichwertig"},
       "n/a": {"en": "Not applicable", "de": "Nicht zutreffend"}
     },
-    "DataType": "string"
+    "DataType": "string",
+    "VariableType": "Categorical",
+    "Annotations": {
+      "IsAbout": "snomed:224530016",
+      "Label": "Education level",
+      "Standard": "ISCED 2011",
+      "DictionarySourceURI": "cde:5090887"
+    }
   },
   "education_years": {
     "Description": {
@@ -122,7 +216,12 @@
     "Units": "years",
     "MinValue": 0,
     "MaxValue": 30,
-    "DataType": "integer"
+    "DataType": "integer",
+    "VariableType": "Continuous",
+    "Annotations": {
+      "IsAbout": "snomed:224530016",
+      "Label": "Years of education"
+    }
   },
   "employment_status": {
     "Description": {
@@ -373,6 +472,11 @@
       "de": "Studiengruppenzuordnung (z.B. Kontrolle, Patient, Experimental)"
     },
     "Levels": {},
-    "DataType": "string"
+    "DataType": "string",
+    "VariableType": "Categorical",
+    "Annotations": {
+      "IsAbout": "ncit:C41185",
+      "Label": "Study group"
+    }
   }
 }
