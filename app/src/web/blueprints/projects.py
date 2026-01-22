@@ -365,10 +365,27 @@ def get_library_path():
     # Get effective library path from configuration
     from src.config import get_effective_library_paths
     lib_paths = get_effective_library_paths(app_root=str(app_root), app_settings=app_settings)
-    default_library_path = lib_paths["global_library_path"] or str(app_root / "survey_library")
 
-    # Use configured global path or default
-    effective_global_path = app_settings.global_template_library_path or default_library_path
+    # Resolve and validate the global library path
+    def resolve_library_path(path_str):
+        """Resolve a path and return it only if it exists."""
+        if not path_str:
+            return None
+        p = Path(path_str)
+        # Resolve relative paths against app root
+        if not p.is_absolute():
+            p = (app_root / p).resolve()
+        else:
+            p = p.resolve()
+        return str(p) if p.exists() and p.is_dir() else None
+
+    # Try configured path first, then fallbacks
+    effective_global_path = (
+        resolve_library_path(app_settings.global_template_library_path) or
+        resolve_library_path(lib_paths["global_library_path"]) or
+        resolve_library_path(str(app_root / "survey_library")) or
+        resolve_library_path(str(app_root / "library" / "survey_i18n"))
+    )
 
     if not current.get("path"):
         # No project selected - still return global library
