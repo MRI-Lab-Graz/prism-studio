@@ -461,8 +461,21 @@ class ProjectManager:
 
     def _create_bidsignore(self, modalities: List[str]) -> str:
         """Create .bidsignore content."""
-        content = "# .bidsignore - PRISM modalities excluded from BIDS validation\n"
+        content = "# .bidsignore - PRISM and YODA files excluded from BIDS validation\n"
         content += "# This ensures compatibility with standard BIDS tools (fMRIPrep, etc.)\n\n"
+
+        # Ignore project-level metadata
+        content += "project.json\n"
+        content += "contributors.json\n"
+        content += "CITATION.cff\n"
+        content += ".prismrc.json\n\n"
+
+        # Ignore YODA folders (they are outside rawdata/ but just in case)
+        content += "sourcedata/\n"
+        content += "derivatives/\n"
+        content += "analysis/\n"
+        content += "paper/\n"
+        content += "code/\n\n"
 
         for mod in modalities:
             if mod in PRISM_MODALITIES:

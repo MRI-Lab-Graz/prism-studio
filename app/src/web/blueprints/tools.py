@@ -800,6 +800,69 @@ def api_recipes_surveys():
         "nan_report": result.nan_report,
     })
 
+@tools_bp.route("/api/browse-file")
+def api_browse_file():
+    """Open a system dialog to select a file (filtering for project.json)"""
+    file_path = ""
+    try:
+        if sys.platform == "darwin":
+            try:
+                script = 'POSIX path of (choose file of type {"public.json"} with prompt "Select your project.json file")'
+                result = subprocess.check_output(["osascript", "-e", script], stderr=subprocess.STDOUT)
+                file_path = result.decode("utf-8").strip()
+            except subprocess.CalledProcessError:
+                file_path = ""
+        elif sys.platform.startswith("win"):
+            try:
+                import tkinter as tk
+                from tkinter import filedialog
+
+                root = tk.Tk()
+                root.withdraw()
+                root.wm_attributes('-topmost', 1)
+                root.focus_force()
+                
+                file_path = filedialog.askopenfilename(
+                    title="Select project.json",
+                    filetypes=[("PRISM Project Metadata", "project.json"), ("JSON Files", "*.json"), ("All Files", "*.*")],
+                    parent=root
+                )
+                root.destroy()
+                
+                if not file_path:
+                    return jsonify({"path": ""}), 200
+            except ImportError as import_err:
+                print(f"File picker error: tkinter not available - {import_err}")
+                return jsonify({"error": "File picker requires tkinter. Please manually enter the path."}), 500
+            except Exception as win_err:
+                print(f"File picker error: {win_err}")
+                return jsonify({"error": f"File picker error: {str(win_err)}"}), 500
+        else:
+            # Linux/Unix
+            try:
+                if not os.environ.get("DISPLAY"):
+                    return jsonify({"error": "File picker requires a desktop session."}), 501
+
+                import tkinter as tk
+                from tkinter import filedialog
+                root = tk.Tk()
+                root.withdraw()
+                file_path = filedialog.askopenfilename(
+                    title="Select project.json",
+                    filetypes=[("PRISM Project Metadata", "project.json"), ("JSON Files", "*.json"), ("All Files", "*.*")]
+                )
+                root.destroy()
+                if not file_path:
+                    return jsonify({"path": ""}), 200
+            except Exception as linux_err:
+                print(f"Linux file picker error: {linux_err}")
+                return jsonify({"error": f"File picker error: {str(linux_err)}"}), 500
+
+        return jsonify({"path": file_path})
+    except Exception as e:
+        print(f"Unexpected file picker error: {e}")
+        return jsonify({"error": str(e)}), 500
+
 @tools_bp.route("/api/browse-folder")
 def api_browse_folder():
     """Open a system dialog to select a folder"""
