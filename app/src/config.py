@@ -274,6 +274,10 @@ class AppSettings:
         default_factory=lambda: ["survey", "biometrics"]
     )
 
+    # Last opened project (restored on app restart)
+    last_project_path: Optional[str] = None
+    last_project_name: Optional[str] = None
+
     # Settings file location (set after loading)
     _settings_path: Optional[str] = None
 
@@ -335,6 +339,8 @@ def load_app_settings(app_root: str = None) -> AppSettings:
             global_template_library_path=data.get("globalTemplateLibraryPath"),
             global_recipes_path=data.get("globalRecipesPath"),
             default_modalities=data.get("defaultModalities", ["survey", "biometrics"]),
+            last_project_path=data.get("lastProjectPath"),
+            last_project_name=data.get("lastProjectName"),
         )
         settings._settings_path = settings_path
         return settings
@@ -365,6 +371,8 @@ def save_app_settings(settings: AppSettings, app_root: str = None) -> str:
         "globalTemplateLibraryPath": settings.global_template_library_path,
         "globalRecipesPath": settings.global_recipes_path,
         "defaultModalities": settings.default_modalities,
+        "lastProjectPath": settings.last_project_path,
+        "lastProjectName": settings.last_project_name,
     }
 
     # Remove None values
