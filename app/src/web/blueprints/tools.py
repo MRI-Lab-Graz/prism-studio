@@ -276,7 +276,7 @@ def api_survey_customizer_load():
     for file_config in files:
         file_path = file_config.get("path")
         include_questions = file_config.get("includeQuestions", [])
-        run_number = file_config.get("runNumber", 1)
+        max_run_number = file_config.get("runNumber", 1)
 
         if not file_path or not os.path.exists(file_path):
             continue
@@ -289,9 +289,9 @@ def api_survey_customizer_load():
 
         # Get group name from template
         study_info = template_data.get("Study", {})
-        group_name = study_info.get("OriginalName") or template_data.get("TaskName") or Path(file_path).stem
-        if isinstance(group_name, dict):
-            group_name = group_name.get("en") or next(iter(group_name.values()), Path(file_path).stem)
+        base_group_name = study_info.get("OriginalName") or template_data.get("TaskName") or Path(file_path).stem
+        if isinstance(base_group_name, dict):
+            base_group_name = base_group_name.get("en") or next(iter(base_group_name.values()), Path(file_path).stem)
 
         # Extract questions
         if "Questions" in template_data and isinstance(template_data["Questions"], dict):
@@ -306,37 +306,45 @@ def api_survey_customizer_load():
         else:
             filtered_questions = all_questions
 
-        # Build questions list for this group
-        questions = []
-        for idx, (q_code, q_data) in enumerate(filtered_questions.items()):
-            if not isinstance(q_data, dict):
-                q_data = {"Description": str(q_data)}
+        # Create a group for each run (1 to max_run_number)
+        # If max_run_number is 4, create groups for run 1, 2, 3, 4
+        for current_run in range(1, max_run_number + 1):
+            # Build questions list for this group/run
+            questions = []
+            for idx, (q_code, q_data) in enumerate(filtered_questions.items()):
+                if not isinstance(q_data, dict):
+                    q_data = {"Description": str(q_data)}
 
-            description = q_data.get("Description", "")
-            if isinstance(description, dict):
-                description = description.get("en") or next(iter(description.values()), "")
+                description = q_data.get("Description", "")
+                if isinstance(description, dict):
+                    description = description.get("en") or next(iter(description.values()), "")
 
-            questions.append({
+                questions.append({
+                    "id": str(uuid_module.uuid4()),
+                    "sourceFile": file_path,
+                    "questionCode": q_code,
+                    "description": description,
+                    "displayOrder": idx,
+                    "mandatory": True,  # Default to mandatory
+                    "enabled": True,
+                    "runNumber": current_run,
+                    "levels": q_data.get("Levels", {}),
+                    "originalData": q_data
+                })
+
+            # Create group with run suffix if multiple runs
+            group_name = base_group_name
+            if max_run_number > 1:
+                group_name = f"{base_group_name} (Run {current_run})"
+
+            groups.append({
                 "id": str(uuid_module.uuid4()),
+                "name": group_name,
+                "order": len(groups),
                 "sourceFile": file_path,
-                "questionCode": q_code,
-                "description": description,
-                "displayOrder": idx,
-                "mandatory": True,  # Default to mandatory
-                "enabled": True,
-                "runNumber": run_number,
-                "levels": q_data.get("Levels", {}),
-                "originalData": q_data
+                "runNumber": current_run,
+                "questions": questions
             })
-
-        # Create group
-        groups.append({
-            "id": str(uuid_module.uuid4()),
-            "name": group_name,
-            "order": len(groups),
-            "sourceFile": file_path,
-            "questions": questions
-        })
 
     if not groups:
         return jsonify({"error": "No valid questions found in selected files"}), 400

@@ -24,20 +24,20 @@ def _sanitize_question_code(code: str, max_length: int = LS_QUESTION_CODE_MAX_LE
 
     LimeSurvey restrictions:
     - Maximum 20 characters (older versions)
-    - No underscores allowed (will be auto-renamed)
+    - No underscores or hyphens allowed (will be auto-renamed)
     - Should start with a letter
-    - Only alphanumeric characters recommended
+    - Only alphanumeric characters allowed
 
     Args:
-        code: Question code (e.g., "neurological_diagnosis")
+        code: Question code (e.g., "neurological_diagnosis" or "LOT-R01")
         max_length: Maximum allowed length (default: 20 for LS compatibility)
 
     Returns:
-        Sanitized code: underscores removed, truncated if necessary
-        Example: "neurological_diagnosis" -> "neurologicaldiagnos"
+        Sanitized code: underscores/hyphens removed, truncated if necessary
+        Example: "LOT-R_01" -> "LOTR01"
     """
-    # Remove underscores (LimeSurvey doesn't allow them in question codes)
-    sanitized = code.replace("_", "")
+    # Remove underscores and hyphens (LimeSurvey doesn't allow them in question codes)
+    sanitized = code.replace("_", "").replace("-", "")
 
     # Truncate to max length
     if len(sanitized) > max_length:
