@@ -304,15 +304,15 @@
                 <form id="openProjectForm">
                     <div class="row g-3">
                         <div class="col-md-7">
-                            <label for="existingPath" class="form-label fw-bold">Project Path</label>
+                            <label for="existingPath" class="form-label fw-bold">Project Path or project.json</label>
                             <div class="input-group">
                                 <input type="text" class="form-control" id="existingPath"
-                                       placeholder="C:\Users\...\existing_project" required>
+                                       placeholder="C:\\Users\\...\\project\\project.json" required>
                                 <button class="btn btn-outline-secondary" type="button" id="browseExistingPath">
                                     <i class="fas fa-folder-open"></i> Browse
                                 </button>
                             </div>
-                            <small class="text-muted">Path to your existing PRISM/BIDS dataset</small>
+                            <small class="text-muted">Path to your existing PRISM/BIDS dataset or its project.json file</small>
                         </div>
                         <div class="col-md-5">
                             <label class="form-label fw-bold d-none d-md-block">&nbsp;</label>
@@ -320,6 +320,11 @@
                                 <i class="fas fa-search me-2"></i>Load Project
                             </button>
                         </div>
+                    </div>
+
+                    <div class="mt-3" id="recentProjectsBlock" style="display: none;">
+                        <label class="form-label fw-bold">Recent Projects</label>
+                        <div id="recentProjectsList" class="d-flex flex-wrap gap-2"></div>
                     </div>
                 </form>
 
@@ -791,6 +796,58 @@
 <script>
     let currentProjectPath = "{{ current_project.path or '' }}";
     let currentProjectName = "{{ current_project.name or '' }}";
+    const recentProjectsKey = 'prism_recent_projects';
+
+    function getRecentProjects() {
+        try {
+            const raw = localStorage.getItem(recentProjectsKey);
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (err) {
+            console.warn('Could not read recent projects', err);
+            return [];
+        }
+    }
+
+    function saveRecentProjects(list) {
+        try {
+            localStorage.setItem(recentProjectsKey, JSON.stringify(list.slice(0, 6)));
+        } catch (err) {
+            console.warn('Could not save recent projects', err);
+        }
+    }
+
+    function addRecentProject(name, path) {
+        if (!path) return;
+        const safeName = name && name.trim() ? name.trim() : path.split(/[/\\]/).pop();
+        const list = getRecentProjects().filter(p => p.path !== path);
+        list.unshift({ name: safeName, path: path });
+        saveRecentProjects(list);
+        renderRecentProjects();
+    }
+
+    function renderRecentProjects() {
+        const block = document.getElementById('recentProjectsBlock');
+        const listEl = document.getElementById('recentProjectsList');
+        if (!block || !listEl) return;
+
+        const list = getRecentProjects();
+        if (!list.length) {
+            block.style.display = 'none';
+            listEl.innerHTML = '';
+            return;
+        }
+
+        block.style.display = 'block';
+        listEl.innerHTML = list.map(p => {
+            const label = p.name || p.path;
+            return `
+                <button type="button" class="btn btn-outline-secondary btn-sm recent-project-btn" data-path="${p.path}" data-name="${label}">
+                    <i class="fas fa-clock me-1"></i>${label}
+                </button>`;
+        }).join('');
+    }
 
     // Load global settings on page load
     document.addEventListener('DOMContentLoaded', function() {
@@ -799,6 +856,12 @@
         initParticipantsStatus();
         loadProjectMetadata();
         showExportCard();
+        renderRecentProjects();
+
+        // Seed recent list with current project if available
+        if (currentProjectPath) {
+            addRecentProject(currentProjectName, currentProjectPath);
+        }
 
         // Update chevron icons on collapse toggle
         const sections = [
@@ -820,6 +883,19 @@
                 });
             }
         });
+
+        const recentList = document.getElementById('recentProjectsList');
+        if (recentList) {
+            recentList.addEventListener('click', (event) => {
+                const btn = event.target.closest('.recent-project-btn');
+                if (!btn) return;
+                const path = btn.getAttribute('data-path');
+                if (path) {
+                    document.getElementById('existingPath').value = path;
+                    selectProjectType('open');
+                }
+            });
+        }
     });
 
     // Load global library settings
@@ -1185,6 +1261,7 @@
                 // Update local state and refresh dependent UI components
                 currentProjectPath = result.current_project.path;
                 currentProjectName = result.current_project.name;
+                addRecentProject(currentProjectName, currentProjectPath);
                 await initParticipantsStatus();
                 await loadProjectMetadata();
                 showExportCard();
@@ -1363,6 +1440,7 @@
             // Update local state and refresh dependent UI components
             currentProjectPath = result.current_project.path;
             currentProjectName = result.current_project.name;
+            addRecentProject(currentProjectName, currentProjectPath);
             await initParticipantsStatus();
             await loadProjectMetadata();
             showExportCard();

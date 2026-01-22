@@ -230,6 +230,18 @@ class ProjectManager:
             "is_yoda": False
         }
 
+        # Require project.json at the project root
+        project_json_path = project_path / "project.json"
+        if not project_json_path.exists():
+            code = "PRISM010"
+            msg = "Missing project.json at project root"
+            issues.append({
+                "code": code,
+                "message": msg,
+                "fix_hint": get_fix_hint(code, msg),
+                "fixable": False
+            })
+
         # Determine BIDS root: check for rawdata/ first (YODA layout)
         bids_root = project_path
         if (project_path / "rawdata").is_dir() and (project_path / "rawdata" / "dataset_description.json").exists():
@@ -640,14 +652,23 @@ Subfolders:
     def _create_project_metadata(self, name: str, config: Dict[str, Any]) -> Dict[str, Any]:
         """Create project-level metadata template."""
         return {
-            "project_name": name,
-            "created": date.today().isoformat(),
-            "funding": config.get("funding", []),
-            "ethics_approvals": config.get("ethics_approvals", []),
-            "contacts": [],
-            "preregistration": "",
-            "data_access": "",
-            "notes": ""
+            "name": name,
+            "paths": {
+                "rawdata": "rawdata",
+                "sourcedata": "sourcedata"
+            },
+            "app": {
+                "schema": "1",
+                "last_opened": date.today().isoformat()
+            },
+            "governance": {
+                "funding": config.get("funding", []),
+                "ethics_approvals": config.get("ethics_approvals", []),
+                "contacts": [],
+                "preregistration": "",
+                "data_access": "",
+                "notes": ""
+            }
         }
 
     def _create_contributors_template(self, config: Dict[str, Any]) -> Dict[str, Any]:

@@ -135,7 +135,7 @@ def validate_project():
 
     Expected JSON body:
     {
-        "path": "/path/to/project"
+        "path": "/path/to/project"  // or /path/to/project.json
     }
     """
     try:
@@ -147,6 +147,12 @@ def validate_project():
         path = data.get("path")
         if not path:
             return jsonify({"success": False, "error": "Path is required"}), 400
+
+        # Allow passing a project.json file directly; use its parent as project root
+        path_obj = Path(path)
+        if path_obj.is_file() and path_obj.name == "project.json":
+            path_obj = path_obj.parent
+            path = str(path_obj)
 
         # Check if path exists
         if not os.path.exists(path):
