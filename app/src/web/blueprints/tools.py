@@ -1021,9 +1021,13 @@ def api_browse_file():
     try:
         if sys.platform == "darwin":
             try:
-                script = 'POSIX path of (choose file of type {"public.json"} with prompt "Select your project.json file")'
+                # Only allow project.json files on macOS
+                script = 'POSIX path of (choose file with prompt "Select your project.json file" of type {"public.json"})'
                 result = subprocess.check_output(["osascript", "-e", script], stderr=subprocess.STDOUT)
                 file_path = result.decode("utf-8").strip()
+                # Validate that the selected file is named project.json
+                if file_path and not file_path.endswith("project.json"):
+                    return jsonify({"error": "Please select a file named 'project.json'"}), 400
             except subprocess.CalledProcessError:
                 file_path = ""
         elif sys.platform.startswith("win"):
@@ -1036,9 +1040,10 @@ def api_browse_file():
                 root.wm_attributes('-topmost', 1)
                 root.focus_force()
                 
+                # Only allow project.json files on Windows
                 file_path = filedialog.askopenfilename(
                     title="Select project.json",
-                    filetypes=[("PRISM Project Metadata", "project.json"), ("JSON Files", "*.json"), ("All Files", "*.*")],
+                    filetypes=[("PRISM Project Metadata", "project.json")],
                     parent=root
                 )
                 root.destroy()
@@ -1061,9 +1066,10 @@ def api_browse_file():
                 from tkinter import filedialog
                 root = tk.Tk()
                 root.withdraw()
+                # Only allow project.json files on Linux
                 file_path = filedialog.askopenfilename(
                     title="Select project.json",
-                    filetypes=[("PRISM Project Metadata", "project.json"), ("JSON Files", "*.json"), ("All Files", "*.*")]
+                    filetypes=[("PRISM Project Metadata", "project.json")]
                 )
                 root.destroy()
                 if not file_path:

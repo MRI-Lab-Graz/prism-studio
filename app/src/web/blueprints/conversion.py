@@ -96,6 +96,49 @@ def _log_file_head(input_path: Path, suffix: str, log_func):
     except Exception as e:
         log_func(f"Could not log file head: {str(e)}", "warning")
 
+def _resolve_effective_library_path() -> Path:
+    """
+    Automatically resolve library path:
+    1. First, try project's /code/library
+    2. Fall back to global library
+    
+    Returns the resolved Path to the library root.
+    Raises an error if no valid library is found.
+    """
+    from src.web.blueprints.projects import get_current_project
+    
+    # Try project library first
+    project = get_current_project()
+    project_path = project.get("path")
+    if project_path:
+        project_library = Path(project_path).expanduser().resolve() / "code" / "library"
+        if project_library.exists() and project_library.is_dir():
+            return project_library
+    
+    # Fall back to global library
+    from src.config import get_effective_library_paths
+    base_dir = Path(current_app.root_path)
+    lib_paths = get_effective_library_paths(app_root=str(base_dir))
+    
+    if lib_paths.get("global_library_path"):
+        global_lib = Path(lib_paths["global_library_path"]).expanduser().resolve()
+        if global_lib.exists() and global_lib.is_dir():
+            return global_lib
+    
+    # Last resort: check default locations
+    default_locations = [
+        base_dir / "library" / "survey_i18n",
+        base_dir / "survey_library",
+    ]
+    
+    for location in default_locations:
+        if location.exists() and location.is_dir():
+            return location
+    
+    raise FileNotFoundError(
+        "No survey library found. Please create a project with /code/library or configure a global library."
+    )
+
 @conversion_bp.route("/api/survey-languages", methods=["GET"])
 def api_survey_languages():
     """List available languages for the selected survey template library folder."""
@@ -186,7 +229,6 @@ def api_survey_convert():
 
     uploaded_file = request.files.get("excel") or request.files.get("file")
     alias_upload = request.files.get("alias") or request.files.get("alias_file")
-    library_path = (request.form.get("library_path") or "").strip()
 
     if not uploaded_file or not getattr(uploaded_file, "filename", ""):
         return jsonify({"error": "Missing input file"}), 400
@@ -203,13 +245,12 @@ def api_survey_convert():
         if alias_suffix and alias_suffix not in {".tsv", ".txt"}:
             return jsonify({"error": "Alias file must be a .tsv or .txt mapping file"}), 400
 
-    if not library_path:
-        return jsonify({"error": "Survey template library path is required."}), 400
+    # Automatically resolve library path (project first, then global)
+    try:
+        library_root = _resolve_effective_library_path()
+    except FileNotFoundError as e:
+        return jsonify({"error": str(e)}), 400
 
-    if not os.path.exists(library_path) or not os.path.isdir(library_path):
-        return jsonify({"error": f"Library path is not a directory: {library_path}"}), 400
-
-    library_root = Path(library_path)
     # Check for official structure: official/library/survey
     if (library_root / "library" / "survey").is_dir():
         survey_dir = library_root / "library" / "survey"
@@ -360,7 +401,6 @@ def api_survey_convert_validate():
 
     uploaded_file = request.files.get("excel") or request.files.get("file")
     alias_upload = request.files.get("alias") or request.files.get("alias_file")
-    library_path = (request.form.get("library_path") or "").strip()
 
     if not uploaded_file or not getattr(uploaded_file, "filename", ""):
         return jsonify({"error": "Missing input file", "log": log_messages}), 400
@@ -370,10 +410,12 @@ def api_survey_convert_validate():
     if suffix not in {".xlsx", ".lsa", ".csv", ".tsv"}:
         return jsonify({"error": "Supported formats: .xlsx, .lsa, .csv, .tsv", "log": log_messages}), 400
 
-    if not library_path or not os.path.isdir(library_path):
-        return jsonify({"error": "Valid library path is required.", "log": log_messages}), 400
+    # Automatically resolve library path (project first, then global)
+    try:
+        library_root = _resolve_effective_library_path()
+    except FileNotFoundError as e:
+        return jsonify({"error": str(e), "log": log_messages}), 400
 
-    library_root = Path(library_path)
     # Check for official structure: official/library/survey
     if (library_root / "library" / "survey").is_dir():
         survey_dir = library_root / "library" / "survey"
@@ -539,7 +581,12 @@ def api_survey_convert_validate():
             project_path = session.get("current_project_path")
             if project_path:
                 project_path = Path(project_path)
-                if project_path.exists():
+                
+                # If the path is a file (project.json), get the parent directory
+                if project_path.is_file():
+                    project_path = project_path.parent
+                
+                if project_path.exists() and project_path.is_dir():
                     # Prefer rawdata/ (BIDS/YODA standard), create if needed
                     dest_root = project_path / "rawdata"
                     dest_root.mkdir(parents=True, exist_ok=True)
@@ -622,13 +669,15 @@ def api_biometrics_detect():
     from src.converters.biometrics import detect_biometrics_in_table
 
     uploaded_file = request.files.get("data") or request.files.get("file")
-    library_path = (request.form.get("library_path") or "").strip()
 
     if not uploaded_file or not getattr(uploaded_file, "filename", ""):
         return jsonify({"error": "Missing input file"}), 400
 
-    if not library_path:
-        return jsonify({"error": "Biometrics template library path is required."}), 400
+    # Automatically resolve library path (project first, then global)
+    try:
+        library_root = _resolve_effective_library_path()
+    except FileNotFoundError as e:
+        return jsonify({"error": str(e)}), 400
 
     filename = secure_filename(uploaded_file.filename)
     tmp_dir = tempfile.mkdtemp(prefix="prism_biometrics_detect_")
@@ -637,7 +686,6 @@ def api_biometrics_detect():
         input_path = tmp_dir_path / filename
         uploaded_file.save(str(input_path))
 
-        library_root = Path(library_path)
         biometrics_dir = library_root / "biometrics"
         effective_biometrics_dir = biometrics_dir if biometrics_dir.is_dir() else library_root
 
@@ -660,7 +708,6 @@ def api_biometrics_convert():
         return jsonify({"error": "Biometrics conversion module not available"}), 500
 
     uploaded_file = request.files.get("data") or request.files.get("file")
-    library_path = (request.form.get("library_path") or "").strip()
 
     if not uploaded_file or not getattr(uploaded_file, "filename", ""):
         return jsonify({"error": "Missing input file"}), 400
@@ -670,13 +717,12 @@ def api_biometrics_convert():
     if suffix not in {".csv", ".xlsx", ".tsv"}:
         return jsonify({"error": "Supported formats: .csv, .xlsx, .tsv"}), 400
 
-    if not library_path:
-        return jsonify({"error": "Biometrics template library path is required."}), 400
+    # Automatically resolve library path (project first, then global)
+    try:
+        library_root = _resolve_effective_library_path()
+    except FileNotFoundError as e:
+        return jsonify({"error": str(e)}), 400
 
-    if not os.path.exists(library_path) or not os.path.isdir(library_path):
-        return jsonify({"error": f"Library path is not a directory: {library_path}"}), 400
-
-    library_root = Path(library_path)
     biometrics_dir = library_root / "biometrics"
     effective_biometrics_dir = biometrics_dir if biometrics_dir.is_dir() else library_root
 
