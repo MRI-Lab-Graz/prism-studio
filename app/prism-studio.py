@@ -121,10 +121,16 @@ app.config["MAX_CONTENT_LENGTH"] = (
     1024 * 1024 * 1024
 )  # 1GB max file size (metadata only)
 app.config["MAX_FORM_PARTS"] = 20000  # Allow up to 20000 files/fields in upload
+app.config["BASE_DIR"] = BASE_DIR  # Make BASE_DIR available to blueprints
 
-# Reset current project on each app start (per browser session cookie).
-# This keeps the initial landing page empty, even if an old session cookie exists.
+# Track app startup for session management
 app.config["PRISM_STARTUP_ID"] = uuid.uuid4().hex
+
+# Load last project from settings (will be restored to session on first request)
+from src.config import load_app_settings, save_app_settings
+_app_settings = load_app_settings(app_root=str(BASE_DIR))
+app.config["LAST_PROJECT_PATH"] = getattr(_app_settings, 'last_project_path', None)
+app.config["LAST_PROJECT_NAME"] = getattr(_app_settings, 'last_project_name', None)
 
 # Initialize Survey Manager with global library paths
 from src.config import get_effective_library_paths
@@ -223,11 +229,18 @@ def ensure_project_selected_first():
     This keeps all features consistently anchored to the active project path
     (stored in session as current_project_path/current_project_name).
     """
-    # If this is a new Prism Studio process start, clear any persisted project selection.
+    # If this is a new browser session, restore the last project from settings
     if session.get("_prism_startup_id") != app.config.get("PRISM_STARTUP_ID"):
-        session.pop("current_project_path", None)
-        session.pop("current_project_name", None)
         session["_prism_startup_id"] = app.config.get("PRISM_STARTUP_ID")
+        # Restore last project if it still exists
+        last_path = app.config.get("LAST_PROJECT_PATH")
+        last_name = app.config.get("LAST_PROJECT_NAME")
+        if last_path and os.path.exists(last_path):
+            session["current_project_path"] = last_path
+            session["current_project_name"] = last_name or Path(last_path).name
+        else:
+            session.pop("current_project_path", None)
+            session.pop("current_project_name", None)
 
     if session.get("current_project_path"):
         return None
