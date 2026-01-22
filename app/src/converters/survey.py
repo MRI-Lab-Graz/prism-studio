@@ -96,19 +96,45 @@ def _load_global_library_path() -> Path | None:
     """Find the global library path from config.
 
     Returns:
-        Path to global library or None if not configured/found.
+        Path to global survey library or None if not configured/found.
     """
     try:
+        from ..config import load_app_settings
+        import os
+
+        # Determine app root (parent of src folder)
+        app_root = Path(__file__).parent.parent.parent.resolve()
+        settings = load_app_settings(app_root=str(app_root))
+
+        if settings.global_library_root:
+            # Resolve relative paths from app_root
+            root = settings.global_library_root
+            if not os.path.isabs(root):
+                root = os.path.normpath(os.path.join(app_root, root))
+            p = Path(root).expanduser().resolve()
+
+            # Check for survey subfolder in various locations
+            candidates = [
+                p / "library" / "survey",  # official/library/survey
+                p / "survey",              # official/survey (alternative layout)
+            ]
+            for candidate in candidates:
+                if candidate.is_dir():
+                    return candidate
+
+            # If we have a library folder, use that
+            if (p / "library").is_dir():
+                return p / "library"
+
+        # Fallback to default path resolution
         from ..config import get_effective_library_paths
-        lib_paths = get_effective_library_paths()
+        lib_paths = get_effective_library_paths(app_root=str(app_root))
         global_path = lib_paths.get("global_library_path")
         if global_path:
             p = Path(global_path).expanduser().resolve()
             # Check for survey subfolder
             if (p / "survey").is_dir():
                 return p / "survey"
-            if (p / "library" / "survey").is_dir():
-                return p / "library" / "survey"
             if p.is_dir():
                 return p
     except Exception:
