@@ -278,6 +278,10 @@ def api_survey_convert():
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
     save_to_project = request.form.get("save_to_project") == "true"
+    archive_sourcedata = request.form.get("archive_sourcedata") == "true"
+    duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
+    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
+        duplicate_handling = "error"
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_")
     try:
@@ -321,6 +325,7 @@ def api_survey_convert():
                 authors=["prism-studio"],
                 language=language,
                 alias_file=alias_path,
+                duplicate_handling=duplicate_handling,
             )
         elif suffix == ".lsa":
             convert_survey_lsa_to_prism_dataset(
@@ -339,6 +344,7 @@ def api_survey_convert():
                 language=language,
                 alias_file=alias_path,
                 strict_levels=True if strict_levels else None,
+                duplicate_handling=duplicate_handling,
             )
 
         # Save to project if requested
@@ -350,7 +356,7 @@ def api_survey_convert():
                     # Prefer rawdata/ (BIDS/YODA standard), create if needed
                     dest_root = p_path / "rawdata"
                     dest_root.mkdir(parents=True, exist_ok=True)
-                    
+
                     # Merge output_root contents into dest_root
                     for item in output_root.rglob("*"):
                         if item.is_file():
@@ -358,6 +364,13 @@ def api_survey_convert():
                             dest = dest_root / rel_path
                             dest.parent.mkdir(parents=True, exist_ok=True)
                             shutil.copy2(item, dest)
+
+                    # Archive original file to sourcedata/ if requested
+                    if archive_sourcedata:
+                        sourcedata_dir = p_path / "sourcedata"
+                        sourcedata_dir.mkdir(parents=True, exist_ok=True)
+                        archive_dest = sourcedata_dir / filename
+                        shutil.copy2(input_path, archive_dest)
 
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
@@ -443,6 +456,10 @@ def api_survey_convert_validate():
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
     save_to_project = request.form.get("save_to_project") == "true"
+    archive_sourcedata = request.form.get("archive_sourcedata") == "true"
+    duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
+    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
+        duplicate_handling = "error"
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_survey_convert_validate_")
     try:
@@ -478,6 +495,7 @@ def api_survey_convert_validate():
                     sheet=sheet, unknown=unknown,
                     dry_run=False, force=True, name=dataset_name, authors=["prism-studio"],
                     language=language, alias_file=alias_path,
+                    duplicate_handling=duplicate_handling,
                 )
             elif suffix == ".lsa":
                 add_log(f"Processing LimeSurvey archive: {filename}", "info")
@@ -489,6 +507,7 @@ def api_survey_convert_validate():
                     force=True, name=dataset_name, authors=["prism-studio"],
                     language=language, alias_file=alias_path,
                     strict_levels=True if strict_levels else None,
+                    duplicate_handling=duplicate_handling,
                 )
             add_log("Conversion completed successfully", "success")
         except Exception as conv_err:
@@ -600,6 +619,14 @@ def api_survey_convert_validate():
                             dest.parent.mkdir(parents=True, exist_ok=True)
                             shutil.copy2(item, dest)
                     add_log("Project updated successfully!", "success")
+
+                    # Archive original file to sourcedata/ if requested
+                    if archive_sourcedata:
+                        sourcedata_dir = project_path / "sourcedata"
+                        sourcedata_dir.mkdir(parents=True, exist_ok=True)
+                        archive_dest = sourcedata_dir / filename
+                        shutil.copy2(input_path, archive_dest)
+                        add_log(f"Archived original file to sourcedata/{filename}", "info")
                 else:
                     add_log(f"Project path not found: {project_path}", "error")
             else:

@@ -373,7 +373,29 @@
                                 </div>
                             </div>
 
-                            <!-- Row 5: Convert button -->
+                            <!-- Row 5: Duplicate ID Handling and Sourcedata Archiving -->
+                            <div class="row g-3 mb-3" id="convertAdvancedRow">
+                                <div class="col-md-4" id="convertDuplicateGroup">
+                                    <label for="convertDuplicateHandling" class="form-label">Duplicate ID Handling</label>
+                                    <select class="form-select" id="convertDuplicateHandling">
+                                        <option value="error" selected>Stop and report</option>
+                                        <option value="keep_first">Keep first occurrence</option>
+                                        <option value="keep_last">Keep last occurrence</option>
+                                        <option value="sessions">Create multiple sessions</option>
+                                    </select>
+                                    <div class="form-text">How to handle participants with duplicate IDs</div>
+                                </div>
+                                <div class="col-md-4" id="convertArchiveGroup">
+                                    <label class="form-label">Sourcedata Archive</label>
+                                    <div class="form-check form-switch mt-2">
+                                        <input class="form-check-input" type="checkbox" id="convertArchiveSourcedata">
+                                        <label class="form-check-label" for="convertArchiveSourcedata">Archive original file to sourcedata/</label>
+                                    </div>
+                                    <div class="form-text">Preserves the raw input file alongside converted data</div>
+                                </div>
+                            </div>
+
+                            <!-- Row 6: Convert button -->
                             <div class="row g-3 mb-3">
                                 <div class="col-12">
                                     <button class="btn btn-warning text-white w-100" type="button" id="convertBtn" disabled>
@@ -2771,6 +2793,28 @@ document.addEventListener('DOMContentLoaded', function() {
         if (strictLevelsEl && strictLevelsEl.checked) {
             formData.append('strict_levels', 'true');
             appendLog('Strict Levels Validation: enabled', 'step');
+        }
+
+        // Add duplicate handling option
+        const duplicateHandlingEl = document.getElementById('convertDuplicateHandling');
+        if (duplicateHandlingEl) {
+            const dupHandling = duplicateHandlingEl.value;
+            formData.append('duplicate_handling', dupHandling);
+            if (dupHandling !== 'error') {
+                const dupLabels = {
+                    'keep_first': 'Keep first occurrence',
+                    'keep_last': 'Keep last occurrence',
+                    'sessions': 'Create multiple sessions'
+                };
+                appendLog(`Duplicate ID handling: ${dupLabels[dupHandling] || dupHandling}`, 'step');
+            }
+        }
+
+        // Add sourcedata archiving option
+        const archiveSourcedataEl = document.getElementById('convertArchiveSourcedata');
+        if (archiveSourcedataEl && archiveSourcedataEl.checked) {
+            formData.append('archive_sourcedata', 'true');
+            appendLog('Will archive original file to sourcedata/', 'step');
         }
 
         convertBtn.disabled = true;
