@@ -46,6 +46,129 @@ _NON_ITEM_TOPLEVEL_KEYS = {
 _MISSING_TOKEN = "n/a"
 _LANGUAGE_KEY_RE = re.compile(r"^[a-z]{2}(?:-[a-z]{2})?$", re.IGNORECASE)
 
+# Pattern to detect run suffix in column names: _run-01, _run-02, _run01, _run02, etc.
+# Format: {QUESTIONNAIRE}_{ITEM}_run-{NN} or {QUESTIONNAIRE}_{ITEM}_run{NN}
+_RUN_SUFFIX_PATTERN = re.compile(r"^(.+)_run-?(\d+)$", re.IGNORECASE)
+
+# LimeSurvey system columns - these are platform metadata, not questionnaire responses
+# They should be extracted to a separate tool-limesurvey file
+LIMESURVEY_SYSTEM_COLUMNS = {
+    # Core system fields
+    "id",               # LimeSurvey response ID
+    "submitdate",       # Survey completion timestamp
+    "startdate",        # Survey start timestamp
+    "datestamp",        # Date stamp
+    "lastpage",         # Last page viewed
+    "startlanguage",    # Language at start
+    "seed",             # Randomization seed
+    "token",            # Participant token
+    "ipaddr",           # IP address (sensitive)
+    "refurl",           # Referrer URL
+    # Timing fields
+    "interviewtime",    # Total interview time
+    # Other common LimeSurvey fields
+    "optout",           # Opt-out status
+    "emailstatus",      # Email status
+    "attribute_1",      # Custom attributes
+    "attribute_2",
+    "attribute_3",
+}
+
+# Pattern for LimeSurvey group timing columns: groupTime123, grouptime456, etc.
+_LS_TIMING_PATTERN = re.compile(r"^grouptime\d+$", re.IGNORECASE)
+
+
+def _is_limesurvey_system_column(column_name: str) -> bool:
+    """Check if a column is a LimeSurvey system/metadata column.
+
+    Args:
+        column_name: Column name to check
+
+    Returns:
+        True if this is a LimeSurvey system column that should be
+        extracted to tool-limesurvey file instead of questionnaire data.
+    """
+    col_lower = column_name.strip().lower()
+
+    # Check against known system columns
+    if col_lower in LIMESURVEY_SYSTEM_COLUMNS:
+        return True
+
+    # Check timing pattern (groupTimeXXX)
+    if _LS_TIMING_PATTERN.match(col_lower):
+        return True
+
+    # Check for Duration_ prefix (group duration columns)
+    if col_lower.startswith("duration_"):
+        return True
+
+    return False
+
+
+def _extract_limesurvey_columns(df_columns: list[str]) -> tuple[list[str], list[str]]:
+    """Separate LimeSurvey system columns from questionnaire columns.
+
+    Args:
+        df_columns: List of all column names from dataframe
+
+    Returns:
+        Tuple of (ls_system_cols, other_cols)
+        - ls_system_cols: Columns that are LimeSurvey system metadata
+        - other_cols: Remaining columns (questionnaire data, participant info, etc.)
+    """
+    ls_cols = []
+    other_cols = []
+
+    for col in df_columns:
+        if _is_limesurvey_system_column(col):
+            ls_cols.append(col)
+        else:
+            other_cols.append(col)
+
+    return ls_cols, other_cols
+
+
+def _parse_run_from_column(column_name: str) -> tuple[str, int | None]:
+    """Parse run information from a column name.
+
+    Detects PRISM naming convention: {QUESTIONNAIRE}_{ITEM}_run-{NN}
+
+    Args:
+        column_name: Column name to parse (e.g., 'PANAS_1_run-01', 'PHQ9_3')
+
+    Returns:
+        Tuple of (base_column_name, run_number)
+        - If run detected: ('PANAS_1', 1)
+        - If no run: ('PHQ9_3', None)
+    """
+    match = _RUN_SUFFIX_PATTERN.match(column_name.strip())
+    if match:
+        base_name = match.group(1)
+        run_num = int(match.group(2))
+        return base_name, run_num
+    return column_name, None
+
+
+def _group_columns_by_run(columns: list[str]) -> dict[str, dict[int | None, list[str]]]:
+    """Group columns by their base name and run number.
+
+    Args:
+        columns: List of column names
+
+    Returns:
+        Dict mapping base_column_name -> {run_number -> [original_column_names]}
+        Example: {'PANAS_1': {1: ['PANAS_1_run-01'], 2: ['PANAS_1_run-02']}}
+    """
+    grouped: dict[str, dict[int | None, list[str]]] = {}
+    for col in columns:
+        base_name, run_num = _parse_run_from_column(col)
+        if base_name not in grouped:
+            grouped[base_name] = {}
+        if run_num not in grouped[base_name]:
+            grouped[base_name][run_num] = []
+        grouped[base_name][run_num].append(col)
+    return grouped
+
 
 def _strip_internal_keys(sidecar: dict) -> dict:
     """Remove internal underscore-prefixed keys that would fail schema validation."""
@@ -83,6 +206,54 @@ class SurveyConvertResult:
     missing_cells_by_subject: dict[str, int] = field(default_factory=dict)
     missing_value_token: str = _MISSING_TOKEN
     conversion_warnings: list[str] = field(default_factory=list)
+    task_runs: dict[str, int | None] = field(default_factory=dict)  # task -> max run number (None if single occurrence)
+
+
+def _build_bids_survey_filename(
+    sub_id: str,
+    ses_id: str,
+    task: str,
+    run: int | None = None,
+    extension: str = "tsv"
+) -> str:
+    """Build a BIDS-compliant survey filename.
+
+    Args:
+        sub_id: Subject ID (e.g., 'sub-001')
+        ses_id: Session ID (e.g., 'ses-01')
+        task: Task name (e.g., 'panas')
+        run: Run number (1, 2, 3...) or None if single occurrence
+        extension: File extension without dot (default: 'tsv')
+
+    Returns:
+        Filename like 'sub-001_ses-01_task-panas_survey.tsv' (no run)
+        or 'sub-001_ses-01_task-panas_run-01_survey.tsv' (with run)
+    """
+    parts = [sub_id, ses_id, f"task-{task}"]
+    if run is not None:
+        parts.append(f"run-{run:02d}")
+    parts.append(f"survey.{extension}")
+    return "_".join(parts[:-1]) + f".{extension}"
+
+
+def _determine_task_runs(tasks_with_data: set[str], task_occurrences: dict[str, int]) -> dict[str, int | None]:
+    """Determine which tasks need run numbers based on occurrence count.
+
+    Args:
+        tasks_with_data: Set of task names that have data
+        task_occurrences: Dict mapping task name to number of occurrences in session
+
+    Returns:
+        Dict mapping task name to max run number (None if single occurrence)
+    """
+    task_runs: dict[str, int | None] = {}
+    for task in tasks_with_data:
+        count = task_occurrences.get(task, 1)
+        if count > 1:
+            task_runs[task] = count
+        else:
+            task_runs[task] = None
+    return task_runs
 
 
 def _load_participants_template(library_dir: Path) -> dict | None:
@@ -318,6 +489,7 @@ def convert_survey_xlsx_to_prism_dataset(
     authors: list[str] | None = None,
     language: str | None = None,
     alias_file: str | Path | None = None,
+    duplicate_handling: str = "error",
 ) -> SurveyConvertResult:
     """Convert a wide survey Excel table into a PRISM dataset.
 
@@ -356,6 +528,7 @@ def convert_survey_xlsx_to_prism_dataset(
         language=language,
         alias_file=alias_file,
         strict_levels=True,
+        duplicate_handling=duplicate_handling,
     )
 
 
@@ -376,6 +549,7 @@ def convert_survey_lsa_to_prism_dataset(
     language: str | None = None,
     alias_file: str | Path | None = None,
     strict_levels: bool | None = None,
+    duplicate_handling: str = "error",
 ) -> SurveyConvertResult:
     """Convert a LimeSurvey response archive (.lsa) into a PRISM dataset.
 
@@ -414,6 +588,7 @@ def convert_survey_lsa_to_prism_dataset(
         technical_overrides=inferred_tech,
         alias_file=alias_file,
         strict_levels=effective_strict_levels,
+        duplicate_handling=duplicate_handling,
     )
 
 
@@ -622,9 +797,12 @@ def _convert_survey_dataframe_to_prism_dataset(
     technical_overrides: dict | None = None,
     alias_file: str | Path | None = None,
     strict_levels: bool = True,
+    duplicate_handling: str = "error",
 ) -> SurveyConvertResult:
     if unknown not in {"error", "warn", "ignore"}:
         raise ValueError("unknown must be one of: error, warn, ignore")
+    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
+        raise ValueError("duplicate_handling must be one of: error, keep_first, keep_last, sessions")
 
     library_dir = Path(library_dir).resolve()
     output_root = Path(output_root).resolve()
@@ -709,18 +887,49 @@ def _convert_survey_dataframe_to_prism_dataset(
         selected_tasks = selected
 
     # --- Determine Columns ---
-    res_id_col, res_ses_col = _resolve_id_and_session_cols(df, id_column, session_column)
+    res_id_col, res_ses_col = _resolve_id_and_session_cols(
+        df, id_column, session_column, participants_template=participant_template
+    )
 
     if alias_map:
         df = _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
 
-    # Detect duplicate IDs after normalization
+    # --- Extract LimeSurvey System Columns ---
+    # These are platform metadata (timestamps, tokens, timings) that should be
+    # written to a separate tool-limesurvey file, not mixed with questionnaire data
+    ls_system_cols, _ = _extract_limesurvey_columns(list(df.columns))
+
+    # Initialize conversion warnings list (will be extended by _map_survey_columns)
+    conversion_warnings: list[str] = []
+
+    # Handle duplicate IDs based on duplicate_handling parameter
     normalized_ids = df[res_id_col].astype(str).map(_normalize_sub_id)
     if normalized_ids.duplicated().any():
         dup_ids = sorted(set(normalized_ids[normalized_ids.duplicated()]))
-        raise ValueError(f"Duplicate participant_id values after normalization: {', '.join(dup_ids[:5])}")
+        dup_count = len(dup_ids)
 
-    col_to_task, unknown_cols, conversion_warnings = _map_survey_columns(
+        if duplicate_handling == "error":
+            raise ValueError(f"Duplicate participant_id values after normalization: {', '.join(dup_ids[:5])}")
+        elif duplicate_handling == "keep_first":
+            # Keep first occurrence, drop subsequent duplicates
+            df = df[~normalized_ids.duplicated(keep="first")].copy()
+            normalized_ids = df[res_id_col].astype(str).map(_normalize_sub_id)
+            conversion_warnings.append(f"Duplicate IDs found ({dup_count} duplicates). Kept first occurrence for: {', '.join(dup_ids[:5])}")
+        elif duplicate_handling == "keep_last":
+            # Keep last occurrence, drop earlier duplicates
+            df = df[~normalized_ids.duplicated(keep="last")].copy()
+            normalized_ids = df[res_id_col].astype(str).map(_normalize_sub_id)
+            conversion_warnings.append(f"Duplicate IDs found ({dup_count} duplicates). Kept last occurrence for: {', '.join(dup_ids[:5])}")
+        elif duplicate_handling == "sessions":
+            # Create multiple sessions for duplicates (ses-1, ses-2, etc.)
+            # Add a session counter column based on occurrence order
+            df = df.copy()
+            df["_dup_session_num"] = df.groupby(normalized_ids.values).cumcount() + 1
+            # Override session column with the computed session numbers
+            res_ses_col = "_dup_session_num"
+            conversion_warnings.append(f"Duplicate IDs found ({dup_count} duplicates). Created multiple sessions for: {', '.join(dup_ids[:5])}")
+
+    col_to_mapping, unknown_cols, map_warnings, task_runs = _map_survey_columns(
         df=df,
         item_to_task=item_to_task,
         participant_columns_lower=participant_columns_lower,
@@ -728,12 +937,25 @@ def _convert_survey_dataframe_to_prism_dataset(
         ses_col=res_ses_col,
         unknown_mode=unknown,
     )
+    conversion_warnings.extend(map_warnings)
 
-    tasks_with_data = set(col_to_task.values())
+    # Extract tasks from mappings
+    tasks_with_data = {m.task for m in col_to_mapping.values()}
     if selected_tasks is not None:
         tasks_with_data = tasks_with_data.intersection(selected_tasks)
     if not tasks_with_data:
         raise ValueError("No survey item columns matched the selected templates.")
+
+    # Build col_to_task for backward compatibility with existing functions
+    col_to_task = {col: m.task for col, m in col_to_mapping.items()}
+
+    # Group columns by (task, run) for run-aware processing
+    task_run_columns: dict[tuple[str, int | None], list[str]] = {}
+    for col, mapping in col_to_mapping.items():
+        key = (mapping.task, mapping.run)
+        if key not in task_run_columns:
+            task_run_columns[key] = []
+        task_run_columns[key].append(col)
 
     # --- Results Preparation ---
     missing_items_by_task = _compute_missing_items_report(tasks_with_data, templates, col_to_task)
@@ -746,6 +968,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             id_column=res_id_col,
             session_column=res_ses_col,
             conversion_warnings=conversion_warnings,
+            task_runs=task_runs,
         )
 
     # --- Write Output ---
@@ -753,6 +976,16 @@ def _convert_survey_dataframe_to_prism_dataset(
     dataset_root = _resolve_dataset_root(output_root)
     _ensure_dir(dataset_root)
     _write_survey_description(dataset_root, name, authors)
+
+    # Write LimeSurvey system metadata sidecar at root level (if LS columns present)
+    if ls_system_cols:
+        _write_limesurvey_sidecar(
+            dataset_root=dataset_root,
+            ls_columns=ls_system_cols,
+            ls_version=technical_overrides.get("SoftwareVersion") if technical_overrides else None,
+            force=force,
+        )
+
     _write_survey_participants(
         df=df,
         output_root=dataset_root,
@@ -796,17 +1029,34 @@ def _convert_survey_dataframe_to_prism_dataset(
         )
         modality_dir = _ensure_dir(output_root / sub_id / ses_id / "survey")
 
-        for task in sorted(tasks_with_data):
+        # Write LimeSurvey system data for this subject/session (if LS columns present)
+        if ls_system_cols:
+            _write_limesurvey_data(
+                row=row,
+                ls_columns=ls_system_cols,
+                sub_id=sub_id,
+                ses_id=ses_id,
+                modality_dir=modality_dir,
+                normalize_val_fn=_normalize_item_value,
+            )
+
+        # Process each (task, run) combination separately
+        for (task, run), columns in sorted(task_run_columns.items()):
             if selected_tasks is not None and task not in selected_tasks:
                 continue
 
             schema = templates[task]["json"]
-            out_row, missing_count = _process_survey_row(
+
+            # Build mapping from base item names to actual column names for this run
+            run_col_mapping = {col_to_mapping[c].base_item: c for c in columns}
+
+            out_row, missing_count = _process_survey_row_with_run(
                 row=row,
                 df_cols=df.columns,
                 task=task,
+                run=run,
                 schema=schema,
-                col_to_task=col_to_task,
+                run_col_mapping=run_col_mapping,
                 sub_id=sub_id,
                 strict_levels=strict_levels,
                 items_using_tolerance=items_using_tolerance,
@@ -815,9 +1065,17 @@ def _convert_survey_dataframe_to_prism_dataset(
             )
             missing_cells_by_subject[sub_id] = missing_cells_by_subject.get(sub_id, 0) + missing_count
 
-            # Write TSV
+            # Write TSV with run number if needed
             expected_cols = [k for k in schema.keys() if k not in _NON_ITEM_TOPLEVEL_KEYS and k not in schema.get("_aliases", {})]
-            res_file = modality_dir / f"{sub_id}_{ses_id}_task-{task}_survey.tsv"
+
+            # Determine if run number should be in filename
+            # Only include run if this task has multiple runs detected
+            include_run = task_runs.get(task) is not None
+            effective_run = run if include_run else None
+
+            filename = _build_bids_survey_filename(sub_id, ses_id, task, effective_run, "tsv")
+            res_file = modality_dir / filename
+
             with open(res_file, "w", encoding="utf-8", newline="") as f:
                 writer = csv.DictWriter(f, fieldnames=expected_cols, delimiter="\t", lineterminator="\n")
                 writer.writeheader()
@@ -846,6 +1104,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         missing_cells_by_subject=missing_cells_by_subject,
         missing_value_token=_MISSING_TOKEN,
         conversion_warnings=conversion_warnings,
+        task_runs=task_runs,
     )
 
 
@@ -865,15 +1124,33 @@ def _normalize_item_value(val) -> str:
 
 
 def _resolve_id_and_session_cols(
-    df, id_column: str | None, session_column: str | None
+    df, id_column: str | None, session_column: str | None,
+    participants_template: dict | None = None
 ) -> tuple[str, str | None]:
-    """Helper to determine participant ID and session columns from dataframe."""
+    """Helper to determine participant ID and session columns from dataframe.
+
+    Priority for ID column detection:
+    1. Explicit id_column parameter
+    2. _sourceField from participants.json (if participant_id has _sourceField)
+    3. Common column name patterns (participant_id, subject, id, code, token)
+    """
 
     def _find_col(candidates: set[str]) -> str | None:
         lower_map = {str(c).strip().lower(): str(c).strip() for c in df.columns}
         for c in candidates:
             if c in lower_map:
                 return lower_map[c]
+        return None
+
+    def _find_col_exact_or_lower(col_name: str) -> str | None:
+        """Find column by exact match first, then case-insensitive."""
+        # Exact match
+        if col_name in df.columns:
+            return col_name
+        # Case-insensitive match
+        lower_map = {str(c).strip().lower(): str(c).strip() for c in df.columns}
+        if col_name.lower() in lower_map:
+            return lower_map[col_name.lower()]
         return None
 
     resolved_id = id_column
@@ -883,14 +1160,34 @@ def _resolve_id_and_session_cols(
                 f"id_column '{resolved_id}' not found. Columns: {', '.join([str(c) for c in df.columns])}"
             )
     else:
-        # LimeSurvey response archives commonly use `token`.
-        resolved_id = _find_col(
-            {"participant_id", "subject", "id", "sub_id", "participant", "code", "token"}
-        )
+        # Priority 1: Check participants_template for _sourceField
+        source_field = None
+        if participants_template:
+            # Check if participant_id has _sourceField defined
+            pid_def = participants_template.get("participant_id")
+            if isinstance(pid_def, dict) and "_sourceField" in pid_def:
+                source_field = pid_def.get("_sourceField")
+                if source_field:
+                    resolved_id = _find_col_exact_or_lower(source_field)
+                    if not resolved_id:
+                        # _sourceField specified but column not found, try common patterns
+                        source_field = None
+
+        # Priority 2: Common column name patterns
         if not resolved_id:
-            raise ValueError(
-                "Could not determine participant id column. Provide id_column explicitly (e.g., participant_id, CODE)."
+            # LimeSurvey response archives commonly use `token`.
+            resolved_id = _find_col(
+                {"participant_id", "subject", "id", "sub_id", "participant", "code", "token"}
             )
+            if not resolved_id:
+                if source_field:
+                    raise ValueError(
+                        f"participants.json specifies _sourceField='{source_field}' but column not found. "
+                        f"Columns: {', '.join([str(c) for c in df.columns])}"
+                    )
+                raise ValueError(
+                    "Could not determine participant id column. Provide id_column explicitly (e.g., participant_id, CODE)."
+                )
 
     resolved_ses: str | None
     if session_column:
@@ -903,6 +1200,14 @@ def _resolve_id_and_session_cols(
     return str(resolved_id), resolved_ses
 
 
+@dataclass
+class ColumnMapping:
+    """Mapping information for a single column."""
+    task: str
+    run: int | None  # None if single occurrence, 1/2/3... if multiple runs
+    base_item: str   # Item name without run suffix (for template lookup)
+
+
 def _map_survey_columns(
     *,
     df,
@@ -911,8 +1216,18 @@ def _map_survey_columns(
     id_col: str,
     ses_col: str | None,
     unknown_mode: str,
-) -> tuple[dict[str, str], list[str], list[str]]:
-    """Determine which columns map to which surveys and identify unmapped columns."""
+) -> tuple[dict[str, ColumnMapping], list[str], list[str], dict[str, int | None]]:
+    """Determine which columns map to which surveys and identify unmapped columns.
+
+    Now also detects run information from PRISM naming convention:
+    {QUESTIONNAIRE}_{ITEM}_run-{NN}
+
+    Returns:
+        col_to_mapping: Dict mapping column name to ColumnMapping(task, run, base_item)
+        unknown_cols: List of unmapped column names
+        warnings: List of warning messages
+        task_runs: Dict mapping task name to max run number (None if single occurrence)
+    """
     lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
 
     # Detect participant-related columns first so they are not treated as unmapped survey items.
@@ -932,18 +1247,61 @@ def _map_survey_columns(
     }
 
     cols = [c for c in df.columns if c not in {id_col} and c != ses_col]
-    col_to_task: dict[str, str] = {}
+    col_to_mapping: dict[str, ColumnMapping] = {}
     unknown_cols: list[str] = []
+
+    # Track runs per task: task -> set of run numbers seen
+    task_run_tracker: dict[str, set[int | None]] = {}
+
     for c in cols:
         col_lower = str(c).strip().lower()
+
+        # Skip participant columns
+        if c in participant_columns_present or col_lower in participant_columns_present:
+            continue
+        if col_lower in participant_columns_lower:
+            continue
+
+        # Parse run suffix from column name
+        base_name, run_num = _parse_run_from_column(c)
+
+        # Try to match against templates (original name first, then base name)
+        matched_task = None
+        matched_base = c
+
         if c in item_to_task:
-            col_to_task[c] = item_to_task[c]
-        elif c in participant_columns_present or col_lower in participant_columns_present:
-            continue
-        elif col_lower in participant_columns_lower:
-            continue
+            # Direct match (e.g., 'PANAS_1' without run suffix)
+            matched_task = item_to_task[c]
+            matched_base = c
+        elif base_name in item_to_task:
+            # Match after stripping run suffix (e.g., 'PANAS_1' from 'PANAS_1_run-01')
+            matched_task = item_to_task[base_name]
+            matched_base = base_name
+
+        if matched_task:
+            col_to_mapping[c] = ColumnMapping(
+                task=matched_task,
+                run=run_num,
+                base_item=matched_base
+            )
+            # Track runs for this task
+            if matched_task not in task_run_tracker:
+                task_run_tracker[matched_task] = set()
+            task_run_tracker[matched_task].add(run_num)
         else:
             unknown_cols.append(c)
+
+    # Determine final run assignments per task
+    # If a task has only items with run=None, no runs needed
+    # If a task has items with run numbers, all items for that task get run numbers
+    task_runs: dict[str, int | None] = {}
+    for task, runs in task_run_tracker.items():
+        # Remove None and get max run number
+        run_numbers = [r for r in runs if r is not None]
+        if run_numbers:
+            task_runs[task] = max(run_numbers)
+        else:
+            task_runs[task] = None
 
     warnings: list[str] = []
     bookkeeping = {
@@ -961,7 +1319,148 @@ def _map_survey_columns(
             more = "" if len(filtered_unknown) <= 10 else f" (+{len(filtered_unknown)-10} more)"
             warnings.append(f"Unmapped columns (not in any survey template): {shown}{more}")
 
-    return col_to_task, unknown_cols, warnings
+    return col_to_mapping, unknown_cols, warnings, task_runs
+
+
+def _write_limesurvey_sidecar(
+    dataset_root: Path,
+    ls_columns: list[str],
+    ls_version: str | None = None,
+    force: bool = False,
+) -> Path | None:
+    """Write the root-level tool-limesurvey_survey.json sidecar.
+
+    This sidecar describes the LimeSurvey system columns present in the data.
+    It's written once at the dataset root and applies to all subjects via BIDS inheritance.
+
+    Args:
+        dataset_root: Path to dataset root directory
+        ls_columns: List of LimeSurvey system column names present in data
+        ls_version: LimeSurvey version string (if detected)
+        force: Overwrite existing file if True
+
+    Returns:
+        Path to written sidecar, or None if nothing written
+    """
+    if not ls_columns:
+        return None
+
+    sidecar_path = dataset_root / "tool-limesurvey_survey.json"
+    if sidecar_path.exists() and not force:
+        return sidecar_path
+
+    # Build sidecar content
+    from datetime import date
+    today = date.today().isoformat()
+
+    sidecar = {
+        "Metadata": {
+            "SchemaVersion": "1.0.0",
+            "CreationDate": today,
+            "Tool": "LimeSurvey",
+        },
+        "SystemFields": {},
+    }
+
+    if ls_version:
+        sidecar["Metadata"]["ToolVersion"] = ls_version
+
+    # Field descriptions for common LimeSurvey columns
+    field_descriptions = {
+        "id": {"Description": "LimeSurvey response ID", "DataType": "integer"},
+        "submitdate": {"Description": "Survey completion timestamp", "DataType": "string", "Format": "ISO8601"},
+        "startdate": {"Description": "Survey start timestamp", "DataType": "string", "Format": "ISO8601"},
+        "datestamp": {"Description": "Date stamp of response", "DataType": "string"},
+        "lastpage": {"Description": "Last page number viewed by participant", "DataType": "integer"},
+        "startlanguage": {"Description": "Language code at survey start", "DataType": "string"},
+        "seed": {"Description": "Randomization seed for question/answer order", "DataType": "string"},
+        "token": {"Description": "Participant access token", "DataType": "string"},
+        "ipaddr": {"Description": "IP address of respondent", "DataType": "string", "SensitiveData": True},
+        "refurl": {"Description": "Referrer URL", "DataType": "string"},
+        "interviewtime": {"Description": "Total time spent on survey", "DataType": "float", "Unit": "seconds"},
+        "optout": {"Description": "Opt-out status", "DataType": "string"},
+        "emailstatus": {"Description": "Email delivery status", "DataType": "string"},
+    }
+
+    # Add descriptions for columns present in data
+    for col in ls_columns:
+        col_lower = col.lower()
+        if col_lower in field_descriptions:
+            sidecar["SystemFields"][col] = field_descriptions[col_lower]
+        elif col_lower.startswith("grouptime"):
+            # Extract group number if possible
+            sidecar["SystemFields"][col] = {
+                "Description": f"Time spent on question group",
+                "DataType": "float",
+                "Unit": "seconds",
+            }
+        elif col_lower.startswith("duration_"):
+            group_name = col[9:]  # Remove "Duration_" prefix
+            sidecar["SystemFields"][col] = {
+                "Description": f"Time spent on group: {group_name}",
+                "DataType": "float",
+                "Unit": "seconds",
+            }
+        elif col_lower.startswith("attribute_"):
+            sidecar["SystemFields"][col] = {
+                "Description": "Custom participant attribute",
+                "DataType": "string",
+            }
+        else:
+            sidecar["SystemFields"][col] = {
+                "Description": f"LimeSurvey system field: {col}",
+            }
+
+    _write_json(sidecar_path, sidecar)
+    return sidecar_path
+
+
+def _write_limesurvey_data(
+    *,
+    row,
+    ls_columns: list[str],
+    sub_id: str,
+    ses_id: str,
+    modality_dir: Path,
+    normalize_val_fn,
+) -> Path | None:
+    """Write LimeSurvey system data for a single subject/session.
+
+    Args:
+        row: DataFrame row with the data
+        ls_columns: List of LimeSurvey system columns to extract
+        sub_id: Subject ID (e.g., 'sub-001')
+        ses_id: Session ID (e.g., 'ses-01')
+        modality_dir: Path to survey modality directory
+        normalize_val_fn: Function to normalize values
+
+    Returns:
+        Path to written TSV file, or None if no data
+    """
+    if not ls_columns:
+        return None
+
+    # Filter to only columns present in this row
+    present_cols = [c for c in ls_columns if c in row.index]
+    if not present_cols:
+        return None
+
+    # Build output row
+    out_row = {}
+    for col in present_cols:
+        val = row[col]
+        out_row[col] = normalize_val_fn(val)
+
+    # Write TSV
+    filename = f"{sub_id}_{ses_id}_tool-limesurvey_survey.tsv"
+    res_file = modality_dir / filename
+
+    with open(res_file, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=present_cols, delimiter="\t", lineterminator="\n")
+        writer.writeheader()
+        writer.writerow(out_row)
+
+    return res_file
 
 
 def _write_survey_description(output_root: Path, name: str | None, authors: list[str] | None):
@@ -1160,6 +1659,75 @@ def _process_survey_row(
             out[item_id] = _MISSING_TOKEN
             missing_count += 1
             
+    return out, missing_count
+
+
+def _process_survey_row_with_run(
+    *,
+    row,
+    df_cols,
+    task: str,
+    run: int | None,
+    schema: dict,
+    run_col_mapping: dict[str, str],  # base_item -> actual column name
+    sub_id: str,
+    strict_levels: bool,
+    items_using_tolerance: dict[str, set[str]],
+    is_missing_fn,
+    normalize_val_fn,
+) -> tuple[dict[str, str], int]:
+    """Process a single task/run's data for one subject/session.
+
+    Similar to _process_survey_row but uses run_col_mapping to find
+    the correct column for each item (accounting for _run-XX suffixes).
+    """
+    all_items = [k for k in schema.keys() if k not in _NON_ITEM_TOPLEVEL_KEYS]
+    expected = [k for k in all_items if k not in schema.get("_aliases", {})]
+
+    out: dict[str, str] = {}
+    missing_count = 0
+
+    for item_id in expected:
+        # Get candidates: item itself plus any aliases
+        candidates = [item_id] + schema.get("_reverse_aliases", {}).get(item_id, [])
+        found_val = None
+        found_col = None
+
+        for cand in candidates:
+            # First check if there's a direct mapping for this candidate
+            if cand in run_col_mapping:
+                actual_col = run_col_mapping[cand]
+                if actual_col in df_cols and not is_missing_fn(row[actual_col]):
+                    found_val = row[actual_col]
+                    found_col = actual_col
+                    break
+            # Fallback: check if candidate itself is in df_cols (for non-run data)
+            elif cand in df_cols and not is_missing_fn(row[cand]):
+                found_val = row[cand]
+                found_col = cand
+                break
+
+        if found_col:
+            # Inline validation using the helper's logic
+            _validate_survey_item_value(
+                item_id=item_id,
+                val=found_val,
+                item_schema=schema.get(item_id),
+                sub_id=sub_id,
+                task=task,
+                strict_levels=strict_levels,
+                items_using_tolerance=items_using_tolerance,
+                normalize_fn=normalize_val_fn,
+                is_missing_fn=is_missing_fn,
+            )
+            norm = normalize_val_fn(found_val)
+            if norm == _MISSING_TOKEN:
+                missing_count += 1
+            out[item_id] = norm
+        else:
+            out[item_id] = _MISSING_TOKEN
+            missing_count += 1
+
     return out, missing_count
 
 
