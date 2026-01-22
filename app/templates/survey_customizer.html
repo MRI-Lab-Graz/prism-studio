@@ -715,7 +715,53 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update order values
         customizationState.groups.forEach((g, i) => g.order = i);
 
+        // Recalculate run numbers based on new positions
+        recalculateRunNumbers();
+
+        // Re-render to show updated run numbers
+        renderGroups();
         renderQuestions();
+    }
+
+    // Recalculate run numbers for multi-run questionnaires based on group positions
+    function recalculateRunNumbers() {
+        // Group by sourceFile to find multi-run questionnaires
+        const groupsBySource = {};
+        customizationState.groups.forEach((group, index) => {
+            const source = group.sourceFile;
+            if (!source) return;
+            if (!groupsBySource[source]) {
+                groupsBySource[source] = [];
+            }
+            groupsBySource[source].push({ group, index });
+        });
+
+        // For each source with multiple runs, reassign run numbers based on position
+        Object.entries(groupsBySource).forEach(([source, entries]) => {
+            if (entries.length <= 1) return; // Single run, no change needed
+
+            // Sort by current position (index)
+            entries.sort((a, b) => a.index - b.index);
+
+            // Reassign run numbers 1, 2, 3, ... based on position
+            entries.forEach((entry, runIdx) => {
+                const newRunNumber = runIdx + 1;
+                const group = entry.group;
+
+                // Update group runNumber
+                group.runNumber = newRunNumber;
+
+                // Update group name to reflect new run number
+                // Extract base name (remove existing " (Run X)" suffix)
+                let baseName = group.name.replace(/\s*\(Run \d+\)$/, '');
+                group.name = entries.length > 1 ? `${baseName} (Run ${newRunNumber})` : baseName;
+
+                // Update all questions in this group
+                group.questions.forEach(q => {
+                    q.runNumber = newRunNumber;
+                });
+            });
+        });
     }
 
     // Handle question move between/within groups
