@@ -222,118 +222,6 @@
 
     <div class="card">
         <div class="card-body">
-            <!-- Global Renamer Helper -->
-            <div class="card border-warning mb-4 shadow-sm">
-                <div class="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#globalRenamerCollapse">
-                    <h5 class="mb-0 text-dark">
-                        <i class="fas fa-wand-magic-sparkles me-2 text-warning"></i>Renamer Helper <small class="text-muted ms-2 fw-normal">(Optional tool to fix filenames before conversion)</small>
-                    </h5>
-                    <button class="btn btn-sm btn-outline-warning border-0" type="button">
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                </div>
-                <div id="globalRenamerCollapse" class="collapse">
-                    <div class="card-body">
-                        <div class="alert alert-light border mb-4">
-                            <div class="d-flex">
-                                <i class="fas fa-info-circle me-3 text-info fa-2x"></i>
-                                <div>
-                                    <strong>Renamer by Example:</strong> Quickly rename your files to match the PRISM/BIDS format (<code>sub-XXX_ses-YYY_task-ZZZ</code>).
-                                    <br><small class="text-muted">Examples: <code>004-t2.edf</code> → <code>sub-004_ses-2_task-rest_physio.edf</code> or <code>survey_01.csv</code> → <code>sub-01_survey-phq9_survey.csv</code></small>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row g-3">
-                            <div class="col-md-12">
-                                <label for="renamerFiles" class="form-label fw-bold">1. Select Files or Folder to Rename</label>
-                                <input class="form-control" type="file" id="renamerFiles" multiple webkitdirectory directory>
-                                <small class="text-muted">Upload files or an entire directory. We will pick one file as an example to define the rule.</small>
-                            </div>
-                            
-                            <div id="renamerExampleContainer" class="col-md-12 d-none">
-                                <div class="card border-warning shadow-sm">
-                                    <div class="card-header bg-warning bg-opacity-10 fw-bold">
-                                        <i class="fas fa-magic me-2 text-warning"></i>2. Define Renaming Rule by Example
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-5">
-                                                <label class="form-label small text-muted mb-1">Original Filename</label>
-                                                <div id="renamerOriginalExample" class="form-control bg-light font-monospace"></div>
-                                            </div>
-                                            <div class="col-md-1 text-center mt-3">
-                                                <i class="fas fa-arrow-right fa-lg text-muted"></i>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="row g-2">
-                                                    <div class="col-md-3">
-                                                        <label for="renamerModality" class="form-label small text-muted mb-1">Modality</label>
-                                                        <select class="form-select form-select-sm" id="renamerModality">
-                                                            <option value="physio" selected>Physio</option>
-                                                            <option value="biometrics">Biometrics</option>
-                                                            <option value="events">Events</option>
-                                                            <option value="survey">Survey</option>
-                                                        </select>
-                                                    </div>
-                                                    <div class="col-md-3" id="renamerRecordingContainer">
-                                                        <label for="renamerRecording" class="form-label small text-muted mb-1">Recording</label>
-                                                        <select class="form-select form-select-sm" id="renamerRecording">
-                                                            <option value="">None</option>
-                                                            <option value="ecg">ecg</option>
-                                                            <option value="cardiac">cardiac</option>
-                                                            <option value="puls">puls</option>
-                                                            <option value="ppg">ppg</option>
-                                                            <option value="resp">resp</option>
-                                                            <option value="eda">eda</option>
-                                                            <option value="emg">emg</option>
-                                                            <option value="temp">temp</option>
-                                                            <option value="trigger">trigger</option>
-                                                        </select>
-                                                        <small class="text-muted x-small">Optional</small>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label for="renamerNewExample" class="form-label small text-muted mb-1">New PRISM Filename</label>
-                                                        <div class="text-muted mb-1" style="font-size: 0.75rem;">
-                                                            <i class="fas fa-info-circle me-1"></i> <span id="renamerExampleHint">Example: <code>sub-001_task-rest_physio.edf</code></span>
-                                                        </div>
-                                                        <input type="text" class="form-control font-monospace border-primary" id="renamerNewExample" placeholder="e.g. sub-001_task-rest_physio.edf">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="mt-3 pt-3 border-top">
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="renamerOrganize" checked>
-                                                <label class="form-check-label fw-bold" for="renamerOrganize">
-                                                    Organize into PRISM structure
-                                                </label>
-                                                <div class="text-muted small">
-                                                    If enabled, files will be placed in <code>sub-XX/ses-YY/modality/</code> folders. 
-                                                    Otherwise, they will be saved in a flat structure.
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="mt-2">
-                                            <small class="text-muted">
-                                                <i class="fas fa-info-circle me-1"></i> 
-                                                Type how the filename above should look. We'll automatically apply this pattern to all other files.
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Hidden fields for the actual regex/replacement used by the backend -->
-                            <input type="hidden" id="renamerPattern">
-                            <input type="hidden" id="renamerReplacement">
-
-                        <div id="renamerError" class="alert alert-danger d-none mt-3"></div>
-                        <div id="renamerInfo" class="alert alert-success d-none mt-3"></div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Ribbon Navigation -->
             <ul class="nav nav-pills nav-fill mb-4" id="converterTabs" role="tablist">
                 <li class="nav-item" role="presentation">
@@ -364,13 +252,6 @@
                         <small class="d-block text-muted" style="font-size: 0.7rem;">Gaze data</small>
                     </button>
                 </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="organize-tab" data-bs-toggle="pill" data-bs-target="#organize-panel" type="button" role="tab" aria-controls="organize-panel" aria-selected="false">
-                        <i class="fas fa-folder-tree fa-lg mb-1 d-block"></i>
-                        <span class="fw-bold">Organize</span>
-                        <small class="d-block text-muted" style="font-size: 0.7rem;">Batch organize files</small>
-                    </button>
-                </li>
             </ul>
 
             <!-- Tab Content -->
@@ -388,45 +269,6 @@
                                     <h5 class="mb-1">Survey Data Conversion</h5>
                                     <p class="text-muted mb-0">Convert questionnaire responses from Excel or LimeSurvey archives</p>
                                 </div>
-                            </div>
-
-                            <!-- Template Library Path -->
-                            <div class="row g-3 mb-3">
-                                <div class="col-12">
-                                    <label for="convertLibraryPath" class="form-label">Template Library Root <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="convertLibraryPath" placeholder="/path/to/library" value="{{ default_survey_library_path }}">
-                                        <button class="btn btn-outline-secondary" type="button" id="convertBrowseLibraryBtn" title="Browse Folder">
-                                            <i class="fas fa-folder-open"></i>
-                                        </button>
-                                    </div>
-                                    <div class="form-text">Library folder containing <code>survey/</code> and <code>biometrics/</code>. (<code>participants.json</code> can be here or in parent folder)</div>
-                                    <!-- Quick switch buttons for library paths -->
-                                    <div class="mt-2" id="convertLibraryQuickSwitch">
-                                        <small class="text-muted me-2">Quick switch:</small>
-                                        <button type="button" class="btn btn-sm btn-outline-info me-1" id="convertUseGlobalLibraryBtn" disabled title="No global library configured">
-                                            <i class="fas fa-globe me-1"></i>Global
-                                        </button>
-                                        <button type="button" class="btn btn-sm btn-outline-success me-1" id="convertUseProjectLibraryBtn" disabled title="No project selected">
-                                            <i class="fas fa-folder me-1"></i>Project
-                                        </button>
-                                        <span class="badge bg-secondary ms-2" id="convertLibrarySourceBadge" style="display: none;">
-                                            <i class="fas fa-info-circle me-1"></i><span id="convertLibrarySourceText">-</span>
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Structure Warning (missing folders/files) -->
-                            <div id="surveyStructureWarning" class="alert alert-danger d-none mb-3">
-                                <i class="fas fa-folder-minus me-2"></i>
-                                <strong>Missing Structure:</strong> <span id="surveyStructureMessage">The selected folder is missing required items.</span>
-                            </div>
-
-                            <!-- I18n Warning -->
-                            <div id="surveyI18nWarning" class="alert alert-warning d-none mb-3">
-                                <i class="fas fa-language me-2"></i>
-                                <strong>Multilanguage Notice:</strong> <span id="surveyI18nMessage">Some templates do not have multilanguage (I18n) configuration.</span>
                             </div>
 
                             <!-- Conversion Mode Toggle -->
@@ -500,56 +342,43 @@
                                 </div>
                             </div>
 
-                            <!-- Row 4: Convert button -->
+                            <!-- Row 4: ID Mapping, Session, Unknown Items, Strict Levels (conversion settings) -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-3" id="convertAliasGroup">
+                                    <label for="convertAliasFile" class="form-label">ID Mapping File (optional)</label>
+                                    <input class="form-control" type="file" id="convertAliasFile" accept=".tsv,.txt">
+                                    <div class="form-text">Only needed if item IDs changed over time.</div>
+                                </div>
+                                <div class="col-md-3" id="convertSessionGroup">
+                                    <label for="convertSession" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control border-warning" id="convertSession" placeholder="e.g. 1, 2, 3..." required>
+                                    <div class="form-text text-warning">Creates 'ses-1', 'ses-2', etc.</div>
+                                </div>
+                                <div class="col-md-3" id="convertUnknownGroup">
+                                    <label for="convertUnknown" class="form-label">Unknown Items</label>
+                                    <select class="form-select" id="convertUnknown">
+                                        <option value="warn" selected>Show warnings</option>
+                                        <option value="ignore">Skip silently</option>
+                                        <option value="error">Stop on unknown</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end" id="convertStrictGroup">
+                                    <div class="w-100">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="convertStrictLevels">
+                                            <label class="form-check-label" for="convertStrictLevels">Strict Levels Validation</label>
+                                        </div>
+                                        <div class="form-text">Require defined levels for categorical responses.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Row 5: Convert button -->
                             <div class="row g-3 mb-3">
                                 <div class="col-12">
                                     <button class="btn btn-warning text-white w-100" type="button" id="convertBtn" disabled>
                                         <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
                                     </button>
-                                </div>
-                            </div>
-
-                                {% if current_project.path %}
-                                <div class="col-12 mt-2">
-                                    <div class="form-check form-switch badge bg-primary bg-opacity-10 text-dark p-2 w-100 text-start border border-primary border-opacity-25" style="border-radius: 8px;">
-                                        <input class="form-check-input ms-0 me-2" type="checkbox" id="convertSaveToProject" checked>
-                                        <label class="form-check-label fw-bold" for="convertSaveToProject">
-                                            <i class="fas fa-folder-plus text-primary me-1"></i>Save directly to project: <span class="text-primary">{{ current_project.name }}</span>
-                                        </label>
-                                    </div>
-                                    <div class="form-text mt-1 px-1 small text-muted">Files will be merged into {{ current_project.path }}</div>
-                                </div>
-                                {% endif %}
-
-                                <!-- Row 5: ID Mapping, Session, Unknown Items, Strict Levels -->
-                                <div class="row g-3 mt-3">
-                                    <div class="col-md-3">
-                                        <label for="convertAliasFile" class="form-label">ID Mapping File (optional)</label>
-                                        <input class="form-control" type="file" id="convertAliasFile" accept=".tsv,.txt">
-                                        <div class="form-text">Only needed if item IDs changed over time.</div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label for="convertSession" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control border-warning" id="convertSession" placeholder="e.g. 1, 2, 3..." required>
-                                        <div class="form-text text-warning">Creates 'ses-1', 'ses-2', etc.</div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label for="convertUnknown" class="form-label">Unknown Items</label>
-                                        <select class="form-select" id="convertUnknown">
-                                            <option value="warn" selected>Show warnings</option>
-                                            <option value="ignore">Skip silently</option>
-                                            <option value="error">Stop on unknown</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3 d-flex align-items-end">
-                                        <div class="w-100">
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="convertStrictLevels">
-                                                <label class="form-check-label" for="convertStrictLevels">Strict Levels Validation</label>
-                                            </div>
-                                            <div class="form-text">Require defined levels for categorical responses.</div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
 
@@ -748,20 +577,6 @@
                                 <div>
                                     <h5 class="mb-1">Biometrics Data Conversion</h5>
                                     <p class="text-muted mb-0">Convert physical measurements like grip strength, balance tests</p>
-                                </div>
-                            </div>
-
-                            <!-- Template Library Path -->
-                            <div class="row g-3 mb-3">
-                                <div class="col-12">
-                                    <label for="biometricsLibraryPath" class="form-label">Template Library Root <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="biometricsLibraryPath" placeholder="/path/to/library" value="{{ default_survey_library_path }}">
-                                        <button class="btn btn-outline-secondary" type="button" id="biometricsBrowseLibraryBtn" title="Browse Folder">
-                                            <i class="fas fa-folder-open"></i>
-                                        </button>
-                                    </div>
-                                    <div class="form-text">Library folder containing <code>survey/</code> and <code>biometrics/</code>. (<code>participants.json</code> can be here or in parent folder)</div>
                                 </div>
                             </div>
 
@@ -1096,76 +911,6 @@
                                              style="height: 200px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Organize Panel -->
-                <div class="tab-pane fade" id="organize-panel" role="tabpanel" aria-labelledby="organize-tab">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
-                                    <i class="fas fa-folder-tree fa-2x text-warning"></i>
-                                </div>
-                                <div>
-                                    <h5 class="mb-1">Batch File Organizer</h5>
-                                    <p class="text-muted mb-0">Organize pre-formatted files into a PRISM/BIDS structure without conversion</p>
-                                </div>
-                            </div>
-
-                            <div class="alert alert-light border mb-4">
-                                <h6 class="fw-bold"><i class="fas fa-info-circle me-2 text-info"></i>How it works:</h6>
-                                <p class="small mb-2">This tool takes a flat list of files and organizes them into <code>sub-XXX/ses-YYY/modality/</code> folders.</p>
-                                <p class="small mb-0"><strong>Required naming:</strong> <code>sub-XXX_ses-YYY_task-ZZZ.ext</code> (Session is optional)</p>
-                            </div>
-
-                            <div class="row g-3 align-items-end">
-                                <div class="col-md-6">
-                                    <label for="organizeFiles" class="form-label">Select Files to Organize</label>
-                                    <input class="form-control" type="file" id="organizeFiles" multiple>
-                                    <div class="form-text">Supports .edf, .tsv, .nii.gz, .json, .png, etc.</div>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="organizeModality" class="form-label">Target Modality</label>
-                                    <select class="form-select" id="organizeModality">
-                                        <option value="physio" selected>Physio (ECG, EDA, etc.)</option>
-                                        <option value="eyetracking">Eyetracking</option>
-                                        <option value="survey">Survey (TSV/JSON)</option>
-                                        <option value="biometrics">Biometrics</option>
-                                        <option value="anat">Anatomy (T1w)</option>
-                                        <option value="func">Functional (BOLD)</option>
-                                        <option value="extra">Extra / Other</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="organizeDatasetName" class="form-label">Dataset Name</label>
-                                    <input type="text" class="form-control" id="organizeDatasetName" value="Organized Dataset">
-                                </div>
-                                <div class="col-md-4">
-                                    <button class="btn btn-warning text-white w-100" type="button" id="organizeBtn" disabled>
-                                        <i class="fas fa-folder-plus me-2"></i>Organize & Download
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div id="organizeError" class="alert alert-danger d-none mt-3"></div>
-                            <div id="organizeInfo" class="alert alert-info d-none mt-3"></div>
-                            <div id="organizeProgress" class="progress d-none mt-3" style="height: 25px;">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning text-dark" style="width: 100%">Organizing...</div>
-                            </div>
-
-                            <!-- Log Window -->
-                            <div id="organizeLogContainer" class="d-none mt-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <label class="form-label mb-0"><i class="fas fa-terminal me-2"></i>Organization Log</label>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="organizeLogClearBtn">
-                                        <i class="fas fa-trash-alt me-1"></i>Clear
-                                    </button>
-                                </div>
-                                <div id="organizeLog" class="bg-dark text-light p-3 rounded font-monospace" 
-                                     style="height: 200px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></div>
                             </div>
                         </div>
                     </div>
@@ -1812,6 +1557,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const convertTemplateExportGroup = document.getElementById('convertTemplateExportGroup');
     const convertTemplateExport = document.getElementById('convertTemplateExport');
     const convertLanguageGroup = document.getElementById('convertLanguageGroup');
+    const convertAliasGroup = document.getElementById('convertAliasGroup');
+    const convertSessionGroup = document.getElementById('convertSessionGroup');
+    const convertUnknownGroup = document.getElementById('convertUnknownGroup');
+    const convertStrictGroup = document.getElementById('convertStrictGroup');
     const templateResultsContainer = document.getElementById('templateResultsContainer');
 
     // Get current conversion mode
@@ -1830,6 +1579,12 @@ document.addEventListener('DOMContentLoaded', function() {
             convertIdColumnGroup?.classList.add('d-none');
             convertTemplateExportGroup?.classList.remove('d-none');
             convertLanguageGroup?.classList.add('d-none');
+            
+            // Hide conversion-specific settings (not needed for templates)
+            convertAliasGroup?.classList.add('d-none');
+            convertSessionGroup?.classList.add('d-none');
+            convertUnknownGroup?.classList.add('d-none');
+            convertStrictGroup?.classList.add('d-none');
 
             // Hide library path requirement for template mode (not needed for structure)
             const libPathLabel = convertLibraryPathInput?.closest('.col-12')?.querySelector('.form-label');
@@ -1841,6 +1596,12 @@ document.addEventListener('DOMContentLoaded', function() {
             convertIdColumnGroup?.classList.remove('d-none');
             convertTemplateExportGroup?.classList.add('d-none');
             convertLanguageGroup?.classList.remove('d-none');
+            
+            // Show conversion-specific settings
+            convertAliasGroup?.classList.remove('d-none');
+            convertSessionGroup?.classList.remove('d-none');
+            convertUnknownGroup?.classList.remove('d-none');
+            convertStrictGroup?.classList.remove('d-none');
 
             // Show library path as required
             const libPathLabel = convertLibraryPathInput?.closest('.col-12')?.querySelector('.form-label');
