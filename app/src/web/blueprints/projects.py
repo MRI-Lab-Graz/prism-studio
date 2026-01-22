@@ -117,9 +117,15 @@ def create_project():
         result = _project_manager.create_project(path, config)
 
         if result.get("success"):
-            # Set as current working project
+            # Set as current working project (folder path for internal logic)
             set_current_project(path, config.get("name"))
-            result["current_project"] = get_current_project()
+            
+            # Return the project.json path for the UI to use as handle
+            project_json_path = str(Path(path) / "project.json")
+            result["current_project"] = {
+                "path": project_json_path,
+                "name": session.get("current_project_name")
+            }
             return jsonify(result)
         else:
             return jsonify(result), 400
@@ -148,25 +154,37 @@ def validate_project():
         if not path:
             return jsonify({"success": False, "error": "Path is required"}), 400
 
-        # Allow passing a project.json file directly; use its parent as project root
+        # Enforce project.json as the only valid entry point
         path_obj = Path(path)
-        if path_obj.is_file() and path_obj.name == "project.json":
-            path_obj = path_obj.parent
-            path = str(path_obj)
+        if not (path_obj.is_file() and path_obj.name == "project.json"):
+            return jsonify({
+                "success": False, 
+                "error": "Invalid selection. You must select the 'project.json' file directly. Folder loading is no longer supported."
+            }), 400
+        
+        project_json_path = path
+        # Use the parent directory as the project root for validation
+        root_path_obj = path_obj.parent
+        root_path = str(root_path_obj)
 
         # Check if path exists
-        if not os.path.exists(path):
+        if not os.path.exists(root_path):
             return jsonify({
                 "success": False,
-                "error": f"Path does not exist: {path}"
+                "error": f"Path does not exist: {root_path}"
             }), 400
 
-        result = _project_manager.validate_structure(path)
+        result = _project_manager.validate_structure(root_path)
         result["success"] = True
 
-        # Set as current working project
-        set_current_project(path)
-        result["current_project"] = get_current_project()
+        # Set as current working project - use the folder for internal logic, but UI will remember the json
+        set_current_project(root_path)
+        
+        # Override the return path to be the project.json path so UI stores/reloads via the file
+        result["current_project"] = {
+            "path": project_json_path,
+            "name": session.get("current_project_name")
+        }
 
         return jsonify(result)
 
