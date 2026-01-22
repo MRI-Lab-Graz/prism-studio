@@ -133,6 +133,140 @@ def resolve_sidecar_path(file_path, root_dir, library_path=None):
     return candidate
 
 
+def _deep_merge(base: dict, override: dict) -> dict:
+    """
+    Deep merge two dictionaries. Override values take precedence.
+
+    For nested dicts, recursively merge. For other types, override replaces base.
+    This implements BIDS inheritance where subject-level values override root-level.
+    """
+    result = base.copy()
+    for key, value in override.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
+def _find_root_sidecar(file_path: str, root_dir: str) -> str | None:
+    """
+    Find the root-level (inherited) sidecar for a data file.
+
+    BIDS inheritance: root-level sidecars like task-{name}_survey.json provide
+    defaults that can be overridden by subject-level sidecars.
+
+    Args:
+        file_path: Path to the data file (e.g., sub-001/ses-01/survey/sub-001_ses-01_task-panas_survey.tsv)
+        root_dir: Dataset root directory
+
+    Returns:
+        Path to root-level sidecar if found, None otherwise
+    """
+    file_path = normalize_path(file_path)
+    fname = os.path.basename(file_path)
+    stem, _ext = split_compound_ext(fname)
+
+    # Extract task name from filename
+    task_value = _extract_entity_value(stem, "task")
+    if not task_value:
+        return None
+
+    # Determine suffix (survey, biometrics, etc.)
+    suffix = ""
+    if "_" in stem:
+        suffix = stem.split("_")[-1]
+
+    if not suffix:
+        return None
+
+    # Look for root-level sidecar: task-{name}_{suffix}.json
+    root_sidecar_name = f"task-{task_value}_{suffix}.json"
+    root_sidecar_path = safe_path_join(root_dir, root_sidecar_name)
+
+    if os.path.exists(root_sidecar_path):
+        return root_sidecar_path
+
+    return None
+
+
+def resolve_inherited_sidecar(
+    file_path: str,
+    root_dir: str,
+    library_path: str | None = None
+) -> tuple[dict | None, str | None]:
+    """
+    Build inherited sidecar content following BIDS inheritance principle.
+
+    Resolution order:
+    1. Root-level sidecar (task-{name}_{suffix}.json at dataset root) - provides defaults
+    2. Subject-level sidecar (alongside the data file) - overrides root-level
+    3. Library sidecar (from global library) - fallback if no local sidecars
+
+    The subject-level sidecar is OPTIONAL. If only root-level exists, it's used.
+    If both exist, they are deep-merged with subject-level values taking precedence.
+
+    Args:
+        file_path: Path to the data file
+        root_dir: Dataset root directory
+        library_path: Optional path to template library
+
+    Returns:
+        Tuple of (merged_sidecar_data, primary_sidecar_path)
+        - merged_sidecar_data: The merged sidecar content (or None if not found)
+        - primary_sidecar_path: Path to report errors against (subject-level if exists, else root)
+    """
+    # Find subject-level sidecar (directly alongside data file)
+    subject_sidecar_path = derive_sidecar_path(file_path)
+    subject_sidecar_exists = os.path.exists(subject_sidecar_path)
+
+    # Find root-level sidecar
+    root_sidecar_path = _find_root_sidecar(file_path, root_dir)
+    root_sidecar_exists = root_sidecar_path and os.path.exists(root_sidecar_path)
+
+    # Load sidecars
+    root_data = None
+    subject_data = None
+
+    if root_sidecar_exists:
+        try:
+            content = CrossPlatformFile.read_text(root_sidecar_path)
+            root_data = json.loads(content)
+        except (json.JSONDecodeError, Exception):
+            root_data = None
+
+    if subject_sidecar_exists:
+        try:
+            content = CrossPlatformFile.read_text(subject_sidecar_path)
+            subject_data = json.loads(content)
+        except (json.JSONDecodeError, Exception):
+            subject_data = None
+
+    # Merge according to BIDS inheritance
+    if root_data and subject_data:
+        # Both exist: merge (subject overrides root)
+        merged = _deep_merge(root_data, subject_data)
+        return merged, subject_sidecar_path
+    elif subject_data:
+        # Only subject-level exists
+        return subject_data, subject_sidecar_path
+    elif root_data:
+        # Only root-level exists (subject-level is optional)
+        return root_data, root_sidecar_path
+
+    # Neither exists locally - try library fallback via existing resolution
+    library_sidecar = resolve_sidecar_path(file_path, root_dir, library_path)
+    if library_sidecar and os.path.exists(library_sidecar):
+        try:
+            content = CrossPlatformFile.read_text(library_sidecar)
+            library_data = json.loads(content)
+            return library_data, library_sidecar
+        except (json.JSONDecodeError, Exception):
+            pass
+
+    return None, None
+
+
 class DatasetValidator:
     """Main dataset validation class"""
 
@@ -350,15 +484,19 @@ class DatasetValidator:
         return issues
 
     def validate_data_content(self, file_path, modality, root_dir):
-        """Validate data content against constraints in sidecar"""
+        """Validate data content against constraints in sidecar (with BIDS inheritance)"""
         issues = []
 
         # Only validate content for tabular data modalities
         if modality not in ["survey", "biometrics"]:
             return issues
 
-        sidecar_path = resolve_sidecar_path(file_path, root_dir, self.library_path)
-        if not os.path.exists(sidecar_path):
+        # Use BIDS inheritance to resolve sidecar (root-level + subject-level merged)
+        sidecar_data, sidecar_path = resolve_inherited_sidecar(
+            file_path, root_dir, self.library_path
+        )
+
+        if sidecar_data is None:
             # Missing sidecar is already reported by validate_sidecar
             return issues
 
@@ -372,9 +510,7 @@ class DatasetValidator:
                     )
                 ]
 
-            # Load sidecar
-            sidecar_content = CrossPlatformFile.read_text(sidecar_path)
-            sidecar_data = json.loads(sidecar_content)
+            # sidecar_data is already loaded and merged by resolve_inherited_sidecar
 
             # Build flat lookup table for validation, resolving AliasOf and Aliases
             effective_defs = self._build_effective_defs(sidecar_data)
@@ -542,24 +678,24 @@ class DatasetValidator:
         return issues
 
     def validate_sidecar(self, file_path, modality, root_dir):
-        """Validate JSON sidecar against schema"""
-        
+        """Validate JSON sidecar against schema (with BIDS inheritance)"""
+
         # Skip sidecar validation for standard BIDS modalities
         # The BIDS validator handles these
         if modality in BIDS_MODALITIES:
             return []
-        
-        sidecar_path = resolve_sidecar_path(file_path, root_dir, self.library_path)
+
         issues = []
 
-        if not os.path.exists(sidecar_path):
+        # Use BIDS inheritance to resolve sidecar (root-level + subject-level merged)
+        sidecar_data, sidecar_path = resolve_inherited_sidecar(
+            file_path, root_dir, self.library_path
+        )
+
+        if sidecar_data is None:
             return [("ERROR", f"Missing sidecar for {normalize_path(file_path)}")]
 
         try:
-            # Use cross-platform file reading
-            content = CrossPlatformFile.read_text(sidecar_path)
-            sidecar_data = json.loads(content)
-
             # Validate against schema if available (PRISM modalities only)
             schema = self.schemas.get(modality)
             if schema:
