@@ -22,13 +22,25 @@ This folder contains materials for the PRISM hands-on workshop focused on **well
 - **Materials:** `exercise_1_raw_data/raw_data/wellbeing.xlsx` & `wellbeing.tsv`
 - **Output:** BIDS-structured dataset with participants and survey files
 
-### Exercise 2: Metadata & Validation
+### Exercise 2: Participant Demographic Mapping ⭐ NEW
+- **Goal:** Transform demographic data with custom encodings to standardized PRISM format
+- **Duration:** 45 minutes
+- **Folder:** `exercise_2_participant_mapping/`
+- **Key Concept:** Using `participants_mapping.json` to auto-transform demographic variables
+- **Learn:** 
+  - ✓ Document custom variable encodings
+  - ✓ Create mapping specifications
+  - ✓ Transform numeric codes (1→M, 2→F, 4→O)
+  - ✓ Auto-generate standardized participants.tsv
+- **Materials:** Template + solution included
+
+### Exercise 3: Metadata & Validation
 - **Goal:** Add item descriptions and validate dataset
 - **Duration:** 25 minutes
 - **Template:** `exercise_4_templates/survey-wellbeing.json`
 - **Key Concept:** Making data self-documenting and reusable
 
-### Exercise 3: Scoring & Export
+### Exercise 4: Scoring & Export
 - **Goal:** Calculate wellbeing scores and export to SPSS
 - **Duration:** 20 minutes
 - **Recipe:** `exercise_3_using_recipes/recipe-wellbeing.json`

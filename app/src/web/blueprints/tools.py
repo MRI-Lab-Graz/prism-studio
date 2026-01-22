@@ -472,9 +472,33 @@ def converter():
     if default_library_path is None:
         default_library_path = _default_library_root_for_templates(modality="survey")
 
+    # Check if a participants_mapping.json exists in the project
+    participants_mapping_info = None
+    if project_path:
+        mapping_candidates = [
+            Path(project_path) / "code" / "library" / "participants_mapping.json",
+            Path(project_path) / "sourcedata" / "participants_mapping.json",
+        ]
+        for candidate in mapping_candidates:
+            if candidate.exists():
+                participants_mapping_info = {
+                    "path": str(candidate),
+                    "status": "found",
+                    "message": f"Found participants_mapping.json at {candidate.relative_to(Path(project_path))}"
+                }
+                break
+        
+        if not participants_mapping_info:
+            participants_mapping_info = {
+                "path": str(Path(project_path) / "code" / "library" / "participants_mapping.json"),
+                "status": "not_found",
+                "message": "No participants_mapping.json found. Create one to auto-transform demographic data."
+            }
+
     return render_template(
         "converter.html",
         default_survey_library_path=str(default_library_path or ""),
+        participants_mapping_info=participants_mapping_info,
     )
 
 @tools_bp.route("/file-management")

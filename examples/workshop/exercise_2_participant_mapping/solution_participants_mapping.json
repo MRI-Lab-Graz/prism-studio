@@ -1,0 +1,61 @@
+{
+  "version": "1.0",
+  "description": "SOLUTION: Mapping for wellbeing survey raw data to PRISM standard participant variables",
+  "source_file": "raw_data/wellbeing.tsv",
+  "mappings": {
+    "participant_id": {
+      "source_column": "participant_id",
+      "standard_variable": "participant_id",
+      "type": "string",
+      "description": "Unique participant identifier (BIDS sub- label)"
+    },
+    "session": {
+      "source_column": "session",
+      "standard_variable": "session",
+      "type": "string",
+      "description": "Session label (e.g., baseline, followup)"
+    },
+    "age": {
+      "source_column": "age",
+      "standard_variable": "age",
+      "type": "integer",
+      "units": "years",
+      "description": "Age of participant at time of data collection"
+    },
+    "sex": {
+      "source_column": "sex",
+      "standard_variable": "sex",
+      "type": "string",
+      "value_mapping": {
+        "1": "M",
+        "2": "F",
+        "4": "O"
+      },
+      "description": "Biological sex: 1=Male (M), 2=Female (F), 4=Other (O)"
+    },
+    "education": {
+      "source_column": "education",
+      "standard_variable": "education_level",
+      "type": "string",
+      "value_mapping": {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "5",
+        "6": "6"
+      },
+      "description": "Education level (ISCED 2011): numeric levels 1-6"
+    },
+    "handedness": {
+      "source_column": "handedness",
+      "standard_variable": "handedness",
+      "type": "string",
+      "value_mapping": {
+        "1": "R",
+        "2": "L"
+      },
+      "description": "Handedness: 1=Right-handed (R), 2=Left-handed (L)"
+    }
+  }
+}

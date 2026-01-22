@@ -1,0 +1,35 @@
+{
+  "version": "1.0",
+  "description": "TEMPLATE: Mapping for wellbeing survey raw data to PRISM standard participant variables. Fill in the mappings for each demographic variable.",
+  "source_file": "raw_data/wellbeing.tsv",
+  "instructions": {
+    "task": "Map raw demographic columns to PRISM standard variables",
+    "hint_1": "participant_id and session should map directly (no value_mapping needed)",
+    "hint_2": "sex uses numeric codes: 1=M, 2=F, 4=O",
+    "hint_3": "education uses numeric levels 1-6 (no recoding needed)",
+    "hint_4": "handedness uses codes: 1=R, 2=L"
+  },
+  "mappings": {
+    "participant_id": {
+      "source_column": "participant_id",
+      "standard_variable": "participant_id",
+      "type": "string",
+      "description": "Unique participant identifier"
+    },
+    "session": {
+      "description": "TODO: Add mapping for session column"
+    },
+    "age": {
+      "description": "TODO: Add mapping for age column"
+    },
+    "sex": {
+      "description": "TODO: Add mapping for sex column with numeric codes (1,2,4)"
+    },
+    "education": {
+      "description": "TODO: Add mapping for education column"
+    },
+    "handedness": {
+      "description": "TODO: Add mapping for handedness column with numeric codes (1,2)"
+    }
+  }
+}
