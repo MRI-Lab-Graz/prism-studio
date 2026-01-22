@@ -43,6 +43,236 @@ _NON_ITEM_TOPLEVEL_KEYS = {
     "_reverse_aliases",
 }
 
+# Keys that are considered "styling" or metadata, not structural
+_STYLING_KEYS = {
+    "Description", "Levels", "MinValue", "MaxValue", "Units",
+    "HelpText", "Aliases", "AliasOf", "Derivative", "TermURL",
+}
+
+
+def _extract_template_structure(template: dict) -> set[str]:
+    """Extract the structural signature of a template (item keys only).
+
+    This ignores styling/metadata and only looks at what items exist.
+    Used to compare if two templates are structurally equivalent.
+
+    Args:
+        template: The template dictionary
+
+    Returns:
+        Set of item keys (excluding non-item keys like Study, Technical, etc.)
+    """
+    return {
+        k for k in template.keys()
+        if k not in _NON_ITEM_TOPLEVEL_KEYS and isinstance(template.get(k), dict)
+    }
+
+
+def _compare_template_structures(
+    template_a: dict, template_b: dict
+) -> tuple[bool, set[str], set[str]]:
+    """Compare two templates structurally.
+
+    Args:
+        template_a: First template
+        template_b: Second template
+
+    Returns:
+        Tuple of (is_equivalent, only_in_a, only_in_b)
+        - is_equivalent: True if templates have the same item keys
+        - only_in_a: Item keys only in template_a
+        - only_in_b: Item keys only in template_b
+    """
+    struct_a = _extract_template_structure(template_a)
+    struct_b = _extract_template_structure(template_b)
+
+    only_in_a = struct_a - struct_b
+    only_in_b = struct_b - struct_a
+
+    return (len(only_in_a) == 0 and len(only_in_b) == 0), only_in_a, only_in_b
+
+
+def _load_global_library_path() -> Path | None:
+    """Find the global library path from config.
+
+    Returns:
+        Path to global library or None if not configured/found.
+    """
+    try:
+        from ..config import get_effective_library_paths
+        lib_paths = get_effective_library_paths()
+        global_path = lib_paths.get("global_library_path")
+        if global_path:
+            p = Path(global_path).expanduser().resolve()
+            # Check for survey subfolder
+            if (p / "survey").is_dir():
+                return p / "survey"
+            if (p / "library" / "survey").is_dir():
+                return p / "library" / "survey"
+            if p.is_dir():
+                return p
+    except Exception:
+        pass
+    return None
+
+
+def _load_global_templates() -> dict[str, dict]:
+    """Load all templates from the global library.
+
+    Returns:
+        Dict mapping task_name -> {"path": Path, "json": dict, "structure": set}
+    """
+    global_path = _load_global_library_path()
+    if not global_path or not global_path.exists():
+        return {}
+
+    templates = {}
+    for json_path in sorted(global_path.glob("survey-*.json")):
+        if _is_participant_template(json_path):
+            continue
+        try:
+            sidecar = _read_json(json_path)
+        except Exception:
+            continue
+
+        task_from_name = json_path.stem.replace("survey-", "")
+        task = str(sidecar.get("Study", {}).get("TaskName") or task_from_name).strip()
+        task_norm = task.lower() or task_from_name.lower()
+
+        templates[task_norm] = {
+            "path": json_path,
+            "json": sidecar,
+            "structure": _extract_template_structure(sidecar),
+        }
+
+    return templates
+
+
+def _load_global_participants_template() -> dict | None:
+    """Load the global participants.json template.
+
+    Returns:
+        The participants template dict or None if not found.
+    """
+    global_path = _load_global_library_path()
+    if not global_path or not global_path.exists():
+        return None
+
+    # Try various locations relative to the global survey library
+    candidates = [
+        global_path.parent / "participants.json",  # library/participants.json
+        global_path / "participants.json",  # library/survey/participants.json
+    ]
+    # Also try parent directories
+    for ancestor in global_path.parents[:2]:
+        candidates.append(ancestor / "participants.json")
+
+    for p in candidates:
+        if p.exists() and p.is_file():
+            try:
+                return _read_json(p)
+            except Exception:
+                pass
+    return None
+
+
+def _compare_participants_templates(
+    project_template: dict | None,
+    global_template: dict | None,
+) -> tuple[bool, set[str], set[str], list[str]]:
+    """Compare project participants template against global template.
+
+    Args:
+        project_template: Project's participants.json (normalized)
+        global_template: Global participants.json (normalized)
+
+    Returns:
+        Tuple of (is_equivalent, only_in_project, only_in_global, warnings)
+    """
+    warnings: list[str] = []
+
+    if not project_template and not global_template:
+        return True, set(), set(), warnings
+
+    if not project_template:
+        return False, set(), set(), ["No project participants.json found"]
+
+    if not global_template:
+        # No global to compare against - project is custom
+        return True, set(), set(), warnings
+
+    # Normalize both templates
+    project_norm = _normalize_participant_template_dict(project_template) or {}
+    global_norm = _normalize_participant_template_dict(global_template) or {}
+
+    # Extract column keys (excluding internal keys starting with _)
+    project_cols = {k for k in project_norm.keys() if not k.startswith("_")}
+    global_cols = {k for k in global_norm.keys() if not k.startswith("_")}
+
+    only_in_project = project_cols - global_cols
+    only_in_global = global_cols - project_cols
+
+    is_equivalent = len(only_in_project) == 0 and len(only_in_global) == 0
+
+    if not is_equivalent:
+        diff_parts = []
+        if only_in_project:
+            diff_parts.append(f"added columns: {', '.join(sorted(only_in_project))}")
+        if only_in_global:
+            diff_parts.append(f"missing columns: {', '.join(sorted(only_in_global))}")
+        warnings.append(f"participants.json differs from global: {'; '.join(diff_parts)}")
+
+    return is_equivalent, only_in_project, only_in_global, warnings
+
+
+def _find_matching_global_template(
+    project_template: dict,
+    global_templates: dict[str, dict],
+) -> tuple[str | None, bool, set[str], set[str]]:
+    """Find if a project template matches any global template.
+
+    Args:
+        project_template: The project template dict
+        global_templates: Dict of global templates from _load_global_templates()
+
+    Returns:
+        Tuple of (matched_task, is_exact, only_in_project, only_in_global)
+        - matched_task: Task name of matching global template, or None
+        - is_exact: True if structure matches exactly
+        - only_in_project: Items only in project template
+        - only_in_global: Items only in global template
+    """
+    project_struct = _extract_template_structure(project_template)
+
+    best_match = None
+    best_overlap = 0
+    best_only_project: set[str] = set()
+    best_only_global: set[str] = set()
+
+    for task_name, global_data in global_templates.items():
+        global_struct = global_data["structure"]
+
+        overlap = len(project_struct & global_struct)
+        only_in_project = project_struct - global_struct
+        only_in_global = global_struct - project_struct
+
+        # Exact match
+        if len(only_in_project) == 0 and len(only_in_global) == 0:
+            return task_name, True, set(), set()
+
+        # Track best partial match (most overlap)
+        if overlap > best_overlap:
+            best_overlap = overlap
+            best_match = task_name
+            best_only_project = only_in_project
+            best_only_global = only_in_global
+
+    # Return best partial match if significant overlap (>50%)
+    if best_match and best_overlap > len(project_struct) * 0.5:
+        return best_match, False, best_only_project, best_only_global
+
+    return None, False, set(), set()
+
 _MISSING_TOKEN = "n/a"
 _LANGUAGE_KEY_RE = re.compile(r"^[a-z]{2}(?:-[a-z]{2})?$", re.IGNORECASE)
 
@@ -859,19 +1089,38 @@ def _convert_survey_dataframe_to_prism_dataset(
                 alias_map = _build_alias_map(rows)
                 canonical_aliases = _build_canonical_aliases(rows)
 
-    participant_template = _normalize_participant_template_dict(_load_participants_template(library_dir))
+    # Initialize conversion warnings list early (will be extended throughout processing)
+    conversion_warnings: list[str] = []
+
+    # Load participant template and compare with global
+    raw_participant_template = _load_participants_template(library_dir)
+    participant_template = _normalize_participant_template_dict(raw_participant_template)
     participant_columns_lower: set[str] = set()
     if participant_template:
         participant_columns_lower = {
             str(k).strip().lower() for k in participant_template.keys() if isinstance(k, str)
         }
 
-    templates, item_to_task, duplicates = _load_and_preprocess_templates(library_dir, canonical_aliases)
+    # Compare participants.json with global
+    global_participants = _load_global_participants_template()
+    if raw_participant_template and global_participants:
+        _, _, _, part_warnings = _compare_participants_templates(
+            raw_participant_template, global_participants
+        )
+        conversion_warnings.extend(part_warnings)
+
+    templates, item_to_task, duplicates, template_warnings = _load_and_preprocess_templates(
+        library_dir, canonical_aliases, compare_with_global=True
+    )
     if duplicates:
         msg_lines = ["Duplicate item IDs found across survey templates (ambiguous mapping):"]
         for it_id, tsks in sorted(duplicates.items()):
             msg_lines.append(f"- {it_id}: {', '.join(sorted(tsks))}")
         raise ValueError("\n".join(msg_lines))
+
+    # Add template comparison warnings to conversion warnings
+    if template_warnings:
+        conversion_warnings.extend(template_warnings)
 
     # --- Survey Filtering ---
     selected_tasks: set[str] | None = None
@@ -898,9 +1147,6 @@ def _convert_survey_dataframe_to_prism_dataset(
     # These are platform metadata (timestamps, tokens, timings) that should be
     # written to a separate tool-limesurvey file, not mixed with questionnaire data
     ls_system_cols, _ = _extract_limesurvey_columns(list(df.columns))
-
-    # Initialize conversion warnings list (will be extended by _map_survey_columns)
-    conversion_warnings: list[str] = []
 
     # Handle duplicate IDs based on duplicate_handling parameter
     normalized_ids = df[res_id_col].astype(str).map(_normalize_sub_id)
@@ -1536,12 +1782,46 @@ def _write_survey_participants(
 
 
 def _load_and_preprocess_templates(
-    library_dir: Path, canonical_aliases: dict[str, list[str]] | None
-) -> tuple[dict[str, dict], dict[str, str], dict[str, set[str]]]:
-    """Load and prepare survey templates from library."""
+    library_dir: Path,
+    canonical_aliases: dict[str, list[str]] | None,
+    compare_with_global: bool = True,
+) -> tuple[dict[str, dict], dict[str, str], dict[str, set[str]], list[str]]:
+    """Load and prepare survey templates from library.
+
+    Also compares project templates against global library templates to detect
+    if they are structurally identical (same item keys) or modified.
+
+    Args:
+        library_dir: Path to the survey library directory
+        canonical_aliases: Optional alias mappings
+        compare_with_global: Whether to compare with global library
+
+    Returns:
+        Tuple of (templates, item_to_task, duplicates, template_warnings)
+        - templates: Dict mapping task_name -> template data
+        - item_to_task: Dict mapping item_key -> task_name
+        - duplicates: Dict of duplicate item keys across templates
+        - template_warnings: List of warnings about template differences
+    """
     templates: dict[str, dict] = {}
     item_to_task: dict[str, str] = {}
     duplicates: dict[str, set[str]] = {}
+    template_warnings: list[str] = []
+
+    # Load global templates for comparison
+    global_templates: dict[str, dict] = {}
+    global_library_path = _load_global_library_path()
+    is_using_global_library = False
+
+    if compare_with_global and global_library_path:
+        # Check if we're already using the global library
+        try:
+            if library_dir.resolve() == global_library_path.resolve():
+                is_using_global_library = True
+            else:
+                global_templates = _load_global_templates()
+        except Exception:
+            pass
 
     for json_path in sorted(library_dir.glob("survey-*.json")):
         if _is_participant_template(json_path):
@@ -1576,7 +1856,42 @@ def _load_and_preprocess_templates(
                 sidecar["_aliases"][k] = target
                 sidecar["_reverse_aliases"].setdefault(target, []).append(k)
 
-        templates[task_norm] = {"path": json_path, "json": sidecar, "task": task_norm}
+        # Compare with global template if available
+        template_source = "project"
+        global_match_task = None
+        if is_using_global_library:
+            template_source = "global"
+        elif global_templates:
+            matched_task, is_exact, only_project, only_global = _find_matching_global_template(
+                sidecar, global_templates
+            )
+            if matched_task:
+                global_match_task = matched_task
+                if is_exact:
+                    template_source = "global"  # Identical to global
+                else:
+                    template_source = "modified"
+                    # Add warning about structural differences
+                    diff_parts = []
+                    if only_project:
+                        diff_parts.append(f"added: {', '.join(sorted(list(only_project)[:5]))}")
+                        if len(only_project) > 5:
+                            diff_parts[-1] += f" (+{len(only_project) - 5} more)"
+                    if only_global:
+                        diff_parts.append(f"removed: {', '.join(sorted(list(only_global)[:5]))}")
+                        if len(only_global) > 5:
+                            diff_parts[-1] += f" (+{len(only_global) - 5} more)"
+                    template_warnings.append(
+                        f"Template '{task_norm}' differs from global '{matched_task}': {'; '.join(diff_parts)}"
+                    )
+
+        templates[task_norm] = {
+            "path": json_path,
+            "json": sidecar,
+            "task": task_norm,
+            "source": template_source,
+            "global_match": global_match_task,
+        }
 
         for k, v in sidecar.items():
             if k in _NON_ITEM_TOPLEVEL_KEYS:
@@ -1593,7 +1908,7 @@ def _load_and_preprocess_templates(
                     else:
                         item_to_task[alias] = task_norm
 
-    return templates, item_to_task, duplicates
+    return templates, item_to_task, duplicates, template_warnings
 
 
 def _compute_missing_items_report(tasks: set[str], templates: dict, col_to_task: dict) -> dict[str, int]:
