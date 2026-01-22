@@ -13,6 +13,39 @@ def add_row(parent, data):
         child.text = str(value)
 
 
+# LimeSurvey has a 20-character limit on question codes in older versions (LS 2.x/early 3.x)
+# We use 20 as the safe maximum to ensure compatibility
+LS_QUESTION_CODE_MAX_LENGTH = 20
+
+
+def _sanitize_question_code(code: str, max_length: int = LS_QUESTION_CODE_MAX_LENGTH) -> str:
+    """
+    Sanitize and truncate question code for LimeSurvey compatibility.
+
+    LimeSurvey restrictions:
+    - Maximum 20 characters (older versions)
+    - No underscores allowed (will be auto-renamed)
+    - Should start with a letter
+    - Only alphanumeric characters recommended
+
+    Args:
+        code: Question code (e.g., "neurological_diagnosis")
+        max_length: Maximum allowed length (default: 20 for LS compatibility)
+
+    Returns:
+        Sanitized code: underscores removed, truncated if necessary
+        Example: "neurological_diagnosis" -> "neurologicaldiagnos"
+    """
+    # Remove underscores (LimeSurvey doesn't allow them in question codes)
+    sanitized = code.replace("_", "")
+
+    # Truncate to max length
+    if len(sanitized) > max_length:
+        sanitized = sanitized[:max_length]
+
+    return sanitized
+
+
 def _apply_run_suffix(code: str, run: int | None) -> str:
     """
     Apply run suffix to question code for multi-run surveys.
@@ -22,11 +55,138 @@ def _apply_run_suffix(code: str, run: int | None) -> str:
         run: Run number (1-based). If None or 1, no suffix is added.
 
     Returns:
-        Code with run suffix if run > 1 (e.g., "PANAS_1_run-02")
+        Code with run suffix if run > 1 (e.g., "PANAS1run02")
+        Note: Uses no underscore to comply with LimeSurvey code restrictions.
     """
     if run is None or run <= 1:
-        return code
-    return f"{code}_run-{run:02d}"
+        return _sanitize_question_code(code)
+
+    # Build suffix without underscore (LimeSurvey doesn't allow underscores in codes)
+    suffix = f"run{run:02d}"
+    suffix_len = len(suffix)
+
+    # If code + suffix would exceed max length, truncate code portion
+    max_code_len = LS_QUESTION_CODE_MAX_LENGTH - suffix_len
+    truncated_code = code[:max_code_len] if len(code) > max_code_len else code
+
+    return _sanitize_question_code(f"{truncated_code}{suffix}")
+
+
+def _extract_metadata_from_files(json_files, language="en"):
+    """
+    Extract metadata (Authors, DOI, Citation, Manual, License) from JSON files.
+
+    Returns a structured metadata description that can be stored in surveyls_description.
+    This metadata is preserved when exporting from LimeSurvey.
+    """
+    all_metadata = []
+
+    for item in json_files:
+        if isinstance(item, str):
+            f_path = item
+        else:
+            f_path = item.get("path")
+
+        try:
+            with open(f_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            continue
+
+        study = data.get("Study", {})
+        if not study:
+            continue
+
+        # Extract metadata fields
+        meta = {}
+
+        # Original name (with language support)
+        orig_name = study.get("OriginalName", "")
+        if isinstance(orig_name, dict):
+            meta["Name"] = orig_name.get(language, orig_name.get("en", str(orig_name)))
+        elif orig_name:
+            meta["Name"] = str(orig_name)
+
+        # Abbreviation
+        if study.get("Abbreviation"):
+            meta["Abbreviation"] = study["Abbreviation"]
+
+        # Authors
+        authors = study.get("Authors", [])
+        if authors:
+            if isinstance(authors, list):
+                meta["Authors"] = ", ".join(str(a) for a in authors)
+            else:
+                meta["Authors"] = str(authors)
+
+        # Year
+        if study.get("Year"):
+            meta["Year"] = str(study["Year"])
+
+        # DOI
+        if study.get("DOI"):
+            meta["DOI"] = study["DOI"]
+
+        # Citation
+        if study.get("Citation"):
+            meta["Citation"] = study["Citation"]
+
+        # Source (Manual URL)
+        if study.get("Source"):
+            meta["Manual"] = study["Source"]
+
+        # License (with language support)
+        license_info = study.get("License", "")
+        if isinstance(license_info, dict):
+            meta["License"] = license_info.get(language, license_info.get("en", ""))
+        elif license_info:
+            meta["License"] = str(license_info)
+
+        if meta:
+            all_metadata.append(meta)
+
+    return all_metadata
+
+
+def _format_metadata_description(all_metadata, json_files):
+    """
+    Format extracted metadata into a description string for surveyls_description.
+
+    The format is designed to be human-readable but also machine-parseable,
+    so it can be preserved and extracted when the .lss/.lsa is re-exported.
+    """
+    lines = []
+
+    # Add metadata for each questionnaire
+    for idx, meta in enumerate(all_metadata, 1):
+        if len(all_metadata) > 1:
+            lines.append(f"=== Questionnaire {idx}: {meta.get('Name', 'Unknown')} ===")
+
+        if meta.get("Abbreviation"):
+            lines.append(f"Abbreviation: {meta['Abbreviation']}")
+        if meta.get("Authors"):
+            lines.append(f"Authors: {meta['Authors']}")
+        if meta.get("Year"):
+            lines.append(f"Year: {meta['Year']}")
+        if meta.get("DOI"):
+            lines.append(f"DOI: {meta['DOI']}")
+        if meta.get("Manual"):
+            lines.append(f"Manual/Source: {meta['Manual']}")
+        if meta.get("Citation"):
+            # Clean up citation (remove extra whitespace/newlines)
+            citation = " ".join(meta["Citation"].split())
+            lines.append(f"Citation: {citation}")
+        if meta.get("License"):
+            lines.append(f"License: {meta['License']}")
+
+        if len(all_metadata) > 1:
+            lines.append("")  # Blank line between questionnaires
+
+    # Add generation info
+    lines.append("")
+    lines.append(f"--- Generated from {len(json_files)} PRISM template(s) on {datetime.now().strftime('%Y-%m-%d %H:%M')} ---")
+
+    return "\n".join(lines)
 
 
 def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
@@ -547,13 +707,17 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
         except Exception:
             pass
 
+    # Extract metadata (Authors, DOI, Citation, Manual, License) from templates
+    all_metadata = _extract_metadata_from_files(json_files, language)
+    survey_description = _format_metadata_description(all_metadata, json_files)
+
     add_row(
         surveys_lang_rows,
         {
             "surveyls_survey_id": sid,
             "surveyls_language": language,
             "surveyls_title": survey_title,
-            "surveyls_description": f"Generated from {len(json_files)} Prism JSON files on {datetime.now().isoformat()}",
+            "surveyls_description": survey_description,
             "surveyls_welcometext": "",
             "surveyls_endtext": "",
         },
@@ -1043,13 +1207,28 @@ def generate_lss_from_customization(
     if sorted_groups:
         survey_title = sorted_groups[0].get("name", "Custom Survey")
 
+    # Extract source files from questions for metadata
+    source_files = set()
+    for grp in sorted_groups:
+        for q in grp.get("questions", []):
+            sf = q.get("sourceFile")
+            if sf:
+                source_files.add(sf)
+
+    # Format source files as list for metadata extraction
+    source_file_list = [{"path": sf} for sf in source_files]
+
+    # Extract metadata (Authors, DOI, Citation, Manual, License) from source files
+    all_metadata = _extract_metadata_from_files(source_file_list, language)
+    survey_description = _format_metadata_description(all_metadata, source_file_list)
+
     add_row(
         surveys_lang_rows,
         {
             "surveyls_survey_id": sid,
             "surveyls_language": language,
             "surveyls_title": survey_title,
-            "surveyls_description": f"Generated from Survey Customizer on {datetime.now().isoformat()}",
+            "surveyls_description": survey_description,
             "surveyls_welcometext": "",
             "surveyls_endtext": "",
         },
