@@ -105,6 +105,18 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Schema version mismatch",
         "fix_hint": "The metadata uses an older or newer schema version than the validator. Consider updating the 'SchemaVersion' in your metadata files.",
     },
+    "PRISM006": {
+        "message": "FAIR compliance issue in dataset_description.json",
+        "fix_hint": "Add recommended metadata for FAIR compliance: Description (min 50 chars), License, EthicsApprovals, Funding, Keywords (min 3), Authors with ORCID/affiliation",
+    },
+    "PRISM007": {
+        "message": "Incomplete survey template metadata",
+        "fix_hint": "Add recommended fields to the survey template: References, Description, Reliability, AdministrationTime",
+    },
+    "PRISM008": {
+        "message": "Template consistency error",
+        "fix_hint": "Check that ItemCount matches actual questions, Subscale items exist, ReverseCodedItems exist, and Levels keys are within MinValue/MaxValue range",
+    },
     # Filename errors (1xx)
     "PRISM101": {
         "message": "Invalid BIDS filename format",
@@ -193,6 +205,49 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "fix_hint": "Check the error message for details",
     },
 }
+
+
+# =============================================================================
+# FIX TOOL MAPPING
+# =============================================================================
+# Maps error codes to the appropriate tool for fixing the issue.
+# Used to show "Fix in [Tool]" buttons in validation results.
+
+FIX_TOOLS: Dict[str, Dict[str, str]] = {
+    # Dataset structure - use JSON editor for metadata files
+    "PRISM001": {"tool": "json-editor", "label": "Create in Editor", "target": "dataset_description.json"},
+    "PRISM003": {"tool": "json-editor", "label": "Edit in JSON Editor", "target": "dataset_description.json"},
+    "PRISM004": {"tool": "json-editor", "label": "Create in Editor", "target": "participants.json"},
+    "PRISM006": {"tool": "json-editor", "label": "Edit Metadata", "target": "dataset_description.json"},
+
+    # Template issues - use template editor
+    "PRISM007": {"tool": "template-editor", "label": "Edit Template"},
+    "PRISM008": {"tool": "template-editor", "label": "Fix Template"},
+
+    # Sidecar issues - use JSON editor
+    "PRISM201": {"tool": "json-editor", "label": "Create Sidecar"},
+    "PRISM202": {"tool": "json-editor", "label": "Fix JSON Syntax"},
+    "PRISM203": {"tool": "json-editor", "label": "Edit Sidecar"},
+    "PRISM301": {"tool": "json-editor", "label": "Fix Schema Error"},
+    "PRISM302": {"tool": "json-editor", "label": "Fix Field Type"},
+
+    # Content issues - often need data file or sidecar edit
+    "PRISM402": {"tool": "json-editor", "label": "Update Levels"},
+    "PRISM403": {"tool": "json-editor", "label": "Update Range"},
+
+    # BIDS compatibility
+    "PRISM501": {"tool": "json-editor", "label": "Edit .bidsignore", "target": ".bidsignore"},
+}
+
+
+def get_fix_tool(code: str) -> Dict[str, str] | None:
+    """
+    Get the fix tool info for an error code.
+
+    Returns:
+        Dict with 'tool', 'label', and optionally 'target' keys, or None if no fix tool.
+    """
+    return FIX_TOOLS.get(code)
 
 
 def get_error_description(code: str) -> str:
@@ -296,6 +351,12 @@ def infer_code_from_message(message: str) -> str:
         return "PRISM104"
     elif "schema version mismatch" in msg_lower:
         return "PRISM005"
+    elif "fair compliance" in msg_lower or "fair principle" in msg_lower:
+        return "PRISM006"
+    elif "incomplete template" in msg_lower or ("template" in msg_lower and "missing" in msg_lower and ("references" in msg_lower or "reliability" in msg_lower or "administrationtime" in msg_lower)):
+        return "PRISM007"
+    elif "template consistency" in msg_lower or "itemcount" in msg_lower or ("subscale" in msg_lower and "not found" in msg_lower):
+        return "PRISM008"
     elif "dataset_description.json" in msg_lower:
         if "missing" in msg_lower:
             return "PRISM001"
