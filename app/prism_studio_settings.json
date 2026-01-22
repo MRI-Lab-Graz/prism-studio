@@ -1,7 +1,7 @@
 {
-  "globalLibraryRoot": "",
-  "globalTemplateLibraryPath": "official/",
-  "globalRecipesPath": "official/",
+  "globalLibraryRoot": "../official",
+  "globalTemplateLibraryPath": "",
+  "globalRecipesPath": "",
   "defaultModalities": [
     "survey",
     "biometrics"

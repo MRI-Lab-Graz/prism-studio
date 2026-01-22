@@ -1,0 +1,917 @@
+{% extends "base.html" %}
+
+{% block title %}PRISM Studio - Survey Customizer{% endblock %}
+
+{% block styles %}
+<style>
+    .customizer-container {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 1rem;
+        min-height: 60vh;
+    }
+
+    /* Groups Panel */
+    .groups-panel {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+    }
+
+    .group-item {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        cursor: grab;
+        transition: all 0.2s ease;
+    }
+
+    .group-item:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .group-item.active {
+        border-color: #0d6efd;
+        background: #e7f1ff;
+    }
+
+    .group-item.sortable-ghost {
+        opacity: 0.4;
+        background: #e9ecef;
+    }
+
+    .group-item.sortable-drag {
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .group-item .group-name {
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+
+    .group-item .group-meta {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    .group-actions {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    /* Questions Panel */
+    .questions-panel {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+        overflow-y: auto;
+        max-height: 70vh;
+    }
+
+    .question-item {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        cursor: grab;
+        transition: all 0.2s ease;
+    }
+
+    .question-item:hover {
+        border-color: #198754;
+        background: #f0fff4;
+    }
+
+    .question-item.sortable-ghost {
+        opacity: 0.4;
+        background: #e9ecef;
+    }
+
+    .question-item.sortable-drag {
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .question-item .question-code {
+        font-family: monospace;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .question-item .question-desc {
+        font-size: 0.85rem;
+        color: #6c757d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .question-item .question-meta {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.25rem;
+    }
+
+    /* Mandatory Toggle */
+    .mandatory-toggle {
+        cursor: pointer;
+        padding: 0.125rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .mandatory-toggle.mandatory {
+        background: #dc3545;
+        color: white;
+    }
+
+    .mandatory-toggle.optional {
+        background: #e9ecef;
+        color: #6c757d;
+    }
+
+    .mandatory-toggle:hover {
+        opacity: 0.8;
+    }
+
+    /* Export Settings */
+    .export-settings {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+        border: 1px solid #dee2e6;
+    }
+
+    .export-option {
+        margin-bottom: 0.75rem;
+    }
+
+    /* Drag Handle */
+    .drag-handle {
+        cursor: grab;
+        color: #adb5bd;
+        margin-right: 0.5rem;
+    }
+
+    .drag-handle:hover {
+        color: #6c757d;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    /* Group Header */
+    .group-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .group-header h5 {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Question Group Container */
+    .question-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .question-group-list {
+        min-height: 50px;
+        background: #fafafa;
+        border-radius: 4px;
+        padding: 0.5rem;
+    }
+
+    .question-group-list.sortable-empty {
+        border: 2px dashed #dee2e6;
+    }
+
+    /* Loading State */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255,255,255,0.9);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .customizer-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h2><i class="fas fa-sliders-h text-info me-2"></i>Survey Customizer</h2>
+                <p class="text-muted mb-0">Organize questions, create groups, set mandatory fields, then export.</p>
+            </div>
+            <a href="{{ url_for('tools.survey_generator') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Library
+            </a>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay d-none">
+        <div class="text-center">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted">Loading survey data...</p>
+        </div>
+    </div>
+
+    <!-- No Data Warning -->
+    <div id="noDataWarning" class="alert alert-warning d-none">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>No survey data found.</strong> Please go back to the Survey & Boilerplate page and select questionnaires first.
+        <a href="{{ url_for('tools.survey_generator') }}" class="alert-link ms-2">Go to Survey Library</a>
+    </div>
+
+    <!-- Main Customizer Layout -->
+    <div id="customizerMain" class="d-none">
+        <div class="customizer-container">
+            <!-- Groups Panel (Left) -->
+            <div class="groups-panel">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-layer-group me-2"></i>Groups</h5>
+                    <button class="btn btn-sm btn-outline-primary" id="addGroupBtn" title="Add new group">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div id="groupsList" class="groups-list">
+                    <!-- Groups will be rendered here -->
+                </div>
+                <small class="text-muted d-block mt-2">
+                    <i class="fas fa-info-circle me-1"></i>Drag to reorder groups
+                </small>
+            </div>
+
+            <!-- Questions Panel (Right) -->
+            <div class="questions-panel">
+                <div id="questionsContainer">
+                    <!-- Question groups will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Settings -->
+        <div class="export-settings">
+            <h5 class="mb-3"><i class="fas fa-cog me-2"></i>Export Settings</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="export-option">
+                        <label class="form-label">Export Format</label>
+                        <select class="form-select" id="exportFormat">
+                            <option value="limesurvey" selected>LimeSurvey (.lss)</option>
+                            <!-- Future: <option value="redcap">REDCap</option> -->
+                            <!-- Future: <option value="qualtrics">Qualtrics</option> -->
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="export-option">
+                        <label class="form-label">LimeSurvey Version</label>
+                        <select class="form-select" id="lsVersionSelect">
+                            <option value="6" selected>LimeSurvey 5.x / 6.x (Modern)</option>
+                            <option value="3">LimeSurvey 3.x (Legacy)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="export-option">
+                        <label class="form-label">Language</label>
+                        <select class="form-select" id="languageSelect">
+                            <option value="en" selected>English</option>
+                            <option value="de">German</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="matrixMode" checked>
+                        <label class="form-check-label" for="matrixMode">
+                            Group questions with identical options into matrices
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="globalMatrix" checked>
+                        <label class="form-check-label" for="globalMatrix">
+                            Global matrix grouping (all identical options, not just consecutive)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="d-flex justify-content-end gap-2 mt-4 mb-5">
+            <button class="btn btn-outline-secondary" id="resetBtn">
+                <i class="fas fa-undo me-2"></i>Reset Changes
+            </button>
+            <button class="btn btn-info btn-lg text-white" id="exportBtn">
+                <i class="fas fa-file-export me-2"></i>Export Survey
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Group Modal -->
+<div class="modal fade" id="addGroupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Group</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Group Name</label>
+                    <input type="text" class="form-control" id="newGroupName" placeholder="e.g., Demographics">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmAddGroup">Add Group</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rename Group Modal -->
+<div class="modal fade" id="renameGroupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Rename Group</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Group Name</label>
+                    <input type="text" class="form-control" id="renameGroupName">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmRenameGroup">Rename</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- SortableJS for drag-and-drop -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // State
+    let customizationState = {
+        survey: {
+            title: 'Custom Survey',
+            language: 'en'
+        },
+        groups: [],
+        exportFormat: 'limesurvey',
+        exportOptions: {
+            ls_version: '6',
+            matrix: true,
+            matrix_global: true
+        }
+    };
+
+    // Original data for reset
+    let originalState = null;
+    let sortableInstances = [];
+
+    // DOM Elements
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const noDataWarning = document.getElementById('noDataWarning');
+    const customizerMain = document.getElementById('customizerMain');
+    const groupsList = document.getElementById('groupsList');
+    const questionsContainer = document.getElementById('questionsContainer');
+    const exportBtn = document.getElementById('exportBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const addGroupBtn = document.getElementById('addGroupBtn');
+    const addGroupModal = new bootstrap.Modal(document.getElementById('addGroupModal'));
+    const renameGroupModal = new bootstrap.Modal(document.getElementById('renameGroupModal'));
+
+    // Generate UUID
+    function uuid() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    // Get text from multilingual object
+    function getText(obj, lang) {
+        if (!obj) return '';
+        if (typeof obj === 'string') return obj;
+        if (typeof obj === 'object') {
+            return obj[lang] || obj['en'] || Object.values(obj)[0] || '';
+        }
+        return '';
+    }
+
+    // Load data from sessionStorage
+    function loadFromSessionStorage() {
+        loadingOverlay.classList.remove('d-none');
+
+        try {
+            const storedData = sessionStorage.getItem('surveyCustomizerData');
+            if (!storedData) {
+                showNoData();
+                return;
+            }
+
+            const data = JSON.parse(storedData);
+            if (!data.selectedFiles || data.selectedFiles.length === 0) {
+                showNoData();
+                return;
+            }
+
+            // Set language and version
+            customizationState.survey.language = data.language || 'en';
+            customizationState.exportOptions.ls_version = data.ls_version || '6';
+
+            // Update UI
+            document.getElementById('languageSelect').value = customizationState.survey.language;
+            document.getElementById('lsVersionSelect').value = customizationState.exportOptions.ls_version;
+
+            // Load file data via API
+            loadQuestionsFromFiles(data.selectedFiles);
+
+        } catch (e) {
+            console.error('Error loading session data:', e);
+            showNoData();
+        }
+    }
+
+    // Load questions from selected files via API
+    async function loadQuestionsFromFiles(selectedFiles) {
+        try {
+            const response = await fetch('/api/survey-customizer/load', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ files: selectedFiles })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load survey data');
+            }
+
+            const result = await response.json();
+            if (result.error) {
+                throw new Error(result.error);
+            }
+
+            // Build groups from loaded data
+            customizationState.groups = result.groups;
+            originalState = JSON.parse(JSON.stringify(customizationState));
+
+            renderGroups();
+            renderQuestions();
+            showCustomizer();
+
+        } catch (e) {
+            console.error('Error loading questions:', e);
+            alert('Error loading survey data: ' + e.message);
+            showNoData();
+        }
+    }
+
+    // Show states
+    function showNoData() {
+        loadingOverlay.classList.add('d-none');
+        noDataWarning.classList.remove('d-none');
+        customizerMain.classList.add('d-none');
+    }
+
+    function showCustomizer() {
+        loadingOverlay.classList.add('d-none');
+        noDataWarning.classList.add('d-none');
+        customizerMain.classList.remove('d-none');
+    }
+
+    // Render groups in left panel
+    function renderGroups() {
+        groupsList.innerHTML = '';
+
+        customizationState.groups.forEach((group, idx) => {
+            const div = document.createElement('div');
+            div.className = 'group-item';
+            div.dataset.groupId = group.id;
+            div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <i class="fas fa-grip-vertical drag-handle"></i>
+                        <span class="group-name">${escapeHtml(group.name)}</span>
+                        <div class="group-meta">${group.questions.length} question(s)</div>
+                    </div>
+                    <div class="group-actions">
+                        <button class="btn btn-sm btn-link text-secondary p-0 rename-group-btn" title="Rename">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <button class="btn btn-sm btn-link text-danger p-0 ms-1 delete-group-btn" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Click to select
+            div.addEventListener('click', (e) => {
+                if (!e.target.closest('button')) {
+                    document.querySelectorAll('.group-item').forEach(g => g.classList.remove('active'));
+                    div.classList.add('active');
+                    scrollToGroup(group.id);
+                }
+            });
+
+            // Rename button
+            div.querySelector('.rename-group-btn').addEventListener('click', () => {
+                openRenameModal(group);
+            });
+
+            // Delete button
+            div.querySelector('.delete-group-btn').addEventListener('click', () => {
+                if (customizationState.groups.length <= 1) {
+                    alert('Cannot delete the only remaining group.');
+                    return;
+                }
+                if (confirm(`Delete group "${group.name}"? Questions will be moved to the previous group.`)) {
+                    deleteGroup(group.id);
+                }
+            });
+
+            groupsList.appendChild(div);
+        });
+
+        // Initialize sortable for groups
+        initGroupsSortable();
+    }
+
+    // Render questions in right panel
+    function renderQuestions() {
+        questionsContainer.innerHTML = '';
+
+        // Destroy existing sortables
+        sortableInstances.forEach(s => s.destroy());
+        sortableInstances = [];
+
+        customizationState.groups.forEach((group, groupIdx) => {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'question-group';
+            groupDiv.dataset.groupId = group.id;
+            groupDiv.innerHTML = `
+                <div class="group-header">
+                    <h5>
+                        <i class="fas fa-folder-open text-primary"></i>
+                        <span class="editable-group-name">${escapeHtml(group.name)}</span>
+                        <span class="badge bg-secondary">${group.questions.length}</span>
+                    </h5>
+                </div>
+                <div class="question-group-list" data-group-id="${group.id}">
+                </div>
+            `;
+
+            const listDiv = groupDiv.querySelector('.question-group-list');
+
+            group.questions.forEach((q, qIdx) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'question-item';
+                qDiv.dataset.questionId = q.id;
+                qDiv.dataset.groupId = group.id;
+                qDiv.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <i class="fas fa-grip-vertical drag-handle"></i>
+                            <span class="question-code">${escapeHtml(q.questionCode)}</span>
+                            <span class="mandatory-toggle ${q.mandatory ? 'mandatory' : 'optional'}"
+                                  title="Click to toggle mandatory">
+                                ${q.mandatory ? 'Required' : 'Optional'}
+                            </span>
+                            ${q.runNumber > 1 ? `<span class="badge bg-info">run-${String(q.runNumber).padStart(2, '0')}</span>` : ''}
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input question-enabled" type="checkbox"
+                                   ${q.enabled ? 'checked' : ''} title="Include in export">
+                        </div>
+                    </div>
+                    <div class="question-desc" title="${escapeHtml(q.description || '')}">${escapeHtml(q.description || 'No description')}</div>
+                `;
+
+                // Mandatory toggle
+                qDiv.querySelector('.mandatory-toggle').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleMandatory(group.id, q.id);
+                });
+
+                // Enabled toggle
+                qDiv.querySelector('.question-enabled').addEventListener('change', (e) => {
+                    toggleEnabled(group.id, q.id, e.target.checked);
+                });
+
+                listDiv.appendChild(qDiv);
+            });
+
+            questionsContainer.appendChild(groupDiv);
+
+            // Initialize sortable for questions within this group
+            const sortable = new Sortable(listDiv, {
+                group: 'questions',
+                animation: 150,
+                handle: '.drag-handle',
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                onEnd: function(evt) {
+                    handleQuestionMove(evt);
+                }
+            });
+            sortableInstances.push(sortable);
+        });
+    }
+
+    // Initialize sortable for groups list
+    function initGroupsSortable() {
+        if (window.groupsSortable) {
+            window.groupsSortable.destroy();
+        }
+        window.groupsSortable = new Sortable(groupsList, {
+            animation: 150,
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onEnd: function(evt) {
+                handleGroupMove(evt);
+            }
+        });
+    }
+
+    // Handle group reordering
+    function handleGroupMove(evt) {
+        const groupId = evt.item.dataset.groupId;
+        const oldIndex = evt.oldIndex;
+        const newIndex = evt.newIndex;
+
+        if (oldIndex === newIndex) return;
+
+        const [movedGroup] = customizationState.groups.splice(oldIndex, 1);
+        customizationState.groups.splice(newIndex, 0, movedGroup);
+
+        // Update order values
+        customizationState.groups.forEach((g, i) => g.order = i);
+
+        renderQuestions();
+    }
+
+    // Handle question move between/within groups
+    function handleQuestionMove(evt) {
+        const questionId = evt.item.dataset.questionId;
+        const fromGroupId = evt.from.dataset.groupId;
+        const toGroupId = evt.to.dataset.groupId;
+        const newIndex = evt.newIndex;
+
+        // Find and remove from source
+        const fromGroup = customizationState.groups.find(g => g.id === fromGroupId);
+        const questionIdx = fromGroup.questions.findIndex(q => q.id === questionId);
+        const [question] = fromGroup.questions.splice(questionIdx, 1);
+
+        // Add to target
+        const toGroup = customizationState.groups.find(g => g.id === toGroupId);
+        toGroup.questions.splice(newIndex, 0, question);
+
+        // Update display orders
+        toGroup.questions.forEach((q, i) => q.displayOrder = i);
+        if (fromGroupId !== toGroupId) {
+            fromGroup.questions.forEach((q, i) => q.displayOrder = i);
+        }
+
+        // Update both panels
+        renderGroups();
+        updateQuestionCounts();
+    }
+
+    // Update question count badges in both panels without full re-render
+    function updateQuestionCounts() {
+        customizationState.groups.forEach(group => {
+            // Update right panel header badge
+            const groupDiv = questionsContainer.querySelector(`[data-group-id="${group.id}"]`);
+            if (groupDiv) {
+                const badge = groupDiv.querySelector('.group-header .badge');
+                if (badge) {
+                    badge.textContent = group.questions.length;
+                }
+            }
+        });
+    }
+
+    // Toggle mandatory
+    function toggleMandatory(groupId, questionId) {
+        const group = customizationState.groups.find(g => g.id === groupId);
+        const question = group.questions.find(q => q.id === questionId);
+        question.mandatory = !question.mandatory;
+        renderQuestions();
+    }
+
+    // Toggle enabled
+    function toggleEnabled(groupId, questionId, enabled) {
+        const group = customizationState.groups.find(g => g.id === groupId);
+        const question = group.questions.find(q => q.id === questionId);
+        question.enabled = enabled;
+    }
+
+    // Scroll to group in questions panel
+    function scrollToGroup(groupId) {
+        const groupDiv = questionsContainer.querySelector(`[data-group-id="${groupId}"]`);
+        if (groupDiv) {
+            groupDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    // Add new group
+    addGroupBtn.addEventListener('click', () => {
+        document.getElementById('newGroupName').value = '';
+        addGroupModal.show();
+    });
+
+    document.getElementById('confirmAddGroup').addEventListener('click', () => {
+        const name = document.getElementById('newGroupName').value.trim();
+        if (!name) {
+            alert('Please enter a group name.');
+            return;
+        }
+
+        const newGroup = {
+            id: uuid(),
+            name: name,
+            order: customizationState.groups.length,
+            questions: []
+        };
+
+        customizationState.groups.push(newGroup);
+        addGroupModal.hide();
+        renderGroups();
+        renderQuestions();
+    });
+
+    // Rename group
+    let renameGroupId = null;
+    function openRenameModal(group) {
+        renameGroupId = group.id;
+        document.getElementById('renameGroupName').value = group.name;
+        renameGroupModal.show();
+    }
+
+    document.getElementById('confirmRenameGroup').addEventListener('click', () => {
+        const newName = document.getElementById('renameGroupName').value.trim();
+        if (!newName) {
+            alert('Please enter a group name.');
+            return;
+        }
+
+        const group = customizationState.groups.find(g => g.id === renameGroupId);
+        if (group) {
+            group.name = newName;
+        }
+
+        renameGroupModal.hide();
+        renderGroups();
+        renderQuestions();
+    });
+
+    // Delete group
+    function deleteGroup(groupId) {
+        const groupIdx = customizationState.groups.findIndex(g => g.id === groupId);
+        const group = customizationState.groups[groupIdx];
+
+        // Move questions to previous group (or next if first)
+        const targetIdx = groupIdx > 0 ? groupIdx - 1 : 1;
+        const targetGroup = customizationState.groups[targetIdx];
+
+        if (targetGroup && group.questions.length > 0) {
+            targetGroup.questions.push(...group.questions);
+            targetGroup.questions.forEach((q, i) => q.displayOrder = i);
+        }
+
+        customizationState.groups.splice(groupIdx, 1);
+        customizationState.groups.forEach((g, i) => g.order = i);
+
+        renderGroups();
+        renderQuestions();
+    }
+
+    // Reset changes
+    resetBtn.addEventListener('click', () => {
+        if (!originalState) return;
+        if (confirm('Reset all changes to the original state?')) {
+            customizationState = JSON.parse(JSON.stringify(originalState));
+            renderGroups();
+            renderQuestions();
+        }
+    });
+
+    // Export
+    exportBtn.addEventListener('click', async () => {
+        // Update export options from UI
+        customizationState.exportFormat = document.getElementById('exportFormat').value;
+        customizationState.survey.language = document.getElementById('languageSelect').value;
+        customizationState.exportOptions.ls_version = document.getElementById('lsVersionSelect').value;
+        customizationState.exportOptions.matrix = document.getElementById('matrixMode').checked;
+        customizationState.exportOptions.matrix_global = document.getElementById('globalMatrix').checked;
+
+        exportBtn.disabled = true;
+        exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Exporting...';
+
+        try {
+            const response = await fetch('/api/survey-customizer/export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(customizationState)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Export failed');
+            }
+
+            // Download the file
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `survey_export_${customizationState.survey.language}.lss`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+
+        } catch (e) {
+            console.error('Export error:', e);
+            alert('Export failed: ' + e.message);
+        } finally {
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = '<i class="fas fa-file-export me-2"></i>Export Survey';
+        }
+    });
+
+    // Utility: escape HTML
+    function escapeHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // Initialize
+    loadFromSessionStorage();
+});
+</script>
+{% endblock %}

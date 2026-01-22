@@ -28,6 +28,9 @@ def _global_survey_library_root() -> Path | None:
 
     if lib_paths["global_library_path"]:
         candidate = Path(lib_paths["global_library_path"]).expanduser()
+        # Resolve relative paths against app root
+        if not candidate.is_absolute():
+            candidate = (base_dir / candidate).resolve()
         if candidate.exists() and candidate.is_dir():
             return candidate
 
@@ -44,9 +47,12 @@ def _global_recipes_root() -> Path | None:
     base_dir = Path(current_app.root_path)
     from src.config import get_effective_library_paths
     lib_paths = get_effective_library_paths(app_root=str(base_dir))
-    
+
     if lib_paths["global_recipe_path"]:
         candidate = Path(lib_paths["global_recipe_path"]).expanduser()
+        # Resolve relative paths against app root
+        if not candidate.is_absolute():
+            candidate = (base_dir / candidate).resolve()
         if candidate.exists() and candidate.is_dir():
             return candidate
     return None
@@ -230,6 +236,214 @@ def survey_generator():
         "survey_generator.html",
         default_survey_library_path=str(default_library_path or ""),
     )
+
+
+@tools_bp.route("/survey-customizer")
+def survey_customizer():
+    """Survey customizer page for organizing questions before export"""
+    return render_template("survey_customizer.html")
+
+
+@tools_bp.route("/api/survey-customizer/load", methods=["POST"])
+def api_survey_customizer_load():
+    """Load selected templates and convert to customization groups.
+
+    Expects JSON body:
+    {
+        "files": [
+            {
+                "path": "/path/to/survey.json",
+                "includeQuestions": ["Q1", "Q2", ...],
+                "matrix": true,
+                "matrix_global": true,
+                "runNumber": 1
+            }
+        ]
+    }
+
+    Returns customization groups ready for the customizer UI.
+    """
+    import uuid as uuid_module
+
+    data = request.get_json(silent=True) or {}
+    files = data.get("files", [])
+
+    if not files:
+        return jsonify({"error": "No files provided"}), 400
+
+    groups = []
+
+    for file_config in files:
+        file_path = file_config.get("path")
+        include_questions = file_config.get("includeQuestions", [])
+        run_number = file_config.get("runNumber", 1)
+
+        if not file_path or not os.path.exists(file_path):
+            continue
+
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                template_data = json.load(f)
+        except Exception as e:
+            continue
+
+        # Get group name from template
+        study_info = template_data.get("Study", {})
+        group_name = study_info.get("OriginalName") or template_data.get("TaskName") or Path(file_path).stem
+        if isinstance(group_name, dict):
+            group_name = group_name.get("en") or next(iter(group_name.values()), Path(file_path).stem)
+
+        # Extract questions
+        if "Questions" in template_data and isinstance(template_data["Questions"], dict):
+            all_questions = template_data["Questions"]
+        else:
+            reserved = ["Technical", "Study", "Metadata", "Categories", "TaskName", "I18n", "Scoring", "Normative"]
+            all_questions = {k: v for k, v in template_data.items() if k not in reserved}
+
+        # Filter to included questions
+        if include_questions:
+            filtered_questions = {k: v for k, v in all_questions.items() if k in include_questions}
+        else:
+            filtered_questions = all_questions
+
+        # Build questions list for this group
+        questions = []
+        for idx, (q_code, q_data) in enumerate(filtered_questions.items()):
+            if not isinstance(q_data, dict):
+                q_data = {"Description": str(q_data)}
+
+            description = q_data.get("Description", "")
+            if isinstance(description, dict):
+                description = description.get("en") or next(iter(description.values()), "")
+
+            questions.append({
+                "id": str(uuid_module.uuid4()),
+                "sourceFile": file_path,
+                "questionCode": q_code,
+                "description": description,
+                "displayOrder": idx,
+                "mandatory": True,  # Default to mandatory
+                "enabled": True,
+                "runNumber": run_number,
+                "levels": q_data.get("Levels", {}),
+                "originalData": q_data
+            })
+
+        # Create group
+        groups.append({
+            "id": str(uuid_module.uuid4()),
+            "name": group_name,
+            "order": len(groups),
+            "sourceFile": file_path,
+            "questions": questions
+        })
+
+    if not groups:
+        return jsonify({"error": "No valid questions found in selected files"}), 400
+
+    return jsonify({
+        "groups": groups,
+        "totalQuestions": sum(len(g["questions"]) for g in groups)
+    })
+
+
+@tools_bp.route("/api/survey-customizer/export", methods=["POST"])
+def api_survey_customizer_export():
+    """Export survey with customization state applied.
+
+    Expects JSON body with CustomizationState:
+    {
+        "survey": {"title": "...", "language": "en"},
+        "groups": [...],
+        "exportFormat": "limesurvey",
+        "exportOptions": {"ls_version": "6", "matrix": true, "matrix_global": false}
+    }
+    """
+    try:
+        from src.limesurvey_exporter import generate_lss_from_customization
+    except ImportError:
+        return jsonify({"error": "LimeSurvey exporter not available"}), 500
+
+    data = request.get_json(silent=True) or {}
+
+    export_format = data.get("exportFormat", "limesurvey")
+    if export_format != "limesurvey":
+        return jsonify({"error": f"Export format '{export_format}' not yet supported"}), 400
+
+    survey_info = data.get("survey", {})
+    groups = data.get("groups", [])
+    export_options = data.get("exportOptions", {})
+
+    if not groups:
+        return jsonify({"error": "No groups to export"}), 400
+
+    language = survey_info.get("language", "en")
+    ls_version = export_options.get("ls_version", "6")
+    matrix_mode = export_options.get("matrix", True)
+    matrix_global = export_options.get("matrix_global", True)
+
+    try:
+        fd, temp_path = tempfile.mkstemp(suffix=".lss")
+        os.close(fd)
+
+        generate_lss_from_customization(
+            groups=groups,
+            output_path=temp_path,
+            language=language,
+            ls_version=ls_version,
+            matrix_mode=matrix_mode,
+            matrix_global=matrix_global
+        )
+
+        return send_file(
+            temp_path,
+            as_attachment=True,
+            download_name=f"survey_export_{language}.lss",
+            mimetype="application/xml"
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@tools_bp.route("/api/survey-customizer/formats", methods=["GET"])
+def api_survey_customizer_formats():
+    """List available export formats for the survey customizer."""
+    formats = [
+        {
+            "id": "limesurvey",
+            "name": "LimeSurvey",
+            "extension": ".lss",
+            "description": "LimeSurvey Survey Structure file",
+            "options": [
+                {
+                    "id": "ls_version",
+                    "name": "LimeSurvey Version",
+                    "type": "select",
+                    "default": "6",
+                    "choices": [
+                        {"value": "6", "label": "LimeSurvey 5.x / 6.x (Modern)"},
+                        {"value": "3", "label": "LimeSurvey 3.x (Legacy)"}
+                    ]
+                },
+                {
+                    "id": "matrix",
+                    "name": "Group as matrices",
+                    "type": "boolean",
+                    "default": True
+                },
+                {
+                    "id": "matrix_global",
+                    "name": "Global matrix grouping",
+                    "type": "boolean",
+                    "default": True
+                }
+            ]
+        }
+        # Future formats can be added here:
+        # {"id": "redcap", "name": "REDCap", ...},
+        # {"id": "qualtrics", "name": "Qualtrics", ...},
+    ]
+    return jsonify({"formats": formats})
 
 @tools_bp.route("/converter")
 def converter():
@@ -1014,8 +1228,26 @@ def _extract_template_info(full_path, filename):
 def list_library_files():
     """List JSON files in a user-specified library path, grouped by modality"""
     library_path = request.args.get("path")
-    if not library_path or not os.path.exists(library_path) or not os.path.isdir(library_path):
-        return jsonify({"error": "Invalid path"}), 400
+    if not library_path:
+        return jsonify({"error": "No path provided"}), 400
+
+    # Resolve relative paths against app root
+    path_obj = Path(library_path)
+    if not path_obj.is_absolute():
+        # Try relative to app root first
+        app_root = Path(current_app.root_path)
+        resolved_path = (app_root / library_path).resolve()
+        if resolved_path.exists() and resolved_path.is_dir():
+            library_path = str(resolved_path)
+        else:
+            # Try as-is (might be relative to CWD)
+            resolved_path = path_obj.resolve()
+            if resolved_path.exists() and resolved_path.is_dir():
+                library_path = str(resolved_path)
+            else:
+                return jsonify({"error": f"Path not found: {library_path}"}), 400
+    elif not os.path.exists(library_path) or not os.path.isdir(library_path):
+        return jsonify({"error": f"Invalid path: {library_path}"}), 400
 
     results = {"participants": [], "survey": [], "biometrics": [], "other": []}
     try:

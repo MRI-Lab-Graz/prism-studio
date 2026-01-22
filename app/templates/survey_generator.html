@@ -153,6 +153,7 @@
                                     <th>Original Name</th>
                                     <th class="text-center" style="width: 100px;">Matrix</th>
                                     <th class="text-center" style="width: 100px;">Global</th>
+                                    <th class="text-center" style="width: 80px;">Run</th>
                                     <th>Items</th>
                                     <th>Description</th>
                                 </tr>
@@ -185,6 +186,7 @@
                                     <th>Original Name</th>
                                     <th class="text-center" style="width: 100px;">Matrix</th>
                                     <th class="text-center" style="width: 100px;">Global</th>
+                                    <th class="text-center" style="width: 80px;">Run</th>
                                     <th>Items</th>
                                     <th>Description</th>
                                 </tr>
@@ -217,6 +219,7 @@
                                     <th>Original Name</th>
                                     <th class="text-center" style="width: 100px;">Matrix</th>
                                     <th class="text-center" style="width: 100px;">Global</th>
+                                    <th class="text-center" style="width: 80px;">Run</th>
                                     <th>Items</th>
                                     <th>Description</th>
                                 </tr>
@@ -249,6 +252,7 @@
                                     <th>Original Name</th>
                                     <th class="text-center" style="width: 100px;">Matrix</th>
                                     <th class="text-center" style="width: 100px;">Global</th>
+                                    <th class="text-center" style="width: 80px;">Run</th>
                                     <th>Items</th>
                                     <th>Description</th>
                                 </tr>
@@ -264,8 +268,11 @@
             <button class="btn btn-outline-info btn-lg" id="generateBoilerplateBtn" disabled title="Generate a scientific methods section boilerplate from selected templates">
                 <i class="fas fa-file-alt me-2"></i>Write Boilerplate (.md / .html)
             </button>
-            <button class="btn btn-info btn-lg text-white" id="generateLssBtn" disabled>
-                <i class="fas fa-file-export me-2"></i>Export to LimeSurvey (.lss)
+            <button class="btn btn-outline-secondary btn-lg" id="generateLssBtn" disabled title="Quick export directly to LimeSurvey without customization">
+                <i class="fas fa-file-export me-2"></i>Quick Export (.lss)
+            </button>
+            <button class="btn btn-info btn-lg text-white" id="customizeExportBtn" disabled title="Open the Survey Customizer to organize questions, create groups, and set mandatory fields before exporting">
+                <i class="fas fa-sliders-h me-2"></i>Customize & Export
             </button>
         </div>
     </div>
@@ -288,6 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const libraryError = document.getElementById('libraryError');
     const generateLssBtn = document.getElementById('generateLssBtn');
     const generateBoilerplateBtn = document.getElementById('generateBoilerplateBtn');
+    const customizeExportBtn = document.getElementById('customizeExportBtn');
     const languageSelectionCard = document.getElementById('languageSelectionCard');
     const languageSelect = document.getElementById('languageSelect');
 
@@ -392,10 +400,16 @@ document.addEventListener('DOMContentLoaded', function() {
             </td>
             <td class="text-center">
                 <div class="form-check form-switch d-flex justify-content-center">
-                    <input class="form-check-input global-matrix-checkbox" type="checkbox" id="global-${sectionKey}-${index}" 
-                           checked 
+                    <input class="form-check-input global-matrix-checkbox" type="checkbox" id="global-${sectionKey}-${index}"
+                           checked
                            title="If ON, groups all identical questions. If OFF, only groups consecutive ones.">
                 </div>
+            </td>
+            <td class="text-center">
+                <input type="number" class="form-control form-control-sm run-number-input"
+                       id="run-${sectionKey}-${index}"
+                       min="1" max="99" value="1" style="width: 60px; margin: 0 auto;"
+                       title="Run number (1 = no suffix, 2+ = adds _run-NN suffix to variable names)">
             </td>
             <td><span class="badge bg-secondary">${file.question_count || 0} items</span></td>
             <td class="text-muted small">${getText(file.description, currentLanguage)}</td>
@@ -404,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const trDetails = document.createElement('tr');
         trDetails.className = 'collapse-row';
         trDetails.innerHTML = `
-            <td colspan="8" class="p-0 border-0">
+            <td colspan="9" class="p-0 border-0">
                 <div class="collapse bg-light p-3" id="${collapseId}">
                     <!-- Metadata Section -->
                     <div class="row mb-3">
@@ -689,6 +703,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const anyChecked = document.querySelectorAll('.file-checkbox:checked').length > 0;
         generateLssBtn.disabled = !anyChecked;
         generateBoilerplateBtn.disabled = !anyChecked;
+        customizeExportBtn.disabled = !anyChecked;
     }
 
     // Generate Boilerplate
@@ -767,19 +782,27 @@ document.addEventListener('DOMContentLoaded', function() {
             const mainRow = cb.closest('tr');
             const matrixCheckbox = mainRow.querySelector('.matrix-checkbox');
             const isMatrix = matrixCheckbox ? matrixCheckbox.checked : false;
-            
+
             const globalCheckbox = mainRow.querySelector('.global-matrix-checkbox');
             const isGlobal = globalCheckbox ? globalCheckbox.checked : false;
-            
+
+            const runInput = mainRow.querySelector('.run-number-input');
+            const runNumber = runInput ? parseInt(runInput.value, 10) || 1 : 1;
+
             const selectedQuestions = Array.from(questionCheckboxes).map(qcb => qcb.value);
-            
+
             if (selectedQuestions.length > 0) {
-                selectedFiles.push({
+                const fileConfig = {
                     path: cb.value,
                     include: selectedQuestions,
                     matrix: isMatrix,
                     matrix_global: isGlobal
-                });
+                };
+                // Only include run if > 1 (adds _run-NN suffix)
+                if (runNumber > 1) {
+                    fileConfig.run = runNumber;
+                }
+                selectedFiles.push(fileConfig);
             }
         });
 
@@ -818,8 +841,57 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(err => alert(err.message))
         .finally(() => {
             generateLssBtn.disabled = false;
-            generateLssBtn.innerHTML = '<i class="fas fa-file-export me-2"></i>Export to LimeSurvey (.lss)';
+            generateLssBtn.innerHTML = '<i class="fas fa-file-export me-2"></i>Quick Export (.lss)';
         });
+    });
+
+    // Customize & Export - Navigate to Survey Customizer
+    customizeExportBtn.addEventListener('click', function() {
+        const selectedFiles = [];
+        const lsVersion = document.getElementById('lsVersionSelect').value;
+
+        document.querySelectorAll('.file-checkbox:checked').forEach(cb => {
+            const collapseId = cb.dataset.target;
+            const collapseDiv = document.getElementById(collapseId);
+            const questionCheckboxes = collapseDiv.querySelectorAll('.question-checkbox:checked');
+
+            const mainRow = cb.closest('tr');
+            const matrixCheckbox = mainRow.querySelector('.matrix-checkbox');
+            const isMatrix = matrixCheckbox ? matrixCheckbox.checked : false;
+
+            const globalCheckbox = mainRow.querySelector('.global-matrix-checkbox');
+            const isGlobal = globalCheckbox ? globalCheckbox.checked : false;
+
+            const runInput = mainRow.querySelector('.run-number-input');
+            const runNumber = runInput ? parseInt(runInput.value, 10) || 1 : 1;
+
+            const selectedQuestions = Array.from(questionCheckboxes).map(qcb => qcb.value);
+
+            if (selectedQuestions.length > 0) {
+                selectedFiles.push({
+                    path: cb.value,
+                    includeQuestions: selectedQuestions,
+                    matrix: isMatrix,
+                    matrix_global: isGlobal,
+                    runNumber: runNumber
+                });
+            }
+        });
+
+        if (selectedFiles.length === 0) {
+            alert("Please select at least one file and one question.");
+            return;
+        }
+
+        // Store in sessionStorage and navigate to customizer
+        const customizerData = {
+            selectedFiles: selectedFiles,
+            language: currentLanguage,
+            ls_version: lsVersion
+        };
+
+        sessionStorage.setItem('surveyCustomizerData', JSON.stringify(customizerData));
+        window.location.href = '/survey-customizer';
     });
 
     // --- Library path management ---
