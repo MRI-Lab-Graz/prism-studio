@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}File Management - PRISM Studio{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    {% if not current_project.path %}
+    <div class="alert alert-warning shadow-sm">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-info-circle me-2"></i>
+            <div>
+                A project must be selected before using File Management tools. Please open a project via <a href="{{ url_for('projects.projects_page') }}" class="alert-link">Projects</a> and try again.
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body">
+            <h2 class="mb-4"><i class="fas fa-cogs me-2 text-warning"></i>File Management Tools</h2>
+            <p class="text-muted mb-4">Prepare and organize your files before conversion.</p>
+
+            <div class="row g-4">
+                <!-- Renamer Helper Card -->
+                <div class="col-12">
+                    <div class="card border-warning mb-4 shadow-sm">
+                        <div class="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#renamerCollapse">
+                            <h5 class="mb-0 text-dark">
+                                <i class="fas fa-wand-magic-sparkles me-2 text-warning"></i>Renamer Helper
+                            </h5>
+                            <button class="btn btn-sm btn-outline-warning border-0" type="button">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div id="renamerCollapse" class="collapse show">
+                            <div class="card-body">
+                                <div class="alert alert-light border mb-4">
+                                    <div class="d-flex">
+                                        <i class="fas fa-info-circle me-3 text-info fa-2x"></i>
+                                        <div>
+                                            <strong>Renamer by Example:</strong> Quickly rename your files to match the PRISM/BIDS format (<code>sub-XXX_ses-YYY_task-ZZZ</code>).
+                                            <br><small class="text-muted">Examples: <code>004-t2.edf</code> → <code>sub-004_ses-2_task-rest_physio.edf</code> or <code>survey_01.csv</code> → <code>sub-01_survey-phq9_survey.csv</code></small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row g-3">
+                                    <div class="col-md-12">
+                                        <label for="renamerFiles" class="form-label fw-bold">1. Select Files or Folder to Rename</label>
+                                        <input class="form-control" type="file" id="renamerFiles" multiple webkitdirectory directory>
+                                        <small class="text-muted">Upload files or an entire directory. We will pick one file as an example to define the rule.</small>
+                                    </div>
+                                    
+                                    <div id="renamerExampleContainer" class="col-md-12 d-none">
+                                        <div class="card border-warning shadow-sm">
+                                            <div class="card-header bg-warning bg-opacity-10 fw-bold">
+                                                <i class="fas fa-magic me-2 text-warning"></i>2. Define Renaming Rule by Example
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row align-items-center">
+                                                    <div class="col-md-5">
+                                                        <label class="form-label small text-muted mb-1">Original Filename</label>
+                                                        <div id="renamerOriginalExample" class="form-control bg-light font-monospace"></div>
+                                                    </div>
+                                                    <div class="col-md-1 text-center mt-3">
+                                                        <i class="fas fa-arrow-right fa-lg text-muted"></i>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="row g-2">
+                                                            <div class="col-md-3">
+                                                                <label for="renamerModality" class="form-label small text-muted mb-1">Modality</label>
+                                                                <select class="form-select form-select-sm" id="renamerModality">
+                                                                    <option value="physio" selected>Physio</option>
+                                                                    <option value="biometrics">Biometrics</option>
+                                                                    <option value="events">Events</option>
+                                                                    <option value="survey">Survey</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-3" id="renamerRecordingContainer">
+                                                                <label for="renamerRecording" class="form-label small text-muted mb-1">Recording</label>
+                                                                <select class="form-select form-select-sm" id="renamerRecording">
+                                                                    <option value="">None</option>
+                                                                    <option value="ecg">ecg</option>
+                                                                    <option value="cardiac">cardiac</option>
+                                                                    <option value="puls">puls</option>
+                                                                    <option value="ppg">ppg</option>
+                                                                    <option value="resp">resp</option>
+                                                                    <option value="eda">eda</option>
+                                                                    <option value="emg">emg</option>
+                                                                    <option value="temp">temp</option>
+                                                                    <option value="trigger">trigger</option>
+                                                                </select>
+                                                                <small class="text-muted x-small">Optional</small>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label for="renamerNewExample" class="form-label small text-muted mb-1">New PRISM Filename</label>
+                                                                <div class="text-muted mb-1" style="font-size: 0.75rem;">
+                                                                    <i class="fas fa-info-circle me-1"></i> <span id="renamerExampleHint">Example: <code>sub-001_task-rest_physio.edf</code></span>
+                                                                </div>
+                                                                <input type="text" class="form-control font-monospace border-primary" id="renamerNewExample" placeholder="e.g. sub-001_task-rest_physio.edf">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-3 pt-3 border-top">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="renamerOrganize" checked>
+                                                        <label class="form-check-label fw-bold" for="renamerOrganize">
+                                                            Organize into PRISM structure
+                                                        </label>
+                                                        <div class="text-muted small">
+                                                            If enabled, files will be placed in <code>sub-XX/ses-YY/modality/</code> folders. 
+                                                            Otherwise, they will be saved in a flat structure.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-info-circle me-1"></i> 
+                                                        Type how the filename above should look. We'll automatically apply this pattern to all other files.
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Hidden fields for the actual regex/replacement used by the backend -->
+                                    <input type="hidden" id="renamerPattern">
+                                    <input type="hidden" id="renamerReplacement">
+
+                                    <div class="d-flex flex-wrap gap-2 mt-3">
+                                        <button class="btn btn-outline-secondary" type="button" id="renamerResetBtn">
+                                            <i class="fas fa-sync-alt me-1"></i>Use another example
+                                        </button>
+                                        <button class="btn btn-outline-primary" type="button" id="renamerDryRunBtn">
+                                            <i class="fas fa-search me-1"></i>Preview renames
+                                        </button>
+                                        <button class="btn btn-success" type="button" id="renamerCopyBtn" disabled>
+                                            <i class="fas fa-copy me-1"></i>Copy to Project
+                                        </button>
+                                        <button class="btn btn-warning text-white" type="button" id="renamerDownloadBtn" disabled>
+                                            <i class="fas fa-file-archive me-1"></i>Rename & Download
+                                        </button>
+                                    </div>
+
+                                    <div id="renamerPreview" class="card mt-3 d-none">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <div>
+                                                    <h6 class="mb-0">Preview</h6>
+                                                    <small class="text-muted">Shows matches, invalid names, and unmatched files.</small>
+                                                </div>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button" class="btn btn-outline-secondary active" id="renamerFilterAll">All</button>
+                                                    <button type="button" class="btn btn-outline-secondary" id="renamerFilterUnmatched">Only issues</button>
+                                                </div>
+                                            </div>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm align-middle">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Original</th>
+                                                            <th></th>
+                                                            <th>New PRISM Filename</th>
+                                                            <th class="text-center">Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="renamerPreviewBody"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                <div id="renamerError" class="alert alert-danger d-none mt-3"></div>
+                                <div id="renamerInfo" class="alert alert-success d-none mt-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Batch File Organizer Card -->
+                <div class="col-12">
+                    <div class="card border-warning mb-4 shadow-sm">
+                        <div class="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#organizerCollapse">
+                            <h5 class="mb-0 text-dark">
+                                <i class="fas fa-folder-tree me-2 text-warning"></i>Batch File Organizer
+                            </h5>
+                            <button class="btn btn-sm btn-outline-warning border-0" type="button">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+                        <div id="organizerCollapse" class="collapse show">
+                            <div class="card-body">
+                                <div class="alert alert-light border mb-4">
+                                    <h6 class="fw-bold"><i class="fas fa-info-circle me-2 text-info"></i>How it works:</h6>
+                                    <p class="small mb-2">This tool takes a flat list of files and organizes them into <code>sub-XXX/ses-YYY/modality/</code> folders.</p>
+                                    <p class="small mb-0"><strong>Required naming:</strong> <code>sub-XXX_ses-YYY_task-ZZZ.ext</code> (Session is optional)</p>
+                                </div>
+
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-5">
+                                        <label for="organizeFiles" class="form-label">Select Files to Organize</label>
+                                        <input class="form-control" type="file" id="organizeFiles" multiple>
+                                        <div class="form-text">Supports .edf, .tsv, .nii.gz, .json, .png, etc.</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="organizeModality" class="form-label">Target Modality</label>
+                                        <select class="form-select" id="organizeModality">
+                                            <option value="physio" selected>Physio (ECG, EDA, etc.)</option>
+                                            <option value="eyetracking">Eyetracking</option>
+                                            <option value="survey">Survey (TSV/JSON)</option>
+                                            <option value="biometrics">Biometrics</option>
+                                            <option value="anat">Anatomy (T1w)</option>
+                                            <option value="func">Functional (BOLD)</option>
+                                            <option value="extra">Extra / Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Project Destination</label>
+                                        <div class="d-flex gap-3 align-items-center flex-wrap">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="organizeTargetRoot" id="organizeTargetRaw" value="rawdata" checked>
+                                                <label class="form-check-label" for="organizeTargetRaw">rawdata</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="organizeTargetRoot" id="organizeTargetSource" value="sourcedata">
+                                                <label class="form-check-label" for="organizeTargetSource">sourcedata</label>
+                                            </div>
+                                            <small class="text-muted">Requires an active project.</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 d-flex flex-wrap gap-2">
+                                        <button class="btn btn-warning text-white flex-grow-1" type="button" id="organizeBtn" disabled>
+                                            <i class="fas fa-folder-plus me-2"></i>Organize & Download
+                                        </button>
+                                        <button class="btn btn-success flex-grow-1" type="button" id="organizeCopyBtn" disabled>
+                                            <i class="fas fa-copy me-2"></i>Copy to Project
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="organizeError" class="alert alert-danger d-none mt-3"></div>
+                                <div id="organizeInfo" class="alert alert-info d-none mt-3"></div>
+                                <div id="organizeProgress" class="progress d-none mt-3" style="height: 25px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning text-dark" style="width: 100%">Organizing...</div>
+                                </div>
+
+                                <!-- Log Window -->
+                                <div id="organizeLogContainer" class="d-none mt-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label class="form-label mb-0"><i class="fas fa-terminal me-2"></i>Organization Log</label>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="organizeLogClearBtn">
+                                            <i class="fas fa-trash-alt me-1"></i>Clear
+                                        </button>
+                                    </div>
+                                    <div id="organizeLog" class="bg-dark text-light p-3 rounded font-monospace" 
+                                         style="height: 200px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/file_management.js') }}"></script>
+{% endblock %}

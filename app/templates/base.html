@@ -128,6 +128,10 @@
                             <i class="fas fa-toolbox me-1 text-info"></i>Tools
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="toolsDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('tools.file_management') }}">
+                                <i class="fas fa-file-import me-2 text-warning"></i>File Management
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('tools.survey_generator') }}">
                                 <i class="fas fa-poll-h me-2 text-info"></i>Survey & Boilerplate
                             </a></li>

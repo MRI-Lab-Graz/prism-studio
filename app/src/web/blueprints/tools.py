@@ -255,6 +255,11 @@ def converter():
         default_survey_library_path=str(default_library_path or ""),
     )
 
+@tools_bp.route("/file-management")
+def file_management():
+    """File Management tools page (Renamer and Organizer)"""
+    return render_template("file_management.html")
+
 @tools_bp.route("/recipes")
 def recipes():
     return render_template("recipes.html")

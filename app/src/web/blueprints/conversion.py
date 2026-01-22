@@ -922,6 +922,10 @@ def api_batch_convert():
 
     dataset_name = (request.form.get("dataset_name") or "Converted Dataset").strip()
     modality_filter = request.form.get("modality", "all")
+    save_to_project = (request.form.get("save_to_project") or "false").lower() == "true"
+    dest_root = (request.form.get("dest_root") or "rawdata").strip().lower()
+    if dest_root not in {"rawdata", "sourcedata"}:
+        dest_root = "rawdata"
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
 
     try:
@@ -954,6 +958,8 @@ def api_batch_convert():
         return jsonify({"error": "No valid files to convert.", "logs": logs}), 400
 
     tmp_dir = tempfile.mkdtemp(prefix="prism_batch_convert_")
+    warnings = []
+    warned_subjects = set()
     try:
         tmp_path = Path(tmp_dir)
         input_dir = tmp_path / "input"
@@ -973,12 +979,49 @@ def api_batch_convert():
 
         create_dataset_description(output_dir, name=dataset_name)
 
+        project_saved = False
+        project_root = None
+        if save_to_project:
+            p_path = session.get("current_project_path")
+            if p_path:
+                project_root = Path(p_path)
+                if project_root.exists():
+                    project_root = project_root / dest_root
+                    project_root.mkdir(parents=True, exist_ok=True)
+                else:
+                    warnings.append(f"Project path not found: {p_path}. Copy to project skipped.")
+                    project_root = None
+            else:
+                warnings.append("No active project selected; copy to project skipped.")
+
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for file_path in output_dir.rglob("*"):
                 if file_path.is_file():
-                    zf.write(file_path, file_path.relative_to(output_dir))
-        mem.seek(0)
+                    rel_path = file_path.relative_to(output_dir)
+                    zf.write(file_path, rel_path)
+
+                    if project_root:
+                        # Warn if subject folder is being created
+                        bids = parse_bids_filename(rel_path.name) if parse_bids_filename else None
+                        subject_label = None
+                        if bids and bids.get("sub"):
+                            subject_label = bids.get("sub")
+                        else:
+                            m = re.search(r"(sub-[A-Za-z0-9]+)", rel_path.name)
+                            if m:
+                                subject_label = m.group(1)
+
+                        if subject_label:
+                            subject_dir = project_root / subject_label
+                            if not subject_dir.exists() and subject_label not in warned_subjects:
+                                warnings.append(f"Subject folder {subject_label} did not exist and will be created in project.")
+                                warned_subjects.add(subject_label)
+
+                        dest_path = project_root / rel_path
+                        dest_path.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(file_path, dest_path)
+                        project_saved = True
 
         import base64
         zip_base64 = base64.b64encode(mem.read()).decode('utf-8')
@@ -988,7 +1031,9 @@ def api_batch_convert():
             "log": "\n".join([log_entry["message"] for log_entry in logs]),
             "zip": zip_base64,
             "converted": result.success_count,
-            "errors": result.error_count
+            "errors": result.error_count,
+            "project_saved": project_saved,
+            "warnings": warnings
         })
     except Exception as e:
         return jsonify({"error": str(e), "logs": logs}), 500
@@ -1003,6 +1048,7 @@ def api_physio_rename():
     dry_run = request.form.get("dry_run", "false").lower() == "true"
     organize = request.form.get("organize", "false").lower() == "true"
     modality = request.form.get("modality", "physio")
+    save_to_project = request.form.get("save_to_project", "false").lower() == "true"
     
     files = request.files.getlist("files[]") or request.files.getlist("files")
     
@@ -1018,6 +1064,8 @@ def api_physio_rename():
         return jsonify({"error": f"Invalid regex: {str(e)}"}), 400
         
     results = []
+    warnings = []
+    warned_subjects = set()
     
     if dry_run:
         # Use filenames if provided, else use uploaded files' names
@@ -1046,13 +1094,26 @@ def api_physio_rename():
                 results.append({"old": fname, "new": new_name, "path": zip_path, "success": True})
             except Exception as e:
                 results.append({"old": fname, "new": str(e), "success": False})
-        return jsonify({"results": results})
+        return jsonify({"results": results, "warnings": warnings})
 
     # Actual renaming and zipping
     if not files:
         return jsonify({"error": "No files uploaded for renaming"}), 400
 
     mem = io.BytesIO()
+    project_root = None
+    if save_to_project:
+        p_path = session.get("current_project_path")
+        if p_path:
+            project_root = Path(p_path)
+            if project_root.exists():
+                project_root = project_root / "rawdata"
+                project_root.mkdir(parents=True, exist_ok=True)
+            else:
+                warnings.append(f"Project path not found: {p_path}. Copy to project skipped.")
+                project_root = None
+        else:
+            warnings.append("No active project selected; copy to project skipped.")
     try:
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for f in files:
@@ -1085,6 +1146,30 @@ def api_physio_rename():
                     
                     f_content = f.read()
                     zf.writestr(zip_path, f_content)
+
+                    if project_root:
+                        dest_path = project_root / Path(zip_path)
+
+                        # Warn if subject folder does not yet exist (but still allow creation)
+                        subject_label = None
+                        if parse_bids_filename:
+                            bids_parts = parse_bids_filename(new_name)
+                            if bids_parts:
+                                subject_label = bids_parts.get("sub")
+                        if not subject_label:
+                            m = re.search(r"(sub-[A-Za-z0-9]+)", new_name)
+                            if m:
+                                subject_label = m.group(1)
+
+                        if subject_label:
+                            subject_dir = project_root / subject_label
+                            if not subject_dir.exists() and subject_label not in warned_subjects:
+                                warnings.append(f"Subject folder {subject_label} did not exist and will be created in project.")
+                                warned_subjects.add(subject_label)
+
+                        dest_path.parent.mkdir(parents=True, exist_ok=True)
+                        with open(dest_path, "wb") as out_f:
+                            out_f.write(f_content)
                     results.append({"old": old_name, "new": new_name, "success": True, "path": zip_path})
                 except Exception as e:
                     results.append({"old": old_name, "new": str(e), "success": False})
@@ -1096,7 +1181,9 @@ def api_physio_rename():
         return jsonify({
             "status": "success",
             "results": results,
-            "zip": zip_base64
+            "zip": zip_base64,
+            "project_saved": bool(project_root),
+            "warnings": warnings
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
