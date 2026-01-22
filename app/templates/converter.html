@@ -521,28 +521,29 @@
                                 </div>
                                 {% endif %}
 
-                                <div class="col-12 mt-3">
-                                    <div class="row g-3 align-items-end">
-                                        <div class="col-md-3">
-                                            <label for="convertAliasFile" class="form-label">ID Mapping File (optional)</label>
-                                            <input class="form-control" type="file" id="convertAliasFile" accept=".tsv,.txt">
-                                            <div class="form-text">Only needed if item IDs changed over time.</div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label for="convertSession" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control border-warning" id="convertSession" placeholder="e.g. 1, 2, 3..." required>
-                                            <div class="form-text text-warning">Creates 'ses-1', 'ses-2', etc.</div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label for="convertUnknown" class="form-label">Unknown Items</label>
-                                            <select class="form-select" id="convertUnknown">
-                                                <option value="warn" selected>Show warnings</option>
-                                                <option value="ignore">Skip silently</option>
-                                                <option value="error">Stop on unknown</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="form-check form-switch mt-4">
+                                <!-- Row 5: ID Mapping, Session, Unknown Items, Strict Levels -->
+                                <div class="row g-3 mt-3">
+                                    <div class="col-md-3">
+                                        <label for="convertAliasFile" class="form-label">ID Mapping File (optional)</label>
+                                        <input class="form-control" type="file" id="convertAliasFile" accept=".tsv,.txt">
+                                        <div class="form-text">Only needed if item IDs changed over time.</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="convertSession" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control border-warning" id="convertSession" placeholder="e.g. 1, 2, 3..." required>
+                                        <div class="form-text text-warning">Creates 'ses-1', 'ses-2', etc.</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="convertUnknown" class="form-label">Unknown Items</label>
+                                        <select class="form-select" id="convertUnknown">
+                                            <option value="warn" selected>Show warnings</option>
+                                            <option value="ignore">Skip silently</option>
+                                            <option value="error">Stop on unknown</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end">
+                                        <div class="w-100">
+                                            <div class="form-check form-switch">
                                                 <input class="form-check-input" type="checkbox" id="convertStrictLevels">
                                                 <label class="form-check-label" for="convertStrictLevels">Strict Levels Validation</label>
                                             </div>
