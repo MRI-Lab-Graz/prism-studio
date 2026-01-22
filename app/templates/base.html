@@ -85,6 +85,12 @@
         .footer-contact a {
             color: inherit;
         }
+        .dropdown-item.disabled {
+            color: #6c757d;
+            pointer-events: none;
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -128,7 +134,7 @@
                             <i class="fas fa-toolbox me-1 text-info"></i>Tools
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="toolsDropdown">
-                            <li><a class="dropdown-item" href="{{ url_for('tools.file_management') }}">
+                            <li><a class="dropdown-item{% if not current_project.path %} disabled{% endif %}" href="{% if current_project.path %}{{ url_for('tools.file_management') }}{% else %}#{% endif %}" id="fileManagementLink" {% if not current_project.path %}title="Please load a project first"{% endif %}>
                                 <i class="fas fa-file-import me-2 text-warning"></i>File Management
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
@@ -164,6 +170,15 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Handle File Management link disabled state
+            const fileManagementLink = document.getElementById('fileManagementLink');
+            if (fileManagementLink?.classList.contains('disabled')) {
+                fileManagementLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    alert('Please load a project first');
+                });
+            }
+            
             document.getElementById('quitAppBtn')?.addEventListener('click', async function(e) {
                 e.preventDefault();
                 if (!confirm('Are you sure you want to quit PRISM Studio?')) return;
