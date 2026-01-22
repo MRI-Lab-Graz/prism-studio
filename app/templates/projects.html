@@ -304,15 +304,15 @@
                 <form id="openProjectForm">
                     <div class="row g-3">
                         <div class="col-md-7">
-                            <label for="existingPath" class="form-label fw-bold">Project Path or project.json</label>
+                            <label for="existingPath" class="form-label fw-bold">Select project.json</label>
                             <div class="input-group">
                                 <input type="text" class="form-control" id="existingPath"
                                        placeholder="C:\\Users\\...\\project\\project.json" required>
-                                <button class="btn btn-outline-secondary" type="button" id="browseExistingPath">
-                                    <i class="fas fa-folder-open"></i> Browse
+                                <button class="btn btn-outline-secondary" type="button" id="browseExistingPath" title="Open file picker (or type path manually)">
+                                    <i class="fas fa-file-code"></i> Browse
                                 </button>
                             </div>
-                            <small class="text-muted">Path to your existing PRISM/BIDS dataset or its project.json file</small>
+                            <small class="text-muted">Type the full path to your <code>project.json</code> file, or click Browse to select it.</small>
                         </div>
                         <div class="col-md-5">
                             <label class="form-label fw-bold d-none d-md-block">&nbsp;</label>
@@ -893,6 +893,8 @@
                 if (path) {
                     document.getElementById('existingPath').value = path;
                     selectProjectType('open');
+                    // Automatically trigger the load
+                    document.getElementById('openProjectForm').dispatchEvent(new Event('submit'));
                 }
             });
         }
@@ -1153,16 +1155,30 @@
     // Browse button for existing project
     document.getElementById('browseExistingPath').addEventListener('click', async function() {
         try {
-            const response = await fetch('/api/browse-folder');
+            const response = await fetch('/api/browse-file');
+            
+            // Check if response is HTML instead of JSON (indicates error page)
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                alert('File picker is not available.\\n\\nPlease manually type the full path to your project.json file in the field above.\\n\\nExample: C:\\\\Users\\\\YourName\\\\Documents\\\\MyProject\\\\project.json');
+                return;
+            }
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                alert('File picker error: ' + (errorData.error || 'Please enter the path manually.'));
+                return;
+            }
+
             const data = await response.json();
             if (data.path) {
                 document.getElementById('existingPath').value = data.path;
             } else if (data.error) {
-                alert('Folder picker unavailable: ' + data.error);
+                alert('File picker unavailable: ' + data.error + '\\n\\nPlease enter the path manually.');
             }
         } catch (error) {
             console.error('Browse error:', error);
-            alert('Failed to open folder picker. Please enter path manually.');
+            alert('File picker unavailable.\\n\\nPlease manually type the full path to your project.json file.\\n\\nExample: C:\\\\Users\\\\YourName\\\\Documents\\\\MyProject\\\\project.json');
         }
     });
 
@@ -1297,6 +1313,21 @@
         btn.disabled = true;
 
         const path = document.getElementById('existingPath').value;
+
+        // Strict validation: must be a project.json file
+        if (!path.toLowerCase().endsWith('project.json')) {
+            const resultDiv = document.getElementById('validationResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="validation-result invalid">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>Selection Error</h5>
+                    <p class="mb-0">You must select the <strong>project.json</strong> file. Folder selection is no longer supported for project loading.</p>
+                </div>
+            `;
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            return;
+        }
 
         try {
             const response = await fetch('/api/projects/validate', {

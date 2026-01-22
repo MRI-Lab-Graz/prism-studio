@@ -243,6 +243,8 @@ def ensure_project_selected_first():
     # Allow utility endpoints needed before a project is selected (used on /projects).
     if path == "/api/browse-folder":
         return None
+    if path == "/api/browse-file":
+        return None
     if path.startswith("/api/settings/"):
         return None
 
