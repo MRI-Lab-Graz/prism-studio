@@ -430,8 +430,114 @@ def _parse_lss_structure(root, get_text):
     return questions_map, groups_map
 
 
-def parse_lss_xml(xml_content, task_name=None):
-    """Parse a LimeSurvey .lss XML blob into a Prism sidecar dict."""
+def _build_standard_prism_questions(questions_map, groups_map, language="en"):
+    """Convert LimeSurvey question data to standard PRISM template format.
+
+    Standard PRISM format:
+    - Questions are flat at top level (matrix subquestions become individual questions)
+    - Each question has Description and optional Levels
+    - Multilingual structure: {"en": "text", "de": "text"}
+    - No LimeSurvey-specific fields (QuestionType, Position, Mandatory)
+
+    Args:
+        questions_map: Dict from _parse_lss_structure with question data
+        groups_map: Dict from _parse_lss_structure with group data
+        language: Language code for the template (default: "en")
+
+    Returns:
+        Dict of question_code -> {Description: {...}, Levels: {...}}
+    """
+    prism_questions = {}
+
+    # Sort questions by group order, then question order
+    sorted_questions = sorted(
+        questions_map.items(),
+        key=lambda x: (
+            groups_map.get(x[1]["gid"], {}).get("order", 0),
+            x[1]["question_order"]
+        )
+    )
+
+    for qid, q_data in sorted_questions:
+        q_type = q_data.get("type", "")
+        title = q_data.get("title", "")
+        question_text = q_data.get("question", "")
+        levels = q_data.get("levels", {})
+        subquestions = q_data.get("subquestions", [])
+
+        # Array/Matrix types (F, A, B, C, E, H, 1, ;, :) have subquestions
+        # These should be flattened - each subquestion becomes a top-level question
+        array_types = {"F", "A", "B", "C", "E", "H", "1", ";", ":"}
+
+        if q_type in array_types and subquestions:
+            # Matrix question: flatten subquestions to individual questions
+            # Convert levels to multilingual format once (shared by all subquestions)
+            multilingual_levels = {}
+            for code, answer_text in levels.items():
+                if isinstance(answer_text, dict):
+                    multilingual_levels[code] = answer_text
+                else:
+                    multilingual_levels[code] = {language: str(answer_text) if answer_text else ""}
+
+            for sq in subquestions:
+                sq_code = sq.get("code", "")
+                sq_text = sq.get("text", "")
+
+                # Create individual question entry
+                # Use subquestion code as the question key
+                q_key = sq_code
+
+                # Build description: combine parent question text with subquestion text if different
+                if question_text and sq_text and question_text != sq_text:
+                    # If parent has a prompt, include it
+                    full_desc = sq_text  # Usually subquestion text is the actual item
+                else:
+                    full_desc = sq_text or question_text
+
+                entry = {
+                    "Description": {language: full_desc} if full_desc else {language: ""}
+                }
+
+                # Add Levels if present
+                if multilingual_levels:
+                    entry["Levels"] = multilingual_levels
+
+                prism_questions[q_key] = entry
+
+        else:
+            # Non-matrix question: add as single entry
+            q_key = title
+
+            # Convert description to multilingual format
+            entry = {
+                "Description": {language: question_text} if question_text else {language: ""}
+            }
+
+            # Convert levels to multilingual format if present
+            if levels:
+                multilingual_levels = {}
+                for code, answer_text in levels.items():
+                    if isinstance(answer_text, dict):
+                        multilingual_levels[code] = answer_text
+                    else:
+                        multilingual_levels[code] = {language: str(answer_text) if answer_text else ""}
+                entry["Levels"] = multilingual_levels
+
+            prism_questions[q_key] = entry
+
+    return prism_questions
+
+
+def parse_lss_xml(xml_content, task_name=None, use_standard_format=True):
+    """Parse a LimeSurvey .lss XML blob into a Prism sidecar dict.
+
+    Args:
+        xml_content: XML content as bytes or string
+        task_name: Optional task name override
+        use_standard_format: If True, produce standard PRISM format compatible with
+                           Survey Customizer. If False, use legacy format with
+                           LimeSurvey-specific fields.
+    """
     try:
         root = ET.fromstring(xml_content)
     except ET.ParseError as e:
@@ -464,80 +570,87 @@ def parse_lss_xml(xml_content, task_name=None):
                     questions_map[qid]["levels"][code] = answer
 
     # 3. Construct Prism JSON
-    prism_json = {}
+    language = survey_meta.get("language", "en")
 
-    # Sort questions by group order, then question order for proper sequencing
-    sorted_questions = sorted(
-        questions_map.items(),
-        key=lambda x: (
-            groups_map.get(x[1]["gid"], {}).get("order", 0),
-            x[1]["question_order"]
+    if use_standard_format:
+        # Use standard PRISM format (compatible with Survey Customizer)
+        prism_json = _build_standard_prism_questions(questions_map, groups_map, language)
+    else:
+        # Legacy format with LimeSurvey-specific fields
+        prism_json = {}
+
+        # Sort questions by group order, then question order for proper sequencing
+        sorted_questions = sorted(
+            questions_map.items(),
+            key=lambda x: (
+                groups_map.get(x[1]["gid"], {}).get("order", 0),
+                x[1]["question_order"]
+            )
         )
-    )
 
-    for qid, q_data in sorted_questions:
-        key = q_data["title"]
-        gid = q_data["gid"]
+        for qid, q_data in sorted_questions:
+            key = q_data["title"]
+            gid = q_data["gid"]
 
-        # Get group info
-        group_info = groups_map.get(gid, {"name": "", "order": 0, "description": ""})
+            # Get group info
+            group_info = groups_map.get(gid, {"name": "", "order": 0, "description": ""})
 
-        entry = {
-            "Description": q_data["question"],
-            "QuestionType": q_data["type_name"],
-            "Mandatory": q_data["mandatory"],
-            "Position": {
-                "Group": group_info["name"],
-                "GroupOrder": group_info["order"],
-                "QuestionOrder": q_data["question_order"]
-            }
-        }
-
-        # Add answer levels if present
-        if q_data["levels"]:
-            entry["Levels"] = q_data["levels"]
-
-        # Add subquestions/items for array-type questions
-        if q_data["subquestions"]:
-            items = {}
-            for sq in q_data["subquestions"]:
-                item_entry = {
-                    "Description": sq["text"],
-                    "Order": sq["order"],
+            entry = {
+                "Description": q_data["question"],
+                "QuestionType": q_data["type_name"],
+                "Mandatory": q_data["mandatory"],
+                "Position": {
+                    "Group": group_info["name"],
+                    "GroupOrder": group_info["order"],
+                    "QuestionOrder": q_data["question_order"]
                 }
-                # Only include ScaleId if not 0 (dual-scale arrays)
-                if sq["scale_id"] != 0:
-                    item_entry["ScaleId"] = sq["scale_id"]
-                # Include media URLs if present
-                if sq.get("media_urls"):
-                    item_entry["MediaUrls"] = sq["media_urls"]
-                items[sq["code"]] = item_entry
-            entry["Items"] = items
+            }
 
-        # Add "Other" option flag
-        if q_data["other"]:
-            entry["HasOtherOption"] = True
+            # Add answer levels if present
+            if q_data["levels"]:
+                entry["Levels"] = q_data["levels"]
 
-        # Add help text if present
-        if q_data["help"]:
-            entry["HelpText"] = q_data["help"]
+            # Add subquestions/items for array-type questions
+            if q_data["subquestions"]:
+                items = {}
+                for sq in q_data["subquestions"]:
+                    item_entry = {
+                        "Description": sq["text"],
+                        "Order": sq["order"],
+                    }
+                    # Only include ScaleId if not 0 (dual-scale arrays)
+                    if sq["scale_id"] != 0:
+                        item_entry["ScaleId"] = sq["scale_id"]
+                    # Include media URLs if present
+                    if sq.get("media_urls"):
+                        item_entry["MediaUrls"] = sq["media_urls"]
+                    items[sq["code"]] = item_entry
+                entry["Items"] = items
 
-        # Add validation regex if present
-        if q_data["validation_regex"]:
-            entry["ValidationRegex"] = q_data["validation_regex"]
+            # Add "Other" option flag
+            if q_data["other"]:
+                entry["HasOtherOption"] = True
 
-        # Add relevance/condition if present (conditional display)
-        if q_data["relevance"]:
-            entry["Condition"] = q_data["relevance"]
+            # Add help text if present
+            if q_data["help"]:
+                entry["HelpText"] = q_data["help"]
 
-        # Add question attributes (design options, etc.)
-        if q_data["attributes"]:
-            # Filter out empty values and organize attributes
-            attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
-            if attrs:
-                entry["Attributes"] = attrs
+            # Add validation regex if present
+            if q_data["validation_regex"]:
+                entry["ValidationRegex"] = q_data["validation_regex"]
 
-        prism_json[key] = entry
+            # Add relevance/condition if present (conditional display)
+            if q_data["relevance"]:
+                entry["Condition"] = q_data["relevance"]
+
+            # Add question attributes (design options, etc.)
+            if q_data["attributes"]:
+                # Filter out empty values and organize attributes
+                attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
+                if attrs:
+                    entry["Attributes"] = attrs
+
+            prism_json[key] = entry
 
     # Use survey title if available, otherwise use task_name
     survey_title = survey_meta.get("title") or task_name or "survey"
@@ -585,8 +698,13 @@ def parse_lss_xml(xml_content, task_name=None):
     return metadata
 
 
-def parse_lss_xml_by_groups(xml_content):
+def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
     """Parse a LimeSurvey .lss XML blob and split into separate questionnaires by group.
+
+    Args:
+        xml_content: XML content as bytes or string
+        use_standard_format: If True, produce standard PRISM format (flat questions,
+                           multilingual structure). If False, use legacy format.
 
     Returns:
         dict: {group_name: prism_json_dict, ...} or None on error
@@ -604,6 +722,7 @@ def parse_lss_xml_by_groups(xml_content):
 
     # Get survey-level metadata
     survey_meta = _parse_survey_metadata(root, get_text)
+    language = survey_meta.get("language", "en")
 
     questions_map, groups_map = _parse_lss_structure(root, get_text)
 
@@ -646,63 +765,115 @@ def parse_lss_xml_by_groups(xml_content):
         group_description = group_info.get("description", "")
 
         # Sort questions by question_order within the group
-        sorted_questions = sorted(questions_list, key=lambda x: x[1]["question_order"])
+        sorted_questions_list = sorted(questions_list, key=lambda x: x[1]["question_order"])
 
-        # Build question entries
+        # Build question entries based on format
         questions_dict = {}
-        for qid, q_data in sorted_questions:
-            key = q_data["title"]
-            entry = {
-                "Description": q_data["question"],
-                "QuestionType": q_data["type_name"],
-                "Mandatory": q_data["mandatory"],
-                "Position": {
-                    "Group": group_name,
-                    "GroupOrder": group_order,
-                    "QuestionOrder": q_data["question_order"]
-                }
-            }
 
-            # Add answer levels if present
-            if q_data["levels"]:
-                entry["Levels"] = q_data["levels"]
+        if use_standard_format:
+            # Standard PRISM format: flatten matrix questions, use multilingual structure
+            for qid, q_data in sorted_questions_list:
+                q_type = q_data.get("type", "")
+                title = q_data.get("title", "")
+                question_text = q_data.get("question", "")
+                levels = q_data.get("levels", {})
+                subquestions = q_data.get("subquestions", [])
 
-            # Add subquestions/items for array-type questions
-            if q_data["subquestions"]:
-                items = {}
-                for sq in q_data["subquestions"]:
-                    item_entry = {
-                        "Description": sq["text"],
-                        "Order": sq["order"],
+                # Array/Matrix types should be flattened
+                array_types = {"F", "A", "B", "C", "E", "H", "1", ";", ":"}
+
+                if q_type in array_types and subquestions:
+                    # Convert levels to multilingual format
+                    multilingual_levels = {}
+                    for code, answer_text in levels.items():
+                        if isinstance(answer_text, dict):
+                            multilingual_levels[code] = answer_text
+                        else:
+                            multilingual_levels[code] = {language: str(answer_text) if answer_text else ""}
+
+                    for sq in subquestions:
+                        sq_code = sq.get("code", "")
+                        sq_text = sq.get("text", "")
+
+                        entry = {
+                            "Description": {language: sq_text} if sq_text else {language: ""}
+                        }
+                        if multilingual_levels:
+                            entry["Levels"] = multilingual_levels
+
+                        questions_dict[sq_code] = entry
+                else:
+                    # Non-matrix question
+                    entry = {
+                        "Description": {language: question_text} if question_text else {language: ""}
                     }
-                    if sq["scale_id"] != 0:
-                        item_entry["ScaleId"] = sq["scale_id"]
-                    if sq.get("media_urls"):
-                        item_entry["MediaUrls"] = sq["media_urls"]
-                    items[sq["code"]] = item_entry
-                entry["Items"] = items
+                    if levels:
+                        multilingual_levels = {}
+                        for code, answer_text in levels.items():
+                            if isinstance(answer_text, dict):
+                                multilingual_levels[code] = answer_text
+                            else:
+                                multilingual_levels[code] = {language: str(answer_text) if answer_text else ""}
+                        entry["Levels"] = multilingual_levels
 
-            # Add "Other" option flag
-            if q_data["other"]:
-                entry["HasOtherOption"] = True
+                    questions_dict[title] = entry
+        else:
+            # Legacy format with LimeSurvey-specific fields
+            for qid, q_data in sorted_questions_list:
+                key = q_data["title"]
+                entry = {
+                    "Description": q_data["question"],
+                    "QuestionType": q_data["type_name"],
+                    "Mandatory": q_data["mandatory"],
+                    "Position": {
+                        "Group": group_name,
+                        "GroupOrder": group_order,
+                        "QuestionOrder": q_data["question_order"]
+                    }
+                }
 
-            # Add help text if present
-            if q_data["help"]:
-                entry["HelpText"] = q_data["help"]
+                # Add answer levels if present
+                if q_data["levels"]:
+                    entry["Levels"] = q_data["levels"]
 
-            # Add validation regex if present
-            if q_data["validation_regex"]:
-                entry["ValidationRegex"] = q_data["validation_regex"]
+                # Add subquestions/items for array-type questions
+                if q_data["subquestions"]:
+                    items = {}
+                    for sq in q_data["subquestions"]:
+                        item_entry = {
+                            "Description": sq["text"],
+                            "Order": sq["order"],
+                        }
+                        if sq["scale_id"] != 0:
+                            item_entry["ScaleId"] = sq["scale_id"]
+                        if sq.get("media_urls"):
+                            item_entry["MediaUrls"] = sq["media_urls"]
+                        items[sq["code"]] = item_entry
+                    entry["Items"] = items
 
-            # Add relevance/condition if present
-            if q_data["relevance"]:
-                entry["Condition"] = q_data["relevance"]
+                # Add "Other" option flag
+                if q_data["other"]:
+                    entry["HasOtherOption"] = True
 
-            # Add question attributes (design options, etc.)
-            if q_data["attributes"]:
-                attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
-                if attrs:
-                    entry["Attributes"] = attrs
+                # Add help text if present
+                if q_data["help"]:
+                    entry["HelpText"] = q_data["help"]
+
+                # Add validation regex if present
+                if q_data["validation_regex"]:
+                    entry["ValidationRegex"] = q_data["validation_regex"]
+
+                # Add relevance/condition if present
+                if q_data["relevance"]:
+                    entry["Condition"] = q_data["relevance"]
+
+                # Add question attributes (design options, etc.)
+                if q_data["attributes"]:
+                    attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
+                    if attrs:
+                        entry["Attributes"] = attrs
+
+                questions_dict[key] = entry
 
             questions_dict[key] = entry
 
