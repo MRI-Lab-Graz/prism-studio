@@ -150,13 +150,17 @@ def create_project():
 
         if result.get("success"):
             # Set as current working project (folder path for internal logic)
-            set_current_project(path, config.get("name"))
-            
+            project_name = config.get("name") or Path(path).name
+            set_current_project(path, project_name)
+
+            # Persist to settings file for restoration after app restart
+            _save_last_project(path, project_name)
+
             # Return the project.json path for the UI to use as handle
             project_json_path = str(Path(path) / "project.json")
             result["current_project"] = {
                 "path": project_json_path,
-                "name": session.get("current_project_name")
+                "name": project_name
             }
             return jsonify(result)
         else:
@@ -210,12 +214,16 @@ def validate_project():
         result["success"] = True
 
         # Set as current working project - use the folder for internal logic, but UI will remember the json
-        set_current_project(root_path)
-        
+        project_name = session.get("current_project_name") or root_path_obj.name
+        set_current_project(root_path, project_name)
+
+        # Persist to settings file for restoration after app restart
+        _save_last_project(root_path, project_name)
+
         # Override the return path to be the project.json path so UI stores/reloads via the file
         result["current_project"] = {
             "path": project_json_path,
-            "name": session.get("current_project_name")
+            "name": project_name
         }
 
         return jsonify(result)
@@ -674,6 +682,7 @@ def save_dataset_description():
         # If name changed, also update session name for UI consistency
         if "Name" in description:
             set_current_project(str(project_path), description["Name"])
+            _save_last_project(str(project_path), description["Name"])
 
         return jsonify({
             "success": True,
