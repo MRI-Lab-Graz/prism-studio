@@ -1700,14 +1700,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasFile = convertExcelFile.files && convertExcelFile.files.length === 1;
         const mode = getConvertMode();
 
-        if (mode === 'template') {
-            // Template mode only needs a file
-            convertBtn.disabled = !hasFile;
-        } else {
-            // Data mode needs file + library path
-            const hasLibraryPath = convertLibraryPathInput && convertLibraryPathInput.value.trim() !== '';
-            convertBtn.disabled = !(hasFile && hasLibraryPath);
-        }
+        // Both modes only need a file now (library path is resolved automatically)
+        convertBtn.disabled = !hasFile;
 
         // Update button text based on mode
         if (convertBtn) {
@@ -2733,23 +2727,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const libraryPath = convertLibraryPathInput ? convertLibraryPathInput.value.trim() : '';
-        if (!libraryPath) {
-            convertError.textContent = 'Please select a survey template library folder first.';
-            convertError.classList.remove('d-none');
-            return;
-        }
-
-        // Show log container
-        conversionLogContainer.classList.remove('d-none');
-        conversionLogBody.classList.remove('d-none');
-        const icon = toggleLogBtn.querySelector('i');
-        icon.classList.remove('fa-chevron-right');
-        icon.classList.add('fa-chevron-down');
-
-        appendLog(`Starting conversion of: ${file.name}`, 'info');
-        appendLog(`Using library: ${libraryPath}`, 'step');
-
         const formData = new FormData();
         formData.append('excel', file);
 
@@ -2759,15 +2736,23 @@ document.addEventListener('DOMContentLoaded', function() {
             appendLog(`Using alias file: ${alias.name}`, 'step');
         }
 
-        formData.append('library_path', libraryPath);
+        // Library path is now resolved automatically (project first, then global)
         formData.append('dataset_name', convertDatasetName.value.trim());
+        
+        // Show log container
+        conversionLogContainer.classList.remove('d-none');
+        conversionLogBody.classList.remove('d-none');
+        const icon = toggleLogBtn.querySelector('i');
+        icon.classList.remove('fa-chevron-right');
+        icon.classList.add('fa-chevron-down');
+
+        appendLog(`Starting conversion of: ${file.name}`, 'info');
+        appendLog(`Using library: Project library first, then global`, 'step');
         formData.append('unknown', convertUnknown.value);
 
-        const saveToProjectEl = document.getElementById('convertSaveToProject');
-        if (saveToProjectEl && saveToProjectEl.checked) {
-            formData.append('save_to_project', 'true');
-            appendLog('Saving output directly to project', 'step');
-        }
+        // Always save to project's rawdata folder when a project is loaded
+        formData.append('save_to_project', 'true');
+        appendLog('Output will be saved to project rawdata folder', 'step');
 
         // Add ID column if selected
         const idColumn = document.getElementById('convertIdColumn')?.value;
@@ -2848,10 +2833,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 const byteArray = new Uint8Array(byteNumbers);
                 currentZipBlob = new Blob([byteArray], { type: 'application/zip' });
-                appendLog('Dataset ready for download', 'success');
+                appendLog('✓ Data saved to project rawdata folder', 'success');
             } else if (data.blob) {
                 currentZipBlob = data.blob;
-                appendLog('Dataset ready for download', 'success');
+                appendLog('✓ Data saved to project rawdata folder', 'success');
             }
 
             convertInfo.textContent = 'Conversion complete. See results below.';
@@ -2967,7 +2952,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const formData = new FormData();
             formData.append('data', file);
-            formData.append('library_path', libraryPath);
+            // Library path is now resolved automatically (project first, then global)
             formData.append('sheet', (document.getElementById('biometricsSheet') || {value: '0'}).value);
 
             biometricsConvertBtn.disabled = true;
@@ -3050,10 +3035,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             appendLog(`Starting conversion of: ${file.name}`, 'info', biometricsLog);
             appendLog(`Using library: ${libraryPath}`, 'step', biometricsLog);
-
             const formData = new FormData();
             formData.append('data', file);
-            formData.append('library_path', libraryPath);
+            // Library path is now resolved automatically (project first, then global)
             formData.append('dataset_name', biometricsDatasetName.value.trim());
             formData.append('unknown', biometricsUnknown.value);
 
