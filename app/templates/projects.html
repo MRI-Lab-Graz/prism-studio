@@ -307,12 +307,12 @@
                             <label for="existingPath" class="form-label fw-bold">Select project.json</label>
                             <div class="input-group">
                                 <input type="text" class="form-control" id="existingPath"
-                                       placeholder="C:\\Users\\...\\project\\project.json" required>
+                                       placeholder="/Users/YourName/MyProject/project.json" required>
                                 <button class="btn btn-outline-secondary" type="button" id="browseExistingPath" title="Open file picker (or type path manually)">
                                     <i class="fas fa-file-code"></i> Browse
                                 </button>
                             </div>
-                            <small class="text-muted">Type the full path to your <code>project.json</code> file, or click Browse to select it.</small>
+                            <small class="text-muted" id="pathHelp">Type the full path to your <code>project.json</code> file, or click Browse to select it.</small>
                         </div>
                         <div class="col-md-5">
                             <label class="form-label fw-bold d-none d-md-block">&nbsp;</label>
@@ -851,6 +851,30 @@
 
     // Load global settings on page load
     document.addEventListener('DOMContentLoaded', function() {
+        // Set OS-specific path format and help text
+        const isWindows = navigator.platform.toUpperCase().indexOf('WIN') > -1;
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') > -1;
+        const existingPathInput = document.getElementById('existingPath');
+        const pathHelpText = document.getElementById('pathHelp');
+        
+        if (existingPathInput) {
+            if (isWindows) {
+                existingPathInput.placeholder = "C:\\Users\\YourName\\MyProject\\project.json";
+            } else if (isMac) {
+                existingPathInput.placeholder = "/Users/YourName/MyProject/project.json";
+            } else {
+                // Linux
+                existingPathInput.placeholder = "/home/username/MyProject/project.json";
+            }
+        }
+        
+        if (pathHelpText) {
+            let osExample = isWindows ? "C:\\\\Users\\\\YourName\\\\Documents\\\\MyProject\\\\project.json" :
+                           isMac ? "/Users/YourName/Documents/MyProject/project.json" :
+                           "/home/username/Documents/MyProject/project.json";
+            pathHelpText.innerHTML = `Type the full path to your <code>project.json</code> file (e.g., <code>${osExample}</code>), or click Browse to select it. <strong>Only project.json files are supported.</strong>`;
+        }
+        
         loadGlobalSettings();
         loadLibraryInfo();
         initParticipantsStatus();
@@ -1160,7 +1184,9 @@
             // Check if response is HTML instead of JSON (indicates error page)
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
-                alert('File picker is not available.\\n\\nPlease manually type the full path to your project.json file in the field above.\\n\\nExample: C:\\\\Users\\\\YourName\\\\Documents\\\\MyProject\\\\project.json');
+                const isWindows = navigator.platform.toUpperCase().indexOf('WIN') > -1;
+                let example = isWindows ? "C:\\Users\\YourName\\MyProject\\project.json" : "/Users/YourName/MyProject/project.json";
+                alert('File picker is not available.\\n\\nPlease manually type the full path to your project.json file in the field above.\\n\\nExample: ' + example);
                 return;
             }
 
@@ -1174,11 +1200,13 @@
             if (data.path) {
                 document.getElementById('existingPath').value = data.path;
             } else if (data.error) {
-                alert('File picker unavailable: ' + data.error + '\\n\\nPlease enter the path manually.');
+                alert('File picker unavailable: ' + data.error + '\\n\\nPlease select only project.json files.');
             }
         } catch (error) {
             console.error('Browse error:', error);
-            alert('File picker unavailable.\\n\\nPlease manually type the full path to your project.json file.\\n\\nExample: C:\\\\Users\\\\YourName\\\\Documents\\\\MyProject\\\\project.json');
+            const isWindows = navigator.platform.toUpperCase().indexOf('WIN') > -1;
+            let example = isWindows ? "C:\\Users\\YourName\\MyProject\\project.json" : "/Users/YourName/MyProject/project.json";
+            alert('File picker unavailable.\\n\\nPlease manually type the full path to your project.json file.\\n\\nExample: ' + example);
         }
     });
 
