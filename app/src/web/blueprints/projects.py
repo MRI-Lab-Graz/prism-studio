@@ -104,7 +104,7 @@ def _save_last_project(path: str | None, name: str | None):
         current_app.config["LAST_PROJECT_PATH"] = path
         current_app.config["LAST_PROJECT_NAME"] = name
     except Exception as e:
-        print(f"Warning: Could not save last project to settings: {e}")
+        print(f"[WARN] Could not save last project to settings: {e}")
 
 
 @projects_bp.route("/api/projects/create", methods=["POST"])
