@@ -54,6 +54,9 @@ def get_current():
 @projects_bp.route("/api/projects/current", methods=["POST"])
 def set_current():
     """Set or clear the current working project."""
+    from flask import current_app
+    from src.config import load_app_settings, save_app_settings
+
     data = request.get_json()
     if not data:
         return jsonify({"success": False, "error": "No data provided"}), 400
@@ -64,6 +67,8 @@ def set_current():
     if not path:
         session.pop("current_project_path", None)
         session.pop("current_project_name", None)
+        # Also clear from settings
+        _save_last_project(None, None)
         return jsonify({"success": True, "current": get_current_project()})
 
     name = data.get("name")
@@ -72,7 +77,34 @@ def set_current():
         return jsonify({"success": False, "error": "Path does not exist"}), 400
 
     set_current_project(path, name)
+
+    # Save to settings for persistence across restarts
+    _save_last_project(path, name or Path(path).name)
+
     return jsonify({"success": True, "current": get_current_project()})
+
+
+def _save_last_project(path: str | None, name: str | None):
+    """Save the last project to app settings for persistence."""
+    try:
+        from flask import current_app
+        from src.config import load_app_settings, save_app_settings
+
+        # Determine app root
+        app_root = current_app.config.get("BASE_DIR")
+        if not app_root:
+            app_root = Path(__file__).parent.parent.parent.parent
+
+        settings = load_app_settings(app_root=str(app_root))
+        settings.last_project_path = path
+        settings.last_project_name = name
+        save_app_settings(settings, app_root=str(app_root))
+
+        # Also update the app config so it's immediately available
+        current_app.config["LAST_PROJECT_PATH"] = path
+        current_app.config["LAST_PROJECT_NAME"] = name
+    except Exception as e:
+        print(f"Warning: Could not save last project to settings: {e}")
 
 
 @projects_bp.route("/api/projects/create", methods=["POST"])
