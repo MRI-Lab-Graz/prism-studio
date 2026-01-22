@@ -74,7 +74,10 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
         return str(obj)
 
     is_v6 = str(ls_version) == "6"
-    db_version = "640" if is_v6 else "366"
+    # DBVersion must match LimeSurvey's expected schema version
+    # Use conservative versions for maximum compatibility
+    # LS 5.x/6.x: 415 (widely compatible), LS 3.x: 350
+    db_version = "415" if is_v6 else "350"
 
     # IDs
     sid = "123456"  # Dummy Survey ID
@@ -304,7 +307,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                 q_type = "F"
 
                 # Matrix Title (with run suffix if applicable)
-                matrix_title = _apply_run_suffix(f"M_{first_code}", run_number)
+                matrix_title = _apply_run_suffix(f"M{first_code}", run_number)
 
                 # Matrix Text - Use a generic prompt
                 matrix_text = "Please answer the following questions:"
@@ -341,6 +344,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                             "question": matrix_text,
                             "help": "",
                             "language": language,
+                            "sid": sid,
                         },
                     )
 
@@ -386,6 +390,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                                 "question": sub_q_text,
                                 "help": "",
                                 "language": language,
+                                "sid": sid,
                             },
                         )
 
@@ -417,11 +422,12 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                                 add_row(
                                     answer_l10ns_rows,
                                     {
-                                        "id": f"{qid}_{code}",  # Dummy unique ID for l10n row
+                                        "id": f"{qid}_{code}",
                                         "qid": qid,
                                         "code": code,
                                         "answer": ans_text,
                                         "language": language,
+                                        "sid": sid,
                                     },
                                 )
 
@@ -469,6 +475,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                             "question": description,
                             "help": "",
                             "language": language,
+                            "sid": sid,
                         },
                     )
 
@@ -502,6 +509,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                                     "code": code,
                                     "answer": ans_text,
                                     "language": language,
+                                    "sid": sid,
                                 },
                             )
 
@@ -636,7 +644,10 @@ def generate_lss_from_customization(
         str: The XML content if output_path is None, else None.
     """
     is_v6 = str(ls_version) == "6"
-    db_version = "640" if is_v6 else "366"
+    # DBVersion must match LimeSurvey's expected schema version
+    # Use conservative versions for maximum compatibility
+    # LS 5.x/6.x: 415 (widely compatible), LS 3.x: 350
+    db_version = "415" if is_v6 else "350"
 
     # IDs
     sid = "123456"  # Dummy Survey ID
@@ -810,7 +821,7 @@ def generate_lss_from_customization(
                 # Matrix Title
                 first_code = first_q.get("questionCode", "Q")
                 run_number = first_q.get("runNumber")
-                matrix_title = _apply_run_suffix(f"M_{first_code}", run_number)
+                matrix_title = _apply_run_suffix(f"M{first_code}", run_number)
 
                 # Matrix Text
                 matrix_text = "Please answer the following questions:"
@@ -850,6 +861,7 @@ def generate_lss_from_customization(
                             "question": matrix_text,
                             "help": "",
                             "language": language,
+                            "sid": sid,
                         },
                     )
 
@@ -927,6 +939,7 @@ def generate_lss_from_customization(
                                     "code": code,
                                     "answer": ans_text,
                                     "language": language,
+                                    "sid": sid,
                                 },
                             )
             else:
@@ -975,6 +988,7 @@ def generate_lss_from_customization(
                             "question": description,
                             "help": "",
                             "language": language,
+                            "sid": sid,
                         },
                     )
 
@@ -1006,6 +1020,7 @@ def generate_lss_from_customization(
                                     "code": code,
                                     "answer": ans_text,
                                     "language": language,
+                                    "sid": sid,
                                 },
                             )
 
