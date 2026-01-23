@@ -1708,11 +1708,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (idColumnStatus) idColumnStatus.innerHTML = '<span class="text-warning">No columns found</span>';
                     }
                 } else {
-                    const err = await response.json();
-                    if (idColumnStatus) idColumnStatus.innerHTML = `<span class="text-danger">${err.error || 'Error'}</span>`;
+                    try {
+                        const err = await response.json();
+                        console.error('Server returned error:', response.status, err);
+                        if (idColumnStatus) idColumnStatus.innerHTML = `<span class="text-danger">${err.error || 'Error'}</span>`;
+                    } catch (jsonError) {
+                        console.error('Failed to parse error response:', response.status, jsonError);
+                        if (idColumnStatus) idColumnStatus.innerHTML = `<span class="text-danger">Server error (${response.status})</span>`;
+                    }
                 }
             } catch (e) {
-                console.warn('Could not detect columns:', e);
+                console.error('Failed to detect columns:', e.message, e.stack);
                 if (idColumnStatus) idColumnStatus.innerHTML = '<span class="text-danger">Failed to load</span>';
             }
         }

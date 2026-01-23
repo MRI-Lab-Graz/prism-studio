@@ -488,8 +488,8 @@ def _build_bids_survey_filename(
     parts = [sub_id, ses_id, f"task-{task}"]
     if run is not None:
         parts.append(f"run-{run:02d}")
-    parts.append(f"survey.{extension}")
-    return "_".join(parts[:-1]) + f".{extension}"
+    parts.append("survey")  # Add suffix without extension
+    return "_".join(parts) + f".{extension}"
 
 
 def _determine_task_runs(tasks_with_data: set[str], task_occurrences: dict[str, int]) -> dict[str, int | None]:
@@ -512,7 +512,7 @@ def _determine_task_runs(tasks_with_data: set[str], task_occurrences: dict[str, 
     return task_runs
 
 
-def _load_participants_mapping(output_root: Path) -> dict | None:
+def _load_participants_mapping(output_root: Path, log_fn=None) -> dict | None:
     """Load participants_mapping.json from the project.
 
     The mapping file specifies which source columns should be included in
@@ -520,6 +520,7 @@ def _load_participants_mapping(output_root: Path) -> dict | None:
 
     Args:
         output_root: Path to the output root (rawdata/ or dataset root)
+        log_fn: Optional logging function (callable taking message string)
 
     Returns:
         Mapping dict if found, None otherwise
@@ -540,9 +541,17 @@ def _load_participants_mapping(output_root: Path) -> dict | None:
     for p in candidates:
         if p.exists() and p.is_file():
             try:
-                return _read_json(p)
-            except Exception:
+                mapping = _read_json(p)
+                if log_fn:
+                    log_fn(f"Loaded participants_mapping.json from: {p}")
+                return mapping
+            except Exception as e:
+                if log_fn:
+                    log_fn(f"Warning: Failed to load {p}: {e}")
                 continue
+    
+    if log_fn:
+        log_fn("No participants_mapping.json found (using template columns only)")
     return None
 
 
@@ -1895,8 +1904,24 @@ def _write_survey_participants(
     lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
 
     # Try to load participants_mapping.json from the project
+    # Determine project root for searching
+    if output_root.name == "rawdata":
+        search_root = output_root.parent
+    else:
+        search_root = output_root
+    
     participants_mapping = _load_participants_mapping(output_root)
     mapped_cols, col_renames, value_mappings = _get_mapped_columns(participants_mapping)
+    
+    # Log what was found
+    if participants_mapping:
+        print(f"[INFO] Using participants_mapping.json from project ({len(mapped_cols)} mapped columns)")
+        if col_renames:
+            print(f"[INFO]   Column renames: {col_renames}")
+        if value_mappings:
+            print(f"[INFO]   Value transformations for: {list(value_mappings.keys())}")
+    else:
+        print(f"[INFO] No participants_mapping.json found (using template columns only)")
 
     # Start with participant_id column
     df_part = pd.DataFrame({"participant_id": df[id_col].astype(str).map(normalize_sub_fn)})
