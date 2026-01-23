@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "EHI",
-    "Reference": "survey-ehi.json"
+    "Reference": "survey-ehi.json",
+    "TaskName": "ehi"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for The Edinburgh Handedness Inventory (short form)",
-        "de": "Gesamtscore für The Edinburgh Handedness Inventory (short form)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for The Edinburgh Handedness Inventory (short form)",
       "Items": [
         "EHI01",
         "EHI02",
@@ -26,7 +22,7 @@
         "max": 28
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

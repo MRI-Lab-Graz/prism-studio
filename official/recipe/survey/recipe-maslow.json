@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "MASLOW",
-    "Reference": "survey-maslow.json"
+    "Reference": "survey-maslow.json",
+    "TaskName": "maslow"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Maslow’s Hierarchy of Needs",
-        "de": "Gesamtscore für Maslow’s Hierarchy of Needs"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Maslow’s Hierarchy of Needs",
       "Items": [
         "MASLOW01",
         "MASLOW02",
@@ -37,7 +33,7 @@
         "max": 105
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

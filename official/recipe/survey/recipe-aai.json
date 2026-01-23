@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "AAI",
-    "Reference": "survey-aai.json"
+    "Reference": "survey-aai.json",
+    "TaskName": "aai"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Appearance Anxiety Inventory (AAI)",
-        "de": "Gesamtscore für Appearance Anxiety Inventory (AAI)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Appearance Anxiety Inventory (AAI)",
       "Items": [
         "AAI01",
         "AAI02",
@@ -32,7 +28,7 @@
         "max": 70
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

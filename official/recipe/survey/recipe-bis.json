@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "BIS",
-    "Reference": "survey-bis.json"
+    "Reference": "survey-bis.json",
+    "TaskName": "bis"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Barratt’s Impulsiveness scale (BIS)",
-        "de": "Gesamtscore für Barratt’s Impulsiveness scale (BIS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Barratt’s Impulsiveness scale (BIS)",
       "Items": [
         "BIS01",
         "BIS02",
@@ -27,7 +23,7 @@
         "max": 35
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

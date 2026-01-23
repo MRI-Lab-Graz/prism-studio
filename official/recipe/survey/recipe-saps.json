@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "SAPS",
-    "Reference": "survey-saps.json"
+    "Reference": "survey-saps.json",
+    "TaskName": "saps"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Short revised almost perfect scale (SAPS)",
-        "de": "Gesamtscore für Short revised almost perfect scale (SAPS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Short revised almost perfect scale (SAPS)",
       "Items": [
         "SAPS01",
         "SAPS02",
@@ -30,7 +26,7 @@
         "max": 56
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

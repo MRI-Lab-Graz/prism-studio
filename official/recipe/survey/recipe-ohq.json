@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "OHQ",
-    "Reference": "survey-ohq.json"
+    "Reference": "survey-ohq.json",
+    "TaskName": "ohq"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Oxford Happiness Scale",
-        "de": "Gesamtscore für Oxford Happiness Scale"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Oxford Happiness Scale",
       "Items": [
         "OHQ01",
         "OHQ02",
@@ -39,7 +35,7 @@
         "max": 119
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

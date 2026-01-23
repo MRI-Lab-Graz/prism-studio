@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "DASS",
-    "Reference": "survey-dass.json"
+    "Reference": "survey-dass.json",
+    "TaskName": "dass"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Depression Anxiety Stress Scales (DASS)",
-        "de": "Gesamtscore für Depression Anxiety Stress Scales (DASS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Depression Anxiety Stress Scales (DASS)",
       "Items": [
         "DASS01",
         "DASS02",
@@ -64,7 +60,7 @@
         "max": 294
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

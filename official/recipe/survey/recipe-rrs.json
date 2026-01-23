@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "RRS",
-    "Reference": "survey-rrs.json"
+    "Reference": "survey-rrs.json",
+    "TaskName": "rrs"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Rumination Response Scale (RRS)",
-        "de": "Gesamtscore für Rumination Response Scale (RRS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Rumination Response Scale (RRS)",
       "Items": [
         "RRS01",
         "RRS02",
@@ -44,7 +40,7 @@
         "max": 154
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

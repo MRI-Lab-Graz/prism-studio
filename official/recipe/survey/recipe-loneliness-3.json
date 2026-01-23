@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "LONELINESS-3",
-    "Reference": "survey-loneliness-3.json"
+    "Reference": "survey-loneliness-3.json",
+    "TaskName": "loneliness-3"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Loneliness (TILS)",
-        "de": "Gesamtscore für Loneliness (TILS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Loneliness (TILS)",
       "Items": [
         "LONELINESS-301",
         "LONELINESS-302",
@@ -25,7 +21,7 @@
         "max": 21
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

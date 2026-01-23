@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "REI",
-    "Reference": "survey-rei.json"
+    "Reference": "survey-rei.json",
+    "TaskName": "rei"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Rational Experiental Inventory (REI)",
-        "de": "Gesamtscore für Rational Experiental Inventory (REI)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Rational Experiental Inventory (REI)",
       "Items": [
         "REI01",
         "REI02",
@@ -32,7 +28,7 @@
         "max": 70
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

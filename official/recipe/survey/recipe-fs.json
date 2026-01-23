@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "FS",
-    "Reference": "survey-fs.json"
+    "Reference": "survey-fs.json",
+    "TaskName": "fs"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Flourishing Scale (FS)",
-        "de": "Gesamtscore für Flourishing Scale (FS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Flourishing Scale (FS)",
       "Items": [
         "FS01",
         "FS02",
@@ -30,7 +26,7 @@
         "max": 56
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

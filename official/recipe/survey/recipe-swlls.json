@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "SWLLS",
-    "Reference": "survey-swlls.json"
+    "Reference": "survey-swlls.json",
+    "TaskName": "swlls"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Satisfaction with love life scale (SWLLS)",
-        "de": "Gesamtscore für Satisfaction with love life scale (SWLLS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Satisfaction with love life scale (SWLLS)",
       "Items": [
         "SWLLS01",
         "SWLLS02",
@@ -27,7 +23,7 @@
         "max": 35
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

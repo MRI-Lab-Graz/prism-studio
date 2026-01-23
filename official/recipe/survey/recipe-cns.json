@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "CNS",
-    "Reference": "survey-cns.json"
+    "Reference": "survey-cns.json",
+    "TaskName": "cns"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Connectedness to Nature Scale (CNS)",
-        "de": "Gesamtscore für Connectedness to Nature Scale (CNS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Connectedness to Nature Scale (CNS)",
       "Items": [
         "CNS01",
         "CNS02",
@@ -33,7 +29,7 @@
         "max": 77
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

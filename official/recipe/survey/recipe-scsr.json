@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "SCSR",
-    "Reference": "survey-scsr.json"
+    "Reference": "survey-scsr.json",
+    "TaskName": "scsr"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Self-consciousness scale (revised version)",
-        "de": "Gesamtscore für Self-consciousness scale (revised version)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Self-consciousness scale (revised version)",
       "Items": [
         "SCSR01",
         "SCSR02",
@@ -41,7 +37,7 @@
         "max": 133
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

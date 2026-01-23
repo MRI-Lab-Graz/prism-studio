@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "GRIT-S",
-    "Reference": "survey-grit-s.json"
+    "Reference": "survey-grit-s.json",
+    "TaskName": "grit-s"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Short Grit Scale (Grit-S)",
-        "de": "Gesamtscore für Short Grit Scale (Grit-S)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Short Grit Scale (Grit-S)",
       "Items": [
         "GRIT-S01",
         "GRIT-S02",
@@ -26,7 +22,7 @@
         "max": 28
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

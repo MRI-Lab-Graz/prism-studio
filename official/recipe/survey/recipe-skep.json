@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "SKEP",
-    "Reference": "survey-skep.json"
+    "Reference": "survey-skep.json",
+    "TaskName": "skep"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Skepticism towards advertisements (SKEP)",
-        "de": "Gesamtscore für Skepticism towards advertisements (SKEP)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Skepticism towards advertisements (SKEP)",
       "Items": [
         "SKEP01",
         "SKEP02",
@@ -27,7 +23,7 @@
         "max": 35
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

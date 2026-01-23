@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "BFI-S",
-    "Reference": "survey-bfi-s.json"
+    "Reference": "survey-bfi-s.json",
+    "TaskName": "bfi-s"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Short 15-item Big Five Inventory (BFI-S)",
-        "de": "Gesamtscore für Short 15-item Big Five Inventory (BFI-S)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Short 15-item Big Five Inventory (BFI-S)",
       "Items": [
         "BFI-S01",
         "BFI-S02",
@@ -33,7 +29,7 @@
         "max": 77
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

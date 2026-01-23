@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "GAENE",
-    "Reference": "survey-gaene.json"
+    "Reference": "survey-gaene.json",
+    "TaskName": "gaene"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Generalized Acceptance of EvolutioN Evaluation (GAENE)",
-        "de": "Gesamtscore für Generalized Acceptance of EvolutioN Evaluation (GAENE)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Generalized Acceptance of EvolutioN Evaluation (GAENE)",
       "Items": [
         "GAENE01",
         "GAENE02",
@@ -35,7 +31,7 @@
         "max": 91
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

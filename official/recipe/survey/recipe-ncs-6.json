@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "NCS-6",
-    "Reference": "survey-ncs-6.json"
+    "Reference": "survey-ncs-6.json",
+    "TaskName": "ncs-6"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Need for Cognition (NCS-6)",
-        "de": "Gesamtscore für Need for Cognition (NCS-6)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Need for Cognition (NCS-6)",
       "Items": [
         "NCS-601",
         "NCS-602",
@@ -26,7 +22,7 @@
         "max": 28
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

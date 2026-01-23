@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "PNSMD",
-    "Reference": "survey-pnsmd.json"
+    "Reference": "survey-pnsmd.json",
+    "TaskName": "pnsmd"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Relationship satisfaction (PN-SMD)",
-        "de": "Gesamtscore für Relationship satisfaction (PN-SMD)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Relationship satisfaction (PN-SMD)",
       "Items": [
         "PNSMD01",
         "PNSMD02",
@@ -29,7 +25,7 @@
         "max": 49
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

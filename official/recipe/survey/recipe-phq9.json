@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "PHQ9",
-    "Reference": "survey-phq9.json"
+    "Reference": "survey-phq9.json",
+    "TaskName": "phq9"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Patient Health Questionnaire (PHQ-9)",
-        "de": "Gesamtscore für Patient Health Questionnaire (PHQ-9)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Patient Health Questionnaire (PHQ-9)",
       "Items": [
         "PHQ901",
         "PHQ902",
@@ -31,7 +27,7 @@
         "max": 63
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

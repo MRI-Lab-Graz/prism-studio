@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "BES-ALT",
-    "Reference": "survey-bes-alt.json"
+    "Reference": "survey-bes-alt.json",
+    "TaskName": "bes-alt"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Belonging, engagement, and self-confidence in higher education (BES)",
-        "de": "Gesamtscore für Belonging, engagement, and self-confidence in higher education (BES)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Belonging, engagement, and self-confidence in higher education (BES)",
       "Items": [
         "BES-ALT01",
         "BES-ALT02",
@@ -34,7 +30,7 @@
         "max": 84
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

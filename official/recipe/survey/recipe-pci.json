@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "PCI",
-    "Reference": "survey-pci.json"
+    "Reference": "survey-pci.json",
+    "TaskName": "pci"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Procrastinatory Cognitions Inventory (PCI)",
-        "de": "Gesamtscore für Procrastinatory Cognitions Inventory (PCI)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Procrastinatory Cognitions Inventory (PCI)",
       "Items": [
         "PCI01",
         "PCI02",
@@ -40,7 +36,7 @@
         "max": 126
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "LIES",
-    "Reference": "survey-lies.json"
+    "Reference": "survey-lies.json",
+    "TaskName": "lies"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Lying in Everyday Situations Scale (LiES)",
-        "de": "Gesamtscore für Lying in Everyday Situations Scale (LiES)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Lying in Everyday Situations Scale (LiES)",
       "Items": [
         "LIES01",
         "LIES02",
@@ -29,7 +25,7 @@
         "max": 49
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

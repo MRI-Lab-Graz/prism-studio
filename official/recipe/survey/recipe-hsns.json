@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "HSNS",
-    "Reference": "survey-hsns.json"
+    "Reference": "survey-hsns.json",
+    "TaskName": "hsns"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Hypersensitive Narcissism Scale (HSNS)",
-        "de": "Gesamtscore für Hypersensitive Narcissism Scale (HSNS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Hypersensitive Narcissism Scale (HSNS)",
       "Items": [
         "HSNS01",
         "HSNS02",
@@ -32,7 +28,7 @@
         "max": 70
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

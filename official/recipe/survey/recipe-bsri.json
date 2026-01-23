@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "BSRI",
-    "Reference": "survey-bsri.json"
+    "Reference": "survey-bsri.json",
+    "TaskName": "bsri"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Bem sex role inventory (BSRI)",
-        "de": "Gesamtscore für Bem sex role inventory (BSRI)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Bem sex role inventory (BSRI)",
       "Items": [
         "BSRI01",
         "BSRI02",
@@ -42,7 +38,7 @@
         "max": 140
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

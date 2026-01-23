@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "MATE",
-    "Reference": "survey-mate.json"
+    "Reference": "survey-mate.json",
+    "TaskName": "mate"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Measure of Acceptance of the Theory of Evolution (MATE)",
-        "de": "Gesamtscore für Measure of Acceptance of the Theory of Evolution (MATE)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Measure of Acceptance of the Theory of Evolution (MATE)",
       "Items": [
         "MATE01",
         "MATE02",
@@ -32,7 +28,7 @@
         "max": 70
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

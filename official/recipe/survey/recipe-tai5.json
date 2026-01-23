@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "TAI5",
-    "Reference": "survey-tai5.json"
+    "Reference": "survey-tai5.json",
+    "TaskName": "tai5"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Test Anxiety Inventory (TAI-5)",
-        "de": "Gesamtscore für Test Anxiety Inventory (TAI-5)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Test Anxiety Inventory (TAI-5)",
       "Items": [
         "TAI501",
         "TAI502",
@@ -27,7 +23,7 @@
         "max": 35
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

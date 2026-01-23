@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "AISS",
-    "Reference": "survey-aiss.json"
+    "Reference": "survey-aiss.json",
+    "TaskName": "aiss"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Sensation seeking (AISS)",
-        "de": "Gesamtscore für Sensation seeking (AISS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Sensation seeking (AISS)",
       "Items": [
         "AISS01",
         "AISS02",
@@ -36,7 +32,7 @@
         "max": 98
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

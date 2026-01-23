@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "AGG-A",
-    "Reference": "survey-agg-a.json"
+    "Reference": "survey-agg-a.json",
+    "TaskName": "agg-a"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Aggressive behavior scale (for adolescents)",
-        "de": "Gesamtscore für Aggressive behavior scale (for adolescents)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Aggressive behavior scale (for adolescents)",
       "Items": [
         "AGG-A01",
         "AGG-A02",
@@ -33,7 +29,7 @@
         "max": 77
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {
