@@ -117,7 +117,8 @@ def _resolve_effective_library_path() -> Path:
     
     # Fall back to global library
     from src.config import get_effective_library_paths
-    base_dir = Path(current_app.root_path)
+    # current_app.root_path points to /app directory, we need to go up one level to get to the workspace root
+    base_dir = Path(current_app.root_path).parent.resolve()
     lib_paths = get_effective_library_paths(app_root=str(base_dir))
     
     if lib_paths.get("global_library_path"):
@@ -129,6 +130,7 @@ def _resolve_effective_library_path() -> Path:
     default_locations = [
         base_dir / "library" / "survey_i18n",
         base_dir / "survey_library",
+        base_dir / "official" / "library",
     ]
     
     for location in default_locations:
@@ -247,19 +249,16 @@ def api_survey_convert():
 
     # Automatically resolve library path (project first, then global)
     try:
-        library_root = _resolve_effective_library_path()
+        library_path = _resolve_effective_library_path()
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 400
 
-    # Check for official structure: official/library/survey
-    if (library_root / "library" / "survey").is_dir():
-        survey_dir = library_root / "library" / "survey"
-    # Check for standard structure: library/survey
-    elif (library_root / "survey").is_dir():
-        survey_dir = library_root / "survey"
-    # Fall back to root
+    # _resolve_effective_library_path() returns the library directory itself
+    # Check for survey subdirectory
+    if (library_path / "survey").is_dir():
+        survey_dir = library_path / "survey"
     else:
-        survey_dir = library_root
+        survey_dir = library_path
     
     effective_survey_dir = survey_dir
 
@@ -425,19 +424,16 @@ def api_survey_convert_validate():
 
     # Automatically resolve library path (project first, then global)
     try:
-        library_root = _resolve_effective_library_path()
+        library_path = _resolve_effective_library_path()
     except FileNotFoundError as e:
         return jsonify({"error": str(e), "log": log_messages}), 400
 
-    # Check for official structure: official/library/survey
-    if (library_root / "library" / "survey").is_dir():
-        survey_dir = library_root / "library" / "survey"
-    # Check for standard structure: library/survey
-    elif (library_root / "survey").is_dir():
-        survey_dir = library_root / "survey"
-    # Fall back to root
+    # _resolve_effective_library_path() returns the library directory itself
+    # Check for survey subdirectory
+    if (library_path / "survey").is_dir():
+        survey_dir = library_path / "survey"
     else:
-        survey_dir = library_root
+        survey_dir = library_path
     
     effective_survey_dir = survey_dir
 
@@ -471,6 +467,29 @@ def api_survey_convert_validate():
         if alias_upload and getattr(alias_upload, "filename", ""):
             alias_path = tmp_dir_path / secure_filename(alias_upload.filename)
             alias_upload.save(str(alias_path))
+
+        # Copy participants_mapping.json from project to temp directory if it exists
+        project_path = session.get("current_project_path")
+        if project_path and save_to_project:
+            project_path = Path(project_path)
+            if project_path.is_file():
+                project_path = project_path.parent
+            
+            # Search for participants_mapping.json in project
+            mapping_candidates = [
+                project_path / "participants_mapping.json",
+                project_path / "code" / "participants_mapping.json",
+                project_path / "code" / "library" / "participants_mapping.json",
+            ]
+            
+            for mapping_file in mapping_candidates:
+                if mapping_file.exists():
+                    # Copy to temp directory's code/ folder where conversion will look for it
+                    dest_mapping = tmp_dir_path / "code" / "participants_mapping.json"
+                    dest_mapping.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(mapping_file, dest_mapping)
+                    add_log(f"Using participants mapping from: {mapping_file.name}", "info")
+                    break
 
         output_root = tmp_dir_path / "rawdata"
         output_root.mkdir(parents=True, exist_ok=True)

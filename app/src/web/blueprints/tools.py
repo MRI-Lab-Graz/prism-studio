@@ -1510,7 +1510,11 @@ def detect_columns():
         })
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        error_msg = str(e)
+        print(f"ERROR in /api/detect-columns: {error_msg}")
+        print(traceback.format_exc())
+        return jsonify({"error": error_msg}), 500
 
 
 @tools_bp.route("/api/limesurvey-to-prism", methods=["POST"])
