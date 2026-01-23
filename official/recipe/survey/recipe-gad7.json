@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "GAD7",
-    "Reference": "survey-gad7.json"
+    "Reference": "survey-gad7.json",
+    "TaskName": "gad7"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Generalized Anxiety Disorder (GAD-7)",
-        "de": "Gesamtscore für Generalized Anxiety Disorder (GAD-7)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Generalized Anxiety Disorder (GAD-7)",
       "Items": [
         "GAD701",
         "GAD702",
@@ -29,7 +25,7 @@
         "max": 49
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

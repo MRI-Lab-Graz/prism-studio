@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "VAST",
-    "Reference": "survey-vast.json"
+    "Reference": "survey-vast.json",
+    "TaskName": "vast"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Varieties of Sadistic Tendencies (VAST)",
-        "de": "Gesamtscore für Varieties of Sadistic Tendencies (VAST)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Varieties of Sadistic Tendencies (VAST)",
       "Items": [
         "VAST01",
         "VAST02",
@@ -45,7 +41,7 @@
         "max": 161
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

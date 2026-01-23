@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "UPLAS",
-    "Reference": "survey-uplas.json"
+    "Reference": "survey-uplas.json",
+    "TaskName": "uplas"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Loneliness (UPLAS)",
-        "de": "Gesamtscore für Loneliness (UPLAS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Loneliness (UPLAS)",
       "Items": [
         "UPLAS01",
         "UPLAS02",
@@ -42,7 +38,7 @@
         "max": 140
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

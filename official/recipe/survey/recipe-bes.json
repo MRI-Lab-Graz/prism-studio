@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "BES",
-    "Reference": "survey-bes.json"
+    "Reference": "survey-bes.json",
+    "TaskName": "bes"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Body Esteem Scale (BES)",
-        "de": "Gesamtscore für Body Esteem Scale (BES)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Body Esteem Scale (BES)",
       "Items": [
         "BES01",
         "BES02"
@@ -24,7 +20,7 @@
         "max": 14
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

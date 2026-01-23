@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "SOC-3",
-    "Reference": "survey-soc-3.json"
+    "Reference": "survey-soc-3.json",
+    "TaskName": "soc-3"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Spheres of Control Scale (SOC-3)",
-        "de": "Gesamtscore für Spheres of Control Scale (SOC-3)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Spheres of Control Scale (SOC-3)",
       "Items": [
         "SOC-301",
         "SOC-302",
@@ -37,7 +33,7 @@
         "max": 105
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

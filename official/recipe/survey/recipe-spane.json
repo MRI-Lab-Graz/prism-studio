@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "SPANE",
-    "Reference": "survey-spane.json"
+    "Reference": "survey-spane.json",
+    "TaskName": "spane"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Scale of Positive and Negative Experience (SPANE)",
-        "de": "Gesamtscore für Scale of Positive and Negative Experience (SPANE)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Scale of Positive and Negative Experience (SPANE)",
       "Items": [
         "SPANE01",
         "SPANE02",
@@ -34,7 +30,7 @@
         "max": 84
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

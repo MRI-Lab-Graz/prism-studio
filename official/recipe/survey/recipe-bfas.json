@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "BFAS",
-    "Reference": "survey-bfas.json"
+    "Reference": "survey-bfas.json",
+    "TaskName": "bfas"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Facebook Addition Scale (BFAS)",
-        "de": "Gesamtscore für Facebook Addition Scale (BFAS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Facebook Addition Scale (BFAS)",
       "Items": [
         "BFAS01",
         "BFAS02",
@@ -28,7 +24,7 @@
         "max": 42
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "CIRENS",
-    "Reference": "survey-cirens.json"
+    "Reference": "survey-cirens.json",
+    "TaskName": "cirens"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Chronotype: Circadian Energy Scale (CIRENS)",
-        "de": "Gesamtscore für Chronotype: Circadian Energy Scale (CIRENS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Chronotype: Circadian Energy Scale (CIRENS)",
       "Items": [
         "CIRENS01",
         "CIRENS02"
@@ -24,7 +20,7 @@
         "max": 14
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

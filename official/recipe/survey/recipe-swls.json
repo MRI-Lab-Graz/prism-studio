@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "SWLS",
-    "Reference": "survey-swls.json"
+    "Reference": "survey-swls.json",
+    "TaskName": "swls"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Satisfaction with life scale (SWLS)",
-        "de": "Gesamtscore für Satisfaction with life scale (SWLS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Satisfaction with life scale (SWLS)",
       "Items": [
         "SWLS01",
         "SWLS02",
@@ -27,7 +23,7 @@
         "max": 35
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

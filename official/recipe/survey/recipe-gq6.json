@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "GQ6",
-    "Reference": "survey-gq6.json"
+    "Reference": "survey-gq6.json",
+    "TaskName": "gq6"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Gratitude (GQ-6)",
-        "de": "Gesamtscore für Gratitude (GQ-6)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Gratitude (GQ-6)",
       "Items": [
         "GQ601",
         "GQ602",
@@ -26,7 +22,7 @@
         "max": 28
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

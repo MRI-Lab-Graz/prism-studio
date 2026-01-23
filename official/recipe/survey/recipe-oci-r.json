@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "OCI-R",
-    "Reference": "survey-oci-r.json"
+    "Reference": "survey-oci-r.json",
+    "TaskName": "oci-r"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for The ObsessiveâCompulsive Inventory (short version, OCI-R)",
-        "de": "Gesamtscore für The ObsessiveâCompulsive Inventory (short version, OCI-R)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for The ObsessiveâCompulsive Inventory (short version, OCI-R)",
       "Items": [
         "OCI-R01",
         "OCI-R02",
@@ -40,7 +36,7 @@
         "max": 126
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

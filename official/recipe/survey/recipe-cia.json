@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "CIA",
-    "Reference": "survey-cia.json"
+    "Reference": "survey-cia.json",
+    "TaskName": "cia"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Clinical Impairment Assessment Questionnaire (CIA 3.0)",
-        "de": "Gesamtscore für Clinical Impairment Assessment Questionnaire (CIA 3.0)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Clinical Impairment Assessment Questionnaire (CIA 3.0)",
       "Items": [
         "CIA01",
         "CIA02",
@@ -38,7 +34,7 @@
         "max": 112
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

@@ -1012,11 +1012,19 @@ def api_recipes_surveys():
                     
             except Exception as anon_error:
                 import traceback
-                traceback.print_exc()
-                return jsonify({"error": f"Anonymization failed: {str(anon_error)}"}), 500
+                error_trace = traceback.format_exc()
+                print(f"\n{'='*70}\n❌ ANONYMIZATION ERROR\n{'='*70}")
+                print(error_trace)
+                print(f"{'='*70}\n")
+                return jsonify({"error": f"Anonymization failed: {str(anon_error)}\n\nSee terminal for full traceback."}), 500
                 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"\n{'='*70}\n❌ PROCESSING ERROR\n{'='*70}")
+        print(error_trace)
+        print(f"{'='*70}\n")
+        return jsonify({"error": f"{str(e)}\n\nSee terminal for full traceback."}), 500
 
     msg = f"✅ Data processing complete: wrote {result.written_files} file(s)"
     if result.flat_out_path:

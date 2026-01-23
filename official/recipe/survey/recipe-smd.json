@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "SMD",
-    "Reference": "survey-smd.json"
+    "Reference": "survey-smd.json",
+    "TaskName": "smd"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Social Media Disorder Scale (SMD)",
-        "de": "Gesamtscore für Social Media Disorder Scale (SMD)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Social Media Disorder Scale (SMD)",
       "Items": [
         "SMD01",
         "SMD02",
@@ -31,7 +27,7 @@
         "max": 63
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

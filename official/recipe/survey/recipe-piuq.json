@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "PIUQ",
-    "Reference": "survey-piuq.json"
+    "Reference": "survey-piuq.json",
+    "TaskName": "piuq"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Problematic Internet Use Questionnaire (PIUQ)",
-        "de": "Gesamtscore für Problematic Internet Use Questionnaire (PIUQ)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Problematic Internet Use Questionnaire (PIUQ)",
       "Items": [
         "PIUQ01",
         "PIUQ02",
@@ -40,7 +36,7 @@
         "max": 126
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

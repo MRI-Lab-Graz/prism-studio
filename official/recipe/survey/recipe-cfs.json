@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "CFS",
-    "Reference": "survey-cfs.json"
+    "Reference": "survey-cfs.json",
+    "TaskName": "cfs"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Cognitive Flexibility Scale (CFS)",
-        "de": "Gesamtscore für Cognitive Flexibility Scale (CFS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Cognitive Flexibility Scale (CFS)",
       "Items": [
         "CFS01",
         "CFS02",
@@ -30,7 +26,7 @@
         "max": 56
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

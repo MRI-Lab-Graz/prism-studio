@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "SD3",
-    "Reference": "survey-sd3.json"
+    "Reference": "survey-sd3.json",
+    "TaskName": "sd3"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for A brief measure of dark personality traits (SD3)",
-        "de": "Gesamtscore für A brief measure of dark personality traits (SD3)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for A brief measure of dark personality traits (SD3)",
       "Items": [
         "SD301",
         "SD302",
@@ -44,7 +40,7 @@
         "max": 154
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

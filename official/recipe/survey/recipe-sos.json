@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "SOS",
-    "Reference": "survey-sos.json"
+    "Reference": "survey-sos.json",
+    "TaskName": "sos"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Service to Others in Sobriety (SOS) questionnaire",
-        "de": "Gesamtscore für Service to Others in Sobriety (SOS) questionnaire"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Service to Others in Sobriety (SOS) questionnaire",
       "Items": [
         "SOS01",
         "SOS02",
@@ -34,7 +30,7 @@
         "max": 84
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "DASS21",
-    "Reference": "survey-dass21.json"
+    "Reference": "survey-dass21.json",
+    "TaskName": "dass21"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for The Depression, Anxiety, and Stress Scales with 21 items (DASS-21)",
-        "de": "Gesamtscore für The Depression, Anxiety, and Stress Scales with 21 items (DASS-21)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for The Depression, Anxiety, and Stress Scales with 21 items (DASS-21)",
       "Items": [
         "DASS2101",
         "DASS2102",
@@ -43,7 +39,7 @@
         "max": 147
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

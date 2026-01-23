@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "NMP-Q",
-    "Reference": "survey-nmp-q.json"
+    "Reference": "survey-nmp-q.json",
+    "TaskName": "nmp-q"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Nomophobia Questionnaire (NMP-Q)",
-        "de": "Gesamtscore für Nomophobia Questionnaire (NMP-Q)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Nomophobia Questionnaire (NMP-Q)",
       "Items": [
         "NMP-Q01",
         "NMP-Q02",
@@ -31,7 +27,7 @@
         "max": 63
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

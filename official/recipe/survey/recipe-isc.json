@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "ISC",
-    "Reference": "survey-isc.json"
+    "Reference": "survey-isc.json",
+    "TaskName": "isc"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Impulsivity Scale for Children (ISC)",
-        "de": "Gesamtscore für Impulsivity Scale for Children (ISC)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Impulsivity Scale for Children (ISC)",
       "Items": [
         "ISC01",
         "ISC02",
@@ -30,7 +26,7 @@
         "max": 56
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

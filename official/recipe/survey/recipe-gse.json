@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "GSE",
-    "Reference": "survey-gse.json"
+    "Reference": "survey-gse.json",
+    "TaskName": "gse"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Generalized Self Efficacy scale (GSE)",
-        "de": "Gesamtscore für Generalized Self Efficacy scale (GSE)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Generalized Self Efficacy scale (GSE)",
       "Items": [
         "GSE01",
         "GSE02",
@@ -32,7 +28,7 @@
         "max": 70
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

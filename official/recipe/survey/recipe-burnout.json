@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "BURNOUT",
-    "Reference": "survey-burnout.json"
+    "Reference": "survey-burnout.json",
+    "TaskName": "burnout"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Teacher burnout",
-        "de": "Gesamtscore für Teacher burnout"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Teacher burnout",
       "Items": [
         "BURNOUT01",
         "BURNOUT02",
@@ -42,7 +38,7 @@
         "max": 140
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

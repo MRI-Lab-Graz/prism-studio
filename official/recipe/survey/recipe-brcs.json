@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "BRCS",
-    "Reference": "survey-brcs.json"
+    "Reference": "survey-brcs.json",
+    "TaskName": "brcs"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Resilience (BRCS)",
-        "de": "Gesamtscore für Resilience (BRCS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Resilience (BRCS)",
       "Items": [
         "BRCS01",
         "BRCS02",
@@ -26,7 +22,7 @@
         "max": 28
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "ZKPQ",
-    "Reference": "survey-zkpq.json"
+    "Reference": "survey-zkpq.json",
+    "TaskName": "zkpq"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for ZuckermanâKuhlman Personality Questionnaire (Shortened, ZKPQ-50-CC)",
-        "de": "Gesamtscore für ZuckermanâKuhlman Personality Questionnaire (Shortened, ZKPQ-50-CC)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for ZuckermanâKuhlman Personality Questionnaire (Shortened, ZKPQ-50-CC)",
       "Items": [
         "ZKPQ01",
         "ZKPQ02",
@@ -60,7 +56,7 @@
         "max": 266
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

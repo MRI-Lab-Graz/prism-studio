@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "LOT-R",
-    "Reference": "survey-lot-r.json"
+    "Reference": "survey-lot-r.json",
+    "TaskName": "lot-r"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Optimism (LOT-R)",
-        "de": "Gesamtscore für Optimism (LOT-R)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Optimism (LOT-R)",
       "Items": [
         "LOT-R01",
         "LOT-R02",
@@ -29,7 +25,7 @@
         "max": 49
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

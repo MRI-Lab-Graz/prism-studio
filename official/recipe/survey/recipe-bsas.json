@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "BSAS",
-    "Reference": "survey-bsas.json"
+    "Reference": "survey-bsas.json",
+    "TaskName": "bsas"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for The brief sexual attitudes scale (BSAS)",
-        "de": "Gesamtscore für The brief sexual attitudes scale (BSAS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for The brief sexual attitudes scale (BSAS)",
       "Items": [
         "BSAS01",
         "BSAS02",
@@ -45,7 +41,7 @@
         "max": 161
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

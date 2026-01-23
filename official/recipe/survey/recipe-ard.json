@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "ARD",
-    "Reference": "survey-ard.json"
+    "Reference": "survey-ard.json",
+    "TaskName": "ard"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Dominance Scale (for relationship research)",
-        "de": "Gesamtscore für Dominance Scale (for relationship research)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Dominance Scale (for relationship research)",
       "Items": [
         "ARD01",
         "ARD02",
@@ -44,7 +40,7 @@
         "max": 154
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

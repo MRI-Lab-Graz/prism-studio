@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "GTPS",
-    "Reference": "survey-gtps.json"
+    "Reference": "survey-gtps.json",
+    "TaskName": "gtps"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Green et al. Paranoid Thought Scales (GPTS)",
-        "de": "Gesamtscore für Green et al. Paranoid Thought Scales (GPTS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Green et al. Paranoid Thought Scales (GPTS)",
       "Items": [
         "GTPS01",
         "GTPS02",
@@ -38,7 +34,7 @@
         "max": 112
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

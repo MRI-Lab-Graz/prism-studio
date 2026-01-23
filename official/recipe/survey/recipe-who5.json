@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "WHO5",
-    "Reference": "survey-who5.json"
+    "Reference": "survey-who5.json",
+    "TaskName": "who5"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for The WHO-5 Well-Being Index",
-        "de": "Gesamtscore für The WHO-5 Well-Being Index"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for The WHO-5 Well-Being Index",
       "Items": [
         "WHO501",
         "WHO502",
@@ -27,7 +23,7 @@
         "max": 35
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "GP",
-    "Reference": "survey-gp.json"
+    "Reference": "survey-gp.json",
+    "TaskName": "gp"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for General Procrastination Scale",
-        "de": "Gesamtscore für General Procrastination Scale"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for General Procrastination Scale",
       "Items": [
         "GP01",
         "GP02",
@@ -32,7 +28,7 @@
         "max": 70
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

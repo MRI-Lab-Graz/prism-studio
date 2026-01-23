@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "GSQS",
-    "Reference": "survey-gsqs.json"
+    "Reference": "survey-gsqs.json",
+    "TaskName": "gsqs"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Groningen Sleep Quality Questionnaire",
-        "de": "Gesamtscore für Groningen Sleep Quality Questionnaire"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Groningen Sleep Quality Questionnaire",
       "Items": [
         "GSQS01",
         "GSQS02",
@@ -34,7 +30,7 @@
         "max": 84
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

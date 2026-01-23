@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "BHPS",
-    "Reference": "survey-bhps.json"
+    "Reference": "survey-bhps.json",
+    "TaskName": "bhps"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Brief Histrionic Personality Scale (BHPS)",
-        "de": "Gesamtscore für Brief Histrionic Personality Scale (BHPS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Brief Histrionic Personality Scale (BHPS)",
       "Items": [
         "BHPS01",
         "BHPS02",
@@ -33,7 +29,7 @@
         "max": 77
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

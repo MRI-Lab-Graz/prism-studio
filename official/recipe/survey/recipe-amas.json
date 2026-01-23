@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "AMAS",
-    "Reference": "survey-amas.json"
+    "Reference": "survey-amas.json",
+    "TaskName": "amas"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Abbreviated Math Anxiety Scale (AMAS)",
-        "de": "Gesamtscore für Abbreviated Math Anxiety Scale (AMAS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Abbreviated Math Anxiety Scale (AMAS)",
       "Items": [
         "AMAS01",
         "AMAS02",
@@ -31,7 +27,7 @@
         "max": 63
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "SQS",
-    "Reference": "survey-sqs.json"
+    "Reference": "survey-sqs.json",
+    "TaskName": "sqs"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Single-Item Sleep Quality Scale (SQS)",
-        "de": "Gesamtscore für Single-Item Sleep Quality Scale (SQS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Single-Item Sleep Quality Scale (SQS)",
       "Items": [
         "SQS01"
       ],
@@ -23,7 +19,7 @@
         "max": 7
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {
