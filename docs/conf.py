@@ -6,9 +6,9 @@ import sys
 sys.path.insert(0, os.path.abspath(".."))
 
 project = "PRISM"
-copyright = "2025, MRI-Lab-Graz"
+copyright = "2025-2026, MRI-Lab-Graz"
 author = "MRI-Lab-Graz"
-release = "1.7.1"
+release = "1.9.1"
 
 # -- General configuration ---------------------------------------------------
 extensions = [

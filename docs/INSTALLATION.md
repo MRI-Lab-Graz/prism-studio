@@ -1,126 +1,168 @@
 # Installation
 
-PRISM is designed to be easy to install on Windows, macOS, and Linux.
+Get PRISM Studio running in 5 minutes.
 
-## Prerequisites
-
-- **Python 3.8 or higher**: [Download Python](https://www.python.org/downloads/)
-- **Deno** (for BIDS validation): [Download Deno](https://deno.com/) (Automatically installed by setup script)
-- **Git** (optional, for cloning the repository): [Download Git](https://git-scm.com/downloads)
-
-## Quick Install (Recommended)
+## Quick Start
 
 ### macOS / Linux
 
-Open your terminal and run:
-
 ```bash
+# Clone and setup
 git clone https://github.com/MRI-Lab-Graz/prism-studio.git
 cd prism-studio
-bash scripts/setup/setup.sh
+./setup.sh
+
+# Launch PRISM Studio
+python prism-studio.py
 ```
+
+Your browser will open automatically at `http://localhost:5001`
 
 ### Windows
 
-**Choose one of two installation methods depending on your use case:**
-
-#### Option 1: Pre-Built Version (Normal Users)
-
-If you just want to use PRISM for dataset validation:
-
 ```powershell
-# Download the pre-built PrismValidator.exe from releases
-# https://github.com/MRI-Lab-Graz/prism-studio/releases
-
-# Extract the folder and run:
-PrismValidator.exe "C:\path\to\your\dataset"
-```
-
-**Advantages:**
-- No Python installation required
-- Simple, single executable
-- Minimal dependencies
-- Easiest setup for end users
-
-**Disadvantages:**
-- Cannot modify the code
-- Cannot install additional analysis tools
-- Larger file size
-
-#### Option 2: Development Installation (Developers)
-
-If you want to contribute, modify code, or use additional development tools:
-
-Open PowerShell and run:
-
-```powershell
+# Clone and setup
 git clone https://github.com/MRI-Lab-Graz/prism-studio.git
 cd prism-studio
-.\setup.ps1 -Dev
+.\setup.ps1
+
+# Launch PRISM Studio
+python prism-studio.py
 ```
 
-This will:
-1.  Create a Python virtual environment (`.venv`).
-2.  Install all necessary dependencies for development.
-3.  Install testing and documentation tools.
-4.  Prepare the application for use and modification.
-
-**Advantages:**
-- Full source code access
-- Can modify and extend functionality
-- Includes development and testing tools
-- Suitable for contributions
-
-**Disadvantages:**
-- Requires Python 3.8+ installation
-- More dependencies to manage
-- Slightly longer setup time
+```{tip}
+If the browser doesn't open automatically on Windows, manually navigate to `http://localhost:5001`
+```
 
 ---
 
-**Note:** The CLI tools (`prism.py`, `prism_tools.py`) intentionally enforce running from the repository-local virtual environment at `./.venv`.
+## Requirements
 
-## Manual Installation
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| **Python** | 3.9+ | [Download](https://www.python.org/downloads/) |
+| **Git** | Any | [Download](https://git-scm.com/downloads) |
+| **Deno** | Optional | For BIDS validation (auto-installed by setup) |
 
-If you prefer to set it up manually:
+### Windows-Specific Notes
+
+When installing Python on Windows, make sure to:
+- ✅ Check **"Add Python to PATH"**
+- ✅ Check **"tcl/tk and IDLE"** (required for folder picker)
+
+---
+
+## Installation Options
+
+### Option 1: PRISM Studio (Recommended)
+
+The web interface is the easiest way to use PRISM:
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/MRI-Lab-Graz/prism-studio.git
+python prism-studio.py
+```
+
+Features:
+- Project management with YODA layout
+- Data conversion from Excel/CSV/SPSS
+- Interactive validation with error explanations
+- Survey library browser
+- Recipe-based scoring
+
+### Option 2: Command Line (CLI)
+
+For scripting and batch processing:
+
+```bash
+# Validate a dataset
+python prism.py /path/to/dataset
+
+# Run recipes
+python prism_tools.py recipes survey --prism /path/to/dataset
+```
+
+See the [CLI Reference](CLI_REFERENCE.md) for all commands.
+
+### Option 3: Standalone Executable (Windows)
+
+For users who don't want to install Python:
+
+1. Download `PrismValidator.exe` from [GitHub Releases](https://github.com/MRI-Lab-Graz/prism-studio/releases)
+2. Extract and run
+
+```{note}
+The standalone version includes validation only. For the full PRISM Studio experience with conversion and scoring, use the Python installation.
+```
+
+---
+
+## Verify Installation
+
+```bash
+# Check version
+python prism.py --version
+
+# Run a test validation
+python prism.py examples/workshop/exercise_1_raw_data
+```
+
+Expected output:
+```
+PRISM v1.9.1
+Validating: examples/workshop/exercise_1_raw_data
+...
+```
+
+---
+
+## Updating PRISM
+
+```bash
 cd prism-studio
-
-# 2. Create a virtual environment
-python -m venv .venv
-
-# 3. Activate the environment
-# macOS/Linux:
-source .venv/bin/activate
-# Windows:
-.venv\Scripts\activate
-
-# 4. Install dependencies
+git pull
 pip install -r requirements.txt
 ```
 
-## Verifying Installation
-
-To check if everything is installed correctly, try running the help command:
-
-```bash
-# macOS/Linux
-source .venv/bin/activate
-python prism.py --help
-
-# Windows
-.venv\Scripts\activate
-python prism.py --help
-```
-
-If you see the help message, you are ready to go!
+---
 
 ## Troubleshooting
 
-### Windows Antivirus / SmartScreen
-If you are using the standalone `.exe` version on Windows, you might encounter warnings from Windows Defender or third-party antivirus software (like Norton). This is a common false positive for unsigned open-source software. 
+### "Python not found"
 
-Please refer to the [Windows Setup Guide](WINDOWS_SETUP.md#issue-antivirus-defender-norton-etc-blocks-the-exe) for detailed instructions on how to handle these warnings.
+Make sure Python is in your PATH:
+```bash
+# Check Python version
+python --version
+# or
+python3 --version
+```
+
+### "Module not found" errors
+
+Activate the virtual environment first:
+```bash
+# macOS/Linux
+source .venv/bin/activate
+
+# Windows
+.venv\Scripts\activate
+```
+
+### Windows SmartScreen Warning
+
+The standalone `.exe` may trigger SmartScreen warnings. This is normal for open-source software. See [Windows Setup](WINDOWS_SETUP.md) for details.
+
+### Folder Picker Not Working
+
+On Linux, install tkinter:
+```bash
+sudo apt-get install python3-tk
+```
+
+---
+
+## Next Steps
+
+- **[Quick Start](QUICK_START.md)** – Create your first project
+- **[Workshop](WORKSHOP.md)** – Hands-on exercises
+- **[Studio Overview](STUDIO_OVERVIEW.md)** – Tour of the web interface
