@@ -21,6 +21,7 @@ extensions = [
 templates_path = ["_templates"]
 exclude_patterns = [
     "_build",
+    "_archive",
     "Thumbs.db",
     ".DS_Store",
     "README.md",
