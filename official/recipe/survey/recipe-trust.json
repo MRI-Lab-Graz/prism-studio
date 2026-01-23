@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "TRUST",
-    "Reference": "survey-trust.json"
+    "Reference": "survey-trust.json",
+    "TaskName": "trust"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Trust in close relationships",
-        "de": "Gesamtscore für Trust in close relationships"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Trust in close relationships",
       "Items": [
         "TRUST01",
         "TRUST02",
@@ -35,7 +31,7 @@
         "max": 91
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

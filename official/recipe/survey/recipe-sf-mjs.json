@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "SF-MJS",
-    "Reference": "survey-sf-mjs.json"
+    "Reference": "survey-sf-mjs.json",
+    "TaskName": "sf-mjs"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Multi-dimensional (romantic) jealousy scale",
-        "de": "Gesamtscore für Multi-dimensional (romantic) jealousy scale"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Multi-dimensional (romantic) jealousy scale",
       "Items": [
         "SF-MJS01",
         "SF-MJS02",
@@ -27,7 +23,7 @@
         "max": 35
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

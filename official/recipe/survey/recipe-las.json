@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "LAS",
-    "Reference": "survey-las.json"
+    "Reference": "survey-las.json",
+    "TaskName": "las"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Love Attitudes Scale (Short Form)",
-        "de": "Gesamtscore für Love Attitudes Scale (Short Form)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Love Attitudes Scale (Short Form)",
       "Items": [
         "LAS01",
         "LAS02",
@@ -46,7 +42,7 @@
         "max": 168
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

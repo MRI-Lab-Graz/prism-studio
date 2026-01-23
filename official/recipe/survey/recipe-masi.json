@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "MASI",
-    "Reference": "survey-masi.json"
+    "Reference": "survey-masi.json",
+    "TaskName": "masi"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Measure of Anxiety in Selection Interviews (MASI)",
-        "de": "Gesamtscore für Measure of Anxiety in Selection Interviews (MASI)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Measure of Anxiety in Selection Interviews (MASI)",
       "Items": [
         "MASI01",
         "MASI02",
@@ -50,7 +46,7 @@
         "max": 196
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

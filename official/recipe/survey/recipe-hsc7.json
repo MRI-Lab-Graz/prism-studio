@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "HSC7",
-    "Reference": "survey-hsc7.json"
+    "Reference": "survey-hsc7.json",
+    "TaskName": "hsc7"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Hypoglycemia Symptoms Checklist (HSC-7)",
-        "de": "Gesamtscore für Hypoglycemia Symptoms Checklist (HSC-7)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Hypoglycemia Symptoms Checklist (HSC-7)",
       "Items": [
         "HSC701",
         "HSC702",
@@ -29,7 +25,7 @@
         "max": 49
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

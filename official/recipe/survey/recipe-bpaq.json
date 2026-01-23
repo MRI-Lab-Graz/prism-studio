@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "BPAQ",
-    "Reference": "survey-bpaq.json"
+    "Reference": "survey-bpaq.json",
+    "TaskName": "bpaq"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Buss-Perry Aggression Questionnaire (BPAQ)",
-        "de": "Gesamtscore für Buss-Perry Aggression Questionnaire (BPAQ)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Buss-Perry Aggression Questionnaire (BPAQ)",
       "Items": [
         "BPAQ01",
         "BPAQ02",
@@ -49,7 +45,7 @@
         "max": 189
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

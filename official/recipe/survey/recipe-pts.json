@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "PTS",
-    "Reference": "survey-pts.json"
+    "Reference": "survey-pts.json",
+    "TaskName": "pts"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Positive Thinking Scale",
-        "de": "Gesamtscore für Positive Thinking Scale"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Positive Thinking Scale",
       "Items": [
         "PTS01",
         "PTS02",
@@ -33,7 +29,7 @@
         "max": 77
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

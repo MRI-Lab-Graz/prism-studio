@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "BITE",
-    "Reference": "survey-bite.json"
+    "Reference": "survey-bite.json",
+    "TaskName": "bite"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for The Brief Irritability Test (BITe)",
-        "de": "Gesamtscore für The Brief Irritability Test (BITe)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for The Brief Irritability Test (BITe)",
       "Items": [
         "BITE01",
         "BITE02",
@@ -27,7 +23,7 @@
         "max": 35
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

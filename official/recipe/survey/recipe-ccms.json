@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "CCMS",
-    "Reference": "survey-ccms.json"
+    "Reference": "survey-ccms.json",
+    "TaskName": "ccms"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Concise Conscientiousness Measure (CCM-S)",
-        "de": "Gesamtscore für Concise Conscientiousness Measure (CCM-S)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Concise Conscientiousness Measure (CCM-S)",
       "Items": [
         "CCMS01",
         "CCMS02",
@@ -38,7 +34,7 @@
         "max": 112
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

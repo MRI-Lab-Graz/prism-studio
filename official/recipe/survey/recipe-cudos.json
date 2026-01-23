@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "CUDOS",
-    "Reference": "survey-cudos.json"
+    "Reference": "survey-cudos.json",
+    "TaskName": "cudos"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for A clinically useful depression outcome scale (CUDOS)",
-        "de": "Gesamtscore für A clinically useful depression outcome scale (CUDOS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for A clinically useful depression outcome scale (CUDOS)",
       "Items": [
         "CUDOS01",
         "CUDOS02",
@@ -38,7 +34,7 @@
         "max": 112
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

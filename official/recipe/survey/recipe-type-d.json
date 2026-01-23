@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "TYPE-D",
-    "Reference": "survey-type-d.json"
+    "Reference": "survey-type-d.json",
+    "TaskName": "type-d"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Type D Personality (DS14)",
-        "de": "Gesamtscore für Type D Personality (DS14)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Type D Personality (DS14)",
       "Items": [
         "TYPE-D01",
         "TYPE-D02",
@@ -34,7 +30,7 @@
         "max": 84
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

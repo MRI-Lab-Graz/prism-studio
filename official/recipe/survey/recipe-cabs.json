@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "CABS",
-    "Reference": "survey-cabs.json"
+    "Reference": "survey-cabs.json",
+    "TaskName": "cabs"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Child Adolescent Bullying Scale (CABS)",
-        "de": "Gesamtscore für Child Adolescent Bullying Scale (CABS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Child Adolescent Bullying Scale (CABS)",
       "Items": [
         "CABS01",
         "CABS02",
@@ -62,7 +58,7 @@
         "max": 280
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "BRS",
-    "Reference": "survey-brs.json"
+    "Reference": "survey-brs.json",
+    "TaskName": "brs"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Resilience (BRS)",
-        "de": "Gesamtscore für Resilience (BRS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Resilience (BRS)",
       "Items": [
         "BRS01",
         "BRS02",
@@ -25,7 +21,7 @@
         "max": 21
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

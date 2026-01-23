@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "PIU",
-    "Reference": "survey-piu.json"
+    "Reference": "survey-piu.json",
+    "TaskName": "piu"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Pathological Internet Use (PIU)",
-        "de": "Gesamtscore für Pathological Internet Use (PIU)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Pathological Internet Use (PIU)",
       "Items": [
         "PIU01",
         "PIU02",
@@ -33,7 +29,7 @@
         "max": 77
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

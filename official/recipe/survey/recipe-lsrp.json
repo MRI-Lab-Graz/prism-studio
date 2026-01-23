@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "LSRP",
-    "Reference": "survey-lsrp.json"
+    "Reference": "survey-lsrp.json",
+    "TaskName": "lsrp"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Psychopathy (LSRP)",
-        "de": "Gesamtscore für Psychopathy (LSRP)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Psychopathy (LSRP)",
       "Items": [
         "LSRP01",
         "LSRP02",
@@ -33,7 +29,7 @@
         "max": 77
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

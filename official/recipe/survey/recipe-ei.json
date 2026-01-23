@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "EI",
-    "Reference": "survey-ei.json"
+    "Reference": "survey-ei.json",
+    "TaskName": "ei"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Emotional Intelligence",
-        "de": "Gesamtscore für Emotional Intelligence"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Emotional Intelligence",
       "Items": [
         "EI01",
         "EI02",
@@ -52,7 +48,7 @@
         "max": 210
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

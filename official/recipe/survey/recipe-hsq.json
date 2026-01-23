@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "HSQ",
-    "Reference": "survey-hsq.json"
+    "Reference": "survey-hsq.json",
+    "TaskName": "hsq"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Humor Styles Questionnaire (HSQ)",
-        "de": "Gesamtscore für Humor Styles Questionnaire (HSQ)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Humor Styles Questionnaire (HSQ)",
       "Items": [
         "HSQ01",
         "HSQ02",
@@ -43,7 +39,7 @@
         "max": 147
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

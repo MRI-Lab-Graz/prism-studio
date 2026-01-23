@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "WEBEXEC",
-    "Reference": "survey-webexec.json"
+    "Reference": "survey-webexec.json",
+    "TaskName": "webexec"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Problems with executive control (webexec)",
-        "de": "Gesamtscore für Problems with executive control (webexec)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Problems with executive control (webexec)",
       "Items": [
         "WEBEXEC01",
         "WEBEXEC02",
@@ -28,7 +24,7 @@
         "max": 42
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "CCSS",
-    "Reference": "survey-ccss.json"
+    "Reference": "survey-ccss.json",
+    "TaskName": "ccss"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Cooperative/Competitive Strategy Scale (CCSS)",
-        "de": "Gesamtscore für Cooperative/Competitive Strategy Scale (CCSS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Cooperative/Competitive Strategy Scale (CCSS)",
       "Items": [
         "CCSS01",
         "CCSS02",
@@ -41,7 +37,7 @@
         "max": 133
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

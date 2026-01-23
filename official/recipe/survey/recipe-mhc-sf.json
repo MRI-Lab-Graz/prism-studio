@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "MHC-SF",
-    "Reference": "survey-mhc-sf.json"
+    "Reference": "survey-mhc-sf.json",
+    "TaskName": "mhc-sf"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Mental Health Continuum Short Form (MHC-SF)",
-        "de": "Gesamtscore für Mental Health Continuum Short Form (MHC-SF)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Mental Health Continuum Short Form (MHC-SF)",
       "Items": [
         "MHC-SF01",
         "MHC-SF02",
@@ -36,7 +32,7 @@
         "max": 98
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

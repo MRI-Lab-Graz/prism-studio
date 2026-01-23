@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "SPQ",
-    "Reference": "survey-spq.json"
+    "Reference": "survey-spq.json",
+    "TaskName": "spq"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Spider Fear Questionnaire (SPQ)",
-        "de": "Gesamtscore für Spider Fear Questionnaire (SPQ)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Spider Fear Questionnaire (SPQ)",
       "Items": [
         "SPQ01",
         "SPQ02",
@@ -44,7 +40,7 @@
         "max": 154
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

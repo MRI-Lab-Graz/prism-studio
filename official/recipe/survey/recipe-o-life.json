@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "O-LIFE",
-    "Reference": "survey-o-life.json"
+    "Reference": "survey-o-life.json",
+    "TaskName": "o-life"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Short Oxford-Liverpool Inventory of Feelings and Experiences (O-LIFE).",
-        "de": "Gesamtscore für Short Oxford-Liverpool Inventory of Feelings and Experiences (O-LIFE)."
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Short Oxford-Liverpool Inventory of Feelings and Experiences (O-LIFE).",
       "Items": [
         "O-LIFE01",
         "O-LIFE02",
@@ -34,7 +30,7 @@
         "max": 84
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

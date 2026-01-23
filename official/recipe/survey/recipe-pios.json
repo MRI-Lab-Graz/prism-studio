@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "PIOS",
-    "Reference": "survey-pios.json"
+    "Reference": "survey-pios.json",
+    "TaskName": "pios"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for The Penn Inventory of Scrupulosity (PIOS)",
-        "de": "Gesamtscore für The Penn Inventory of Scrupulosity (PIOS)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for The Penn Inventory of Scrupulosity (PIOS)",
       "Items": [
         "PIOS01",
         "PIOS02",
@@ -41,7 +37,7 @@
         "max": 133
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {

@@ -3,17 +3,13 @@
   "Kind": "survey",
   "Survey": {
     "Name": "ROSENBERG",
-    "Reference": "survey-rosenberg.json"
+    "Reference": "survey-rosenberg.json",
+    "TaskName": "rosenberg"
   },
-  "Transforms": {
-    "Invert": {}
-  },
-  "Scores": {
-    "Total": {
-      "Description": {
-        "en": "Total score for Rosenberg Self-Esteem Scale (RSES)",
-        "de": "Gesamtscore für Rosenberg Self-Esteem Scale (RSES)"
-      },
+  "Scores": [
+    {
+      "Name": "Total",
+      "Description": "Total score for Rosenberg Self-Esteem Scale (RSES)",
       "Items": [
         "ROSENBERG01",
         "ROSENBERG02",
@@ -27,7 +23,7 @@
         "max": 35
       }
     }
-  },
+  ],
   "Psychometrics": {
     "Reliability": {
       "InternalConsistency": {
