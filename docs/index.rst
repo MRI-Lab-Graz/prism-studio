@@ -3,78 +3,78 @@
 PRISM Documentation
 =============================
 
-PRISM is an independent, BIDS-compatible dataset validation tool for psychological experiments. It validates standard BIDS datasets and additionally enforces PRISM extensions (e.g., stricter metadata requirements for certain files and support for modalities like surveys and biometrics) while remaining compatible with BIDS tools/apps.
+**PRISM** (Psychological Research Information Structure for Metadata) is a validation and metadata framework for psychological experiment datasets. It extends the BIDS standard to support modalities common in psychological research—like surveys, biometrics, and eyetracking—while ensuring your data remains **fully compatible with existing BIDS tools**.
+
+.. important::
+   PRISM is an **add-on to BIDS**, not a replacement. Your PRISM-validated datasets will still work with fMRIPrep, MRIQC, and all other BIDS apps.
 
 **Key Features:**
 
-- **Multi-modal validation**: survey, physio, eyetracking, biometrics, events, anat, func, dwi, fmap
-- **Structured error codes**: PRISM001-PRISM9xx with severity levels
-- **Auto-fix**: Automatically fix common issues (``--fix``)
-- **Multiple output formats**: JSON, SARIF, JUnit XML, Markdown, CSV
-- **Plugin system**: Custom validators for project-specific rules
-- **REST API**: Integrate validation into workflows
-- **Bilingual surveys**: German + English templates in single JSON files
-- **Template Editor (Web UI)**: Value-only editing for Survey/Biometrics templates with schema guidance
+- 🔍 **Validation** with structured error codes and auto-fix
+- 📝 **Self-documenting data** with complete metadata in JSON sidecars
+- 📊 **Questionnaire scoring** with recipes and SPSS export
+- 🌐 **Web interface** (PRISM Studio) for easy project management
+- ✨ **100+ survey templates** in the official library
 
 .. toctree::
    :maxdepth: 2
    :caption: Getting Started
 
-   WALKTHROUGH
-   QUICK_START
+   WHAT_IS_PRISM
    INSTALLATION
-   USAGE
-   DEMO_DATA
-   PRISM_TOOLS
-   SURVEY_DATA_IMPORT
-   SURVEY_LIBRARY
-   WINDOWS_SETUP
+   QUICK_START
+   WORKSHOP
+
+.. toctree::
+   :maxdepth: 2
+   :caption: PRISM Studio Guide
+
+   STUDIO_OVERVIEW
+   PROJECTS
+   CONVERTER
+   VALIDATOR
+   TOOLS
+   WEB_INTERFACE
 
 .. toctree::
    :maxdepth: 2
    :caption: Reference
 
-   WEB_INTERFACE
    CLI_REFERENCE
+   SPECIFICATIONS
+   RECIPES
+   SURVEY_LIBRARY
+   ERROR_CODES
+   PARTICIPANTS_MAPPING
 
 .. toctree::
    :maxdepth: 2
-   :caption: Understanding the Data
+   :caption: Schema Specifications
 
-   SPECIFICATIONS
-   RECIPES
+   specs/survey
    specs/biometrics
    specs/events
-   specs/survey
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Advanced Topics
+
+   LIMESURVEY_INTEGRATION
    SCHEMA_VERSIONING
-   SCHEMA_VERSIONING_GUIDE
+   WINDOWS_SETUP
+   WINDOWS_BUILD
    FAIR_POLICY
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Troubleshooting
+   :maxdepth: 1
+   :caption: Development
 
-   ERROR_CODES
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Advanced / Developer
-
-   LIMESURVEY_INTEGRATION
-   WINDOWS_COMPATIBILITY
-   WINDOWS_BUILD
-   IMPLEMENTATION_SUMMARY
-   RELEASE_GUIDE
-   RELEASE_NOTES_v1.0.0
    CHANGELOG
-   READTHEDOCS
-
-
+   RELEASE_GUIDE
 
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
