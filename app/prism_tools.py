@@ -1155,7 +1155,10 @@ def cmd_anonymize(args):
     
     # Step 1: Collect all participant IDs
     participant_ids = set()
-    participants_tsv = dataset_path / "participants.tsv"
+    # Check rawdata/ first (PRISM/YODA structure), then root (BIDS)
+    participants_tsv = dataset_path / "rawdata" / "participants.tsv"
+    if not participants_tsv.exists():
+        participants_tsv = dataset_path / "participants.tsv"
     
     if participants_tsv.exists():
         with open(participants_tsv, 'r', encoding='utf-8') as f:
