@@ -4,8 +4,8 @@ title: "PRISM"
 abstract: "A BIDS-compatible validator and metadata framework for psychological experiment datasets."
 type: software
 license: "MIT"
-version: "1.7.0"
-date-released: "2026-01-12"
+version: "1.9.1"
+date-released: "2026-01-23"
 repository-code: "https://github.com/MRI-Lab-Graz/prism-studio"
 url: "https://prism-studio.readthedocs.io/en/latest/"
 authors:
