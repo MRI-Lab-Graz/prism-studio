@@ -180,7 +180,7 @@
                         <div class="col-md-6">
                             <label for="projectPath" class="form-label fw-bold">Project Location</label>
                             <div class="input-group">
-                                <input type="text" class="form-control" id="projectPath" placeholder="C:\Users\..." required>
+                                <input type="text" class="form-control" id="projectPath" placeholder="" required>
                                 <button class="btn btn-outline-secondary" type="button" id="browseProjectPath">
                                     <i class="fas fa-folder-open"></i> Browse
                                 </button>
@@ -855,6 +855,7 @@
         const isWindows = navigator.platform.toUpperCase().indexOf('WIN') > -1;
         const isMac = navigator.platform.toUpperCase().indexOf('MAC') > -1;
         const existingPathInput = document.getElementById('existingPath');
+        const projectPathInput = document.getElementById('projectPath');
         const pathHelpText = document.getElementById('pathHelp');
         
         if (existingPathInput) {
@@ -865,6 +866,18 @@
             } else {
                 // Linux
                 existingPathInput.placeholder = "/home/username/MyProject/project.json";
+            }
+        }
+        
+        // Set OS-specific placeholder for new project location
+        if (projectPathInput) {
+            if (isWindows) {
+                projectPathInput.placeholder = "C:\\Users\\YourName\\Documents";
+            } else if (isMac) {
+                projectPathInput.placeholder = "/Users/YourName/Documents";
+            } else {
+                // Linux
+                projectPathInput.placeholder = "/home/username/Documents";
             }
         }
         

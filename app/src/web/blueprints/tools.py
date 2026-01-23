@@ -899,9 +899,12 @@ def api_recipes_surveys():
                 import json
                 
                 # Read participants.tsv to get participant IDs
-                participants_tsv = os.path.join(dataset_path, "participants.tsv")
+                # Check rawdata/ first (PRISM/YODA structure), then root (BIDS)
+                participants_tsv = os.path.join(dataset_path, "rawdata", "participants.tsv")
                 if not os.path.exists(participants_tsv):
-                    raise FileNotFoundError(f"participants.tsv not found at {participants_tsv}")
+                    participants_tsv = os.path.join(dataset_path, "participants.tsv")
+                if not os.path.exists(participants_tsv):
+                    raise FileNotFoundError(f"participants.tsv not found in {dataset_path}/rawdata/ or {dataset_path}/")
                 
                 # Extract participant IDs
                 df = pd.read_csv(participants_tsv, sep='\t')
