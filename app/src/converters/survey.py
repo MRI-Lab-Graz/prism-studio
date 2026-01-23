@@ -512,6 +512,75 @@ def _determine_task_runs(tasks_with_data: set[str], task_occurrences: dict[str, 
     return task_runs
 
 
+def _load_participants_mapping(output_root: Path) -> dict | None:
+    """Load participants_mapping.json from the project.
+
+    The mapping file specifies which source columns should be included in
+    participants.tsv and how they map to standard variable names.
+
+    Args:
+        output_root: Path to the output root (rawdata/ or dataset root)
+
+    Returns:
+        Mapping dict if found, None otherwise
+    """
+    # Determine project root from output_root
+    if output_root.name == "rawdata":
+        project_root = output_root.parent
+    else:
+        project_root = output_root
+
+    # Search locations for participants_mapping.json
+    candidates = [
+        project_root / "participants_mapping.json",
+        project_root / "code" / "participants_mapping.json",
+        project_root / "code" / "library" / "participants_mapping.json",
+    ]
+
+    for p in candidates:
+        if p.exists() and p.is_file():
+            try:
+                return _read_json(p)
+            except Exception:
+                continue
+    return None
+
+
+def _get_mapped_columns(mapping: dict | None) -> tuple[set[str], dict[str, str], dict[str, dict]]:
+    """Extract column information from participants mapping.
+
+    Args:
+        mapping: The participants_mapping.json content
+
+    Returns:
+        Tuple of:
+        - allowed_columns: Set of source column names that should be included
+        - column_renames: Dict mapping source_column -> standard_variable
+        - value_mappings: Dict mapping standard_variable -> {source_val: target_val}
+    """
+    if not mapping or "mappings" not in mapping:
+        return set(), {}, {}
+
+    allowed_columns: set[str] = set()
+    column_renames: dict[str, str] = {}
+    value_mappings: dict[str, dict] = {}
+
+    for var_name, spec in mapping.get("mappings", {}).items():
+        if not isinstance(spec, dict):
+            continue
+        source_col = spec.get("source_column")
+        standard_var = spec.get("standard_variable", var_name)
+
+        if source_col:
+            allowed_columns.add(source_col.lower())
+            column_renames[source_col.lower()] = standard_var
+
+            if "value_mapping" in spec:
+                value_mappings[standard_var] = spec["value_mapping"]
+
+    return allowed_columns, column_renames, value_mappings
+
+
 def _load_participants_template(library_dir: Path) -> dict | None:
     """Load a participant template from the survey library, if present.
 
@@ -565,10 +634,30 @@ def _normalize_participant_template_dict(template: dict | None) -> dict | None:
     return template
 
 
-def _participants_json_from_template(*, columns: list[str], template: dict | None) -> dict:
-    """Create a BIDS-style participants.json for the given TSV columns."""
+def _participants_json_from_template(
+    *,
+    columns: list[str],
+    template: dict | None,
+    extra_descriptions: dict[str, str] | None = None,
+) -> dict:
+    """Create a BIDS/NeuroBagel-compatible participants.json for the given TSV columns.
 
+    All columns in the output TSV must be documented in participants.json.
+    This function ensures NeuroBagel compatibility by:
+    - Including full metadata from the official template (with semantic annotations)
+    - Adding descriptions for extra columns from participants_mapping.json
+
+    Args:
+        columns: List of column names in the output TSV
+        template: The official participants template (from official/participants.json)
+        extra_descriptions: Additional descriptions from participants_mapping.json
+                           for columns not in the template
+
+    Returns:
+        Dict suitable for writing as participants.json
+    """
     template = _normalize_participant_template_dict(template)
+    extra_descriptions = extra_descriptions or {}
     out: dict[str, dict] = {}
 
     def _template_meta(col: str) -> dict:
@@ -580,15 +669,21 @@ def _participants_json_from_template(*, columns: list[str], template: dict | Non
         if not isinstance(v, dict):
             return {}
         meta: dict[str, object] = {}
+
+        # Copy all relevant metadata fields for NeuroBagel compatibility
         desc = v.get("Description")
         if desc:
             meta["Description"] = desc
         levels = v.get("Levels")
         if isinstance(levels, dict) and levels:
             meta["Levels"] = levels
-        unit = v.get("Units") or v.get("Unit")
-        if unit:
-            meta["Unit"] = unit
+        units = v.get("Units") or v.get("Unit")
+        if units:
+            meta["Units"] = units
+        # Include additional metadata for NeuroBagel
+        for key in ("DataType", "VariableType", "MinValue", "MaxValue", "Annotations"):
+            if key in v:
+                meta[key] = v[key]
         return meta
 
     for col in columns:
@@ -598,13 +693,24 @@ def _participants_json_from_template(*, columns: list[str], template: dict | Non
             }
             continue
 
+        # Try to get metadata from official template first
         meta = _template_meta(col)
+
         if not meta:
-            # Minimal, valid fallback.
-            meta = {"Description": col}
-            if col == "age":
-                meta["Description"] = "Age"
-                meta["Unit"] = "years"
+            # Column not in template - check for description from mapping
+            if col in extra_descriptions:
+                meta = {"Description": extra_descriptions[col]}
+            else:
+                # Minimal fallback - column must still be documented
+                meta = {"Description": col}
+                # Add sensible defaults for common columns
+                if col == "age":
+                    meta["Description"] = "Age of participant"
+                    meta["Units"] = "years"
+                elif col == "sex":
+                    meta["Description"] = "Biological sex"
+                elif col == "gender":
+                    meta["Description"] = "Gender identity"
 
         out[col] = dict(meta)
 
@@ -1771,38 +1877,103 @@ def _write_survey_participants(
     normalize_sub_fn,
     is_missing_fn,
 ):
-    """Write participants.tsv and participants.json."""
+    """Write participants.tsv and participants.json.
+
+    Column inclusion logic:
+    1. If participants_mapping.json exists in project:
+       - Only include columns explicitly defined in the mapping
+       - Apply value transformations as specified
+       - Rename columns to standard variable names
+    2. If no mapping exists:
+       - Only include columns that exist in the official participants template
+       - No arbitrary extra columns from source data
+
+    All columns in the output must have documentation in participants.json.
+    """
     import pandas as pd
+
     lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
 
+    # Try to load participants_mapping.json from the project
+    participants_mapping = _load_participants_mapping(output_root)
+    mapped_cols, col_renames, value_mappings = _get_mapped_columns(participants_mapping)
+
+    # Start with participant_id column
     df_part = pd.DataFrame({"participant_id": df[id_col].astype(str).map(normalize_sub_fn)})
 
-    # Determine extra columns from template + standard fallbacks
+    # Normalize template to get column definitions
+    template_norm = _normalize_participant_template_dict(participant_template)
+    template_cols = set(template_norm.keys()) if template_norm else set()
+    # Remove non-column keys from template
+    non_column_keys = {"@context", "Technical", "I18n", "Study", "Metadata", "_aliases", "_reverse_aliases"}
+    template_cols = template_cols - non_column_keys
+
+    # Determine which columns to include
     extra_cols: list[str] = []
-    template_cols = set(participant_template.keys()) if participant_template else set()
-    for col in (template_cols | {"age", "sex", "gender", "education", "handedness", "completion_date"}):
-        if col in lower_to_col:
-            actual = lower_to_col[col]
-            if actual not in {id_col, ses_col}:
-                extra_cols.append(actual)
+    col_output_names: dict[str, str] = {}  # Maps source col -> output name
+    mapping_descriptions: dict[str, str] = {}  # Extra descriptions from mapping
+
+    if participants_mapping and mapped_cols:
+        # MODE 1: Use mapping - only include explicitly mapped columns
+        for source_col_lower in mapped_cols:
+            if source_col_lower in lower_to_col:
+                actual_col = lower_to_col[source_col_lower]
+                if actual_col not in {id_col, ses_col}:
+                    extra_cols.append(actual_col)
+                    # Get the standard variable name (renamed output)
+                    output_name = col_renames.get(source_col_lower, source_col_lower)
+                    col_output_names[actual_col] = output_name
+
+        # Extract descriptions from mapping for columns not in template
+        for var_name, spec in participants_mapping.get("mappings", {}).items():
+            if isinstance(spec, dict):
+                standard_var = spec.get("standard_variable", var_name)
+                if standard_var not in template_cols and "description" in spec:
+                    mapping_descriptions[standard_var] = spec["description"]
+    else:
+        # MODE 2: No mapping - only include columns defined in the official template
+        for col in template_cols:
+            if col in lower_to_col:
+                actual_col = lower_to_col[col]
+                if actual_col not in {id_col, ses_col}:
+                    extra_cols.append(actual_col)
+                    col_output_names[actual_col] = col
 
     if extra_cols:
         extra_cols = list(dict.fromkeys(extra_cols))
         df_extra = df[[id_col] + extra_cols].copy()
+
+        # Apply value mappings and missing value handling
         for c in extra_cols:
-            df_extra[c] = df_extra[c].apply(lambda v: _MISSING_TOKEN if is_missing_fn(v) else v)
+            output_name = col_output_names.get(c, c)
+
+            # Apply value mapping if specified
+            if output_name in value_mappings:
+                val_map = value_mappings[output_name]
+                df_extra[c] = df_extra[c].astype(str).map(
+                    lambda v, vm=val_map: vm.get(v, v) if v not in ("nan", "None", "") else _MISSING_TOKEN
+                )
+            else:
+                df_extra[c] = df_extra[c].apply(lambda v: _MISSING_TOKEN if is_missing_fn(v) else v)
+
         df_extra[id_col] = df_extra[id_col].astype(str).map(normalize_sub_fn)
         df_extra = df_extra.groupby("participant_id", dropna=False)[extra_cols].first().reset_index()
+
+        # Rename columns to standard variable names
+        rename_map = {c: col_output_names.get(c, c) for c in extra_cols}
+        df_extra = df_extra.rename(columns=rename_map)
+
         df_part = df_part.merge(df_extra, on="participant_id", how="left")
 
     df_part = df_part.drop_duplicates(subset=["participant_id"]).reset_index(drop=True)
     df_part.to_csv(output_root / "participants.tsv", sep="\t", index=False)
 
-    # participants.json
+    # participants.json - all columns must be documented
     parts_json_path = output_root / "participants.json"
     p_json = _participants_json_from_template(
         columns=[str(c) for c in df_part.columns],
         template=participant_template,
+        extra_descriptions=mapping_descriptions,
     )
     _write_json(parts_json_path, p_json)
 
