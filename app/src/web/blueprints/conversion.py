@@ -220,6 +220,189 @@ def api_survey_languages():
         }
     )
 
+@conversion_bp.route("/api/survey-convert-preview", methods=["POST"])
+def api_survey_convert_preview():
+    """Run a dry-run conversion to preview what will be created without writing files."""
+    if (
+        not convert_survey_xlsx_to_prism_dataset
+        and not convert_survey_lsa_to_prism_dataset
+    ):
+        return jsonify({"error": "Survey conversion module not available"}), 500
+
+    uploaded_file = request.files.get("excel") or request.files.get("file")
+    alias_upload = request.files.get("alias") or request.files.get("alias_file")
+    id_map_upload = request.files.get("id_map")
+    id_map_upload = request.files.get("id_map")
+
+    if not uploaded_file or not getattr(uploaded_file, "filename", ""):
+        return jsonify({"error": "Missing input file"}), 400
+
+    filename = secure_filename(uploaded_file.filename)
+    suffix = Path(filename).suffix.lower()
+    if suffix not in {".xlsx", ".lsa", ".csv", ".tsv"}:
+        return jsonify({"error": "Supported formats: .xlsx, .lsa, .csv, .tsv"}), 400
+
+    alias_filename = None
+    if alias_upload and getattr(alias_upload, "filename", ""):
+        alias_filename = secure_filename(alias_upload.filename)
+        alias_suffix = Path(alias_filename).suffix.lower()
+        if alias_suffix and alias_suffix not in {".tsv", ".txt"}:
+            return jsonify({"error": "Alias file must be a .tsv or .txt mapping file"}), 400
+
+    id_map_filename = None
+    if id_map_upload and getattr(id_map_upload, "filename", ""):
+        id_map_filename = secure_filename(id_map_upload.filename)
+        id_map_suffix = Path(id_map_filename).suffix.lower()
+        if id_map_suffix and id_map_suffix not in {".tsv", ".txt", ".csv"}:
+            return jsonify({"error": "ID map file must be a .tsv, .csv, or .txt file"}), 400
+
+    id_map_filename = None
+    if id_map_upload and getattr(id_map_upload, "filename", ""):
+        id_map_filename = secure_filename(id_map_upload.filename)
+        id_map_suffix = Path(id_map_filename).suffix.lower()
+        if id_map_suffix and id_map_suffix not in {".tsv", ".txt", ".csv"}:
+            return jsonify({"error": "ID map file must be a .tsv, .csv, or .txt file"}), 400
+
+    # Automatically resolve library path (project first, then global)
+    try:
+        library_path = _resolve_effective_library_path()
+    except FileNotFoundError as e:
+        return jsonify({"error": str(e)}), 400
+
+    # Check for survey subdirectory
+    if (library_path / "survey").is_dir():
+        survey_dir = library_path / "survey"
+    else:
+        survey_dir = library_path
+    
+    effective_survey_dir = survey_dir
+    
+    # DEBUG: Log which library is being used
+    print(f"[PRISM DEBUG] DRY-RUN Preview using library: {effective_survey_dir}")
+    print(f"[PRISM DEBUG] Session project path: {session.get('current_project_path')}")
+    print(f"[PRISM DEBUG] Available templates: {list(effective_survey_dir.glob('survey-*.json'))}")
+
+    survey_templates = list(effective_survey_dir.glob("survey-*.json"))
+    if not survey_templates:
+        return jsonify({"error": f"No survey templates found in: {effective_survey_dir}"}), 400
+
+    survey_filter = (request.form.get("survey") or "").strip() or None
+    id_column = (request.form.get("id_column") or "").strip() or None
+    session_column = (request.form.get("session_column") or "").strip() or None
+    session_override = (request.form.get("session") or "").strip() or None
+    sheet = (request.form.get("sheet") or "0").strip() or 0
+    unknown = (request.form.get("unknown") or "warn").strip() or "warn"
+    language = (request.form.get("language") or "").strip() or None
+    strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
+    strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
+    duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
+    if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
+        duplicate_handling = "error"
+
+    tmp_dir = tempfile.mkdtemp(prefix="prism_survey_preview_")
+    try:
+        tmp_dir_path = Path(tmp_dir)
+        input_path = tmp_dir_path / filename
+        uploaded_file.save(str(input_path))
+
+        alias_path = None
+        if alias_filename:
+            alias_path = tmp_dir_path / alias_filename
+            alias_upload.save(str(alias_path))
+
+        id_map_path = None
+        if id_map_filename:
+            id_map_path = tmp_dir_path / id_map_filename
+            # DEBUG: Check file object before saving
+            print(f"[PRISM DEBUG] ID map upload object: filename={id_map_upload.filename}")
+            print(f"[PRISM DEBUG] ID map upload stream size: {id_map_upload.stream.seek(0, 2)} bytes (seek to end)")
+            id_map_upload.stream.seek(0)  # Reset to beginning
+            id_map_upload.save(str(id_map_path))
+            # Check what was actually saved
+            saved_size = id_map_path.stat().st_size if id_map_path.exists() else 0
+            print(f"[PRISM DEBUG] ID map saved to: {id_map_path} (size: {saved_size} bytes)")
+
+        output_root = tmp_dir_path / "rawdata"
+
+        # DEBUG: log the resolved parameters for dry-run
+        print("[PRISM DEBUG] Dry-run request:")
+        print(f"  file: {input_path}")
+        print(f"  id_column: {id_column}")
+        print(f"  session_column: {session_column}")
+        print(f"  session_override: {session_override}")
+        print(f"  sheet: {sheet}")
+        print(f"  unknown: {unknown}")
+        print(f"  strict_levels: {strict_levels}")
+        print(f"  duplicate_handling: {duplicate_handling}")
+        if alias_path:
+            print(f"  alias_file: {alias_path}")
+        if 'id_map_path' in locals() and id_map_path:
+            print(f"  id_map_file: {id_map_path}")
+        print(f"  library_dir: {effective_survey_dir}")
+
+        # Run dry-run conversion
+        if suffix in {".xlsx", ".csv", ".tsv"}:
+            result = convert_survey_xlsx_to_prism_dataset(
+                input_path=input_path,
+                library_dir=str(effective_survey_dir),
+                output_root=output_root,
+                survey=survey_filter,
+                id_column=id_column,
+                session_column=session_column,
+                session=session_override,
+                sheet=sheet,
+                unknown=unknown,
+                dry_run=True,  # DRY RUN MODE
+                force=True,
+                name="preview",
+                authors=["prism-studio"],
+                language=language,
+                alias_file=alias_path,
+                id_map_file=id_map_path,
+                duplicate_handling=duplicate_handling,
+            )
+        elif suffix == ".lsa":
+            result = convert_survey_lsa_to_prism_dataset(
+                input_path=input_path,
+                library_dir=str(effective_survey_dir),
+                output_root=output_root,
+                survey=survey_filter,
+                id_column=id_column,
+                session_column=session_column,
+                session=session_override,
+                unknown=unknown,
+                dry_run=True,  # DRY RUN MODE
+                force=True,
+                name="preview",
+                authors=["prism-studio"],
+                language=language,
+                alias_file=alias_path,
+                id_map_file=id_map_path,
+                strict_levels=True if strict_levels else None,
+                duplicate_handling=duplicate_handling,
+            )
+        else:
+            return jsonify({"error": "Unsupported file format"}), 400
+
+        # Return the dry-run preview as JSON
+        response_data = {
+            "preview": result.dry_run_preview,
+            "tasks_included": result.tasks_included,
+            "unknown_columns": result.unknown_columns,
+            "missing_items_by_task": result.missing_items_by_task,
+            "id_column": result.id_column,
+            "session_column": result.session_column,
+            "conversion_warnings": result.conversion_warnings,
+            "task_runs": result.task_runs,
+        }
+
+        return jsonify(response_data)
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
 @conversion_bp.route("/api/survey-convert", methods=["POST"])
 def api_survey_convert():
     """Convert an uploaded survey file (.xlsx or .lsa) to a PRISM dataset and return it as a zip."""
@@ -324,6 +507,7 @@ def api_survey_convert():
                 authors=["prism-studio"],
                 language=language,
                 alias_file=alias_path,
+                id_map_file=id_map_path,
                 duplicate_handling=duplicate_handling,
             )
         elif suffix == ".lsa":
@@ -342,6 +526,7 @@ def api_survey_convert():
                 authors=["prism-studio"],
                 language=language,
                 alias_file=alias_path,
+                id_map_file=id_map_path,
                 strict_levels=True if strict_levels else None,
                 duplicate_handling=duplicate_handling,
             )

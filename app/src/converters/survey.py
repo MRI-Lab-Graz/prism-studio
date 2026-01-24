@@ -463,6 +463,8 @@ class SurveyConvertResult:
     missing_value_token: str = _MISSING_TOKEN
     conversion_warnings: list[str] = field(default_factory=list)
     task_runs: dict[str, int | None] = field(default_factory=dict)  # task -> max run number (None if single occurrence)
+    # Enhanced dry-run information
+    dry_run_preview: dict | None = None  # Detailed preview of what will be created
 
 
 def _build_bids_survey_filename(
@@ -860,6 +862,7 @@ def convert_survey_xlsx_to_prism_dataset(
     authors: list[str] | None = None,
     language: str | None = None,
     alias_file: str | Path | None = None,
+    id_map_file: str | Path | None = None,
     duplicate_handling: str = "error",
 ) -> SurveyConvertResult:
     """Convert a wide survey Excel table into a PRISM dataset.
@@ -898,6 +901,7 @@ def convert_survey_xlsx_to_prism_dataset(
         authors=authors,
         language=language,
         alias_file=alias_file,
+        id_map_file=id_map_file,
         strict_levels=True,
         duplicate_handling=duplicate_handling,
     )
@@ -919,6 +923,7 @@ def convert_survey_lsa_to_prism_dataset(
     authors: list[str] | None = None,
     language: str | None = None,
     alias_file: str | Path | None = None,
+    id_map_file: str | Path | None = None,
     strict_levels: bool | None = None,
     duplicate_handling: str = "error",
 ) -> SurveyConvertResult:
@@ -958,6 +963,7 @@ def convert_survey_lsa_to_prism_dataset(
         language=effective_language,
         technical_overrides=inferred_tech,
         alias_file=alias_file,
+        id_map_file=id_map_file,
         strict_levels=effective_strict_levels,
         duplicate_handling=duplicate_handling,
     )
@@ -982,6 +988,97 @@ def _debug_print_file_head(input_path: Path, num_lines: int = 4):
     except Exception:
         # Silently fail if we can't read/print
         pass
+
+
+def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
+    """Load subject ID mapping (source -> participant_id) from TSV/CSV.
+
+    The mapping file must have at least two columns; the first is treated as the
+    source/LimeSurvey ID and the second as the target participant_id.
+    """
+    if not path:
+        return None
+
+    p = Path(path)
+    if not p.exists():
+        raise ValueError(f"ID map file not found: {p}")
+
+    # DEBUG: Log file details
+    file_size = p.stat().st_size
+    print(f"[PRISM DEBUG] Loading ID map: {p} (size: {file_size} bytes)")
+
+    try:
+        import pandas as pd
+    except Exception as e:  # pragma: no cover
+        raise RuntimeError(
+            "pandas is required for survey conversion. Ensure dependencies are installed via setup.sh"
+        ) from e
+
+    # Choose delimiter based on extension, fall back to auto-sniff
+    sep = None
+    suffix = p.suffix.lower()
+    if suffix == ".tsv":
+        sep = "\t"
+    elif suffix == ".csv":
+        sep = ","
+
+    # First, manually inspect the file to debug
+    try:
+        with open(p, "r", encoding="utf-8-sig") as f:
+            first_line = f.readline()
+            if first_line:
+                print(f"[PRISM DEBUG] First line of ID map: {repr(first_line[:100])}")
+    except Exception as debug_e:
+        print(f"[PRISM DEBUG] Could not read first line: {debug_e}")
+
+    try:
+        df = pd.read_csv(p, sep=sep, engine="python", encoding="utf-8-sig")
+    except Exception as e:
+        # Last attempt: sniff delimiter, then manual parse to avoid pandas edge cases on small files
+        try:
+            import csv
+            with open(p, "r", encoding="utf-8-sig", errors="replace") as f:
+                sample = f.read(4096)
+                if not sample.strip():
+                    raise ValueError("ID map file is empty")
+                sniff_sep = csv.Sniffer().sniff(sample).delimiter
+                print(f"[PRISM DEBUG] Sniffed delimiter: {repr(sniff_sep)}")
+                f.seek(0)
+                reader = csv.reader(f, delimiter=sniff_sep)
+                rows = list(reader)
+                if not rows:
+                    raise ValueError("ID map file contains no rows")
+                if len(rows[0]) < 2:
+                    raise ValueError(f"ID map must have at least two columns, got {len(rows[0])}")
+                print(f"[PRISM DEBUG] Manually parsed {len(rows)} rows")
+                df = pd.DataFrame(rows)
+        except Exception as inner:
+            raise ValueError(
+                f"Error loading ID map {p}: {inner}. Try saving as UTF-8 TSV with a tab delimiter or CSV with commas."
+            ) from inner
+
+    if df is None or df.empty:
+        raise ValueError(f"ID map file is empty: {p}")
+
+    if df.shape[1] < 2:
+        raise ValueError(f"ID map file {p} must have at least two columns (source_id, participant_id)")
+
+    df = df.iloc[:, :2].copy()
+    df.columns = ["source_id", "participant_id"]
+    df["source_id"] = df["source_id"].astype(str).str.strip()
+    df["participant_id"] = df["participant_id"].astype(str).str.strip()
+
+    mapping = {
+        row["source_id"]: row["participant_id"]
+        for _, row in df.iterrows()
+        if row["source_id"] and row["participant_id"]
+    }
+
+    if not mapping:
+        raise ValueError(f"ID map file {p} contains no valid mappings")
+
+    print(f"[PRISM DEBUG] Loaded ID map with {len(mapping)} entries")
+    return mapping
 
 
 def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 0):
@@ -1167,6 +1264,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     language: str | None,
     technical_overrides: dict | None = None,
     alias_file: str | Path | None = None,
+    id_map_file: str | Path | None = None,
     strict_levels: bool = True,
     duplicate_handling: str = "error",
 ) -> SurveyConvertResult:
@@ -1281,6 +1379,25 @@ def _convert_survey_dataframe_to_prism_dataset(
         df, id_column, session_column, participants_template=participant_template
     )
 
+    # --- Apply subject ID mapping if provided ---
+    id_map: dict[str, str] | None = _load_id_mapping(id_map_file)
+    if id_map:
+        df = df.copy()
+        df[res_id_col] = df[res_id_col].astype(str).str.strip()
+        ids_in_data = set(df[res_id_col].unique())
+        missing = sorted([i for i in ids_in_data if i not in id_map])
+        if missing:
+            sample = ", ".join(missing[:20])
+            more = "" if len(missing) <= 20 else f" (+{len(missing) - 20} more)"
+            raise ValueError(
+                f"ID mapping incomplete: {len(missing)} IDs from data are missing in the mapping: {sample}{more}."
+            )
+
+        df[res_id_col] = df[res_id_col].map(lambda x: id_map.get(str(x).strip(), x))
+        conversion_warnings.append(
+            f"Applied subject ID mapping from {Path(id_map_file).name} ({len(id_map)} entries)."
+        )
+
     if alias_map:
         df = _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
 
@@ -1348,6 +1465,26 @@ def _convert_survey_dataframe_to_prism_dataset(
     missing_items_by_task = _compute_missing_items_report(tasks_with_data, templates, col_to_task)
 
     if dry_run:
+        # Generate detailed dry-run preview
+        dry_run_preview = _generate_dry_run_preview(
+            df=df,
+            tasks_with_data=tasks_with_data,
+            task_run_columns=task_run_columns,
+            col_to_mapping=col_to_mapping,
+            templates=templates,
+            res_id_col=res_id_col,
+            res_ses_col=res_ses_col,
+            session=session,
+            selected_tasks=selected_tasks,
+            normalize_sub_fn=_normalize_sub_id,
+            normalize_ses_fn=_normalize_ses_id,
+            is_missing_fn=_is_missing_value,
+            ls_system_cols=ls_system_cols,
+            participant_template=participant_template,
+            output_root=output_root,
+            dataset_root=_resolve_dataset_root(output_root),
+        )
+        
         return SurveyConvertResult(
             tasks_included=sorted(tasks_with_data),
             unknown_columns=unknown_cols,
@@ -1356,6 +1493,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             session_column=res_ses_col,
             conversion_warnings=conversion_warnings,
             task_runs=task_runs,
+            dry_run_preview=dry_run_preview,
         )
 
     # --- Write Output ---
@@ -2056,6 +2194,9 @@ def _load_and_preprocess_templates(
         task_from_name = json_path.stem.replace("survey-", "")
         task = str(sidecar.get("Study", {}).get("TaskName") or task_from_name).strip()
         task_norm = task.lower() or task_from_name.lower()
+        
+        # DEBUG: Log which template is being loaded
+        print(f"[PRISM DEBUG] Loading template: {json_path} (task: {task_norm})")
 
         if canonical_aliases:
             sidecar = _canonicalize_template_items(sidecar=sidecar, canonical_aliases=canonical_aliases)
@@ -2077,6 +2218,14 @@ def _load_and_preprocess_templates(
                 target = v["AliasOf"]
                 sidecar["_aliases"][k] = target
                 sidecar["_reverse_aliases"].setdefault(target, []).append(k)
+
+            # Warn when an item mixes discrete Levels with numeric range
+            has_levels = isinstance(v.get("Levels"), dict)
+            has_range = "MinValue" in v or "MaxValue" in v
+            if has_levels and has_range:
+                template_warnings.append(
+                    f"Template '{task_norm}' item '{k}' defines both Levels and Min/Max; numeric range takes precedence and Levels will be treated as labels only."
+                )
 
         # Compare with global template if available
         template_source = "project"
@@ -2142,6 +2291,267 @@ def _compute_missing_items_report(tasks: set[str], templates: dict, col_to_task:
         missing = [k for k in expected if k not in present]
         report[task] = len(missing)
     return report
+
+
+def _generate_dry_run_preview(
+    *,
+    df,
+    tasks_with_data: set[str],
+    task_run_columns: dict[tuple[str, int | None], list[str]],
+    col_to_mapping: dict,
+    templates: dict,
+    res_id_col: str,
+    res_ses_col: str | None,
+    session: str | None,
+    selected_tasks: set[str] | None,
+    normalize_sub_fn,
+    normalize_ses_fn,
+    is_missing_fn,
+    ls_system_cols: list[str],
+    participant_template: dict | None,
+    output_root: Path,
+    dataset_root: Path,
+) -> dict:
+    """Generate a detailed preview of what will be created during conversion.
+    
+    This shows:
+    - Files that will be created
+    - Participant mapping
+    - Data quality issues (missing values, wrong formats, etc.)
+    - Column mapping details
+    """
+    
+    preview = {
+        "summary": {},
+        "participants": [],
+        "files_to_create": [],
+        "data_issues": [],
+        "column_mapping": {},
+    }
+    
+    # Summary
+    preview["summary"] = {
+        "total_participants": len(df),
+        "unique_participants": df[res_id_col].nunique(),
+        "tasks": sorted(tasks_with_data),
+        "output_root": str(output_root),
+        "dataset_root": str(dataset_root),
+    }
+    
+    # Track data issues
+    issues = []
+    
+    # Analyze each participant
+    participants_info = []
+    sub_ids_normalized = []
+    
+    for idx, row in df.iterrows():
+        sub_id_raw = row[res_id_col]
+        sub_id = normalize_sub_fn(sub_id_raw)
+        sub_ids_normalized.append(sub_id)
+        
+        ses_id = normalize_ses_fn(session) if session else (
+            normalize_ses_fn(row[res_ses_col]) if res_ses_col else "ses-1"
+        )
+        
+        # Count missing values for this participant
+        missing_count = 0
+        total_items = 0
+        
+        for (task, run), columns in task_run_columns.items():
+            if selected_tasks is not None and task not in selected_tasks:
+                continue
+            
+            for col in columns:
+                val = row.get(col)
+                total_items += 1
+                if is_missing_fn(val):
+                    missing_count += 1
+        
+        participants_info.append({
+            "participant_id": sub_id,
+            "session_id": ses_id,
+            "raw_id": str(sub_id_raw),
+            "missing_values": missing_count,
+            "total_items": total_items,
+            "completeness_percent": round((total_items - missing_count) / total_items * 100, 1) if total_items > 0 else 100,
+        })
+    
+    preview["participants"] = participants_info
+    
+    # Check for duplicate participants
+    from collections import Counter
+    id_counts = Counter(sub_ids_normalized)
+    duplicates = {sub_id: count for sub_id, count in id_counts.items() if count > 1}
+    if duplicates:
+        issues.append({
+            "type": "duplicate_ids",
+            "severity": "error",
+            "message": f"Found {len(duplicates)} duplicate participant IDs after normalization",
+            "details": {k: v for k, v in list(duplicates.items())[:10]},  # Show first 10
+        })
+    
+    # Analyze column mapping and data quality
+    col_mapping_details = {}
+    for col, mapping in col_to_mapping.items():
+        task = mapping.task
+        run = mapping.run
+        base_item = mapping.base_item
+        
+        # Get schema for this task
+        schema = templates[task]["json"]
+        item_def = schema.get(base_item, {})
+        
+        # Analyze this column's data
+        col_values = df[col]
+        missing = col_values.apply(is_missing_fn).sum()
+        total = len(col_values)
+        unique_vals = col_values.dropna().unique()
+        
+        col_info = {
+            "task": task,
+            "run": run,
+            "base_item": base_item,
+            "missing_count": int(missing),
+            "missing_percent": round(missing / total * 100, 1) if total > 0 else 0,
+            "unique_values": len(unique_vals),
+            "data_type": item_def.get("DataType", "unknown"),
+        }
+        
+        # Check for Levels validation issues
+        # BUT: If MinValue/MaxValue are defined, they take precedence (allow any numeric value in range)
+        has_numeric_range = "MinValue" in item_def or "MaxValue" in item_def
+        
+        if "Levels" in item_def and isinstance(item_def["Levels"], dict) and not has_numeric_range:
+            # Only validate against Levels if NO numeric range is defined
+            expected_levels = set(str(k) for k in item_def["Levels"].keys())
+            actual_values = set(str(v) for v in unique_vals if not is_missing_fn(v))
+            unexpected = actual_values - expected_levels
+            
+            if unexpected:
+                issues.append({
+                    "type": "unexpected_values",
+                    "severity": "warning",
+                    "column": col,
+                    "task": task,
+                    "item": base_item,
+                    "message": f"Column '{col}' has {len(unexpected)} unexpected value(s)",
+                    "expected": sorted(expected_levels),
+                    "unexpected": sorted(list(unexpected)[:20]),  # Show first 20
+                })
+                col_info["has_unexpected_values"] = True
+        
+        # Check for numeric range issues
+        if "MinValue" in item_def or "MaxValue" in item_def:
+            try:
+                import pandas as pd
+                numeric_vals = pd.to_numeric(col_values, errors='coerce').dropna()
+                if len(numeric_vals) > 0:
+                    min_val = item_def.get("MinValue")
+                    max_val = item_def.get("MaxValue")
+                    
+                    out_of_range = []
+                    if min_val is not None:
+                        out_of_range.extend(numeric_vals[numeric_vals < min_val])
+                    if max_val is not None:
+                        out_of_range.extend(numeric_vals[numeric_vals > max_val])
+                    
+                    if len(out_of_range) > 0:
+                        issues.append({
+                            "type": "out_of_range",
+                            "severity": "warning",
+                            "column": col,
+                            "task": task,
+                            "item": base_item,
+                            "message": f"Column '{col}' has {len(out_of_range)} value(s) outside expected range",
+                            "range": f"[{min_val}, {max_val}]",
+                            "out_of_range_count": len(out_of_range),
+                        })
+            except Exception:
+                pass
+        
+        col_mapping_details[col] = col_info
+    
+    preview["column_mapping"] = col_mapping_details
+    preview["data_issues"] = issues
+    
+    # List files that will be created
+    files_to_create = []
+    
+    # Dataset description
+    files_to_create.append({
+        "path": "dataset_description.json",
+        "type": "metadata",
+        "description": "Dataset description (BIDS required)",
+    })
+    
+    # Participants files
+    files_to_create.append({
+        "path": "participants.tsv",
+        "type": "metadata",
+        "description": f"Participant list ({len(participants_info)} participants)",
+    })
+    
+    files_to_create.append({
+        "path": "participants.json",
+        "type": "metadata",
+        "description": "Participant column definitions",
+    })
+    
+    # Task sidecars
+    for task in sorted(tasks_with_data):
+        files_to_create.append({
+            "path": f"task-{task}_survey.json",
+            "type": "sidecar",
+            "description": f"Survey template for {task}",
+        })
+    
+    # LimeSurvey metadata (if present)
+    if ls_system_cols:
+        files_to_create.append({
+            "path": "tool-limesurvey.json",
+            "type": "sidecar",
+            "description": f"LimeSurvey system metadata ({len(ls_system_cols)} columns)",
+        })
+    
+    # Individual subject/session files
+    for p_info in participants_info:
+        sub_id = p_info["participant_id"]
+        ses_id = p_info["session_id"]
+        
+        # LimeSurvey data file
+        if ls_system_cols:
+            files_to_create.append({
+                "path": f"{sub_id}/{ses_id}/survey/{sub_id}_{ses_id}_tool-limesurvey.tsv",
+                "type": "data",
+                "description": "LimeSurvey system data",
+            })
+        
+        # Survey data files
+        for task in sorted(tasks_with_data):
+            # Determine if this task has multiple runs
+            max_run = max((r for t, r in task_run_columns.keys() if t == task and r is not None), default=None)
+            
+            if max_run is not None:
+                # Multiple runs - create separate files
+                for run_num in range(1, max_run + 1):
+                    files_to_create.append({
+                        "path": f"{sub_id}/{ses_id}/survey/{sub_id}_{ses_id}_task-{task}_run-{run_num:02d}_survey.tsv",
+                        "type": "data",
+                        "description": f"Survey responses for {task} (run {run_num})",
+                    })
+            else:
+                # Single occurrence
+                files_to_create.append({
+                    "path": f"{sub_id}/{ses_id}/survey/{sub_id}_{ses_id}_task-{task}_survey.tsv",
+                    "type": "data",
+                    "description": f"Survey responses for {task}",
+                })
+    
+    preview["files_to_create"] = files_to_create
+    preview["summary"]["total_files"] = len(files_to_create)
+    
+    return preview
 
 
 def _process_survey_row(
