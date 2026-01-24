@@ -51,6 +51,11 @@ Library survey templates use language maps for study metadata and item text:
 }
 ```
 
+**Discrete vs. numeric scales**
+- Use `Levels` for categorical/ordinal responses where only listed values are valid (e.g., Likert options or named categories).
+- Use `MinValue` / `MaxValue` for numeric ranges; any value inside the range is valid even if not explicitly listed in `Levels`.
+- Do not mix `Levels` with `MinValue` / `MaxValue` for the same item unless the `Levels` entries are just labels for the endpoints; the validator will prioritize the numeric range and emit a warning when both are present.
+
 ### Building Language-Specific Versions
 
 Use `prism_tools.py` to compile a clean, single-language output:

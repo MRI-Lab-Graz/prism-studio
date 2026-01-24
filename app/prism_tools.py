@@ -621,7 +621,96 @@ def cmd_survey_convert(args):
             print(f"  - {c}")
 
     if args.dry_run:
-        print("\nDry-run: no files written.")
+        print("\n" + "="*80)
+        print("DRY-RUN MODE: Conversion Preview")
+        print("="*80)
+        
+        if result.dry_run_preview:
+            preview = result.dry_run_preview
+            
+            # Summary
+            print(f"\n📊 SUMMARY")
+            print(f"   Total participants in file: {preview['summary']['total_participants']}")
+            print(f"   Unique participants: {preview['summary']['unique_participants']}")
+            print(f"   Tasks detected: {', '.join(preview['summary']['tasks'])}")
+            print(f"   Total files to create: {preview['summary']['total_files']}")
+            
+            # Data issues
+            if preview['data_issues']:
+                print(f"\n⚠️  DATA ISSUES FOUND ({len(preview['data_issues'])})")
+                print("   These issues should be fixed in your input data BEFORE conversion:\n")
+                
+                for issue in preview['data_issues'][:10]:  # Show first 10
+                    severity = issue['severity'].upper()
+                    print(f"   [{severity}] {issue['type']}")
+                    print(f"   → {issue['message']}")
+                    
+                    if issue['type'] == 'duplicate_ids':
+                        print(f"   → Duplicates found: {list(issue['details'].keys())[:5]}")
+                    elif issue['type'] == 'unexpected_values':
+                        print(f"   → Column: {issue['column']} (task: {issue['task']}, item: {issue['item']})")
+                        print(f"   → Expected values: {', '.join(issue['expected'][:10])}")
+                        print(f"   → Unexpected values: {', '.join(str(v) for v in issue['unexpected'][:10])}")
+                    elif issue['type'] == 'out_of_range':
+                        print(f"   → Column: {issue['column']} (task: {issue['task']}, item: {issue['item']})")
+                        print(f"   → Expected range: {issue['range']}")
+                        print(f"   → Values out of range: {issue['out_of_range_count']}")
+                    print()
+                
+                if len(preview['data_issues']) > 10:
+                    print(f"   ... and {len(preview['data_issues']) - 10} more issues")
+            else:
+                print(f"\n✅ NO DATA ISSUES DETECTED")
+            
+            # Participants preview
+            print(f"\n👥 PARTICIPANT PREVIEW (first 10)")
+            for p in preview['participants'][:10]:
+                completeness = p['completeness_percent']
+                status = "✓" if completeness > 80 else ("⚠" if completeness > 50 else "✗")
+                print(f"   {status} {p['participant_id']} ({p['session_id']})")
+                print(f"      Raw ID: {p['raw_id']}")
+                print(f"      Completeness: {completeness}% ({p['total_items'] - p['missing_values']}/{p['total_items']} items)")
+            
+            if len(preview['participants']) > 10:
+                print(f"   ... and {len(preview['participants']) - 10} more participants")
+            
+            # Column mapping preview
+            print(f"\n📋 COLUMN MAPPING (first 15)")
+            shown = 0
+            for col, info in list(preview['column_mapping'].items())[:15]:
+                run_info = f" (run {info['run']})" if info['run'] else ""
+                status = "⚠" if info.get('has_unexpected_values') else "✓"
+                print(f"   {status} {col}")
+                print(f"      → Task: {info['task']}{run_info}, Item: {info['base_item']}")
+                print(f"      → Missing: {info['missing_percent']}% ({info['missing_count']} values)")
+                if info.get('has_unexpected_values'):
+                    print(f"      ⚠  Has unexpected values!")
+                shown += 1
+            
+            if len(preview['column_mapping']) > 15:
+                print(f"   ... and {len(preview['column_mapping']) - 15} more columns")
+            
+            # Files to create
+            print(f"\n📁 FILES TO CREATE (showing structure)")
+            file_types = {}
+            for f in preview['files_to_create']:
+                file_types[f['type']] = file_types.get(f['type'], 0) + 1
+            
+            print(f"   Metadata files: {file_types.get('metadata', 0)}")
+            print(f"   Sidecar files: {file_types.get('sidecar', 0)}")
+            print(f"   Data files: {file_types.get('data', 0)}")
+            
+            print(f"\n   Sample files:")
+            shown_by_type = {'metadata': 0, 'sidecar': 0, 'data': 0}
+            for f in preview['files_to_create']:
+                if shown_by_type[f['type']] < 3:
+                    print(f"   - {f['path']}")
+                    print(f"     {f['description']}")
+                    shown_by_type[f['type']] += 1
+        
+        print("\n" + "="*80)
+        print("No files were created. Run without --dry-run to execute the conversion.")
+        print("="*80)
         return
 
     print("\n✅ Survey conversion complete.")

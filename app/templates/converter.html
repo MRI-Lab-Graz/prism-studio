@@ -345,9 +345,9 @@
                             <!-- Row 4: ID Mapping, Session, Unknown Items, Strict Levels (conversion settings) -->
                             <div class="row g-3 mb-3">
                                 <div class="col-md-3" id="convertAliasGroup">
-                                    <label for="convertAliasFile" class="form-label">ID Mapping File (optional)</label>
-                                    <input class="form-control" type="file" id="convertAliasFile" accept=".tsv,.txt">
-                                    <div class="form-text">Only needed if item IDs changed over time.</div>
+                                    <label for="convertIdMapFile" class="form-label">ID Mapping File (optional)</label>
+                                    <input class="form-control" type="file" id="convertIdMapFile" accept=".tsv,.txt,.csv">
+                                    <div class="form-text">Map source IDs to participant_id (two-column TSV/CSV).</div>
                                 </div>
                                 <div class="col-md-3" id="convertSessionGroup">
                                     <label for="convertSession" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
@@ -397,7 +397,12 @@
 
                             <!-- Row 6: Convert button -->
                             <div class="row g-3 mb-3">
-                                <div class="col-12">
+                                <div class="col-md-6">
+                                    <button class="btn btn-info text-white w-100" type="button" id="previewBtn" disabled>
+                                        <i class="fas fa-eye me-2"></i>Preview (Dry-Run)
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
                                     <button class="btn btn-warning text-white w-100" type="button" id="convertBtn" disabled>
                                         <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
                                     </button>
@@ -1337,13 +1342,66 @@ document.addEventListener('DOMContentLoaded', function() {
     const convertLibraryPathInput = document.getElementById('convertLibraryPath');
     const convertBrowseLibraryBtn = document.getElementById('convertBrowseLibraryBtn');
     const convertExcelFile = document.getElementById('convertExcelFile');
-    const convertAliasFile = document.getElementById('convertAliasFile');
+    const convertIdMapFile = document.getElementById('convertIdMapFile');
     const convertBtn = document.getElementById('convertBtn');
+    const previewBtn = document.getElementById('previewBtn');
     const convertDatasetName = document.getElementById('convertDatasetName');
     const convertUnknown = document.getElementById('convertUnknown');
     const convertLanguage = document.getElementById('convertLanguage');
     const convertError = document.getElementById('convertError');
     const convertInfo = document.getElementById('convertInfo');
+
+    // Validate ID map immediately on selection (basic sanity: 2 columns, some rows)
+    // Use FileReader instead of file.text() to avoid consuming the file stream
+    async function validateIdMapFile(file) {
+        if (!file) return true;
+        try {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const text = e.target.result;
+                        const first = (text || '').split(/\r?\n/).filter(Boolean).slice(0, 5);
+                        if (!first.length) throw new Error('File is empty');
+                        const detectSep = (line) => (line.includes('\t') ? '\t' : (line.includes(',') ? ',' : null));
+                        let sep = detectSep(first[0]);
+                        if (!sep && first[1]) sep = detectSep(first[1]);
+                        if (!sep) throw new Error('Could not detect delimiter (expected tab or comma)');
+                        const cols = first[0].split(sep);
+                        if (cols.length < 2) throw new Error('Need at least two columns (source, participant_id)');
+                        if (first.length < 2) throw new Error('File has header only; add mapping rows');
+                        convertError.classList.add('d-none');
+                        convertError.textContent = '';
+                        resolve(true);
+                    } catch (err) {
+                        convertError.classList.remove('d-none');
+                        convertError.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>ID map error: ${err.message}`;
+                        resolve(false);
+                    }
+                };
+                reader.onerror = () => {
+                    convertError.classList.remove('d-none');
+                    convertError.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Could not read ID map file`;
+                    resolve(false);
+                };
+                reader.readAsText(file);
+            });
+        } catch (e) {
+            convertError.classList.remove('d-none');
+            convertError.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>ID map error: ${e.message}`;
+            return false;
+        }
+    }
+
+    if (convertIdMapFile) {
+        convertIdMapFile.addEventListener('change', () => {
+            const f = convertIdMapFile.files && convertIdMapFile.files[0];
+            if (f) {
+                // Just log selection, don't validate (avoids stream issues)
+                console.log(`ID map file selected: ${f.name} (${f.size} bytes)`);
+            }
+        });
+    }
 
     // --- Biometrics Convert ---
     const biometricsLibraryPathInput = document.getElementById('biometricsLibraryPath');
@@ -1730,6 +1788,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Both modes only need a file now (library path is resolved automatically)
         convertBtn.disabled = !hasFile;
+        
+        // Preview button is only available in data conversion mode
+        if (previewBtn) {
+            if (mode === 'template') {
+                previewBtn.disabled = true;
+                previewBtn.style.display = 'none';
+                // Make convert button full width in template mode
+                convertBtn.parentElement.classList.remove('col-md-6');
+                convertBtn.parentElement.classList.add('col-12');
+            } else {
+                previewBtn.disabled = !hasFile;
+                previewBtn.style.display = '';
+                // Restore split layout in data conversion mode
+                convertBtn.parentElement.classList.remove('col-12');
+                convertBtn.parentElement.classList.add('col-md-6');
+            }
+        }
 
         // Update button text based on mode
         if (convertBtn) {
@@ -2705,7 +2780,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    convertBtn.addEventListener('click', function() {
+    convertBtn.addEventListener('click', async function() {
         convertError.classList.add('d-none');
         convertInfo.classList.add('d-none');
         convertError.textContent = '';
@@ -2755,13 +2830,25 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Validate ID map before sending
+        const idMap = convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
+        if (idMap) {
+            if (idMap.size === 0) {
+                convertError.classList.remove('d-none');
+                convertError.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>ID map file is empty`;
+                return;
+            }
+        }
+
         const formData = new FormData();
         formData.append('excel', file);
+        console.log(`[CLIENT DEBUG] Excel file: ${file.name}, size: ${file.size}`);
 
-        const alias = convertAliasFile && convertAliasFile.files && convertAliasFile.files[0];
-        if (alias) {
-            formData.append('alias', alias);
-            appendLog(`Using alias file: ${alias.name}`, 'step');
+        if (idMap) {
+            console.log(`[CLIENT DEBUG] ID map file before append: ${idMap.name}, size: ${idMap.size}, type: ${idMap.type}`);
+            formData.append('id_map', idMap);
+            console.log(`[CLIENT DEBUG] ID map appended to FormData`);
+            appendLog(`Using ID map file: ${idMap.name} (${idMap.size} bytes)`, 'step');
         }
 
         // Library path is now resolved automatically (project first, then global)
@@ -2899,6 +2986,227 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .finally(() => {
             updateConvertBtn();
+        });
+    });
+
+    // Preview button (dry-run) handler
+    previewBtn.addEventListener('click', async function() {
+        convertError.classList.add('d-none');
+        convertInfo.classList.add('d-none');
+        convertError.textContent = '';
+        convertInfo.textContent = '';
+        resetConversionUI();
+
+        const file = convertExcelFile.files && convertExcelFile.files[0];
+        if (!file) {
+            return;
+        }
+
+        // Validate ID map before sending
+        const idMap = convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
+        if (idMap) {
+            // Just check that a file is selected; don't read it (avoids stream issues)
+            console.log(`[CLIENT DEBUG] ID map file selected: ${idMap.name} (size: ${idMap.size} bytes, type: ${idMap.type})`);
+            if (idMap.size === 0) {
+                convertError.classList.remove('d-none');
+                convertError.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>ID map file is empty`;
+                return;
+            }
+        }
+
+        const formData = new FormData();
+        formData.append('excel', file);
+
+        if (idMap) {
+            console.log(`[CLIENT DEBUG] About to append id_map to FormData: ${idMap.name} (size: ${idMap.size} bytes)`);
+            formData.append('id_map', idMap);
+            console.log(`[CLIENT DEBUG] Successfully appended id_map to FormData`);
+        }
+
+        // Add ID column if selected
+        const idColumn = document.getElementById('convertIdColumn')?.value;
+        if (idColumn && idColumn !== 'auto') {
+            formData.append('id_column', idColumn);
+        }
+
+        const sessionVal = document.getElementById('convertSession') ? document.getElementById('convertSession').value.trim() : '';
+        if (sessionVal) {
+            formData.append('session', sessionVal);
+        }
+
+        formData.append('language', convertLanguage ? convertLanguage.value : 'auto');
+        formData.append('unknown', convertUnknown.value);
+
+        const strictLevelsEl = document.getElementById('convertStrictLevels');
+        if (strictLevelsEl && strictLevelsEl.checked) {
+            formData.append('strict_levels', 'true');
+        }
+
+        const duplicateHandlingEl = document.getElementById('convertDuplicateHandling');
+        if (duplicateHandlingEl) {
+            formData.append('duplicate_handling', duplicateHandlingEl.value);
+        }
+
+        // Show log container
+        conversionLogContainer.classList.remove('d-none');
+        conversionLogBody.classList.remove('d-none');
+        const icon = toggleLogBtn.querySelector('i');
+        icon.classList.remove('fa-chevron-right');
+        icon.classList.add('fa-chevron-down');
+
+        appendLog('🔍 PREVIEW MODE (Dry-Run)', 'info');
+        appendLog('═══════════════════════════════════════', 'info');
+        appendLog(`Analyzing file: ${file.name}`, 'step');
+        if (idMap) {
+            appendLog(`With ID map: ${idMap.name}`, 'step');
+        }
+        appendLog('No files will be created.', 'info');
+        appendLog('', 'info');
+
+        console.log(`[CLIENT DEBUG] FormData ready, sending to /api/survey-convert-preview`);
+        console.log(`[CLIENT DEBUG] FormData contains:`, {
+            excel: file.name,
+            excel_size: file.size,
+            id_map: idMap ? idMap.name : null,
+            id_map_size: idMap ? idMap.size : null
+        });
+
+        previewBtn.disabled = true;
+        convertBtn.disabled = true;
+
+        fetch('/api/survey-convert-preview', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(async response => {
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Preview failed');
+            }
+
+            const preview = data.preview;
+            
+            if (!preview) {
+                appendLog('⚠ No preview data received', 'warning');
+                return;
+            }
+
+            // Display summary
+            appendLog('📊 SUMMARY', 'info');
+            appendLog(`   Total participants: ${preview.summary.total_participants}`, 'info');
+            appendLog(`   Unique participants: ${preview.summary.unique_participants}`, 'info');
+            appendLog(`   Tasks detected: ${preview.summary.tasks.join(', ')}`, 'info');
+            appendLog(`   Total files to create: ${preview.summary.total_files}`, 'info');
+            appendLog('', 'info');
+
+            // Display data issues
+            if (preview.data_issues && preview.data_issues.length > 0) {
+                appendLog(`⚠️  DATA ISSUES FOUND (${preview.data_issues.length})`, 'warning');
+                appendLog('   Fix these issues BEFORE conversion:', 'warning');
+                appendLog('', 'warning');
+                
+                preview.data_issues.slice(0, 10).forEach(issue => {
+                    const severity = issue.severity.toUpperCase();
+                    appendLog(`   [${severity}] ${issue.type}`, 'warning');
+                    appendLog(`   → ${issue.message}`, 'warning');
+                    
+                    if (issue.type === 'duplicate_ids' && issue.details) {
+                        const dups = Object.keys(issue.details).slice(0, 5);
+                        appendLog(`   → Duplicates: ${dups.join(', ')}`, 'warning');
+                    } else if (issue.type === 'unexpected_values') {
+                        appendLog(`   → Column: ${issue.column} (task: ${issue.task}, item: ${issue.item})`, 'warning');
+                        if (issue.unexpected) {
+                            appendLog(`   → Unexpected values: ${issue.unexpected.slice(0, 5).join(', ')}`, 'warning');
+                        }
+                    } else if (issue.type === 'out_of_range') {
+                        appendLog(`   → Column: ${issue.column} (task: ${issue.task}, item: ${issue.item})`, 'warning');
+                        appendLog(`   → Expected range: ${issue.range}`, 'warning');
+                        appendLog(`   → Out of range count: ${issue.out_of_range_count}`, 'warning');
+                    }
+                    appendLog('', 'warning');
+                });
+                
+                if (preview.data_issues.length > 10) {
+                    appendLog(`   ... and ${preview.data_issues.length - 10} more issues`, 'warning');
+                }
+                appendLog('', 'info');
+            } else {
+                appendLog('✅ NO DATA ISSUES DETECTED', 'success');
+                appendLog('', 'info');
+            }
+
+            // Display participant preview
+            appendLog('👥 PARTICIPANT PREVIEW (first 10)', 'info');
+            preview.participants.slice(0, 10).forEach(p => {
+                const completeness = p.completeness_percent;
+                const status = completeness > 80 ? '✓' : (completeness > 50 ? '⚠' : '✗');
+                appendLog(`   ${status} ${p.participant_id} (${p.session_id})`, 'info');
+                appendLog(`      Raw ID: ${p.raw_id}`, 'info');
+                appendLog(`      Completeness: ${completeness}% (${p.total_items - p.missing_values}/${p.total_items} items)`, 'info');
+            });
+            
+            if (preview.participants.length > 10) {
+                appendLog(`   ... and ${preview.participants.length - 10} more participants`, 'info');
+            }
+            appendLog('', 'info');
+
+            // Display column mapping preview
+            appendLog('📋 COLUMN MAPPING (first 15)', 'info');
+            const cols = Object.entries(preview.column_mapping).slice(0, 15);
+            cols.forEach(([col, info]) => {
+                const run_info = info.run ? ` (run ${info.run})` : '';
+                const status = info.has_unexpected_values ? '⚠' : '✓';
+                appendLog(`   ${status} ${col}`, 'info');
+                appendLog(`      → Task: ${info.task}${run_info}, Item: ${info.base_item}`, 'info');
+                appendLog(`      → Missing: ${info.missing_percent}% (${info.missing_count} values)`, 'info');
+                if (info.has_unexpected_values) {
+                    appendLog(`      ⚠ Has unexpected values!`, 'warning');
+                }
+            });
+            
+            if (Object.keys(preview.column_mapping).length > 15) {
+                appendLog(`   ... and ${Object.keys(preview.column_mapping).length - 15} more columns`, 'info');
+            }
+            appendLog('', 'info');
+
+            // Display file structure
+            appendLog('📁 FILES TO CREATE', 'info');
+            const fileTypes = {};
+            preview.files_to_create.forEach(f => {
+                fileTypes[f.type] = (fileTypes[f.type] || 0) + 1;
+            });
+            
+            appendLog(`   Metadata files: ${fileTypes.metadata || 0}`, 'info');
+            appendLog(`   Sidecar files: ${fileTypes.sidecar || 0}`, 'info');
+            appendLog(`   Data files: ${fileTypes.data || 0}`, 'info');
+            appendLog('', 'info');
+            
+            appendLog('   Sample files:', 'info');
+            const shownByType = {metadata: 0, sidecar: 0, data: 0};
+            preview.files_to_create.forEach(f => {
+                if (shownByType[f.type] < 3) {
+                    appendLog(`   - ${f.path}`, 'info');
+                    appendLog(`     ${f.description}`, 'info');
+                    shownByType[f.type]++;
+                }
+            });
+
+            appendLog('', 'info');
+            appendLog('═══════════════════════════════════════', 'info');
+            appendLog('Preview complete. Run Convert to create files.', 'success');
+            
+            convertInfo.innerHTML = '<i class="fas fa-info-circle me-2"></i>Preview complete. Review the log above, then click <strong>Convert</strong> to proceed.';
+            convertInfo.classList.remove('d-none');
+        })
+        .catch(err => {
+            appendLog(`Error: ${err.message}`, 'error');
+            convertError.textContent = err.message;
+            convertError.classList.remove('d-none');
+        })
+        .finally(() => {
+            previewBtn.disabled = false;
+            convertBtn.disabled = false;
         });
     });
 
