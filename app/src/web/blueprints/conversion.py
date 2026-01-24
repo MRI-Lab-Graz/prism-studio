@@ -1465,37 +1465,71 @@ def api_physio_rename():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@conversion_bp.route("/save_participant_mapping", methods=["POST"])
+@conversion_bp.route("/api/save-participant-mapping", methods=["POST"])
 def save_participant_mapping():
-    """Save participant mapping JSON file to the survey library directory."""
+    """Save participant mapping JSON file to the project survey library directory.
+    
+    Priority:
+    1. Save to project library if available
+    2. Fall back to provided library path
+    """
     try:
+        import json
+        
         data = request.get_json()
         if not data:
             return jsonify({"error": "No JSON data provided"}), 400
         
         mapping = data.get("mapping")
         library_path = data.get("library_path")
+        project_path = session.get('current_project_path')
         
-        if not mapping or not library_path:
-            return jsonify({"error": "Missing mapping or library_path"}), 400
+        if not mapping:
+            return jsonify({"error": "Missing mapping data"}), 400
         
-        # Ensure library path is valid and exists
-        lib_path = Path(library_path).resolve()
-        if not lib_path.exists() or not lib_path.is_dir():
-            return jsonify({"error": f"Library path does not exist: {library_path}"}), 400
+        # Determine target library path
+        target_lib_path = None
+        used_source = None
         
-        # Create participants_mapping.json in the library directory
-        mapping_file = lib_path / "participants_mapping.json"
+        # Priority 1: Use project library if available
+        if project_path:
+            try:
+                project_lib = Path(str(project_path)).resolve() / "code" / "library" / "survey"
+                if project_lib.exists() and project_lib.is_dir():
+                    target_lib_path = project_lib
+                    used_source = "project"
+            except Exception:
+                pass  # Fall through to Priority 2
+        
+        # Priority 2: Fall back to provided library path
+        if not target_lib_path and library_path:
+            try:
+                lib_path = Path(str(library_path)).resolve()
+                if lib_path.exists() and lib_path.is_dir():
+                    target_lib_path = lib_path
+                    used_source = "provided"
+            except Exception as e:
+                return jsonify({"error": f"Invalid library path: {str(e)}"}), 400
+        
+        if not target_lib_path:
+            return jsonify({
+                "error": "No valid library path found. Please ensure project is loaded or select a library path."
+            }), 400
+        
+        # Create participants_mapping.json in the target library directory
+        mapping_file = target_lib_path / "participants_mapping.json"
         
         # Write the mapping file
-        import json
         with open(mapping_file, 'w') as f:
             json.dump(mapping, f, indent=2)
         
         return jsonify({
             "status": "success",
             "file_path": str(mapping_file),
+            "library_source": used_source,
             "message": f"Participant mapping saved to {mapping_file.name}"
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Error saving mapping: {str(e)}"}), 500

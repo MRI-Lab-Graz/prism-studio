@@ -976,9 +976,12 @@
                 <div class="alert alert-info">
                     <strong>ℹ️ What is this?</strong><br>
                     <small>
-                        <strong>Participant Mapping:</strong> Maps demographic/unused columns from your survey to participants.tsv<br>
+                        <strong>Participant Mapping:</strong> Maps demographic/unused columns from your survey to participants.tsv (saved to PROJECT library)<br>
                         <strong>ID Mapping:</strong> Maps participant IDs between different systems<br>
-                        This dialog helps you create a <code>participants_mapping.json</code> file automatically.
+                        <br>
+                        <i class="fas fa-check-circle text-success me-1"></i> File will be saved to your <strong>project</strong> library survey directory<br>
+                        <i class="fas fa-book text-info me-1"></i> References participant.json template from <strong>global</strong> library<br>
+                        <i class="fas fa-circle-info text-secondary me-1"></i> Variables without NeuroBagel template definitions will be added as custom fields
                     </small>
                 </div>
 
@@ -3148,17 +3151,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 mapping[fieldCode] = targetCol;
             });
 
-            // Get the library path from the form
+            // Get the library path from the form (will use project library by preference in backend)
             const libraryPath = document.getElementById('convertLibraryPath')?.value || '';
-            
-            if (!libraryPath) {
-                showMappingError('Please select a library path first');
-                return;
-            }
 
             try {
                 // Send mapping to backend to save
-                const response = await fetch('/api/v1/converter/save_participant_mapping', {
+                const response = await fetch('/api/save-participant-mapping', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
