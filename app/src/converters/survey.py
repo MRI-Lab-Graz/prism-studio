@@ -2293,6 +2293,172 @@ def _compute_missing_items_report(tasks: set[str], templates: dict, col_to_task:
     return report
 
 
+def _generate_participants_preview(
+    *,
+    df,
+    res_id_col: str,
+    res_ses_col: str | None,
+    session: str | None,
+    normalize_sub_fn,
+    normalize_ses_fn,
+    is_missing_fn,
+    participant_template: dict | None,
+    output_root: Path,
+    survey_columns: set[str] | None = None,
+    ls_system_columns: list[str] | None = None,
+) -> dict:
+    """Generate a preview of what will be written to participants.tsv.
+    
+    Args:
+        df: Input DataFrame
+        res_id_col: Participant ID column name
+        res_ses_col: Session column name (if any)
+        session: Default session value
+        normalize_sub_fn: Function to normalize subject IDs
+        normalize_ses_fn: Function to normalize session IDs
+        is_missing_fn: Function to check if a value is missing
+        participant_template: Participant template dict
+        output_root: Output root path
+        survey_columns: Set of columns being used for survey items (optional)
+        ls_system_columns: List of LimeSurvey system columns (optional)
+    
+    Returns:
+        Dictionary with structure:
+        {
+            "columns": [...],  # Column names that will be in participants.tsv
+            "sample_rows": [...],  # Sample rows (up to 10 first participants)
+            "mappings": {...},  # Details about which source columns -> output columns
+            "total_rows": int,  # Total number of participant rows
+            "unused_columns": [...],  # Columns not used in survey or participants (candidates for mapping)
+            "notes": [...]  # Any notes about the mapping
+        }
+    """
+    import pandas as pd
+    
+    preview = {
+        "columns": [],
+        "sample_rows": [],
+        "mappings": {},
+        "total_rows": 0,
+        "unused_columns": [],
+        "notes": [],
+    }
+    
+    # Load participants mapping if it exists
+    participants_mapping = _load_participants_mapping(output_root)
+    mapped_cols, col_renames, value_mappings = _get_mapped_columns(participants_mapping)
+    
+    # Get template columns
+    lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
+    template_norm = _normalize_participant_template_dict(participant_template)
+    template_cols = set(template_norm.keys()) if template_norm else set()
+    non_column_keys = {"@context", "Technical", "I18n", "Study", "Metadata", "_aliases", "_reverse_aliases"}
+    template_cols = template_cols - non_column_keys
+    
+    # Determine which columns will be included
+    extra_cols: list[str] = []
+    col_output_names: dict[str, str] = {}  # source col -> output name
+    
+    if participants_mapping and mapped_cols:
+        # Using explicit mapping
+        for source_col_lower in mapped_cols:
+            if source_col_lower in lower_to_col:
+                actual_col = lower_to_col[source_col_lower]
+                if actual_col not in {res_id_col, res_ses_col}:
+                    extra_cols.append(actual_col)
+                    output_name = col_renames.get(source_col_lower, source_col_lower)
+                    col_output_names[actual_col] = output_name
+        
+        preview["notes"].append(
+            f"Using participants_mapping.json with {len(mapped_cols)} explicit column mappings"
+        )
+    else:
+        # Using template columns only
+        for col in template_cols:
+            if col in lower_to_col:
+                actual_col = lower_to_col[col]
+                if actual_col not in {res_id_col, res_ses_col}:
+                    extra_cols.append(actual_col)
+                    col_output_names[actual_col] = col
+        
+        if not extra_cols:
+            preview["notes"].append(
+                "No participants_mapping.json found. Using template columns only (or none available in data)."
+            )
+        else:
+            preview["notes"].append(
+                f"No participants_mapping.json found. Using {len(extra_cols)} columns from participant template."
+            )
+    
+    # Build list of columns that will be in output
+    output_columns = ["participant_id"] + [col_output_names.get(c, c) for c in extra_cols]
+    preview["columns"] = output_columns
+    
+    # Build sample rows with actual data
+    extra_cols = list(dict.fromkeys(extra_cols))  # Remove duplicates
+    sample_rows = []
+    
+    for idx, row in df.iterrows():
+        if len(sample_rows) >= 10:  # Limit to 10 sample rows
+            break
+        
+        sub_id_raw = row[res_id_col]
+        sub_id = normalize_sub_fn(sub_id_raw)
+        
+        row_data = {"participant_id": sub_id}
+        
+        for col in extra_cols:
+            output_name = col_output_names.get(col, col)
+            val = row.get(col)
+            
+            # Apply value mapping if specified
+            if output_name in value_mappings:
+                val_map = value_mappings[output_name]
+                display_val = val_map.get(str(val), str(val)) if val not in ("nan", "None", "") else _MISSING_TOKEN
+            else:
+                if is_missing_fn(val):
+                    display_val = _MISSING_TOKEN
+                else:
+                    display_val = str(val)
+            
+            row_data[output_name] = display_val
+        
+        sample_rows.append(row_data)
+    
+    preview["sample_rows"] = sample_rows
+    preview["total_rows"] = len(df[res_id_col].unique())
+    
+    # Build mapping details
+    if extra_cols:
+        for col in extra_cols:
+            output_name = col_output_names.get(col, col)
+            preview["mappings"][output_name] = {
+                "source_column": col,
+                "has_value_mapping": output_name in value_mappings,
+                "value_mapping": value_mappings.get(output_name, {}),
+            }
+    
+    # Identify unused columns (potential participants.tsv candidates)
+    # Unused columns are those that are:
+    # - Not in col_output_names (not already mapped to participants.tsv)
+    # - Not in survey_columns (not used for survey items)
+    # - Not in ls_system_columns (not LimeSurvey system columns)
+    # - Not the participant ID or session columns
+    
+    used_in_participants = set(extra_cols) | {res_id_col, res_ses_col} if res_ses_col else set(extra_cols) | {res_id_col}
+    survey_cols = survey_columns or set()
+    ls_sys_cols = set(ls_system_columns) if ls_system_columns else set()
+    
+    unused_cols = []
+    for col in df.columns:
+        if col not in used_in_participants and col not in survey_cols and col not in ls_sys_cols:
+            unused_cols.append(col)
+    
+    preview["unused_columns"] = sorted(unused_cols)
+    
+    return preview
+
+
 def _generate_dry_run_preview(
     *,
     df,
@@ -2550,6 +2716,22 @@ def _generate_dry_run_preview(
     
     preview["files_to_create"] = files_to_create
     preview["summary"]["total_files"] = len(files_to_create)
+    
+    # Generate participants.tsv preview
+    participants_tsv_preview = _generate_participants_preview(
+        df=df,
+        res_id_col=res_id_col,
+        res_ses_col=res_ses_col,
+        session=session,
+        normalize_sub_fn=normalize_sub_fn,
+        normalize_ses_fn=normalize_ses_fn,
+        is_missing_fn=is_missing_fn,
+        participant_template=participant_template,
+        output_root=output_root,
+        survey_columns=set(col_to_mapping.keys()),  # Columns used for survey items
+        ls_system_columns=ls_system_cols,  # LimeSurvey system columns
+    )
+    preview["participants_tsv"] = participants_tsv_preview
     
     return preview
 
