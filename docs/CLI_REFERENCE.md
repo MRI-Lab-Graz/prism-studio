@@ -58,6 +58,7 @@ python prism.py /path/to/dataset
 | `--bids` | Run the standard BIDS validator in addition to PRISM validation. |
 | `--bids-warnings` | Include warnings from BIDS validator output (default hidden). |
 | `--no-prism` | Skip PRISM-specific checks (only BIDS if `--bids` is set). |
+| `--validate-templates PATH` | Validate all survey/biometrics JSON templates in a library directory. See [Template Validation](TEMPLATE_VALIDATION.md) for details. |
 | `--json` | Output a JSON report to stdout (compact). |
 | `--json-pretty` | Output a JSON report to stdout (pretty). |
 | `--format {json,sarif,junit,markdown,csv}` | Set an explicit output format. |
@@ -81,6 +82,9 @@ python prism.py /data/study-01 --bids
 
 # Produce SARIF for GitHub Code Scanning
 python prism.py /data/study-01 --format sarif -o prism.sarif
+
+# Validate survey templates in your project library
+python prism.py --validate-templates /code/library/survey
 
 # Auto-fix (preview)
 python prism.py /data/study-01 --fix --dry-run

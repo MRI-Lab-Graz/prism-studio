@@ -42,6 +42,7 @@ try:
         generate_plugin_template,
         list_plugins,
     )
+    from template_validator import validate_templates
 except ImportError as e:
     print(f"❌ Import error: {e}")
     print("Make sure you're running from the project root directory")
@@ -61,6 +62,7 @@ Examples:
   %(prog)s /path/to/dataset --fix
   %(prog)s /path/to/dataset --fix --dry-run
   %(prog)s --schema-info image
+  %(prog)s --validate-templates /path/to/library/survey
         """,
     )
 
@@ -157,10 +159,28 @@ Examples:
         help="Disable plugin loading",
     )
     parser.add_argument(
+        "--validate-templates",
+        metavar="PATH",
+        help="Validate survey/biometrics templates in a library directory",
+    )
+    parser.add_argument(
         "--version", action="version", version="PRISM 1.7.1"
     )
 
     args = parser.parse_args()
+
+    # Handle template validation request
+    if args.validate_templates:
+        library_path = args.validate_templates
+        if not os.path.exists(library_path):
+            print(f"❌ Library directory not found: {library_path}")
+            sys.exit(1)
+
+        errors, summary = validate_templates(library_path, verbose=True)
+        
+        # Exit with error code if there are errors (not just warnings)
+        error_count = sum(1 for e in errors if e.severity == "error")
+        sys.exit(1 if error_count > 0 else 0)
 
     # Handle list fixes request
     if args.list_fixes:
