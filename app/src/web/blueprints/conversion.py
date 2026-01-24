@@ -1464,3 +1464,38 @@ def api_physio_rename():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@conversion_bp.route("/save_participant_mapping", methods=["POST"])
+def save_participant_mapping():
+    """Save participant mapping JSON file to the survey library directory."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+        
+        mapping = data.get("mapping")
+        library_path = data.get("library_path")
+        
+        if not mapping or not library_path:
+            return jsonify({"error": "Missing mapping or library_path"}), 400
+        
+        # Ensure library path is valid and exists
+        lib_path = Path(library_path).resolve()
+        if not lib_path.exists() or not lib_path.is_dir():
+            return jsonify({"error": f"Library path does not exist: {library_path}"}), 400
+        
+        # Create participants_mapping.json in the library directory
+        mapping_file = lib_path / "participants_mapping.json"
+        
+        # Write the mapping file
+        import json
+        with open(mapping_file, 'w') as f:
+            json.dump(mapping, f, indent=2)
+        
+        return jsonify({
+            "status": "success",
+            "file_path": str(mapping_file),
+            "message": f"Participant mapping saved to {mapping_file.name}"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

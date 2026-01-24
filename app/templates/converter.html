@@ -409,6 +409,16 @@
                                 </div>
                             </div>
 
+                            <!-- Row 7: Participant Mapping button -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-12">
+                                    <button class="btn btn-outline-success w-100" type="button" id="createParticipantMappingBtn" disabled title="Creates a participants_mapping.json file to map unused survey columns to participants.tsv">
+                                        <i class="fas fa-list-check me-2"></i>Create Participant Mapping
+                                        <span class="badge bg-info ms-2" data-bs-toggle="tooltip" title="Map demographic/unused columns to participants.tsv (different from ID mapping)">?</span>
+                                    </button>
+                                </div>
+                            </div>
+
                             <div id="convertError" class="alert alert-danger d-none mt-3"></div>
                             <div id="convertInfo" class="alert alert-info d-none mt-3"></div>
 
@@ -947,6 +957,57 @@
         </div>
     </div>
 </div>
+
+<!-- Modal: Create Participant Mapping -->
+<div class="modal fade" id="participantMappingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-map me-2"></i>Create Participant Mapping
+                    <small class="d-block mt-1" style="font-size: 0.7em; font-weight: normal;">
+                        Map unused survey columns to participants.tsv
+                        <span class="badge bg-warning text-dark ms-2">Different from ID Mapping</span>
+                    </small>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <strong>ℹ️ What is this?</strong><br>
+                    <small>
+                        <strong>Participant Mapping:</strong> Maps demographic/unused columns from your survey to participants.tsv<br>
+                        <strong>ID Mapping:</strong> Maps participant IDs between different systems<br>
+                        This dialog helps you create a <code>participants_mapping.json</code> file automatically.
+                    </small>
+                </div>
+
+                <div id="mappingColumnsContainer">
+                    <p class="text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading unused columns...</p>
+                </div>
+
+                <div id="mappingSuccess" class="alert alert-success d-none mt-3">
+                    <i class="fas fa-check-circle me-2"></i>Mapping file created successfully!
+                    <div id="mappingFilePath" class="mt-2 small"></div>
+                </div>
+
+                <div id="mappingError" class="alert alert-danger d-none mt-3">
+                    <i class="fas fa-exclamation-circle me-2"></i><span id="mappingErrorText"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="saveMappingBtn" disabled>
+                    <i class="fas fa-save me-2"></i>Save Mapping
+                </button>
+                <button type="button" class="btn btn-primary d-none" id="downloadMappingBtn">
+                    <i class="fas fa-download me-2"></i>Download JSON
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -2989,6 +3050,154 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Participant Mapping button handler
+    const createParticipantMappingBtn = document.getElementById('createParticipantMappingBtn');
+    if (createParticipantMappingBtn) {
+        createParticipantMappingBtn.addEventListener('click', function() {
+            // Show the modal and prepare the mapping interface
+            const modal = new bootstrap.Modal(document.getElementById('participantMappingModal'));
+            
+            // Get the current preview to extract unused columns
+            if (window.lastPreviewData && window.lastPreviewData.participants_tsv) {
+                const tsv = window.lastPreviewData.participants_tsv;
+                const unusedCols = tsv.unused_columns || [];
+                
+                renderParticipantMappingForm(unusedCols);
+            } else {
+                document.getElementById('mappingColumnsContainer').innerHTML = 
+                    '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>No preview data available. Please run a preview first.</div>';
+            }
+            
+            modal.show();
+        });
+    }
+
+    // Helper function to render the participant mapping form
+    function renderParticipantMappingForm(unusedCols) {
+        const container = document.getElementById('mappingColumnsContainer');
+        
+        if (!unusedCols || unusedCols.length === 0) {
+            container.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>No unused columns available to map.</div>';
+            document.getElementById('saveMappingBtn').disabled = true;
+            return;
+        }
+
+        let html = `
+            <div class="mb-3">
+                <h6>Select columns to include in participants.tsv:</h6>
+                <div class="form-check-list" style="max-height: 300px; overflow-y: auto;">
+        `;
+
+        unusedCols.forEach((item, idx) => {
+            const fieldCode = typeof item === 'object' ? item.field_code : item;
+            const description = typeof item === 'object' ? (item.description || '') : '';
+            const safeName = fieldCode.replace(/[^a-zA-Z0-9_]/g, '_');
+            
+            html += `
+                <div class="form-check mb-2">
+                    <input class="form-check-input col-selector" type="checkbox" id="col_${idx}" value="${fieldCode}" data-description="${description}">
+                    <label class="form-check-label" for="col_${idx}">
+                        <strong>${fieldCode}</strong>
+                        ${description ? `<br><small class="text-muted">→ ${description}</small>` : ''}
+                    </label>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+            <div class="alert alert-info small">
+                <i class="fas fa-lightbulb me-2"></i>
+                <strong>Tip:</strong> Columns with descriptive text are likely demographic fields that should be included.
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        // Enable save button when selections are made
+        const checkboxes = document.querySelectorAll('.col-selector');
+        const updateSaveBtn = () => {
+            const hasSelection = Array.from(checkboxes).some(cb => cb.checked);
+            document.getElementById('saveMappingBtn').disabled = !hasSelection;
+        };
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateSaveBtn);
+        });
+    }
+
+    // Save Mapping button handler
+    const saveMappingBtn = document.getElementById('saveMappingBtn');
+    if (saveMappingBtn) {
+        saveMappingBtn.addEventListener('click', async function() {
+            const selected = Array.from(document.querySelectorAll('.col-selector:checked'));
+            
+            if (selected.length === 0) {
+                alert('Please select at least one column');
+                return;
+            }
+
+            // Build mapping object
+            const mapping = {};
+            selected.forEach(checkbox => {
+                const fieldCode = checkbox.value;
+                const description = checkbox.getAttribute('data-description');
+                // Use the description as target column name if available, otherwise use field code
+                const targetCol = description ? description.toLowerCase().replace(/\s+/g, '_') : fieldCode;
+                mapping[fieldCode] = targetCol;
+            });
+
+            // Get the library path from the form
+            const libraryPath = document.getElementById('convertLibraryPath')?.value || '';
+            
+            if (!libraryPath) {
+                showMappingError('Please select a library path first');
+                return;
+            }
+
+            try {
+                // Send mapping to backend to save
+                const response = await fetch('/api/v1/converter/save_participant_mapping', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mapping: mapping,
+                        library_path: libraryPath
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to save mapping');
+                }
+
+                showMappingSuccess(result.file_path);
+            } catch (err) {
+                showMappingError(err.message);
+            }
+        });
+    }
+
+    function showMappingSuccess(filePath) {
+        document.getElementById('mappingColumnsContainer').classList.add('d-none');
+        document.getElementById('mappingSuccess').classList.remove('d-none');
+        document.getElementById('saveMappingBtn').disabled = true;
+        document.getElementById('mappingError').classList.add('d-none');
+        document.getElementById('mappingFilePath').innerHTML = `
+            <strong>File created:</strong> <code>${filePath}</code>
+        `;
+    }
+
+    function showMappingError(message) {
+        document.getElementById('mappingError').classList.remove('d-none');
+        document.getElementById('mappingErrorText').textContent = message;
+        document.getElementById('mappingSuccess').classList.add('d-none');
+    }
+
     // Preview button (dry-run) handler
     previewBtn.addEventListener('click', async function() {
         convertError.classList.add('d-none');
@@ -3139,6 +3348,15 @@ document.addEventListener('DOMContentLoaded', function() {
             // Display participants.tsv preview
             if (preview.participants_tsv) {
                 const tsv = preview.participants_tsv;
+                
+                // Store preview data globally for the mapping button
+                window.lastPreviewData = preview;
+                
+                // Enable the participant mapping button if there are unused columns
+                if (createParticipantMappingBtn) {
+                    createParticipantMappingBtn.disabled = !(tsv.unused_columns && tsv.unused_columns.length > 0);
+                }
+                
                 appendLog('📝 PARTICIPANTS.TSV PREVIEW', 'info');
                 appendLog('   This file will be created with the following structure:', 'info');
                 appendLog('', 'info');
@@ -3218,6 +3436,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (tsv.unused_columns.length > 10) {
                         appendLog(`      ... and ${tsv.unused_columns.length - 10} more columns`, 'warning');
                     }
+                    
+                    // Add button to create participant mapping
+                    appendLog('', 'info');
+                    appendLog(`   💡 TIP: Click "Create Participant Mapping" button below to map these columns to participants.tsv`, 'info');
                 }
                 
                 appendLog('', 'info');
