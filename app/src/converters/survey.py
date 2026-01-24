@@ -937,7 +937,13 @@ def convert_survey_lsa_to_prism_dataset(
     if input_path.suffix.lower() not in {".lsa"}:
         raise ValueError("Currently only .lsa input is supported.")
 
-    df = _read_table_as_dataframe(input_path=input_path, kind="lsa")
+    result = _read_table_as_dataframe(input_path=input_path, kind="lsa")
+    # LSA returns (df, questions_map); other formats return just df
+    if isinstance(result, tuple):
+        df, lsa_questions_map = result
+    else:
+        df = result
+        lsa_questions_map = None
 
     # If language was not explicitly specified, try to infer it from the LSA.
     inferred_lang, inferred_tech = _infer_lsa_language_and_tech(input_path=input_path, df=df)
@@ -966,6 +972,7 @@ def convert_survey_lsa_to_prism_dataset(
         id_map_file=id_map_file,
         strict_levels=effective_strict_levels,
         duplicate_handling=duplicate_handling,
+        lsa_questions_map=lsa_questions_map,
     )
 
 
@@ -1079,6 +1086,61 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
 
     print(f"[PRISM DEBUG] Loaded ID map with {len(mapping)} entries")
     return mapping
+
+
+def _extract_lsa_questions_map(input_path: Path) -> dict | None:
+    """Extract questions_map from LSA file for metadata lookup.
+    
+    Returns a dict mapping qid -> {title, question, type, ...} or None if extraction fails.
+    """
+    try:
+        with zipfile.ZipFile(input_path) as zf:
+            # Find and read the .lss (structure) file
+            lss_members = [n for n in zf.namelist() if n.endswith(".lss")]
+            if not lss_members:
+                return None
+            
+            xml_bytes = zf.read(lss_members[0])
+            
+            # Parse XML
+            try:
+                lss_root = ET.fromstring(xml_bytes)
+            except Exception:
+                try:
+                    text = xml_bytes.decode("utf-8", errors="replace")
+                    text = re.sub(r'<\?xml.*?\?>', '', text, 1)
+                    lss_root = ET.fromstring(text.strip())
+                except Exception:
+                    return None
+            
+            # Helper to extract text
+            def get_text(element, tag):
+                child = element.find(tag)
+                return (child.text or "").strip() if child is not None else ""
+            
+            # Parse questions section to build qid -> title + question mapping
+            questions_map = {}
+            questions_section = lss_root.find("questions")
+            if questions_section is not None:
+                rows = questions_section.find("rows")
+                if rows is not None:
+                    for row in rows.findall("row"):
+                        qid = get_text(row, "qid")
+                        title = get_text(row, "title")  # Variable name like 'ADS01'
+                        question_text = get_text(row, "question")
+                        
+                        # Clean HTML tags
+                        clean_question = re.sub("<[^<]+?>", "", question_text).strip()
+                        
+                        if qid:
+                            questions_map[qid] = {
+                                "title": title,
+                                "question": clean_question
+                            }
+            
+            return questions_map if questions_map else None
+    except Exception:
+        return None
 
 
 def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 0):
@@ -1242,10 +1304,14 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
 
         df = df.rename(columns={c: str(c).strip() for c in df.columns})
         df.columns = _normalize_lsa_columns([str(c) for c in df.columns])
-        return df
+        
+        # Extract questions_map for metadata lookup (used in preview generation)
+        questions_map = _extract_lsa_questions_map(input_path)
+        
+        # Return tuple of (df, questions_map) for LSA files
+        return (df, questions_map)
 
     raise ValueError(f"Unsupported table kind: {kind}")
-
 
 def _convert_survey_dataframe_to_prism_dataset(
     *,
@@ -1267,6 +1333,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     id_map_file: str | Path | None = None,
     strict_levels: bool = True,
     duplicate_handling: str = "error",
+    lsa_questions_map: dict | None = None,
 ) -> SurveyConvertResult:
     if unknown not in {"error", "warn", "ignore"}:
         raise ValueError("unknown must be one of: error, warn, ignore")
@@ -1483,6 +1550,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             participant_template=participant_template,
             output_root=output_root,
             dataset_root=_resolve_dataset_root(output_root),
+            lsa_questions_map=lsa_questions_map,
         )
         
         return SurveyConvertResult(
@@ -2306,6 +2374,7 @@ def _generate_participants_preview(
     output_root: Path,
     survey_columns: set[str] | None = None,
     ls_system_columns: list[str] | None = None,
+    lsa_questions_map: dict | None = None,
 ) -> dict:
     """Generate a preview of what will be written to participants.tsv.
     
@@ -2454,7 +2523,41 @@ def _generate_participants_preview(
         if col not in used_in_participants and col not in survey_cols and col not in ls_sys_cols:
             unused_cols.append(col)
     
-    preview["unused_columns"] = sorted(unused_cols)
+    # Decode cryptic LimeSurvey field names if we have questions_map
+    unused_cols_with_descriptions = []
+    if lsa_questions_map:
+        # Build mapping from field code/qid to question title/text
+        field_descriptions = {}
+        for qid, q_info in lsa_questions_map.items():
+            title = q_info.get("title", "")
+            question = q_info.get("question", "")
+            # Use title if available, otherwise use question text
+            description = title if title else question
+            field_descriptions[qid] = description
+        
+        # For each unused column, try to find matching description
+        for col in sorted(unused_cols):
+            # Try to extract QID from column name (format: suffix from _XXX pattern)
+            # or use the column name directly if it's already a QID
+            qid_match = re.search(r'^_\d+X\d+X(\d+)', col)
+            qid = qid_match.group(1) if qid_match else col
+            
+            description = field_descriptions.get(qid, "")
+            if description:
+                unused_cols_with_descriptions.append({
+                    "field_code": col,
+                    "description": description
+                })
+            else:
+                unused_cols_with_descriptions.append({
+                    "field_code": col,
+                    "description": ""
+                })
+        
+        preview["unused_columns"] = unused_cols_with_descriptions
+    else:
+        # No LSA metadata, just show column names
+        preview["unused_columns"] = sorted(unused_cols)
     
     return preview
 
@@ -2477,6 +2580,7 @@ def _generate_dry_run_preview(
     participant_template: dict | None,
     output_root: Path,
     dataset_root: Path,
+    lsa_questions_map: dict | None = None,
 ) -> dict:
     """Generate a detailed preview of what will be created during conversion.
     
@@ -2730,6 +2834,7 @@ def _generate_dry_run_preview(
         output_root=output_root,
         survey_columns=set(col_to_mapping.keys()),  # Columns used for survey items
         ls_system_columns=ls_system_cols,  # LimeSurvey system columns
+        lsa_questions_map=lsa_questions_map,  # LSA metadata for decoding field names
     )
     preview["participants_tsv"] = participants_tsv_preview
     
