@@ -719,8 +719,22 @@ def cmd_survey_convert(args):
                     print(f"\n   ⚠️  UNUSED COLUMNS ({len(unused_cols)} available for participants.tsv):")
                     print(f"      These columns are not being imported as survey data and could be included")
                     print(f"      in participants.tsv if you create/update participants_mapping.json:")
-                    for col in unused_cols[:10]:  # Show first 10
-                        print(f"      • {col}")
+                    
+                    displayed = 0
+                    for item in unused_cols[:10]:  # Show first 10
+                        # Handle both old format (string) and new format (dict with description)
+                        if isinstance(item, dict):
+                            field_code = item.get("field_code", "")
+                            description = item.get("description", "")
+                            if description:
+                                print(f"      • {field_code}")
+                                print(f"        ↳ {description}")
+                            else:
+                                print(f"      • {field_code}")
+                        else:
+                            print(f"      • {item}")
+                        displayed += 1
+                    
                     if len(unused_cols) > 10:
                         print(f"      ... and {len(unused_cols) - 10} more columns")
                 

@@ -3136,6 +3136,93 @@ document.addEventListener('DOMContentLoaded', function() {
                 appendLog('', 'info');
             }
 
+            // Display participants.tsv preview
+            if (preview.participants_tsv) {
+                const tsv = preview.participants_tsv;
+                appendLog('📝 PARTICIPANTS.TSV PREVIEW', 'info');
+                appendLog('   This file will be created with the following structure:', 'info');
+                appendLog('', 'info');
+                
+                // Columns
+                appendLog(`   Columns (${tsv.columns.length} total):`, 'info');
+                tsv.columns.forEach(col => {
+                    appendLog(`     • ${col}`, 'info');
+                });
+                
+                // Mappings
+                if (Object.keys(tsv.mappings).length > 0) {
+                    appendLog('', 'info');
+                    appendLog('   Column Mappings:', 'info');
+                    Object.entries(tsv.mappings).forEach(([outputCol, mappingInfo]) => {
+                        const hasMapping = mappingInfo.has_value_mapping;
+                        const indicator = hasMapping ? '🔄' : '✓';
+                        appendLog(`     ${indicator} ${outputCol} ← ${mappingInfo.source_column}`, 'info');
+                        if (hasMapping && Object.keys(mappingInfo.value_mapping).length > 0) {
+                            appendLog(`        (has value transformation mapping)`, 'info');
+                        }
+                    });
+                }
+                
+                // Sample data
+                if (tsv.sample_rows.length > 0) {
+                    appendLog('', 'info');
+                    const sampleCount = Math.min(5, tsv.sample_rows.length);
+                    appendLog(`   Sample Data (showing first ${sampleCount} of ${tsv.total_rows} participants):`, 'info');
+                    appendLog(`   ${'-'.repeat(100)}`, 'info');
+                    
+                    // Header
+                    const header = tsv.columns.map(col => col.padEnd(20)).join(' | ');
+                    appendLog(`   ${header}`, 'info');
+                    appendLog(`   ${'-'.repeat(100)}`, 'info');
+                    
+                    // Rows
+                    tsv.sample_rows.slice(0, 5).forEach(rowData => {
+                        const row = tsv.columns.map(col => String(rowData[col] || 'n/a').padEnd(20)).join(' | ');
+                        appendLog(`   ${row}`, 'info');
+                    });
+                    
+                    if (tsv.sample_rows.length > 5) {
+                        appendLog(`   ... and ${tsv.sample_rows.length - 5} more rows shown above (total ${tsv.total_rows} participants)`, 'info');
+                    }
+                    appendLog(`   ${'-'.repeat(100)}`, 'info');
+                }
+                
+                // Notes
+                if (tsv.notes.length > 0) {
+                    appendLog('', 'info');
+                    appendLog('   📌 Notes:', 'info');
+                    tsv.notes.forEach(note => {
+                        appendLog(`     • ${note}`, 'info');
+                    });
+                }
+                
+                // Unused columns
+                if (tsv.unused_columns && tsv.unused_columns.length > 0) {
+                    appendLog('', 'info');
+                    appendLog(`   ⚠️  UNUSED COLUMNS (${tsv.unused_columns.length} available for participants.tsv):`, 'warning');
+                    appendLog(`      These columns are not being imported as survey data and could be included`, 'warning');
+                    appendLog(`      in participants.tsv if you create/update participants_mapping.json:`, 'warning');
+                    tsv.unused_columns.slice(0, 10).forEach(item => {
+                        // Handle both old format (string) and new format (dict with description)
+                        if (typeof item === 'object') {
+                            const fieldCode = item.field_code || '';
+                            const description = item.description || '';
+                            appendLog(`      • ${fieldCode}`, 'warning');
+                            if (description) {
+                                appendLog(`        ↳ ${description}`, 'warning');
+                            }
+                        } else {
+                            appendLog(`      • ${item}`, 'warning');
+                        }
+                    });
+                    if (tsv.unused_columns.length > 10) {
+                        appendLog(`      ... and ${tsv.unused_columns.length - 10} more columns`, 'warning');
+                    }
+                }
+                
+                appendLog('', 'info');
+            }
+
             // Display participant preview
             appendLog('👥 PARTICIPANT PREVIEW (first 10)', 'info');
             preview.participants.slice(0, 10).forEach(p => {
