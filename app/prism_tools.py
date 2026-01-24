@@ -662,8 +662,72 @@ def cmd_survey_convert(args):
             else:
                 print(f"\n✅ NO DATA ISSUES DETECTED")
             
+            # 📝 Participants.tsv Preview (NEW!)
+            if "participants_tsv" in preview:
+                print(f"\n📝 PARTICIPANTS.TSV PREVIEW")
+                print(f"   This file will be created with the following structure:\n")
+                
+                tsv_preview = preview["participants_tsv"]
+                columns = tsv_preview["columns"]
+                sample_rows = tsv_preview["sample_rows"]
+                total_rows = tsv_preview["total_rows"]
+                
+                # Column names
+                print(f"   Columns ({len(columns)} total):")
+                for col in columns:
+                    print(f"     • {col}")
+                
+                # Mapping details if present
+                if tsv_preview["mappings"]:
+                    print(f"\n   Column Mappings:")
+                    for output_col, mapping_info in tsv_preview["mappings"].items():
+                        source_col = mapping_info["source_column"]
+                        has_mapping = mapping_info.get("has_value_mapping", False)
+                        indicator = "🔄" if has_mapping else "✓"
+                        print(f"     {indicator} {output_col} ← {source_col}")
+                        if has_mapping and mapping_info.get("value_mapping"):
+                            print(f"        (has value transformation mapping)")
+                
+                # Sample data
+                print(f"\n   Sample Data (showing first {min(5, len(sample_rows))} of {total_rows} participants):")
+                print(f"   {'-' * 100}")
+                
+                # Header
+                header = " | ".join(f"{col:<20}" for col in columns)
+                print(f"   {header}")
+                print(f"   {'-' * 100}")
+                
+                # Rows
+                for row_data in sample_rows[:5]:
+                    row_str = " | ".join(f"{str(row_data.get(col, 'n/a')):<20}" for col in columns)
+                    print(f"   {row_str}")
+                
+                if len(sample_rows) > 5:
+                    print(f"   ... and {len(sample_rows) - 5} more rows shown above (total {total_rows} participants)")
+                
+                print(f"   {'-' * 100}")
+                
+                # Notes
+                if tsv_preview["notes"]:
+                    print(f"\n   📌 Notes:")
+                    for note in tsv_preview["notes"]:
+                        print(f"     • {note}")
+                
+                # Unused columns that could be added to participants.tsv
+                unused_cols = tsv_preview.get("unused_columns", [])
+                if unused_cols:
+                    print(f"\n   ⚠️  UNUSED COLUMNS ({len(unused_cols)} available for participants.tsv):")
+                    print(f"      These columns are not being imported as survey data and could be included")
+                    print(f"      in participants.tsv if you create/update participants_mapping.json:")
+                    for col in unused_cols[:10]:  # Show first 10
+                        print(f"      • {col}")
+                    if len(unused_cols) > 10:
+                        print(f"      ... and {len(unused_cols) - 10} more columns")
+                
+                print()
+            
             # Participants preview
-            print(f"\n👥 PARTICIPANT PREVIEW (first 10)")
+            print(f"\n👥 PARTICIPANT SURVEY COMPLETENESS (first 10)")
             for p in preview['participants'][:10]:
                 completeness = p['completeness_percent']
                 status = "✓" if completeness > 80 else ("⚠" if completeness > 50 else "✗")
