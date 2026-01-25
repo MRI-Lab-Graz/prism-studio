@@ -2550,7 +2550,9 @@ def _generate_participants_preview(
     unused_cols = []
     for col in df.columns:
         if col not in used_in_participants and col not in survey_cols and col not in ls_sys_cols:
-            unused_cols.append(col)
+            # Skip completely empty columns (all NaN or all empty strings)
+            if df[col].notna().any() and (df[col].astype(str).str.strip() != "").any():
+                unused_cols.append(col)
     
     # Decode cryptic LimeSurvey field names if we have questions_map
     unused_cols_with_descriptions = []
