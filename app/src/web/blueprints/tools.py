@@ -693,8 +693,10 @@ def api_template_editor_load():
         return jsonify({"error": f"Could not read JSON: {e}"}), 400
 
     try:
-        base = _new_template_from_schema(modality=modality, schema_version=schema_version)
-        merged = _deep_merge(base, loaded)
+        # Do not merge schema examples/defaults into loaded templates.
+        # Returning the raw file ensures the editor reflects actual state
+        # and shows missing required fields as unset.
+        merged = loaded
     except Exception:
         merged = loaded
 

@@ -22,11 +22,13 @@ try:
         convert_survey_xlsx_to_prism_dataset,
         convert_survey_lsa_to_prism_dataset,
         infer_lsa_metadata,
+        MissingIdMappingError,
     )
 except ImportError:
     convert_survey_xlsx_to_prism_dataset = None
     convert_survey_lsa_to_prism_dataset = None
     infer_lsa_metadata = None
+    MissingIdMappingError = None
 
 try:
     from src.converters.biometrics import convert_biometrics_table_to_prism_dataset
@@ -295,6 +297,9 @@ def api_survey_convert_preview():
     language = (request.form.get("language") or "").strip() or None
     strict_levels_raw = (request.form.get("strict_levels") or "").strip().lower()
     strict_levels = strict_levels_raw in {"1", "true", "yes", "on"}
+    validate_raw = (request.form.get("validate") or "").strip().lower()
+    # Default: run validation in preview unless explicitly disabled
+    validate_preview = True if validate_raw == "" else validate_raw in {"1", "true", "yes", "on"}
     duplicate_handling = (request.form.get("duplicate_handling") or "error").strip()
     if duplicate_handling not in {"error", "keep_first", "keep_last", "sessions"}:
         duplicate_handling = "error"
@@ -321,6 +326,28 @@ def api_survey_convert_preview():
             # Check what was actually saved
             saved_size = id_map_path.stat().st_size if id_map_path.exists() else 0
             print(f"[PRISM DEBUG] ID map saved to: {id_map_path} (size: {saved_size} bytes)")
+
+        # Copy participants_mapping.json from project to temp directory if it exists
+        project_path = session.get("current_project_path")
+        if project_path:
+            project_path = Path(project_path)
+            if project_path.is_file():
+                project_path = project_path.parent
+
+            mapping_candidates = [
+                project_path / "participants_mapping.json",
+                project_path / "code" / "participants_mapping.json",
+                project_path / "code" / "library" / "participants_mapping.json",
+                project_path / "code" / "library" / "survey" / "participants_mapping.json",
+            ]
+
+            for mapping_file in mapping_candidates:
+                if mapping_file.exists():
+                    dest_mapping = tmp_dir_path / "code" / "participants_mapping.json"
+                    dest_mapping.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(mapping_file, dest_mapping)
+                    print(f"[PRISM DEBUG] Using participants mapping from: {mapping_file}")
+                    break
 
         output_root = tmp_dir_path / "rawdata"
 
@@ -384,6 +411,73 @@ def api_survey_convert_preview():
         else:
             return jsonify({"error": "Unsupported file format"}), 400
 
+        # Optionally run full validation in preview (writes to temp, then cleans up)
+        validation_result = None
+        if validate_preview:
+            try:
+                validate_root = tmp_dir_path / "rawdata_validate"
+                validate_root.mkdir(parents=True, exist_ok=True)
+
+                if suffix in {".xlsx", ".csv", ".tsv"}:
+                    convert_survey_xlsx_to_prism_dataset(
+                        input_path=input_path,
+                        library_dir=str(effective_survey_dir),
+                        output_root=validate_root,
+                        survey=survey_filter,
+                        id_column=id_column,
+                        session_column=session_column,
+                        session=session_override,
+                        sheet=sheet,
+                        unknown=unknown,
+                        dry_run=False,
+                        force=True,
+                        name="preview",
+                        authors=["prism-studio"],
+                        language=language,
+                        alias_file=alias_path,
+                        id_map_file=id_map_path,
+                        duplicate_handling=duplicate_handling,
+                    )
+                elif suffix == ".lsa":
+                    convert_survey_lsa_to_prism_dataset(
+                        input_path=input_path,
+                        library_dir=str(effective_survey_dir),
+                        output_root=validate_root,
+                        survey=survey_filter,
+                        id_column=id_column,
+                        session_column=session_column,
+                        session=session_override,
+                        unknown=unknown,
+                        dry_run=False,
+                        force=True,
+                        name="preview",
+                        authors=["prism-studio"],
+                        language=language,
+                        alias_file=alias_path,
+                        id_map_file=id_map_path,
+                        strict_levels=True if strict_levels else None,
+                        duplicate_handling=duplicate_handling,
+                    )
+
+                v_res = run_validation(
+                    str(validate_root),
+                    schema_version="stable",
+                    library_path=str(effective_survey_dir)
+                )
+                # run_validation returns (issues, stats)
+                if v_res and isinstance(v_res, tuple):
+                    issues, stats = v_res
+                    validation_result = {
+                        "errors": issues.get("errors", []),
+                        "warnings": issues.get("warnings", []),
+                        "summary": stats or {},
+                    }
+                    err_cnt = len(validation_result.get("errors", []))
+                    warn_cnt = len(validation_result.get("warnings", []))
+                    print(f"[PRISM DEBUG] Preview validation: errors={err_cnt}, warnings={warn_cnt}")
+            except Exception as ve:
+                validation_result = {"error": str(ve)}
+
         # Return the dry-run preview as JSON
         response_data = {
             "preview": result.dry_run_preview,
@@ -395,6 +489,9 @@ def api_survey_convert_preview():
             "conversion_warnings": result.conversion_warnings,
             "task_runs": result.task_runs,
         }
+
+        if validation_result is not None:
+            response_data["validation"] = validation_result
 
         return jsonify(response_data)
     except Exception as e:
@@ -414,6 +511,7 @@ def api_survey_convert():
 
     uploaded_file = request.files.get("excel") or request.files.get("file")
     alias_upload = request.files.get("alias") or request.files.get("alias_file")
+    id_map_upload = request.files.get("id_map")
 
     if not uploaded_file or not getattr(uploaded_file, "filename", ""):
         return jsonify({"error": "Missing input file"}), 400
@@ -429,6 +527,13 @@ def api_survey_convert():
         alias_suffix = Path(alias_filename).suffix.lower()
         if alias_suffix and alias_suffix not in {".tsv", ".txt"}:
             return jsonify({"error": "Alias file must be a .tsv or .txt mapping file"}), 400
+
+    id_map_filename = None
+    if id_map_upload and getattr(id_map_upload, "filename", ""):
+        id_map_filename = secure_filename(id_map_upload.filename)
+        id_map_suffix = Path(id_map_filename).suffix.lower()
+        if id_map_suffix and id_map_suffix not in {".tsv", ".csv", ".txt"}:
+            return jsonify({"error": "ID map file must be a .tsv, .csv, or .txt file"}), 400
 
     # Automatically resolve library path (project first, then global)
     try:
@@ -476,6 +581,11 @@ def api_survey_convert():
             alias_path = tmp_dir_path / alias_filename
             alias_upload.save(str(alias_path))
 
+        id_map_path = None
+        if id_map_filename:
+            id_map_path = tmp_dir_path / id_map_filename
+            id_map_upload.save(str(id_map_path))
+
         output_root = tmp_dir_path / "rawdata"
         detected_language = None
         detected_platform = None
@@ -490,45 +600,56 @@ def api_survey_convert():
             except Exception:
                 pass
 
-        if suffix in {".xlsx", ".csv", ".tsv"}:
-            convert_survey_xlsx_to_prism_dataset(
-                input_path=input_path,
-                library_dir=str(effective_survey_dir),
-                output_root=output_root,
-                survey=survey_filter,
-                id_column=id_column,
-                session_column=session_column,
-                session=session_override,
-                sheet=sheet,
-                unknown=unknown,
-                dry_run=False,
-                force=True,
-                name=dataset_name,
-                authors=["prism-studio"],
-                language=language,
-                alias_file=alias_path,
-                id_map_file=id_map_path,
-                duplicate_handling=duplicate_handling,
-            )
-        elif suffix == ".lsa":
-            convert_survey_lsa_to_prism_dataset(
-                input_path=input_path,
-                library_dir=str(effective_survey_dir),
-                output_root=output_root,
-                survey=survey_filter,
-                id_column=id_column,
-                session_column=session_column,
-                session=session_override,
-                unknown=unknown,
-                dry_run=False,
-                force=True,
-                name=dataset_name,
-                authors=["prism-studio"],
-                language=language,
-                alias_file=alias_path,
-                id_map_file=id_map_path,
-                strict_levels=True if strict_levels else None,
-                duplicate_handling=duplicate_handling,
+        try:
+            if suffix in {".xlsx", ".csv", ".tsv"}:
+                convert_survey_xlsx_to_prism_dataset(
+                    input_path=input_path,
+                    library_dir=str(effective_survey_dir),
+                    output_root=output_root,
+                    survey=survey_filter,
+                    id_column=id_column,
+                    session_column=session_column,
+                    session=session_override,
+                    sheet=sheet,
+                    unknown=unknown,
+                    dry_run=False,
+                    force=True,
+                    name=dataset_name,
+                    authors=["prism-studio"],
+                    language=language,
+                    alias_file=alias_path,
+                    id_map_file=id_map_path,
+                    duplicate_handling=duplicate_handling,
+                )
+            elif suffix == ".lsa":
+                convert_survey_lsa_to_prism_dataset(
+                    input_path=input_path,
+                    library_dir=str(effective_survey_dir),
+                    output_root=output_root,
+                    survey=survey_filter,
+                    id_column=id_column,
+                    session_column=session_column,
+                    session=session_override,
+                    unknown=unknown,
+                    dry_run=False,
+                    force=True,
+                    name=dataset_name,
+                    authors=["prism-studio"],
+                    language=language,
+                    alias_file=alias_path,
+                    id_map_file=id_map_path,
+                    strict_levels=True if strict_levels else None,
+                    duplicate_handling=duplicate_handling,
+                )
+        except MissingIdMappingError as mie:
+            return (
+                jsonify({
+                    "error": "id_mapping_incomplete",
+                    "message": str(mie),
+                    "missing_ids": mie.missing_ids,
+                    "suggestions": mie.suggestions,
+                }),
+                409,
             )
 
         # Save to project if requested
@@ -598,6 +719,7 @@ def api_survey_convert_validate():
 
     uploaded_file = request.files.get("excel") or request.files.get("file")
     alias_upload = request.files.get("alias") or request.files.get("alias_file")
+    id_map_upload = request.files.get("id_map")
 
     if not uploaded_file or not getattr(uploaded_file, "filename", ""):
         return jsonify({"error": "Missing input file", "log": log_messages}), 400
@@ -653,6 +775,14 @@ def api_survey_convert_validate():
             alias_path = tmp_dir_path / secure_filename(alias_upload.filename)
             alias_upload.save(str(alias_path))
 
+        id_map_path = None
+        if id_map_upload and getattr(id_map_upload, "filename", ""):
+            id_map_filename = secure_filename(id_map_upload.filename)
+            id_map_path = tmp_dir_path / id_map_filename
+            id_map_upload.save(str(id_map_path))
+            saved_size = id_map_path.stat().st_size if id_map_path.exists() else 0
+            add_log(f"Using ID map file: {id_map_filename} ({saved_size} bytes)", "info")
+
         # Copy participants_mapping.json from project to temp directory if it exists
         project_path = session.get("current_project_path")
         if project_path and save_to_project:
@@ -665,6 +795,7 @@ def api_survey_convert_validate():
                 project_path / "participants_mapping.json",
                 project_path / "code" / "participants_mapping.json",
                 project_path / "code" / "library" / "participants_mapping.json",
+                project_path / "code" / "library" / "survey" / "participants_mapping.json",
             ]
             
             for mapping_file in mapping_candidates:
@@ -714,8 +845,30 @@ def api_survey_convert_validate():
                     duplicate_handling=duplicate_handling,
                 )
             add_log("Conversion completed successfully", "success")
+        except MissingIdMappingError as mie:
+            add_log(f"ID mapping incomplete: {str(mie)}", "error")
+            return (
+                jsonify({
+                    "error": "id_mapping_incomplete",
+                    "message": str(mie),
+                    "missing_ids": mie.missing_ids,
+                    "suggestions": mie.suggestions,
+                    "log": log_messages,
+                }),
+                409,
+            )
         except Exception as conv_err:
-            add_log(f"Conversion engine failed: {str(conv_err)}", "error")
+            import traceback
+            import sys
+            full_trace = traceback.format_exc()
+            # Log to console as well
+            print(f"\n[CONVERSION ERROR] {type(conv_err).__name__}: {str(conv_err)}", file=sys.stderr)
+            print(f"[FULL TRACEBACK]\n{full_trace}", file=sys.stderr)
+            add_log(f"Conversion engine failed: {type(conv_err).__name__}: {str(conv_err)}", "error")
+            # Split traceback into lines for better display in web UI
+            for line in full_trace.split('\n'):
+                if line.strip():
+                    add_log(line, "error")
             raise conv_err
 
         # Process warnings and missing cells
