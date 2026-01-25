@@ -3249,6 +3249,9 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('strict_levels', 'true');
         }
 
+        // Default: run validation in preview
+        formData.append('validate', 'true');
+
         const duplicateHandlingEl = document.getElementById('convertDuplicateHandling');
         if (duplicateHandlingEl) {
             formData.append('duplicate_handling', duplicateHandlingEl.value);
@@ -3293,7 +3296,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const preview = data.preview;
-            
+
             if (!preview) {
                 appendLog('⚠ No preview data received', 'warning');
                 return;
@@ -3306,6 +3309,24 @@ document.addEventListener('DOMContentLoaded', function() {
             appendLog(`   Tasks detected: ${preview.summary.tasks.join(', ')}`, 'info');
             appendLog(`   Total files to create: ${preview.summary.total_files}`, 'info');
             appendLog('', 'info');
+
+            // Show validation results if backend ran validation during preview
+            if (data.validation) {
+                const v = data.validation;
+                const errorCount = (v.errors || []).length;
+                const warningCount = (v.warnings || []).length;
+
+                if (errorCount === 0 && warningCount === 0) {
+                    appendLog('✓ Validation (preview) passed - dataset is valid!', 'success');
+                } else if (errorCount === 0) {
+                    appendLog(`⚠ Validation (preview) passed with ${warningCount} warning(s)`, 'warning');
+                } else {
+                    appendLog(`✗ Validation (preview) failed with ${errorCount} error(s)`, 'error');
+                }
+
+                displayValidationResults(data.validation);
+                appendLog('', 'info');
+            }
 
             // Display data issues
             if (preview.data_issues && preview.data_issues.length > 0) {

@@ -538,6 +538,7 @@ def _load_participants_mapping(output_root: Path, log_fn=None) -> dict | None:
         project_root / "participants_mapping.json",
         project_root / "code" / "participants_mapping.json",
         project_root / "code" / "library" / "participants_mapping.json",
+        project_root / "code" / "library" / "survey" / "participants_mapping.json",
     ]
 
     for p in candidates:
@@ -1068,7 +1069,11 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
                 if len(rows[0]) < 2:
                     raise ValueError(f"ID map must have at least two columns, got {len(rows[0])}")
                 print(f"[PRISM DEBUG] Manually parsed {len(rows)} rows")
-                df = pd.DataFrame(rows)
+                # Use first row as header, rest as data
+                if len(rows) > 1:
+                    df = pd.DataFrame(rows[1:], columns=rows[0])
+                else:
+                    raise ValueError("ID map file contains only a header row, no data")
         except Exception as inner:
             raise ValueError(
                 f"Error loading ID map {p}: {inner}. Try saving as UTF-8 TSV with a tab delimiter or CSV with commas."
@@ -1080,22 +1085,113 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
     if df.shape[1] < 2:
         raise ValueError(f"ID map file {p} must have at least two columns (source_id, participant_id)")
 
-    df = df.iloc[:, :2].copy()
-    df.columns = ["source_id", "participant_id"]
-    df["source_id"] = df["source_id"].astype(str).str.strip()
-    df["participant_id"] = df["participant_id"].astype(str).str.strip()
+    # Debug: Log current state
+    print(f"[PRISM DEBUG] DataFrame shape before processing: {df.shape}")
+    print(f"[PRISM DEBUG] DataFrame columns before processing: {list(df.columns)}")
+    print(f"[PRISM DEBUG] First 3 rows:\n{df.head(3)}")
 
-    mapping = {
-        row["source_id"]: row["participant_id"]
-        for _, row in df.iterrows()
-        if row["source_id"] and row["participant_id"]
-    }
+    try:
+        df = df.iloc[:, :2].copy()
+        df.columns = ["source_id", "participant_id"]
+        print(f"[PRISM DEBUG] After column rename: {list(df.columns)}")
+        
+        df["source_id"] = df["source_id"].astype(str).str.strip()
+        df["participant_id"] = df["participant_id"].astype(str).str.strip()
+        print(f"[PRISM DEBUG] After string conversion - dtypes: {df.dtypes.to_dict()}")
+
+        mapping = {
+            str(row["source_id"]).strip(): str(row["participant_id"]).strip()
+            for _, row in df.iterrows()
+            if row["source_id"] and row["participant_id"]
+        }
+    except KeyError as ke:
+        raise ValueError(
+            f"Error accessing column in ID map file {p}: {ke}. "
+            f"Available columns: {list(df.columns)}. "
+            f"DataFrame shape: {df.shape}"
+        ) from ke
 
     if not mapping:
         raise ValueError(f"ID map file {p} contains no valid mappings")
 
     print(f"[PRISM DEBUG] Loaded ID map with {len(mapping)} entries")
     return mapping
+
+
+class MissingIdMappingError(ValueError):
+    """Raised when IDs in data are missing from the mapping, with suggestions."""
+
+    def __init__(self, missing_ids: list[str], suggestions: dict[str, list[dict]], message: str):
+        super().__init__(message)
+        self.missing_ids = missing_ids
+        self.suggestions = suggestions
+
+
+def _damerau_levenshtein(a: str, b: str, limit: int = 2) -> int | None:
+    """Compute Damerau-Levenshtein distance with an optional early-exit limit."""
+
+    a = a or ""
+    b = b or ""
+    if a == b:
+        return 0
+    if abs(len(a) - len(b)) > limit:
+        return None
+
+    len_a, len_b = len(a), len(b)
+    max_dist = limit if limit is not None else max(len_a, len_b)
+
+    # Use two-row DP with transposition check
+    prev_row = list(range(len_b + 1))
+    curr_row = [0] * (len_b + 1)
+    last_row = [0] * (len_b + 1)
+
+    for i in range(1, len_a + 1):
+        curr_row[0] = i
+        min_in_row = curr_row[0]
+        for j in range(1, len_b + 1):
+            cost = 0 if a[i - 1] == b[j - 1] else 1
+            deletion = prev_row[j] + 1
+            insertion = curr_row[j - 1] + 1
+            substitution = prev_row[j - 1] + cost
+            curr_row[j] = min(deletion, insertion, substitution)
+
+            if i > 1 and j > 1 and a[i - 1] == b[j - 2] and a[i - 2] == b[j - 1]:
+                curr_row[j] = min(curr_row[j], last_row[j - 2] + 1)
+
+            if curr_row[j] < min_in_row:
+                min_in_row = curr_row[j]
+
+        if min_in_row > max_dist:
+            return None
+        last_row, prev_row, curr_row = prev_row, curr_row, [0] * (len_b + 1)
+
+    return prev_row[-1]
+
+
+def _suggest_id_matches(missing_ids: list[str], map_keys: list[str]) -> dict[str, list[dict]]:
+    """Return top candidate matches for each missing ID based on small edit distance."""
+
+    suggestions: dict[str, list[dict]] = {}
+    map_keys_lower = [(k, str(k).strip().lower()) for k in map_keys]
+
+    for miss in missing_ids:
+        miss_clean = str(miss).strip()
+        miss_lower = miss_clean.lower()
+        scored: list[tuple[int, str]] = []
+        for orig, lower in map_keys_lower:
+            dist = _damerau_levenshtein(miss_lower, lower, limit=2)
+            if dist is None:
+                continue
+            scored.append((dist, orig))
+
+        scored.sort(key=lambda x: (x[0], x[1]))
+        top = [s for s in scored[:3]]
+        suggestions[miss_clean] = [
+            {"candidate": cand, "distance": dist}
+            for dist, cand in top
+        ]
+
+    return suggestions
 
 
 def _extract_lsa_questions_map(input_path: Path) -> dict | None:
@@ -1491,17 +1587,93 @@ def _convert_survey_dataframe_to_prism_dataset(
     id_map: dict[str, str] | None = _load_id_mapping(id_map_file)
     if id_map:
         df = df.copy()
+
+        # Heuristic: pick the column whose values best match the ID map keys.
+        # Order candidates with likely user-provided codes before tokens.
+        all_cols_lower = {str(c).strip().lower(): str(c) for c in df.columns}
+        preferred_order = [
+            res_id_col,
+            "participant_id",
+            "code",
+            "token",
+            "id",
+            "subject",
+            "sub_id",
+            "participant",
+        ]
+        candidate_cols: list[str] = []
+        seen = set()
+        for name in preferred_order:
+            if not name:
+                continue
+            # exact first
+            if name in df.columns and name not in seen:
+                candidate_cols.append(name)
+                seen.add(name)
+                continue
+            # case-insensitive
+            lower = str(name).strip().lower()
+            if lower in all_cols_lower:
+                actual = all_cols_lower[lower]
+                if actual not in seen:
+                    candidate_cols.append(actual)
+                    seen.add(actual)
+
+        # Normalize id_map keys to lowercase for case-insensitive matching
+        id_map_lower = {str(k).strip().lower(): v for k, v in id_map.items()}
+
+        def _score_column(col: str) -> tuple[int, float]:
+            col_values = df[col].astype(str).str.strip()
+            unique_vals = set(col_values.unique())
+            matches = len([v for v in unique_vals if str(v).strip().lower() in id_map_lower])
+            total = len(unique_vals) if unique_vals else 1
+            ratio = matches / total if total else 0.0
+            return matches, ratio
+
+        print(f"[PRISM DEBUG] ID map keys sample: {list(id_map_lower.keys())[:5]} ...")
+        print(f"[PRISM DEBUG] Dataframe columns: {list(df.columns)}")
+        print(f"[PRISM DEBUG] Candidate ID columns: {candidate_cols}")
+
+        best_col = res_id_col
+        best_matches, best_ratio = _score_column(res_id_col)
+        print(f"[PRISM DEBUG] Score {res_id_col}: matches={best_matches}, ratio={best_ratio:.3f}")
+        for c in candidate_cols:
+            matches, ratio = _score_column(c)
+            print(f"[PRISM DEBUG] Score {c}: matches={matches}, ratio={ratio:.3f}")
+            if (matches > best_matches) or (matches == best_matches and ratio > best_ratio):
+                best_col = c
+                best_matches, best_ratio = matches, ratio
+
+        # If no matches at all, prefer 'code' if available
+        if best_matches == 0 and "code" in candidate_cols:
+            best_col = "code"
+            print("[PRISM DEBUG] No matches; falling back to 'code' column")
+
+        if best_col != res_id_col:
+            conversion_warnings.append(
+                f"Selected id_column '{best_col}' based on ID map overlap ({best_matches} matches)."
+            )
+            res_id_col = best_col
+
+        print(f"[PRISM DEBUG] Selected ID column: {res_id_col}; unique sample: {df[res_id_col].astype(str).unique()[:10]}")
+
         df[res_id_col] = df[res_id_col].astype(str).str.strip()
         ids_in_data = set(df[res_id_col].unique())
-        missing = sorted([i for i in ids_in_data if i not in id_map])
+        missing = sorted([i for i in ids_in_data if str(i).strip().lower() not in id_map_lower])
         if missing:
             sample = ", ".join(missing[:20])
             more = "" if len(missing) <= 20 else f" (+{len(missing) - 20} more)"
-            raise ValueError(
-                f"ID mapping incomplete: {len(missing)} IDs from data are missing in the mapping: {sample}{more}."
+            map_keys = list(id_map.keys())
+            suggestions = _suggest_id_matches(missing, map_keys)
+            raise MissingIdMappingError(
+                missing,
+                suggestions,
+                f"ID mapping incomplete: {len(missing)} IDs from data are missing in the mapping: {sample}{more}.",
             )
 
-        df[res_id_col] = df[res_id_col].map(lambda x: id_map.get(str(x).strip(), x))
+        df[res_id_col] = df[res_id_col].map(
+            lambda x: id_map_lower.get(str(x).strip().lower(), id_map.get(str(x).strip(), x))
+        )
         conversion_warnings.append(
             f"Applied subject ID mapping from {Path(id_map_file).name} ({len(id_map)} entries)."
         )
@@ -1809,10 +1981,23 @@ def _resolve_id_and_session_cols(
 
         # Priority 2: Common column name patterns
         if not resolved_id:
-            # LimeSurvey response archives commonly use `token`.
-            resolved_id = _find_col(
-                {"participant_id", "subject", "id", "sub_id", "participant", "code", "token"}
-            )
+            # LimeSurvey response archives commonly use `token` (sequential numeric ID).
+            # We check in priority order: token before code, since 'code' in LimeSurvey
+            # can be a custom participant-provided field, while 'token' is the system ID.
+            priority_columns = [
+                "participant_id",
+                "token",          # LimeSurvey system ID (priority)
+                "subject",
+                "id",
+                "sub_id",
+                "participant",
+                "code",           # May be participant-provided, check last
+            ]
+            for col_name in priority_columns:
+                resolved_id = _find_col_exact_or_lower(col_name)
+                if resolved_id:
+                    break
+            
             if not resolved_id:
                 if source_field:
                     raise ValueError(
@@ -1820,7 +2005,7 @@ def _resolve_id_and_session_cols(
                         f"Columns: {', '.join([str(c) for c in df.columns])}"
                     )
                 raise ValueError(
-                    "Could not determine participant id column. Provide id_column explicitly (e.g., participant_id, CODE)."
+                    "Could not determine participant id column. Provide id_column explicitly (e.g., participant_id, token)."
                 )
 
     resolved_ses: str | None
@@ -2228,7 +2413,9 @@ def _write_survey_participants(
             else:
                 df_extra[c] = df_extra[c].apply(lambda v: _MISSING_TOKEN if is_missing_fn(v) else v)
 
+        # Normalize ID column and rename to participant_id
         df_extra[id_col] = df_extra[id_col].astype(str).map(normalize_sub_fn)
+        df_extra = df_extra.rename(columns={id_col: "participant_id"})
         df_extra = df_extra.groupby("participant_id", dropna=False)[extra_cols].first().reset_index()
 
         # Rename columns to standard variable names
