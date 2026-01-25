@@ -598,6 +598,8 @@ def _load_participants_template(library_dir: Path) -> dict | None:
     We prioritize a library-level `participants.json` (sibling of the survey/
     folder) and fall back to legacy names `survey-participants.json` and
     `survey-participant.json` placed alongside the survey templates.
+    
+    Finally, we fall back to the official participants template as a global reference.
     """
 
     library_dir = library_dir.resolve()
@@ -616,6 +618,14 @@ def _load_participants_template(library_dir: Path) -> dict | None:
     # Also try a few ancestor folders (code/library -> project root) for participants.json
     for ancestor in library_dir.parents[:3]:
         candidates.append(ancestor / "participants.json")
+
+    # Add the official template as a fallback
+    try:
+        app_root = Path(__file__).parent.parent.parent.resolve()
+        official_template = app_root / "official" / "participants.json"
+        candidates.append(official_template)
+    except Exception:
+        pass
 
     seen: set[Path] = set()
     for p in candidates:
@@ -1211,20 +1221,48 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
         return df.rename(columns={c: str(c).strip() for c in df.columns})
 
     if kind == "lsa":
-        def _normalize_lsa_columns(cols: list[str]) -> list[str]:
-            """Normalize LimeSurvey export column names."""
-            pattern = re.compile(r"^_\d+X\d+X\d+(.*)$")
+        def _normalize_lsa_columns(cols: list[str], questions_map: dict | None = None) -> list[str]:
+            """Normalize LimeSurvey export column names using QID lookup.
+            
+            Args:
+                cols: List of column names from LSR responses
+                questions_map: Optional dict mapping qid -> {title, question}
+            
+            Returns:
+                List of normalized column names with QIDs replaced by question codes
+            """
+            # Pattern to match: _SurveyIDXGroupIDXQuestionID[suffix]
+            pattern = re.compile(r"^_?(\d+)X(\d+)X(\d+)(.*)$")
+            
+            # Build qid_to_title lookup if questions_map is available
+            qid_to_title = {}
+            if questions_map:
+                qid_to_title = {qid: info["title"] for qid, info in questions_map.items()}
+            
             used: set[str] = set()
             out_cols: list[str] = []
+            
             for c in cols:
                 s = str(c).strip()
                 m = pattern.match(s)
                 candidate = s
+                
                 if m:
-                    suffix = (m.group(1) or "").strip()
+                    # Extract QID and suffix
+                    qid = m.group(3)
+                    suffix = (m.group(4) or "").strip()
+                    
+                    # If suffix exists, use it
                     if suffix:
                         candidate = suffix
-                # avoid collisions
+                    # Otherwise, try QID lookup
+                    elif qid in qid_to_title:
+                        candidate = qid_to_title[qid]
+                    # Fallback: use QID as-is
+                    else:
+                        candidate = qid
+                
+                # Avoid collisions
                 base_candidate = candidate
                 counter = 1
                 while candidate in used:
@@ -1232,6 +1270,7 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
                     counter += 1
                 used.add(candidate)
                 out_cols.append(candidate)
+            
             return out_cols
 
         def _find_responses_member(zf: zipfile.ZipFile) -> str:
@@ -1303,10 +1342,12 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
                 df[col] = df[col].str.strip()
 
         df = df.rename(columns={c: str(c).strip() for c in df.columns})
-        df.columns = _normalize_lsa_columns([str(c) for c in df.columns])
         
-        # Extract questions_map for metadata lookup (used in preview generation)
+        # Extract questions_map for metadata lookup BEFORE normalizing columns
         questions_map = _extract_lsa_questions_map(input_path)
+        
+        # Normalize columns using questions_map for QID lookup
+        df.columns = _normalize_lsa_columns([str(c) for c in df.columns], questions_map)
         
         # Return tuple of (df, questions_map) for LSA files
         return (df, questions_map)
@@ -1846,16 +1887,6 @@ def _map_survey_columns(
     # Track runs per task: task -> set of run numbers seen
     task_run_tracker: dict[str, set[int | None]] = {}
 
-    # DEBUG: Show sample columns and item_to_task keys
-    sample_cols = cols[:20] if cols else []
-    psqi_cols = [c for c in cols if str(c).startswith("PSQI")]
-    all_psqi_items = sorted([k for k in item_to_task.keys() if str(k).startswith('PSQI')])
-    print(f"[PRISM DEBUG] Column mapping debug:")
-    print(f"  - Total columns to map: {len(cols)}")
-    print(f"  - Sample columns: {sample_cols}")
-    print(f"  - PSQI columns found in DataFrame: {sorted(psqi_cols)}")
-    print(f"  - PSQI items in item_to_task ({len(all_psqi_items)}): {all_psqi_items}")
-
     for c in cols:
         col_lower = str(c).strip().lower()
 
@@ -1871,12 +1902,6 @@ def _map_survey_columns(
         # Try to match against templates (original name first, then base name)
         matched_task = None
         matched_base = c
-
-        # DEBUG: Log PSQI matching attempts
-        if str(c).startswith("PSQI"):
-            print(f"[PRISM DEBUG] Checking PSQI column '{c}':")
-            print(f"  - c in item_to_task: {c in item_to_task} (value: {item_to_task.get(c, 'NOT FOUND')})")
-            print(f"  - base_name: {base_name}, in item_to_task: {base_name in item_to_task}")
 
         if c in item_to_task:
             # Direct match (e.g., 'PANAS_1' without run suffix)
@@ -2363,19 +2388,6 @@ def _load_and_preprocess_templates(
                     else:
                         item_to_task[alias] = task_norm
 
-    # DEBUG: Log how many items per task
-    task_item_counts = {}
-    for item, task in item_to_task.items():
-        task_item_counts[task] = task_item_counts.get(task, 0) + 1
-    print(f"[PRISM DEBUG] Loaded {len(item_to_task)} items across {len(templates)} templates:")
-    for task, count in sorted(task_item_counts.items()):
-        print(f"  - {task}: {count} items")
-    
-    # DEBUG: Show first few PSQI items if present
-    psqi_items = [k for k, v in item_to_task.items() if v == "psqi" and k.startswith("PSQI")][:10]
-    if psqi_items:
-        print(f"[PRISM DEBUG] Sample PSQI items in item_to_task: {', '.join(psqi_items)}")
-
     return templates, item_to_task, duplicates, template_warnings
 
 
@@ -2548,10 +2560,14 @@ def _generate_participants_preview(
     ls_sys_cols = set(ls_system_columns) if ls_system_columns else set()
     
     unused_cols = []
+    
     for col in df.columns:
         if col not in used_in_participants and col not in survey_cols and col not in ls_sys_cols:
             # Skip completely empty columns (all NaN or all empty strings)
-            if df[col].notna().any() and (df[col].astype(str).str.strip() != "").any():
+            has_data = df[col].notna().any()
+            has_non_empty = (df[col].astype(str).str.strip() != "").any()
+            
+            if has_data and has_non_empty:
                 unused_cols.append(col)
     
     # Decode cryptic LimeSurvey field names if we have questions_map
