@@ -128,6 +128,15 @@
         </div>
 
         <div class="mt-3" id="alertArea"></div>
+        <div class="mt-2" id="missingSummaryArea"></div>
+        <div class="d-flex justify-content-end mt-2">
+          <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#jsonDiffCollapse" aria-expanded="false" aria-controls="jsonDiffCollapse" id="btnToggleDiff">
+            <i class="fas fa-code-branch me-1"></i>Show JSON diff
+          </button>
+        </div>
+        <div class="collapse mt-2" id="jsonDiffCollapse">
+          <div class="card card-body" id="jsonDiffContainer"></div>
+        </div>
 
         <div class="mt-4">
           <div class="d-flex align-items-center justify-content-between mb-2">
@@ -239,6 +248,9 @@
   const selectedItemIdEl = document.getElementById('selectedItemId');
   const selectedItemCollapseEl = document.getElementById('collapseItem');
   const alertAreaEl = document.getElementById('alertArea');
+  const missingSummaryEl = document.getElementById('missingSummaryArea');
+  const btnToggleDiff = document.getElementById('btnToggleDiff');
+  const jsonDiffContainer = document.getElementById('jsonDiffContainer');
   const btnLoad = document.getElementById('btnLoad');
   const btnNew = document.getElementById('btnNew');
   const btnValidate = document.getElementById('btnValidate');
@@ -251,6 +263,7 @@
 
   let currentSchema = null;
   let currentTemplate = null;
+  let originalTemplate = null; // snapshot of loaded file for diff
   let selectedItemId = null;
   let checkedItemIds = new Set();
   let projectLibraryRoot = null;
@@ -286,6 +299,132 @@
 
   function clearAlert() {
     alertAreaEl.innerHTML = '';
+  }
+
+  function cloneDeep(obj) {
+    return obj === undefined ? undefined : JSON.parse(JSON.stringify(obj));
+  }
+
+  function isMissingValue(val, fieldSchema) {
+    if (val === undefined || val === null) return true;
+    const t = Array.isArray(fieldSchema?.type) ? fieldSchema.type : fieldSchema?.type;
+    if (t === 'string') return String(val).trim() === '';
+    if (t === 'array') return Array.isArray(val) && val.length === 0;
+    if (t === 'object') return val && typeof val === 'object' && Object.keys(val).length === 0;
+    // Fallback: treat empty string and empty arrays/objects as missing
+    if (typeof val === 'string') return val.trim() === '';
+    if (Array.isArray(val)) return val.length === 0;
+    if (val && typeof val === 'object') return Object.keys(val).length === 0;
+    return false;
+  }
+
+  function focusField(path) {
+    if (!path) return;
+    const parts = String(path).split('/');
+    const section = parts[0];
+    const name = parts[1];
+    // Expand section accordion
+    try {
+      const body = document.getElementById(`tlBody_${section}`);
+      if (body) {
+        // eslint-disable-next-line no-undef
+        const coll = bootstrap.Collapse.getOrCreateInstance(body, { toggle: false });
+        coll.show();
+      }
+    } catch {}
+    // Focus input
+    const inp = document.getElementById(`field_${section}_${name}`);
+    if (inp) {
+      inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      inp.focus();
+      inp.classList.add('border-warning');
+      setTimeout(() => inp.classList.remove('border-warning'), 1500);
+    }
+  }
+
+  function recomputeMissingFields() {
+    const sections = ['Technical','Study','Metadata','I18n'];
+    const missing = [];
+    for (const s of sections) {
+      const sch = getSectionSchema(s);
+      if (!sch || !sch.properties) continue;
+      const required = sch.required || [];
+      const obj = (currentTemplate && currentTemplate[s]) || {};
+      for (const name of required) {
+        const fs = sch.properties[name] || {};
+        const val = obj[name];
+        if (isMissingValue(val, fs)) missing.push({ section: s, name, path: `${s}/${name}` });
+      }
+    }
+    return missing;
+  }
+
+  function renderMissingSummary() {
+    if (!missingSummaryEl) return;
+    const missing = recomputeMissingFields();
+    if (!missing.length) {
+      missingSummaryEl.innerHTML = '';
+      return;
+    }
+    const items = missing.map(m => `<li><a href="#" data-path="${m.path}" class="missing-link">${m.section}: ${m.name}</a></li>`).join('');
+    missingSummaryEl.innerHTML = `
+      <div class="alert alert-warning" role="alert">
+        <strong>${missing.length} required field(s) missing</strong>
+        <ul class="mb-0">${items}</ul>
+      </div>
+    `;
+    missingSummaryEl.querySelectorAll('.missing-link').forEach(a => {
+      a.addEventListener('click', (e) => { e.preventDefault(); focusField(a.dataset.path); });
+    });
+  }
+
+  function diffObjects(base, curr, path, out) {
+    const baseKeys = new Set(Object.keys(base || {}));
+    const currKeys = new Set(Object.keys(curr || {}));
+
+    for (const k of baseKeys) {
+      const p = path ? `${path}/${k}` : k;
+      if (!currKeys.has(k)) {
+        out.missing.push(p);
+        continue;
+      }
+      const bv = base[k];
+      const cv = curr[k];
+      if (bv && typeof bv === 'object' && cv && typeof cv === 'object') {
+        diffObjects(bv, cv, p, out);
+      } else if (JSON.stringify(bv) !== JSON.stringify(cv)) {
+        out.changed.push(p);
+      }
+    }
+
+    for (const k of currKeys) {
+      if (baseKeys.has(k)) continue;
+      const p = path ? `${path}/${k}` : k;
+      out.added.push(p);
+    }
+  }
+
+  function renderJsonDiff() {
+    if (!jsonDiffContainer) return;
+    if (!originalTemplate) {
+      jsonDiffContainer.innerHTML = '<div class="text-muted">No baseline loaded (new template).</div>';
+      return;
+    }
+    const out = { missing: [], added: [], changed: [] };
+    diffObjects(originalTemplate, currentTemplate || {}, '', out);
+
+    if (!out.missing.length && !out.added.length && !out.changed.length) {
+      jsonDiffContainer.innerHTML = '<div class="text-success"><i class="fas fa-check me-1"></i>No differences from loaded file.</div>';
+      return;
+    }
+
+    const renderList = (arr, cls, label) => arr.length ? `<div class="mb-2"><strong>${label} (${arr.length})</strong><ul class="mb-0 ${cls}">${arr.map(p => `<li>${p}</li>`).join('')}</ul></div>` : '';
+    jsonDiffContainer.innerHTML = `
+      ${renderList(out.missing, 'text-warning', 'Missing in current')}
+      ${renderList(out.added, 'text-info', 'Added in current')}
+      ${renderList(out.changed, 'text-danger', 'Changed')}
+      <div class="mt-2 small text-muted">Diff is path-based; deep content differences show as "Changed".</div>
+    `;
   }
 
   function updateProjectLibraryStatus() {
@@ -518,13 +657,21 @@
     if (Array.isArray(fieldSchema.enum)) {
       const sel = document.createElement('select');
       sel.className = 'form-select';
+      // Add explicit placeholder when value is not set and schema doesn't already allow empty
+      const hasEmptyEnum = fieldSchema.enum.includes('');
+      if (!hasEmptyEnum) {
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = '— Not set —';
+        sel.appendChild(placeholder);
+      }
       for (const v of fieldSchema.enum) {
         const opt = document.createElement('option');
         opt.value = v;
         opt.textContent = v === '' ? '(empty)' : String(v);
         sel.appendChild(opt);
       }
-      sel.value = value === undefined || value === null ? '' : String(value);
+      sel.value = (value === undefined || value === null) ? '' : String(value);
       sel.addEventListener('change', () => onChange(sel.value));
       return sel;
     }
@@ -550,6 +697,7 @@
       inp.type = 'number';
       inp.className = 'form-control';
       inp.value = (value === undefined || value === null) ? '' : String(value);
+      inp.placeholder = (value === undefined || value === null) ? '— Not set —' : (schemaExample(fieldSchema) ? String(schemaExample(fieldSchema)) : '');
       inp.addEventListener('input', () => {
         const raw = inp.value;
         if (raw === '') return onChange(null);
@@ -641,7 +789,7 @@
           if (!currentVal.length) {
             const p = document.createElement('div');
             p.className = 'text-muted small';
-            p.textContent = 'No entries.';
+            p.textContent = 'No entries (not set).';
             list.appendChild(p);
           }
 
@@ -1012,7 +1160,7 @@
     inp.type = 'text';
     inp.className = 'form-control';
     inp.value = (value === undefined || value === null) ? '' : String(value);
-    inp.placeholder = schemaExample(fieldSchema) ? String(schemaExample(fieldSchema)) : '';
+    inp.placeholder = (value === undefined || value === null) ? '— Not set —' : (schemaExample(fieldSchema) ? String(schemaExample(fieldSchema)) : '');
     if (fieldSchema.pattern) inp.pattern = fieldSchema.pattern;
     inp.addEventListener('input', () => onChange(inp.value));
     return inp;
@@ -1042,15 +1190,19 @@
       const isRequired = required.includes(name);
       col.appendChild(makeLabel(name, fieldSchema, isRequired));
 
-      if (targetObj[name] === undefined) {
-        targetObj[name] = schemaExample(fieldSchema);
-      }
+      // Track whether the value is missing (not set in loaded template)
+      const isMissing = (targetObj[name] === undefined || targetObj[name] === null);
       targetObj[name] = normalizeValueForSchema(fieldSchema, targetObj[name]);
 
       const input = createInput(fieldSchema, targetObj[name], (v) => {
         targetObj[name] = v;
         btnDownload.disabled = true;
+        renderMissingSummary();
+        renderJsonDiff();
       });
+      // Tag input for quick navigation from error list/summary
+      input.id = `field_${sectionKey}_${name}`;
+      input.setAttribute('data-field-path', `${sectionKey}/${name}`);
 
       // checkbox layout
       if (input.classList.contains('form-check-input')) {
@@ -1062,9 +1214,18 @@
         col.appendChild(input);
       }
 
+      // Visual hint for missing fields (both required and optional)
+      if (isMissing) {
+        const hint = document.createElement('div');
+        hint.className = isRequired ? 'form-text text-warning' : 'form-text text-muted';
+        hint.textContent = isRequired ? 'Required: not set' : 'Not set';
+        col.appendChild(hint);
+      }
+
       row.appendChild(col);
     }
     mountEl.appendChild(row);
+    renderMissingSummary();
   }
 
   function itemKeysFromTemplate(tpl) {
@@ -1283,6 +1444,7 @@
 
     topLevelFormEl.appendChild(acc);
     enableTooltips();
+    renderMissingSummary();
   }
 
   function renderAll() {
@@ -1290,6 +1452,7 @@
     renderItemList();
     renderSelectedItem();
     renderBulkEdit();
+    renderJsonDiff();
   }
 
   // Store template metadata for source-aware loading
@@ -1374,10 +1537,12 @@
 
     const data = await apiGet(`/api/template-editor/new?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schema_version)}`);
     currentTemplate = data.template;
+    originalTemplate = null; // no baseline for new templates
     checkedItemIds.clear();
     filenameEl.value = data.suggested_filename || `${modality}-new.json`;
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     renderAll();
+    renderJsonDiff();
     await validateCurrent();
   }
 
@@ -1415,10 +1580,12 @@
     if (library_path) qp.set('library_path', library_path);
     const data = await apiGet(`/api/template-editor/load?${qp.toString()}`);
     currentTemplate = data.template;
+    originalTemplate = cloneDeep(data.template);
     checkedItemIds.clear();
     filenameEl.value = data.filename || filename;
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     renderAll();
+    renderJsonDiff();
     await validateCurrent();
 
     // Show read-only warning for global/external templates
@@ -1460,9 +1627,18 @@
       btnDownload.disabled = true;
       btnSave.disabled = true;
       const errs = (data.errors || []).slice(0, 50);
-      const list = errs.map(e => `<li><code>${e.path || '(root)'}</code>: ${e.message}</li>`).join('');
-      const extra = (data.errors || []).length > errs.length ? `<div class="mt-2 text-muted small">(showing first ${errs.length} errors)</div>` : '';
-      showAlert('danger', `❌ Validation failed.<ul class="mb-0">${list}</ul>${extra}`);
+      const list = errs.map(e => {
+        const p = e.path || '(root)';
+        const link = `<a href=\"#\" class=\"error-link\" data-path=\"${p}\"><code>${p}</code></a>`;
+        return `<li>${link}: ${e.message}</li>`;
+      }).join('');
+      const extra = (data.errors || []).length > errs.length ? `<div class=\"mt-2 text-muted small\">(showing first ${errs.length} errors)</div>` : '';
+      showAlert('danger', `❌ Validation failed.<ul class=\"mb-0\">${list}</ul>${extra}`);
+      // Wire clicks to focus fields
+      alertAreaEl.querySelectorAll('.error-link').forEach(a => {
+        a.addEventListener('click', (ev) => { ev.preventDefault(); focusField(a.dataset.path); });
+      });
+      renderMissingSummary();
     }
   }
 
