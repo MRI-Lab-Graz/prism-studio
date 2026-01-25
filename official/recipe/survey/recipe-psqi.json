@@ -1,0 +1,218 @@
+{
+  "RecipeVersion": "1.0.0",
+  "Kind": "survey",
+  "Survey": {
+    "Name": {
+      "en": "Pittsburgh Sleep Quality Index",
+      "de": "Pittsburgh Schlafqualitätsindex"
+    },
+    "Description": {
+      "en": "The PSQI is a self-report questionnaire that assesses sleep quality and disturbances over a 1-month time interval. It generates seven component scores and one global score.",
+      "de": "Der PSQI ist ein Selbstbeurteilungsfragebogen, der die Schlafqualität und Schlafstörungen über einen Zeitraum von einem Monat erfasst. Er generiert sieben Komponentenwerte und einen Globalwert."
+    },
+    "Reference": "survey-psqi.json",
+    "TaskName": "psqi",
+    "Version": "1.0",
+    "Authors": ["Buysse DJ", "Reynolds CF", "Monk TH", "Berman SR", "Kupfer DJ"],
+    "Citation": "Buysse, D. J., Reynolds, C. F., Monk, T. H., Berman, S. R., & Kupfer, D. J. (1989). The Pittsburgh Sleep Quality Index: a new instrument for psychiatric practice and research. Psychiatry Research, 28(2), 193-213.",
+    "URL": "https://doi.org/10.1016/0165-1781(89)90047-4"
+  },
+  "Transforms": {
+    "Derived": [
+      {
+        "Name": "C2_latency_score",
+        "Description": "Component 2 sub-score for sleep latency (PSQI02)",
+        "Method": "map",
+        "Source": "PSQI02",
+        "Mapping": {
+          "0-15": 0,
+          "16-30": 1,
+          "31-60": 2,
+          "61-999": 3
+        }
+      },
+      {
+        "Name": "C2_trouble_score",
+        "Description": "Component 2 contribution from trouble falling asleep",
+        "Items": ["PSQI0501"],
+        "Method": "max"
+      },
+      {
+        "Name": "C2_sum",
+        "Description": "Sum of C2 latency and trouble scores",
+        "Formula": "{C2_latency_score} + {C2_trouble_score}",
+        "Items": ["C2_latency_score", "C2_trouble_score"],
+        "Method": "formula"
+      },
+      {
+        "Name": "Component2",
+        "Description": "Component 2: Sleep latency (0-3)",
+        "Method": "map",
+        "Source": "C2_sum",
+        "Mapping": {
+          "0": 0,
+          "1-2": 1,
+          "3-4": 2,
+          "5-6": 3
+        }
+      },
+      {
+        "Name": "C3_hours",
+        "Description": "Sleep duration score based on hours",
+        "Method": "map",
+        "Source": "PSQI04",
+        "Mapping": {
+          "7-999": 0,
+          "6-7": 1,
+          "5-6": 2,
+          "0-5": 3
+        }
+      },
+      {
+        "Name": "C5_disturbance_sum",
+        "Description": "Sum of sleep disturbance items (5b-5j)",
+        "Items": [
+          "PSQI0502",
+          "PSQI0503",
+          "PSQI0504",
+          "PSQI0505",
+          "PSQI0506",
+          "PSQI0507",
+          "PSQI0508",
+          "PSQI0509",
+          "PSQI051001"
+        ],
+        "Method": "sum"
+      },
+      {
+        "Name": "Component5",
+        "Description": "Component 5: Sleep disturbances (0-3)",
+        "Method": "map",
+        "Source": "C5_disturbance_sum",
+        "Mapping": {
+          "0": 0,
+          "1-9": 1,
+          "10-18": 2,
+          "19-27": 3
+        }
+      },
+      {
+        "Name": "C7_sum",
+        "Description": "Sum of daytime dysfunction items",
+        "Items": ["PSQI08", "PSQI09"],
+        "Method": "sum"
+      },
+      {
+        "Name": "Component7",
+        "Description": "Component 7: Daytime dysfunction (0-3)",
+        "Method": "map",
+        "Source": "C7_sum",
+        "Mapping": {
+          "0": 0,
+          "1-2": 1,
+          "3-4": 2,
+          "5-6": 3
+        }
+      }
+    ]
+  },
+  "Scores": [
+    {
+      "Name": "Component1",
+      "Description": {
+        "en": "Subjective sleep quality (0-3)",
+        "de": "Subjektive Schlafqualität (0-3)"
+      },
+      "Items": ["PSQI06"],
+      "Method": "sum",
+      "Range": {
+        "min": 0,
+        "max": 3
+      }
+    },
+    {
+      "Name": "Component3",
+      "Description": {
+        "en": "Sleep duration (0-3)",
+        "de": "Schlafdauer (0-3)"
+      },
+      "Items": ["C3_hours"],
+      "Method": "sum",
+      "Range": {
+        "min": 0,
+        "max": 3
+      }
+    },
+    {
+      "Name": "Component6",
+      "Description": {
+        "en": "Use of sleeping medication (0-3)",
+        "de": "Verwendung von Schlafmitteln (0-3)"
+      },
+      "Items": ["PSQI07"],
+      "Method": "sum",
+      "Range": {
+        "min": 0,
+        "max": 3
+      }
+    },
+    {
+      "Name": "GlobalScore",
+      "Description": {
+        "en": "Global PSQI score (0-21, >5 indicates poor sleep quality)",
+        "de": "Globaler PSQI-Wert (0-21, >5 deutet auf schlechte Schlafqualität hin)"
+      },
+      "Items": [
+        "Component1",
+        "Component2",
+        "Component3",
+        "Component5",
+        "Component6",
+        "Component7"
+      ],
+      "Method": "sum",
+      "Range": {
+        "min": 0,
+        "max": 21
+      }
+    }
+  ],
+  "Psychometrics": {
+    "Reliability": {
+      "InternalConsistency": {
+        "CronbachAlpha": 0.83,
+        "Note": "Original validation study (Buysse et al., 1989)"
+      },
+      "TestRetest": {
+        "Correlation": 0.85,
+        "Note": "One-month test-retest reliability"
+      }
+    },
+    "Validity": {
+      "Note": "Global score >5 yielded diagnostic sensitivity of 89.6% and specificity of 86.5% in distinguishing good and poor sleepers."
+    },
+    "Cutoffs": {
+      "PoorSleepQuality": {
+        "threshold": 5,
+        "description": {
+          "en": "Scores > 5 indicate clinically significant sleep disturbance",
+          "de": "Werte > 5 weisen auf klinisch bedeutsame Schlafstörungen hin"
+        }
+      }
+    }
+  },
+  "Usage": {
+    "ScoringGuidelines": {
+      "en": "The PSQI generates seven component scores (each 0-3) and one global score (0-21). Higher scores indicate worse sleep quality. A global score > 5 suggests clinically significant sleep disturbance. Note: Component 4 (sleep efficiency) requires calculation from bedtime (PSQI01), wake time (PSQI03), and sleep duration (PSQI04) and is typically computed separately.",
+      "de": "Der PSQI erzeugt sieben Komponentenwerte (jeweils 0-3) und einen Globalwert (0-21). Höhere Werte bedeuten schlechtere Schlafqualität. Ein Globalwert > 5 deutet auf klinisch bedeutsame Schlafstörungen hin. Hinweis: Komponente 4 (Schlafeffizienz) erfordert die Berechnung aus Zubettgehzeit (PSQI01), Aufwachzeit (PSQI03) und Schlafdauer (PSQI04) und wird üblicherweise separat berechnet."
+    },
+    "InterpretationGuidelines": {
+      "en": "Global scores range from 0-21. Scores ≤ 5 indicate good sleep quality, while scores > 5 indicate poor sleep quality and clinically significant sleep disturbance.",
+      "de": "Globalwerte reichen von 0-21. Werte ≤ 5 zeigen gute Schlafqualität an, während Werte > 5 auf schlechte Schlafqualität und klinisch bedeutsame Schlafstörungen hinweisen."
+    },
+    "Notes": {
+      "en": "Component 4 (Habitual Sleep Efficiency) is not included in this automated scoring as it requires time calculations from PSQI01, PSQI03, and PSQI04. Calculate manually: (PSQI04 / time in bed) × 100, then score: ≥85%=0, 75-84%=1, 65-74%=2, <65%=3.",
+      "de": "Komponente 4 (Habituelle Schlafeffizienz) ist in dieser automatischen Bewertung nicht enthalten, da sie Zeitberechnungen aus PSQI01, PSQI03 und PSQI04 erfordert. Manuelle Berechnung: (PSQI04 / Zeit im Bett) × 100, dann bewerten: ≥85%=0, 75-84%=1, 65-74%=2, <65%=3."
+    }
+  }
+}

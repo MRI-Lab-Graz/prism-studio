@@ -1846,6 +1846,16 @@ def _map_survey_columns(
     # Track runs per task: task -> set of run numbers seen
     task_run_tracker: dict[str, set[int | None]] = {}
 
+    # DEBUG: Show sample columns and item_to_task keys
+    sample_cols = cols[:20] if cols else []
+    psqi_cols = [c for c in cols if str(c).startswith("PSQI")]
+    all_psqi_items = sorted([k for k in item_to_task.keys() if str(k).startswith('PSQI')])
+    print(f"[PRISM DEBUG] Column mapping debug:")
+    print(f"  - Total columns to map: {len(cols)}")
+    print(f"  - Sample columns: {sample_cols}")
+    print(f"  - PSQI columns found in DataFrame: {sorted(psqi_cols)}")
+    print(f"  - PSQI items in item_to_task ({len(all_psqi_items)}): {all_psqi_items}")
+
     for c in cols:
         col_lower = str(c).strip().lower()
 
@@ -1861,6 +1871,12 @@ def _map_survey_columns(
         # Try to match against templates (original name first, then base name)
         matched_task = None
         matched_base = c
+
+        # DEBUG: Log PSQI matching attempts
+        if str(c).startswith("PSQI"):
+            print(f"[PRISM DEBUG] Checking PSQI column '{c}':")
+            print(f"  - c in item_to_task: {c in item_to_task} (value: {item_to_task.get(c, 'NOT FOUND')})")
+            print(f"  - base_name: {base_name}, in item_to_task: {base_name in item_to_task}")
 
         if c in item_to_task:
             # Direct match (e.g., 'PANAS_1' without run suffix)
@@ -2346,6 +2362,19 @@ def _load_and_preprocess_templates(
                         duplicates.setdefault(alias, set()).update({item_to_task[alias], task_norm})
                     else:
                         item_to_task[alias] = task_norm
+
+    # DEBUG: Log how many items per task
+    task_item_counts = {}
+    for item, task in item_to_task.items():
+        task_item_counts[task] = task_item_counts.get(task, 0) + 1
+    print(f"[PRISM DEBUG] Loaded {len(item_to_task)} items across {len(templates)} templates:")
+    for task, count in sorted(task_item_counts.items()):
+        print(f"  - {task}: {count} items")
+    
+    # DEBUG: Show first few PSQI items if present
+    psqi_items = [k for k, v in item_to_task.items() if v == "psqi" and k.startswith("PSQI")][:10]
+    if psqi_items:
+        print(f"[PRISM DEBUG] Sample PSQI items in item_to_task: {', '.join(psqi_items)}")
 
     return templates, item_to_task, duplicates, template_warnings
 

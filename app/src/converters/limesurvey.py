@@ -107,10 +107,18 @@ def parse_lsa_responses(lsa_path):
 
     # Also include subquestions in qid_to_title if needed?
     # The original code did this:
+    subquestion_count = 0
     for row in lss_root.findall(".//subquestions/rows/row"):
         qid = row.find("qid").text
         title = row.find("title").text
-        qid_to_title[qid] = title
+        if qid and title:
+            qid_to_title[qid] = title
+            subquestion_count += 1
+
+    # DEBUG: Show what QIDs we have mapped
+    psqi_qids = {qid: title for qid, title in qid_to_title.items() if title and str(title).startswith("PSQI")}
+    if psqi_qids:
+        print(f"[PRISM DEBUG] Found {len(psqi_qids)} PSQI questions in survey")
 
     text = xml_resp.decode("utf-8")
     fieldnames = re.findall(r"<fieldname>(.*?)</fieldname>", text)
