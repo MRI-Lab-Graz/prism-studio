@@ -478,5 +478,159 @@
       "IsAbout": "ncit:C41185",
       "Label": "Study group"
     }
+  },
+  "menstrual_cycle_duration": {
+    "Description": {
+      "en": "Duration of menstrual bleeding",
+      "de": "Dauer der Menstruationsblutung"
+    },
+    "Levels": {
+      "short": {
+        "en": "Short duration (<3 days)",
+        "de": "Kurze Dauer (<3 Tage)",
+        "SnomedCode": "snomed:386819001"
+      },
+      "normal": {
+        "en": "Normal duration (3-7 days)",
+        "de": "Normale Dauer (3-7 Tage)",
+        "SnomedCode": "snomed:386819001"
+      },
+      "long": {
+        "en": "Long duration (>7 days)",
+        "de": "Lange Dauer (>7 Tage)",
+        "SnomedCode": "snomed:386818004"
+      },
+      "n/a": {
+        "en": "Not applicable/Prefer not to answer",
+        "de": "Nicht zutreffend/Keine Angabe"
+      }
+    },
+    "DataType": "string",
+    "VariableType": "Categorical",
+    "Annotations": {
+      "IsAbout": "snomed:386819001",
+      "Label": "Menstrual cycle duration"
+    }
+  },
+  "menstrual_cycle_regularity": {
+    "Description": {
+      "en": "Regularity of menstrual bleeding/cycle pattern",
+      "de": "Regelmäßigkeit der Menstruationsblutung/Zyklus"
+    },
+    "Levels": {
+      "regular": {
+        "en": "Regular menstrual cycle",
+        "de": "Regelmäßiger Menstruationszyklus",
+        "SnomedCode": "snomed:386817009"
+      },
+      "irregular": {
+        "en": "Irregular menstrual cycle",
+        "de": "Unregelmäßiger Menstruationszyklus",
+        "SnomedCode": "snomed:445324005"
+      },
+      "n/a": {
+        "en": "Not applicable/Prefer not to answer",
+        "de": "Nicht zutreffend/Keine Angabe"
+      }
+    },
+    "DataType": "string",
+    "VariableType": "Categorical",
+    "Annotations": {
+      "IsAbout": "snomed:386817009",
+      "Label": "Menstrual cycle regularity"
+    }
+  },
+  "menstrual_cycle_length": {
+    "Description": {
+      "en": "Average length of menstrual cycle in days",
+      "de": "Durchschnittliche Länge des Menstruationszyklus in Tagen"
+    },
+    "Units": "days",
+    "MinValue": 20,
+    "MaxValue": 40,
+    "DataType": "integer",
+    "VariableType": "Continuous",
+    "Annotations": {
+      "IsAbout": "snomed:248957007",
+      "Label": "Menstrual cycle length"
+    }
+  },
+  "menstrual_bleeding_intensity": {
+    "Description": {
+      "en": "Subjective intensity of menstrual bleeding",
+      "de": "Subjektive Intensität der Menstruationsblutung"
+    },
+    "Levels": {
+      "light": {
+        "en": "Light",
+        "de": "Leicht",
+        "SnomedCode": "snomed:386818004"
+      },
+      "moderate": {
+        "en": "Moderate",
+        "de": "Mäßig"
+      },
+      "heavy": {
+        "en": "Heavy (menorrhagia)",
+        "de": "Stark (Menorrhagie)",
+        "SnomedCode": "snomed:386819001"
+      },
+      "n/a": {
+        "en": "Not applicable/Prefer not to answer",
+        "de": "Nicht zutreffend/Keine Angabe"
+      }
+    },
+    "DataType": "string",
+    "VariableType": "Categorical",
+    "Annotations": {
+      "IsAbout": "snomed:248957007",
+      "Label": "Menstrual bleeding intensity"
+    }
+  },
+  "hormonal_contraceptive_use": {
+    "Description": {
+      "en": "Current use of hormonal contraceptives",
+      "de": "Aktuelle Verwendung von hormonellen Verhütungsmitteln"
+    },
+    "Levels": {
+      "none": {
+        "en": "Not using",
+        "de": "Nicht verwendend"
+      },
+      "oral": {
+        "en": "Oral contraceptive pill",
+        "de": "Antibabypille"
+      },
+      "injection": {
+        "en": "Injectable hormonal contraceptive (e.g., Depo-Provera)",
+        "de": "Spritze (z.B. Depot-Medroxyprogesterone)"
+      },
+      "patch": {
+        "en": "Patch or ring",
+        "de": "Pflaster oder Ring"
+      },
+      "implant": {
+        "en": "Subdermal implant",
+        "de": "Subkutanes Implantat"
+      },
+      "iud": {
+        "en": "Hormonal IUD",
+        "de": "Hormonelles Intrauterinpessar"
+      },
+      "other": {
+        "en": "Other hormonal method",
+        "de": "Andere hormonelle Methode"
+      },
+      "n/a": {
+        "en": "Prefer not to answer",
+        "de": "Keine Angabe"
+      }
+    },
+    "DataType": "string",
+    "VariableType": "Categorical",
+    "Annotations": {
+      "IsAbout": "snomed:434551000124102",
+      "Label": "Hormonal contraceptive use"
+    }
   }
 }

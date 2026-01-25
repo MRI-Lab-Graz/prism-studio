@@ -76,7 +76,8 @@ def _get_question_type_name(type_code):
 
 
 def _map_field_to_code(fieldname, qid_to_title):
-    m = re.match(r"(\d+)X(\d+)X(\d+)([A-Za-z0-9_]+)?", fieldname)
+    # Handle both with and without leading underscore (_569818X43542X590136 or 569818X43542X590136)
+    m = re.match(r"_?(\d+)X(\d+)X(\d+)([A-Za-z0-9_]+)?", fieldname)
     if not m:
         return fieldname
     qid = m.group(3)
@@ -114,11 +115,6 @@ def parse_lsa_responses(lsa_path):
         if qid and title:
             qid_to_title[qid] = title
             subquestion_count += 1
-
-    # DEBUG: Show what QIDs we have mapped
-    psqi_qids = {qid: title for qid, title in qid_to_title.items() if title and str(title).startswith("PSQI")}
-    if psqi_qids:
-        print(f"[PRISM DEBUG] Found {len(psqi_qids)} PSQI questions in survey")
 
     text = xml_resp.decode("utf-8")
     fieldnames = re.findall(r"<fieldname>(.*?)</fieldname>", text)
