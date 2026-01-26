@@ -798,6 +798,10 @@
     let currentProjectName = "{{ current_project.name or '' }}";
     const recentProjectsKey = 'prism_recent_projects';
 
+    // Also expose globally for navbar and other pages to access
+    window.currentProjectPath = currentProjectPath;
+    window.currentProjectName = currentProjectName;
+
     function getRecentProjects() {
         try {
             const raw = localStorage.getItem(recentProjectsKey);
@@ -1318,6 +1322,8 @@
                 // Update local state and refresh dependent UI components
                 currentProjectPath = result.current_project.path;
                 currentProjectName = result.current_project.name;
+                window.currentProjectPath = currentProjectPath;
+                window.currentProjectName = currentProjectName;
                 addRecentProject(currentProjectName, currentProjectPath);
                 await initParticipantsStatus();
                 await loadProjectMetadata();
@@ -1515,6 +1521,8 @@
             // Update local state and refresh dependent UI components
             currentProjectPath = result.current_project.path;
             currentProjectName = result.current_project.name;
+            window.currentProjectPath = currentProjectPath;
+            window.currentProjectName = currentProjectName;
             addRecentProject(currentProjectName, currentProjectPath);
             await initParticipantsStatus();
             await loadProjectMetadata();

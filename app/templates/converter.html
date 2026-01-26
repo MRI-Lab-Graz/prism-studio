@@ -999,12 +999,15 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelMappingBtn">Cancel</button>
                 <button type="button" class="btn btn-success" id="saveMappingBtn" disabled>
                     <i class="fas fa-save me-2"></i>Save Mapping
                 </button>
                 <button type="button" class="btn btn-primary d-none" id="downloadMappingBtn">
                     <i class="fas fa-download me-2"></i>Download JSON
+                </button>
+                <button type="button" class="btn btn-primary d-none" data-bs-dismiss="modal" id="closeMappingBtn">
+                    <i class="fas fa-check me-2"></i>Close
                 </button>
             </div>
         </div>
@@ -3040,6 +3043,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 appendLog('✓ Data saved to project rawdata folder', 'success');
             }
 
+            // Final completion message
+            appendLog('═══════════════════════════════════════════════', 'info');
+            appendLog('✓ CONVERSION COMPLETED SUCCESSFULLY', 'success');
+            appendLog('═══════════════════════════════════════════════', 'info');
+
             convertInfo.textContent = 'Conversion complete. See results below.';
             convertInfo.classList.remove('d-none');
         })
@@ -3057,6 +3065,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const createParticipantMappingBtn = document.getElementById('createParticipantMappingBtn');
     if (createParticipantMappingBtn) {
         createParticipantMappingBtn.addEventListener('click', function() {
+            // Check if project is loaded using template variable
+            const currentProjectPath = "{{ current_project.path or '' }}";
+            if (!currentProjectPath) {
+                alert('Please load a project first to create participant mapping. Projects are managed in the Projects page.');
+                return;
+            }
+
+            // Reset the modal to initial state
+            document.getElementById('mappingColumnsContainer').classList.remove('d-none');
+            document.getElementById('mappingSuccess').classList.add('d-none');
+            document.getElementById('mappingError').classList.add('d-none');
+            document.getElementById('saveMappingBtn').classList.remove('d-none');
+            document.getElementById('cancelMappingBtn').classList.remove('d-none');
+            document.getElementById('closeMappingBtn').classList.add('d-none');
+
             // Show the modal and prepare the mapping interface
             const modal = new bootstrap.Modal(document.getElementById('participantMappingModal'));
             
@@ -3183,11 +3206,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function showMappingSuccess(filePath) {
         document.getElementById('mappingColumnsContainer').classList.add('d-none');
         document.getElementById('mappingSuccess').classList.remove('d-none');
-        document.getElementById('saveMappingBtn').disabled = true;
         document.getElementById('mappingError').classList.add('d-none');
         document.getElementById('mappingFilePath').innerHTML = `
             <strong>File created:</strong> <code>${filePath}</code>
         `;
+        
+        // Hide the Save and Cancel buttons, show the Close button
+        document.getElementById('saveMappingBtn').classList.add('d-none');
+        document.getElementById('cancelMappingBtn').classList.add('d-none');
+        document.getElementById('closeMappingBtn').classList.remove('d-none');
     }
 
     function showMappingError(message) {
@@ -3522,7 +3549,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             appendLog('', 'info');
             appendLog('═══════════════════════════════════════', 'info');
-            appendLog('Preview complete. Run Convert to create files.', 'success');
+            appendLog('✓ PREVIEW COMPLETED SUCCESSFULLY', 'success');
+            appendLog('═══════════════════════════════════════', 'info');
             
             convertInfo.innerHTML = '<i class="fas fa-info-circle me-2"></i>Preview complete. Review the log above, then click <strong>Convert</strong> to proceed.';
             convertInfo.classList.remove('d-none');

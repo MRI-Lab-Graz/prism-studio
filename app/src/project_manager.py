@@ -166,10 +166,14 @@ class ProjectManager:
             derivatives_path.mkdir(exist_ok=True)
             created_files.append("derivatives/")
 
-            # code/ - minimal, for user scripts
+            # code/ - for user scripts and project library (YODA-compliant)
             code_path = project_path / "code"
             code_path.mkdir(exist_ok=True)
             created_files.append("code/")
+
+            # Create library structure under code/ (YODA-compliant)
+            library_files = self._create_library_structure(project_path, modalities)
+            created_files.extend(library_files)
 
             return {
                 "success": True,
