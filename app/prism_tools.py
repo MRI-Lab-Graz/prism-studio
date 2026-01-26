@@ -137,7 +137,7 @@ def cmd_recipes_surveys(args):
             include_raw=include_raw,
             boilerplate=boilerplate,
         )
-        print(f"✅ Survey recipe scoring complete: {result.written_files} file(s) written")
+        print(f"Survey recipe scoring complete: {result.written_files} file(s) written")
         if result.flat_out_path:
             print(f"   Flat output: {result.flat_out_path}")
         if result.boilerplate_path:
@@ -152,7 +152,7 @@ def cmd_recipes_surveys(args):
                 joined = ", ".join(sorted(cols))
                 print(f"     - {key}: {joined}")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
         sys.exit(1)
 
 

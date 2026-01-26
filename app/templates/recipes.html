@@ -268,6 +268,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   derivRunBtn.addEventListener('click', function() {
+    runRecipeProcessing(false);
+  });
+
+  function runRecipeProcessing(forceOverwrite) {
     derivError.classList.add('d-none');
     derivInfo.classList.add('d-none');
     derivError.textContent = '';
@@ -295,19 +299,22 @@ document.addEventListener('DOMContentLoaded', function() {
       anonymize: document.getElementById('derivAnonymize').checked,
       mask_questions: document.getElementById('derivMaskQuestions').checked,
       id_length: parseInt(document.getElementById('derivIdLength').value) || 8,
-      random_ids: document.getElementById('derivRandomIds').checked
+      random_ids: document.getElementById('derivRandomIds').checked,
+      force_overwrite: forceOverwrite
     };
 
     derivRunBtn.disabled = true;
-    logToTerminal(`Running processing on: ${datasetPath}`);
-    logToTerminal(`Modality: ${payload.modality}, Format: ${payload.format}, Language: ${payload.lang}, Layout: ${payload.layout}`);
-    if (payload.include_raw) logToTerminal(`Including raw data columns`);
-    if (payload.boilerplate) logToTerminal(`Generating methods boilerplate`);
-    if (payload.anonymize) {
-      logToTerminal(`🔒 Anonymizing participant IDs (length: ${payload.id_length}, ${payload.random_ids ? 'random' : 'deterministic'})`, 'warning');
-      if (payload.mask_questions) logToTerminal(`🔒 Masking copyrighted question text`, 'warning');
+    if (!forceOverwrite) {
+      logToTerminal(`Running processing on: ${datasetPath}`);
+      logToTerminal(`Modality: ${payload.modality}, Format: ${payload.format}, Language: ${payload.lang}, Layout: ${payload.layout}`);
+      if (payload.include_raw) logToTerminal(`Including raw data columns`);
+      if (payload.boilerplate) logToTerminal(`Generating methods boilerplate`);
+      if (payload.anonymize) {
+        logToTerminal(`🔒 Anonymizing participant IDs (length: ${payload.id_length}, ${payload.random_ids ? 'random' : 'deterministic'})`, 'warning');
+        if (payload.mask_questions) logToTerminal(`🔒 Masking copyrighted question text`, 'warning');
+      }
+      if (payload.survey) logToTerminal(`Recipe filter: ${payload.survey}`);
     }
-    if (payload.survey) logToTerminal(`Recipe filter: ${payload.survey}`);
     derivInfo.textContent = 'Running processing... this may take a moment.';
     derivInfo.classList.remove('d-none');
 
@@ -325,6 +332,23 @@ document.addEventListener('DOMContentLoaded', function() {
         return data;
       })
       .then(data => {
+        // Check if we need to confirm overwrite
+        if (data && data.confirm_overwrite) {
+          derivInfo.classList.add('d-none');
+          const confirmMsg = `${data.message}\n\nDo you want to overwrite these files?`;
+          logToTerminal(`Existing files found: ${data.existing_files.join(', ')}`, 'warning');
+          if (confirm(confirmMsg)) {
+            logToTerminal('User confirmed overwrite', 'info');
+            runRecipeProcessing(true);
+          } else {
+            logToTerminal('Processing cancelled by user', 'info');
+            derivInfo.textContent = 'Processing cancelled - existing files not overwritten.';
+            derivInfo.classList.remove('d-none');
+            derivRunBtn.disabled = false;
+          }
+          return;
+        }
+        
         const msg = data && data.message ? data.message : 'Done.';
         derivInfo.textContent = msg;
         derivInfo.classList.remove('d-none');
@@ -354,16 +378,15 @@ document.addEventListener('DOMContentLoaded', function() {
           logToTerminal(`Written: ${data.details.written_files || 0} output files`);
           if (data.details.out_root) logToTerminal(`Output: ${data.details.out_root}`);
         }
+        derivRunBtn.disabled = false;
       })
       .catch(err => {
         derivError.textContent = err.message;
         derivError.classList.remove('d-none');
         logToTerminal(err.message, 'error');
-      })
-      .finally(() => {
         derivRunBtn.disabled = false;
       });
-  });
+  }
 });
 </script>
 {% endblock %}
