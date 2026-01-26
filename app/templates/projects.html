@@ -1321,6 +1321,9 @@
                 addRecentProject(currentProjectName, currentProjectPath);
                 await initParticipantsStatus();
                 await loadProjectMetadata();
+                if (window.updateNavbarProject) {
+                    window.updateNavbarProject(currentProjectName, currentProjectPath);
+                }
                 showExportCard();
             } else {
                 resultDiv.innerHTML = `
@@ -1418,7 +1421,7 @@
                         <h5 class="mb-0"><i class="fas fa-${statusIcon} me-2"></i>${statusText}</h5>
                         ${stats.is_yoda ? '<span class="badge bg-info"><i class="fas fa-microchip me-1"></i>YODA Layout</span>' : ''}
                     </div>
-                    <p class="text-success mb-3"><i class="fas fa-folder-open me-1"></i>This project is now your current working project. <a href="${window.location.href}">Refresh</a> to see it in the navbar.</p>
+                    <p class="text-success mb-3"><i class="fas fa-folder-open me-1"></i>This project is now your current working project and is shown in the navbar.</p>
 
                     <div class="stats-grid">
                         <div class="stat-item">
@@ -1515,6 +1518,9 @@
             addRecentProject(currentProjectName, currentProjectPath);
             await initParticipantsStatus();
             await loadProjectMetadata();
+            if (window.updateNavbarProject) {
+                window.updateNavbarProject(currentProjectName, currentProjectPath);
+            }
             showExportCard();
 
         } catch (error) {
@@ -1770,9 +1776,12 @@
                 // Show any remaining validation issues
                 displayMetadataIssues(result.issues || []);
 
-                // Optional: refresh page if name changed to update navbar
-                if (description.Name !== currentProjectName) {
-                    setTimeout(() => window.location.reload(), 2000);
+                // Sync navbar badge if the project label changed
+                if (description.Name && description.Name !== currentProjectName) {
+                    currentProjectName = description.Name;
+                    if (window.updateNavbarProject && currentProjectPath) {
+                        window.updateNavbarProject(currentProjectName, currentProjectPath);
+                    }
                 }
             } else {
                 alert('Failed to save metadata: ' + result.error);
