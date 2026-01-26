@@ -101,7 +101,7 @@ def _log_file_head(input_path: Path, suffix: str, log_func):
 def _resolve_effective_library_path() -> Path:
     """
     Automatically resolve library path:
-    1. First, try project's /code/library
+    1. First, try project's /code/library (only if it has templates)
     2. Fall back to global library
     
     Returns the resolved Path to the library root.
@@ -109,13 +109,17 @@ def _resolve_effective_library_path() -> Path:
     """
     from src.web.blueprints.projects import get_current_project
     
-    # Try project library first
+    # Try project library first, but only if it has templates
     project = get_current_project()
     project_path = project.get("path")
     if project_path:
         project_library = Path(project_path).expanduser().resolve() / "code" / "library"
         if project_library.exists() and project_library.is_dir():
-            return project_library
+            # Check if the library has any survey templates
+            survey_dir = project_library / "survey" if (project_library / "survey").is_dir() else project_library
+            if list(survey_dir.glob("survey-*.json")):
+                return project_library
+            # If project library exists but is empty, fall through to global library
     
     # Fall back to global library
     from src.config import get_effective_library_paths
@@ -1648,9 +1652,10 @@ def save_participant_mapping():
         if project_path:
             try:
                 project_lib = Path(str(project_path)).resolve() / "code" / "library" / "survey"
-                if project_lib.exists() and project_lib.is_dir():
-                    target_lib_path = project_lib
-                    used_source = "project"
+                # Create the library folder if it doesn't exist
+                project_lib.mkdir(parents=True, exist_ok=True)
+                target_lib_path = project_lib
+                used_source = "project"
             except Exception:
                 pass  # Fall through to Priority 2
         
