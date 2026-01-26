@@ -818,9 +818,30 @@ def api_recipes_surveys():
     mask_questions = bool(data.get("mask_questions", False))
     id_length = int(data.get("id_length", 8))
     random_ids = bool(data.get("random_ids", False))
+    force_overwrite = bool(data.get("force_overwrite", False))
 
     if not dataset_path or not os.path.exists(dataset_path) or not os.path.isdir(dataset_path):
         return jsonify({"error": "Invalid dataset path"}), 400
+
+    # Check for existing output files before processing
+    derivatives_dir = Path(dataset_path) / "derivatives" / ("survey" if modality == "survey" else "biometrics")
+    if derivatives_dir.exists() and not force_overwrite:
+        existing_files = []
+        for ext in [".csv", ".tsv", ".xlsx", ".sav", ".feather"]:
+            existing_files.extend(derivatives_dir.glob(f"*{ext}"))
+        
+        if existing_files:
+            file_names = [f.name for f in existing_files[:10]]  # Show first 10
+            more_count = len(existing_files) - 10 if len(existing_files) > 10 else 0
+            msg = f"Output files already exist in {derivatives_dir.name}/: {', '.join(file_names)}"
+            if more_count > 0:
+                msg += f" (and {more_count} more)"
+            return jsonify({
+                "confirm_overwrite": True,
+                "message": msg,
+                "existing_files": file_names,
+                "total_existing": len(existing_files)
+            }), 200
 
     # Validate that the dataset is PRISM-valid. 
     # We log errors but don't block processing unless it's a critical path issue.
@@ -900,7 +921,6 @@ def api_recipes_surveys():
                 import pandas as pd
                 import json
                 
-                # Read participants.tsv to get participant IDs
                 # Check rawdata/ first (PRISM/YODA structure), then root (BIDS)
                 participants_tsv = os.path.join(dataset_path, "rawdata", "participants.tsv")
                 if not os.path.exists(participants_tsv):
@@ -1031,9 +1051,9 @@ def api_recipes_surveys():
         print(f"{'='*70}\n")
         return jsonify({"error": f"{str(e)}\n\nSee terminal for full traceback."}), 500
 
-    msg = f"✅ Data processing complete: wrote {result.written_files} file(s)"
+    msg = f"Data processing complete: wrote {result.written_files} file(s)"
     if result.flat_out_path:
-        msg = f"✅ Data processing complete: wrote {result.flat_out_path}"
+        msg = f"Data processing complete: wrote {result.flat_out_path}"
     if result.fallback_note:
         msg += f" (note: {result.fallback_note})"
     
