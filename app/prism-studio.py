@@ -67,10 +67,16 @@ else:
     BASE_DIR = Path(__file__).resolve().parent
 
 SRC_DIR = BASE_DIR / "src"
-if str(SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(SRC_DIR))
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 
 # Import refactored web modules
+get_error_description = None
+get_error_documentation_url = None
+shorten_path = None
+get_filename_from_path = None
+run_validation = None
+
 try:
     from src.web import (
         # Utils
@@ -88,7 +94,10 @@ except ImportError as e:
     # Fallback definitions will be provided inline if needed
 
 # Legacy alias for backwards compatibility
-run_main_validator = run_validation
+if run_validation:
+    run_main_validator = run_validation
+else:
+    run_main_validator = None
 
 # Import core components
 try:
@@ -481,7 +490,7 @@ def main():
         try:
             from waitress import serve
 
-            print(f"🚀 Running with Waitress server on {host}:{port}")
+            print(f"Running with Waitress server on {host}:{port}")
             serve(app, host=host, port=port)
         except ImportError:
             print("[WARN]  Waitress not installed, falling back to Flask development server")
