@@ -107,13 +107,14 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                {% if current_project.path %}
-                <div class="navbar-text me-3 d-none d-lg-block">
+                <div class="navbar-text me-3 d-none d-lg-block" id="currentProjectBadge"
+                     data-path="{{ current_project.path or '' }}" data-name="{{ current_project.name or '' }}">
+                    {% if current_project.path %}
                     <span class="badge bg-primary">
                         <i class="fas fa-folder-open me-1"></i>{{ current_project.name or 'Project' }}
                     </span>
+                    {% endif %}
                 </div>
-                {% endif %}
                 <div class="navbar-nav ms-auto">
                     <a class="nav-link" href="{{ url_for('index') }}">
                         <i class="fas fa-home me-1"></i>Home
@@ -134,7 +135,7 @@
                             <i class="fas fa-toolbox me-1 text-info"></i>Tools
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="toolsDropdown">
-                            <li><a class="dropdown-item{% if not current_project.path %} disabled{% endif %}" href="{% if current_project.path %}{{ url_for('tools.file_management') }}{% else %}#{% endif %}" id="fileManagementLink" {% if not current_project.path %}title="Please load a project first"{% endif %}>
+                            <li><a class="dropdown-item{% if not current_project.path %} disabled{% endif %}" href="{% if current_project.path %}{{ url_for('tools.file_management') }}{% else %}#{% endif %}" data-file-management-url="{{ url_for('tools.file_management') }}" id="fileManagementLink" {% if not current_project.path %}title="Please load a project first"{% endif %}>
                                 <i class="fas fa-file-import me-2 text-warning"></i>File Management
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
@@ -169,15 +170,62 @@
     </nav>
     
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Handle File Management link disabled state
+        function setFileManagementState(enabled) {
             const fileManagementLink = document.getElementById('fileManagementLink');
-            if (fileManagementLink?.classList.contains('disabled')) {
-                fileManagementLink.addEventListener('click', function(e) {
+            if (!fileManagementLink) return;
+
+            const targetHref = fileManagementLink.dataset.fileManagementUrl || fileManagementLink.getAttribute('href');
+            if (enabled) {
+                fileManagementLink.classList.remove('disabled');
+                fileManagementLink.removeAttribute('title');
+                if (targetHref) {
+                    fileManagementLink.setAttribute('href', targetHref);
+                }
+            } else {
+                fileManagementLink.classList.add('disabled');
+                fileManagementLink.setAttribute('href', '#');
+                fileManagementLink.setAttribute('title', 'Please load a project first');
+            }
+        }
+
+        function updateNavbarProject(name, path) {
+            const badgeContainer = document.getElementById('currentProjectBadge');
+            if (!badgeContainer) return;
+
+            badgeContainer.innerHTML = '';
+            badgeContainer.dataset.path = path || '';
+            badgeContainer.dataset.name = name || '';
+
+            if (name && path) {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-primary';
+                const icon = document.createElement('i');
+                icon.className = 'fas fa-folder-open me-1';
+                badge.appendChild(icon);
+                badge.appendChild(document.createTextNode(name));
+                badgeContainer.appendChild(badge);
+            }
+
+            setFileManagementState(Boolean(path));
+        }
+
+        window.updateNavbarProject = updateNavbarProject;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const badgeContainer = document.getElementById('currentProjectBadge');
+            if (badgeContainer) {
+                updateNavbarProject(badgeContainer.dataset.name, badgeContainer.dataset.path);
+            } else {
+                setFileManagementState(false);
+            }
+
+            const fileManagementLink = document.getElementById('fileManagementLink');
+            fileManagementLink?.addEventListener('click', function(e) {
+                if (fileManagementLink.classList.contains('disabled')) {
                     e.preventDefault();
                     alert('Please load a project first');
-                });
-            }
+                }
+            });
             
             document.getElementById('quitAppBtn')?.addEventListener('click', async function(e) {
                 e.preventDefault();
