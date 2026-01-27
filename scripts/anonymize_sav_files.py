@@ -11,7 +11,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 
-import pandas as pd
 import pyreadstat
 
 def anonymize_all_sav_files(dataset_path: str):
@@ -55,7 +54,7 @@ def anonymize_all_sav_files(dataset_path: str):
             df, meta = pyreadstat.read_sav(str(sav_file))
             
             if 'participant_id' not in df.columns:
-                print(f"  ⚠️  No participant_id column, skipping")
+                print("  ⚠️  No participant_id column, skipping")
                 continue
             
             # Apply mapping

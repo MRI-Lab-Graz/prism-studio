@@ -64,14 +64,14 @@ def strip_temp_path(
         
         if "renamed_files" in file_path:
             idx = file_path.rfind("renamed_files")
-            slash_idx = file_path.find("/", idx)
+            slash_idx = file_path.find(os.sep, idx)
             if slash_idx != -1:
                 return file_path[slash_idx + 1:]
         
-        parts = [p for p in file_path.split("/") if p]
+        parts = [p for p in file_path.split(os.sep) if p]
         if len(parts) >= 2:
             if parts[-2].startswith("sub-") or parts[-2] in ["physio", "anat", "func", "survey", "eyetracking", "dwi", "fmap"]:
-                return "/".join(parts[-2:])
+                return os.sep.join(parts[-2:])
         if len(parts) >= 1:
             return parts[-1]
 
@@ -173,11 +173,11 @@ def shorten_path(file_path: str, max_parts: int = 3) -> str:
     if not file_path:
         return "General"
 
-    parts = file_path.replace("\\", "/").split("/")
+    parts = file_path.replace("\\", os.sep).split(os.sep)
     if len(parts) <= max_parts:
-        return "/".join(parts)
+        return os.sep.join(parts)
 
-    return ".../" + "/".join(parts[-max_parts:])
+    return "..." + os.sep + os.sep.join(parts[-max_parts:])
 
 
 def get_filename_from_path(file_path: str) -> str:

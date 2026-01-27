@@ -246,7 +246,7 @@ def anonymize_dataset(
     
     print(f"✓ Created anonymization mapping for {len(participant_mapping)} participants")
     print(f"  Mapping saved to: {mapping_path}")
-    print(f"  ⚠️  KEEP THIS FILE SECURE! It allows re-identification.")
+    print("  ⚠️  KEEP THIS FILE SECURE! It allows re-identification.")
     
     # TODO: Copy and anonymize all TSV files
     # TODO: Update filenames with random IDs

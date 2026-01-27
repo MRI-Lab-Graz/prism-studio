@@ -4,7 +4,6 @@ This allows both app/src and repo/src imports to work.
 """
 from pathlib import Path
 import importlib.util
-import sys
 
 # Load the real anonymizer module directly from repo root
 repo_root = Path(__file__).resolve().parents[2]

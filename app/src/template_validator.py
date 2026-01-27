@@ -4,7 +4,6 @@ Validates survey/biometrics template structure, metadata completeness, and item 
 """
 
 import json
-import os
 from pathlib import Path
 from typing import List, Dict, Any, Tuple
 

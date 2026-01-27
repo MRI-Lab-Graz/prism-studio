@@ -1051,7 +1051,7 @@ def _load_id_mapping(path: str | Path | None) -> dict[str, str] | None:
 
     try:
         df = pd.read_csv(p, sep=sep, engine="python", encoding="utf-8-sig")
-    except Exception as e:
+    except Exception:
         # Last attempt: sniff delimiter, then manual parse to avoid pandas edge cases on small files
         try:
             import csv
@@ -2209,7 +2209,7 @@ def _write_limesurvey_sidecar(
         elif col_lower.startswith("grouptime"):
             # Extract group number if possible
             sidecar["SystemFields"][col] = {
-                "Description": f"Time spent on question group",
+                "Description": "Time spent on question group",
                 "DataType": "float",
                 "Unit": "seconds",
             }
@@ -2353,7 +2353,7 @@ def _write_survey_participants(
         if value_mappings:
             print(f"[INFO]   Value transformations for: {list(value_mappings.keys())}")
     else:
-        print(f"[INFO] No participants_mapping.json found (using template columns only)")
+        print("[INFO] No participants_mapping.json found (using template columns only)")
 
     # Start with participant_id column
     df_part = pd.DataFrame({"participant_id": df[id_col].astype(str).map(normalize_sub_fn)})
@@ -2630,7 +2630,6 @@ def _generate_participants_preview(
             "notes": [...]  # Any notes about the mapping
         }
     """
-    import pandas as pd
     
     preview = {
         "columns": [],
