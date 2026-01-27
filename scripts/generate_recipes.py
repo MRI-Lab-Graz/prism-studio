@@ -130,7 +130,7 @@ def main():
             print(f"✗ Failed to generate recipe for {survey_name}: {e}")
     
     print(f"\n{'='*60}")
-    print(f"Recipe generation complete:")
+    print("Recipe generation complete:")
     print(f"  • {success_count} recipes created")
     print(f"  • {skip_count} skipped (already exist)")
     print(f"  • Output: {recipe_dir}")

@@ -3,7 +3,7 @@ import sys
 import webbrowser
 import threading
 import socket
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify
 from waitress import serve
 
 app = Flask(__name__)

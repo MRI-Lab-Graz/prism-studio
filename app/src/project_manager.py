@@ -26,7 +26,6 @@ Usage:
 
 import json
 import re
-import shutil
 from pathlib import Path
 from datetime import date
 from typing import Dict, List, Any, Optional
@@ -35,7 +34,7 @@ from src.fixer import DatasetFixer
 from src.cross_platform import CrossPlatformFile
 from src.issues import get_fix_hint
 from src.schema_manager import load_schema
-from jsonschema import validate, ValidationError, Draft7Validator
+from jsonschema import Draft7Validator
 
 
 # Available PRISM modalities

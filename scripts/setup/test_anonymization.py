@@ -6,7 +6,6 @@ Test the anonymization feature on a small example dataset.
 import sys
 from pathlib import Path
 import tempfile
-import shutil
 
 # Add app to path
 repo_root = Path(__file__).resolve().parent.parent.parent

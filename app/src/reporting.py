@@ -58,7 +58,7 @@ def print_dataset_summary(dataset_path, stats):
         sessions_per_subject: dict[str, set[str]] = {}
         unique_session_labels: set[str] = set()
         for session in stats.sessions:
-            parts = session.split("/")
+            parts = session.split(os.sep)
             subj = parts[0] if parts else session
             ses = parts[1] if len(parts) > 1 else session
             sessions_per_subject.setdefault(subj, set()).add(ses)

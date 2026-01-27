@@ -22,8 +22,6 @@ from flask import (
     render_template,
     request,
     jsonify,
-    send_file,
-    flash,
     redirect,
     url_for,
     session,
@@ -136,7 +134,7 @@ app.config["BASE_DIR"] = BASE_DIR  # Make BASE_DIR available to blueprints
 app.config["PRISM_STARTUP_ID"] = uuid.uuid4().hex
 
 # Load last project from settings (will be restored to session on first request)
-from src.config import load_app_settings, save_app_settings
+from src.config import load_app_settings
 _app_settings = load_app_settings(app_root=str(BASE_DIR))
 app.config["LAST_PROJECT_PATH"] = getattr(_app_settings, 'last_project_path', None)
 app.config["LAST_PROJECT_NAME"] = getattr(_app_settings, 'last_project_name', None)
@@ -467,7 +465,7 @@ def main():
                 try:
                     if sys.platform.startswith('win'):
                         # Windows fallback: use start command
-                        subprocess.Popen(['cmd', '/c', 'start', '', url], shell=True)
+                        subprocess.Popen(['cmd', '/c', 'start', '', url])
                         print("✅ Browser opened via Windows fallback")
                     elif sys.platform == 'darwin':
                         # macOS fallback

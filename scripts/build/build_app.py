@@ -102,7 +102,7 @@ def _generate_icon(name: str) -> str | None:
         source_png = Path("static/img/MRI_Lab_Logo.png")
         
     if not source_png.exists():
-        print(f"[WARN] Icon source not found at app/static/img/MRI_Lab_Logo.png or static/img/MRI_Lab_Logo.png")
+        print("[WARN] Icon source not found at app/static/img/MRI_Lab_Logo.png or static/img/MRI_Lab_Logo.png")
         return None
 
     if sys.platform == "darwin":
