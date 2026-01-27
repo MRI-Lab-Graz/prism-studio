@@ -629,7 +629,7 @@ def cmd_survey_convert(args):
             preview = result.dry_run_preview
             
             # Summary
-            print(f"\n📊 SUMMARY")
+            print("\n📊 SUMMARY")
             print(f"   Total participants in file: {preview['summary']['total_participants']}")
             print(f"   Unique participants: {preview['summary']['unique_participants']}")
             print(f"   Tasks detected: {', '.join(preview['summary']['tasks'])}")
@@ -660,12 +660,12 @@ def cmd_survey_convert(args):
                 if len(preview['data_issues']) > 10:
                     print(f"   ... and {len(preview['data_issues']) - 10} more issues")
             else:
-                print(f"\n✅ NO DATA ISSUES DETECTED")
+                print("\n✅ NO DATA ISSUES DETECTED")
             
             # 📝 Participants.tsv Preview (NEW!)
             if "participants_tsv" in preview:
-                print(f"\n📝 PARTICIPANTS.TSV PREVIEW")
-                print(f"   This file will be created with the following structure:\n")
+                print("\n📝 PARTICIPANTS.TSV PREVIEW")
+                print("   This file will be created with the following structure:\n")
                 
                 tsv_preview = preview["participants_tsv"]
                 columns = tsv_preview["columns"]
@@ -679,14 +679,14 @@ def cmd_survey_convert(args):
                 
                 # Mapping details if present
                 if tsv_preview["mappings"]:
-                    print(f"\n   Column Mappings:")
+                    print("\n   Column Mappings:")
                     for output_col, mapping_info in tsv_preview["mappings"].items():
                         source_col = mapping_info["source_column"]
                         has_mapping = mapping_info.get("has_value_mapping", False)
                         indicator = "🔄" if has_mapping else "✓"
                         print(f"     {indicator} {output_col} ← {source_col}")
                         if has_mapping and mapping_info.get("value_mapping"):
-                            print(f"        (has value transformation mapping)")
+                            print("        (has value transformation mapping)")
                 
                 # Sample data
                 print(f"\n   Sample Data (showing first {min(5, len(sample_rows))} of {total_rows} participants):")
@@ -709,7 +709,7 @@ def cmd_survey_convert(args):
                 
                 # Notes
                 if tsv_preview["notes"]:
-                    print(f"\n   📌 Notes:")
+                    print("\n   📌 Notes:")
                     for note in tsv_preview["notes"]:
                         print(f"     • {note}")
                 
@@ -717,8 +717,8 @@ def cmd_survey_convert(args):
                 unused_cols = tsv_preview.get("unused_columns", [])
                 if unused_cols:
                     print(f"\n   ⚠️  UNUSED COLUMNS ({len(unused_cols)} available for participants.tsv):")
-                    print(f"      These columns are not being imported as survey data and could be included")
-                    print(f"      in participants.tsv if you create/update participants_mapping.json:")
+                    print("      These columns are not being imported as survey data and could be included")
+                    print("      in participants.tsv if you create/update participants_mapping.json:")
                     
                     displayed = 0
                     for item in unused_cols[:10]:  # Show first 10
@@ -741,7 +741,7 @@ def cmd_survey_convert(args):
                 print()
             
             # Participants preview
-            print(f"\n👥 PARTICIPANT SURVEY COMPLETENESS (first 10)")
+            print("\n👥 PARTICIPANT SURVEY COMPLETENESS (first 10)")
             for p in preview['participants'][:10]:
                 completeness = p['completeness_percent']
                 status = "✓" if completeness > 80 else ("⚠" if completeness > 50 else "✗")
@@ -753,7 +753,7 @@ def cmd_survey_convert(args):
                 print(f"   ... and {len(preview['participants']) - 10} more participants")
             
             # Column mapping preview
-            print(f"\n📋 COLUMN MAPPING (first 15)")
+            print("\n📋 COLUMN MAPPING (first 15)")
             shown = 0
             for col, info in list(preview['column_mapping'].items())[:15]:
                 run_info = f" (run {info['run']})" if info['run'] else ""
@@ -762,14 +762,14 @@ def cmd_survey_convert(args):
                 print(f"      → Task: {info['task']}{run_info}, Item: {info['base_item']}")
                 print(f"      → Missing: {info['missing_percent']}% ({info['missing_count']} values)")
                 if info.get('has_unexpected_values'):
-                    print(f"      ⚠  Has unexpected values!")
+                    print("      ⚠  Has unexpected values!")
                 shown += 1
             
             if len(preview['column_mapping']) > 15:
                 print(f"   ... and {len(preview['column_mapping']) - 15} more columns")
             
             # Files to create
-            print(f"\n📁 FILES TO CREATE (showing structure)")
+            print("\n📁 FILES TO CREATE (showing structure)")
             file_types = {}
             for f in preview['files_to_create']:
                 file_types[f['type']] = file_types.get(f['type'], 0) + 1
@@ -778,7 +778,7 @@ def cmd_survey_convert(args):
             print(f"   Sidecar files: {file_types.get('sidecar', 0)}")
             print(f"   Data files: {file_types.get('data', 0)}")
             
-            print(f"\n   Sample files:")
+            print("\n   Sample files:")
             shown_by_type = {'metadata': 0, 'sidecar': 0, 'data': 0}
             for f in preview['files_to_create']:
                 if shown_by_type[f['type']] < 3:
@@ -1353,7 +1353,7 @@ def cmd_anonymize(args):
             data = json.load(f)
             participant_mapping = data.get("mapping", {})
     else:
-        print(f"Creating new participant ID mapping...")
+        print("Creating new participant ID mapping...")
         participant_mapping = create_participant_mapping(
             list(participant_ids),
             mapping_file,
@@ -1361,10 +1361,10 @@ def cmd_anonymize(args):
             deterministic=not args.random
         )
         print(f"✓ Mapping saved to: {mapping_file}")
-        print(f"  ⚠️  KEEP THIS FILE SECURE! It allows re-identification.")
+        print("  ⚠️  KEEP THIS FILE SECURE! It allows re-identification.")
     
     print()
-    print(f"Sample mappings:")
+    print("Sample mappings:")
     for i, (orig, anon) in enumerate(list(participant_mapping.items())[:3]):
         print(f"  {orig} → {anon}")
     print()
@@ -1374,13 +1374,13 @@ def cmd_anonymize(args):
     
     # Copy and anonymize participants.tsv
     if participants_tsv.exists():
-        print(f"Anonymizing participants.tsv...")
+        print("Anonymizing participants.tsv...")
         output_participants = output_path / "participants.tsv"
         anonymize_tsv_file(participants_tsv, output_participants, participant_mapping)
         print(f"  ✓ {output_participants}")
     
     # Step 4: Copy and anonymize survey/biometric data
-    print(f"Anonymizing data files...")
+    print("Anonymizing data files...")
     for tsv_file in dataset_path.rglob("*.tsv"):
         if tsv_file.name == "participants.tsv":
             continue  # Already handled
@@ -1398,7 +1398,7 @@ def cmd_anonymize(args):
         print(f"  ✓ {rel_path} → {new_rel_path_str}")
     
     # Step 5: Copy JSON sidecars (with optional question masking)
-    print(f"Copying metadata files...")
+    print("Copying metadata files...")
     for json_file in dataset_path.rglob("*.json"):
         rel_path = json_file.relative_to(dataset_path)
         
@@ -1420,7 +1420,7 @@ def cmd_anonymize(args):
     
     print()
     print("=" * 70)
-    print(f"✅ Anonymization complete!")
+    print("✅ Anonymization complete!")
     print(f"   Anonymized dataset: {output_path}")
     print(f"   Mapping file: {mapping_file}")
     print()

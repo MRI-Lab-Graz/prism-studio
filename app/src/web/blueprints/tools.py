@@ -284,7 +284,7 @@ def api_survey_customizer_load():
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 template_data = json.load(f)
-        except Exception as e:
+        except Exception:
             continue
 
         # Get group name from template
@@ -950,7 +950,7 @@ def api_recipes_surveys():
                         participant_mapping = mapping_data.get("mapping", {})
                     print(f"[ANONYMIZATION] Loaded {len(participant_mapping)} existing ID mappings")
                 else:
-                    print(f"[ANONYMIZATION] Creating new participant mapping...")
+                    print("[ANONYMIZATION] Creating new participant mapping...")
                     participant_mapping = create_participant_mapping(
                         participant_ids,
                         mapping_file,

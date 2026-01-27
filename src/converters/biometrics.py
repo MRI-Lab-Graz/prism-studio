@@ -15,7 +15,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import json
 
 from ..utils.io import read_json as _read_json, write_json as _write_json
 from ..utils.naming import norm_key as _norm_key

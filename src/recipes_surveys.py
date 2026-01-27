@@ -21,7 +21,7 @@ from pathlib import Path
 import csv
 import json
 import math
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from src.reporting import _pick_references
 

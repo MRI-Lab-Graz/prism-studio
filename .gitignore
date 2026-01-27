@@ -95,3 +95,4 @@ derivatives/
 !official/library/
 # Harvest script
 scripts/harvest_testarchiv.py
+backup/

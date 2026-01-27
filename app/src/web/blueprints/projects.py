@@ -54,8 +54,6 @@ def get_current():
 @projects_bp.route("/api/projects/current", methods=["POST"])
 def set_current():
     """Set or clear the current working project."""
-    from flask import current_app
-    from src.config import load_app_settings, save_app_settings
 
     data = request.get_json()
     if not data:
@@ -1003,7 +1001,7 @@ def export_project():
                 download_name=filename
             )
             
-        except Exception as e:
+        except Exception:
             # Clean up temp file on error
             if os.path.exists(temp_path):
                 os.unlink(temp_path)

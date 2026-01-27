@@ -75,7 +75,7 @@ def detect_dataset_prefix(all_paths: List[str]) -> Optional[str]:
     for path in all_paths or []:
         if not path:
             continue
-        parts = [part for part in path.replace("\\", "/").split("/") if part]
+        parts = [part for part in path.replace("\\", os.sep).split(os.sep) if part]
         if not parts:
             continue
         if len(parts) == 1:
@@ -292,7 +292,7 @@ def process_folder_upload(
             continue
 
         uploaded_paths.add(normalized_path)
-        file_path = os.path.join(dataset_root, *normalized_path.split("/"))
+        file_path = os.path.join(dataset_root, *normalized_path.split(os.sep))
         target_dir = os.path.dirname(file_path)
         if target_dir:
             os.makedirs(target_dir, exist_ok=True)
@@ -317,7 +317,7 @@ def process_folder_upload(
         if is_system_file(filename):
             continue
 
-        file_path = os.path.join(dataset_root, *normalized_path.split("/"))
+        file_path = os.path.join(dataset_root, *normalized_path.split(os.sep))
         target_dir = os.path.dirname(file_path)
         if target_dir:
             os.makedirs(target_dir, exist_ok=True)

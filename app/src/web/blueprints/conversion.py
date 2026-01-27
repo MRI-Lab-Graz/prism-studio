@@ -3,7 +3,6 @@ Conversion Blueprint for PRISM.
 Handles survey, biometrics, and physio conversion routes.
 """
 
-import os
 import io
 import re
 import shutil
@@ -11,7 +10,7 @@ import tempfile
 import zipfile
 import base64
 from pathlib import Path
-from flask import Blueprint, request, jsonify, send_file, render_template, current_app, session
+from flask import Blueprint, request, jsonify, send_file, current_app, session
 from werkzeug.utils import secure_filename
 from src.web.utils import list_survey_template_languages, sanitize_jsonable
 from src.web import run_validation

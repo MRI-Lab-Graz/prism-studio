@@ -6,7 +6,6 @@ This script sets up the app-level settings to use the official/ folder
 as the global library and recipe source for all PRISM projects.
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -36,12 +35,12 @@ def main():
         print()
         print("   Expected structure:")
         print(f"   {official_root}/")
-        print(f"   ├── library/")
-        print(f"   │   ├── survey/")
-        print(f"   │   └── biometrics/")
-        print(f"   └── recipe/")
-        print(f"       ├── surveys/")
-        print(f"       └── biometrics/")
+        print("   ├── library/")
+        print("   │   ├── survey/")
+        print("   │   └── biometrics/")
+        print("   └── recipe/")
+        print("       ├── surveys/")
+        print("       └── biometrics/")
         sys.exit(1)
     
     # Check subdirectories
@@ -63,10 +62,10 @@ def main():
     # Save settings to app folder
     settings_path = save_app_settings(settings, app_root=str(app_root))
     
-    print(f"✅ Global library root configured:")
+    print("✅ Global library root configured:")
     print(f"   {official_root}")
     print()
-    print(f"📝 Settings saved to:")
+    print("📝 Settings saved to:")
     print(f"   {settings_path}")
     print()
     

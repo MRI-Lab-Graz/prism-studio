@@ -12,7 +12,6 @@ from pathlib import Path
 # Add parent to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 
-import pandas as pd
 import pyreadstat
 
 def test_sav_anonymization(dataset_path: str, sav_filename: str = "recipe-maia.sav"):
@@ -44,7 +43,7 @@ def test_sav_anonymization(dataset_path: str, sav_filename: str = "recipe-maia.s
         participant_mapping = mapping_data.get("mapping", {})
     
     print(f"✓ Loaded {len(participant_mapping)} ID mappings")
-    print(f"\nSample mappings:")
+    print("\nSample mappings:")
     for i, (orig, anon) in enumerate(list(participant_mapping.items())[:3]):
         print(f"  {orig} → {anon}")
     
@@ -55,7 +54,7 @@ def test_sav_anonymization(dataset_path: str, sav_filename: str = "recipe-maia.s
     print(f"✓ Loaded {len(df)} rows, {len(df.columns)} columns")
     
     if 'participant_id' not in df.columns:
-        print(f"❌ No participant_id column found")
+        print("❌ No participant_id column found")
         print(f"   Available columns: {', '.join(df.columns[:10])}")
         return False
     
@@ -84,7 +83,7 @@ def test_sav_anonymization(dataset_path: str, sav_filename: str = "recipe-maia.s
     test_output = derivatives / "test_anonymized.sav"
     print(f"\nWriting test output to: {test_output.name}")
     pyreadstat.write_sav(df, str(test_output), column_labels=meta.column_names_to_labels)
-    print(f"✓ Written successfully")
+    print("✓ Written successfully")
     
     # Verify by reading back
     df_verify, _ = pyreadstat.read_sav(str(test_output))

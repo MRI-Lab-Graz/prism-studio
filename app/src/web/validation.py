@@ -37,7 +37,7 @@ def _apply_participants_mapping(dataset_path: str, progress_callback: Optional[C
     
     try:
         if progress_callback:
-            progress_callback(0, f"Detected participants_mapping.json - applying transformations...")
+            progress_callback(0, "Detected participants_mapping.json - applying transformations...")
         
         from src.participants_converter import ParticipantsConverter
         

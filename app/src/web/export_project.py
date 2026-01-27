@@ -11,8 +11,7 @@ import shutil
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Dict, List, Optional, Set
-import re
+from typing import Dict, Set
 
 
 def anonymize_filename(filename: str, mapping: Dict[str, str]) -> str:
@@ -311,6 +310,6 @@ def export_project(
         print(f"  Processed {stats['files_processed']} files")
         if anonymize:
             print(f"  Anonymized {stats['files_anonymized']} files/folders")
-            print(f"  ⚠️  Security: Mapping file included in ZIP - keep secure!")
+            print("  ⚠️  Security: Mapping file included in ZIP - keep secure!")
         
         return stats

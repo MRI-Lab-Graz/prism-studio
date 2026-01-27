@@ -2,11 +2,8 @@
 """
 Test script for web interface anonymization integration.
 """
-import os
 import sys
-import json
 import tempfile
-import shutil
 from pathlib import Path
 
 # Add parent directory to path
