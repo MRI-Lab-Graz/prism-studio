@@ -48,15 +48,15 @@
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-info text-white w-100" type="button" id="participantsPreviewBtn" disabled>
-                        <i class="fas fa-eye me-2"></i>Preview
+                        <i class="fas fa-eye me-2"></i><strong>1. Preview Data</strong>
                     </button>
-                    <small class="form-text text-muted">Preview what will be extracted</small>
+                    <small class="form-text text-muted">Review & annotate before converting</small>
                 </div>
                 <div class="col-md-4">
-                    <button class="btn btn-success text-white w-100" type="button" id="participantsConvertBtn" disabled>
-                        <i class="fas fa-play me-2"></i>Extract & Convert
+                    <button class="btn btn-outline-secondary text-dark w-100" type="button" id="participantsConvertBtn" disabled>
+                        <i class="fas fa-play me-2"></i><strong>2. Extract & Convert</strong>
                     </button>
-                    <small class="form-text text-muted">Generate participants.tsv and participants.json</small>
+                    <small class="form-text text-muted" id="convertBtnHint">Preview first to enable</small>
                 </div>
             </div>
 
@@ -82,8 +82,14 @@
 
             <!-- Preview Results -->
             <div id="participantsPreviewResults" class="d-none mt-4">
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Preview mode:</strong> Review the data below and edit any annotations if needed. 
+                    Once satisfied, click <strong>"2. Extract & Convert"</strong> to create files in your project.
+                </div>
+                
                 <h6 class="mb-3">
-                    <i class="fas fa-table me-2 text-info"></i>Preview: Participant Data
+                    <i class="fas fa-table me-2 text-info"></i>Data Preview
                     <span class="badge bg-info ms-2" id="participantsPreviewCount">0 participants</span>
                 </h6>
                 
@@ -97,19 +103,26 @@
                     </table>
                 </div>
                 
-                <!-- NeuroBagel Schema Preview -->
-                <div id="neurobagelSchemaPreview" class="mt-4 d-none">
+                <!-- NeuroBagel Annotation Preview -->
+                <div id="neurobagelAnnotationPreview" class="mt-4 d-none">
                     <h6 class="mb-3">
                         <i class="fas fa-brain me-2 text-success"></i>
-                        Suggested participants.json (NeuroBagel-compliant)
+                        Annotate Categorical Fields
+                        <small class="text-muted">(Click to edit level mappings)</small>
+                    </h6>
+                    <div id="annotationCards" class="row g-3"></div>
+                </div>
+                
+                <!-- NeuroBagel Schema Preview (collapsed by default) -->
+                <div id="neurobagelSchemaPreview" class="mt-4 d-none">
+                    <h6 class="mb-3">
+                        <i class="fas fa-code me-2 text-secondary"></i>
+                        Full participants.json Preview
                         <button class="btn btn-sm btn-outline-secondary ms-2" type="button" 
                                 data-bs-toggle="collapse" data-bs-target="#schemaDetails">
                             <i class="fas fa-code me-1"></i>View JSON
                         </button>
                     </h6>
-                    
-                    <!-- Schema Summary Cards -->
-                    <div id="schemaSummary" class="row g-2 mb-3"></div>
                     
                     <!-- Collapsible JSON view -->
                     <div class="collapse" id="schemaDetails">
@@ -215,7 +228,10 @@
 </div>
 
 <script>
-// Enable/disable buttons based on file selection
+// Track whether preview has been completed
+let participantsPreviewCompleted = false;
+
+// Enable/disable buttons based on file selection and preview state
 function updateParticipantsButtonState() {
     const fileInput = document.getElementById('participantsDataFile');
     const hasFile = fileInput && fileInput.files.length > 0;
@@ -225,11 +241,13 @@ function updateParticipantsButtonState() {
     
     if (hasFile) {
         if (previewBtn) previewBtn.disabled = false;
-        if (convertBtn) convertBtn.disabled = false;
+        // Convert is only enabled if preview has been completed
+        if (convertBtn) convertBtn.disabled = !participantsPreviewCompleted;
         checkExistingParticipantFiles();
     } else {
         if (previewBtn) previewBtn.disabled = true;
         if (convertBtn) convertBtn.disabled = true;
+        participantsPreviewCompleted = false;
     }
 }
 
@@ -359,56 +377,188 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
 });
 
 function displayNeurobagelSchema(schema) {
+    const annotationPreview = document.getElementById('neurobagelAnnotationPreview');
+    const annotationCards = document.getElementById('annotationCards');
     const schemaPreview = document.getElementById('neurobagelSchemaPreview');
-    const schemaSummary = document.getElementById('schemaSummary');
     const schemaJsonCode = document.getElementById('schemaJsonCode');
     
+    // Store schema globally for use during conversion
+    window.neurobagelSchema = schema;
+    
     // Clear previous content
-    schemaSummary.innerHTML = '';
+    annotationCards.innerHTML = '';
     
-    // Count annotations
-    let withNeurobagel = 0;
-    let categorical = 0;
-    let continuous = 0;
-    
+    // Build annotation cards for categorical fields
+    let categoricalCount = 0;
     for (const [col, def] of Object.entries(schema)) {
-        if (def.Annotations && def.Annotations.IsAbout) {
-            withNeurobagel++;
+        if (def.Levels && Object.keys(def.Levels).length > 0) {
+            categoricalCount++;
+            createAnnotationCard(col, def, annotationCards);
         }
-        const varType = def.Annotations?.VariableType?.toLowerCase() || '';
-        if (varType === 'categorical') categorical++;
-        if (varType === 'continuous') continuous++;
     }
     
-    // Create summary cards
-    const totalCols = Object.keys(schema).length;
-    const cards = [
-        { icon: 'brain', label: 'NeuroBagel Mapped', value: withNeurobagel, color: 'success' },
-        { icon: 'tag', label: 'Categorical', value: categorical, color: 'info' },
-        { icon: 'chart-line', label: 'Continuous', value: continuous, color: 'primary' },
-        { icon: 'columns', label: 'Total Fields', value: totalCols, color: 'secondary' }
-    ];
+    // Show annotation section only if there are categorical fields
+    if (categoricalCount > 0) {
+        annotationPreview.classList.remove('d-none');
+    }
     
-    cards.forEach(card => {
-        const col = document.createElement('div');
-        col.className = 'col-md-3';
-        col.innerHTML = `
-            <div class="card border-${card.color}">
-                <div class="card-body text-center py-2">
-                    <i class="fas fa-${card.icon} text-${card.color} fa-2x mb-2"></i>
-                    <div class="h4 mb-0">${card.value}</div>
-                    <small class="text-muted">${card.label}</small>
+    // Show JSON preview
+    schemaJsonCode.textContent = JSON.stringify(schema, null, 2);
+    schemaPreview.classList.remove('d-none');
+    
+    // Mark preview as complete and enable Convert button
+    participantsPreviewCompleted = true;
+    const convertBtn = document.getElementById('participantsConvertBtn');
+    const convertHint = document.getElementById('convertBtnHint');
+    if (convertBtn) {
+        convertBtn.disabled = false;
+        convertBtn.classList.remove('btn-outline-secondary');
+        convertBtn.classList.add('btn-success');
+        convertHint.textContent = 'Ready to create files in project';
+    }
+}
+
+function createAnnotationCard(colName, colDef, container) {
+    const col = document.createElement('div');
+    col.className = 'col-md-6 col-lg-4';
+    
+    // Get levels
+    const levels = colDef.Levels || {};
+    const annotations = colDef.Annotations?.Levels || {};
+    
+    // Count how many have annotations
+    const annotatedCount = Object.keys(annotations).length;
+    const totalLevels = Object.keys(levels).length;
+    const isFullyAnnotated = annotatedCount === totalLevels;
+    
+    const cardColor = isFullyAnnotated ? 'success' : 'warning';
+    const badge = `<span class="badge bg-${cardColor}">${annotatedCount}/${totalLevels}</span>`;
+    
+    col.innerHTML = `
+        <div class="card border-${cardColor} h-100">
+            <div class="card-header bg-${cardColor} bg-opacity-10">
+                <h6 class="mb-0">
+                    <i class="fas fa-tag me-2"></i>${colName}
+                    ${badge}
+                </h6>
+            </div>
+            <div class="card-body p-2">
+                <div class="list-group list-group-sm" id="levels-${colName}"></div>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(col);
+    
+    // Populate levels
+    const levelsList = col.querySelector(`#levels-${colName}`);
+    for (const [levelValue, levelLabel] of Object.entries(levels)) {
+        const annotation = annotations[levelValue] || {};
+        const hasUri = !!annotation.TermURL;
+        
+        const item = document.createElement('div');
+        item.className = `list-group-item list-group-item-sm ${hasUri ? 'list-group-item-success' : 'list-group-item-light'} cursor-pointer p-2`;
+        item.style.cursor = 'pointer';
+        item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${levelValue}</strong>
+                    <small class="text-muted d-block">${levelLabel}</small>
+                    ${hasUri ? `<code class="small text-success">${annotation.TermURL}</code>` : '<span class="small text-muted">Click to add URI</span>'}
                 </div>
+                <i class="fas fa-edit text-muted"></i>
             </div>
         `;
-        schemaSummary.appendChild(col);
+        
+        // Click to edit
+        item.addEventListener('click', () => {
+            showAnnotationEditor(colName, levelValue, levelLabel, annotation);
+        });
+        
+        levelsList.appendChild(item);
+    }
+}
+
+function showAnnotationEditor(colName, levelValue, levelLabel, currentAnnotation) {
+    // Create modal for editing
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title">
+                        <i class="fas fa-brain me-2"></i>Annotate: ${colName} = "${levelValue}"
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Label</label>
+                        <input type="text" class="form-control" id="annotation-label" 
+                               value="${currentAnnotation.Label || levelLabel}">
+                        <small class="form-text text-muted">Human-readable label for this value</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">NeuroBagel URI</label>
+                        <input type="text" class="form-control" id="annotation-uri" 
+                               value="${currentAnnotation.TermURL || ''}"
+                               placeholder="e.g., nb:Handedness/Right">
+                        <small class="form-text text-muted">NeuroBagel standard vocabulary URI</small>
+                    </div>
+                    <div class="alert alert-info small">
+                        <strong>Common URIs:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li><code>nb:Handedness/Right</code>, <code>nb:Handedness/Left</code></li>
+                            <li><code>nb:BiologicalSex/Male</code>, <code>nb:BiologicalSex/Female</code></li>
+                            <li><code>nb:Gender/Male</code>, <code>nb:Gender/Female</code>, <code>nb:Gender/NonBinary</code></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="save-annotation">Save Annotation</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    
+    // Save button handler
+    modal.querySelector('#save-annotation').addEventListener('click', () => {
+        const newLabel = modal.querySelector('#annotation-label').value;
+        const newUri = modal.querySelector('#annotation-uri').value;
+        
+        // Update schema
+        if (window.neurobagelSchema[colName].Annotations.Levels === undefined) {
+            window.neurobagelSchema[colName].Annotations.Levels = {};
+        }
+        
+        window.neurobagelSchema[colName].Annotations.Levels[levelValue] = {
+            TermURL: newUri,
+            Label: newLabel
+        };
+        
+        // Update JSON display
+        document.getElementById('schemaJsonCode').textContent = 
+            JSON.stringify(window.neurobagelSchema, null, 2);
+        
+        // Refresh card
+        const annotationCards = document.getElementById('annotationCards');
+        annotationCards.innerHTML = '';
+        for (const [col, def] of Object.entries(window.neurobagelSchema)) {
+            if (def.Levels && Object.keys(def.Levels).length > 0) {
+                createAnnotationCard(col, def, annotationCards);
+            }
+        }
+        
+        bsModal.hide();
+        document.body.removeChild(modal);
     });
     
-    // Show JSON
-    schemaJsonCode.textContent = JSON.stringify(schema, null, 2);
-    
-    // Show the section
-    schemaPreview.classList.remove('d-none');
+    bsModal.show();
 }
 
 // Convert button handler
@@ -450,6 +600,11 @@ document.getElementById('participantsConvertBtn')?.addEventListener('click', asy
         const idColumn = document.getElementById('participantsIdColumn').value;
         if (sheet) formData.append('sheet', sheet);
         if (idColumn) formData.append('id_column', idColumn);
+        
+        // Include the modified neurobagel_schema if available
+        if (window.neurobagelSchema) {
+            formData.append('neurobagel_schema', JSON.stringify(window.neurobagelSchema));
+        }
         
         const response = await fetch('/api/participants-convert', {
             method: 'POST',

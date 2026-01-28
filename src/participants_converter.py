@@ -164,11 +164,31 @@ class ParticipantsConverter:
         messages = []
         source_path = Path(source_file)
 
-        # Load source data
+        # Load source data - handle multiple file formats
         try:
-            df = pd.read_csv(source_path, sep="\t")
-            self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
-            messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
+            file_ext = source_path.suffix.lower()
+            
+            if file_ext in ['.xlsx', '.xls']:
+                # Excel file
+                df = pd.read_excel(source_path)
+                self._log("INFO", f"Loaded {len(df)} rows from Excel file {source_path.name}")
+                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
+            elif file_ext == '.csv':
+                # CSV file
+                df = pd.read_csv(source_path)
+                self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
+                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
+            elif file_ext in ['.tsv', '.txt']:
+                # TSV file
+                df = pd.read_csv(source_path, sep="\t")
+                self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
+                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
+            else:
+                # Try to detect separator automatically
+                df = pd.read_csv(source_path, sep=None, engine='python')
+                self._log("INFO", f"Loaded {len(df)} rows from {source_path.name} (auto-detected format)")
+                messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
+                
         except Exception as e:
             self._log("ERROR", f"Failed to load {source_path.name}: {e}")
             messages.append(f"✗ Failed to load source file: {e}")
