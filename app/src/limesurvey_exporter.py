@@ -131,9 +131,9 @@ def _determine_ls_question_type(q_data, has_levels):
         # Apply LimeSurvey-specific validation settings
         ls_validation = ls_config.get("validation", {})
         if ls_validation.get("min") is not None:
-            extra_attrs["minimum"] = str(ls_validation["min"])
+            extra_attrs["min_num_value_n"] = str(ls_validation["min"])
         if ls_validation.get("max") is not None:
-            extra_attrs["maximum"] = str(ls_validation["max"])
+            extra_attrs["max_num_value_n"] = str(ls_validation["max"])
         if ls_validation.get("integerOnly"):
             extra_attrs["num_value_int_only"] = "1"
 
@@ -185,9 +185,9 @@ def _determine_ls_question_type(q_data, has_levels):
         min_val = q_data.get("MinValue", "")
         max_val = q_data.get("MaxValue", "")
         if min_val != "":
-            extra_attrs["minimum"] = str(min_val)
+            extra_attrs["min_num_value_n"] = str(min_val)
         if max_val != "":
-            extra_attrs["maximum"] = str(max_val)
+            extra_attrs["max_num_value_n"] = str(max_val)
         if q_data.get("DataType") == "integer":
             extra_attrs["num_value_int_only"] = "1"
         # Default input width for numeric fields
