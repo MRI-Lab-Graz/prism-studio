@@ -182,8 +182,15 @@ def anonymize_tsv_file(
                 new_header.append(col)
         header = new_header
     
-    # Update participant IDs in rows
+    # Update rows to match new header and update participant IDs
     for row in rows:
+        # 1. Update keys based on question_mapping if they were renamed in header
+        if question_mapping:
+            for old_col, new_col in question_mapping.items():
+                if old_col in row and old_col != new_col:
+                    row[new_col] = row.pop(old_col)
+
+        # 2. Update participant IDs
         if 'participant_id' in row:
             original_id = row['participant_id']
             row['participant_id'] = participant_mapping.get(original_id, original_id)
