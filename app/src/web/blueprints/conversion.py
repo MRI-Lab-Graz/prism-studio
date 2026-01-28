@@ -1636,3 +1636,317 @@ def save_participant_mapping():
         import traceback
         traceback.print_exc()
         return jsonify({"error": f"Error saving mapping: {str(e)}"}), 500
+
+
+# ==================== PARTICIPANTS CONVERSION ROUTES ====================
+
+@conversion_bp.route("/api/participants-check", methods=["GET"])
+def api_participants_check():
+    """Check if participants.tsv and participants.json exist in the project/dataset."""
+    project_path = session.get("current_project_path")
+    if not project_path:
+        return jsonify({"error": "No project selected"}), 400
+    
+    project_root = Path(project_path)
+    
+    # Check both root and rawdata subfolder
+    participants_tsv = project_root / "participants.tsv"
+    participants_json = project_root / "participants.json"
+    
+    rawdata_participants_tsv = project_root / "rawdata" / "participants.tsv"
+    rawdata_participants_json = project_root / "rawdata" / "participants.json"
+    
+    exists_root = participants_tsv.exists() or participants_json.exists()
+    exists_rawdata = rawdata_participants_tsv.exists() or rawdata_participants_json.exists()
+    
+    return jsonify({
+        "exists": exists_root or exists_rawdata,
+        "location": "root" if exists_root else ("rawdata" if exists_rawdata else None),
+        "files": {
+            "participants_tsv": str(participants_tsv) if participants_tsv.exists() else (str(rawdata_participants_tsv) if rawdata_participants_tsv.exists() else None),
+            "participants_json": str(participants_json) if participants_json.exists() else (str(rawdata_participants_json) if rawdata_participants_json.exists() else None)
+        }
+    })
+
+
+@conversion_bp.route("/api/participants-preview", methods=["POST"])
+def api_participants_preview():
+    """Preview participant data extraction from uploaded file."""
+    try:
+        from src.participants_converter import ParticipantsConverter
+        import pandas as pd
+    except ImportError as e:
+        return jsonify({"error": f"Required module not available: {str(e)}"}), 500
+    
+    mode = request.form.get("mode", "file")
+    
+    if mode == "file":
+        # File mode: extract from uploaded file
+        uploaded_file = request.files.get("file")
+        if not uploaded_file or not uploaded_file.filename:
+            return jsonify({"error": "Missing input file"}), 400
+        
+        filename = secure_filename(uploaded_file.filename)
+        suffix = Path(filename).suffix.lower()
+        
+        if suffix not in {".xlsx", ".csv", ".tsv", ".lsa"}:
+            return jsonify({"error": "Supported formats: .xlsx, .csv, .tsv, .lsa"}), 400
+        
+        tmp_dir = tempfile.mkdtemp(prefix="prism_participants_preview_")
+        try:
+            tmp_path = Path(tmp_dir)
+            input_path = tmp_path / filename
+            uploaded_file.save(str(input_path))
+            
+            # Read the file
+            sheet = request.form.get("sheet", "0").strip() or "0"
+            try:
+                sheet_arg = int(sheet) if sheet.isdigit() else sheet
+            except:
+                sheet_arg = 0
+            
+            if suffix == ".xlsx":
+                df = pd.read_excel(input_path, sheet_name=sheet_arg, dtype=str)
+            elif suffix in {".csv", ".tsv"}:
+                sep = "\t" if suffix == ".tsv" else ","
+                df = pd.read_csv(input_path, sep=sep, dtype=str)
+            elif suffix == ".lsa":
+                # Handle LimeSurvey archive
+                try:
+                    from src.converters.survey import _read_lsa_as_dataframe
+                    df = _read_lsa_as_dataframe(input_path)
+                except ImportError:
+                    return jsonify({"error": "LimeSurvey support not available"}), 500
+            
+            # Detect ID column
+            id_column = request.form.get("id_column", "").strip()
+            if not id_column:
+                # Auto-detect
+                candidates = {"participant_id", "participant", "subject", "sub", "id"}
+                df_cols_lower = {str(c).lower(): str(c) for c in df.columns}
+                for cand in candidates:
+                    if cand in df_cols_lower:
+                        id_column = df_cols_lower[cand]
+                        break
+            
+            if not id_column or id_column not in df.columns:
+                return jsonify({"error": f"Could not find ID column. Available columns: {', '.join(df.columns)}"}), 400
+            
+            # Get library path for participants.json
+            library_path = _resolve_effective_library_path()
+            
+            # Preview first 20 rows
+            preview_df = df.head(20)
+            
+            return jsonify({
+                "status": "success",
+                "columns": list(df.columns),
+                "id_column": id_column,
+                "participant_count": len(df),
+                "preview_rows": preview_df.to_dict(orient="records"),
+                "library_path": str(library_path)
+            })
+        
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+    
+    elif mode == "dataset":
+        # Dataset mode: extract from converted data
+        project_path = session.get("current_project_path")
+        if not project_path:
+            return jsonify({"error": "No project selected"}), 400
+        
+        project_root = Path(project_path)
+        extract_from_survey = request.form.get("extract_from_survey", "true").lower() == "true"
+        extract_from_biometrics = request.form.get("extract_from_biometrics", "true").lower() == "true"
+        
+        # Scan for survey and biometrics files
+        participants = set()
+        
+        if extract_from_survey:
+            survey_files = list(project_root.rglob("**/survey/*_survey.tsv"))
+            for f in survey_files:
+                # Extract participant ID from filename
+                match = re.search(r"(sub-[A-Za-z0-9]+)", f.name)
+                if match:
+                    participants.add(match.group(1))
+        
+        if extract_from_biometrics:
+            biometrics_files = list(project_root.rglob("**/biometrics/*_biometrics.tsv"))
+            for f in biometrics_files:
+                match = re.search(r"(sub-[A-Za-z0-9]+)", f.name)
+                if match:
+                    participants.add(match.group(1))
+        
+        if not participants:
+            return jsonify({"error": "No participant data found in dataset"}), 400
+        
+        participants_list = sorted(list(participants))
+        
+        return jsonify({
+            "status": "success",
+            "participant_count": len(participants_list),
+            "participants": participants_list[:20],  # Preview first 20
+            "total_participants": len(participants_list)
+        })
+    
+    else:
+        return jsonify({"error": f"Unknown mode: {mode}"}), 400
+
+
+@conversion_bp.route("/api/participants-convert", methods=["POST"])
+def api_participants_convert():
+    """Convert/extract participant data and create participants.tsv and participants.json."""
+    try:
+        from src.participants_converter import ParticipantsConverter
+        import pandas as pd
+    except ImportError as e:
+        return jsonify({"error": f"Required module not available: {str(e)}"}), 500
+    
+    mode = request.form.get("mode", "file")
+    force_overwrite = request.form.get("force_overwrite", "false").lower() == "true"
+    
+    project_path = session.get("current_project_path")
+    if not project_path:
+        return jsonify({"error": "No project selected"}), 400
+    
+    project_root = Path(project_path)
+    
+    # Check for existing files
+    participants_tsv = project_root / "participants.tsv"
+    participants_json = project_root / "participants.json"
+    rawdata_tsv = project_root / "rawdata" / "participants.tsv"
+    rawdata_json = project_root / "rawdata" / "participants.json"
+    
+    existing_files = []
+    if participants_tsv.exists():
+        existing_files.append(str(participants_tsv))
+    if participants_json.exists():
+        existing_files.append(str(participants_json))
+    if rawdata_tsv.exists():
+        existing_files.append(str(rawdata_tsv))
+    if rawdata_json.exists():
+        existing_files.append(str(rawdata_json))
+    
+    if existing_files and not force_overwrite:
+        return jsonify({
+            "error": "Participant files already exist. Enable 'force overwrite' to replace them.",
+            "existing_files": existing_files
+        }), 409
+    
+    logs = []
+    def log_msg(level, message):
+        logs.append({"level": level, "message": message})
+    
+    try:
+        if mode == "file":
+            # File mode: extract from uploaded file
+            uploaded_file = request.files.get("file")
+            if not uploaded_file or not uploaded_file.filename:
+                return jsonify({"error": "Missing input file"}), 400
+            
+            filename = secure_filename(uploaded_file.filename)
+            suffix = Path(filename).suffix.lower()
+            
+            tmp_dir = tempfile.mkdtemp(prefix="prism_participants_convert_")
+            try:
+                tmp_path = Path(tmp_dir)
+                input_path = tmp_path / filename
+                uploaded_file.save(str(input_path))
+                
+                log_msg("INFO", f"Processing {filename}...")
+                
+                # Initialize converter
+                converter = ParticipantsConverter(project_root, log_callback=log_msg)
+                
+                # Convert using the uploaded file
+                mapping = converter.load_mapping()
+                if mapping:
+                    log_msg("INFO", f"Using participants_mapping.json from {converter.mapping_file}")
+                
+                messages = converter.convert_participants(
+                    input_file=str(input_path),
+                    output_file=str(participants_tsv)
+                )
+                
+                for msg in messages:
+                    log_msg("INFO", msg)
+                
+                log_msg("INFO", f"✓ Created {participants_tsv.name}")
+                log_msg("INFO", f"✓ Created {participants_json.name}")
+                
+                return jsonify({
+                    "status": "success",
+                    "log": logs,
+                    "files_created": [str(participants_tsv), str(participants_json)]
+                })
+            
+            finally:
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+        
+        elif mode == "dataset":
+            # Dataset mode: extract from converted data
+            extract_from_survey = request.form.get("extract_from_survey", "true").lower() == "true"
+            extract_from_biometrics = request.form.get("extract_from_biometrics", "true").lower() == "true"
+            merge_strategy = request.form.get("merge_strategy", "conservative")
+            
+            log_msg("INFO", "Extracting participant data from dataset...")
+            
+            # Scan for participants
+            participants = set()
+            
+            if extract_from_survey:
+                survey_files = list(project_root.rglob("**/survey/*_survey.tsv"))
+                log_msg("INFO", f"Found {len(survey_files)} survey files")
+                for f in survey_files:
+                    match = re.search(r"(sub-[A-Za-z0-9]+)", f.name)
+                    if match:
+                        participants.add(match.group(1))
+            
+            if extract_from_biometrics:
+                biometrics_files = list(project_root.rglob("**/biometrics/*_biometrics.tsv"))
+                log_msg("INFO", f"Found {len(biometrics_files)} biometrics files")
+                for f in biometrics_files:
+                    match = re.search(r"(sub-[A-Za-z0-9]+)", f.name)
+                    if match:
+                        participants.add(match.group(1))
+            
+            if not participants:
+                return jsonify({"error": "No participant data found in dataset", "log": logs}), 400
+            
+            participants_list = sorted(list(participants))
+            log_msg("INFO", f"Found {len(participants_list)} unique participants")
+            
+            # Create simple participants.tsv
+            df = pd.DataFrame({"participant_id": participants_list})
+            df.to_csv(participants_tsv, sep="\t", index=False)
+            
+            # Create basic participants.json
+            participants_json_data = {
+                "participant_id": {
+                    "Description": "Unique participant identifier"
+                }
+            }
+            
+            import json
+            with open(participants_json, "w") as f:
+                json.dump(participants_json_data, f, indent=2)
+            
+            log_msg("INFO", f"✓ Created {participants_tsv.name} with {len(participants_list)} participants")
+            log_msg("INFO", f"✓ Created {participants_json.name}")
+            
+            return jsonify({
+                "status": "success",
+                "log": logs,
+                "participant_count": len(participants_list),
+                "files_created": [str(participants_tsv), str(participants_json)]
+            })
+        
+        else:
+            return jsonify({"error": f"Unknown mode: {mode}", "log": logs}), 400
+    
+    except Exception as e:
+        import traceback
+        log_msg("ERROR", f"Error: {str(e)}")
+        log_msg("ERROR", traceback.format_exc())
+        return jsonify({"error": str(e), "log": logs}), 500

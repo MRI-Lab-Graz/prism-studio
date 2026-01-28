@@ -70,6 +70,15 @@
     #eyetracking-tab.active small {
         color: rgba(0,0,0,0.6) !important;
     }
+    
+    /* Participants tab - Green */
+    #participants-tab.active {
+        background-color: #198754;
+        color: #ffffff;
+    }
+    #participants-tab.active small {
+        color: rgba(255,255,255,0.8) !important;
+    }
 </style>
 {% endblock %}
 
@@ -252,6 +261,13 @@
                         <small class="d-block text-muted" style="font-size: 0.7rem;">Gaze data</small>
                     </button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="participants-tab" data-bs-toggle="pill" data-bs-target="#participants-panel" type="button" role="tab" aria-controls="participants-panel" aria-selected="false">
+                        <i class="fas fa-users fa-lg mb-1 d-block"></i>
+                        <span class="fw-bold">Participants</span>
+                        <small class="d-block text-muted" style="font-size: 0.7rem;">Demographics</small>
+                    </button>
+                </li>
             </ul>
 
             <!-- Tab Content -->
@@ -264,6 +280,8 @@
                 {% include 'converter_physio.html' %}
 
                 {% include 'converter_eyetracking.html' %}
+
+                {% include 'converter_participants.html' %}
 
             </div>
         </div>
@@ -725,7 +743,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const convertBtn = document.getElementById('convertBtn');
     const previewBtn = document.getElementById('previewBtn');
     const convertDatasetName = document.getElementById('convertDatasetName');
-    const convertUnknown = document.getElementById('convertUnknown');
     const convertLanguage = document.getElementById('convertLanguage');
     const convertError = document.getElementById('convertError');
     const convertInfo = document.getElementById('convertInfo');
@@ -784,7 +801,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Biometrics Convert ---
     const biometricsDataFile = document.getElementById('biometricsDataFile');
-    const biometricsUnknown = document.getElementById('biometricsUnknown');
     const biometricsPreviewBtn = document.getElementById('biometricsPreviewBtn');
     const biometricsConvertBtn = document.getElementById('biometricsConvertBtn');
     const biometricsError = document.getElementById('biometricsError');
@@ -998,8 +1014,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const convertLanguageGroup = document.getElementById('convertLanguageGroup');
     const convertAliasGroup = document.getElementById('convertAliasGroup');
     const convertSessionGroup = document.getElementById('convertSessionGroup');
-    const convertUnknownGroup = document.getElementById('convertUnknownGroup');
-    const convertStrictGroup = document.getElementById('convertStrictGroup');
     const templateResultsContainer = document.getElementById('templateResultsContainer');
 
     // Get current conversion mode
@@ -1022,8 +1036,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide conversion-specific settings (not needed for templates)
             convertAliasGroup?.classList.add('d-none');
             convertSessionGroup?.classList.add('d-none');
-            convertUnknownGroup?.classList.add('d-none');
-            convertStrictGroup?.classList.add('d-none');
 
             // Hide library path requirement for template mode (not needed for structure)
             const libPathLabel = convertLibraryPathInput?.closest('.col-12')?.querySelector('.form-label');
@@ -1039,8 +1051,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show conversion-specific settings
             convertAliasGroup?.classList.remove('d-none');
             convertSessionGroup?.classList.remove('d-none');
-            convertUnknownGroup?.classList.remove('d-none');
-            convertStrictGroup?.classList.remove('d-none');
 
             // Show library path as required
             const libPathLabel = convertLibraryPathInput?.closest('.col-12')?.querySelector('.form-label');
@@ -2222,7 +2232,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         appendLog(`Starting conversion of: ${file.name}`, 'info');
         appendLog(`Using library: Project library first, then global`, 'step');
-        formData.append('unknown', convertUnknown.value);
 
         // Always save to project's rawdata folder when a project is loaded
         formData.append('save_to_project', 'true');
@@ -2240,34 +2249,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         formData.append('language', convertLanguage ? convertLanguage.value : 'auto');
         formData.append('validate', 'true');  // Request validation
-
-        const strictLevelsEl = document.getElementById('convertStrictLevels');
-        if (strictLevelsEl && strictLevelsEl.checked) {
-            formData.append('strict_levels', 'true');
-            appendLog('Strict Levels Validation: enabled', 'step');
-        }
-
-        // Add duplicate handling option
-        const duplicateHandlingEl = document.getElementById('convertDuplicateHandling');
-        if (duplicateHandlingEl) {
-            const dupHandling = duplicateHandlingEl.value;
-            formData.append('duplicate_handling', dupHandling);
-            if (dupHandling !== 'error') {
-                const dupLabels = {
-                    'keep_first': 'Keep first occurrence',
-                    'keep_last': 'Keep last occurrence',
-                    'sessions': 'Create multiple sessions'
-                };
-                appendLog(`Duplicate ID handling: ${dupLabels[dupHandling] || dupHandling}`, 'step');
-            }
-        }
-
-        // Add sourcedata archiving option
-        const archiveSourcedataEl = document.getElementById('convertArchiveSourcedata');
-        if (archiveSourcedataEl && archiveSourcedataEl.checked) {
-            formData.append('archive_sourcedata', 'true');
-            appendLog('Will archive original file to sourcedata/', 'step');
-        }
 
         convertBtn.disabled = true;
         appendLog('Uploading file and starting conversion...', 'info');
@@ -2561,20 +2542,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         formData.append('language', convertLanguage ? convertLanguage.value : 'auto');
-        formData.append('unknown', convertUnknown.value);
-
-        const strictLevelsEl = document.getElementById('convertStrictLevels');
-        if (strictLevelsEl && strictLevelsEl.checked) {
-            formData.append('strict_levels', 'true');
-        }
 
         // Default: run validation in preview
         formData.append('validate', 'true');
-
-        const duplicateHandlingEl = document.getElementById('convertDuplicateHandling');
-        if (duplicateHandlingEl) {
-            formData.append('duplicate_handling', duplicateHandlingEl.value);
-        }
 
         // Show log container
         conversionLogContainer.classList.remove('d-none');
@@ -2927,9 +2897,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const formData = new FormData();
             formData.append('data', file);
-            formData.append('sheet', (document.getElementById('biometricsSheet') || {value: '0'}).value);
+            formData.append('sheet', '0');
             formData.append('session', sessionVal);
-            formData.append('unknown', biometricsUnknown.value);
             formData.append('dry_run', 'true');
             formData.append('validate', 'true');
 
@@ -3018,7 +2987,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('data', file);
             // Library path is now resolved automatically (project first, then global)
-            formData.append('sheet', (document.getElementById('biometricsSheet') || {value: '0'}).value);
+            formData.append('sheet', '0');
 
             biometricsConvertBtn.disabled = true;
             biometricsInfo.textContent = 'Analyzing file...';
@@ -3102,8 +3071,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('data', file);
             // Library path is now resolved automatically (project first, then global)
-            formData.append('unknown', biometricsUnknown.value);
-            // Always save to project structure (project/code/biometrics)
 
             const sessionVal = document.getElementById('biometricsSession') ? document.getElementById('biometricsSession').value.trim() : '';
             formData.append('session', sessionVal);
