@@ -875,6 +875,7 @@ def convert_survey_xlsx_to_prism_dataset(
     alias_file: str | Path | None = None,
     id_map_file: str | Path | None = None,
     duplicate_handling: str = "error",
+    skip_participants: bool = False,
 ) -> SurveyConvertResult:
     """Convert a wide survey Excel table into a PRISM dataset.
 
@@ -915,6 +916,7 @@ def convert_survey_xlsx_to_prism_dataset(
         id_map_file=id_map_file,
         strict_levels=True,
         duplicate_handling=duplicate_handling,
+        skip_participants=skip_participants,
     )
 
 
@@ -937,6 +939,7 @@ def convert_survey_lsa_to_prism_dataset(
     id_map_file: str | Path | None = None,
     strict_levels: bool | None = None,
     duplicate_handling: str = "error",
+    skip_participants: bool = False,
 ) -> SurveyConvertResult:
     """Convert a LimeSurvey response archive (.lsa) into a PRISM dataset.
 
@@ -1471,6 +1474,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     strict_levels: bool = True,
     duplicate_handling: str = "error",
     lsa_questions_map: dict | None = None,
+    skip_participants: bool = False,
 ) -> SurveyConvertResult:
     if unknown not in {"error", "warn", "ignore"}:
         raise ValueError("unknown must be one of: error, warn, ignore")
@@ -1792,15 +1796,16 @@ def _convert_survey_dataframe_to_prism_dataset(
             force=force,
         )
 
-    _write_survey_participants(
-        df=df,
-        output_root=dataset_root,
-        id_col=res_id_col,
-        ses_col=res_ses_col,
-        participant_template=participant_template,
-        normalize_sub_fn=_normalize_sub_id,
-        is_missing_fn=_is_missing_value,
-    )
+    if not skip_participants:
+        _write_survey_participants(
+            df=df,
+            output_root=dataset_root,
+            id_col=res_id_col,
+            ses_col=res_ses_col,
+            participant_template=participant_template,
+            normalize_sub_fn=_normalize_sub_id,
+            is_missing_fn=_is_missing_value,
+        )
 
     # Write task sidecars
     for task in sorted(tasks_with_data):
