@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Test Windows compatibility for prism-studio
 """
@@ -7,6 +8,12 @@ import os
 import sys
 import tempfile
 import json
+
+# Force UTF-8 encoding for Windows console
+if sys.platform.startswith('win'):
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 # Add app/src to path for testing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app", "src"))
