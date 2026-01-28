@@ -452,6 +452,11 @@
         "type": "string",
         "pattern": "^(run-[a-zA-Z0-9]+)?$",
         "description": "Optional run hint for repeated assessments (e.g., 'run-2')"
+      },
+      "Mandatory": {
+        "type": "boolean",
+        "default": true,
+        "description": "Whether this question is mandatory (required) in the survey. Defaults to true if not specified."
       }
     },
     "anyOf": [
