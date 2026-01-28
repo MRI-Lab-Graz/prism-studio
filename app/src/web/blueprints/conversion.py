@@ -68,6 +68,119 @@ _participant_json_candidates = participant_json_candidates
 _log_file_head = log_file_head
 _resolve_effective_library_path = resolve_effective_library_path
 
+
+def _generate_neurobagel_schema(df, id_column):
+    """
+    Generate NeuroBagel-compliant participants.json schema from DataFrame.
+    Auto-detects data types, standard variables, and suggests annotations.
+    
+    Returns dict with column definitions including NeuroBagel annotations.
+    """
+    import pandas as pd
+    
+    # NeuroBagel standard variable mappings
+    NEUROBAGEL_VOCAB = {
+        # Core demographics
+        "age": {"term": "nb:Age", "label": "Age", "type": "continuous", "unit": "years"},
+        "sex": {"term": "nb:Sex", "label": "Sex", "type": "categorical", 
+                "levels": {"M": "Male", "F": "Female", "O": "Other"}},
+        "gender": {"term": "nb:Gender", "label": "Gender", "type": "categorical"},
+        "handedness": {"term": "nb:Handedness", "label": "Handedness", "type": "categorical",
+                      "levels": {"R": "Right", "L": "Left", "A": "Ambidextrous"}},
+        
+        # Clinical/study info
+        "group": {"term": "nb:Group", "label": "Group", "type": "categorical"},
+        "diagnosis": {"term": "nb:Diagnosis", "label": "Diagnosis", "type": "categorical"},
+        "education": {"term": "nb:EducationLevel", "label": "Education Level", "type": "continuous", "unit": "years"},
+        "ethnicity": {"term": "nb:Ethnicity", "label": "Ethnicity", "type": "categorical"},
+        
+        # IDs
+        "participant_id": {"term": "nb:ParticipantID", "label": "Participant ID", "type": "string"},
+        "subject": {"term": "nb:ParticipantID", "label": "Subject ID", "type": "string"},
+        "sub": {"term": "nb:ParticipantID", "label": "Subject ID", "type": "string"},
+    }
+    
+    schema = {}
+    
+    for col in df.columns:
+        col_lower = str(col).lower().strip()
+        col_data = df[col].dropna()
+        
+        # Start with basic structure
+        field = {
+            "Description": "",
+            "Annotations": {}
+        }
+        
+        # Check if column matches NeuroBagel vocabulary
+        neurobagel_match = None
+        for key, vocab in NEUROBAGEL_VOCAB.items():
+            if key in col_lower or col_lower in key:
+                neurobagel_match = vocab
+                break
+        
+        # Infer data type
+        if col == id_column:
+            data_type = "string"
+            is_categorical = False
+        else:
+            # Try to detect if numeric
+            try:
+                pd.to_numeric(col_data, errors='raise')
+                unique_count = col_data.nunique()
+                # If less than 10 unique values, likely categorical
+                is_categorical = unique_count < 10
+                data_type = "categorical" if is_categorical else "continuous"
+            except (ValueError, TypeError):
+                # String data - check uniqueness
+                unique_count = col_data.nunique()
+                is_categorical = unique_count < 20
+                data_type = "categorical" if is_categorical else "string"
+        
+        # Build description
+        if neurobagel_match:
+            field["Description"] = neurobagel_match.get("label", col)
+            field["Annotations"]["IsAbout"] = {
+                "TermURL": neurobagel_match["term"],
+                "Label": neurobagel_match["label"]
+            }
+            field["Annotations"]["VariableType"] = neurobagel_match["type"].capitalize()
+            
+            # Add unit if specified
+            if "unit" in neurobagel_match:
+                field["Unit"] = neurobagel_match["unit"]
+                if data_type == "continuous":
+                    field["Annotations"]["Format"] = {
+                        "TermURL": "nb:FromFloat",
+                        "Label": "Float"
+                    }
+        else:
+            # No NeuroBagel match - use generic description
+            field["Description"] = f"{col} (auto-detected)"
+            field["Annotations"]["VariableType"] = data_type.capitalize()
+        
+        # Extract levels for categorical variables
+        if is_categorical and len(col_data) > 0:
+            levels = {}
+            unique_vals = col_data.unique()[:50]  # Limit to 50 levels
+            
+            # Use NeuroBagel levels if available
+            if neurobagel_match and "levels" in neurobagel_match:
+                nb_levels = neurobagel_match["levels"]
+                for val in unique_vals:
+                    val_str = str(val)
+                    levels[val_str] = nb_levels.get(val_str, val_str)
+            else:
+                for val in unique_vals:
+                    levels[str(val)] = str(val)
+            
+            field["Levels"] = levels
+        
+        schema[col] = field
+    
+    return schema
+
+
 @conversion_bp.route("/api/survey-languages", methods=["GET"])
 def api_survey_languages():
     """List available languages for the selected survey template library folder."""
@@ -1773,6 +1886,9 @@ def api_participants_preview():
             # Preview first 20 rows
             preview_df = output_df.head(20)
             
+            # NEUROBAGEL INTEGRATION: Generate suggested participants.json with annotations
+            neurobagel_schema = _generate_neurobagel_schema(output_df, id_column)
+            
             return jsonify({
                 "status": "success",
                 "columns": list(output_df.columns),
@@ -1782,7 +1898,8 @@ def api_participants_preview():
                 "library_path": str(library_path),
                 "simulation_note": simulation_note,
                 "total_source_columns": len(df.columns),
-                "extracted_columns": len(output_df.columns)
+                "extracted_columns": len(output_df.columns),
+                "neurobagel_schema": neurobagel_schema
             })
         
         finally:
