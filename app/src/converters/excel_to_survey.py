@@ -60,7 +60,16 @@ SURVEY_METADATA = {
 }
 
 
-ID_ALIASES = {"item_id", "id", "code", "variable", "var", "name", "variablename", "itemname"}
+ID_ALIASES = {
+    "item_id",
+    "id",
+    "code",
+    "variable",
+    "var",
+    "name",
+    "variablename",
+    "itemname",
+}
 QUESTION_ALIASES = {"item", "question", "description", "text", "itemdescription"}
 SCALE_ALIASES = {"scale", "scaling", "levels", "options", "answers"}
 GROUP_ALIASES = {"group", "survey", "section", "domain", "category"}
@@ -99,11 +108,24 @@ VERSION_EN_ALIASES = {"version_en"}
 VERSION_DE_ALIASES = {"version_de"}
 CITATION_ALIASES = {"citation", "reference", "doi"}
 CONSTRUCT_ALIASES = {"construct", "domain", "measure"}
-INSTRUCTIONS_ALIASES = {"instructions", "instruction", "taskinstructions", "task_instructions"}
+INSTRUCTIONS_ALIASES = {
+    "instructions",
+    "instruction",
+    "taskinstructions",
+    "task_instructions",
+}
 INSTRUCTIONS_EN_ALIASES = {"instructions_en", "taskinstructions_en"}
 INSTRUCTIONS_DE_ALIASES = {"instructions_de", "taskinstructions_de"}
-STUDY_DESC_EN_ALIASES = {"study_description_en", "studydescription_en", "description_en"}
-STUDY_DESC_DE_ALIASES = {"study_description_de", "studydescription_de", "description_de"}
+STUDY_DESC_EN_ALIASES = {
+    "study_description_en",
+    "studydescription_en",
+    "description_en",
+}
+STUDY_DESC_DE_ALIASES = {
+    "study_description_de",
+    "studydescription_de",
+    "description_de",
+}
 KEYWORDS_ALIASES = {"keywords", "tags"}
 AUTHORS_ALIASES = {"authors", "author", "creator", "creators"}
 DOI_ALIASES = {"doi", "digital_object_identifier"}
@@ -123,7 +145,12 @@ ADMIN_METHOD_ALIASES = {
     "administration_method",
     "administration",
 }
-SOFTWARE_PLATFORM_ALIASES = {"softwareplatform", "software_platform", "platform", "software"}
+SOFTWARE_PLATFORM_ALIASES = {
+    "softwareplatform",
+    "software_platform",
+    "platform",
+    "software",
+}
 SOFTWARE_VERSION_ALIASES = {"softwareversion", "software_version"}
 I18N_LANGUAGES_ALIASES = {"languages", "i18n_languages", "i18nlanguages"}
 I18N_DEFAULT_LANGUAGE_ALIASES = {"defaultlanguage", "default_language"}
@@ -213,7 +240,9 @@ def process_excel(
 ):
     print(f"Loading metadata from {excel_file}...")
     try:
-        surveys_data = extract_excel_templates(excel_file, participants_prefix=participants_prefix)
+        surveys_data = extract_excel_templates(
+            excel_file, participants_prefix=participants_prefix
+        )
     except Exception as e:
         print(f"Error during extraction: {e}")
         sys.exit(1)
@@ -484,8 +513,10 @@ def extract_excel_templates(excel_file, participants_prefix=None):
         if _clean_cell(doi) and "DOI" not in meta:
             meta["DOI"] = _clean_cell(doi)
         if _clean_cell(authors) and "Authors" not in meta:
-            meta["Authors"] = [a.strip() for a in re.split(r"[;,]", str(authors)) if a.strip()]
-        
+            meta["Authors"] = [
+                a.strip() for a in re.split(r"[;,]", str(authors)) if a.strip()
+            ]
+
         if _clean_cell(construct) and "Construct" not in meta:
             meta["Construct"] = _clean_cell(construct)
         if _clean_cell(construct_en) and "Construct_en" not in meta:
@@ -521,7 +552,9 @@ def extract_excel_templates(excel_file, participants_prefix=None):
             meta["Instructions_de"] = _clean_cell(instructions_de)
 
         if _clean_cell(keywords) and "Keywords" not in meta:
-            meta["Keywords"] = [k.strip() for k in re.split(r"[;,]", str(keywords)) if k.strip()]
+            meta["Keywords"] = [
+                k.strip() for k in re.split(r"[;,]", str(keywords)) if k.strip()
+            ]
 
         if _clean_cell(respondent) and "Respondent" not in meta:
             meta["Respondent"] = _clean_cell(respondent)
@@ -534,7 +567,9 @@ def extract_excel_templates(excel_file, participants_prefix=None):
 
         if _clean_cell(i18n_languages) and "I18nLanguages" not in meta:
             # Accept: "en,de" or "['en','de']" (keep it simple)
-            langs = [k.strip() for k in re.split(r"[;,]", str(i18n_languages)) if k.strip()]
+            langs = [
+                k.strip() for k in re.split(r"[;,]", str(i18n_languages)) if k.strip()
+            ]
             meta["I18nLanguages"] = langs
         if _clean_cell(i18n_default_lang) and "I18nDefaultLanguage" not in meta:
             meta["I18nDefaultLanguage"] = _clean_cell(i18n_default_lang)
@@ -552,8 +587,18 @@ def extract_excel_templates(excel_file, participants_prefix=None):
         # i18n template format: Description as {de,en}
         entry = {
             "Description": {
-                "de": q_de or (description_default if detect_language([description_default]) == "de" else ""),
-                "en": q_en or (description_default if detect_language([description_default]) == "en" else ""),
+                "de": q_de
+                or (
+                    description_default
+                    if detect_language([description_default]) == "de"
+                    else ""
+                ),
+                "en": q_en
+                or (
+                    description_default
+                    if detect_language([description_default]) == "en"
+                    else ""
+                ),
             }
         }
 
@@ -650,7 +695,7 @@ def extract_excel_templates(excel_file, participants_prefix=None):
             alias_target = entry.get("AliasOf")
             if alias_target and alias_target in variables:
                 target_entry = variables[alias_target]
-                
+
                 # Register as an alias in the canonical item
                 if "Aliases" not in target_entry:
                     target_entry["Aliases"] = []
@@ -659,24 +704,38 @@ def extract_excel_templates(excel_file, participants_prefix=None):
 
                 # Remove fields that match the alias target exactly
                 to_remove_fields = []
-                for field in ["Description", "Levels", "Unit", "DataType", "MinValue", "MaxValue", "WarnMinValue", "WarnMaxValue", "AllowedValues", "TermURL", "Relevance"]:
+                for field in [
+                    "Description",
+                    "Levels",
+                    "Unit",
+                    "DataType",
+                    "MinValue",
+                    "MaxValue",
+                    "WarnMinValue",
+                    "WarnMaxValue",
+                    "AllowedValues",
+                    "TermURL",
+                    "Relevance",
+                ]:
                     if field in entry and field in target_entry:
                         if entry[field] == target_entry[field]:
                             to_remove_fields.append(field)
                     # Also handle case where alias entry has empty/placeholder description but target has real one
                     elif field == "Description" and field in entry:
                         desc = entry[field]
-                        if isinstance(desc, dict) and not any(v for v in desc.values() if v):
+                        if isinstance(desc, dict) and not any(
+                            v for v in desc.values() if v
+                        ):
                             to_remove_fields.append(field)
                     # Same for Levels
                     elif field == "Levels" and field in entry:
                         levs = entry[field]
                         if isinstance(levs, dict) and not levs:
                             to_remove_fields.append(field)
-                
+
                 for field in to_remove_fields:
                     del entry[field]
-                
+
                 # If the entry is now purely redundant (only AliasOf left), mark it for total removal
                 # This aligns with the "centralized aliases in main item" approach
                 remaining_keys = [k for k in entry.keys() if k != "AliasOf"]
@@ -713,10 +772,16 @@ def extract_excel_templates(excel_file, participants_prefix=None):
                             if isinstance(vvv, str) and vvv.strip():
                                 texts_for_lang.append(vvv)
 
-        if isinstance(meta.get("Instructions_en"), str) and meta.get("Instructions_en").strip():
+        if (
+            isinstance(meta.get("Instructions_en"), str)
+            and meta.get("Instructions_en").strip()
+        ):
             languages.append("en")
             texts_for_lang.append(meta["Instructions_en"])
-        if isinstance(meta.get("Instructions_de"), str) and meta.get("Instructions_de").strip():
+        if (
+            isinstance(meta.get("Instructions_de"), str)
+            and meta.get("Instructions_de").strip()
+        ):
             languages.append("de")
             texts_for_lang.append(meta["Instructions_de"])
 
@@ -734,7 +799,10 @@ def extract_excel_templates(excel_file, participants_prefix=None):
                 languages = ["de", "en"]
 
         default_language = None
-        if isinstance(meta.get("I18nDefaultLanguage"), str) and meta.get("I18nDefaultLanguage").strip():
+        if (
+            isinstance(meta.get("I18nDefaultLanguage"), str)
+            and meta.get("I18nDefaultLanguage").strip()
+        ):
             default_language = meta["I18nDefaultLanguage"].strip()
         if not default_language:
             default_language = detect_language(texts_for_lang)
@@ -799,7 +867,10 @@ def extract_excel_templates(excel_file, participants_prefix=None):
                     "ShortName": meta.get("ShortName", ""),
                     "Version": {"de": version_de, "en": version_en},
                     "Citation": citation,
-                    "Construct": {"de": meta.get("Construct_de", ""), "en": meta.get("Construct_en", "")},
+                    "Construct": {
+                        "de": meta.get("Construct_de", ""),
+                        "en": meta.get("Construct_en", ""),
+                    },
                     "Description": {"de": study_desc_de, "en": study_desc_en},
                 },
                 "Metadata": {
@@ -810,7 +881,10 @@ def extract_excel_templates(excel_file, participants_prefix=None):
             }
 
             # Handle Construct fallback if no i18n provided
-            if not sidecar["Study"]["Construct"]["de"] and not sidecar["Study"]["Construct"]["en"]:
+            if (
+                not sidecar["Study"]["Construct"]["de"]
+                and not sidecar["Study"]["Construct"]["en"]
+            ):
                 raw_construct = meta.get("Construct") or fallback_meta.get("Domain", "")
                 if default_language == "de":
                     sidecar["Study"]["Construct"]["de"] = raw_construct

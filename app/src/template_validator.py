@@ -92,7 +92,9 @@ class TemplateValidator:
         """Initialize validator with library path."""
         self.library_path = Path(library_path)
 
-    def validate_directory(self, pattern: str = "*.json") -> Tuple[List[TemplateValidationError], Dict[str, Any]]:
+    def validate_directory(
+        self, pattern: str = "*.json"
+    ) -> Tuple[List[TemplateValidationError], Dict[str, Any]]:
         """
         Validate all template files in the library directory.
 
@@ -225,7 +227,9 @@ class TemplateValidator:
 
         return errors
 
-    def _validate_study(self, file_name: str, study_data: Any) -> List[TemplateValidationError]:
+    def _validate_study(
+        self, file_name: str, study_data: Any
+    ) -> List[TemplateValidationError]:
         """Validate Study metadata section."""
         errors = []
 
@@ -275,7 +279,9 @@ class TemplateValidator:
 
         if "DOI" in study_data and study_data["DOI"]:
             doi = study_data["DOI"].strip()
-            if doi and not (doi.startswith("10.") or doi.startswith("https://doi.org/")):
+            if doi and not (
+                doi.startswith("10.") or doi.startswith("https://doi.org/")
+            ):
                 errors.append(
                     TemplateValidationError(
                         file=file_name,
@@ -309,7 +315,9 @@ class TemplateValidator:
                         )
                     )
 
-        if "OriginalName" in study_data and isinstance(study_data["OriginalName"], dict):
+        if "OriginalName" in study_data and isinstance(
+            study_data["OriginalName"], dict
+        ):
             if "en" not in study_data["OriginalName"]:
                 errors.append(
                     TemplateValidationError(
@@ -322,7 +330,9 @@ class TemplateValidator:
 
         return errors
 
-    def _validate_i18n(self, file_name: str, i18n_data: Any) -> List[TemplateValidationError]:
+    def _validate_i18n(
+        self, file_name: str, i18n_data: Any
+    ) -> List[TemplateValidationError]:
         """Validate internationalization (I18n) settings."""
         errors = []
 
@@ -401,7 +411,9 @@ class TemplateValidator:
 
         return items
 
-    def _validate_items(self, file_name: str, items: Dict[str, Any]) -> List[TemplateValidationError]:
+    def _validate_items(
+        self, file_name: str, items: Dict[str, Any]
+    ) -> List[TemplateValidationError]:
         """Validate item definitions."""
         errors = []
 
@@ -447,7 +459,9 @@ class TemplateValidator:
 
         return errors
 
-    def _validate_item_structure(self, file_name: str, item_id: str, item_def: Dict[str, Any]) -> List[TemplateValidationError]:
+    def _validate_item_structure(
+        self, file_name: str, item_id: str, item_def: Dict[str, Any]
+    ) -> List[TemplateValidationError]:
         """Validate individual item structure."""
         errors = []
 
@@ -507,7 +521,9 @@ class TemplateValidator:
 
         return errors
 
-    def _validate_item_i18n(self, file_name: str, item_id: str, item_def: Dict[str, Any]) -> List[TemplateValidationError]:
+    def _validate_item_i18n(
+        self, file_name: str, item_id: str, item_def: Dict[str, Any]
+    ) -> List[TemplateValidationError]:
         """Validate internationalization in item definition."""
         errors = []
 
@@ -573,9 +589,9 @@ def validate_templates(
     errors, summary = validator.validate_directory()
 
     if verbose:
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"Template Validation Report: {library_path}")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
         print(
             f"Total files: {summary['total_files']} | "
             f"Valid: {summary['valid_files']} | "
@@ -584,9 +600,9 @@ def validate_templates(
         )
 
         if errors:
-            print(f"\n{'-'*70}")
+            print(f"\n{'-' * 70}")
             print("VALIDATION ERRORS:")
-            print(f"{'-'*70}")
+            print(f"{'-' * 70}")
 
             # Group errors by severity
             errors_by_severity = {"error": [], "warning": [], "info": []}
@@ -602,10 +618,10 @@ def validate_templates(
                         if error.details:
                             print(f"    → {error.details}")
 
-            print(f"\n{'-'*70}")
+            print(f"\n{'-' * 70}")
         else:
             print("\n✅ All templates are valid!")
 
-        print(f"{'='*70}\n")
+        print(f"{'=' * 70}\n")
 
     return errors, summary

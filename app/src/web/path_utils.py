@@ -25,11 +25,11 @@ def strip_temp_path(
         if parent_dir and parent_dir != "/":
             prefix = parent_dir if parent_dir.endswith("/") else parent_dir + "/"
             if file_path.startswith(prefix):
-                return file_path[len(prefix):]
+                return file_path[len(prefix) :]
             elif prefix in file_path:
                 idx = file_path.find(prefix)
-                return file_path[idx + len(prefix):]
-        
+                return file_path[idx + len(prefix) :]
+
         # Fallback to stripping the dataset_path itself
         ds_prefix = dataset_path + "/"
         if file_path.startswith(ds_prefix):
@@ -39,7 +39,13 @@ def strip_temp_path(
             return file_path[idx + len(dataset_path) :].lstrip("/")
 
     # Look for common BIDS/PRISM root markers
-    markers = ["sub-", "dataset_description.json", "participants.tsv", "task-", "survey-"]
+    markers = [
+        "sub-",
+        "dataset_description.json",
+        "participants.tsv",
+        "task-",
+        "survey-",
+    ]
     best_match = None
     for marker in markers:
         if marker in file_path:
@@ -47,30 +53,47 @@ def strip_temp_path(
             match_path = file_path[idx:]
             if not best_match or len(match_path) > len(best_match):
                 best_match = match_path
-    
+
     if best_match:
         return best_match
 
     # If it's a temp path, try to extract the relative path
     # Unix: /tmp/, /var/folders/, /T/
     # Windows: C:\Users\...\AppData\Local\Temp\, C:\Temp\, etc.
-    temp_patterns = ["/tmp/", "/T/prism_validator_", "/var/folders/", "prism_validator_", "renamed_files", "/Temp/", "\\Temp\\", "\\AppData\\"]
+    temp_patterns = [
+        "/tmp/",
+        "/T/prism_validator_",
+        "/var/folders/",
+        "prism_validator_",
+        "renamed_files",
+        "/Temp/",
+        "\\Temp\\",
+        "\\AppData\\",
+    ]
     if any(p in file_path for p in temp_patterns):
         if "/dataset/" in file_path or "\\dataset\\" in file_path:
             # Handle both Unix and Windows separators
             parts = file_path.replace("\\", "/").split("/dataset/", 1)
             if len(parts) > 1:
                 return parts[1]
-        
+
         if "renamed_files" in file_path:
             idx = file_path.rfind("renamed_files")
             slash_idx = file_path.find(os.sep, idx)
             if slash_idx != -1:
-                return file_path[slash_idx + 1:]
-        
+                return file_path[slash_idx + 1 :]
+
         parts = [p for p in file_path.split(os.sep) if p]
         if len(parts) >= 2:
-            if parts[-2].startswith("sub-") or parts[-2] in ["physio", "anat", "func", "survey", "eyetracking", "dwi", "fmap"]:
+            if parts[-2].startswith("sub-") or parts[-2] in [
+                "physio",
+                "anat",
+                "func",
+                "survey",
+                "eyetracking",
+                "dwi",
+                "fmap",
+            ]:
                 return os.sep.join(parts[-2:])
         if len(parts) >= 1:
             return parts[-1]
@@ -82,7 +105,7 @@ def strip_temp_path_from_message(msg: str, dataset_path: Optional[str] = None) -
     """Remove temp folder paths from message text."""
     if not msg:
         return msg
-    
+
     msg = msg.replace("\\", "/")
 
     # If dataset_path is provided, try to strip up to its parent folder
@@ -96,7 +119,7 @@ def strip_temp_path_from_message(msg: str, dataset_path: Optional[str] = None) -
             if prefix in msg:
                 msg = msg.replace(prefix, "/")
                 did_dataset_strip = True
-        
+
         # Fallback: strip the dataset_path itself if parent stripping didn't work/apply
         ds_prefix = dataset_path + "/"
         if ds_prefix in msg:
@@ -109,17 +132,36 @@ def strip_temp_path_from_message(msg: str, dataset_path: Optional[str] = None) -
     # Only apply heuristic marker-based stripping if we didn't do a dataset strip
     # or if the message STILL contains absolute system markers
     # Check for both Unix (/var, /tmp) and Windows (C:\Users\AppData, \Temp) paths
-    has_system_markers = any(p in msg for p in ["/var/folders/", "/tmp/prism_", "/prism_validator_", "\\AppData\\", "\\Temp\\", "C:\\Users"])
-    
+    has_system_markers = any(
+        p in msg
+        for p in [
+            "/var/folders/",
+            "/tmp/prism_",
+            "/prism_validator_",
+            "\\AppData\\",
+            "\\Temp\\",
+            "C:\\Users",
+        ]
+    )
+
     if not did_dataset_strip or has_system_markers:
-        markers = ["sub-", "dataset_description.json", "participants.tsv", "task-", "survey-"]
+        markers = [
+            "sub-",
+            "dataset_description.json",
+            "participants.tsv",
+            "task-",
+            "survey-",
+        ]
         for marker in markers:
             if marker in msg:
                 # Only strip automatically if it looks like a temporary or absolute path
                 # This pattern matches common Unix absolute roots and temp folders
-                temp_prefix_pattern = r"/(?:var|tmp|Volumes|Users|home|Users|prism_validator|renamed_files)[^\s,:]*/" + re.escape(marker)
+                temp_prefix_pattern = (
+                    r"/(?:var|tmp|Volumes|Users|home|Users|prism_validator|renamed_files)[^\s,:]*/"
+                    + re.escape(marker)
+                )
                 msg = re.sub(temp_prefix_pattern, marker, msg)
-                
+
                 # Legacy fallback for renamed_files
                 renamed_pattern = r"renamed_files[^/\s,:]*/" + re.escape(marker)
                 msg = re.sub(renamed_pattern, marker, msg)
@@ -133,10 +175,10 @@ def strip_temp_path_from_message(msg: str, dataset_path: Optional[str] = None) -
         r"[A-Z]:\\\\Users\\\\[^\\\\\s,:]+\\\\AppData\\\\Local\\\\Temp\\\\[^\\\\\s,:]+\\\\",  # Windows temp
         r"[A-Z]:\\\\Temp\\\\[^\\\\\s,:]+\\\\",  # Alternative Windows temp
     ]
-    
+
     for pattern in temp_patterns:
         msg = re.sub(pattern, "", msg)
-    
+
     return msg.strip()
 
 

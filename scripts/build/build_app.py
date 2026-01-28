@@ -100,9 +100,11 @@ def _generate_icon(name: str) -> str | None:
     if not source_png.exists():
         # Fallback to local if running from inside app/
         source_png = Path("static/img/MRI_Lab_Logo.png")
-        
+
     if not source_png.exists():
-        print("[WARN] Icon source not found at app/static/img/MRI_Lab_Logo.png or static/img/MRI_Lab_Logo.png")
+        print(
+            "[WARN] Icon source not found at app/static/img/MRI_Lab_Logo.png or static/img/MRI_Lab_Logo.png"
+        )
         return None
 
     if sys.platform == "darwin":
@@ -237,7 +239,7 @@ def main() -> int:
     sep = ";" if os.name == "nt" else ":"
 
     # Data paths are now in the app/ subdirectory
-    # We use os.path.join for the source path to be platform-neutral, 
+    # We use os.path.join for the source path to be platform-neutral,
     # then the PyInstaller 'sep' to separate source and destination.
     datas = [
         f"{os.path.join('app', 'templates')}{sep}templates",
@@ -245,12 +247,12 @@ def main() -> int:
         f"{os.path.join('app', 'schemas')}{sep}schemas",
         f"{os.path.join('app', 'src')}{sep}src",
     ]
-    
+
     # Include official library and recipe folders
     if (project_root / "official").exists():
         datas.append(f"official{sep}official")
         print("[OK] Including official/ folder (library and recipes)")
-    
+
     # Check for optional directories and only add them if they exist
     if (project_root / "app" / "survey_library").exists():
         datas.append(f"{os.path.join('app', 'survey_library')}{sep}survey_library")

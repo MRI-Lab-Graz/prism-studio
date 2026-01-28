@@ -30,7 +30,6 @@ import fnmatch
 from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Optional, Any
 
-
 CONFIG_FILENAMES = [".prismrc.json", "prism.config.json"]
 
 DEFAULT_IGNORE_PATTERNS = [
@@ -385,8 +384,7 @@ def save_app_settings(settings: AppSettings, app_root: str = None) -> str:
 
 
 def get_effective_library_paths(
-    app_root: str = None,
-    app_settings: AppSettings = None
+    app_root: str = None, app_settings: AppSettings = None
 ) -> Dict[str, Optional[str]]:
     """
     Get the effective global library and recipe paths.
@@ -458,9 +456,7 @@ def get_effective_library_paths(
 
 
 def get_effective_template_library_path(
-    project_path: str = None,
-    app_settings: AppSettings = None,
-    app_root: str = None
+    project_path: str = None, app_settings: AppSettings = None, app_root: str = None
 ) -> Dict[str, Any]:
     """
     Get the effective template library paths considering both global and project settings.
@@ -487,7 +483,9 @@ def get_effective_template_library_path(
         app_settings = load_app_settings(app_root=app_root)
 
     # Get global library paths
-    lib_paths = get_effective_library_paths(app_root=app_root, app_settings=app_settings)
+    lib_paths = get_effective_library_paths(
+        app_root=app_root, app_settings=app_settings
+    )
     global_path = lib_paths["global_library_path"]
     source = lib_paths["source"]
 

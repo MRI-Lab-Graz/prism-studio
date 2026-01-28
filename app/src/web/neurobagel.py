@@ -7,6 +7,7 @@ import requests
 from functools import lru_cache
 from typing import Any, Dict
 
+
 @lru_cache(maxsize=8)
 def fetch_neurobagel_participants() -> Any:
     """Fetch NeuroBagel participants dictionary and cache it."""
@@ -17,6 +18,7 @@ def fetch_neurobagel_participants() -> Any:
         return resp.json()
     except Exception:
         return None
+
 
 def augment_neurobagel_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
     """Augment raw NeuroBagel data with standardized variable mappings and categorical details.

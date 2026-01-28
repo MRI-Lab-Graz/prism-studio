@@ -15,11 +15,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import json
 
 from ..utils.io import read_json as _read_json, write_json as _write_json
 from ..utils.naming import norm_key as _norm_key
-
 
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = {
     "Technical",
@@ -138,7 +136,7 @@ def detect_biometrics_in_table(
     task_to_items, _ = _load_biometrics_library(library_dir)
 
     df_cols_norm = {_norm_col(c) for c in df.columns}
-    
+
     detected_tasks: list[str] = []
     for task, items in task_to_items.items():
         # A task is detected if at least one of its items is present in the table (case-insensitive)
@@ -230,15 +228,15 @@ def convert_biometrics_table_to_prism_dataset(
     for c in list(df.columns):
         c_str = str(c)
         c_norm = _norm_col(c_str)
-        
+
         if c_str == col_pid or (col_ses and c_str == col_ses):
             continue
         if _norm_col(col_pid) == c_norm or (col_ses and _norm_col(col_ses) == c_norm):
             continue
-            
+
         if c_norm in all_item_cols_norm:
             continue
-            
+
         # Also ignore reserved keys
         if any(_norm_col(k) == c_norm for k in _NON_ITEM_TOPLEVEL_KEYS):
             continue
@@ -321,7 +319,9 @@ def convert_biometrics_table_to_prism_dataset(
                     values[item] = "n/a"
 
             # If this task has no columns in the input at all, skip writing.
-            if not any_present and not any(_norm_col(item) in df_col_map for item in items):
+            if not any_present and not any(
+                _norm_col(item) in df_col_map for item in items
+            ):
                 continue
 
             modality_dir = output_root / sub_id / ses_id / "biometrics"

@@ -215,28 +215,44 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
 
 FIX_TOOLS: Dict[str, Dict[str, str]] = {
     # Dataset structure - use JSON editor for metadata files
-    "PRISM001": {"tool": "json-editor", "label": "Create in Editor", "target": "dataset_description.json"},
-    "PRISM003": {"tool": "json-editor", "label": "Edit in JSON Editor", "target": "dataset_description.json"},
-    "PRISM004": {"tool": "json-editor", "label": "Create in Editor", "target": "participants.json"},
-    "PRISM006": {"tool": "json-editor", "label": "Edit Metadata", "target": "dataset_description.json"},
-
+    "PRISM001": {
+        "tool": "json-editor",
+        "label": "Create in Editor",
+        "target": "dataset_description.json",
+    },
+    "PRISM003": {
+        "tool": "json-editor",
+        "label": "Edit in JSON Editor",
+        "target": "dataset_description.json",
+    },
+    "PRISM004": {
+        "tool": "json-editor",
+        "label": "Create in Editor",
+        "target": "participants.json",
+    },
+    "PRISM006": {
+        "tool": "json-editor",
+        "label": "Edit Metadata",
+        "target": "dataset_description.json",
+    },
     # Template issues - use template editor
     "PRISM007": {"tool": "template-editor", "label": "Edit Template"},
     "PRISM008": {"tool": "template-editor", "label": "Fix Template"},
-
     # Sidecar issues - use JSON editor
     "PRISM201": {"tool": "json-editor", "label": "Create Sidecar"},
     "PRISM202": {"tool": "json-editor", "label": "Fix JSON Syntax"},
     "PRISM203": {"tool": "json-editor", "label": "Edit Sidecar"},
     "PRISM301": {"tool": "json-editor", "label": "Fix Schema Error"},
     "PRISM302": {"tool": "json-editor", "label": "Fix Field Type"},
-
     # Content issues - often need data file or sidecar edit
     "PRISM402": {"tool": "json-editor", "label": "Update Levels"},
     "PRISM403": {"tool": "json-editor", "label": "Update Range"},
-
     # BIDS compatibility
-    "PRISM501": {"tool": "json-editor", "label": "Edit .bidsignore", "target": ".bidsignore"},
+    "PRISM501": {
+        "tool": "json-editor",
+        "label": "Edit .bidsignore",
+        "target": ".bidsignore",
+    },
 }
 
 
@@ -254,7 +270,7 @@ def get_error_description(code: str) -> str:
     """Get user-friendly description for an error code."""
     if code.startswith("BIDS_"):
         return f"BIDS specification violation: {code[5:]}"
-    
+
     defaults = ERROR_CODES.get(code, {})
     return defaults.get("message", "Validation error")
 
@@ -262,7 +278,7 @@ def get_error_description(code: str) -> str:
 def get_fix_hint(code: str, message: str = "") -> str:
     """Get fix hint for an error code, optionally using the message for context."""
     import re
-    
+
     # Handle specific cases with regex if message is provided
     if message:
         # Schema validation errors (PRISM301)
@@ -272,7 +288,7 @@ def get_fix_hint(code: str, message: str = "") -> str:
                 task_match = re.search(r"task-([a-zA-Z0-9]+)_survey", message)
                 survey_name = task_match.group(1) if task_match else "this instrument"
                 return f"The PRISM schema requires a valid license for all survey instruments. You must specify a 'LicenseID' (e.g., 'Proprietary' or 'CC-BY-4.0') and a 'License' statement for survey '{survey_name}' in the metadata template."
-            
+
             if "too short" in message.lower():
                 if "keyword" in message.lower():
                     return "PRISM recommends at least 3 keywords to ensure your dataset is discoverable (FAIR compliance). Add more keywords to the 'Keywords' array."
@@ -284,14 +300,18 @@ def get_fix_hint(code: str, message: str = "") -> str:
 
         # Levels errors (PRISM402)
         if code == "PRISM402":
-            match = re.search(r"Value '([^']+)' not found in allowed levels: \[(.*)\]", message)
+            match = re.search(
+                r"Value '([^']+)' not found in allowed levels: \[(.*)\]", message
+            )
             if match:
                 val, levels = match.groups()
                 return f"The value '{val}' is not defined in the 'Levels' dictionary in the sidecar JSON. Add it to the sidecar or correct the data."
-        
+
         # Range errors (PRISM403)
         if code == "PRISM403":
-            match = re.search(r"Value '([^']+)' is out of range \(([^,]+), ([^)]+)\)", message)
+            match = re.search(
+                r"Value '([^']+)' is out of range \(([^,]+), ([^)]+)\)", message
+            )
             if match:
                 val, min_val, max_val = match.groups()
                 return f"The value '{val}' is outside the allowed range [{min_val}, {max_val}]. Check the sidecar JSON for 'MinValue' and 'MaxValue' definitions for this column."
@@ -304,11 +324,11 @@ def get_error_documentation_url(code: str) -> str:
     """Get documentation URL for an error code."""
     if code.startswith("BIDS"):
         return "https://bids-specification.readthedocs.io/en/stable/"
-    
+
     base_url = "https://prism-studio.readthedocs.io/en/latest/ERROR_CODES.html"
     if code.startswith("PRISM"):
         return f"{base_url}#{code.lower()}---"
-    
+
     return base_url
 
 
@@ -328,7 +348,7 @@ def infer_code_from_message(message: str) -> str:
 
     # PRISM-specific error detection (legacy patterns)
     msg_lower = message.lower()
-    
+
     if "invalid bids filename" in msg_lower:
         return "PRISM101"
     elif "missing sidecar" in msg_lower:
@@ -353,9 +373,21 @@ def infer_code_from_message(message: str) -> str:
         return "PRISM005"
     elif "fair compliance" in msg_lower or "fair principle" in msg_lower:
         return "PRISM006"
-    elif "incomplete template" in msg_lower or ("template" in msg_lower and "missing" in msg_lower and ("references" in msg_lower or "reliability" in msg_lower or "administrationtime" in msg_lower)):
+    elif "incomplete template" in msg_lower or (
+        "template" in msg_lower
+        and "missing" in msg_lower
+        and (
+            "references" in msg_lower
+            or "reliability" in msg_lower
+            or "administrationtime" in msg_lower
+        )
+    ):
         return "PRISM007"
-    elif "template consistency" in msg_lower or "itemcount" in msg_lower or ("subscale" in msg_lower and "not found" in msg_lower):
+    elif (
+        "template consistency" in msg_lower
+        or "itemcount" in msg_lower
+        or ("subscale" in msg_lower and "not found" in msg_lower)
+    ):
         return "PRISM008"
     elif "dataset_description.json" in msg_lower:
         if "missing" in msg_lower:
@@ -363,7 +395,11 @@ def infer_code_from_message(message: str) -> str:
         return "PRISM003"
     elif "no subjects found" in msg_lower:
         return "PRISM002"
-    elif "consistency" in msg_lower or "mislabeled" in msg_lower or "mixed session" in msg_lower:
+    elif (
+        "consistency" in msg_lower
+        or "mislabeled" in msg_lower
+        or "mixed session" in msg_lower
+    ):
         return "PRISM601"
     elif "empty" in msg_lower:
         if "tsv" in msg_lower:
@@ -373,7 +409,10 @@ def infer_code_from_message(message: str) -> str:
         return "PRISM402"
     elif "less than minvalue" in msg_lower or "greater than maxvalue" in msg_lower:
         return "PRISM403"
-    elif "less than warnminvalue" in msg_lower or "greater than warnmaxvalue" in msg_lower:
+    elif (
+        "less than warnminvalue" in msg_lower
+        or "greater than warnmaxvalue" in msg_lower
+    ):
         return "PRISM404"
 
     return "PRISM999"
@@ -532,4 +571,3 @@ def summarize_issues(issues: List[Issue]) -> Dict[str, Any]:
         "info": info_count,
         "by_code": by_code,
     }
-

@@ -21,33 +21,35 @@ def main():
     print("PRISM Global Library Paths - Verification")
     print("=" * 70)
     print()
-    
+
     # Load app settings
     settings = load_app_settings(app_root=str(app_root))
-    
+
     print("📋 App Settings:")
     print(f"  • Global Library Root: {settings.global_library_root}")
     print(f"  • Default Modalities:  {', '.join(settings.default_modalities)}")
     print()
-    
+
     # Get effective paths
-    lib_paths = get_effective_library_paths(app_root=str(app_root), app_settings=settings)
-    
+    lib_paths = get_effective_library_paths(
+        app_root=str(app_root), app_settings=settings
+    )
+
     print("🔍 Resolved Paths:")
     print(f"  • Library Root:  {lib_paths['global_library_root']}")
     print(f"  • Library Path:  {lib_paths['global_library_path']}")
     print(f"  • Recipe Path:   {lib_paths['global_recipe_path']}")
     print(f"  • Source:        {lib_paths['source']}")
     print()
-    
+
     # Check if paths exist
     print("✅ Path Status:")
     checks = [
-        ("Library Root", lib_paths['global_library_root']),
-        ("Library Path", lib_paths['global_library_path']),
-        ("Recipe Path", lib_paths['global_recipe_path']),
+        ("Library Root", lib_paths["global_library_root"]),
+        ("Library Path", lib_paths["global_library_path"]),
+        ("Recipe Path", lib_paths["global_recipe_path"]),
     ]
-    
+
     all_ok = True
     for label, path in checks:
         if path and os.path.exists(path):
@@ -59,46 +61,46 @@ def main():
             print(f"  ⚠ {label}: NOT CONFIGURED")
             all_ok = False
     print()
-    
+
     # Count resources
-    if lib_paths['global_library_path']:
-        library_path = Path(lib_paths['global_library_path'])
-        
+    if lib_paths["global_library_path"]:
+        library_path = Path(lib_paths["global_library_path"])
+
         surveys = []
         biometrics = []
-        
+
         survey_dir = library_path / "survey"
         if survey_dir.exists():
             surveys = list(survey_dir.glob("*.json"))
-        
+
         biometrics_dir = library_path / "biometrics"
         if biometrics_dir.exists():
             biometrics = list(biometrics_dir.glob("*.json"))
-        
+
         print("📊 Library Resources:")
         print(f"  • Surveys:     {len(surveys)}")
         print(f"  • Biometrics:  {len(biometrics)}")
         print()
-    
-    if lib_paths['global_recipe_path']:
-        recipe_path = Path(lib_paths['global_recipe_path'])
-        
+
+    if lib_paths["global_recipe_path"]:
+        recipe_path = Path(lib_paths["global_recipe_path"])
+
         survey_recipes = []
         biometric_recipes = []
-        
+
         survey_recipe_dir = recipe_path / "survey"
         if survey_recipe_dir.exists():
             survey_recipes = list(survey_recipe_dir.glob("*.json"))
-        
+
         biometric_recipe_dir = recipe_path / "biometrics"
         if biometric_recipe_dir.exists():
             biometric_recipes = list(biometric_recipe_dir.glob("*.json"))
-        
+
         print("📊 Recipe Resources:")
         print(f"  • Survey Recipes:     {len(survey_recipes)}")
         print(f"  • Biometric Recipes:  {len(biometric_recipes)}")
         print()
-    
+
     print("=" * 70)
     if all_ok:
         print("✅ All global library paths are correctly configured!")

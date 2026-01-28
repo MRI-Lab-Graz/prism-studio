@@ -79,11 +79,12 @@ def create_json_editor_blueprint(bids_folder=None):
     def sync_with_session_project():
         """Ensure JSON editor is using the currently selected project from session"""
         from flask import session
-        project_path = session.get('current_project_path')
+
+        project_path = session.get("current_project_path")
         if project_path and file_manager:
             try:
                 project_path_obj = Path(project_path)
-                
+
                 # Check for YODA layout (rawdata/ subdirectory)
                 rawdata_path = project_path_obj / "rawdata"
                 if rawdata_path.exists() and rawdata_path.is_dir():
@@ -94,10 +95,12 @@ def create_json_editor_blueprint(bids_folder=None):
                     # Use project path directly (standard BIDS layout)
                     dataset_path = project_path_obj
                     print(f"📁 [JSON EDITOR] Using project path: {dataset_path}")
-                
+
                 file_manager.set_bids_folder(str(dataset_path))
             except Exception as e:
-                print(f"⚠️ [JSON EDITOR] Could not set BIDS folder to {project_path}: {e}")
+                print(
+                    f"⚠️ [JSON EDITOR] Could not set BIDS folder to {project_path}: {e}"
+                )
 
     @bp.route("/")
     @bp.route("/index.html")

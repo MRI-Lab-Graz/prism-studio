@@ -70,16 +70,13 @@ def _write_json(path: Path, obj: dict) -> None:
 
 
 def _copy_recipes_to_project(
-    *,
-    recipes: dict[str, dict],
-    dataset_root: Path,
-    modality: str
+    *, recipes: dict[str, dict], dataset_root: Path, modality: str
 ) -> None:
     """Copy used recipes to project's code/recipes/{modality}/ for reproducibility.
-    
+
     Following YODA principles, this ensures the exact recipes used during processing
     are preserved in the project, making it self-contained and reproducible.
-    
+
     Args:
         recipes: Dict of loaded recipes (recipe_id -> {path, json})
         dataset_root: Root of the dataset (might be rawdata/ or project root)
@@ -96,38 +93,42 @@ def _copy_recipes_to_project(
         else:
             # Might be legacy structure or non-YODA, skip copying
             return
-    
+
     # Create code/recipes/{modality}/ folder (YODA-compliant)
     recipes_dir = project_root / "code" / "recipes" / modality
     recipes_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Copy each used recipe
     for recipe_id, rec in recipes.items():
         recipe_data = rec["json"]
-        
+
         # Generate filename from recipe_id
         output_filename = f"{recipe_id}.json"
         output_path = recipes_dir / output_filename
-        
+
         # Only copy if it doesn't already exist (don't overwrite user customizations)
         if not output_path.exists():
             _write_json(output_path, recipe_data)
 
 
-def _get_sidecar_for_task(dataset_path: Path, prefix: str, name: str, repo_root: Path | None = None) -> dict:
+def _get_sidecar_for_task(
+    dataset_path: Path, prefix: str, name: str, repo_root: Path | None = None
+) -> dict:
     """Find and load sidecar JSON for a given task/biometric."""
     candidates = [
         dataset_path / f"{prefix}-{name}.json",
         dataset_path / f"{prefix}s" / f"{prefix}-{name}.json",
         dataset_path / f"{name}.json",
     ]
-    
+
     # Try library fallback if we have repo_root
     if repo_root:
         lib_path = repo_root / "library" / prefix
         candidates.append(lib_path / f"{prefix}-{name}.json")
         # Global library folder (outside app/ as well)
-        candidates.append(repo_root.parent / "library" / prefix / f"{prefix}-{name}.json")
+        candidates.append(
+            repo_root.parent / "library" / prefix / f"{prefix}-{name}.json"
+        )
 
     for p in candidates:
         if p.exists():
@@ -193,7 +194,9 @@ def _build_variable_metadata(
             if col in sidecar_meta:
                 col_meta = sidecar_meta[col]
                 if isinstance(col_meta, dict):
-                    desc = col_meta.get("Description") or col_meta.get("description") or ""
+                    desc = (
+                        col_meta.get("Description") or col_meta.get("description") or ""
+                    )
                     if desc:
                         variable_labels[col] = get_i18n_text(desc, lang)
                     levels = col_meta.get("Levels") or col_meta.get("levels") or {}
@@ -491,11 +494,7 @@ def _get_item_value(
     v = _parse_numeric_cell(raw)
     if v is None:
         return None
-    if (
-        item_id in invert_items
-        and invert_min is not None
-        and invert_max is not None
-    ):
+    if item_id in invert_items and invert_min is not None and invert_max is not None:
         try:
             return float(invert_max) + float(invert_min) - float(v)
         except Exception:
@@ -542,7 +541,12 @@ def _calculate_derived_variables(
             d_values = []
             for item_id in d_items:
                 v = _get_item_value(
-                    item_id, current_row, invert_items, invert_min, invert_max, alias_map=alias_map
+                    item_id,
+                    current_row,
+                    invert_items,
+                    invert_min,
+                    invert_max,
+                    alias_map=alias_map,
                 )
                 if v is not None:
                     d_values.append(v)
@@ -564,7 +568,12 @@ def _calculate_derived_variables(
                 source = d_items[0]
             v = (
                 _get_item_value(
-                    str(source).strip(), current_row, invert_items, invert_min, invert_max, alias_map=alias_map
+                    str(source).strip(),
+                    current_row,
+                    invert_items,
+                    invert_min,
+                    invert_max,
+                    alias_map=alias_map,
                 )
                 if source
                 else None
@@ -579,7 +588,12 @@ def _calculate_derived_variables(
                 any_missing = False
                 for item_id in d_items:
                     v = _get_item_value(
-                        item_id, current_row, invert_items, invert_min, invert_max, alias_map=alias_map
+                        item_id,
+                        current_row,
+                        invert_items,
+                        invert_min,
+                        invert_max,
+                        alias_map=alias_map,
                     )
                     if v is None:
                         any_missing = True
@@ -618,7 +632,12 @@ def _calculate_scores(
         any_missing = False
         for item_id in items:
             v = _get_item_value(
-                item_id, current_row, invert_items, invert_min, invert_max, alias_map=alias_map
+                item_id,
+                current_row,
+                invert_items,
+                invert_min,
+                invert_max,
+                alias_map=alias_map,
             )
             if v is None:
                 any_missing = True
@@ -635,7 +654,12 @@ def _calculate_scores(
                 # Replace {item_id} with value from current_row (which includes derived)
                 for item_id in items:
                     v = _get_item_value(
-                        item_id, current_row, invert_items, invert_min, invert_max, alias_map=alias_map
+                        item_id,
+                        current_row,
+                        invert_items,
+                        invert_min,
+                        invert_max,
+                        alias_map=alias_map,
                     )
                     val_str = str(v) if v is not None else "0.0"
                     expr = expr.replace(f"{{{item_id}}}", val_str)
@@ -649,7 +673,12 @@ def _calculate_scores(
             mapping = score.get("Mapping")
             if source and mapping:
                 val = _get_item_value(
-                    source, current_row, invert_items, invert_min, invert_max, alias_map=alias_map
+                    source,
+                    current_row,
+                    invert_items,
+                    invert_min,
+                    invert_max,
+                    alias_map=alias_map,
                 )
                 if val is not None:
                     result = _map_value_to_bucket(val, mapping)
@@ -669,10 +698,10 @@ def _calculate_scores(
 
 
 def _apply_survey_derivative_recipe_to_rows(
-    recipe: dict, 
-    rows: list[dict[str, str]], 
+    recipe: dict,
+    rows: list[dict[str, str]],
     include_raw: bool = False,
-    sidecar_meta: dict = None
+    sidecar_meta: dict = None,
 ) -> tuple[list[str], list[dict[str, str]]]:
     transforms = recipe.get("Transforms", {}) or {}
     invert_cfg = transforms.get("Invert") or {}
@@ -713,12 +742,22 @@ def _apply_survey_derivative_recipe_to_rows(
 
         # 1) Compute Derived variables first
         _calculate_derived_variables(
-            derived_cfg, current_row, invert_items, invert_min, invert_max, alias_map=alias_map
+            derived_cfg,
+            current_row,
+            invert_items,
+            invert_min,
+            invert_max,
+            alias_map=alias_map,
         )
 
         # 2) Compute Scores
         out = _calculate_scores(
-            scores, current_row, invert_items, invert_min, invert_max, alias_map=alias_map
+            scores,
+            current_row,
+            invert_items,
+            invert_min,
+            invert_max,
+            alias_map=alias_map,
         )
 
         if include_raw:
@@ -732,7 +771,9 @@ def _apply_survey_derivative_recipe_to_rows(
     return out_header, out_rows
 
 
-def _write_recipes_dataset_description(*, out_root: Path, modality: str, prism_root: Path) -> None:
+def _write_recipes_dataset_description(
+    *, out_root: Path, modality: str, prism_root: Path
+) -> None:
     """Create a dataset_description.json under recipes/<modality>/."""
 
     desc_path = out_root / "dataset_description.json"
@@ -741,7 +782,10 @@ def _write_recipes_dataset_description(*, out_root: Path, modality: str, prism_r
 
     # Try to inherit some metadata from the root dataset_description.json
     root_desc_path = prism_root / "dataset_description.json"
-    if not root_desc_path.exists() and (prism_root / "rawdata" / "dataset_description.json").exists():
+    if (
+        not root_desc_path.exists()
+        and (prism_root / "rawdata" / "dataset_description.json").exists()
+    ):
         root_desc_path = prism_root / "rawdata" / "dataset_description.json"
 
     root_meta = {}
@@ -845,7 +889,9 @@ def _generate_recipes_boilerplate_sections(
 
         if refs["translation"]:
             if lang == "de":
-                text_parts.append(f"Die verwendete Übersetzung ist {refs['translation']}.")
+                text_parts.append(
+                    f"Die verwendete Übersetzung ist {refs['translation']}."
+                )
             else:
                 text_parts.append(f"The translation used is {refs['translation']}.")
 
@@ -900,9 +946,13 @@ def _generate_recipes_boilerplate_sections(
                         )
                 elif s_source:
                     if lang == "de":
-                        sections.append(f"- `{s_name}`: {method_desc} basierend auf `{s_source}`.")
+                        sections.append(
+                            f"- `{s_name}`: {method_desc} basierend auf `{s_source}`."
+                        )
                     else:
-                        sections.append(f"- `{s_name}`: {method_desc} based on `{s_source}`.")
+                        sections.append(
+                            f"- `{s_name}`: {method_desc} based on `{s_source}`."
+                        )
                 else:
                     sections.append(f"- `{s_name}`: {method_desc}.")
     return sections
@@ -988,12 +1038,15 @@ def _generate_recipes_boilerplate(
 
 
 def _load_and_validate_recipes(
-    repo_root: Path, modality: str, survey_ids: str | None = None, recipe_dir: str | Path | None = None
+    repo_root: Path,
+    modality: str,
+    survey_ids: str | None = None,
+    recipe_dir: str | Path | None = None,
 ) -> dict[str, dict]:
     """Locate, load and validate recipe JSON files."""
     if recipe_dir:
         recipes_dir = Path(recipe_dir).resolve()
-        
+
         # Smart detection: if the provided dir has no JSONs but has modality subfolders, descend.
         # This helps if the user selects the top-level 'recipes' folder of a project.
         if recipes_dir.is_dir() and not list(recipes_dir.glob("*.json")):
@@ -1003,7 +1056,7 @@ def _load_and_validate_recipes(
                 recipes_dir = recipes_dir / "survey"
             elif modality == "biometrics" and (recipes_dir / "biometrics").is_dir():
                 recipes_dir = recipes_dir / "biometrics"
-                
+
         expected = str(recipes_dir / "*.json")
     elif modality == "survey":
         # Try YODA-compliant location first (code/recipes/survey)
@@ -1068,7 +1121,7 @@ def _load_and_validate_recipes(
     requested = [p.strip() for p in str(survey_ids).replace(";", ",").split(",")]
     requested = [_normalize_survey_key(p) for p in requested if p.strip()]
     selected_set = set([p for p in requested if p])
-    
+
     unknown = sorted([s for s in selected_set if s not in all_recipes])
     if unknown:
         raise ValueError(
@@ -1115,7 +1168,10 @@ def _load_participants_data(prism_root: Path) -> tuple[Any, dict]:
     participants_json = prism_root / "participants.json"
 
     # If not in root, check in rawdata/
-    if not participants_tsv.is_file() and (prism_root / "rawdata" / "participants.tsv").is_file():
+    if (
+        not participants_tsv.is_file()
+        and (prism_root / "rawdata" / "participants.tsv").is_file()
+    ):
         participants_tsv = prism_root / "rawdata" / "participants.tsv"
         participants_json = prism_root / "rawdata" / "participants.json"
 
@@ -1188,7 +1244,9 @@ def _export_recipe_aggregated(
     final_header = []
 
     # Pre-load sidecar for alias mapping support in scoring
-    sidecar_meta = _get_sidecar_for_task(output_prism_root, modality, survey_task, repo_root=repo_root)
+    sidecar_meta = _get_sidecar_for_task(
+        output_prism_root, modality, survey_task, repo_root=repo_root
+    )
 
     for in_path in matching:
         processed_count += 1
@@ -1302,7 +1360,9 @@ def _export_recipe_aggregated(
                     v_str = (
                         "; ".join(
                             f"{k}={v}"
-                            for k, v in sorted(v_labels.items(), key=lambda x: str(x[0]))
+                            for k, v in sorted(
+                                v_labels.items(), key=lambda x: str(x[0])
+                            )
                         )
                         if v_labels
                         else ""
@@ -1317,7 +1377,9 @@ def _export_recipe_aggregated(
                             parts.append(f"items={'+'.join(d['items'])}")
                         if d.get("range"):
                             r = d["range"]
-                            parts.append(f"range={r.get('min', '?')}-{r.get('max', '?')}")
+                            parts.append(
+                                f"range={r.get('min', '?')}-{r.get('max', '?')}"
+                            )
                         det_str = "; ".join(parts)
                     cb_rows.append(
                         {
@@ -1327,10 +1389,16 @@ def _export_recipe_aggregated(
                             "score_details": det_str,
                         }
                     )
-                pd.DataFrame(cb_rows).to_excel(writer, sheet_name="Codebook", index=False)
+                pd.DataFrame(cb_rows).to_excel(
+                    writer, sheet_name="Codebook", index=False
+                )
                 if survey_meta:
-                    s_rows = [{"property": k, "value": str(v)} for k, v in survey_meta.items()]
-                    pd.DataFrame(s_rows).to_excel(writer, sheet_name="Survey Info", index=False)
+                    s_rows = [
+                        {"property": k, "value": str(v)} for k, v in survey_meta.items()
+                    ]
+                    pd.DataFrame(s_rows).to_excel(
+                        writer, sheet_name="Survey Info", index=False
+                    )
         except Exception:
             df.to_excel(out_fname, index=False)
     elif out_format == "sav":
@@ -1338,20 +1406,20 @@ def _export_recipe_aggregated(
         try:
             import pyreadstat
             import numpy as np
-            
+
             # Opt into future pandas behavior (no automatic downcasting in replace)
-            pd.set_option('future.no_silent_downcasting', True)
-            
+            pd.set_option("future.no_silent_downcasting", True)
+
             # Sanitize for SPSS: convert "n/a" to real NaNs so numeric cols remain numeric
             df_sav = df.copy()
-            
+
             # SPSS fails on illegal column names (no dashes allowed)
             rename_map = {}
             for col in df_sav.columns:
                 clean_col = col.replace("-", "_").replace(".", "_")
                 if clean_col != col:
                     rename_map[col] = clean_col
-            
+
             if rename_map:
                 df_sav = df_sav.rename(columns=rename_map)
 
@@ -1376,7 +1444,7 @@ def _export_recipe_aggregated(
                     col_series = df_sav[new_col]
                     # Only apply value labels if they match the column type (numeric vs string)
                     is_numeric_col = pd.api.types.is_numeric_dtype(col_series)
-                    
+
                     col_labels = {}
                     for k, v in vals.items():
                         try:
@@ -1386,17 +1454,23 @@ def _export_recipe_aggregated(
                         except (ValueError, TypeError):
                             if not is_numeric_col:
                                 col_labels[k] = v
-                    
+
                     if col_labels:
                         sav_val_labels[new_col] = col_labels
-            
+
             pyreadstat.write_sav(
                 df_sav,
                 str(out_fname),
                 column_labels=sav_var_labels if sav_var_labels else None,
                 variable_value_labels=sav_val_labels if sav_val_labels else None,
             )
-            _write_codebook_json(out_root / f"{recipe_id}_codebook.json", var_labels, val_labels, score_details, survey_meta)
+            _write_codebook_json(
+                out_root / f"{recipe_id}_codebook.json",
+                var_labels,
+                val_labels,
+                score_details,
+                survey_meta,
+            )
         except Exception as e:
             out_fname = out_root / f"{recipe_id}.csv"
             df.to_csv(out_fname, index=False)
@@ -1405,11 +1479,19 @@ def _export_recipe_aggregated(
         out_fname = out_root / f"{recipe_id}.feather"
         try:
             df.to_feather(out_fname)
-            _write_codebook_json(out_root / f"{recipe_id}_codebook.json", var_labels, val_labels, score_details, survey_meta)
+            _write_codebook_json(
+                out_root / f"{recipe_id}_codebook.json",
+                var_labels,
+                val_labels,
+                score_details,
+                survey_meta,
+            )
         except Exception:
             out_fname = out_root / f"{recipe_id}.csv"
             df.to_csv(out_fname, index=False)
-            fallback_note = "pyarrow/feather not available; wrote CSV instead of R/feather"
+            fallback_note = (
+                "pyarrow/feather not available; wrote CSV instead of R/feather"
+            )
 
     return processed_count, 1, out_fname, fallback_note, nan_cols
 
@@ -1436,10 +1518,13 @@ def _export_recipe_legacy(
     participant_cols = []
     if participants_df is not None and "participant_id" in participants_df.columns:
         import pandas as pd
+
         participant_cols = [c for c in participants_df.columns if c != "participant_id"]
         for _, p_row in participants_df.iterrows():
             p_id = p_row["participant_id"]
-            rest = {k: v for k, v in p_row.items() if k != "participant_id" and pd.notna(v)}
+            rest = {
+                k: v for k, v in p_row.items() if k != "participant_id" and pd.notna(v)
+            }
             participant_lookup[p_id] = rest
 
     # Extract task name to find sidecar
@@ -1451,7 +1536,9 @@ def _export_recipe_legacy(
 
     sidecar_meta = {}
     if output_prism_root:
-        sidecar_meta = _get_sidecar_for_task(output_prism_root, modality, survey_task, repo_root=repo_root)
+        sidecar_meta = _get_sidecar_for_task(
+            output_prism_root, modality, survey_task, repo_root=repo_root
+        )
 
     for in_path in matching:
         processed_count += 1
@@ -1496,7 +1583,9 @@ def _export_recipe_legacy(
         else:
             # PRISM format: sub-*/ses-*/survey/*.tsv
             if participant_data and participant_cols:
-                out_header = participant_cols + [c for c in out_header if c not in participant_cols]
+                out_header = participant_cols + [
+                    c for c in out_header if c not in participant_cols
+                ]
                 for row in out_rows:
                     row.update(participant_data)
             out_dir = out_root / recipe_id / sub_id / ses_id / modality
@@ -1527,7 +1616,11 @@ def _finalize_flat_output(
 
     fixed = ["participant_id"] + participant_cols + ["session", modality]
     score_cols = sorted({k for r in flat_rows for k in r.keys() if k not in fixed})
-    out_root = output_prism_root / "derivatives" / ( "survey" if modality == "survey" else "biometrics" )
+    out_root = (
+        output_prism_root
+        / "derivatives"
+        / ("survey" if modality == "survey" else "biometrics")
+    )
     flat_out_path = out_root / f"{modality}_scores.tsv"
 
     if layout == "wide":
@@ -1544,11 +1637,23 @@ def _finalize_flat_output(
             df_flat = df_wide.reset_index().fillna("n/a")
 
             if participant_cols:
-                participants_subset = participants_df[["participant_id"] + participant_cols]
-                df_flat = df_flat.merge(participants_subset, on="participant_id", how="left")
+                participants_subset = participants_df[
+                    ["participant_id"] + participant_cols
+                ]
+                df_flat = df_flat.merge(
+                    participants_subset, on="participant_id", how="left"
+                )
 
-            flat_header = ["participant_id"] + participant_cols + sorted(
-                [c for c in df_flat.columns if c not in {"participant_id", *participant_cols}]
+            flat_header = (
+                ["participant_id"]
+                + participant_cols
+                + sorted(
+                    [
+                        c
+                        for c in df_flat.columns
+                        if c not in {"participant_id", *participant_cols}
+                    ]
+                )
             )
             final_rows = df_flat.to_dict("records")
         except Exception as e:
@@ -1568,9 +1673,7 @@ def _finalize_flat_output(
         df_chk = pd.DataFrame(final_rows).replace("n/a", pd.NA)
         ignore_cols = {"participant_id", "session", modality, "survey"}
         nan_cols = [
-            c
-            for c in df_chk.columns
-            if c not in ignore_cols and df_chk[c].isna().all()
+            c for c in df_chk.columns if c not in ignore_cols and df_chk[c].isna().all()
         ]
     except Exception:
         pass
@@ -1635,11 +1738,15 @@ def compute_survey_recipes(
         raise ValueError("--layout must be one of: long, wide")
 
     # 1. Load and validate recipes
-    recipes = _load_and_validate_recipes(repo_root, modality, survey, recipe_dir=recipe_dir)
+    recipes = _load_and_validate_recipes(
+        repo_root, modality, survey, recipe_dir=recipe_dir
+    )
 
     # Copy used recipes to project's code/recipes/ for reproducibility (YODA)
     # This ensures the exact recipes used for scoring are preserved in the project
-    _copy_recipes_to_project(recipes=recipes, dataset_root=output_prism_root, modality=modality)
+    _copy_recipes_to_project(
+        recipes=recipes, dataset_root=output_prism_root, modality=modality
+    )
 
     # 2. Scan dataset for TSV files based on modality
     tsv_files = _find_tsv_files(prism_root, modality)
@@ -1697,9 +1804,12 @@ def compute_survey_recipes(
             if merge_all:
                 # Collect data for merging instead of writing
                 import pandas as pd
+
                 rows_accum: list[dict[str, Any]] = []
-                sidecar_meta = _get_sidecar_for_task(output_prism_root, modality, survey_task, repo_root=repo_root)
-                
+                sidecar_meta = _get_sidecar_for_task(
+                    output_prism_root, modality, survey_task, repo_root=repo_root
+                )
+
                 for in_path in matching:
                     processed_files += 1
                     sub_id, ses_id = _infer_sub_ses_from_path(in_path)
@@ -1713,7 +1823,10 @@ def compute_survey_recipes(
                         continue
 
                     out_header, out_rows = _apply_survey_derivative_recipe_to_rows(
-                        recipe, in_rows, include_raw=include_raw, sidecar_meta=sidecar_meta
+                        recipe,
+                        in_rows,
+                        include_raw=include_raw,
+                        sidecar_meta=sidecar_meta,
                     )
                     if not out_header:
                         continue
@@ -1725,12 +1838,14 @@ def compute_survey_recipes(
                             prefixed_col = f"{recipe_id}_{col}"
                             merged[prefixed_col] = score_row.get(col, "n/a")
                         rows_accum.append(merged)
-                
+
                 if rows_accum:
                     df = pd.DataFrame(rows_accum)
                     # Merge participant variables if this is the first recipe
                     if participants_df is not None and len(merge_all_dfs) == 0:
-                        participant_cols = [c for c in participants_df.columns if c != "participant_id"]
+                        participant_cols = [
+                            c for c in participants_df.columns if c != "participant_id"
+                        ]
                         if participant_cols:
                             df = df.merge(
                                 participants_df[["participant_id"] + participant_cols],
@@ -1797,20 +1912,22 @@ def compute_survey_recipes(
     # If merge_all mode, combine all collected DataFrames and write one file
     if merge_all and merge_all_dfs:
         import pandas as pd
-        
+
         # Merge all DataFrames on participant_id and session
         combined_df = merge_all_dfs[0]
         for df in merge_all_dfs[1:]:
-            combined_df = combined_df.merge(df, on=["participant_id", "session"], how="outer", suffixes=("", "_dup"))
-        
+            combined_df = combined_df.merge(
+                df, on=["participant_id", "session"], how="outer", suffixes=("", "_dup")
+            )
+
         # Write combined file
         out_stem = f"combined_{modality}"
         ext_map = {"csv": ".csv", "xlsx": ".xlsx", "sav": ".sav", "r": ".feather"}
         ext = ext_map.get(out_format, ".csv")
         out_path = out_root / f"{out_stem}{ext}"
-        
+
         _ensure_dir(out_root)
-        
+
         if out_format == "csv":
             combined_df.to_csv(out_path, index=False)
         elif out_format == "xlsx":
@@ -1818,6 +1935,7 @@ def compute_survey_recipes(
         elif out_format == "sav":
             try:
                 import pyreadstat
+
                 pyreadstat.write_sav(combined_df, str(out_path))
             except ImportError:
                 combined_df.to_csv(out_path.with_suffix(".csv"), index=False)
@@ -1828,11 +1946,11 @@ def compute_survey_recipes(
             except Exception:
                 combined_df.to_csv(out_path.with_suffix(".csv"), index=False)
                 fallback_note = "feather writer not available, wrote CSV instead"
-        
+
         written_files = 1
         flat_out_path = out_path
         print(f"✓ Combined {len(merge_all_dfs)} surveys into: {out_path.name}")
-    
+
     if written_files == 0:
         raise ValueError(f"No matching {modality} recipes applied.")
 
@@ -1871,5 +1989,3 @@ def compute_survey_recipes(
         boilerplate_path=boilerplate_path,
         boilerplate_html_path=boilerplate_html_path,
     )
-
-

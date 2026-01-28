@@ -20,7 +20,14 @@ from cross_platform import (
 # PRISM-specific modalities that we validate with our schemas
 # Standard BIDS modalities (anat, func, fmap, dwi, eeg) are passed through
 # and should be validated by the optional BIDS validator instead
-PRISM_MODALITIES = {"survey", "biometrics", "events", "physio", "physiological", "eyetracking"}
+PRISM_MODALITIES = {
+    "survey",
+    "biometrics",
+    "events",
+    "physio",
+    "physiological",
+    "eyetracking",
+}
 
 # Standard BIDS modalities - we only do minimal checks (subject/session consistency)
 # Full validation is delegated to the BIDS validator
@@ -191,9 +198,7 @@ def _find_root_sidecar(file_path: str, root_dir: str) -> str | None:
 
 
 def resolve_inherited_sidecar(
-    file_path: str,
-    root_dir: str,
-    library_path: str | None = None
+    file_path: str, root_dir: str, library_path: str | None = None
 ) -> tuple[dict | None, str | None]:
     """
     Build inherited sidecar content following BIDS inheritance principle.
@@ -601,13 +606,19 @@ class DatasetValidator:
             # Only do basic subject/session consistency checks
             if subject_id and not filename.startswith(subject_id + "_"):
                 issues.append(
-                    ("WARNING", f"Filename {filename} does not start with subject ID {subject_id}")
+                    (
+                        "WARNING",
+                        f"Filename {filename} does not start with subject ID {subject_id}",
+                    )
                 )
             if session_id:
                 expected_prefix = f"{subject_id}_{session_id}_"
                 if not filename.startswith(expected_prefix):
                     issues.append(
-                        ("WARNING", f"Filename {filename} does not match session directory {session_id}")
+                        (
+                            "WARNING",
+                            f"Filename {filename} does not match session directory {session_id}",
+                        )
                     )
             return issues  # Skip PRISM-specific validation for BIDS modalities
 
@@ -708,7 +719,10 @@ class DatasetValidator:
             field_path = " -> ".join([str(p) for p in e.path])
             prefix = f"{field_path}: " if field_path else ""
             issues.append(
-                ("ERROR", f"{normalize_path(sidecar_path)} schema error: {prefix}{e.message}")
+                (
+                    "ERROR",
+                    f"{normalize_path(sidecar_path)} schema error: {prefix}{e.message}",
+                )
             )
         except json.JSONDecodeError as e:
             issues.append(

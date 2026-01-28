@@ -10,20 +10,20 @@ from typing import List, Tuple, Set, Optional
 
 
 def run_bids_validator(
-    root_dir: str, 
+    root_dir: str,
     verbose: bool = False,
     placeholders: Optional[Set[str]] = None,
-    structure_only: bool = False
+    structure_only: bool = False,
 ) -> List[Tuple[str, str]]:
     """
     Run the standard BIDS validator CLI and return issues.
-    
+
     Args:
         root_dir: Path to the dataset root
         verbose: Enable verbose output
         placeholders: Set of relative paths to placeholder files to ignore content errors for
         structure_only: Whether this is a structure-only upload (suppress content errors)
-        
+
     Returns:
         List of (severity, message) tuples
     """
@@ -39,10 +39,15 @@ def run_bids_validator(
         "NIFTI_HEADER_UNREADABLE",
         "QUICK_TEST_FAILED",
     }
-    
+
     # PRISM modalities that should be ignored by BIDS
     prism_ignore_folders = {
-        "eyetracking", "physiological", "physio", "survey", "biometrics", "metadata"
+        "eyetracking",
+        "physiological",
+        "physio",
+        "survey",
+        "biometrics",
+        "metadata",
     }
 
     def _looks_like_content_file(location: str) -> bool:
@@ -73,7 +78,9 @@ def run_bids_validator(
         return any(loc.endswith(p) or p.endswith(loc) for p in placeholders)
 
     if verbose and structure_only:
-        print("   ℹ️  Detected structure-only upload. Will suppress BIDS data-content checks.")
+        print(
+            "   ℹ️  Detected structure-only upload. Will suppress BIDS data-content checks."
+        )
 
     if placeholders and verbose:
         print(
@@ -130,12 +137,16 @@ def run_bids_validator(
                         is_prism_modality = False
                         loc_lower = location.lower()
                         for folder in prism_ignore_folders:
-                            if f"/{folder}/" in loc_lower or loc_lower.endswith(f"/{folder}/"):
+                            if f"/{folder}/" in loc_lower or loc_lower.endswith(
+                                f"/{folder}/"
+                            ):
                                 is_prism_modality = True
                                 break
                         if is_prism_modality:
                             if verbose:
-                                print(f"   ℹ️  Silencing '{code}' for PRISM modality: {location}")
+                                print(
+                                    f"   ℹ️  Silencing '{code}' for PRISM modality: {location}"
+                                )
                             continue
 
                     severity = issue.get("severity", "warning").upper()
@@ -153,7 +164,7 @@ def run_bids_validator(
 
                     if location:
                         msg += f"\n    Location: {location}"
-                    
+
                     # Try to extract a specific file path from the location
                     issue_file = None
                     if location:
@@ -162,7 +173,7 @@ def run_bids_validator(
                             issue_file = os.path.join(root_dir, location.lstrip("/"))
                         else:
                             issue_file = os.path.join(root_dir, location)
-                    
+
                     if issue_file:
                         issues.append((level, msg, issue_file))
                     else:
@@ -218,7 +229,7 @@ def run_bids_validator(
                     level = "ERROR" if issue_type == "errors" else "WARNING"
                     for issue in bids_report.get("issues", {}).get(issue_type, []):
                         key = issue.get("key", "")
-                        
+
                         # Filter files for this issue
                         filtered_files = []
                         for file in issue.get("files", []):
@@ -226,21 +237,33 @@ def run_bids_validator(
                             if file_obj:
                                 file_path = file_obj.get("relativePath", "")
                                 # Suppress content-related errors for placeholders
-                                if key in content_error_codes and file_path.lstrip("/") in placeholders:
+                                if (
+                                    key in content_error_codes
+                                    and file_path.lstrip("/") in placeholders
+                                ):
                                     continue
-                                if structure_only and key == "EMPTY_FILE" and file_path.lower().endswith((".nii", ".nii.gz", ".tsv.gz")):
+                                if (
+                                    structure_only
+                                    and key == "EMPTY_FILE"
+                                    and file_path.lower().endswith(
+                                        (".nii", ".nii.gz", ".tsv.gz")
+                                    )
+                                ):
                                     continue
                                 filtered_files.append(file_path)
-                        
+
                         if not filtered_files and issue.get("files"):
                             continue
-                            
+
                         # Filter out NOT_INCLUDED for known PRISM modalities
                         if key == "NOT_INCLUDED":
                             is_prism_folder = False
                             for f_path in filtered_files:
                                 for prism_folder in prism_ignore_folders:
-                                    if f"/{prism_folder}/" in f_path.lower() or f_path.lower().endswith(f"/{prism_folder}/"):
+                                    if (
+                                        f"/{prism_folder}/" in f_path.lower()
+                                        or f_path.lower().endswith(f"/{prism_folder}/")
+                                    ):
                                         is_prism_folder = True
                                         break
                             if is_prism_folder:
@@ -252,7 +275,7 @@ def run_bids_validator(
                             msg += f"\n    File: {f_path}"
                             if not first_file:
                                 first_file = os.path.join(root_dir, f_path.lstrip("/"))
-                        
+
                         if first_file:
                             issues.append((level, msg, first_file))
                         else:

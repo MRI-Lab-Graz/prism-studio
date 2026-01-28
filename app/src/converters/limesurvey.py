@@ -28,7 +28,6 @@ except (ImportError, ValueError):
 
 from .csv import process_dataframe  # noqa: E402
 
-
 # LimeSurvey question type codes mapped to human-readable names
 LIMESURVEY_QUESTION_TYPES = {
     # Single choice
@@ -199,7 +198,7 @@ def _clean_html_preserve_info(html_content):
     # Remove HTML tags
     clean_text = re.sub("<[^<]+?>", "", html_content).strip()
     # Clean up whitespace
-    clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+    clean_text = re.sub(r"\s+", " ", clean_text).strip()
 
     return clean_text, media_urls
 
@@ -217,7 +216,7 @@ def _parse_survey_metadata(root, get_text):
         "datestamp": False,
         "welcome_message": "",
         "end_message": "",
-        "description": ""
+        "description": "",
     }
 
     # Parse surveys section
@@ -249,7 +248,9 @@ def _parse_survey_metadata(root, get_text):
                 if title:
                     metadata["title"] = re.sub("<[^<]+?>", "", title).strip()
                 if welcome:
-                    metadata["welcome_message"] = re.sub("<[^<]+?>", "", welcome).strip()
+                    metadata["welcome_message"] = re.sub(
+                        "<[^<]+?>", "", welcome
+                    ).strip()
                 if end:
                     metadata["end_message"] = re.sub("<[^<]+?>", "", end).strip()
                 if desc:
@@ -302,8 +303,12 @@ def _parse_lss_structure(root, get_text):
                     "name": name if name else "",
                     "order": order_int,
                     "description": clean_desc,
-                    "randomization_group": randomization_group if randomization_group else None,
-                    "relevance": grelevance if grelevance and grelevance != "1" else None
+                    "randomization_group": (
+                        randomization_group if randomization_group else None
+                    ),
+                    "relevance": (
+                        grelevance if grelevance and grelevance != "1" else None
+                    ),
                 }
 
     # 2. Parse Subquestions first (so we can attach them to parent questions)
@@ -338,7 +343,7 @@ def _parse_lss_structure(root, get_text):
                     "text": clean_text,
                     "order": sq_order,
                     "scale_id": scale,
-                    "media_urls": media_urls if media_urls else None
+                    "media_urls": media_urls if media_urls else None,
                 }
 
                 if parent_qid not in subquestions_map:
@@ -420,7 +425,7 @@ def _parse_lss_structure(root, get_text):
                     "other": other.upper() == "Y" if other else False,
                     "help": clean_help if clean_help else None,
                     "validation_regex": preg if preg else None,
-                    "relevance": relevance if relevance and relevance != "1" else None
+                    "relevance": relevance if relevance and relevance != "1" else None,
                 }
 
                 # Update group name with a representative title if not set
@@ -458,8 +463,8 @@ def _build_standard_prism_questions(questions_map, groups_map, language="en"):
         questions_map.items(),
         key=lambda x: (
             groups_map.get(x[1]["gid"], {}).get("order", 0),
-            x[1]["question_order"]
-        )
+            x[1]["question_order"],
+        ),
     )
 
     for qid, q_data in sorted_questions:
@@ -481,7 +486,9 @@ def _build_standard_prism_questions(questions_map, groups_map, language="en"):
                 if isinstance(answer_text, dict):
                     multilingual_levels[code] = answer_text
                 else:
-                    multilingual_levels[code] = {language: str(answer_text) if answer_text else ""}
+                    multilingual_levels[code] = {
+                        language: str(answer_text) if answer_text else ""
+                    }
 
             for sq in subquestions:
                 sq_code = sq.get("code", "")
@@ -499,7 +506,9 @@ def _build_standard_prism_questions(questions_map, groups_map, language="en"):
                     full_desc = sq_text or question_text
 
                 entry = {
-                    "Description": {language: full_desc} if full_desc else {language: ""}
+                    "Description": (
+                        {language: full_desc} if full_desc else {language: ""}
+                    )
                 }
 
                 # Add Levels if present
@@ -514,7 +523,9 @@ def _build_standard_prism_questions(questions_map, groups_map, language="en"):
 
             # Convert description to multilingual format
             entry = {
-                "Description": {language: question_text} if question_text else {language: ""}
+                "Description": (
+                    {language: question_text} if question_text else {language: ""}
+                )
             }
 
             # Convert levels to multilingual format if present
@@ -524,7 +535,9 @@ def _build_standard_prism_questions(questions_map, groups_map, language="en"):
                     if isinstance(answer_text, dict):
                         multilingual_levels[code] = answer_text
                     else:
-                        multilingual_levels[code] = {language: str(answer_text) if answer_text else ""}
+                        multilingual_levels[code] = {
+                            language: str(answer_text) if answer_text else ""
+                        }
                 entry["Levels"] = multilingual_levels
 
             prism_questions[q_key] = entry
@@ -578,7 +591,9 @@ def parse_lss_xml(xml_content, task_name=None, use_standard_format=True):
 
     if use_standard_format:
         # Use standard PRISM format (compatible with Survey Customizer)
-        prism_json = _build_standard_prism_questions(questions_map, groups_map, language)
+        prism_json = _build_standard_prism_questions(
+            questions_map, groups_map, language
+        )
     else:
         # Legacy format with LimeSurvey-specific fields
         prism_json = {}
@@ -588,8 +603,8 @@ def parse_lss_xml(xml_content, task_name=None, use_standard_format=True):
             questions_map.items(),
             key=lambda x: (
                 groups_map.get(x[1]["gid"], {}).get("order", 0),
-                x[1]["question_order"]
-            )
+                x[1]["question_order"],
+            ),
         )
 
         for qid, q_data in sorted_questions:
@@ -597,7 +612,9 @@ def parse_lss_xml(xml_content, task_name=None, use_standard_format=True):
             gid = q_data["gid"]
 
             # Get group info
-            group_info = groups_map.get(gid, {"name": "", "order": 0, "description": ""})
+            group_info = groups_map.get(
+                gid, {"name": "", "order": 0, "description": ""}
+            )
 
             entry = {
                 "Description": q_data["question"],
@@ -606,8 +623,8 @@ def parse_lss_xml(xml_content, task_name=None, use_standard_format=True):
                 "Position": {
                     "Group": group_info["name"],
                     "GroupOrder": group_info["order"],
-                    "QuestionOrder": q_data["question_order"]
-                }
+                    "QuestionOrder": q_data["question_order"],
+                },
             }
 
             # Add answer levels if present
@@ -650,7 +667,11 @@ def parse_lss_xml(xml_content, task_name=None, use_standard_format=True):
             # Add question attributes (design options, etc.)
             if q_data["attributes"]:
                 # Filter out empty values and organize attributes
-                attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
+                attrs = {
+                    k: v
+                    for k, v in q_data["attributes"].items()
+                    if v not in (None, "", 0)
+                }
                 if attrs:
                     entry["Attributes"] = attrs
 
@@ -661,7 +682,9 @@ def parse_lss_xml(xml_content, task_name=None, use_standard_format=True):
     normalized_task = sanitize_task_name(survey_title)
 
     # Build description from survey metadata
-    description = survey_meta.get("description") or f"Imported from LimeSurvey: {survey_title}"
+    description = (
+        survey_meta.get("description") or f"Imported from LimeSurvey: {survey_title}"
+    )
 
     metadata = {
         "Technical": {
@@ -753,7 +776,7 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
     # Sort groups by group order, then sort questions within each group
     sorted_groups = sorted(
         grouped_questions.items(),
-        key=lambda x: groups_map.get(x[0], {}).get("order", 0)
+        key=lambda x: groups_map.get(x[0], {}).get("order", 0),
     )
 
     # Build separate PRISM JSONs for each group
@@ -763,13 +786,17 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
             continue
 
         # Get group info
-        group_info = groups_map.get(gid, {"name": f"group_{gid}", "order": 0, "description": ""})
+        group_info = groups_map.get(
+            gid, {"name": f"group_{gid}", "order": 0, "description": ""}
+        )
         group_name = group_info["name"] if group_info["name"] else f"group_{gid}"
         group_order = group_info["order"]
         group_description = group_info.get("description", "")
 
         # Sort questions by question_order within the group
-        sorted_questions_list = sorted(questions_list, key=lambda x: x[1]["question_order"])
+        sorted_questions_list = sorted(
+            questions_list, key=lambda x: x[1]["question_order"]
+        )
 
         # Build question entries based on format
         questions_dict = {}
@@ -793,14 +820,18 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
                         if isinstance(answer_text, dict):
                             multilingual_levels[code] = answer_text
                         else:
-                            multilingual_levels[code] = {language: str(answer_text) if answer_text else ""}
+                            multilingual_levels[code] = {
+                                language: str(answer_text) if answer_text else ""
+                            }
 
                     for sq in subquestions:
                         sq_code = sq.get("code", "")
                         sq_text = sq.get("text", "")
 
                         entry = {
-                            "Description": {language: sq_text} if sq_text else {language: ""}
+                            "Description": (
+                                {language: sq_text} if sq_text else {language: ""}
+                            )
                         }
                         if multilingual_levels:
                             entry["Levels"] = multilingual_levels
@@ -809,7 +840,11 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
                 else:
                     # Non-matrix question
                     entry = {
-                        "Description": {language: question_text} if question_text else {language: ""}
+                        "Description": (
+                            {language: question_text}
+                            if question_text
+                            else {language: ""}
+                        )
                     }
                     if levels:
                         multilingual_levels = {}
@@ -817,7 +852,9 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
                             if isinstance(answer_text, dict):
                                 multilingual_levels[code] = answer_text
                             else:
-                                multilingual_levels[code] = {language: str(answer_text) if answer_text else ""}
+                                multilingual_levels[code] = {
+                                    language: str(answer_text) if answer_text else ""
+                                }
                         entry["Levels"] = multilingual_levels
 
                     questions_dict[title] = entry
@@ -832,8 +869,8 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
                     "Position": {
                         "Group": group_name,
                         "GroupOrder": group_order,
-                        "QuestionOrder": q_data["question_order"]
-                    }
+                        "QuestionOrder": q_data["question_order"],
+                    },
                 }
 
                 # Add answer levels if present
@@ -873,7 +910,11 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
 
                 # Add question attributes (design options, etc.)
                 if q_data["attributes"]:
-                    attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
+                    attrs = {
+                        k: v
+                        for k, v in q_data["attributes"].items()
+                        if v not in (None, "", 0)
+                    }
                     if attrs:
                         entry["Attributes"] = attrs
 
@@ -884,7 +925,11 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
         normalized_name = sanitize_task_name(group_name)
 
         # Use group description if available, otherwise generate one
-        study_description = group_description if group_description else f"Imported from LimeSurvey group: {group_name}"
+        study_description = (
+            group_description
+            if group_description
+            else f"Imported from LimeSurvey group: {group_name}"
+        )
 
         prism_json = {
             "Technical": {
@@ -1004,8 +1049,8 @@ def parse_lss_xml_by_questions(xml_content):
             "Position": {
                 "Group": group_name,
                 "GroupOrder": group_order,
-                "QuestionOrder": q_data["question_order"]
-            }
+                "QuestionOrder": q_data["question_order"],
+            },
         }
 
         # Add answer levels if present
@@ -1044,7 +1089,9 @@ def parse_lss_xml_by_questions(xml_content):
             entry["Condition"] = q_data["relevance"]
 
         if q_data.get("attributes"):
-            attrs = {k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)}
+            attrs = {
+                k: v for k, v in q_data["attributes"].items() if v not in (None, "", 0)
+            }
             if attrs:
                 entry["Attributes"] = attrs
 
@@ -1075,7 +1122,7 @@ def parse_lss_xml_by_questions(xml_content):
                 "Creator": "limesurvey_to_prism.py",
                 "SourceSurvey": survey_meta.get("title", ""),
             },
-            question_code: entry
+            question_code: entry,
         }
 
         # Add survey-level author info
@@ -1099,7 +1146,7 @@ def parse_lss_xml_by_questions(xml_content):
             "question_order": q_data["question_order"],
             "item_count": item_count,
             "mandatory": q_data["mandatory"],
-            "suggested_filename": f"survey-{sanitize_task_name(question_code)}.json"
+            "suggested_filename": f"survey-{sanitize_task_name(question_code)}.json",
         }
 
     return result
@@ -1322,7 +1369,10 @@ def convert_lsa_to_dataset(
         # Strategy: Find which group the task's variables belong to.
         # Get variables in this task
         task_vars = [
-            k for k in t_schema.keys() if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]
+            k
+            for k in t_schema.keys()
+            if k
+            not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]
         ]
 
         # Find which group these variables belong to

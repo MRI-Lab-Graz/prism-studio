@@ -26,7 +26,6 @@ from dataclasses import dataclass, field
 
 from issues import Issue, error, warning, info
 
-
 # =============================================================================
 # PLUGIN DEFINITIONS
 # =============================================================================

@@ -11,7 +11,6 @@ from typing import List, Optional, Tuple, Set, Dict, Any
 
 from .utils import is_system_file
 
-
 # File extensions to process (metadata and small data files only)
 METADATA_EXTENSIONS = {
     ".json",  # Sidecar metadata
@@ -385,7 +384,7 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
         all_files = zip_ref.namelist()
         if not all_files:
             print(f"⚠️  [UPLOAD] ZIP file {filename} is empty!")
-            
+
         for zip_info in all_files:
             # Skip directories
             if zip_info.endswith("/"):
@@ -441,8 +440,10 @@ def process_zip_upload(file, temp_dir: str, filename: str) -> str:
                 )
 
     if processed_count == 0 and skipped_count == 0:
-        print(f"⚠️  [UPLOAD] No files were extracted from {filename}. ZIP contents: {all_files[:10]}...")
-    
+        print(
+            f"⚠️  [UPLOAD] No files were extracted from {filename}. ZIP contents: {all_files[:10]}..."
+        )
+
     print(
         f"📦 Extracted {processed_count} metadata files, skipped {skipped_count} data files"
     )

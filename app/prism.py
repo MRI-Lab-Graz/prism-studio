@@ -163,9 +163,7 @@ Examples:
         metavar="PATH",
         help="Validate survey/biometrics templates in a library directory",
     )
-    parser.add_argument(
-        "--version", action="version", version="PRISM 1.7.1"
-    )
+    parser.add_argument("--version", action="version", version="PRISM 1.7.1")
 
     args = parser.parse_args()
 
@@ -177,7 +175,7 @@ Examples:
             sys.exit(1)
 
         errors, summary = validate_templates(library_path, verbose=True)
-        
+
         # Exit with error code if there are errors (not just warnings)
         error_count = sum(1 for e in errors if e.severity == "error")
         sys.exit(1 if error_count > 0 else 0)
