@@ -6,8 +6,16 @@ import tempfile
 import subprocess
 from pathlib import Path
 from datetime import date
-from flask import Blueprint, render_template, request, jsonify, send_file, current_app, session
-from src.config import load_app_settings, load_config
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    jsonify,
+    send_file,
+    current_app,
+    session,
+)
+from src.config import load_config
 from src.web.blueprints.projects import get_current_project
 
 tools_bp = Blueprint("tools", __name__)
@@ -24,6 +32,7 @@ def _global_survey_library_root() -> Path | None:
     """Get the global survey library path from configuration."""
     base_dir = Path(current_app.root_path)
     from src.config import get_effective_library_paths
+
     lib_paths = get_effective_library_paths(app_root=str(base_dir))
 
     if lib_paths["global_library_path"]:
@@ -46,6 +55,7 @@ def _global_recipes_root() -> Path | None:
     """Get the global recipes path from configuration."""
     base_dir = Path(current_app.root_path)
     from src.config import get_effective_library_paths
+
     lib_paths = get_effective_library_paths(app_root=str(base_dir))
 
     if lib_paths["global_recipe_path"]:
@@ -130,7 +140,15 @@ def _schema_example(schema: dict) -> object:
     t = schema.get("type")
     if isinstance(t, list):
         # Prefer deterministic order
-        for preferred in ("object", "array", "string", "integer", "number", "boolean", "null"):
+        for preferred in (
+            "object",
+            "array",
+            "string",
+            "integer",
+            "number",
+            "boolean",
+            "null",
+        ):
             if preferred in t:
                 t = preferred
                 break
@@ -146,7 +164,9 @@ def _schema_example(schema: dict) -> object:
         return out
 
     if t == "array":
-        item_schema = schema.get("items") if isinstance(schema.get("items"), dict) else {}
+        item_schema = (
+            schema.get("items") if isinstance(schema.get("items"), dict) else {}
+        )
         return [_schema_example(item_schema)]
 
     if t == "integer":
@@ -178,7 +198,9 @@ def _new_template_from_schema(*, modality: str, schema_version: str | None) -> d
     schema = _load_prism_schema(modality=modality, schema_version=schema_version)
     out: dict[str, object] = {}
 
-    props = schema.get("properties") if isinstance(schema.get("properties"), dict) else {}
+    props = (
+        schema.get("properties") if isinstance(schema.get("properties"), dict) else {}
+    )
     for k, v in props.items():
         out[k] = _schema_example(v if isinstance(v, dict) else {})
 
@@ -194,7 +216,9 @@ def _new_template_from_schema(*, modality: str, schema_version: str | None) -> d
     if modality == "survey":
         # Align with schema naming conventions
         if isinstance(out.get("Technical"), dict):
-            out["Technical"]["StimulusType"] = out["Technical"].get("StimulusType") or "Questionnaire"
+            out["Technical"]["StimulusType"] = (
+                out["Technical"].get("StimulusType") or "Questionnaire"
+            )
             out["Technical"]["FileFormat"] = out["Technical"].get("FileFormat") or "tsv"
 
     if modality == "biometrics":
@@ -218,6 +242,7 @@ def _validate_against_schema(*, instance: object, schema: dict) -> list[dict]:
             }
         )
     return errors
+
 
 @tools_bp.route("/survey-generator")
 def survey_generator():
@@ -289,22 +314,42 @@ def api_survey_customizer_load():
 
         # Get group name from template
         study_info = template_data.get("Study", {})
-        base_group_name = study_info.get("OriginalName") or template_data.get("TaskName") or Path(file_path).stem
+        base_group_name = (
+            study_info.get("OriginalName")
+            or template_data.get("TaskName")
+            or Path(file_path).stem
+        )
         if isinstance(base_group_name, dict):
-            base_group_name = base_group_name.get("en") or next(iter(base_group_name.values()), Path(file_path).stem)
+            base_group_name = base_group_name.get("en") or next(
+                iter(base_group_name.values()), Path(file_path).stem
+            )
 
         # Check if template disables matrix grouping (e.g., demographics templates)
         technical = template_data.get("Technical", {})
         matrix_grouping_disabled = technical.get("MatrixGrouping") is False
 
         # Extract questions
-        if "Questions" in template_data and isinstance(template_data["Questions"], dict):
+        if "Questions" in template_data and isinstance(
+            template_data["Questions"], dict
+        ):
             all_questions = template_data["Questions"]
         else:
             # Filter out metadata keys and non-question entries
-            reserved = ["@context", "Technical", "Study", "Metadata", "Categories", "TaskName", "I18n", "Scoring", "Normative", "participant_id"]
+            reserved = [
+                "@context",
+                "Technical",
+                "Study",
+                "Metadata",
+                "Categories",
+                "TaskName",
+                "I18n",
+                "Scoring",
+                "Normative",
+                "participant_id",
+            ]
             all_questions = {
-                k: v for k, v in template_data.items()
+                k: v
+                for k, v in template_data.items()
                 if k not in reserved
                 and isinstance(v, dict)
                 and "Description" in v
@@ -313,7 +358,9 @@ def api_survey_customizer_load():
 
         # Filter to included questions
         if include_questions:
-            filtered_questions = {k: v for k, v in all_questions.items() if k in include_questions}
+            filtered_questions = {
+                k: v for k, v in all_questions.items() if k in include_questions
+            }
         else:
             filtered_questions = all_questions
 
@@ -328,43 +375,50 @@ def api_survey_customizer_load():
 
                 description = q_data.get("Description", "")
                 if isinstance(description, dict):
-                    description = description.get("en") or next(iter(description.values()), "")
+                    description = description.get("en") or next(
+                        iter(description.values()), ""
+                    )
 
-                questions.append({
-                    "id": str(uuid_module.uuid4()),
-                    "sourceFile": file_path,
-                    "questionCode": q_code,
-                    "description": description,
-                    "displayOrder": idx,
-                    "mandatory": q_data.get("Mandatory", True),  # Read from template, default to mandatory
-                    "enabled": True,
-                    "runNumber": current_run,
-                    "levels": q_data.get("Levels", {}),
-                    "originalData": q_data,
-                    "matrixGroupingDisabled": matrix_grouping_disabled  # From template's Technical section
-                })
+                questions.append(
+                    {
+                        "id": str(uuid_module.uuid4()),
+                        "sourceFile": file_path,
+                        "questionCode": q_code,
+                        "description": description,
+                        "displayOrder": idx,
+                        "mandatory": q_data.get(
+                            "Mandatory", True
+                        ),  # Read from template, default to mandatory
+                        "enabled": True,
+                        "runNumber": current_run,
+                        "levels": q_data.get("Levels", {}),
+                        "originalData": q_data,
+                        "matrixGroupingDisabled": matrix_grouping_disabled,  # From template's Technical section
+                    }
+                )
 
             # Create group with run suffix if multiple runs
             group_name = base_group_name
             if max_run_number > 1:
                 group_name = f"{base_group_name} (Run {current_run})"
 
-            groups.append({
-                "id": str(uuid_module.uuid4()),
-                "name": group_name,
-                "order": len(groups),
-                "sourceFile": file_path,
-                "runNumber": current_run,
-                "questions": questions
-            })
+            groups.append(
+                {
+                    "id": str(uuid_module.uuid4()),
+                    "name": group_name,
+                    "order": len(groups),
+                    "sourceFile": file_path,
+                    "runNumber": current_run,
+                    "questions": questions,
+                }
+            )
 
     if not groups:
         return jsonify({"error": "No valid questions found in selected files"}), 400
 
-    return jsonify({
-        "groups": groups,
-        "totalQuestions": sum(len(g["questions"]) for g in groups)
-    })
+    return jsonify(
+        {"groups": groups, "totalQuestions": sum(len(g["questions"]) for g in groups)}
+    )
 
 
 @tools_bp.route("/api/survey-customizer/export", methods=["POST"])
@@ -388,7 +442,10 @@ def api_survey_customizer_export():
 
     export_format = data.get("exportFormat", "limesurvey")
     if export_format != "limesurvey":
-        return jsonify({"error": f"Export format '{export_format}' not yet supported"}), 400
+        return (
+            jsonify({"error": f"Export format '{export_format}' not yet supported"}),
+            400,
+        )
 
     survey_info = data.get("survey", {})
     groups = data.get("groups", [])
@@ -417,15 +474,16 @@ def api_survey_customizer_export():
             ls_version=ls_version,
             matrix_mode=matrix_mode,
             matrix_global=matrix_global,
-            survey_title=survey_title
+            survey_title=survey_title,
         )
 
         # Generate filename from survey title and date
         import re
         from datetime import datetime
+
         # Sanitize survey title for filename (remove special chars, replace spaces with underscores)
-        safe_title = re.sub(r'[^\w\s-]', '', survey_title)
-        safe_title = re.sub(r'[\s]+', '_', safe_title).strip('_')
+        safe_title = re.sub(r"[^\w\s-]", "", survey_title)
+        safe_title = re.sub(r"[\s]+", "_", safe_title).strip("_")
         if not safe_title:
             safe_title = "survey"
         date_str = datetime.now().strftime("%Y-%m-%d")
@@ -435,7 +493,7 @@ def api_survey_customizer_export():
             temp_path,
             as_attachment=True,
             download_name=download_filename,
-            mimetype="application/xml"
+            mimetype="application/xml",
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -458,28 +516,29 @@ def api_survey_customizer_formats():
                     "default": "6",
                     "choices": [
                         {"value": "6", "label": "LimeSurvey 5.x / 6.x (Modern)"},
-                        {"value": "3", "label": "LimeSurvey 3.x (Legacy)"}
-                    ]
+                        {"value": "3", "label": "LimeSurvey 3.x (Legacy)"},
+                    ],
                 },
                 {
                     "id": "matrix",
                     "name": "Group as matrices",
                     "type": "boolean",
-                    "default": True
+                    "default": True,
                 },
                 {
                     "id": "matrix_global",
                     "name": "Global matrix grouping",
                     "type": "boolean",
-                    "default": True
-                }
-            ]
+                    "default": True,
+                },
+            ],
         }
         # Future formats can be added here:
         # {"id": "redcap", "name": "REDCap", ...},
         # {"id": "qualtrics", "name": "Qualtrics", ...},
     ]
     return jsonify({"formats": formats})
+
 
 @tools_bp.route("/converter")
 def converter():
@@ -512,15 +571,20 @@ def converter():
                 participants_mapping_info = {
                     "path": str(candidate),
                     "status": "found",
-                    "message": f"Found participants_mapping.json at {candidate.relative_to(Path(project_path))}"
+                    "message": f"Found participants_mapping.json at {candidate.relative_to(Path(project_path))}",
                 }
                 break
-        
+
         if not participants_mapping_info:
             participants_mapping_info = {
-                "path": str(Path(project_path) / "code" / "library" / "participants_mapping.json"),
+                "path": str(
+                    Path(project_path)
+                    / "code"
+                    / "library"
+                    / "participants_mapping.json"
+                ),
                 "status": "not_found",
-                "message": "No participants_mapping.json found. Create one to auto-transform demographic data."
+                "message": "No participants_mapping.json found. Create one to auto-transform demographic data.",
             }
 
     return render_template(
@@ -529,10 +593,12 @@ def converter():
         participants_mapping_info=participants_mapping_info,
     )
 
+
 @tools_bp.route("/file-management")
 def file_management():
     """File Management tools page (Renamer and Organizer)"""
     return render_template("file_management.html")
+
 
 @tools_bp.route("/recipes")
 def recipes():
@@ -665,12 +731,17 @@ def api_template_editor_list_merged():
     # Convert to sorted list
     template_list = sorted(templates.values(), key=lambda x: x["filename"].lower())
 
-    return jsonify({
-        "templates": template_list,
-        "sources": sources_info,
-        "has_global": sources_info["global_library_path"] is not None,
-        "has_project": project_path is not None,
-    }), 200
+    return (
+        jsonify(
+            {
+                "templates": template_list,
+                "sources": sources_info,
+                "has_global": sources_info["global_library_path"] is not None,
+                "has_project": project_path is not None,
+            }
+        ),
+        200,
+    )
 
 
 @tools_bp.route("/api/template-editor/new", methods=["GET"])
@@ -681,8 +752,10 @@ def api_template_editor_new():
         return jsonify({"error": "Invalid modality"}), 400
 
     try:
-        template = _new_template_from_schema(modality=modality, schema_version=schema_version)
-            
+        template = _new_template_from_schema(
+            modality=modality, schema_version=schema_version
+        )
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -726,7 +799,10 @@ def api_template_editor_load():
     except Exception:
         merged = loaded
 
-    return jsonify({"template": merged, "filename": filename, "library_path": str(path)}), 200
+    return (
+        jsonify({"template": merged, "filename": filename, "library_path": str(path)}),
+        200,
+    )
 
 
 @tools_bp.route("/api/template-editor/validate", methods=["POST"])
@@ -807,10 +883,10 @@ def api_template_editor_save():
         folder = _project_template_folder(modality=modality)
         folder.mkdir(parents=True, exist_ok=True)
         path = folder / filename
-        
+
         with open(path, "w", encoding="utf-8") as f:
             json.dump(template, f, indent=2, ensure_ascii=False)
-            
+
         return jsonify({"ok": True, "message": f"Saved to {path}"}), 200
     except RuntimeError as e:
         return jsonify({"error": str(e)}), 400
@@ -846,54 +922,74 @@ def api_recipes_surveys():
     random_ids = bool(data.get("random_ids", False))
     force_overwrite = bool(data.get("force_overwrite", False))
 
-    if not dataset_path or not os.path.exists(dataset_path) or not os.path.isdir(dataset_path):
+    if (
+        not dataset_path
+        or not os.path.exists(dataset_path)
+        or not os.path.isdir(dataset_path)
+    ):
         return jsonify({"error": "Invalid dataset path"}), 400
 
     # Check for existing output files before processing
-    derivatives_dir = Path(dataset_path) / "derivatives" / ("survey" if modality == "survey" else "biometrics")
+    derivatives_dir = (
+        Path(dataset_path)
+        / "derivatives"
+        / ("survey" if modality == "survey" else "biometrics")
+    )
     if derivatives_dir.exists() and not force_overwrite:
         existing_files = []
         for ext in [".csv", ".tsv", ".xlsx", ".sav", ".feather"]:
             existing_files.extend(derivatives_dir.glob(f"*{ext}"))
-        
+
         if existing_files:
             file_names = [f.name for f in existing_files[:10]]  # Show first 10
             more_count = len(existing_files) - 10 if len(existing_files) > 10 else 0
             msg = f"Output files already exist in {derivatives_dir.name}/: {', '.join(file_names)}"
             if more_count > 0:
                 msg += f" (and {more_count} more)"
-            return jsonify({
-                "confirm_overwrite": True,
-                "message": msg,
-                "existing_files": file_names,
-                "total_existing": len(existing_files)
-            }), 200
+            return (
+                jsonify(
+                    {
+                        "confirm_overwrite": True,
+                        "message": msg,
+                        "existing_files": file_names,
+                        "total_existing": len(existing_files),
+                    }
+                ),
+                200,
+            )
 
-    # Validate that the dataset is PRISM-valid. 
+    # Validate that the dataset is PRISM-valid.
     # We log errors but don't block processing unless it's a critical path issue.
     from src.web import run_validation
+
     issues, _stats = run_validation(
         dataset_path, verbose=False, schema_version=None, run_bids=False
     )
     error_issues = [
         i for i in (issues or []) if (len(i) >= 1 and str(i[0]).upper() == "ERROR")
     ]
-    
+
     validation_warning = None
     if error_issues:
-        first = error_issues[0][1] if len(error_issues[0]) > 1 else "Dataset has validation errors"
-        validation_warning = f"Dataset has {len(error_issues)} validation error(s). First: {first}"
+        first = (
+            error_issues[0][1]
+            if len(error_issues[0]) > 1
+            else "Dataset has validation errors"
+        )
+        validation_warning = (
+            f"Dataset has {len(error_issues)} validation error(s). First: {first}"
+        )
 
     try:
         # Determine repo_root or recipe_dir
         repo_root = current_app.root_path
         global_recipes = _global_recipes_root()
-        
-        # If we have a global recipes path, we use it as the base repo_root 
-        # (which compute_survey_recipes will append 'recipes/<modality>' to) 
+
+        # If we have a global recipes path, we use it as the base repo_root
+        # (which compute_survey_recipes will append 'recipes/<modality>' to)
         # OR we just set it as recipe_dir if it's already specific.
         # Typically globalRecipesPath points to the 'recipes' folder itself.
-        
+
         effective_recipe_dir = recipe_dir
         if global_recipes and not recipe_dir:
             # If global_recipes points to .../recipes, we use its parent as repo_root
@@ -904,7 +1000,13 @@ def api_recipes_surveys():
                 effective_recipe_dir = str(global_recipes)
 
         # Construct CLI command for logging
-        cmd_parts = ["python", "prism_tools.py", "recipes", modality, f'--prism "{dataset_path}"']
+        cmd_parts = [
+            "python",
+            "prism_tools.py",
+            "recipes",
+            modality,
+            f'--prism "{dataset_path}"',
+        ]
         if repo_root != current_app.root_path:
             cmd_parts.append(f'--repo "{repo_root}"')
         if effective_recipe_dir:
@@ -912,16 +1014,16 @@ def api_recipes_surveys():
         if survey_filter:
             cmd_parts.append(f'--survey "{survey_filter}"')
         if out_format != "flat":
-            cmd_parts.append(f'--format {out_format}')
+            cmd_parts.append(f"--format {out_format}")
         if layout != "long":
-            cmd_parts.append(f'--layout {layout}')
+            cmd_parts.append(f"--layout {layout}")
         if include_raw:
             cmd_parts.append("--include-raw")
         if boilerplate:
             cmd_parts.append("--boilerplate")
         if lang != "en":
-            cmd_parts.append(f'--lang {lang}')
-        
+            cmd_parts.append(f"--lang {lang}")
+
         cli_cmd = " ".join(cmd_parts)
         print(f"\n[BACKEND-ACTION] {cli_cmd}\n")
 
@@ -938,7 +1040,7 @@ def api_recipes_surveys():
             boilerplate=boilerplate,
             merge_all=merge_all,
         )
-        
+
         # Perform anonymization if requested
         mapping_file = None
         if anonymize:
@@ -946,135 +1048,172 @@ def api_recipes_surveys():
                 from src.anonymizer import create_participant_mapping
                 import pandas as pd
                 import json
-                
+
                 # Check rawdata/ first (PRISM/YODA structure), then root (BIDS)
-                participants_tsv = os.path.join(dataset_path, "rawdata", "participants.tsv")
+                participants_tsv = os.path.join(
+                    dataset_path, "rawdata", "participants.tsv"
+                )
                 if not os.path.exists(participants_tsv):
                     participants_tsv = os.path.join(dataset_path, "participants.tsv")
                 if not os.path.exists(participants_tsv):
-                    raise FileNotFoundError(f"participants.tsv not found in {dataset_path}/rawdata/ or {dataset_path}/")
-                
+                    raise FileNotFoundError(
+                        f"participants.tsv not found in {dataset_path}/rawdata/ or {dataset_path}/"
+                    )
+
                 # Extract participant IDs
-                df = pd.read_csv(participants_tsv, sep='\t')
-                if 'participant_id' not in df.columns:
-                    raise ValueError("participants.tsv must have a 'participant_id' column")
-                participant_ids = df['participant_id'].tolist()
-                
+                df = pd.read_csv(participants_tsv, sep="\t")
+                if "participant_id" not in df.columns:
+                    raise ValueError(
+                        "participants.tsv must have a 'participant_id' column"
+                    )
+                participant_ids = df["participant_id"].tolist()
+
                 # Use the ACTUAL output directory from the recipe result
                 output_dir = str(result.out_root)
                 if not os.path.exists(output_dir):
                     raise FileNotFoundError(f"Output directory not found: {output_dir}")
-                
+
                 # Create mapping file path
                 mapping_file = Path(output_dir) / "participants_mapping.json"
-                
+
                 # Load existing mapping if present, otherwise create new one
                 if mapping_file.exists():
-                    print(f"[ANONYMIZATION] Loading existing mapping from: {mapping_file}")
-                    with open(mapping_file, 'r', encoding='utf-8') as f:
+                    print(
+                        f"[ANONYMIZATION] Loading existing mapping from: {mapping_file}"
+                    )
+                    with open(mapping_file, "r", encoding="utf-8") as f:
                         mapping_data = json.load(f)
                         participant_mapping = mapping_data.get("mapping", {})
-                    print(f"[ANONYMIZATION] Loaded {len(participant_mapping)} existing ID mappings")
+                    print(
+                        f"[ANONYMIZATION] Loaded {len(participant_mapping)} existing ID mappings"
+                    )
                 else:
                     print("[ANONYMIZATION] Creating new participant mapping...")
                     participant_mapping = create_participant_mapping(
                         participant_ids,
                         mapping_file,
                         id_length=id_length,
-                        deterministic=not random_ids
+                        deterministic=not random_ids,
                     )
                     print(f"[ANONYMIZATION] Created mapping: {mapping_file}")
-                
+
                 print(f"[ANONYMIZATION] Anonymizing files in: {output_dir}")
                 print(f"[ANONYMIZATION] Output format: {out_format}")
-                
+
                 # Anonymize files based on format
                 anonymized_count = 0
-                
-                if out_format in ('save', 'sav', 'spss'):
+
+                if out_format in ("save", "sav", "spss"):
                     # Handle SPSS .sav files
                     try:
                         import pyreadstat
                     except ImportError:
-                        print("[ANONYMIZATION] WARNING: pyreadstat not available, cannot anonymize .sav files")
+                        print(
+                            "[ANONYMIZATION] WARNING: pyreadstat not available, cannot anonymize .sav files"
+                        )
                         print("[ANONYMIZATION] Install with: pip install pyreadstat")
-                        raise ImportError("pyreadstat required for anonymizing SPSS files")
-                    
+                        raise ImportError(
+                            "pyreadstat required for anonymizing SPSS files"
+                        )
+
                     for root, dirs, files in os.walk(output_dir):
                         for file in files:
-                            if file.endswith('.sav'):
+                            if file.endswith(".sav"):
                                 sav_path = os.path.join(root, file)
                                 print(f"  Processing: {file}")
-                                
+
                                 # Read SPSS file
                                 df_data, meta = pyreadstat.read_sav(sav_path)
-                                
-                                if 'participant_id' in df_data.columns:
-                                    original_ids = df_data['participant_id'].unique()
-                                    df_data['participant_id'] = df_data['participant_id'].map(
-                                        lambda x: participant_mapping.get(x, x)
+
+                                if "participant_id" in df_data.columns:
+                                    original_ids = df_data["participant_id"].unique()
+                                    df_data["participant_id"] = df_data[
+                                        "participant_id"
+                                    ].map(lambda x: participant_mapping.get(x, x))
+                                    anonymized_ids = df_data["participant_id"].unique()
+                                    print(
+                                        f"    ✓ {len(original_ids)} IDs → {len(anonymized_ids)} anonymized"
                                     )
-                                    anonymized_ids = df_data['participant_id'].unique()
-                                    print(f"    ✓ {len(original_ids)} IDs → {len(anonymized_ids)} anonymized")
                                     anonymized_count += 1
-                                
+
                                 # Mask questions if requested
                                 if mask_questions:
-                                    question_cols = [col for col in df_data.columns if 'question' in col.lower()]
+                                    question_cols = [
+                                        col
+                                        for col in df_data.columns
+                                        if "question" in col.lower()
+                                    ]
                                     for col in question_cols:
                                         if col in meta.column_names_to_labels:
-                                            meta.column_names_to_labels[col] = '[MASKED]'
-                                
+                                            meta.column_names_to_labels[col] = (
+                                                "[MASKED]"
+                                            )
+
                                 # Write back SPSS file
-                                pyreadstat.write_sav(df_data, sav_path, column_labels=meta.column_names_to_labels)
-                
-                elif out_format in ('csv', 'tsv', 'flat', 'prism'):
+                                pyreadstat.write_sav(
+                                    df_data,
+                                    sav_path,
+                                    column_labels=meta.column_names_to_labels,
+                                )
+
+                elif out_format in ("csv", "tsv", "flat", "prism"):
                     # Handle TSV/CSV files
                     for root, dirs, files in os.walk(output_dir):
                         for file in files:
-                            if file.endswith(('.tsv', '.csv')):
+                            if file.endswith((".tsv", ".csv")):
                                 file_path = os.path.join(root, file)
                                 print(f"  Processing: {file}")
-                                
+
                                 # Determine separator
-                                sep = '\t' if file.endswith('.tsv') else ','
-                                
+                                sep = "\t" if file.endswith(".tsv") else ","
+
                                 # Read, anonymize, and write back
                                 df_data = pd.read_csv(file_path, sep=sep)
-                                if 'participant_id' in df_data.columns:
-                                    original_ids = df_data['participant_id'].unique()
-                                    df_data['participant_id'] = df_data['participant_id'].map(
-                                        lambda x: participant_mapping.get(x, x)
+                                if "participant_id" in df_data.columns:
+                                    original_ids = df_data["participant_id"].unique()
+                                    df_data["participant_id"] = df_data[
+                                        "participant_id"
+                                    ].map(lambda x: participant_mapping.get(x, x))
+                                    anonymized_ids = df_data["participant_id"].unique()
+                                    print(
+                                        f"    ✓ {len(original_ids)} IDs → {len(anonymized_ids)} anonymized"
                                     )
-                                    anonymized_ids = df_data['participant_id'].unique()
-                                    print(f"    ✓ {len(original_ids)} IDs → {len(anonymized_ids)} anonymized")
                                     anonymized_count += 1
-                                
+
                                 # Mask questions if requested
-                                if mask_questions and 'question' in df_data.columns:
-                                    df_data['question'] = '[MASKED]'
-                                
+                                if mask_questions and "question" in df_data.columns:
+                                    df_data["question"] = "[MASKED]"
+
                                 df_data.to_csv(file_path, sep=sep, index=False)
-                
+
                 print(f"[ANONYMIZATION] ✓ Anonymized {anonymized_count} file(s)")
                 if mask_questions:
                     print("[ANONYMIZATION] ✓ Masked copyrighted question text")
                 mapping_file = str(mapping_file)
-                    
+
             except Exception as anon_error:
                 import traceback
+
                 error_trace = traceback.format_exc()
-                print(f"\n{'='*70}\n❌ ANONYMIZATION ERROR\n{'='*70}")
+                print(f"\n{'=' * 70}\n❌ ANONYMIZATION ERROR\n{'=' * 70}")
                 print(error_trace)
-                print(f"{'='*70}\n")
-                return jsonify({"error": f"Anonymization failed: {str(anon_error)}\n\nSee terminal for full traceback."}), 500
-                
+                print(f"{'=' * 70}\n")
+                return (
+                    jsonify(
+                        {
+                            "error": f"Anonymization failed: {str(anon_error)}\n\nSee terminal for full traceback."
+                        }
+                    ),
+                    500,
+                )
+
     except Exception as e:
         import traceback
+
         error_trace = traceback.format_exc()
-        print(f"\n{'='*70}\n❌ PROCESSING ERROR\n{'='*70}")
+        print(f"\n{'=' * 70}\n❌ PROCESSING ERROR\n{'=' * 70}")
         print(error_trace)
-        print(f"{'='*70}\n")
+        print(f"{'=' * 70}\n")
         return jsonify({"error": f"{str(e)}\n\nSee terminal for full traceback."}), 500
 
     msg = f"Data processing complete: wrote {result.written_files} file(s)"
@@ -1082,28 +1221,41 @@ def api_recipes_surveys():
         msg = f"Data processing complete: wrote {result.flat_out_path}"
     if result.fallback_note:
         msg += f" (note: {result.fallback_note})"
-    
+
     if anonymize and mapping_file:
         msg += f"\n🔒 Anonymized with {'random' if random_ids else 'deterministic'} IDs (length: {id_length})"
         if mask_questions:
             msg += "\n🔒 Masked copyrighted question text"
-        msg += f"\n⚠️  SECURITY: Keep mapping file secure: {os.path.basename(mapping_file)}"
-    
-    return jsonify({
-        "ok": True,
-        "message": msg,
-        "validation_warning": validation_warning,
-        "written_files": result.written_files,
-        "processed_files": result.processed_files,
-        "out_format": result.out_format,
-        "out_root": str(result.out_root),
-        "flat_out_path": str(result.flat_out_path) if result.flat_out_path else None,
-        "boilerplate_path": str(result.boilerplate_path) if result.boilerplate_path else None,
-        "anonymized": anonymize,
-        "mapping_file": os.path.basename(mapping_file) if mapping_file else None,
-        "boilerplate_html_path": str(result.boilerplate_html_path) if result.boilerplate_html_path else None,
-        "nan_report": result.nan_report,
-    })
+        msg += (
+            f"\n⚠️  SECURITY: Keep mapping file secure: {os.path.basename(mapping_file)}"
+        )
+
+    return jsonify(
+        {
+            "ok": True,
+            "message": msg,
+            "validation_warning": validation_warning,
+            "written_files": result.written_files,
+            "processed_files": result.processed_files,
+            "out_format": result.out_format,
+            "out_root": str(result.out_root),
+            "flat_out_path": (
+                str(result.flat_out_path) if result.flat_out_path else None
+            ),
+            "boilerplate_path": (
+                str(result.boilerplate_path) if result.boilerplate_path else None
+            ),
+            "anonymized": anonymize,
+            "mapping_file": os.path.basename(mapping_file) if mapping_file else None,
+            "boilerplate_html_path": (
+                str(result.boilerplate_html_path)
+                if result.boilerplate_html_path
+                else None
+            ),
+            "nan_report": result.nan_report,
+        }
+    )
+
 
 @tools_bp.route("/api/browse-file")
 def api_browse_file():
@@ -1114,11 +1266,16 @@ def api_browse_file():
             try:
                 # Only allow project.json files on macOS
                 script = 'POSIX path of (choose file with prompt "Select your project.json file" of type {"public.json"})'
-                result = subprocess.check_output(["osascript", "-e", script], stderr=subprocess.STDOUT)
+                result = subprocess.check_output(
+                    ["osascript", "-e", script], stderr=subprocess.STDOUT
+                )
                 file_path = result.decode("utf-8").strip()
                 # Validate that the selected file is named project.json
                 if file_path and not file_path.endswith("project.json"):
-                    return jsonify({"error": "Please select a file named 'project.json'"}), 400
+                    return (
+                        jsonify({"error": "Please select a file named 'project.json'"}),
+                        400,
+                    )
             except subprocess.CalledProcessError:
                 file_path = ""
         elif sys.platform.startswith("win"):
@@ -1128,22 +1285,29 @@ def api_browse_file():
 
                 root = tk.Tk()
                 root.withdraw()
-                root.wm_attributes('-topmost', 1)
+                root.wm_attributes("-topmost", 1)
                 root.focus_force()
-                
+
                 # Only allow project.json files on Windows
                 file_path = filedialog.askopenfilename(
                     title="Select project.json",
                     filetypes=[("PRISM Project Metadata", "project.json")],
-                    parent=root
+                    parent=root,
                 )
                 root.destroy()
-                
+
                 if not file_path:
                     return jsonify({"path": ""}), 200
             except ImportError as import_err:
                 print(f"File picker error: tkinter not available - {import_err}")
-                return jsonify({"error": "File picker requires tkinter. Please manually enter the path."}), 500
+                return (
+                    jsonify(
+                        {
+                            "error": "File picker requires tkinter. Please manually enter the path."
+                        }
+                    ),
+                    500,
+                )
             except Exception as win_err:
                 print(f"File picker error: {win_err}")
                 return jsonify({"error": f"File picker error: {str(win_err)}"}), 500
@@ -1151,16 +1315,20 @@ def api_browse_file():
             # Linux/Unix
             try:
                 if not os.environ.get("DISPLAY"):
-                    return jsonify({"error": "File picker requires a desktop session."}), 501
+                    return (
+                        jsonify({"error": "File picker requires a desktop session."}),
+                        501,
+                    )
 
                 import tkinter as tk
                 from tkinter import filedialog
+
                 root = tk.Tk()
                 root.withdraw()
                 # Only allow project.json files on Linux
                 file_path = filedialog.askopenfilename(
                     title="Select project.json",
-                    filetypes=[("PRISM Project Metadata", "project.json")]
+                    filetypes=[("PRISM Project Metadata", "project.json")],
                 )
                 root.destroy()
                 if not file_path:
@@ -1174,6 +1342,7 @@ def api_browse_file():
         print(f"Unexpected file picker error: {e}")
         return jsonify({"error": str(e)}), 500
 
+
 @tools_bp.route("/api/browse-folder")
 def api_browse_folder():
     """Open a system dialog to select a folder"""
@@ -1182,7 +1351,9 @@ def api_browse_folder():
         if sys.platform == "darwin":
             try:
                 script = "POSIX path of (choose folder)"
-                result = subprocess.check_output(["osascript", "-e", script], stderr=subprocess.STDOUT)
+                result = subprocess.check_output(
+                    ["osascript", "-e", script], stderr=subprocess.STDOUT
+                )
                 folder_path = result.decode("utf-8").strip()
             except subprocess.CalledProcessError:
                 folder_path = ""
@@ -1193,63 +1364,104 @@ def api_browse_folder():
 
                 root = tk.Tk()
                 root.withdraw()
-                root.wm_attributes('-topmost', 1)  # Windows-compatible topmost
+                root.wm_attributes("-topmost", 1)  # Windows-compatible topmost
                 root.focus_force()  # Ensure window gets focus
-                
+
                 folder_path = filedialog.askdirectory(
-                    title="Select folder for PRISM",
-                    parent=root
+                    title="Select folder for PRISM", parent=root
                 )
                 root.destroy()
-                
+
                 # User cancelled the dialog
                 if not folder_path:
                     return jsonify({"path": ""}), 200
             except ImportError:
                 print("Windows folder picker failed: tkinter not available")
-                return jsonify({"error": "Folder picker requires tkinter. Please install Python with tcl/tk support, or enter path manually."}), 500
+                return (
+                    jsonify(
+                        {
+                            "error": "Folder picker requires tkinter. Please install Python with tcl/tk support, or enter path manually."
+                        }
+                    ),
+                    500,
+                )
             except Exception as win_err:
                 print(f"Windows folder picker failed: {win_err}")
                 import traceback
+
                 traceback.print_exc()
-                return jsonify({"error": f"Folder picker error: {str(win_err)}. Please enter path manually."}), 500
+                return (
+                    jsonify(
+                        {
+                            "error": f"Folder picker error: {str(win_err)}. Please enter path manually."
+                        }
+                    ),
+                    500,
+                )
         else:
             # Linux/Unix
             try:
                 # Avoid hard crash when no display is available (e.g., headless server)
                 if not os.environ.get("DISPLAY"):
-                    return jsonify({"error": "Folder picker requires a desktop session. Please enter path manually."}), 501
+                    return (
+                        jsonify(
+                            {
+                                "error": "Folder picker requires a desktop session. Please enter path manually."
+                            }
+                        ),
+                        501,
+                    )
 
                 import tkinter as tk
                 from tkinter import filedialog
 
                 root = tk.Tk()
                 root.withdraw()
-                root.attributes('-topmost', True)  # Bring dialog to front
+                root.attributes("-topmost", True)  # Bring dialog to front
                 root.focus_force()  # Ensure window gets focus
-                
+
                 folder_path = filedialog.askdirectory(
-                    title="Select folder for PRISM",
-                    parent=root
+                    title="Select folder for PRISM", parent=root
                 )
                 root.destroy()
-                
+
                 # User cancelled the dialog
                 if not folder_path:
                     return jsonify({"path": ""}), 200
             except ImportError:
                 print("Linux folder picker failed: tkinter not available")
-                return jsonify({"error": "Folder picker requires python3-tk package. Install it or enter path manually."}), 500
+                return (
+                    jsonify(
+                        {
+                            "error": "Folder picker requires python3-tk package. Install it or enter path manually."
+                        }
+                    ),
+                    500,
+                )
             except Exception as linux_err:
                 print(f"Linux folder picker failed: {linux_err}")
                 import traceback
+
                 traceback.print_exc()
-                return jsonify({"error": f"Folder picker error: {str(linux_err)}. Please enter path manually."}), 500
+                return (
+                    jsonify(
+                        {
+                            "error": f"Folder picker error: {str(linux_err)}. Please enter path manually."
+                        }
+                    ),
+                    500,
+                )
 
         return jsonify({"path": folder_path})
     except Exception as e:
         print(f"Error opening file dialog: {e}")
-        return jsonify({"error": "Could not open file dialog. Please enter path manually."}), 500
+        return (
+            jsonify(
+                {"error": "Could not open file dialog. Please enter path manually."}
+            ),
+            500,
+        )
+
 
 def _extract_template_info(full_path, filename):
     """Helper to extract metadata and questions from a PRISM JSON template"""
@@ -1265,7 +1477,7 @@ def _extract_template_info(full_path, filename):
             desc = study.get("Description", "")
             original_name = study.get("OriginalName", "")
             i18n = data.get("I18n", {})
-            
+
             # Capture all study metadata for UI display
             study_info = {
                 "Authors": study.get("Authors", []),
@@ -1304,9 +1516,34 @@ def _extract_template_info(full_path, filename):
                     if isinstance(v, dict) and not v.get("_exclude", False):
                         questions.append(_get_q_info(k, v))
             else:
-                reserved = ["@context", "Technical", "Study", "Metadata", "Categories", "TaskName", "Name", "BIDSVersion", "Description", "URL", "License", "Authors", "Acknowledgements", "References", "Funding", "I18n", "Scoring", "Normative", "participant_id"]
+                reserved = [
+                    "@context",
+                    "Technical",
+                    "Study",
+                    "Metadata",
+                    "Categories",
+                    "TaskName",
+                    "Name",
+                    "BIDSVersion",
+                    "Description",
+                    "URL",
+                    "License",
+                    "Authors",
+                    "Acknowledgements",
+                    "References",
+                    "Funding",
+                    "I18n",
+                    "Scoring",
+                    "Normative",
+                    "participant_id",
+                ]
                 for k, v in data.items():
-                    if k not in reserved and isinstance(v, dict) and "Description" in v and not v.get("_exclude", False):
+                    if (
+                        k not in reserved
+                        and isinstance(v, dict)
+                        and "Description" in v
+                        and not v.get("_exclude", False)
+                    ):
                         questions.append(_get_q_info(k, v))
     except Exception:
         pass
@@ -1321,6 +1558,7 @@ def _extract_template_info(full_path, filename):
         "i18n": i18n,
         "study": study_info,
     }
+
 
 @tools_bp.route("/api/list-library-files")
 def list_library_files():
@@ -1354,7 +1592,9 @@ def list_library_files():
         participants_path = None
         # Priority order: current folder, then parent folders up to 3 levels
         participants_candidates = [lib_p / "participants.json"]
-        participants_candidates.extend([p / "participants.json" for p in lib_p.parents[:3]])
+        participants_candidates.extend(
+            [p / "participants.json" for p in lib_p.parents[:3]]
+        )
 
         for p_cand in participants_candidates:
             if p_cand.exists() and p_cand.is_file():
@@ -1362,23 +1602,38 @@ def list_library_files():
                 break
 
         if participants_path:
-            results["participants"].append(_extract_template_info(participants_path, "participants.json"))
+            results["participants"].append(
+                _extract_template_info(participants_path, "participants.json")
+            )
 
         for folder in ["survey", "biometrics"]:
             folder_path = os.path.join(library_path, folder)
             if os.path.exists(folder_path) and os.path.isdir(folder_path):
                 for filename in os.listdir(folder_path):
                     if filename.endswith(".json") and not filename.startswith("."):
-                        results[folder].append(_extract_template_info(os.path.join(folder_path, filename), filename))
+                        results[folder].append(
+                            _extract_template_info(
+                                os.path.join(folder_path, filename), filename
+                            )
+                        )
 
         if not results["survey"] and not results["biometrics"]:
             for filename in os.listdir(library_path):
-                if filename.endswith(".json") and not filename.startswith(".") and filename != "participants.json":
-                    results["other"].append(_extract_template_info(os.path.join(library_path, filename), filename))
+                if (
+                    filename.endswith(".json")
+                    and not filename.startswith(".")
+                    and filename != "participants.json"
+                ):
+                    results["other"].append(
+                        _extract_template_info(
+                            os.path.join(library_path, filename), filename
+                        )
+                    )
 
         return jsonify(results)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @tools_bp.route("/api/generate-lss", methods=["POST"])
 def generate_lss_endpoint():
@@ -1397,7 +1652,11 @@ def generate_lss_endpoint():
         if not files:
             return jsonify({"error": "No files selected"}), 400
 
-        valid_files = [f for f in files if os.path.exists(f.get("path") if isinstance(f, dict) else f)]
+        valid_files = [
+            f
+            for f in files
+            if os.path.exists(f.get("path") if isinstance(f, dict) else f)
+        ]
         if not valid_files:
             return jsonify({"error": "No valid files found"}), 404
 
@@ -1412,17 +1671,24 @@ def generate_lss_endpoint():
         # Generate filename with survey title (if provided) and date
         import re
         from datetime import datetime
+
         date_str = datetime.now().strftime("%Y-%m-%d")
         if survey_title:
-            safe_title = re.sub(r'[^\w\s-]', '', survey_title)
-            safe_title = re.sub(r'[\s]+', '_', safe_title).strip('_')
+            safe_title = re.sub(r"[^\w\s-]", "", survey_title)
+            safe_title = re.sub(r"[\s]+", "_", safe_title).strip("_")
             download_filename = f"{safe_title}_{date_str}.lss"
         else:
             download_filename = f"survey_export_{date_str}.lss"
 
-        return send_file(temp_path, as_attachment=True, download_name=download_filename, mimetype="application/xml")
+        return send_file(
+            temp_path,
+            as_attachment=True,
+            download_name=download_filename,
+            mimetype="application/xml",
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @tools_bp.route("/api/generate-boilerplate", methods=["POST"])
 def generate_boilerplate_endpoint():
@@ -1461,26 +1727,27 @@ def generate_boilerplate_endpoint():
         os.close(fd)
 
         language = data.get("language", "en")
-        
+
         # Get metadata for boilerplate
         github_url = "https://github.com/MRI-Lab-Graz/prism-studio"
         try:
             from src.schema_manager import DEFAULT_SCHEMA_VERSION
+
             schema_version = DEFAULT_SCHEMA_VERSION
         except ImportError:
             schema_version = "stable"
 
         generate_methods_text(
-            valid_files, 
-            temp_path, 
+            valid_files,
+            temp_path,
             lang=language,
             github_url=github_url,
-            schema_version=schema_version
+            schema_version=schema_version,
         )
 
         with open(temp_path, "r", encoding="utf-8") as f:
             md_content = f.read()
-        
+
         html_path = Path(temp_path).with_suffix(".html")
         html_content = ""
         if html_path.exists():
@@ -1495,11 +1762,13 @@ def generate_boilerplate_endpoint():
         except Exception:
             pass
 
-        return jsonify({
-            "md": md_content,
-            "html": html_content,
-            "filename_base": f"methods_boilerplate_{language}"
-        })
+        return jsonify(
+            {
+                "md": md_content,
+                "html": html_content,
+                "filename_base": f"methods_boilerplate_{language}",
+            }
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -1534,19 +1803,25 @@ def detect_columns():
             try:
                 with zf_module.ZipFile(file_bytes, "r") as zf:
                     # Look for response data files
-                    response_files = [f for f in zf.namelist()
-                                     if f.endswith(('.txt', '.csv')) and 'response' in f.lower()]
+                    response_files = [
+                        f
+                        for f in zf.namelist()
+                        if f.endswith((".txt", ".csv")) and "response" in f.lower()
+                    ]
                     if not response_files:
                         # Try any txt/csv file
-                        response_files = [f for f in zf.namelist()
-                                         if f.endswith(('.txt', '.csv'))]
+                        response_files = [
+                            f for f in zf.namelist() if f.endswith((".txt", ".csv"))
+                        ]
 
                     if response_files:
                         with zf.open(response_files[0]) as f:
                             # Try to detect delimiter
-                            content = f.read().decode('utf-8', errors='replace')
-                            if '\t' in content.split('\n')[0]:
-                                df = pd.read_csv(io.StringIO(content), sep='\t', nrows=1)
+                            content = f.read().decode("utf-8", errors="replace")
+                            if "\t" in content.split("\n")[0]:
+                                df = pd.read_csv(
+                                    io.StringIO(content), sep="\t", nrows=1
+                                )
                             else:
                                 df = pd.read_csv(io.StringIO(content), nrows=1)
                             columns = list(df.columns)
@@ -1562,27 +1837,33 @@ def detect_columns():
             columns = list(df.columns)
 
         elif filename.endswith(".tsv"):
-            df = pd.read_csv(file, sep='\t', nrows=1)
+            df = pd.read_csv(file, sep="\t", nrows=1)
             columns = list(df.columns)
 
         else:
             return jsonify({"columns": [], "suggested_id_column": None})
 
         # Suggest likely ID column
-        id_candidates = ["participant_id", "id", "code", "token", "subject", "sub_id", "participant"]
+        id_candidates = [
+            "participant_id",
+            "id",
+            "code",
+            "token",
+            "subject",
+            "sub_id",
+            "participant",
+        ]
         suggested = None
         for col in columns:
             if col.lower() in id_candidates:
                 suggested = col
                 break
 
-        return jsonify({
-            "columns": columns,
-            "suggested_id_column": suggested
-        })
+        return jsonify({"columns": columns, "suggested_id_column": suggested})
 
     except Exception as e:
         import traceback
+
         error_msg = str(e)
         print(f"ERROR in /api/detect-columns: {error_msg}")
         print(traceback.format_exc())
@@ -1599,6 +1880,7 @@ def limesurvey_to_prism():
     - mode=questions: Separate JSON per individual question (for template library)
     """
     logs = []
+
     def log(msg, type="info"):
         logs.append({"message": msg, "type": type})
 
@@ -1614,7 +1896,10 @@ def limesurvey_to_prism():
     is_limesurvey = any(filename.endswith(ext) for ext in [".lss", ".lsa"])
 
     if not (is_excel or is_limesurvey):
-        return jsonify({"error": "Please upload a .lss, .lsa, .xlsx, .csv, or .tsv file"}), 400
+        return (
+            jsonify({"error": "Please upload a .lss, .lsa, .xlsx, .csv, or .tsv file"}),
+            400,
+        )
 
     task_name = request.form.get("task_name", "").strip()
     log(f"Starting template generation from: {file.filename}")
@@ -1627,7 +1912,12 @@ def limesurvey_to_prism():
         mode = "groups" if split_by_groups else "combined"
 
     if mode not in ("combined", "groups", "questions"):
-        return jsonify({"error": f"Invalid mode '{mode}'. Use: combined, groups, or questions"}), 400
+        return (
+            jsonify(
+                {"error": f"Invalid mode '{mode}'. Use: combined, groups, or questions"}
+            ),
+            400,
+        )
 
     if not task_name:
         task_name = Path(file.filename).stem
@@ -1636,9 +1926,9 @@ def limesurvey_to_prism():
         from src.utils.naming import sanitize_task_name
         from jsonschema import validate, ValidationError
         from src.schema_manager import load_schema
-        
+
         survey_schema = load_schema("survey")
-        
+
         def validate_template(sidecar, name):
             if not survey_schema:
                 return
@@ -1656,18 +1946,26 @@ def limesurvey_to_prism():
         if is_excel:
             import io
             from src.converters.excel_to_survey import extract_excel_templates
-            
-            log("Detected Excel/CSV source. Running data dictionary extraction...", "step")
-            
+
+            log(
+                "Detected Excel/CSV source. Running data dictionary extraction...",
+                "step",
+            )
+
             # Use BytesIO as file-like object for pandas
             file_bytes = io.BytesIO(file.read())
             # We need to give it a name so extract_excel_templates can check extension
-            file_bytes.name = file.filename 
-            
+            file_bytes.name = file.filename
+
             extracted = extract_excel_templates(file_bytes)
-            
+
             if not extracted:
-                return jsonify({"error": "No data found in the Excel/CSV file", "log": logs}), 400
+                return (
+                    jsonify(
+                        {"error": "No data found in the Excel/CSV file", "log": logs}
+                    ),
+                    400,
+                )
 
             log(f"Extracted {len(extracted)} potential survey(s)", "info")
 
@@ -1676,17 +1974,24 @@ def limesurvey_to_prism():
                 # Organize into groups for UI if possible
                 all_questions = {}
                 by_group = {}
-                
+
                 for prefix, sidecar in extracted.items():
                     shared_technical = sidecar.get("Technical", {})
                     shared_study = sidecar.get("Study", {})
                     shared_metadata = sidecar.get("Metadata", {})
                     shared_i18n = sidecar.get("I18n", {})
-                    
+
                     for key, q_entry in sidecar.items():
-                        if key in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]:
+                        if key in [
+                            "Technical",
+                            "Study",
+                            "Metadata",
+                            "I18n",
+                            "Scoring",
+                            "Normative",
+                        ]:
                             continue
-                        
+
                         # Create a full single-question prism_json
                         question_prism = {
                             "Technical": shared_technical,
@@ -1697,46 +2002,50 @@ def limesurvey_to_prism():
                             },
                             "Metadata": shared_metadata,
                             "I18n": shared_i18n,
-                            key: q_entry
+                            key: q_entry,
                         }
-                        
+
                         validate_template(question_prism, f"Item {key}")
-                        
+
                         all_questions[key] = {
                             "prism_json": question_prism,
                             "question_code": key,
-                            "question_type": "string", # placeholder
+                            "question_type": "string",  # placeholder
                             "limesurvey_type": "N/A",
                             "item_count": 1,
                             "mandatory": False,
                             "group_name": prefix,
                             "group_order": 0,
                             "question_order": 0,
-                            "suggested_filename": f"question-{sanitize_task_name(key)}.json"
+                            "suggested_filename": f"question-{sanitize_task_name(key)}.json",
                         }
-                        
+
                         if prefix not in by_group:
                             by_group[prefix] = {"group_order": 0, "questions": []}
-                        
-                        by_group[prefix]["questions"].append({
-                            "code": key,
-                            "type": "string",
-                            "limesurvey_type": "N/A",
-                            "item_count": 1,
-                            "mandatory": False,
-                            "order": 0
-                        })
-                
+
+                        by_group[prefix]["questions"].append(
+                            {
+                                "code": key,
+                                "type": "string",
+                                "limesurvey_type": "N/A",
+                                "item_count": 1,
+                                "mandatory": False,
+                                "order": 0,
+                            }
+                        )
+
                 log("Individual template generation complete.", "success")
-                return jsonify({
-                    "success": True,
-                    "mode": "questions",
-                    "questions": all_questions,
-                    "by_group": by_group,
-                    "question_count": len(all_questions),
-                    "group_count": len(by_group),
-                    "log": logs
-                })
+                return jsonify(
+                    {
+                        "success": True,
+                        "mode": "questions",
+                        "questions": all_questions,
+                        "by_group": by_group,
+                        "question_count": len(all_questions),
+                        "group_count": len(by_group),
+                        "log": logs,
+                    }
+                )
 
             elif mode == "groups":
                 log("Splitting by questionnaire prefixes...", "step")
@@ -1746,24 +2055,37 @@ def limesurvey_to_prism():
                     "questionnaires": {},
                     "questionnaire_count": len(extracted),
                     "total_questions": 0,
-                    "log": logs
+                    "log": logs,
                 }
 
                 for prefix, prism_json in extracted.items():
                     validate_template(prism_json, f"Survey {prefix}")
-                    q_count = len([k for k in prism_json.keys()
-                                  if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]])
+                    q_count = len(
+                        [
+                            k
+                            for k in prism_json.keys()
+                            if k
+                            not in [
+                                "Technical",
+                                "Study",
+                                "Metadata",
+                                "I18n",
+                                "Scoring",
+                                "Normative",
+                            ]
+                        ]
+                    )
                     result["questionnaires"][prefix] = {
                         "prism_json": prism_json,
                         "suggested_filename": f"survey-{prefix}.json",
-                        "question_count": q_count
+                        "question_count": q_count,
                     }
                     result["total_questions"] += q_count
 
                 log("Group template generation complete.", "success")
                 return jsonify(result)
 
-            else: # combined
+            else:  # combined
                 log("Merging all extracted items into a single template...", "step")
                 combined_json = {}
                 total_q = 0
@@ -1772,23 +2094,32 @@ def limesurvey_to_prism():
                     # Usually if multiple found, the first one is the main one.
                     # Let's merge them all into one flat structure if it's 'combined'
                     for k, v in prism_json.items():
-                        if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]:
+                        if k not in [
+                            "Technical",
+                            "Study",
+                            "Metadata",
+                            "I18n",
+                            "Scoring",
+                            "Normative",
+                        ]:
                             combined_json[k] = v
                             total_q += 1
                         elif k not in combined_json:
                             combined_json[k] = v
-                
+
                 validate_template(combined_json, "Combined template")
                 safe_name = sanitize_task_name(task_name)
                 log("Combined template generation complete.", "success")
-                return jsonify({
-                    "success": True,
-                    "mode": "combined",
-                    "prism_json": combined_json,
-                    "suggested_filename": f"survey-{safe_name}.json",
-                    "question_count": total_q,
-                    "log": logs
-                })
+                return jsonify(
+                    {
+                        "success": True,
+                        "mode": "combined",
+                        "prism_json": combined_json,
+                        "suggested_filename": f"survey-{safe_name}.json",
+                        "question_count": total_q,
+                        "log": logs,
+                    }
+                )
 
         # Branch 2: LimeSurvey
         log("Detected LimeSurvey source. Parsing XML structure...", "info")
@@ -1796,14 +2127,14 @@ def limesurvey_to_prism():
             from src.converters.limesurvey import (
                 parse_lss_xml,
                 parse_lss_xml_by_groups,
-                parse_lss_xml_by_questions
+                parse_lss_xml_by_questions,
             )
         except ImportError:
             sys.path.insert(0, str(Path(current_app.root_path)))
             from src.converters.limesurvey import (
                 parse_lss_xml,
                 parse_lss_xml_by_groups,
-                parse_lss_xml_by_questions
+                parse_lss_xml_by_questions,
             )
 
         xml_content = None
@@ -1816,7 +2147,15 @@ def limesurvey_to_prism():
                 with zf_module.ZipFile(file_bytes, "r") as zf:
                     lss_files = [f for f in zf.namelist() if f.endswith(".lss")]
                     if not lss_files:
-                        return jsonify({"error": "No .lss file found in the .lsa archive", "log": logs}), 400
+                        return (
+                            jsonify(
+                                {
+                                    "error": "No .lss file found in the .lsa archive",
+                                    "log": logs,
+                                }
+                            ),
+                            400,
+                        )
                     with zf.open(lss_files[0]) as f:
                         xml_content = f.read()
             except zf_module.BadZipFile:
@@ -1827,14 +2166,21 @@ def limesurvey_to_prism():
         if not xml_content:
             return jsonify({"error": "Could not read file content", "log": logs}), 400
 
-
         if mode == "questions":
             log("Splitting LimeSurvey into individual question templates...", "step")
             # Individual question templates (for Survey & Boilerplate)
             questions = parse_lss_xml_by_questions(xml_content)
 
             if not questions:
-                return jsonify({"error": "Failed to parse LimeSurvey structure or no questions found", "log": logs}), 400
+                return (
+                    jsonify(
+                        {
+                            "error": "Failed to parse LimeSurvey structure or no questions found",
+                            "log": logs,
+                        }
+                    ),
+                    400,
+                )
 
             # Organize questions by group for UI display
             by_group = {}
@@ -1844,31 +2190,35 @@ def limesurvey_to_prism():
                 if g not in by_group:
                     by_group[g] = {
                         "group_order": q_data["group_order"],
-                        "questions": []
+                        "questions": [],
                     }
-                by_group[g]["questions"].append({
-                    "code": code,
-                    "type": q_data["question_type"],
-                    "limesurvey_type": q_data["limesurvey_type"],
-                    "item_count": q_data["item_count"],
-                    "mandatory": q_data["mandatory"],
-                    "order": q_data["question_order"]
-                })
+                by_group[g]["questions"].append(
+                    {
+                        "code": code,
+                        "type": q_data["question_type"],
+                        "limesurvey_type": q_data["limesurvey_type"],
+                        "item_count": q_data["item_count"],
+                        "mandatory": q_data["mandatory"],
+                        "order": q_data["question_order"],
+                    }
+                )
 
             # Sort questions within each group
             for g in by_group.values():
                 g["questions"].sort(key=lambda x: x["order"])
 
             log("Individual template generation complete.", "success")
-            return jsonify({
-                "success": True,
-                "mode": "questions",
-                "questions": questions,
-                "by_group": by_group,
-                "question_count": len(questions),
-                "group_count": len(by_group),
-                "log": logs
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "mode": "questions",
+                    "questions": questions,
+                    "by_group": by_group,
+                    "question_count": len(questions),
+                    "group_count": len(by_group),
+                    "log": logs,
+                }
+            )
 
         elif mode == "groups":
             log("Splitting LimeSurvey into separate questionnaires by group...", "step")
@@ -1876,7 +2226,15 @@ def limesurvey_to_prism():
             questionnaires = parse_lss_xml_by_groups(xml_content)
 
             if not questionnaires:
-                return jsonify({"error": "Failed to parse LimeSurvey structure or no groups found", "log": logs}), 400
+                return (
+                    jsonify(
+                        {
+                            "error": "Failed to parse LimeSurvey structure or no groups found",
+                            "log": logs,
+                        }
+                    ),
+                    400,
+                )
 
             # Build response with all questionnaires
             result = {
@@ -1885,17 +2243,30 @@ def limesurvey_to_prism():
                 "questionnaires": {},
                 "questionnaire_count": len(questionnaires),
                 "total_questions": 0,
-                "log": logs
+                "log": logs,
             }
 
             for name, prism_json in questionnaires.items():
                 validate_template(prism_json, f"Questionnaire {name}")
-                q_count = len([k for k in prism_json.keys()
-                              if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]])
+                q_count = len(
+                    [
+                        k
+                        for k in prism_json.keys()
+                        if k
+                        not in [
+                            "Technical",
+                            "Study",
+                            "Metadata",
+                            "I18n",
+                            "Scoring",
+                            "Normative",
+                        ]
+                    ]
+                )
                 result["questionnaires"][name] = {
                     "prism_json": prism_json,
                     "suggested_filename": f"survey-{name}.json",
-                    "question_count": q_count
+                    "question_count": q_count,
                 }
                 result["total_questions"] += q_count
 
@@ -1908,22 +2279,42 @@ def limesurvey_to_prism():
             prism_data = parse_lss_xml(xml_content, task_name=task_name)
 
             if not prism_data:
-                return jsonify({"error": "Failed to parse LimeSurvey structure", "log": logs}), 400
+                return (
+                    jsonify(
+                        {"error": "Failed to parse LimeSurvey structure", "log": logs}
+                    ),
+                    400,
+                )
 
             validate_template(prism_data, "Combined LimeSurvey template")
             safe_name = sanitize_task_name(task_name)
             suggested_filename = f"survey-{safe_name}.json"
 
             log("Combined template generation complete.", "success")
-            return jsonify({
-                "success": True,
-                "mode": "combined",
-                "prism_json": prism_data,
-                "suggested_filename": suggested_filename,
-                "question_count": len([k for k in prism_data.keys()
-                                      if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]]),
-                "log": logs
-            })
+            return jsonify(
+                {
+                    "success": True,
+                    "mode": "combined",
+                    "prism_json": prism_data,
+                    "suggested_filename": suggested_filename,
+                    "question_count": len(
+                        [
+                            k
+                            for k in prism_data.keys()
+                            if k
+                            not in [
+                                "Technical",
+                                "Study",
+                                "Metadata",
+                                "I18n",
+                                "Scoring",
+                                "Normative",
+                            ]
+                        ]
+                    ),
+                    "log": logs,
+                }
+            )
 
     except Exception as e:
         log(f"Critical error: {str(e)}", "error")
@@ -1994,17 +2385,16 @@ def limesurvey_save_to_project():
             # Write the JSON file
             json_content = json.dumps(content, indent=2, ensure_ascii=False)
             CrossPlatformFile.write_text(str(file_path), json_content)
-            saved_files.append({
-                "filename": safe_filename,
-                "path": str(file_path)
-            })
+            saved_files.append({"filename": safe_filename, "path": str(file_path)})
         except Exception as e:
             errors.append(f"Failed to save {safe_filename}: {str(e)}")
 
-    return jsonify({
-        "success": len(saved_files) > 0,
-        "saved_files": saved_files,
-        "saved_count": len(saved_files),
-        "library_path": str(library_survey_path),
-        "errors": errors if errors else None
-    })
+    return jsonify(
+        {
+            "success": len(saved_files) > 0,
+            "saved_files": saved_files,
+            "saved_count": len(saved_files),
+            "library_path": str(library_survey_path),
+            "errors": errors if errors else None,
+        }
+    )

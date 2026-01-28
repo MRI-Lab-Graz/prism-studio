@@ -6,7 +6,9 @@ from pathlib import Path
 def sync_survey_keys(library_dir=None):
     if library_dir is None:
         # Default to project library
-        library_dir = Path(__file__).resolve().parent.parent.parent / "library" / "survey"
+        library_dir = (
+            Path(__file__).resolve().parent.parent.parent / "library" / "survey"
+        )
     else:
         library_dir = Path(library_dir)
 

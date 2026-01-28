@@ -81,7 +81,10 @@ def _ensure_participants(
     )
     try:
         part_vars = [
-            k for k in part_schema.keys() if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]
+            k
+            for k in part_schema.keys()
+            if k
+            not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]
         ]
         found_part_vars = [v for v in part_vars if v in df.columns]
 
@@ -155,13 +158,8 @@ def process_dataframe(
             "Funding": [],
             "ReferencesAndLinks": ["https://github.com/MRI-Lab-Graz/prism-studio"],
             "DatasetDOI": "",
-            "GeneratedBy": [
-                {
-                    "Name": "PRISM CSV Converter",
-                    "Version": "1.1.1"
-                }
-            ],
-            "HEDVersion": "8.2.0"
+            "GeneratedBy": [{"Name": "PRISM CSV Converter", "Version": "1.1.1"}],
+            "HEDVersion": "8.2.0",
         }
         with open(desc_path, "w") as f:
             json.dump(dataset_description, f, indent=2)
@@ -234,7 +232,10 @@ def process_dataframe(
         # 1. Identify variables belonging to this survey
         # Exclude standard metadata sections
         survey_vars = [
-            k for k in schema.keys() if k not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]
+            k
+            for k in schema.keys()
+            if k
+            not in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]
         ]
 
         # Build canonical mapping and hints
@@ -371,7 +372,15 @@ def process_dataframe(
                 clean_schema = {
                     k: v
                     for k, v in schema.items()
-                    if k in ["Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"]
+                    if k
+                    in [
+                        "Technical",
+                        "Study",
+                        "Metadata",
+                        "I18n",
+                        "Scoring",
+                        "Normative",
+                    ]
                     or (isinstance(v, dict) and "AliasOf" not in v)
                 }
                 with open(path, "w") as f:

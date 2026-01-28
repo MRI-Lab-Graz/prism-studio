@@ -1,0 +1,29 @@
+# .bidsignore created by prism
+# Ignores custom modalities to ensure BIDS-App compatibility
+**/biometrics/
+**/events/
+**/eyetracking/
+**/metadata/
+**/physio/
+**/physiological/
+**/survey/
+*_biometrics.*
+*_eyetrack.*
+*_physio.*
+*_report_*.txt
+*_survey.*
+.upload_manifest.json
+biometrics/
+derivatives/
+events/
+eyetracking/
+metadata/
+physio/
+physiological/
+prism_summary.json
+survey/
+task-*_biometrics.json
+task-*_eyetrack.json
+task-*_physio.json
+task-*_survey.json
+validation_report.json

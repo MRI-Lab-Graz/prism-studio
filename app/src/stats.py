@@ -41,14 +41,22 @@ class DatasetStats:
             if modality not in self.modalities:
                 self.modalities[modality] = 0
             self.modalities[modality] += 1
-        
+
         # Only add to tasks if it's not a modality that has its own specific category
-        if task and modality not in ["survey", "biometrics", "eyetracking", "physio", "physiological", "func", "eeg"]:
+        if task and modality not in [
+            "survey",
+            "biometrics",
+            "eyetracking",
+            "physio",
+            "physiological",
+            "func",
+            "eeg",
+        ]:
             self.tasks.add(task)
 
         if modality == "func" and task:
             self.func_tasks.add(task)
-        
+
         if modality == "eeg" and task:
             self.eeg_tasks.add(task)
 
@@ -58,7 +66,7 @@ class DatasetStats:
             match = re.search(r"_survey-([a-zA-Z0-9]+)", filename)
             if match:
                 self.surveys.add(match.group(1))
-        
+
         elif modality in ["eyetracking", "eyetrack"]:
             if task:
                 self.eyetracking.add(task)
@@ -67,7 +75,7 @@ class DatasetStats:
                 match = re.search(r"_task-([a-zA-Z0-9]+)", filename)
                 if match:
                     self.eyetracking.add(match.group(1))
-        
+
         elif modality in ["physio", "physiological"]:
             if task:
                 self.physio.add(task)
@@ -280,13 +288,9 @@ class DatasetStats:
             missing_tasks = all_tasks - data["tasks"]
 
             for modality in missing_modalities:
-                warnings.append(
-                    ("WARNING", f"Missing {modality} data", subject_id)
-                )
+                warnings.append(("WARNING", f"Missing {modality} data", subject_id))
 
             for task in missing_tasks:
-                warnings.append(
-                    ("WARNING", f"Missing task {task}", subject_id)
-                )
+                warnings.append(("WARNING", f"Missing task {task}", subject_id))
 
         return warnings

@@ -22,7 +22,6 @@ from issues import (
     get_error_documentation_url,
 )
 
-
 # =============================================================================
 # SARIF OUTPUT (Static Analysis Results Interchange Format)
 # =============================================================================

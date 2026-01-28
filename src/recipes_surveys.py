@@ -140,7 +140,9 @@ def _build_variable_metadata(
             if col in sidecar_meta:
                 col_meta = sidecar_meta[col]
                 if isinstance(col_meta, dict):
-                    desc = col_meta.get("Description") or col_meta.get("description") or ""
+                    desc = (
+                        col_meta.get("Description") or col_meta.get("description") or ""
+                    )
                     if desc:
                         variable_labels[col] = get_i18n_text(desc, lang)
                     levels = col_meta.get("Levels") or col_meta.get("levels") or {}
@@ -429,11 +431,7 @@ def _get_item_value(
     v = _parse_numeric_cell(raw)
     if v is None:
         return None
-    if (
-        item_id in invert_items
-        and invert_min is not None
-        and invert_max is not None
-    ):
+    if item_id in invert_items and invert_min is not None and invert_max is not None:
         try:
             return float(invert_max) + float(invert_min) - float(v)
         except Exception:
@@ -501,7 +499,11 @@ def _calculate_derived_variables(
                 source = d_items[0]
             v = (
                 _get_item_value(
-                    str(source).strip(), current_row, invert_items, invert_min, invert_max
+                    str(source).strip(),
+                    current_row,
+                    invert_items,
+                    invert_min,
+                    invert_max,
                 )
                 if source
                 else None
@@ -655,7 +657,9 @@ def _apply_survey_derivative_recipe_to_rows(
     return out_header, out_rows
 
 
-def _write_recipes_dataset_description(*, out_root: Path, modality: str, prism_root: Path) -> None:
+def _write_recipes_dataset_description(
+    *, out_root: Path, modality: str, prism_root: Path
+) -> None:
     """Create a dataset_description.json under recipes/<modality>/."""
 
     desc_path = out_root / "dataset_description.json"
@@ -664,7 +668,10 @@ def _write_recipes_dataset_description(*, out_root: Path, modality: str, prism_r
 
     # Try to inherit some metadata from the root dataset_description.json
     root_desc_path = prism_root / "dataset_description.json"
-    if not root_desc_path.exists() and (prism_root / "rawdata" / "dataset_description.json").exists():
+    if (
+        not root_desc_path.exists()
+        and (prism_root / "rawdata" / "dataset_description.json").exists()
+    ):
         root_desc_path = prism_root / "rawdata" / "dataset_description.json"
 
     root_meta = {}
@@ -768,7 +775,9 @@ def _generate_recipes_boilerplate_sections(
 
         if refs["translation"]:
             if lang == "de":
-                text_parts.append(f"Die verwendete Übersetzung ist {refs['translation']}.")
+                text_parts.append(
+                    f"Die verwendete Übersetzung ist {refs['translation']}."
+                )
             else:
                 text_parts.append(f"The translation used is {refs['translation']}.")
 
@@ -823,9 +832,13 @@ def _generate_recipes_boilerplate_sections(
                         )
                 elif s_source:
                     if lang == "de":
-                        sections.append(f"- `{s_name}`: {method_desc} basierend auf `{s_source}`.")
+                        sections.append(
+                            f"- `{s_name}`: {method_desc} basierend auf `{s_source}`."
+                        )
                     else:
-                        sections.append(f"- `{s_name}`: {method_desc} based on `{s_source}`.")
+                        sections.append(
+                            f"- `{s_name}`: {method_desc} based on `{s_source}`."
+                        )
                 else:
                     sections.append(f"- `{s_name}`: {method_desc}.")
     return sections
@@ -911,12 +924,15 @@ def _generate_recipes_boilerplate(
 
 
 def _load_and_validate_recipes(
-    repo_root: Path, modality: str, survey_ids: str | None = None, recipe_dir: str | Path | None = None
+    repo_root: Path,
+    modality: str,
+    survey_ids: str | None = None,
+    recipe_dir: str | Path | None = None,
 ) -> dict[str, dict]:
     """Locate, load and validate recipe JSON files."""
     if recipe_dir:
         recipes_dir = Path(recipe_dir).resolve()
-        
+
         # Smart detection: if the provided dir has no JSONs but has modality subfolders, descend.
         # This helps if the user selects the top-level 'recipes' folder of a project.
         if recipes_dir.is_dir() and not list(recipes_dir.glob("*.json")):
@@ -924,7 +940,7 @@ def _load_and_validate_recipes(
                 recipes_dir = recipes_dir / "surveys"
             elif modality == "biometrics" and (recipes_dir / "biometrics").is_dir():
                 recipes_dir = recipes_dir / "biometrics"
-                
+
         expected = str(recipes_dir / "*.json")
     elif modality == "survey":
         recipes_dir = (repo_root / "recipe" / "survey").resolve()
@@ -981,7 +997,7 @@ def _load_and_validate_recipes(
     requested = [p.strip() for p in str(survey_ids).replace(";", ",").split(",")]
     requested = [_normalize_survey_key(p) for p in requested if p.strip()]
     selected_set = set([p for p in requested if p])
-    
+
     unknown = sorted([s for s in selected_set if s not in all_recipes])
     if unknown:
         raise ValueError(
@@ -1028,7 +1044,10 @@ def _load_participants_data(prism_root: Path) -> tuple[Any, dict]:
     participants_json = prism_root / "participants.json"
 
     # If not in root, check in rawdata/
-    if not participants_tsv.is_file() and (prism_root / "rawdata" / "participants.tsv").is_file():
+    if (
+        not participants_tsv.is_file()
+        and (prism_root / "rawdata" / "participants.tsv").is_file()
+    ):
         participants_tsv = prism_root / "rawdata" / "participants.tsv"
         participants_json = prism_root / "rawdata" / "participants.json"
 
@@ -1218,7 +1237,9 @@ def _export_recipe_aggregated(
                     v_str = (
                         "; ".join(
                             f"{k}={v}"
-                            for k, v in sorted(v_labels.items(), key=lambda x: str(x[0]))
+                            for k, v in sorted(
+                                v_labels.items(), key=lambda x: str(x[0])
+                            )
                         )
                         if v_labels
                         else ""
@@ -1233,7 +1254,9 @@ def _export_recipe_aggregated(
                             parts.append(f"items={'+'.join(d['items'])}")
                         if d.get("range"):
                             r = d["range"]
-                            parts.append(f"range={r.get('min', '?')}-{r.get('max', '?')}")
+                            parts.append(
+                                f"range={r.get('min', '?')}-{r.get('max', '?')}"
+                            )
                         det_str = "; ".join(parts)
                     cb_rows.append(
                         {
@@ -1243,16 +1266,23 @@ def _export_recipe_aggregated(
                             "score_details": det_str,
                         }
                     )
-                pd.DataFrame(cb_rows).to_excel(writer, sheet_name="Codebook", index=False)
+                pd.DataFrame(cb_rows).to_excel(
+                    writer, sheet_name="Codebook", index=False
+                )
                 if survey_meta:
-                    s_rows = [{"property": k, "value": str(v)} for k, v in survey_meta.items()]
-                    pd.DataFrame(s_rows).to_excel(writer, sheet_name="Survey Info", index=False)
+                    s_rows = [
+                        {"property": k, "value": str(v)} for k, v in survey_meta.items()
+                    ]
+                    pd.DataFrame(s_rows).to_excel(
+                        writer, sheet_name="Survey Info", index=False
+                    )
         except Exception:
             df.to_excel(out_fname, index=False)
     elif out_format == "save":
         out_fname = out_root / f"{recipe_id}.sav"
         try:
             import pyreadstat
+
             sav_val_labels = {}
             for col, vals in val_labels.items():
                 if col in df.columns:
@@ -1266,7 +1296,13 @@ def _export_recipe_aggregated(
                 column_labels=var_labels if var_labels else None,
                 variable_value_labels=sav_val_labels if sav_val_labels else None,
             )
-            _write_codebook_json(out_root / f"{recipe_id}_codebook.json", var_labels, val_labels, score_details, survey_meta)
+            _write_codebook_json(
+                out_root / f"{recipe_id}_codebook.json",
+                var_labels,
+                val_labels,
+                score_details,
+                survey_meta,
+            )
         except Exception:
             out_fname = out_root / f"{recipe_id}.csv"
             df.to_csv(out_fname, index=False)
@@ -1275,11 +1311,19 @@ def _export_recipe_aggregated(
         out_fname = out_root / f"{recipe_id}.feather"
         try:
             df.to_feather(out_fname)
-            _write_codebook_json(out_root / f"{recipe_id}_codebook.json", var_labels, val_labels, score_details, survey_meta)
+            _write_codebook_json(
+                out_root / f"{recipe_id}_codebook.json",
+                var_labels,
+                val_labels,
+                score_details,
+                survey_meta,
+            )
         except Exception:
             out_fname = out_root / f"{recipe_id}.csv"
             df.to_csv(out_fname, index=False)
-            fallback_note = "pyarrow/feather not available; wrote CSV instead of R/feather"
+            fallback_note = (
+                "pyarrow/feather not available; wrote CSV instead of R/feather"
+            )
 
     return processed_count, 1, out_fname, fallback_note, nan_cols
 
@@ -1396,9 +1440,7 @@ def _finalize_flat_output(
         df_chk = pd.DataFrame(final_rows).replace("n/a", pd.NA)
         ignore_cols = {"participant_id", "session", modality, "survey"}
         nan_cols = [
-            c
-            for c in df_chk.columns
-            if c not in ignore_cols and df_chk[c].isna().all()
+            c for c in df_chk.columns if c not in ignore_cols and df_chk[c].isna().all()
         ]
     except Exception:
         pass
@@ -1461,7 +1503,9 @@ def compute_survey_recipes(
         raise ValueError("--layout must be one of: long, wide")
 
     # 1. Load and validate recipes
-    recipes = _load_and_validate_recipes(repo_root, modality, survey, recipe_dir=recipe_dir)
+    recipes = _load_and_validate_recipes(
+        repo_root, modality, survey, recipe_dir=recipe_dir
+    )
 
     # 2. Scan dataset for TSV files based on modality
     tsv_files = _find_tsv_files(prism_root, modality)
@@ -1472,7 +1516,11 @@ def compute_survey_recipes(
     participants_df, participants_meta = _load_participants_data(output_prism_root)
 
     # Output scores into BIDS-recipes folders; recipes remain the instruction set in the repo.
-    out_root = output_prism_root / "recipes" / ("surveys" if modality == "survey" else "biometrics")
+    out_root = (
+        output_prism_root
+        / "recipes"
+        / ("surveys" if modality == "survey" else "biometrics")
+    )
     flat_rows: list[dict] = []
     flat_key_to_idx: dict[tuple, int] = {}
     nan_report: dict[str, list[str]] = {}
@@ -1627,17 +1675,19 @@ def _write_jamovi_r_helper(
         levels = value_labels[var]
         if not levels:
             continue
-        
+
         # Prepare levels: if they look like numbers, we'll try to keep them flexible
         # but in R c('0','1') is safest for CSV-imported data.
         r_levels = ", ".join([f"'{k}'" for k in levels.keys()])
-        
+
         # Avoid backslashes inside f-string expressions (Python < 3.12 compatibility)
         processed_labels = [str(v).replace("'", "\\'") for v in levels.values()]
         r_labels = ", ".join([f"'{v}'" for v in processed_labels])
-        
+
         lines.append(f"if ('{var}' %in% colnames(df)) {{")
-        lines.append(f"  df[['{var}']] <- factor(df[['{var}']], levels=c({r_levels}), labels=c({r_labels}))")
+        lines.append(
+            f"  df[['{var}']] <- factor(df[['{var}']], levels=c({r_levels}), labels=c({r_labels}))"
+        )
         lines.append("}")
 
     lines.append("")

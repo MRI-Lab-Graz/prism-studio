@@ -19,7 +19,6 @@ from typing import Any
 from ..utils.io import read_json as _read_json, write_json as _write_json
 from ..utils.naming import norm_key as _norm_key
 
-
 _NON_ITEM_TOPLEVEL_KEYS: set[str] = {
     "Technical",
     "Study",
@@ -87,7 +86,7 @@ def _debug_print_file_head(input_path: Path, num_lines: int = 4):
                 line = f.readline()
                 if not line:
                     break
-                print(f"L{i+1}: {line.rstrip()}")
+                print(f"L{i + 1}: {line.rstrip()}")
             header_len = 26 + len(input_path.name)
             print("-" * header_len + "\n")
     except Exception:
@@ -161,7 +160,7 @@ def detect_biometrics_in_table(
     task_to_items, _ = _load_biometrics_library(library_dir)
 
     df_cols_norm = {_norm_col(c) for c in df.columns}
-    
+
     detected_tasks: list[str] = []
     for task, items in task_to_items.items():
         # A task is detected if at least one of its items is present in the table (case-insensitive)
@@ -253,15 +252,15 @@ def convert_biometrics_table_to_prism_dataset(
     for c in list(df.columns):
         c_str = str(c)
         c_norm = _norm_col(c_str)
-        
+
         if c_str == col_pid or (col_ses and c_str == col_ses):
             continue
         if _norm_col(col_pid) == c_norm or (col_ses and _norm_col(col_ses) == c_norm):
             continue
-            
+
         if c_norm in all_item_cols_norm:
             continue
-            
+
         # Also ignore reserved keys
         if any(_norm_col(k) == c_norm for k in _NON_ITEM_TOPLEVEL_KEYS):
             continue
@@ -284,10 +283,10 @@ def convert_biometrics_table_to_prism_dataset(
             {
                 "Name": "PRISM Biometrics Converter",
                 "Version": "1.1.1",
-                "Description": "Automated biometrics data conversion to PRISM format."
+                "Description": "Automated biometrics data conversion to PRISM format.",
             }
         ],
-        "HEDVersion": "8.2.0"
+        "HEDVersion": "8.2.0",
     }
     _write_json(output_root / "dataset_description.json", dataset_description)
 
@@ -352,7 +351,9 @@ def convert_biometrics_table_to_prism_dataset(
                     values[item] = "n/a"
 
             # If this task has no columns in the input at all, skip writing.
-            if not any_present and not any(_norm_col(item) in df_col_map for item in items):
+            if not any_present and not any(
+                _norm_col(item) in df_col_map for item in items
+            ):
                 continue
 
             modality_dir = output_root / sub_id / ses_id / "biometrics"

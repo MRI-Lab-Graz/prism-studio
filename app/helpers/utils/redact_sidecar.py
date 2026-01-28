@@ -7,7 +7,6 @@ import hashlib
 import sys
 from pathlib import Path
 
-
 SENSITIVE_TOP_LEVEL = {"Technical", "Study", "Metadata"}
 
 

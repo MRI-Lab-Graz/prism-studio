@@ -13,6 +13,7 @@ openpyxl
 waitress
 pyreadstat
 beautifulsoup4
+colorama
 
 # Note: tkinter (required for folder picker on Windows/Linux) is part of Python's
 # standard library but requires system installation. Cannot be installed via pip.

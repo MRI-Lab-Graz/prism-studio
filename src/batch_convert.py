@@ -36,7 +36,18 @@ BIDS_FILENAME_PATTERN = re.compile(
 # Modality detection by extension
 PHYSIO_EXTENSIONS = {".raw", ".vpd", ".edf"}
 EYETRACKING_EXTENSIONS = {".edf"}
-GENERIC_EXTENSIONS = {".tsv", ".csv", ".txt", ".json", ".nii", ".nii.gz", ".pdf", ".png", ".jpg", ".jpeg"}
+GENERIC_EXTENSIONS = {
+    ".tsv",
+    ".csv",
+    ".txt",
+    ".json",
+    ".nii",
+    ".nii.gz",
+    ".pdf",
+    ".png",
+    ".jpg",
+    ".jpeg",
+}
 
 
 @dataclass
@@ -132,9 +143,9 @@ def _create_physio_sidecar(
         },
         "Metadata": {
             "SourceFile": source_path.name,
-            "ConvertedFrom": "Varioport"
-            if source_path.suffix.lower() in (".raw", ".vpd")
-            else "EDF",
+            "ConvertedFrom": (
+                "Varioport" if source_path.suffix.lower() in (".raw", ".vpd") else "EDF"
+            ),
         },
         "Columns": {
             "time": {"Description": "Time in seconds", "Units": "s"},
@@ -203,12 +214,16 @@ def _extract_edf_metadata(edf_path: Path) -> dict:
         f.close()
 
         # Use the most common sampling rate as the default
-        common_sr = Counter(sampling_rates).most_common(1)[0][0] if sampling_rates else 0
+        common_sr = (
+            Counter(sampling_rates).most_common(1)[0][0] if sampling_rates else 0
+        )
 
         return {
             "SamplingFrequency": common_sr,
             "RecordingDuration": duration,
-            "StartTime": start_datetime.strftime("%H:%M:%S") if start_datetime else None,
+            "StartTime": (
+                start_datetime.strftime("%H:%M:%S") if start_datetime else None
+            ),
             "Channels": channels,
             "AllSamplingRates": sampling_rates,
         }
@@ -385,20 +400,21 @@ def convert_eyetracking_file(
         # Try to enrich sidecar with EDF header info if pyedflib is available
         try:
             import pyedflib
+
             with pyedflib.EdfReader(str(source_path)) as f:
                 with open(out_json, "r", encoding="utf-8") as jf:
                     sidecar = json.load(jf)
-                
+
                 if "Technical" not in sidecar:
                     sidecar["Technical"] = {}
-                
+
                 # Extract sampling rate (from first signal)
                 if f.signals_in_file > 0:
                     sidecar["Technical"]["SamplingFrequency"] = f.getSampleFrequency(0)
-                
+
                 # Extract duration
                 sidecar["Technical"]["Duration"] = f.getFileDuration()
-                
+
                 with open(out_json, "w", encoding="utf-8") as jf:
                     json.dump(sidecar, jf, indent=2)
         except (ImportError, Exception):
@@ -462,7 +478,7 @@ def convert_generic_file(
     parts.append(task)
     if extra:
         parts.append(extra.lstrip("_"))
-    
+
     # Add suffix based on modality if not already in extra
     suffix_map = {
         "survey": "survey",
@@ -472,25 +488,25 @@ def convert_generic_file(
         "anat": "T1w",
         "func": "bold",
     }
-    
+
     suffix = suffix_map.get(target_modality, target_modality)
-    
+
     # Check if suffix is already present in the parts
     suffix_already_present = False
     for p in parts:
         if p == suffix or p.endswith(f"_{suffix}") or p.endswith(f"-{suffix}"):
             suffix_already_present = True
             break
-            
+
     if not suffix_already_present:
         parts.append(suffix)
-        
+
     base_name = "_".join(parts)
     out_data = out_folder / f"{base_name}.{ext}"
 
     try:
         shutil.copy2(source_path, out_data)
-        
+
         # Create a minimal sidecar if it's a data file (not already a json)
         output_files = [out_data]
         if ext != "json":
@@ -585,9 +601,13 @@ def batch_convert_folder(
         # Handle .nii.gz
         if file_path.name.lower().endswith(".nii.gz"):
             ext = ".nii.gz"
-            
+
         if modality_filter == "all":
-            if ext in PHYSIO_EXTENSIONS or ext in EYETRACKING_EXTENSIONS or ext in GENERIC_EXTENSIONS:
+            if (
+                ext in PHYSIO_EXTENSIONS
+                or ext in EYETRACKING_EXTENSIONS
+                or ext in GENERIC_EXTENSIONS
+            ):
                 files_to_process.append(file_path)
         elif ext in all_extensions:
             files_to_process.append(file_path)
@@ -612,7 +632,7 @@ def batch_convert_folder(
 
         # Detect modality and convert
         modality = detect_modality(ext)
-        
+
         # Override modality if filter is specific and not 'all'
         if modality_filter not in ("all", "physio", "eyetracking"):
             modality = "generic"
@@ -638,12 +658,18 @@ def batch_convert_folder(
                 output_folder,
                 parsed=parsed,
             )
-        elif modality == "generic" or modality_filter not in ("all", "physio", "eyetracking"):
+        elif modality == "generic" or modality_filter not in (
+            "all",
+            "physio",
+            "eyetracking",
+        ):
             converted = convert_generic_file(
                 file_path,
                 output_folder,
                 parsed=parsed,
-                target_modality=target_modality if target_modality != "generic" else "extra",
+                target_modality=(
+                    target_modality if target_modality != "generic" else "extra"
+                ),
             )
         else:
             msg = f"Unknown modality for extension: {ext}"
@@ -696,10 +722,10 @@ def create_dataset_description(
             {
                 "Name": "PRISM Batch Converter",
                 "Version": "1.1.1",
-                "Description": "Automated conversion from raw physiological/eyetracking files to BIDS/PRISM structure."
+                "Description": "Automated conversion from raw physiological/eyetracking files to BIDS/PRISM structure.",
             }
         ],
-        "HEDVersion": "8.2.0"
+        "HEDVersion": "8.2.0",
     }
 
     output_path = output_folder / "dataset_description.json"

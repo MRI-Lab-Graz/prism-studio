@@ -88,11 +88,11 @@ def print_dataset_summary(dataset_path, stats):
     pure_tasks = {
         t for t in stats.tasks if t not in stats.surveys and t not in stats.biometrics
     }
-    
+
     tasks_to_show = set(pure_tasks)
-    if hasattr(stats, 'func_tasks'):
+    if hasattr(stats, "func_tasks"):
         tasks_to_show.update(stats.func_tasks)
-    if hasattr(stats, 'eeg_tasks'):
+    if hasattr(stats, "eeg_tasks"):
         tasks_to_show.update(stats.eeg_tasks)
 
     print(f"\n📝 TASKS ({len(tasks_to_show)} found):")
@@ -100,11 +100,11 @@ def print_dataset_summary(dataset_path, stats):
         for task in sorted(tasks_to_show):
             # Badge or prefix for modality
             prefix = ""
-            if hasattr(stats, 'func_tasks') and task in stats.func_tasks:
+            if hasattr(stats, "func_tasks") and task in stats.func_tasks:
                 prefix = "[func] "
-            elif hasattr(stats, 'eeg_tasks') and task in stats.eeg_tasks:
+            elif hasattr(stats, "eeg_tasks") and task in stats.eeg_tasks:
                 prefix = "[eeg] "
-                
+
             desc = get_entity_description(dataset_path, "task", task, stats)
             if desc:
                 print(f"  • {prefix}{task} - {desc}")
@@ -239,7 +239,9 @@ def _instrument_additional_metadata(study: dict) -> list[str]:
             return None
         return f"{label} {min_val}–{max_val} minutes."
 
-    admin_time = _format_time_block(study.get("AdministrationTime"), "Administration time:")
+    admin_time = _format_time_block(
+        study.get("AdministrationTime"), "Administration time:"
+    )
     if admin_time:
         extras.append(admin_time)
 
@@ -327,7 +329,9 @@ def generate_methods_text(
 
         for s in surveys:
             study = s.get("Study", {})
-            name = get_i18n_text(study.get("OriginalName") or study.get("TaskName"), lang)
+            name = get_i18n_text(
+                study.get("OriginalName") or study.get("TaskName"), lang
+            )
             desc = get_i18n_text(study.get("Description"), lang)
             refs = _pick_references(study, lang)
 
@@ -351,7 +355,9 @@ def generate_methods_text(
         sections.append("\n## Biometric and Physiological Measures\n")
         for b in biometrics:
             study = b.get("Study", {})
-            name = get_i18n_text(study.get("OriginalName") or study.get("TaskName"), lang)
+            name = get_i18n_text(
+                study.get("OriginalName") or study.get("TaskName"), lang
+            )
             tech = b.get("Technical", {})
             device = tech.get("Manufacturer") or tech.get("SoftwarePlatform")
 
@@ -371,7 +377,7 @@ def generate_methods_text(
         with open(output_file, "w", encoding="utf-8") as f:
             f.write(content)
         print(f"✅ Methods boilerplate written to {output_file}")
-        
+
         # Also generate HTML version
         try:
             html_path = Path(output_file).with_suffix(".html")
@@ -391,26 +397,28 @@ def generate_methods_text(
                 "strong { color: #2c3e50; }",
                 "</style>",
                 "</head>",
-                "<body>"
+                "<body>",
             ]
-            
+
             in_list = False
             for line in sections:
                 line = line.strip()
                 if not line:
                     continue
-                
+
                 if line.startswith("- "):
                     if not in_list:
                         html_content.append("<ul>")
                         in_list = True
-                    
+
                     li_text = line[2:]
                     while "`" in li_text:
-                        li_text = li_text.replace("`", "<code>", 1).replace("`", "</code>", 1)
+                        li_text = li_text.replace("`", "<code>", 1).replace(
+                            "`", "</code>", 1
+                        )
                     html_content.append(f"  <li>{li_text}</li>")
                     continue
-                
+
                 # If we were in a list and the line doesn't start with "- ", close the list
                 if in_list:
                     html_content.append("</ul>")
@@ -428,14 +436,16 @@ def generate_methods_text(
                     # Handle backticks in paragraphs
                     p_text = line
                     while "`" in p_text:
-                        p_text = p_text.replace("`", "<code>", 1).replace("`", "</code>", 1)
+                        p_text = p_text.replace("`", "<code>", 1).replace(
+                            "`", "</code>", 1
+                        )
                     html_content.append(f"<p>{p_text}</p>")
-            
+
             if in_list:
                 html_content.append("</ul>")
-            
+
             html_content.append("</body></html>")
-            
+
             with open(html_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(html_content))
             print(f"✅ Methods boilerplate (HTML) written to {html_path}")

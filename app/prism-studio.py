@@ -30,30 +30,31 @@ from flask import (
 # Setup logging for compiled version (no console on Windows)
 if getattr(sys, "frozen", False):
     import logging
+
     log_file = Path.home() / "prism_studio.log"
     logging.basicConfig(
         filename=str(log_file),
         level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
+        format="%(asctime)s - %(levelname)s - %(message)s",
     )
-    
+
     # Redirect stdout/stderr to log file for compiled version
     class LogWriter:
         def __init__(self, logger, level):
             self.logger = logger
             self.level = level
-            
+
         def write(self, message):
             if message.strip():
                 self.logger.log(self.level, message.strip())
-                
+
         def flush(self):
             pass
-    
+
     logger = logging.getLogger()
     sys.stdout = LogWriter(logger, logging.INFO)
     sys.stderr = LogWriter(logger, logging.ERROR)
-    
+
     print(f"PRISM Studio starting... Log file: {log_file}")
 
 # Ensure we can import core validator logic from src
@@ -100,6 +101,7 @@ else:
 # Import core components
 try:
     from src.survey_manager import SurveyManager
+
     print("[OK] SurveyManager loaded")
 except ImportError as e:
     SurveyManager = None
@@ -135,9 +137,10 @@ app.config["PRISM_STARTUP_ID"] = uuid.uuid4().hex
 
 # Load last project from settings (will be restored to session on first request)
 from src.config import load_app_settings
+
 _app_settings = load_app_settings(app_root=str(BASE_DIR))
-app.config["LAST_PROJECT_PATH"] = getattr(_app_settings, 'last_project_path', None)
-app.config["LAST_PROJECT_NAME"] = getattr(_app_settings, 'last_project_name', None)
+app.config["LAST_PROJECT_PATH"] = getattr(_app_settings, "last_project_path", None)
+app.config["LAST_PROJECT_NAME"] = getattr(_app_settings, "last_project_name", None)
 
 # Initialize Survey Manager with global library paths
 from src.config import get_effective_library_paths
@@ -197,7 +200,9 @@ try:
     app.register_blueprint(validation_bp)
     app.register_blueprint(tools_bp)
     app.register_blueprint(projects_bp)
-    print("[OK] Modular blueprints registered (neurobagel, conversion, library, validation, tools, projects)")
+    print(
+        "[OK] Modular blueprints registered (neurobagel, conversion, library, validation, tools, projects)"
+    )
 except ImportError as e:
     print(f"[WARN]  Error importing modular blueprints: {e}")
 except Exception as e:
@@ -217,6 +222,7 @@ app.config["VALIDATION_RESULTS"] = validation_results
 def inject_utilities():
     """Inject utility functions into all templates"""
     from flask import session
+
     return {
         "get_filename_from_path": get_filename_from_path,
         "shorten_path": shorten_path,
@@ -224,7 +230,7 @@ def inject_utilities():
         "get_error_documentation_url": get_error_documentation_url,
         "current_project": {
             "path": session.get("current_project_path"),
-            "name": session.get("current_project_name")
+            "name": session.get("current_project_name"),
         },
     }
 
@@ -306,10 +312,10 @@ def ensure_project_selected_first():
     # Allow validation API and results even without a project
     # This enables one-off validation of uploaded ZIPs or folders.
     if (
-        path == "/upload" 
-        or path == "/validate_folder" 
-        or path.startswith("/api/progress/") 
-        or path.startswith("/results/") 
+        path == "/upload"
+        or path == "/validate_folder"
+        or path.startswith("/api/progress/")
+        or path.startswith("/results/")
         or path.startswith("/download_report/")
         or path.startswith("/cleanup/")
         or path == "/api/validate"
@@ -335,10 +341,12 @@ def index():
 def favicon_ico():
     """Serve favicon directly with caching"""
     from flask import send_from_directory
+
     return send_from_directory(
-        app.static_folder, "prism2026.ico",
+        app.static_folder,
+        "prism2026.ico",
         mimetype="image/png",
-        max_age=86400  # Cache for 24 hours
+        max_age=86400,  # Cache for 24 hours
     )
 
 
@@ -355,25 +363,26 @@ def shutdown():
     import signal
     import threading
     import time
-    
+
     def kill_server():
         time.sleep(1)
         print("🛑 Shutting down server...")
         os.kill(os.getpid(), signal.SIGINT)
 
     # Try Werkzeug shutdown first (works in debug mode)
-    func = request.environ.get('werkzeug.server.shutdown')
+    func = request.environ.get("werkzeug.server.shutdown")
     if func:
         func()
     else:
         # Fallback for Waitress/Production
         threading.Thread(target=kill_server).start()
-        
+
     return jsonify({"success": True, "message": "Server is shutting down..."})
 
 
 # Note: Validation, Conversion, Library, and Tools routes are now handled by blueprints.
 # See src/web/blueprints/ for details.
+
 
 def find_free_port(start_port):
     port = start_port
@@ -428,7 +437,9 @@ def main():
     print("Starting PRISM Studio")
     print(f"URL: {url}")
     if args.public:
-        print("[WARN]  Warning: Running in public mode - accessible from other computers")
+        print(
+            "[WARN]  Warning: Running in public mode - accessible from other computers"
+        )
     print("Press Ctrl+C to stop the server")
 
     # Show log location for compiled version
@@ -436,20 +447,25 @@ def main():
         log_file = Path.home() / "prism_studio.log"
         print(f"Log file: {log_file}")
     print()
-    
+
     # On Windows compiled version, show a startup notification
-    if getattr(sys, "frozen", False) and sys.platform.startswith('win') and not args.no_browser:
+    if (
+        getattr(sys, "frozen", False)
+        and sys.platform.startswith("win")
+        and not args.no_browser
+    ):
         try:
             import ctypes
+
             MessageBox = ctypes.windll.user32.MessageBoxW
             threading.Thread(
                 target=lambda: MessageBox(
                     0,
                     f"PRISM Studio is starting...\n\nOpening browser at:\n{url}\n\nIf browser doesn't open automatically,\nplease visit the URL manually.",
                     "PRISM Studio",
-                    0x40  # MB_ICONINFORMATION
+                    0x40,  # MB_ICONINFORMATION
                 ),
-                daemon=True
+                daemon=True,
             ).start()
         except Exception as e:
             print(f"Could not show startup notification: {e}")
@@ -471,23 +487,25 @@ def main():
                     raise Exception("webbrowser.open() returned False")
             except Exception as e:
                 print(f"[INFO]  Standard browser open failed: {e}")
-                
+
                 # Platform-specific fallback
                 try:
-                    if sys.platform.startswith('win'):
+                    if sys.platform.startswith("win"):
                         # Windows fallback: use start command
-                        subprocess.Popen(['cmd', '/c', 'start', '', url])
+                        subprocess.Popen(["cmd", "/c", "start", "", url])
                         print("✅ Browser opened via Windows fallback")
-                    elif sys.platform == 'darwin':
+                    elif sys.platform == "darwin":
                         # macOS fallback
-                        subprocess.Popen(['open', url])
+                        subprocess.Popen(["open", url])
                         print("✅ Browser opened via macOS fallback")
                     else:
                         # Linux fallback
-                        subprocess.Popen(['xdg-open', url])
+                        subprocess.Popen(["xdg-open", url])
                         print("✅ Browser opened via Linux fallback")
                 except Exception as fallback_err:
-                    print(f"[WARN]  Could not open browser automatically: {fallback_err}")
+                    print(
+                        f"[WARN]  Could not open browser automatically: {fallback_err}"
+                    )
                     print(f"   Please visit {url} manually")
 
         browser_thread = threading.Thread(target=open_browser, daemon=True)
@@ -502,7 +520,9 @@ def main():
             print(f"Running with Waitress server on {host}:{port}")
             serve(app, host=host, port=port)
         except ImportError:
-            print("[WARN]  Waitress not installed, falling back to Flask development server")
+            print(
+                "[WARN]  Waitress not installed, falling back to Flask development server"
+            )
             app.run(host=host, port=port, debug=False)
 
 

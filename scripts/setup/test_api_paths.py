@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 
 # Suppress Flask app initialization
-os.environ['WERKZEUG_RUN_MAIN'] = 'true'
+os.environ["WERKZEUG_RUN_MAIN"] = "true"
 
 # Add app to path
 script_dir = Path(__file__).resolve().parent
@@ -24,7 +24,9 @@ settings = load_app_settings(app_root=app_root_str)
 
 # Get effective library path from configuration
 lib_paths = get_effective_library_paths(app_root=app_root_str, app_settings=settings)
-default_library_path = lib_paths["global_library_path"] or str(Path(app_root) / "survey_library")
+default_library_path = lib_paths["global_library_path"] or str(
+    Path(app_root) / "survey_library"
+)
 
 print("=" * 70)
 print("PRISM Studio API - Library Path Test")
