@@ -111,7 +111,25 @@ def _determine_ls_question_type(q_data, has_levels):
     # Check for calculated field first
     if input_type == "calculated" or "Calculation" in q_data:
         calc_config = q_data.get("Calculation", {})
-        extra_attrs["equation"] = calc_config.get("formula", "")
+
+        # Use LimeSurvey-specific formula if provided, otherwise fall back to generic formula
+        formula = calc_config.get("lsFormula", "") or calc_config.get("formula", "")
+
+        # If using generic formula, try to convert to LimeSurvey syntax
+        if not calc_config.get("lsFormula") and formula:
+            import re
+            depends_on = calc_config.get("dependsOn", [])
+
+            # Replace variable references with LimeSurvey syntax
+            for var in depends_on:
+                sanitized_var = _sanitize_question_code(var)
+                # Match whole word only
+                formula = re.sub(rf'\b{re.escape(var)}\b', f'{{{sanitized_var}.NAOK}}', formula)
+
+            # Replace ** exponentiation with pow() function
+            formula = re.sub(r'\(([^)]+)\)\s*\*\*\s*(\d+)', r'pow(\1, \2)', formula)
+
+        extra_attrs["equation"] = formula
         if calc_config.get("hidden", False):
             extra_attrs["hidden"] = "1"
         return "*", extra_attrs
@@ -532,10 +550,15 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
     surveys_lang_elem = ET.SubElement(root, "surveys_languagesettings")
     surveys_lang_rows = ET.SubElement(surveys_lang_elem, "rows")
 
+    # Question attributes section (for minimum, maximum, hidden, etc.)
+    question_attributes_elem = ET.SubElement(root, "question_attributes")
+    question_attributes_rows = ET.SubElement(question_attributes_elem, "rows")
+
     # Counters
     gid_counter = 10
     qid_counter = 100
     group_sort_order = 0
+    qaid_counter = 1  # Question attribute ID counter
 
     # --- Process Each JSON as a Group ---
     for item in json_files:
@@ -972,16 +995,23 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     "relevance": relevance,
                 }
 
-                # Add extra attributes from type determination
-                for attr_key, attr_val in extra_attrs.items():
-                    q_data_row[attr_key] = attr_val
-
                 if not is_v6:
                     q_data_row["question"] = description
                     q_data_row["help"] = help_text
                     q_data_row["language"] = language
 
                 add_row(questions_rows, q_data_row)
+
+                # Add question attributes (minimum, maximum, hidden, etc.)
+                for attr_key, attr_val in extra_attrs.items():
+                    add_row(question_attributes_rows, {
+                        "qaid": str(qaid_counter),
+                        "qid": qid,
+                        "attribute": attr_key,
+                        "value": str(attr_val),
+                        "language": "",
+                    })
+                    qaid_counter += 1
 
                 if is_v6:
                     add_row(
@@ -996,10 +1026,13 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                         },
                     )
 
-                # Add Answers
+                # Add Answers (skip "other" if OtherOption is enabled to avoid duplicate)
                 if levels:
                     sort_ans = 0
                     for code, answer_text in levels.items():
+                        # Skip "other" level if OtherOption is enabled (LimeSurvey will add its own)
+                        if code.lower() == "other" and has_other:
+                            continue
                         sort_ans += 1
                         ans_text = get_text(
                             answer_text, language, i18n_data, f"{q_code}.Levels.{code}"
@@ -1212,10 +1245,15 @@ def generate_lss_from_customization(
     surveys_lang_elem = ET.SubElement(root, "surveys_languagesettings")
     surveys_lang_rows = ET.SubElement(surveys_lang_elem, "rows")
 
+    # Question attributes section (for minimum, maximum, hidden, etc.)
+    question_attributes_elem = ET.SubElement(root, "question_attributes")
+    question_attributes_rows = ET.SubElement(question_attributes_elem, "rows")
+
     # Counters
     gid_counter = 10
     qid_counter = 100
     group_sort_order = 0
+    qaid_counter = 1  # Question attribute ID counter
 
     def get_text(obj, lang):
         """Get localized text from a multilingual object."""
@@ -1550,16 +1588,23 @@ def generate_lss_from_customization(
                     "relevance": relevance,
                 }
 
-                # Add extra attributes from type determination
-                for attr_key, attr_val in extra_attrs.items():
-                    q_data_row[attr_key] = attr_val
-
                 if not is_v6:
                     q_data_row["question"] = description
                     q_data_row["help"] = help_text
                     q_data_row["language"] = language
 
                 add_row(questions_rows, q_data_row)
+
+                # Add question attributes (minimum, maximum, hidden, etc.)
+                for attr_key, attr_val in extra_attrs.items():
+                    add_row(question_attributes_rows, {
+                        "qaid": str(qaid_counter),
+                        "qid": qid,
+                        "attribute": attr_key,
+                        "value": str(attr_val),
+                        "language": "",
+                    })
+                    qaid_counter += 1
 
                 if is_v6:
                     add_row(
@@ -1574,10 +1619,13 @@ def generate_lss_from_customization(
                         },
                     )
 
-                # Add Answers
+                # Add Answers (skip "other" if OtherOption is enabled to avoid duplicate)
                 if levels:
                     sort_ans = 0
                     for code, answer_text in levels.items():
+                        # Skip "other" level if OtherOption is enabled (LimeSurvey will add its own)
+                        if code.lower() == "other" and has_other:
+                            continue
                         sort_ans += 1
                         ans_text = get_text(answer_text, language)
                         ans_row = {

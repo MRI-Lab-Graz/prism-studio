@@ -512,8 +512,8 @@
   },
   "marital_status": {
     "Description": {
-      "en": "Current relationship status",
-      "de": "Aktueller Beziehungsstatus"
+      "en": "<span style=\"font-size:18px;\"><strong>Current relationship status</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Aktueller Beziehungsstatus</strong></span>"
     },
     "Help": {
       "en": "Select your current marital or partnership status.",
@@ -535,8 +535,8 @@
   },
   "ethnicity": {
     "Description": {
-      "en": "Ethnic background",
-      "de": "Ethnische Herkunft"
+      "en": "<span style=\"font-size:18px;\"><strong>Ethnic background</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Ethnische Herkunft</strong></span>"
     },
     "Help": {
       "en": "Select the ethnic group(s) you identify with.",
@@ -565,8 +565,8 @@
   },
   "residence_type": {
     "Description": {
-      "en": "Type of residential area",
-      "de": "Art des Wohngebiets"
+      "en": "<span style=\"font-size:18px;\"><strong>Type of residential area</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Art des Wohngebiets</strong></span>"
     },
     "Help": {
       "en": "Select the type of area where you currently live.",
@@ -585,8 +585,8 @@
   },
   "income_bracket": {
     "Description": {
-      "en": "Annual household income (before taxes)",
-      "de": "Jährliches Haushaltseinkommen (brutto)"
+      "en": "<span style=\"font-size:18px;\"><strong>Annual household income (before taxes)</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Jährliches Haushaltseinkommen (brutto)</strong></span>"
     },
     "Help": {
       "en": "Select the approximate annual gross income of your household (all earners combined). Values in EUR/year.",
@@ -603,15 +603,7 @@
       "7": {"en": "More than €150,000", "de": "Mehr als €150.000"},
       "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
-    "DataType": "string",
-    "InputType": "slider",
-    "SliderConfig": {
-      "min": 1,
-      "max": 7,
-      "step": 1,
-      "showLabels": true,
-      "naOption": true
-    }
+    "DataType": "string"
   },
   "height": {
     "Description": {
@@ -684,6 +676,7 @@
     "InputType": "calculated",
     "Calculation": {
       "formula": "weight / ((height / 100) ** 2)",
+      "lsFormula": "round({weight.NAOK} / (({height.NAOK} / 100) * ({height.NAOK} / 100)), 1)",
       "precision": 1,
       "dependsOn": ["height", "weight"],
       "hidden": true,
@@ -749,8 +742,8 @@
   },
   "smoking_status": {
     "Description": {
-      "en": "Smoking status",
-      "de": "Raucherstatus"
+      "en": "<span style=\"font-size:18px;\"><strong>Smoking status</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Raucherstatus</strong></span>"
     },
     "Help": {
       "en": "Select your current smoking status (tobacco/nicotine).",
@@ -769,8 +762,8 @@
   },
   "alcohol_consumption": {
     "Description": {
-      "en": "Alcohol consumption frequency",
-      "de": "Häufigkeit des Alkoholkonsums"
+      "en": "<span style=\"font-size:18px;\"><strong>Alcohol consumption frequency</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Häufigkeit des Alkoholkonsums</strong></span>"
     },
     "Help": {
       "en": "How often do you typically consume alcoholic beverages?",
@@ -790,8 +783,8 @@
   },
   "physical_activity": {
     "Description": {
-      "en": "Physical activity level",
-      "de": "Körperliche Aktivität"
+      "en": "<span style=\"font-size:18px;\"><strong>Physical activity level</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Körperliche Aktivität</strong></span>"
     },
     "Help": {
       "en": "How often do you engage in moderate to vigorous physical activity (exercise, sports) for at least 30 minutes?",
@@ -810,8 +803,8 @@
   },
   "medication_current": {
     "Description": {
-      "en": "Currently taking medications?",
-      "de": "Nehmen Sie derzeit Medikamente ein?"
+      "en": "<span style=\"font-size:18px;\"><strong>Currently taking medications?</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Nehmen Sie derzeit Medikamente ein?</strong></span>"
     },
     "Help": {
       "en": "Are you currently taking any prescription medications or regular over-the-counter medications?",
@@ -831,8 +824,8 @@
   },
   "medication_details": {
     "Description": {
-      "en": "Medication details (optional)",
-      "de": "Medikamentendetails (optional)"
+      "en": "<span style=\"font-size:18px;\"><strong>Medication details (optional)</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Medikamentendetails (optional)</strong></span>"
     },
     "Help": {
       "en": "Please list the medications you are currently taking. This information is optional and will be kept confidential.",
@@ -856,8 +849,8 @@
   },
   "psychiatric_diagnosis": {
     "Description": {
-      "en": "History of psychiatric/mental health diagnosis?",
-      "de": "Psychiatrische/psychische Diagnose in der Vorgeschichte?"
+      "en": "<span style=\"font-size:18px;\"><strong>History of psychiatric/mental health diagnosis?</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Psychiatrische/psychische Diagnose in der Vorgeschichte?</strong></span>"
     },
     "Help": {
       "en": "Have you ever been diagnosed with a psychiatric or mental health condition by a healthcare professional?",
@@ -877,8 +870,8 @@
   },
   "psychiatric_diagnosis_details": {
     "Description": {
-      "en": "Psychiatric diagnosis details (optional)",
-      "de": "Details zur psychiatrischen Diagnose (optional)"
+      "en": "<span style=\"font-size:18px;\"><strong>Psychiatric diagnosis details (optional)</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Details zur psychiatrischen Diagnose (optional)</strong></span>"
     },
     "Help": {
       "en": "Please specify the diagnosis. This information is optional and will be kept confidential.",
@@ -902,8 +895,8 @@
   },
   "neurological_diagnosis": {
     "Description": {
-      "en": "History of neurological diagnosis?",
-      "de": "Neurologische Diagnose in der Vorgeschichte?"
+      "en": "<span style=\"font-size:18px;\"><strong>History of neurological diagnosis?</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Neurologische Diagnose in der Vorgeschichte?</strong></span>"
     },
     "Help": {
       "en": "Have you ever been diagnosed with a neurological condition by a healthcare professional?",
@@ -923,8 +916,8 @@
   },
   "neurological_diagnosis_details": {
     "Description": {
-      "en": "Neurological diagnosis details (optional)",
-      "de": "Details zur neurologischen Diagnose (optional)"
+      "en": "<span style=\"font-size:18px;\"><strong>Neurological diagnosis details (optional)</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Details zur neurologischen Diagnose (optional)</strong></span>"
     },
     "Help": {
       "en": "Please specify the diagnosis. This information is optional and will be kept confidential.",
@@ -948,8 +941,8 @@
   },
   "menstrual_cycle_regularity": {
     "Description": {
-      "en": "Menstrual cycle regularity",
-      "de": "Regelmäßigkeit des Menstruationszyklus"
+      "en": "<span style=\"font-size:18px;\"><strong>Menstrual cycle regularity</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Regelmäßigkeit des Menstruationszyklus</strong></span>"
     },
     "Help": {
       "en": "How would you describe your menstrual cycle? (Only for females)",
@@ -971,8 +964,8 @@
   },
   "menstrual_cycle_length": {
     "Description": {
-      "en": "Average menstrual cycle length (days)",
-      "de": "Durchschnittliche Zykluslänge (Tage)"
+      "en": "<span style=\"font-size:18px;\"><strong>Average menstrual cycle length (days)</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Durchschnittliche Zykluslänge (Tage)</strong></span>"
     },
     "Help": {
       "en": "Enter the average number of days from the start of one period to the start of the next (typically 21-35 days).",
@@ -1000,8 +993,8 @@
   },
   "hormonal_contraceptive_use": {
     "Description": {
-      "en": "Hormonal contraceptive use",
-      "de": "Verwendung hormoneller Verhütungsmittel"
+      "en": "<span style=\"font-size:18px;\"><strong>Hormonal contraceptive use</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Verwendung hormoneller Verhütungsmittel</strong></span>"
     },
     "Help": {
       "en": "Are you currently using any hormonal contraceptives?",
