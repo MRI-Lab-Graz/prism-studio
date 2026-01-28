@@ -624,7 +624,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
             continue
 
         try:
-            with open(json_path, "r") as f:
+            with open(json_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 i18n_data = data.get("I18n", {})
         except Exception as e:
@@ -1131,7 +1131,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
         try:
             f_item = json_files[0]
             f_path = f_item if isinstance(f_item, str) else f_item.get("path")
-            with open(f_path, "r") as f:
+            with open(f_path, "r", encoding="utf-8") as f:
                 d = json.load(f)
                 s_info = d.get("Study", {})
                 i_data = d.get("I18n", {})
