@@ -942,7 +942,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `survey_export_${customizationState.survey.language}.lss`;
+
+            // Use filename from Content-Disposition header, or generate from survey name
+            const contentDisposition = response.headers.get('Content-Disposition');
+            let filename = null;
+            if (contentDisposition) {
+                const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (match && match[1]) {
+                    filename = match[1].replace(/['"]/g, '');
+                }
+            }
+            if (!filename) {
+                // Generate filename from survey name and date
+                const safeName = surveyName.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_').trim() || 'survey';
+                const dateStr = new Date().toISOString().split('T')[0];
+                filename = `${safeName}_${dateStr}.lss`;
+            }
+            a.download = filename;
+
             document.body.appendChild(a);
             a.click();
             a.remove();
