@@ -200,7 +200,7 @@
 <script src="{{ url_for('static', filename='js/neurobagel.js') }}"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     const uploadArea = document.getElementById('uploadArea');
     const folderInput = document.getElementById('datasetFolder');
     const zipInput = document.getElementById('datasetZip');
@@ -223,6 +223,27 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let currentDatasetPath = null;
     let selectedFiles = null;
+
+    // Check for autoload parameter (coming from project page)
+    const urlParams = new URLSearchParams(window.location.search);
+    const autoloadFile = urlParams.get('autoload');
+    const fromProject = urlParams.get('from') === 'project';
+    
+    if (fromProject && autoloadFile) {
+        // Skip file selection and directly load the requested file
+        console.log('🔄 Auto-loading from project:', autoloadFile);
+        
+        // Hide upload area, show editor
+        uploadArea.closest('.card').style.display = 'none';
+        toolSelectionSection.style.display = 'none';
+        editorSection.style.display = 'block';
+        
+        // Set the file selector to participants
+        fileSelector.value = autoloadFile;
+        
+        // Trigger file load
+        await loadFileForEditing(autoloadFile);
+    }
 
     // Check for webkitdirectory support
     const supportsFolderUpload = 'webkitdirectory' in document.createElement('input');
@@ -469,6 +490,37 @@ document.addEventListener('DOMContentLoaded', function() {
             uploadInfo.innerHTML = '<i class="fas fa-info-circle me-1"></i>ZIP selected - please extract and re-select folder';
         }
     });
+
+    // Function to load a specific file for editing (used by autoload from project context)
+    async function loadFileForEditing(fileType) {
+        try {
+            // Call API to load file from current project
+            const response = await fetch(`/editor/api/file/${fileType}`);
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    showAlert(`File ${fileType}.json not found in current project. Please create it first.`, 'warning');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return;
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Simulate file path for compatibility with existing renderJSONForm
+                const filePath = `${fileType}.json`;
+                await renderJSONForm(result.data, filePath);
+                showAlert(`Loaded ${fileType}.json from project`, 'success');
+            } else {
+                showAlert(result.error || 'Failed to load file', 'danger');
+            }
+        } catch (error) {
+            console.error('Error loading file:', error);
+            showAlert('Error loading file: ' + error.message, 'danger');
+        }
+    }
 
     // Local folder path input (removed - using only Browse buttons)
     

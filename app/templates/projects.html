@@ -469,9 +469,9 @@
             
             <!-- Quick Actions -->
             <div class="d-flex flex-wrap gap-2 mb-3">
-                <a href="{{ url_for('json_editor.editor_index') }}" class="btn btn-sm btn-outline-primary" id="editParticipantsBtn">
+                <button class="btn btn-sm btn-outline-primary" id="editParticipantsBtn" onclick="openParticipantsEditor()">
                     <i class="fas fa-edit me-1"></i>Edit participants.json
-                </a>
+                </button>
                 <button class="btn btn-sm btn-outline-info" id="openNeurobagelBtn">
                     <i class="fas fa-brain me-1"></i>Annotate Participants
                 </button>
@@ -1600,6 +1600,17 @@
         } catch (error) {
             console.error('Error clearing project:', error);
         }
+    }
+
+    // Open participants.json editor with current project context
+    function openParticipantsEditor() {
+        if (!currentProjectPath) {
+            showAlert('Please select a project first', 'warning');
+            return;
+        }
+        
+        // Navigate to JSON editor with autoload flag and file type
+        window.location.href = `{{ url_for('json_editor.editor_index') }}?autoload=participants&from=project`;
     }
 
     // ===== PARTICIPANTS STATUS (read-only display) =====
