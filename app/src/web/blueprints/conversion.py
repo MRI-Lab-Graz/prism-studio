@@ -78,15 +78,33 @@ def _generate_neurobagel_schema(df, id_column):
     """
     import pandas as pd
     
-    # NeuroBagel standard variable mappings
+    # NeuroBagel standard variable mappings with level URIs
     NEUROBAGEL_VOCAB = {
         # Core demographics
         "age": {"term": "nb:Age", "label": "Age", "type": "continuous", "unit": "years"},
         "sex": {"term": "nb:Sex", "label": "Sex", "type": "categorical", 
-                "levels": {"M": "Male", "F": "Female", "O": "Other"}},
-        "gender": {"term": "nb:Gender", "label": "Gender", "type": "categorical"},
+                "levels": {
+                    "M": {"label": "Male", "uri": "nb:BiologicalSex/Male"},
+                    "F": {"label": "Female", "uri": "nb:BiologicalSex/Female"},
+                    "O": {"label": "Other", "uri": "nb:BiologicalSex/Other"},
+                    "1": {"label": "Male", "uri": "nb:BiologicalSex/Male"},
+                    "2": {"label": "Female", "uri": "nb:BiologicalSex/Female"},
+                }},
+        "gender": {"term": "nb:Gender", "label": "Gender", "type": "categorical",
+                   "levels": {
+                       "M": {"label": "Male", "uri": "nb:Gender/Male"},
+                       "F": {"label": "Female", "uri": "nb:Gender/Female"},
+                       "NB": {"label": "Non-binary", "uri": "nb:Gender/NonBinary"},
+                   }},
         "handedness": {"term": "nb:Handedness", "label": "Handedness", "type": "categorical",
-                      "levels": {"R": "Right", "L": "Left", "A": "Ambidextrous"}},
+                       "levels": {
+                           "R": {"label": "Right", "uri": "nb:Handedness/Right"},
+                           "L": {"label": "Left", "uri": "nb:Handedness/Left"},
+                           "A": {"label": "Ambidextrous", "uri": "nb:Handedness/Ambidextrous"},
+                           "1": {"label": "Right", "uri": "nb:Handedness/Right"},
+                           "2": {"label": "Left", "uri": "nb:Handedness/Left"},
+                           "3": {"label": "Ambidextrous", "uri": "nb:Handedness/Ambidextrous"},
+                       }},
         
         # Clinical/study info
         "group": {"term": "nb:Group", "label": "Group", "type": "categorical"},
@@ -159,9 +177,10 @@ def _generate_neurobagel_schema(df, id_column):
             field["Description"] = f"{col} (auto-detected)"
             field["Annotations"]["VariableType"] = data_type.capitalize()
         
-        # Extract levels for categorical variables
+        # Extract levels for categorical variables with NeuroBagel annotations
         if is_categorical and len(col_data) > 0:
             levels = {}
+            level_annotations = {}
             unique_vals = col_data.unique()[:50]  # Limit to 50 levels
             
             # Use NeuroBagel levels if available
@@ -169,12 +188,32 @@ def _generate_neurobagel_schema(df, id_column):
                 nb_levels = neurobagel_match["levels"]
                 for val in unique_vals:
                     val_str = str(val)
-                    levels[val_str] = nb_levels.get(val_str, val_str)
+                    if val_str in nb_levels:
+                        # Has NeuroBagel mapping
+                        nb_info = nb_levels[val_str]
+                        if isinstance(nb_info, dict):
+                            levels[val_str] = nb_info.get("label", val_str)
+                            level_annotations[val_str] = {
+                                "TermURL": nb_info.get("uri"),
+                                "Label": nb_info.get("label", val_str)
+                            }
+                        else:
+                            # String value (old format)
+                            levels[val_str] = nb_info
+                    else:
+                        # No mapping - use raw value
+                        levels[val_str] = val_str
             else:
                 for val in unique_vals:
                     levels[str(val)] = str(val)
             
             field["Levels"] = levels
+            
+            # Add level annotations if available
+            if level_annotations:
+                if "Annotations" not in field:
+                    field["Annotations"] = {}
+                field["Annotations"]["Levels"] = level_annotations
         
         schema[col] = field
     
@@ -1955,11 +1994,21 @@ def api_participants_convert():
     try:
         from src.participants_converter import ParticipantsConverter
         import pandas as pd
+        import json
     except ImportError as e:
         return jsonify({"error": f"Required module not available: {str(e)}"}), 500
     
     mode = request.form.get("mode", "file")
     force_overwrite = request.form.get("force_overwrite", "false").lower() == "true"
+    neurobagel_schema_json = request.form.get("neurobagel_schema")
+    
+    # Parse the neurobagel schema if provided
+    neurobagel_schema = {}
+    if neurobagel_schema_json:
+        try:
+            neurobagel_schema = json.loads(neurobagel_schema_json)
+        except json.JSONDecodeError:
+            pass
     
     project_path = session.get("current_project_path")
     if not project_path:
@@ -2013,18 +2062,111 @@ def api_participants_convert():
                 # Initialize converter
                 converter = ParticipantsConverter(project_root, log_callback=log_msg)
                 
-                # Convert using the uploaded file
+                # Load or create mapping
                 mapping = converter.load_mapping()
-                if mapping:
+                if not mapping:
+                    # No mapping file, try auto-detection from file headers
+                    import pandas as pd
+                    try:
+                        # Try to detect format
+                        test_df = pd.read_csv(str(input_path), sep=None, engine='python', nrows=0)
+                        columns = list(test_df.columns)
+                        log_msg("INFO", f"Auto-detected columns: {', '.join(columns)}")
+                        
+                        # Create basic mapping from columns
+                        mapping = {
+                            "version": "1.0",
+                            "mappings": {}
+                        }
+                        
+                        # Map common participant columns
+                        for col in columns:
+                            col_lower = col.lower()
+                            if col_lower in ['participant_id', 'sub', 'subject', 'id']:
+                                mapping["mappings"]["participant_id"] = {
+                                    "source_column": col,
+                                    "standard_variable": "participant_id"
+                                }
+                            elif col_lower in ['age']:
+                                mapping["mappings"]["age"] = {
+                                    "source_column": col,
+                                    "standard_variable": "age"
+                                }
+                            elif col_lower in ['sex', 'biological_sex']:
+                                mapping["mappings"]["sex"] = {
+                                    "source_column": col,
+                                    "standard_variable": "sex"
+                                }
+                            elif col_lower in ['gender']:
+                                mapping["mappings"]["gender"] = {
+                                    "source_column": col,
+                                    "standard_variable": "gender"
+                                }
+                            elif col_lower in ['handedness']:
+                                mapping["mappings"]["handedness"] = {
+                                    "source_column": col,
+                                    "standard_variable": "handedness"
+                                }
+                        
+                        if mapping["mappings"]:
+                            log_msg("INFO", f"Auto-created mapping for {len(mapping['mappings'])} columns")
+                    except Exception as e:
+                        log_msg("WARNING", f"Could not auto-detect columns: {e}")
+                        mapping = {"version": "1.0", "mappings": {}}
+                else:
                     log_msg("INFO", f"Using participants_mapping.json from {converter.mapping_file}")
                 
-                messages = converter.convert_participants(
-                    input_file=str(input_path),
+                # Convert using the uploaded file
+                success, df, messages = converter.convert_participant_data(
+                    source_file=str(input_path),
+                    mapping=mapping,
                     output_file=str(participants_tsv)
                 )
                 
                 for msg in messages:
                     log_msg("INFO", msg)
+                
+                if not success or df is None:
+                    return jsonify({"error": "Conversion failed", "log": logs}), 400
+                
+                # Write the dataframe to TSV
+                df.to_csv(participants_tsv, sep="\t", index=False)
+                log_msg("INFO", f"✓ Created {participants_tsv.name}")
+                
+                # Create or update participants.json
+                import json as json_module
+                participants_json_data = {}
+                for col in df.columns:
+                    participants_json_data[col] = {
+                        "Description": f"Participant {col}"
+                    }
+                
+                # If neurobagel schema is provided, merge it with participants.json
+                if neurobagel_schema:
+                    try:
+                        for col, schema_def in neurobagel_schema.items():
+                            if col not in participants_json_data:
+                                participants_json_data[col] = {}
+                            
+                            # Merge annotations and other properties
+                            if 'Annotations' in schema_def:
+                                if 'Annotations' not in participants_json_data[col]:
+                                    participants_json_data[col]['Annotations'] = {}
+                                participants_json_data[col]['Annotations'].update(schema_def['Annotations'])
+                            
+                            # Also merge other properties (Description, Units, etc.)
+                            for key, value in schema_def.items():
+                                if key != 'Annotations' and key not in participants_json_data[col]:
+                                    participants_json_data[col][key] = value
+                        
+                        log_msg("INFO", "Merged NeuroBagel annotations into participants.json")
+                    except Exception as e:
+                        log_msg("WARNING", f"Could not merge NeuroBagel schema: {str(e)}")
+                
+                with open(participants_json, "w") as f:
+                    json_module.dump(participants_json_data, f, indent=2)
+                
+                log_msg("INFO", f"✓ Created {participants_json.name}")
                 
                 log_msg("INFO", f"✓ Created {participants_tsv.name}")
                 log_msg("INFO", f"✓ Created {participants_json.name}")
@@ -2081,9 +2223,24 @@ def api_participants_convert():
                 }
             }
             
-            import json
+            # Merge neurobagel schema if provided
+            if neurobagel_schema:
+                for col, schema_def in neurobagel_schema.items():
+                    if col not in participants_json_data:
+                        participants_json_data[col] = {}
+                    
+                    if 'Annotations' in schema_def:
+                        if 'Annotations' not in participants_json_data[col]:
+                            participants_json_data[col]['Annotations'] = {}
+                        participants_json_data[col]['Annotations'].update(schema_def['Annotations'])
+                    
+                    for key, value in schema_def.items():
+                        if key != 'Annotations' and key not in participants_json_data[col]:
+                            participants_json_data[col][key] = value
+            
+            import json as json_module
             with open(participants_json, "w") as f:
-                json.dump(participants_json_data, f, indent=2)
+                json_module.dump(participants_json_data, f, indent=2)
             
             log_msg("INFO", f"✓ Created {participants_tsv.name} with {len(participants_list)} participants")
             log_msg("INFO", f"✓ Created {participants_json.name}")
