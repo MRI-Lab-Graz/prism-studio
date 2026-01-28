@@ -19,6 +19,7 @@ import json
 from datetime import date
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
+from pathlib import Path
 
 
 @dataclass
@@ -271,7 +272,11 @@ class DatasetFixer:
                 )
 
     def _check_missing_sidecars(self):
-        """Check for data files missing sidecar JSON files"""
+        """Check for data files missing sidecar JSON files
+        
+        Respects BIDS inheritance: if a file can find a sidecar via inheritance 
+        (e.g., root-level task-{name}_survey.json), it is NOT flagged as missing.
+        """
         # Extensions that need sidecars
         data_extensions = {".tsv", ".edf", ".nii", ".nii.gz"}
 
@@ -301,7 +306,7 @@ class DatasetFixer:
                 if not needs_sidecar:
                     continue
 
-                # Determine sidecar path
+                # Determine sidecar path (for subject-level sidecar)
                 if filename.endswith(".nii.gz"):
                     stem = filename[:-7]
                 elif filename.endswith(".tsv.gz"):
@@ -309,27 +314,36 @@ class DatasetFixer:
                 else:
                     stem = os.path.splitext(filename)[0]
 
-                sidecar_path = os.path.join(root, f"{stem}.json")
+                subject_level_sidecar = os.path.join(root, f"{stem}.json")
 
-                if not os.path.exists(sidecar_path):
-                    # Determine modality from path/filename
-                    modality = self._infer_modality(file_path, filename)
+                # Check if a sidecar exists at subject level
+                if os.path.exists(subject_level_sidecar):
+                    continue
 
-                    # Create stub sidecar
-                    stub = self._create_sidecar_stub(modality, filename)
+                # Check if a sidecar can be found via BIDS inheritance (root-level)
+                # This looks for inherited sidecars like task-{name}_survey.json at the dataset root
+                if self._has_inherited_sidecar(file_path, filename):
+                    continue
 
-                    self.fixes.append(
-                        FixAction(
-                            issue_code="PRISM201",
-                            description=f"Create sidecar stub for {filename}",
-                            file_path=sidecar_path,
-                            action_type="create",
-                            details={
-                                "content": json.dumps(stub, indent=2),
-                                "modality": modality,
-                            },
-                        )
+                # Only flag as missing if no sidecar found at any level
+                # Determine modality from path/filename
+                modality = self._infer_modality(file_path, filename)
+
+                # Create stub sidecar
+                stub = self._create_sidecar_stub(modality, filename)
+
+                self.fixes.append(
+                    FixAction(
+                        issue_code="PRISM201",
+                        description=f"Create sidecar stub for {filename}",
+                        file_path=subject_level_sidecar,
+                        action_type="create",
+                        details={
+                            "content": json.dumps(stub, indent=2),
+                            "modality": modality,
+                        },
                     )
+                )
 
     def _check_config_file(self):
         """Check for missing .prismrc.json config file"""
@@ -357,6 +371,62 @@ class DatasetFixer:
                     },
                 )
             )
+
+    def _has_inherited_sidecar(self, file_path: str, filename: str) -> bool:
+        """Check if a file has an inherited sidecar via BIDS inheritance rules.
+        
+        BIDS inheritance allows root-level sidecars to apply to all matching files.
+        For example: task-panas_survey.json in the root applies to all 
+        sub-*/ses-*/survey/sub-*_ses-*_task-panas_survey.tsv files.
+        
+        Args:
+            file_path: Full path to the data file
+            filename: Just the filename (basename)
+            
+        Returns:
+            True if an inherited sidecar exists
+        """
+        stem = filename
+        if filename.endswith(".nii.gz"):
+            stem = filename[:-7]
+        elif filename.endswith(".tsv.gz"):
+            stem = filename[:-7]
+        else:
+            stem = os.path.splitext(filename)[0]
+
+        # Extract common BIDS entities from the filename
+        # Look for patterns like task-<name>, survey-<name>, biometrics-<name>
+        entities = ["task", "survey", "biometrics"]
+        
+        for entity in entities:
+            # Try to extract entity value: task-panas -> panas
+            entity_pattern = f"{entity}-"
+            if entity_pattern in stem:
+                # Extract the value after the entity prefix
+                parts = stem.split(entity_pattern)
+                if len(parts) > 1:
+                    value = parts[1].split("_")[0]  # Get value before next underscore
+                    
+                    # Check for inherited sidecar at root level
+                    # e.g., task-panas_survey.json
+                    suffix = stem.split("_")[-1]  # Get the last part (survey, biometrics, etc.)
+                    inherited_name = f"{entity}-{value}_{suffix}.json"
+                    inherited_path = os.path.join(self.bids_path, inherited_name)
+                    
+                    if os.path.exists(inherited_path):
+                        return True
+                    
+                    # Also check in subdirectories like surveys/ or biometrics/
+                    search_dirs = [
+                        os.path.join(self.bids_path, "surveys"),
+                        os.path.join(self.bids_path, "biometrics"),
+                    ]
+                    for search_dir in search_dirs:
+                        inherited_path = os.path.join(search_dir, inherited_name)
+                        if os.path.exists(inherited_path):
+                            return True
+        
+        return False
 
     def _infer_modality(self, file_path: str, filename: str) -> str:
         """Infer modality from file path and name"""

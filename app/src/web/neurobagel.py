@@ -33,13 +33,18 @@ def augment_neurobagel_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
     # Mapping of column names to standardized variables
     standardized_mappings = {
         "participant_id": "participant_id",
+        "session_id": "session_id",
         "age": "age",
         "sex": "biological_sex",
+        "gender": "biological_sex",
         "group": "participant_group",
+        "diagnosis": "diagnosis",
         "handedness": "handedness",
+        "education": "education_level",
+        "education_level": "education_level",
     }
 
-    # Categorical value mappings with controlled vocabulary URIs (SNOMED CT and PATO)
+    # Categorical value mappings with controlled vocabulary URIs (SNOMED CT, NCIT, and PATO)
     # URIs are stored in shortened form for export (e.g., 'snomed:248153007')
     categorical_vocabularies = {
         "sex": {
@@ -74,6 +79,193 @@ def augment_neurobagel_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
                 "label": "Ambidextrous",
                 "description": "Ambidextrous",
                 "uri": "snomed:16022009",
+            },
+        },
+        "group": {
+            "CTRL": {
+                "label": "Healthy Control",
+                "description": "Healthy control participant",
+                "uri": "ncit:C94342",
+            },
+            "HC": {
+                "label": "Healthy Control",
+                "description": "Healthy control participant",
+                "uri": "ncit:C94342",
+            },
+            "CONTROL": {
+                "label": "Healthy Control",
+                "description": "Healthy control participant",
+                "uri": "ncit:C94342",
+            },
+            "PAT": {
+                "label": "Patient",
+                "description": "Patient group (diagnosis unspecified)",
+                "uri": "ncit:C16960",
+            },
+            "PATIENT": {
+                "label": "Patient",
+                "description": "Patient group (diagnosis unspecified)",
+                "uri": "ncit:C16960",
+            },
+            "ADHD": {
+                "label": "ADHD",
+                "description": "Attention deficit hyperactivity disorder",
+                "uri": "snomed:406506008",
+            },
+            "ASD": {
+                "label": "Autism Spectrum Disorder",
+                "description": "Autism spectrum disorder",
+                "uri": "snomed:408856003",
+            },
+            "MDD": {
+                "label": "Major Depressive Disorder",
+                "description": "Major depressive disorder",
+                "uri": "snomed:370143000",
+            },
+            "SZ": {
+                "label": "Schizophrenia",
+                "description": "Schizophrenia",
+                "uri": "snomed:58214004",
+            },
+            "SCZ": {
+                "label": "Schizophrenia",
+                "description": "Schizophrenia",
+                "uri": "snomed:58214004",
+            },
+            "BD": {
+                "label": "Bipolar Disorder",
+                "description": "Bipolar disorder",
+                "uri": "snomed:13746004",
+            },
+            "PD": {
+                "label": "Parkinson's Disease",
+                "description": "Parkinson's disease",
+                "uri": "snomed:49049000",
+            },
+            "AD": {
+                "label": "Alzheimer's Disease",
+                "description": "Alzheimer's disease",
+                "uri": "snomed:26929004",
+            },
+            "MCI": {
+                "label": "Mild Cognitive Impairment",
+                "description": "Mild cognitive impairment",
+                "uri": "snomed:386806002",
+            },
+            "OCD": {
+                "label": "Obsessive-Compulsive Disorder",
+                "description": "Obsessive-compulsive disorder",
+                "uri": "snomed:191736004",
+            },
+            "PTSD": {
+                "label": "Post-Traumatic Stress Disorder",
+                "description": "Post-traumatic stress disorder",
+                "uri": "snomed:47505003",
+            },
+            "GAD": {
+                "label": "Generalized Anxiety Disorder",
+                "description": "Generalized anxiety disorder",
+                "uri": "snomed:21897009",
+            },
+        },
+        "diagnosis": {
+            # Same as group - use the same controlled vocabulary
+            "CTRL": {
+                "label": "Healthy Control",
+                "description": "Healthy control participant",
+                "uri": "ncit:C94342",
+            },
+            "HC": {
+                "label": "Healthy Control",
+                "description": "Healthy control participant",
+                "uri": "ncit:C94342",
+            },
+            "ADHD": {
+                "label": "ADHD",
+                "description": "Attention deficit hyperactivity disorder",
+                "uri": "snomed:406506008",
+            },
+            "ASD": {
+                "label": "Autism Spectrum Disorder",
+                "description": "Autism spectrum disorder",
+                "uri": "snomed:408856003",
+            },
+            "MDD": {
+                "label": "Major Depressive Disorder",
+                "description": "Major depressive disorder",
+                "uri": "snomed:370143000",
+            },
+            "SZ": {
+                "label": "Schizophrenia",
+                "description": "Schizophrenia",
+                "uri": "snomed:58214004",
+            },
+            "SCZ": {
+                "label": "Schizophrenia",
+                "description": "Schizophrenia",
+                "uri": "snomed:58214004",
+            },
+            "BD": {
+                "label": "Bipolar Disorder",
+                "description": "Bipolar disorder",
+                "uri": "snomed:13746004",
+            },
+            "PD": {
+                "label": "Parkinson's Disease",
+                "description": "Parkinson's disease",
+                "uri": "snomed:49049000",
+            },
+            "AD": {
+                "label": "Alzheimer's Disease",
+                "description": "Alzheimer's disease",
+                "uri": "snomed:26929004",
+            },
+            "MCI": {
+                "label": "Mild Cognitive Impairment",
+                "description": "Mild cognitive impairment",
+                "uri": "snomed:386806002",
+            },
+            "OCD": {
+                "label": "Obsessive-Compulsive Disorder",
+                "description": "Obsessive-compulsive disorder",
+                "uri": "snomed:191736004",
+            },
+            "PTSD": {
+                "label": "Post-Traumatic Stress Disorder",
+                "description": "Post-traumatic stress disorder",
+                "uri": "snomed:47505003",
+            },
+            "GAD": {
+                "label": "Generalized Anxiety Disorder",
+                "description": "Generalized anxiety disorder",
+                "uri": "snomed:21897009",
+            },
+        },
+        "education_level": {
+            "1": {
+                "label": "Less than High School",
+                "description": "Did not complete high school",
+                "uri": "ncit:C17781",
+            },
+            "2": {
+                "label": "High School Diploma",
+                "description": "Completed high school or equivalent",
+                "uri": "ncit:C17782",
+            },
+            "3": {
+                "label": "Some College",
+                "description": "Some college or associate degree",
+                "uri": "ncit:C17783",
+            },
+            "4": {
+                "label": "Bachelor's Degree",
+                "description": "Bachelor's degree",
+                "uri": "ncit:C17784",
+            },
+            "5": {
+                "label": "Graduate Degree",
+                "description": "Master's, doctoral, or professional degree",
+                "uri": "ncit:C17785",
             },
         },
     }

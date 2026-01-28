@@ -82,7 +82,20 @@ def create_json_editor_blueprint(bids_folder=None):
         project_path = session.get('current_project_path')
         if project_path and file_manager:
             try:
-                file_manager.set_bids_folder(project_path)
+                project_path_obj = Path(project_path)
+                
+                # Check for YODA layout (rawdata/ subdirectory)
+                rawdata_path = project_path_obj / "rawdata"
+                if rawdata_path.exists() and rawdata_path.is_dir():
+                    # Use rawdata folder as the BIDS root
+                    dataset_path = rawdata_path
+                    print(f"📁 [JSON EDITOR] Using YODA layout: {dataset_path}")
+                else:
+                    # Use project path directly (standard BIDS layout)
+                    dataset_path = project_path_obj
+                    print(f"📁 [JSON EDITOR] Using project path: {dataset_path}")
+                
+                file_manager.set_bids_folder(str(dataset_path))
             except Exception as e:
                 print(f"⚠️ [JSON EDITOR] Could not set BIDS folder to {project_path}: {e}")
 

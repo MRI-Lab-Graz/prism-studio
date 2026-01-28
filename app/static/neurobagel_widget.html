@@ -280,7 +280,39 @@ window.neurobagelCommonMappings = {
     "standardized_variable": "diagnosis",
     "term_url": "nb:Diagnosis",
     "data_type": "categorical",
-    "description": "Clinical diagnosis or study group classification."
+    "description": "Clinical diagnosis or study group classification.",
+    "levels": {
+      "CTRL": { "label": "Healthy Control", "uri": "ncit:C94342" },
+      "HC": { "label": "Healthy Control", "uri": "ncit:C94342" },
+      "CONTROL": { "label": "Healthy Control", "uri": "ncit:C94342" },
+      "PAT": { "label": "Patient", "uri": "ncit:C16960" },
+      "PATIENT": { "label": "Patient", "uri": "ncit:C16960" },
+      "ADHD": { "label": "ADHD", "uri": "snomed:406506008" },
+      "ASD": { "label": "Autism Spectrum Disorder", "uri": "snomed:408856003" },
+      "MDD": { "label": "Major Depressive Disorder", "uri": "snomed:370143000" },
+      "SZ": { "label": "Schizophrenia", "uri": "snomed:58214004" },
+      "SCZ": { "label": "Schizophrenia", "uri": "snomed:58214004" },
+      "BD": { "label": "Bipolar Disorder", "uri": "snomed:13746004" },
+      "PD": { "label": "Parkinson's Disease", "uri": "snomed:49049000" },
+      "AD": { "label": "Alzheimer's Disease", "uri": "snomed:26929004" },
+      "MCI": { "label": "Mild Cognitive Impairment", "uri": "snomed:386806002" },
+      "OCD": { "label": "Obsessive-Compulsive Disorder", "uri": "snomed:191736004" },
+      "PTSD": { "label": "Post-Traumatic Stress Disorder", "uri": "snomed:47505003" },
+      "GAD": { "label": "Generalized Anxiety Disorder", "uri": "snomed:21897009" }
+    }
+  },
+  "Education": {
+    "standardized_variable": "education_level",
+    "term_url": "nb:EducationLevel",
+    "data_type": "categorical",
+    "description": "Highest level of education completed.",
+    "levels": {
+      "1": { "label": "Less than High School", "uri": "ncit:C17781" },
+      "2": { "label": "High School Diploma", "uri": "ncit:C17782" },
+      "3": { "label": "Some College", "uri": "ncit:C17783" },
+      "4": { "label": "Bachelor's Degree", "uri": "ncit:C17784" },
+      "5": { "label": "Graduate Degree", "uri": "ncit:C17785" }
+    }
   },
   "Assessment": {
     "standardized_variable": "assessment",
@@ -355,8 +387,10 @@ window.autoMatchNeurobagelConcepts = function() {
     if (lowerName === 'sex' || lowerName === 'gender') bestMatch = 'Sex';
     else if (lowerName === 'age' || lowerName === 'years') bestMatch = 'Age';
     else if (lowerName === 'handedness' || lowerName === 'hand') bestMatch = 'Handedness';
-    else if (lowerName === 'group' || lowerName === 'diagnosis' || lowerName === 'dx') bestMatch = 'Diagnosis';
+    else if (lowerName === 'education' || lowerName === 'education_level' || lowerName === 'edu') bestMatch = 'Education';
+    else if (lowerName === 'group' || lowerName === 'diagnosis' || lowerName === 'dx' || lowerName === 'pheno_group') bestMatch = 'Diagnosis';
     else if (lowerName === 'participant_id' || lowerName === 'subject_id' || lowerName === 'id') bestMatch = 'ParticipantID';
+    else if (lowerName === 'session_id' || lowerName === 'session') bestMatch = 'SessionID';
     
     if (bestMatch && !colData.standardized_variable) {
       const mapping = window.neurobagelCommonMappings[bestMatch];
@@ -457,19 +491,26 @@ window.renderNeurobagelWidget = async function() {
         const uniqueValues = window.participantsTsvData[colName];
         console.log(`📊 Column ${colName} - TSV values:`, uniqueValues);
         
-        // Create levels from TSV unique values ONLY (don't use defaults)
-        colData.levels = {};
+        // If backend already provided enriched levels (with SNOMED codes), preserve them
+        // Only add missing TSV values that aren't already defined
+        if (!colData.levels) {
+          colData.levels = {};
+        }
         
-        // Add TSV values as levels
+        // Add TSV values as levels, but PRESERVE existing enriched data from backend
         uniqueValues.forEach(value => {
-          colData.levels[value] = {
-            label: value,
-            description: '',  // User can add description later
-            uri: null
-          };
+          if (!colData.levels[value]) {
+            // Only add if not already enriched by backend
+            colData.levels[value] = {
+              label: value,
+              description: '',
+              uri: null
+            };
+          }
+          // If already exists from backend, keep it (it has SNOMED codes!)
         });
         
-        console.log(`✅ Updated ${colName} with ${Object.keys(colData.levels).length} categorical levels from TSV`);
+        console.log(`✅ Merged ${colName} with ${Object.keys(colData.levels).length} categorical levels (${uniqueValues.length} from TSV)`);
       }
     }
     
@@ -696,7 +737,7 @@ window.renderNeurobagelEditor = function(colName, colData) {
             <option value="Sex" ${colData.standardized_variable === 'biological_sex' ? 'selected' : ''}>Sex / Gender</option>
             <option value="Age" ${colData.standardized_variable === 'age' ? 'selected' : ''}>Age</option>
             <option value="Handedness" ${colData.standardized_variable === 'handedness' ? 'selected' : ''}>Handedness</option>
-            <option value="Education" ${colData.standardized_variable === 'education' ? 'selected' : ''}>Education</option>
+            <option value="Education" ${colData.standardized_variable === 'education' || colData.standardized_variable === 'education_level' ? 'selected' : ''}>Education Level</option>
           </optgroup>
           <optgroup label="Clinical">
             <option value="Diagnosis" ${colData.standardized_variable === 'participant_group' || colData.standardized_variable === 'diagnosis' ? 'selected' : ''}>Diagnosis / Group</option>
