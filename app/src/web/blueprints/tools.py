@@ -364,7 +364,7 @@ def api_survey_customizer_export():
         "survey": {"title": "...", "language": "en"},
         "groups": [...],
         "exportFormat": "limesurvey",
-        "exportOptions": {"ls_version": "6", "matrix": true, "matrix_global": false}
+        "exportOptions": {"ls_version": "3", "matrix": true, "matrix_global": false}
     }
     """
     try:
@@ -390,7 +390,7 @@ def api_survey_customizer_export():
         return jsonify({"error": "Survey name is required"}), 400
 
     language = survey_info.get("language", "en")
-    ls_version = export_options.get("ls_version", "6")
+    ls_version = export_options.get("ls_version", "3")
     matrix_mode = export_options.get("matrix", True)
     matrix_global = export_options.get("matrix_global", True)
 
@@ -1383,7 +1383,7 @@ def generate_lss_endpoint():
         os.close(fd)
 
         language = data.get("language", "en")
-        ls_version = data.get("ls_version", "6")
+        ls_version = data.get("ls_version", "3")
         generate_lss(valid_files, temp_path, language=language, ls_version=ls_version)
 
         return send_file(temp_path, as_attachment=True, download_name=f"survey_export_{language}.lss", mimetype="application/xml")

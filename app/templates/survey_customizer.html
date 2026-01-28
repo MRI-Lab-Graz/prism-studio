@@ -302,8 +302,8 @@
                             </a>
                         </label>
                         <select class="form-select" id="lsVersionSelect">
-                            <option value="6" selected>LimeSurvey 5.x / 6.x (v5.0+)</option>
-                            <option value="3">LimeSurvey 3.x / 4.x (v3.0 - v4.x)</option>
+                            <option value="6">LimeSurvey 5.x / 6.x (v5.0+)</option>
+                            <option value="3" selected>LimeSurvey 3.x / 4.x (v3.0 - v4.x)</option>
                         </select>
                         <small class="text-muted">Select the version matching your LimeSurvey installation</small>
                     </div>
@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
         groups: [],
         exportFormat: 'limesurvey',
         exportOptions: {
-            ls_version: '6',
+            ls_version: '3',
             matrix: true,
             matrix_global: true
         }
@@ -470,7 +470,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Set language and version
             customizationState.survey.language = data.language || 'en';
-            customizationState.exportOptions.ls_version = data.ls_version || '6';
+            customizationState.exportOptions.ls_version = data.ls_version || '3';
 
             // Update UI
             document.getElementById('languageSelect').value = customizationState.survey.language;
