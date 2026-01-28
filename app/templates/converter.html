@@ -624,15 +624,16 @@
                             </div>
 
                             <div class="row g-3 align-items-end">
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <label for="biometricsDataFile" class="form-label">Biometrics File (.xlsx, .csv, .tsv)</label>
                                     <input class="form-control" type="file" id="biometricsDataFile" accept=".xlsx,.csv,.tsv">
                                 </div>
-                                <div class="col-md-4">
-                                    <label for="biometricsDatasetName" class="form-label">Dataset Name (optional)</label>
-                                    <input type="text" class="form-control" id="biometricsDatasetName" placeholder="PRISM Biometrics Dataset">
+                                <div class="col-md-3">
+                                    <button class="btn btn-info text-white w-100" type="button" id="biometricsPreviewBtn" disabled>
+                                        <i class="fas fa-eye me-2"></i>Preview (Dry-Run)
+                                    </button>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <button class="btn btn-warning text-white w-100" type="button" id="biometricsConvertBtn" disabled>
                                         <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
                                     </button>
@@ -640,13 +641,17 @@
 
                                 {% if current_project.path %}
                                 <div class="col-12 mt-2">
-                                    <div class="form-check form-switch badge bg-primary bg-opacity-10 text-dark p-2 w-100 text-start border border-primary border-opacity-25" style="border-radius: 8px;">
-                                        <input class="form-check-input ms-0 me-2" type="checkbox" id="biometricsSaveToProject" checked>
-                                        <label class="form-check-label fw-bold" for="biometricsSaveToProject">
-                                            <i class="fas fa-folder-plus text-primary me-1"></i>Save directly to project: <span class="text-primary">{{ current_project.name }}</span>
-                                        </label>
+                                    <div class="alert alert-info py-2 mb-0">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Biometrics will be saved to: <code>{{ current_project.path }}/code/biometrics/</code>
                                     </div>
-                                    <div class="form-text mt-1 px-1 small text-muted">Files will be merged into {{ current_project.path }}</div>
+                                </div>
+                                {% else %}
+                                <div class="col-12 mt-2">
+                                    <div class="alert alert-warning py-2 mb-0">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        Select a project to automatically save biometrics to the correct folder structure.
+                                    </div>
                                 </div>
                                 {% endif %}
 
@@ -1474,8 +1479,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const biometricsLibraryPathInput = document.getElementById('biometricsLibraryPath');
     const biometricsBrowseLibraryBtn = document.getElementById('biometricsBrowseLibraryBtn');
     const biometricsDataFile = document.getElementById('biometricsDataFile');
-    const biometricsDatasetName = document.getElementById('biometricsDatasetName');
     const biometricsUnknown = document.getElementById('biometricsUnknown');
+    const biometricsPreviewBtn = document.getElementById('biometricsPreviewBtn');
     const biometricsConvertBtn = document.getElementById('biometricsConvertBtn');
     const biometricsError = document.getElementById('biometricsError');
     const biometricsInfo = document.getElementById('biometricsInfo');
@@ -3569,6 +3574,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateBiometricsBtn() {
         const hasFile = biometricsDataFile && biometricsDataFile.files && biometricsDataFile.files.length === 1;
         const hasLibraryPath = biometricsLibraryPathInput && biometricsLibraryPathInput.value.trim() !== '';
+        if (biometricsPreviewBtn) biometricsPreviewBtn.disabled = !(hasFile && hasLibraryPath);
         if (biometricsConvertBtn) biometricsConvertBtn.disabled = !(hasFile && hasLibraryPath);
     }
 
@@ -3636,6 +3642,105 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (biometricsDownloadZipWarningBtn) {
         biometricsDownloadZipWarningBtn.addEventListener('click', downloadCurrentBiometricsZip);
+    }
+
+    if (biometricsPreviewBtn) {
+        biometricsPreviewBtn.addEventListener('click', function() {
+            biometricsError.classList.add('d-none');
+            biometricsInfo.classList.add('d-none');
+            biometricsError.textContent = '';
+            biometricsInfo.textContent = '';
+            resetBiometricsUI();
+
+            const sessionVal = document.getElementById('biometricsSession') ? document.getElementById('biometricsSession').value.trim() : '';
+            if (!sessionVal) {
+                biometricsError.textContent = 'Please enter a session ID (e.g., 1, 2, 3).';
+                biometricsError.classList.remove('d-none');
+                document.getElementById('biometricsSession')?.focus();
+                return;
+            }
+
+            const libraryPath = biometricsLibraryPathInput ? biometricsLibraryPathInput.value.trim() : '';
+            if (!libraryPath) {
+                biometricsError.textContent = 'Please select a biometrics template library folder first.';
+                biometricsError.classList.remove('d-none');
+                return;
+            }
+
+            const file = biometricsDataFile.files && biometricsDataFile.files[0];
+            if (!file) return;
+
+            // Show log container
+            biometricsLogContainer.classList.remove('d-none');
+            biometricsLogBody.classList.remove('d-none');
+            const icon = toggleBiometricsLogBtn.querySelector('i');
+            icon.classList.remove('fa-chevron-right');
+            icon.classList.add('fa-chevron-down');
+
+            appendLog('🔍 PREVIEW MODE (Dry-Run)', 'info', biometricsLog);
+            appendLog('═════════════════════════════════════', 'info', biometricsLog);
+            appendLog(`Analyzing file: ${file.name}`, 'step', biometricsLog);
+            appendLog('No files will be created.', 'info', biometricsLog);
+            appendLog('', 'info', biometricsLog);
+
+            const formData = new FormData();
+            formData.append('data', file);
+            formData.append('sheet', (document.getElementById('biometricsSheet') || {value: '0'}).value);
+            formData.append('session', sessionVal);
+            formData.append('unknown', biometricsUnknown.value);
+            formData.append('dry_run', 'true');
+            formData.append('validate', 'true');
+
+            biometricsPreviewBtn.disabled = true;
+            biometricsConvertBtn.disabled = true;
+
+            fetch('/api/biometrics-convert', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(async response => {
+                const data = await response.json();
+                
+                if (data.log && Array.isArray(data.log)) {
+                    data.log.forEach(entry => {
+                        appendLog(entry.message, entry.type || entry.level || 'info', biometricsLog);
+                    });
+                }
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Preview failed');
+                }
+                return data;
+            })
+            .then(data => {
+                if (data.validation) {
+                    const v = data.validation;
+                    const errorCount = (v.errors || []).length;
+                    const warningCount = (v.warnings || []).length;
+                    
+                    if (errorCount === 0 && warningCount === 0) {
+                        appendLog('✓ Validation passed - dataset structure is valid!', 'success', biometricsLog);
+                    } else if (errorCount === 0) {
+                        appendLog(`⚠ Validation passed with ${warningCount} warning(s)`, 'warning', biometricsLog);
+                    } else {
+                        appendLog(`✗ Validation failed with ${errorCount} error(s)`, 'error', biometricsLog);
+                    }
+                    
+                    displayValidationResults(data.validation, 'biometrics');
+                }
+                appendLog('', 'info', biometricsLog);
+                appendLog('Preview complete. Check validation results above.', 'info', biometricsLog);
+            })
+            .catch(err => {
+                appendLog(`Error: ${err.message}`, 'error', biometricsLog);
+                biometricsError.textContent = err.message;
+                biometricsError.classList.remove('d-none');
+            })
+            .finally(() => {
+                biometricsPreviewBtn.disabled = false;
+                biometricsConvertBtn.disabled = false;
+            });
+        });
     }
 
     if (biometricsConvertBtn) {
@@ -3752,14 +3857,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('data', file);
             // Library path is now resolved automatically (project first, then global)
-            formData.append('dataset_name', biometricsDatasetName.value.trim());
             formData.append('unknown', biometricsUnknown.value);
-
-            const saveToProjectEl = document.getElementById('biometricsSaveToProject');
-            if (saveToProjectEl && saveToProjectEl.checked) {
-                formData.append('save_to_project', 'true');
-                appendLog('Saving output directly to project', 'step', biometricsLog);
-            }
+            // Always save to project structure (project/code/biometrics)
 
             const sessionVal = document.getElementById('biometricsSession') ? document.getElementById('biometricsSession').value.trim() : '';
             formData.append('session', sessionVal);

@@ -1124,6 +1124,7 @@ def api_biometrics_convert():
     unknown = (request.form.get("unknown") or "warn").strip() or "warn"
     dataset_name = (request.form.get("dataset_name") or "").strip() or None
     save_to_project = request.form.get("save_to_project") == "true"
+    dry_run = request.form.get("dry_run", "false").lower() == "true"
     
     # Get tasks to export
     tasks_to_export = request.form.getlist("tasks[]")
@@ -1142,6 +1143,9 @@ def api_biometrics_convert():
         uploaded_file.save(str(input_path))
 
         output_root = tmp_dir_path / "prism_dataset"
+
+        if dry_run:
+            log_msg("🔍 DRY-RUN MODE - No files will be created", "info")
 
         log_msg(f"Starting biometrics conversion for {filename}", "info")
         
@@ -1176,8 +1180,8 @@ def api_biometrics_convert():
             for col in result.unknown_columns:
                 log_msg(f"Unknown column ignored: {col}", "warning")
 
-        # Save to project if requested
-        if save_to_project:
+        # Save to project if requested (but not in dry-run mode)
+        if save_to_project and not dry_run:
             project_path = session.get("current_project_path")
             if project_path:
                 project_path = Path(project_path)
@@ -1196,16 +1200,18 @@ def api_biometrics_convert():
             else:
                 log_msg("No project selected in session. Cannot save directly.", "warning")
 
-        # Create ZIP
-        mem = io.BytesIO()
-        with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
-            for p in output_root.rglob("*"):
-                if p.is_file():
-                    arcname = p.relative_to(output_root)
-                    zf.write(p, arcname.as_posix())
-        mem.seek(0)
-        
-        zip_base64 = base64.b64encode(mem.read()).decode("utf-8")
+        # Create ZIP (but not in dry-run mode)
+        zip_base64 = None
+        if not dry_run:
+            mem = io.BytesIO()
+            with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+                for p in output_root.rglob("*"):
+                    if p.is_file():
+                        arcname = p.relative_to(output_root)
+                        zf.write(p, arcname.as_posix())
+            mem.seek(0)
+            
+            zip_base64 = base64.b64encode(mem.read()).decode("utf-8")
         
         # Run validation if requested
         validation = None
