@@ -85,9 +85,24 @@ def _apply_run_suffix(code: str, run: int | None) -> str:
     return _sanitize_question_code(f"{truncated_code}{suffix}")
 
 
+def _apply_ls_styling(text):
+    """
+    Apply LimeSurvey HTML styling to question text.
+    Wraps text with font-size and bold styling for better readability.
+    """
+    if not text:
+        return text
+    # Don't double-wrap if already has styling
+    if '<span' in text or '<strong>' in text:
+        return text
+    return f'<span style="font-size:18px;"><strong>{text}</strong></span>'
+
+
 def _determine_ls_question_type(q_data, has_levels):
     """
     Determine the LimeSurvey question type based on PRISM metadata.
+
+    Checks for LimeSurvey-specific settings first, then falls back to generic InputType.
 
     InputType mapping to LimeSurvey types:
     - numerical: N (Numerical input)
@@ -105,8 +120,39 @@ def _determine_ls_question_type(q_data, has_levels):
     Returns:
         Tuple of (ls_type, extra_attributes)
     """
-    input_type = q_data.get("InputType", "").lower()
+    # Check for LimeSurvey-specific settings first
+    ls_config = q_data.get("LimeSurvey", {})
     extra_attrs = {}
+
+    # If LimeSurvey section has explicit questionType, use it
+    if ls_config.get("questionType"):
+        q_type = ls_config["questionType"]
+
+        # Apply LimeSurvey-specific validation settings
+        ls_validation = ls_config.get("validation", {})
+        if ls_validation.get("min") is not None:
+            extra_attrs["minimum"] = str(ls_validation["min"])
+        if ls_validation.get("max") is not None:
+            extra_attrs["maximum"] = str(ls_validation["max"])
+        if ls_validation.get("integerOnly"):
+            extra_attrs["num_value_int_only"] = "1"
+
+        # Apply input width if specified
+        if ls_config.get("inputWidth"):
+            extra_attrs["text_input_width"] = ls_config["inputWidth"]
+
+        # Apply hidden attribute
+        if ls_config.get("hidden"):
+            extra_attrs["hidden"] = "1"
+
+        # Apply equation if specified
+        if ls_config.get("equation"):
+            extra_attrs["equation"] = ls_config["equation"]
+
+        return q_type, extra_attrs
+
+    # Fall back to generic InputType mapping
+    input_type = q_data.get("InputType", "").lower()
 
     # Check for calculated field first
     if input_type == "calculated" or "Calculation" in q_data:
@@ -134,19 +180,18 @@ def _determine_ls_question_type(q_data, has_levels):
             extra_attrs["hidden"] = "1"
         return "*", extra_attrs
 
-    # Numerical input
+    # Numerical input - use generic MinValue/MaxValue
     if input_type == "numerical":
-        validation = q_data.get("Validation", {})
-        min_val = validation.get("min", q_data.get("MinValue", ""))
-        max_val = validation.get("max", q_data.get("MaxValue", ""))
+        min_val = q_data.get("MinValue", "")
+        max_val = q_data.get("MaxValue", "")
         if min_val != "":
             extra_attrs["minimum"] = str(min_val)
         if max_val != "":
             extra_attrs["maximum"] = str(max_val)
-        if validation.get("type") == "integer":
+        if q_data.get("DataType") == "integer":
             extra_attrs["num_value_int_only"] = "1"
-        # Set smaller input width - 7% is good for numeric input
-        extra_attrs["text_input_width"] = "7%"
+        # Default input width for numeric fields
+        extra_attrs["text_input_width"] = ls_config.get("inputWidth", "7%")
         return "N", extra_attrs
 
     # Slider input - map to Array (Numbers) with slider display or 5-point
@@ -964,6 +1009,8 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     i18n_data,
                     f"{first_code}.Description",
                 )
+                # Apply LimeSurvey HTML styling to question text
+                description = _apply_ls_styling(description)
 
                 # Get help text
                 help_text = get_text(
@@ -1561,6 +1608,8 @@ def generate_lss_from_customization(
                 orig = q.get("originalData", {})
                 if not description:
                     description = get_text(orig.get("Description", q_code), language)
+                # Apply LimeSurvey HTML styling to question text
+                description = _apply_ls_styling(description)
 
                 # Get help text
                 help_text = get_text(orig.get("Help", ""), language)
