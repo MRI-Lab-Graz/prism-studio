@@ -1,0 +1,96 @@
+{
+  "RecipeVersion": "1.0",
+  "Kind": "biometrics",
+  "Biometrics": {
+    "Name": "Basic Fitness Assessment",
+    "BiometricName": "fitness"
+  },
+  "Transforms": {
+    "Derived": [
+      {
+        "Name": "grip_strength_avg",
+        "Description": "Average grip strength (mean of left and right hand)",
+        "Method": "mean",
+        "Items": ["grip_strength_left", "grip_strength_right"]
+      },
+      {
+        "Name": "hr_recovery",
+        "Description": "Heart rate recovery (step_test_hr - recovery_hr_1min)",
+        "Method": "difference",
+        "Items": ["step_test_hr", "recovery_hr_1min"],
+        "Interpretation": {
+          ">20": "Excellent cardiovascular fitness",
+          "15-20": "Good cardiovascular fitness",
+          "<15": "Below average cardiovascular fitness"
+        }
+      }
+    ]
+  },
+  "Scores": [
+    {
+      "Name": "cardio_score",
+      "Description": "Cardiovascular fitness composite score",
+      "Method": "composite",
+      "Components": [
+        {
+          "Item": "resting_hr",
+          "Weight": 0.3,
+          "Direction": "lower_better",
+          "Normalization": {"min": 50, "max": 100}
+        },
+        {
+          "Item": "hr_recovery",
+          "Weight": 0.7,
+          "Direction": "higher_better",
+          "Normalization": {"min": 10, "max": 40}
+        }
+      ],
+      "Range": {"min": 0, "max": 100}
+    },
+    {
+      "Name": "strength_score",
+      "Description": "Muscular strength composite score",
+      "Method": "composite",
+      "Components": [
+        {
+          "Item": "grip_strength_avg",
+          "Weight": 0.5,
+          "Direction": "higher_better",
+          "Normalization": {"min": 20, "max": 50}
+        },
+        {
+          "Item": "plank_duration",
+          "Weight": 0.5,
+          "Direction": "higher_better",
+          "Normalization": {"min": 15, "max": 120}
+        }
+      ],
+      "Range": {"min": 0, "max": 100}
+    },
+    {
+      "Name": "flexibility_score",
+      "Description": "Flexibility score based on sit-and-reach test",
+      "Method": "normalize",
+      "Item": "sit_and_reach",
+      "Normalization": {"min": -10, "max": 30},
+      "Range": {"min": 0, "max": 100}
+    },
+    {
+      "Name": "fitness_total",
+      "Description": "Overall fitness score (weighted average of subscores)",
+      "Method": "weighted_mean",
+      "Components": [
+        {"Score": "cardio_score", "Weight": 0.4},
+        {"Score": "strength_score", "Weight": 0.4},
+        {"Score": "flexibility_score", "Weight": 0.2}
+      ],
+      "Range": {"min": 0, "max": 100},
+      "Interpretation": {
+        "0-40": "Below average fitness",
+        "41-60": "Average fitness",
+        "61-80": "Above average fitness",
+        "81-100": "Excellent fitness"
+      }
+    }
+  ]
+}
