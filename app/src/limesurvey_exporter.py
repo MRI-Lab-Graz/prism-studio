@@ -20,6 +20,73 @@ def add_row(parent, data):
 # - Only alphanumeric characters allowed (no underscores, hyphens, spaces)
 LS_QUESTION_CODE_MAX_LENGTH = 15
 
+# LimeSurvey answer code limits:
+# - Default limit is 5 characters (can be increased in LS settings, but we use 5 for compatibility)
+# - Only alphanumeric characters allowed
+LS_ANSWER_CODE_MAX_LENGTH = 5
+
+
+def _sanitize_answer_code(code: str, existing_codes: set, max_length: int = LS_ANSWER_CODE_MAX_LENGTH) -> str:
+    """
+    Sanitize answer code for LimeSurvey compatibility.
+
+    LimeSurvey answer codes have a 5-character limit by default.
+    This function shortens long codes and ensures uniqueness within a question.
+
+    Args:
+        code: Original answer code (e.g., "corrected_glasses", "n/a")
+        existing_codes: Set of already-used codes for this question (to avoid collisions)
+        max_length: Maximum allowed length (default: 5)
+
+    Returns:
+        Sanitized unique code (e.g., "corgl", "na", "A1", "A2")
+    """
+    import re
+
+    # Handle special cases
+    if code == "n/a" or code == "N/A":
+        result = "na"
+        if result not in existing_codes:
+            return result
+
+    # Remove non-alphanumeric characters
+    sanitized = re.sub(r'[^a-zA-Z0-9]', '', code)
+
+    # If short enough and unique, use as-is
+    if len(sanitized) <= max_length:
+        if sanitized not in existing_codes:
+            return sanitized
+        # Need to make unique
+        for i in range(1, 100):
+            candidate = f"{sanitized[:max_length-1]}{i}"[:max_length]
+            if candidate not in existing_codes:
+                return candidate
+
+    # For long codes, create abbreviated version
+    # Try to keep meaningful parts: first chars + last chars
+    if len(sanitized) > max_length:
+        # Take first 3 chars + last 2 chars (or adjusted based on max_length)
+        prefix_len = max_length - 2
+        suffix_len = 2
+        abbreviated = sanitized[:prefix_len] + sanitized[-suffix_len:]
+
+        if abbreviated not in existing_codes:
+            return abbreviated
+
+        # If collision, use incremental suffix
+        for i in range(1, 100):
+            candidate = f"{sanitized[:max_length-1]}{i}"[:max_length]
+            if candidate not in existing_codes:
+                return candidate
+
+    # Fallback: generate unique code A1, A2, etc.
+    for i in range(1, 1000):
+        candidate = f"A{i}"
+        if candidate not in existing_codes:
+            return candidate
+
+    return sanitized[:max_length]  # Last resort
+
 
 def _sanitize_question_code(code: str, max_length: int = LS_QUESTION_CODE_MAX_LENGTH) -> str:
     """
@@ -999,6 +1066,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     # Add Answers (Only once for the matrix parent)
                     if levels:
                         sort_ans = 0
+                        used_answer_codes = set()  # Track used codes to avoid collisions
                         for code, answer_text in levels.items():
                             sort_ans += 1
                             ans_text = get_text(
@@ -1007,9 +1075,12 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                                 i18n_data,
                                 f"{first_code}.Levels.{code}",
                             )
+                            # Sanitize answer code (LimeSurvey has 5-char limit)
+                            sanitized_code = _sanitize_answer_code(code, used_answer_codes)
+                            used_answer_codes.add(sanitized_code)
                             ans_row = {
                                 "qid": qid,
-                                "code": code,
+                                "code": sanitized_code,
                                 "sortorder": str(sort_ans),
                                 "assessment_value": "0",
                                 "scale_id": "0",
@@ -1024,9 +1095,9 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                                 add_row(
                                     answer_l10ns_rows,
                                     {
-                                        "id": f"{qid}_{code}",
+                                        "id": f"{qid}_{sanitized_code}",
                                         "qid": qid,
-                                        "code": code,
+                                        "code": sanitized_code,
                                         "answer": ans_text,
                                         "language": language,
                                         "sid": sid,
@@ -1110,6 +1181,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                 # Add Answers (skip "other" if OtherOption is enabled to avoid duplicate)
                 if levels:
                     sort_ans = 0
+                    used_answer_codes = set()  # Track used codes to avoid collisions
                     for code, answer_text in levels.items():
                         # Skip "other" level if OtherOption is enabled (LimeSurvey will add its own)
                         if code.lower() == "other" and has_other:
@@ -1118,9 +1190,12 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                         ans_text = get_text(
                             answer_text, language, i18n_data, f"{q_code}.Levels.{code}"
                         )
+                        # Sanitize answer code (LimeSurvey has 5-char limit)
+                        sanitized_code = _sanitize_answer_code(code, used_answer_codes)
+                        used_answer_codes.add(sanitized_code)
                         ans_row = {
                             "qid": qid,
-                            "code": code,
+                            "code": sanitized_code,
                             "sortorder": str(sort_ans),
                             "assessment_value": "0",
                             "scale_id": "0",
@@ -1135,9 +1210,9 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                             add_row(
                                 answer_l10ns_rows,
                                 {
-                                    "id": f"{qid}_{code}",
+                                    "id": f"{qid}_{sanitized_code}",
                                     "qid": qid,
-                                    "code": code,
+                                    "code": sanitized_code,
                                     "answer": ans_text,
                                     "language": language,
                                     "sid": sid,
@@ -1705,12 +1780,16 @@ def generate_lss_from_customization(
                 # Add Answers for the matrix (only once)
                 if levels:
                     sort_ans = 0
+                    used_answer_codes = set()  # Track used codes to avoid collisions
                     for code, answer_text in levels.items():
                         sort_ans += 1
                         ans_text = get_text(answer_text, language)
+                        # Sanitize answer code (LimeSurvey has 5-char limit)
+                        sanitized_code = _sanitize_answer_code(code, used_answer_codes)
+                        used_answer_codes.add(sanitized_code)
                         ans_row = {
                             "qid": qid,
-                            "code": code,
+                            "code": sanitized_code,
                             "sortorder": str(sort_ans),
                             "assessment_value": "0",
                             "scale_id": "0",
@@ -1725,9 +1804,9 @@ def generate_lss_from_customization(
                             add_row(
                                 answer_l10ns_rows,
                                 {
-                                    "id": f"{qid}_{code}",
+                                    "id": f"{qid}_{sanitized_code}",
                                     "qid": qid,
-                                    "code": code,
+                                    "code": sanitized_code,
                                     "answer": ans_text,
                                     "language": language,
                                     "sid": sid,
@@ -1811,6 +1890,7 @@ def generate_lss_from_customization(
                 if levels:
                     print(f"[LSS-EXPORT]   Writing {len(levels)} answers for {final_code}")
                     sort_ans = 0
+                    used_answer_codes = set()  # Track used codes to avoid collisions
                     for code, answer_text in levels.items():
                         # Skip "other" level if OtherOption is enabled (LimeSurvey will add its own)
                         if code.lower() == "other" and has_other:
@@ -1818,10 +1898,13 @@ def generate_lss_from_customization(
                             continue
                         sort_ans += 1
                         ans_text = get_text(answer_text, language)
-                        print(f"[LSS-EXPORT]     Answer {sort_ans}: code='{code}', text='{ans_text[:30]}...'")
+                        # Sanitize answer code (LimeSurvey has 5-char limit)
+                        sanitized_code = _sanitize_answer_code(code, used_answer_codes)
+                        used_answer_codes.add(sanitized_code)
+                        print(f"[LSS-EXPORT]     Answer {sort_ans}: code='{code}' -> '{sanitized_code}', text='{ans_text[:30]}...'")
                         ans_row = {
                             "qid": qid,
-                            "code": code,
+                            "code": sanitized_code,
                             "sortorder": str(sort_ans),
                             "assessment_value": "0",
                             "scale_id": "0",
@@ -1836,9 +1919,9 @@ def generate_lss_from_customization(
                             add_row(
                                 answer_l10ns_rows,
                                 {
-                                    "id": f"{qid}_{code}",
+                                    "id": f"{qid}_{sanitized_code}",
                                     "qid": qid,
-                                    "code": code,
+                                    "code": sanitized_code,
                                     "answer": ans_text,
                                     "language": language,
                                     "sid": sid,
