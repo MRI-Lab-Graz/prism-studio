@@ -279,6 +279,21 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
         const countBadge = document.getElementById('participantsPreviewCount');
         countBadge.textContent = `${data.participant_count} participants`;
         
+        // Show simulation note if available
+        const infoDiv = document.getElementById('participantsInfo');
+        if (data.simulation_note) {
+            infoDiv.innerHTML = `
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Preview: Simulated Output</strong><br>
+                ${data.simulation_note}
+                ${data.total_source_columns && data.extracted_columns ? 
+                    `<br>Extracting ${data.extracted_columns} of ${data.total_source_columns} columns from source file.` : ''}
+            `;
+            infoDiv.classList.remove('d-none');
+        } else {
+            infoDiv.classList.add('d-none');
+        }
+        
         const table = document.getElementById('participantsPreviewTable');
         const thead = table.querySelector('thead');
         const tbody = table.querySelector('tbody');
