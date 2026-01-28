@@ -325,7 +325,7 @@ def api_survey_customizer_load():
                     "questionCode": q_code,
                     "description": description,
                     "displayOrder": idx,
-                    "mandatory": True,  # Default to mandatory
+                    "mandatory": q_data.get("Mandatory", True),  # Read from template, default to mandatory
                     "enabled": True,
                     "runNumber": current_run,
                     "levels": q_data.get("Levels", {}),
