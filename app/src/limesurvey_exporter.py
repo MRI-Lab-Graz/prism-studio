@@ -85,6 +85,147 @@ def _apply_run_suffix(code: str, run: int | None) -> str:
     return _sanitize_question_code(f"{truncated_code}{suffix}")
 
 
+def _determine_ls_question_type(q_data, has_levels):
+    """
+    Determine the LimeSurvey question type based on PRISM metadata.
+
+    InputType mapping to LimeSurvey types:
+    - numerical: N (Numerical input)
+    - text: T (Long free text) or S (Short free text)
+    - dropdown: ! (List dropdown) or L (List radio)
+    - slider: 5 (5-point choice) or K (Multiple numerical) with slider settings
+    - calculated: * (Equation) - hidden calculated field
+    - radio (default for Levels): L (List radio)
+    - array: F (Array/Matrix)
+
+    Args:
+        q_data: Question data dictionary from PRISM template
+        has_levels: Whether the question has Levels defined
+
+    Returns:
+        Tuple of (ls_type, extra_attributes)
+    """
+    input_type = q_data.get("InputType", "").lower()
+    extra_attrs = {}
+
+    # Check for calculated field first
+    if input_type == "calculated" or "Calculation" in q_data:
+        calc_config = q_data.get("Calculation", {})
+        extra_attrs["equation"] = calc_config.get("formula", "")
+        if calc_config.get("hidden", False):
+            extra_attrs["hidden"] = "1"
+        return "*", extra_attrs
+
+    # Numerical input
+    if input_type == "numerical":
+        validation = q_data.get("Validation", {})
+        min_val = validation.get("min", q_data.get("MinValue", ""))
+        max_val = validation.get("max", q_data.get("MaxValue", ""))
+        if min_val != "":
+            extra_attrs["minimum"] = str(min_val)
+        if max_val != "":
+            extra_attrs["maximum"] = str(max_val)
+        if validation.get("type") == "integer":
+            extra_attrs["num_value_int_only"] = "1"
+        # Set smaller input width - 7% is good for numeric input
+        extra_attrs["text_input_width"] = "7%"
+        return "N", extra_attrs
+
+    # Slider input - map to Array (Numbers) with slider display or 5-point
+    if input_type == "slider":
+        slider_config = q_data.get("SliderConfig", {})
+        extra_attrs["slider_min"] = str(slider_config.get("min", 1))
+        extra_attrs["slider_max"] = str(slider_config.get("max", 5))
+        extra_attrs["slider_step"] = str(slider_config.get("step", 1))
+        extra_attrs["slider_showminmax"] = "1" if slider_config.get("showLabels", True) else "0"
+        # Use K (Multiple numerical input) with slider appearance
+        return "K", extra_attrs
+
+    # Dropdown - use ! (List dropdown) for questions with many options
+    if input_type == "dropdown":
+        # Always use dropdown type for explicit dropdown InputType
+        return "!", extra_attrs
+
+    # Check if this has many Levels (>10) - use dropdown instead of radio
+    levels = q_data.get("Levels", {})
+    if len(levels) > 10:
+        return "!", extra_attrs
+
+    # Text input (multiline or single line)
+    if input_type == "text":
+        text_config = q_data.get("TextConfig", {})
+        if text_config.get("multiline", False):
+            extra_attrs["display_rows"] = str(text_config.get("rows", 3))
+            return "T", extra_attrs  # Long free text
+        return "S", extra_attrs  # Short free text
+
+    # Default behavior based on Levels presence
+    if has_levels:
+        return "L", extra_attrs  # List (Radio)
+    else:
+        return "T", extra_attrs  # Long free text
+
+
+def _build_relevance_equation(q_data, code_mapping=None):
+    """
+    Build LimeSurvey relevance equation from ConditionalDisplay metadata.
+
+    Args:
+        q_data: Question data dictionary
+        code_mapping: Optional dict mapping original codes to sanitized codes
+
+    Returns:
+        Relevance equation string (e.g., "((sex.NAOK == 'F'))")
+    """
+    # Check for explicit Relevance first
+    if "Relevance" in q_data:
+        return q_data["Relevance"]
+    if "LimeSurvey" in q_data and "Relevance" in q_data["LimeSurvey"]:
+        return q_data["LimeSurvey"]["Relevance"]
+
+    # Check for ConditionalDisplay
+    conditional = q_data.get("ConditionalDisplay", {})
+    if not conditional:
+        return "1"  # Always shown
+
+    show_when = conditional.get("showWhen", "")
+    if not show_when:
+        return "1"
+
+    # Convert PRISM expression to LimeSurvey expression
+    # Examples:
+    #   "sex == 'F'" -> "((sex.NAOK == 'F'))"
+    #   "medication_current == 'yes'" -> "((medicationcurrent.NAOK == 'yes'))"
+
+    import re
+
+    # Parse simple equality expressions
+    # Pattern: variable == 'value' or variable != 'value'
+    pattern = r"(\w+)\s*(==|!=)\s*['\"]([^'\"]+)['\"]"
+
+    def replace_expr(match):
+        var_name = match.group(1)
+        operator = match.group(2)
+        value = match.group(3)
+
+        # Sanitize variable name to match LimeSurvey code
+        sanitized_var = _sanitize_question_code(var_name)
+
+        # Build LimeSurvey expression
+        if operator == "==":
+            return f"(({sanitized_var}.NAOK == '{value}'))"
+        else:
+            return f"(({sanitized_var}.NAOK != '{value}'))"
+
+    result = re.sub(pattern, replace_expr, show_when)
+
+    # Handle logical operators
+    result = result.replace(" and ", " && ")
+    result = result.replace(" or ", " || ")
+
+    return result if result else "1"
+
+
 def _extract_metadata_from_files(json_files, language="en"):
     """
     Extract metadata (Authors, DOI, Citation, Manual, License) from JSON files.
@@ -423,23 +564,30 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
             continue
 
         # Filter out metadata keys to get questions
+        # These are structural/metadata keys that should never appear as questions
+        METADATA_KEYS = {
+            "@context",
+            "Technical",
+            "Study",
+            "Metadata",
+            "Categories",
+            "TaskName",
+            "I18n",
+            "Scoring",
+            "Normative",
+            "participant_id",  # Usually auto-assigned, not filled by participants
+        }
+
         if "Questions" in data and isinstance(data["Questions"], dict):
             all_questions = data["Questions"]
         else:
             all_questions = {
                 k: v
                 for k, v in data.items()
-                if k
-                not in [
-                    "Technical",
-                    "Study",
-                    "Metadata",
-                    "Categories",
-                    "TaskName",
-                    "I18n",
-                    "Scoring",
-                    "Normative",
-                ]
+                if k not in METADATA_KEYS
+                and isinstance(v, dict)
+                and "Description" in v
+                and not v.get("_exclude", False)  # Respect _exclude flag
             }
 
         # Apply inclusion filter if provided
@@ -449,6 +597,12 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
             }
         else:
             questions_data = all_questions
+
+        # Sort questions by DisplayOrder if available
+        def get_display_order(item):
+            return item[1].get("DisplayOrder", 999)
+
+        questions_data = dict(sorted(questions_data.items(), key=get_display_order))
 
         gid = str(gid_counter)
         gid_counter += 1
@@ -548,6 +702,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
         if matrix_mode:
             if matrix_global:
                 # Global grouping: group all questions with identical levels
+                # BUT skip grouping for dropdown questions or questions with many levels
                 groups = []
                 level_to_group_idx = {}
 
@@ -556,7 +711,20 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                         continue
 
                     levels = q_data.get("Levels")
-                    if levels and isinstance(levels, dict) and len(levels) > 0:
+                    input_type = q_data.get("InputType", "").lower()
+
+                    # Don't group dropdown questions or questions with >10 options
+                    should_not_group = (
+                        input_type == "dropdown" or
+                        input_type == "numerical" or
+                        input_type == "text" or
+                        input_type == "calculated" or
+                        (levels and len(levels) > 10)
+                    )
+
+                    if should_not_group:
+                        groups.append([(q_code, q_data)])
+                    elif levels and isinstance(levels, dict) and len(levels) > 0:
                         l_str = json.dumps(levels, sort_keys=True)
                         if l_str in level_to_group_idx:
                             groups[level_to_group_idx[l_str]].append((q_code, q_data))
@@ -568,6 +736,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                 grouped_questions = groups
             else:
                 # Consecutive grouping only
+                # BUT skip grouping for dropdown questions or questions with many levels
                 current_group = []
                 last_levels_str = None
 
@@ -576,11 +745,29 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                         continue
 
                     levels = q_data.get("Levels")
+                    input_type = q_data.get("InputType", "").lower()
+
+                    # Don't group dropdown questions or questions with >10 options
+                    should_not_group = (
+                        input_type == "dropdown" or
+                        input_type == "numerical" or
+                        input_type == "text" or
+                        input_type == "calculated" or
+                        (levels and len(levels) > 10)
+                    )
+
                     levels_str = (
                         json.dumps(levels, sort_keys=True) if levels else "NO_LEVELS"
                     )
 
-                    if not current_group:
+                    if should_not_group:
+                        # Force this question to be standalone
+                        if current_group:
+                            grouped_questions.append(current_group)
+                            current_group = []
+                        grouped_questions.append([(q_code, q_data)])
+                        last_levels_str = None
+                    elif not current_group:
                         current_group.append((q_code, q_data))
                         last_levels_str = levels_str
                     else:
@@ -611,12 +798,8 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
             qid_counter += 1
             q_sort_order += 1
 
-            # Logic / Relevance
-            relevance = "1"
-            if "Relevance" in first_data:
-                relevance = first_data["Relevance"]
-            elif "LimeSurvey" in first_data and "Relevance" in first_data["LimeSurvey"]:
-                relevance = first_data["LimeSurvey"]["Relevance"]
+            # Logic / Relevance - use new helper function
+            relevance = _build_relevance_equation(first_data)
 
             if is_matrix:
                 # Matrix Question (Array)
@@ -759,8 +942,19 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     f"{first_code}.Description",
                 )
 
-                # Determine Type
-                q_type = "L" if levels else "T"  # List (Radio) or Long Free Text
+                # Get help text
+                help_text = get_text(
+                    q_data.get("Help", ""),
+                    language,
+                    i18n_data,
+                    f"{first_code}.Help",
+                )
+
+                # Determine Type using new helper function
+                q_type, extra_attrs = _determine_ls_question_type(q_data, bool(levels))
+
+                # Check for OtherOption
+                has_other = "OtherOption" in q_data and q_data["OtherOption"].get("enabled", False)
 
                 # Add Single Question
                 q_data_row = {
@@ -770,15 +964,21 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     "gid": gid,
                     "type": q_type,
                     "title": q_code,
-                    "other": "N",
+                    "other": "Y" if has_other else "N",
                     "mandatory": "Y",
                     "question_order": str(q_sort_order),
                     "scale_id": "0",
                     "same_default": "0",
                     "relevance": relevance,
                 }
+
+                # Add extra attributes from type determination
+                for attr_key, attr_val in extra_attrs.items():
+                    q_data_row[attr_key] = attr_val
+
                 if not is_v6:
                     q_data_row["question"] = description
+                    q_data_row["help"] = help_text
                     q_data_row["language"] = language
 
                 add_row(questions_rows, q_data_row)
@@ -790,7 +990,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                             "id": qid,
                             "qid": qid,
                             "question": description,
-                            "help": "",
+                            "help": help_text,
                             "language": language,
                             "sid": sid,
                         },
@@ -1180,13 +1380,9 @@ def generate_lss_from_customization(
             qid_counter += 1
             q_sort_order += 1
 
-            # Relevance
-            relevance = "1"
+            # Relevance - use new helper function with originalData
             original_data = first_q.get("originalData", {})
-            if "Relevance" in original_data:
-                relevance = original_data["Relevance"]
-            elif "LimeSurvey" in original_data and "Relevance" in original_data["LimeSurvey"]:
-                relevance = original_data["LimeSurvey"]["Relevance"]
+            relevance = _build_relevance_equation(original_data)
 
             if is_matrix:
                 # Matrix Question (Array)
@@ -1324,14 +1520,20 @@ def generate_lss_from_customization(
                 final_code = _apply_run_suffix(q_code, run_num)
 
                 description = q.get("description", "")
+                orig = q.get("originalData", {})
                 if not description:
-                    orig = q.get("originalData", {})
                     description = get_text(orig.get("Description", q_code), language)
+
+                # Get help text
+                help_text = get_text(orig.get("Help", ""), language)
 
                 is_mandatory = q.get("mandatory", True)
 
-                # Determine Type
-                q_type = "L" if levels else "T"  # List (Radio) or Long Free Text
+                # Determine Type using new helper function
+                q_type, extra_attrs = _determine_ls_question_type(orig, bool(levels))
+
+                # Check for OtherOption
+                has_other = "OtherOption" in orig and orig["OtherOption"].get("enabled", False)
 
                 q_data_row = {
                     "qid": qid,
@@ -1340,15 +1542,21 @@ def generate_lss_from_customization(
                     "gid": gid,
                     "type": q_type,
                     "title": final_code,
-                    "other": "N",
+                    "other": "Y" if has_other else "N",
                     "mandatory": "Y" if is_mandatory else "N",
                     "question_order": str(q_sort_order),
                     "scale_id": "0",
                     "same_default": "0",
                     "relevance": relevance,
                 }
+
+                # Add extra attributes from type determination
+                for attr_key, attr_val in extra_attrs.items():
+                    q_data_row[attr_key] = attr_val
+
                 if not is_v6:
                     q_data_row["question"] = description
+                    q_data_row["help"] = help_text
                     q_data_row["language"] = language
 
                 add_row(questions_rows, q_data_row)
@@ -1360,7 +1568,7 @@ def generate_lss_from_customization(
                             "id": qid,
                             "qid": qid,
                             "question": description,
-                            "help": "",
+                            "help": help_text,
                             "language": language,
                             "sid": sid,
                         },

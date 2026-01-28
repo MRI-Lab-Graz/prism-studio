@@ -297,8 +297,15 @@ def api_survey_customizer_load():
         if "Questions" in template_data and isinstance(template_data["Questions"], dict):
             all_questions = template_data["Questions"]
         else:
-            reserved = ["Technical", "Study", "Metadata", "Categories", "TaskName", "I18n", "Scoring", "Normative"]
-            all_questions = {k: v for k, v in template_data.items() if k not in reserved}
+            # Filter out metadata keys and non-question entries
+            reserved = ["@context", "Technical", "Study", "Metadata", "Categories", "TaskName", "I18n", "Scoring", "Normative", "participant_id"]
+            all_questions = {
+                k: v for k, v in template_data.items()
+                if k not in reserved
+                and isinstance(v, dict)
+                and "Description" in v
+                and not v.get("_exclude", False)
+            }
 
         # Filter to included questions
         if include_questions:
@@ -408,10 +415,21 @@ def api_survey_customizer_export():
             survey_title=survey_title
         )
 
+        # Generate filename from survey title and date
+        import re
+        from datetime import datetime
+        # Sanitize survey title for filename (remove special chars, replace spaces with underscores)
+        safe_title = re.sub(r'[^\w\s-]', '', survey_title)
+        safe_title = re.sub(r'[\s]+', '_', safe_title).strip('_')
+        if not safe_title:
+            safe_title = "survey"
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        download_filename = f"{safe_title}_{date_str}.lss"
+
         return send_file(
             temp_path,
             as_attachment=True,
-            download_name=f"survey_export_{language}.lss",
+            download_name=download_filename,
             mimetype="application/xml"
         )
     except Exception as e:
@@ -1238,7 +1256,7 @@ def _extract_template_info(full_path, filename):
     i18n = {}
     study_info = {}
     try:
-        with open(full_path, "r") as jf:
+        with open(full_path, "r", encoding="utf-8") as jf:
             data = json.load(jf)
             study = data.get("Study", {})
             desc = study.get("Description", "")
@@ -1280,11 +1298,12 @@ def _extract_template_info(full_path, filename):
 
             if "Questions" in data and isinstance(data["Questions"], dict):
                 for k, v in data["Questions"].items():
-                    questions.append(_get_q_info(k, v))
+                    if isinstance(v, dict) and not v.get("_exclude", False):
+                        questions.append(_get_q_info(k, v))
             else:
-                reserved = ["Technical", "Study", "Metadata", "Categories", "TaskName", "Name", "BIDSVersion", "Description", "URL", "License", "Authors", "Acknowledgements", "References", "Funding", "I18n", "Scoring", "Normative"]
+                reserved = ["@context", "Technical", "Study", "Metadata", "Categories", "TaskName", "Name", "BIDSVersion", "Description", "URL", "License", "Authors", "Acknowledgements", "References", "Funding", "I18n", "Scoring", "Normative", "participant_id"]
                 for k, v in data.items():
-                    if k not in reserved:
+                    if k not in reserved and isinstance(v, dict) and "Description" in v and not v.get("_exclude", False):
                         questions.append(_get_q_info(k, v))
     except Exception:
         pass
@@ -1384,9 +1403,21 @@ def generate_lss_endpoint():
 
         language = data.get("language", "en")
         ls_version = data.get("ls_version", "3")
+        survey_title = data.get("survey_title", "")
         generate_lss(valid_files, temp_path, language=language, ls_version=ls_version)
 
-        return send_file(temp_path, as_attachment=True, download_name=f"survey_export_{language}.lss", mimetype="application/xml")
+        # Generate filename with survey title (if provided) and date
+        import re
+        from datetime import datetime
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        if survey_title:
+            safe_title = re.sub(r'[^\w\s-]', '', survey_title)
+            safe_title = re.sub(r'[\s]+', '_', safe_title).strip('_')
+            download_filename = f"{safe_title}_{date_str}.lss"
+        else:
+            download_filename = f"survey_export_{date_str}.lss"
+
+        return send_file(temp_path, as_attachment=True, download_name=download_filename, mimetype="application/xml")
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

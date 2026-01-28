@@ -32,7 +32,7 @@
       "en": "Standardized sociodemographic variables for participants.tsv compatible with NeuroBagel harmonization.",
       "de": "Standardisierte soziodemographische Variablen für participants.tsv kompatibel mit NeuroBagel-Harmonisierung."
     },
-    "Version": "1.1.0",
+    "Version": "2.1.0",
     "License": "CC0-1.0",
     "LicenseID": "CC0-1.0",
     "Access": "public",
@@ -43,10 +43,14 @@
     "NeuroBagelHarmonization": "This template follows NeuroBagel participant metadata standards with semantic annotations for machine-readability."
   },
   "Metadata": {
-    "SchemaVersion": "1.2.0",
+    "SchemaVersion": "2.1.0",
     "Creator": "PRISM Survey Library",
-    "CreationDate": "2026-01-22",
-    "ConformsTo": "NeuroBagel Participant Metadata Standard (v1.0)"
+    "CreationDate": "2026-01-28",
+    "ConformsTo": "NeuroBagel Participant Metadata Standard (v1.0)",
+    "ChangeLog": {
+      "2.1.0": "Added DisplayOrder, Help text, proper country/language Levels, improved question ordering",
+      "2.0.0": "Added InputType, Validation, ConditionalDisplay, Calculation, OtherOption, and FollowUp fields"
+    }
   },
   "participant_id": {
     "Description": {
@@ -55,22 +59,68 @@
     },
     "DataType": "string",
     "VariableType": "Identifier",
+    "_exclude": true,
     "Annotations": {
       "IsAbout": "snomed:14421000",
       "Relationship": "instance_of",
       "Label": "Person (ID)"
     }
   },
+  "group": {
+    "Description": {
+      "en": "<span style=\"font-size:18px;\"><strong>Study group assignment</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Studiengruppenzuordnung</strong></span>"
+    },
+    "Help": {
+      "en": "Enter your assigned study group code as provided by the researcher. Leave empty if not applicable.",
+      "de": "Geben Sie Ihren zugewiesenen Studiengruppencode ein, wie vom Forscher mitgeteilt. Leer lassen, falls nicht zutreffend."
+    },
+    "DisplayOrder": 1,
+    "DataType": "string",
+    "VariableType": "Categorical",
+    "InputType": "text",
+    "TextConfig": {
+      "multiline": false,
+      "placeholder": {
+        "en": "e.g., A, B, control, patient...",
+        "de": "z.B. A, B, Kontrolle, Patient..."
+      }
+    },
+    "_customizable": true,
+    "_customizationNote": {
+      "en": "IMPORTANT: Researchers should replace this with predefined Levels specific to their study (e.g., control/experimental, patient/healthy, group_A/group_B).",
+      "de": "WICHTIG: Forscher sollten dies durch vordefinierte Levels ersetzen, die spezifisch für ihre Studie sind (z.B. Kontrolle/Experimentell, Patient/Gesund, Gruppe_A/Gruppe_B)."
+    },
+    "Annotations": {
+      "IsAbout": "ncit:C41185",
+      "Label": "Study group"
+    }
+  },
   "age": {
     "Description": {
-      "en": "Age of participant in years at time of data collection",
-      "de": "Alter des Teilnehmers in Jahren zum Zeitpunkt der Datenerhebung"
+      "en": "<span style=\"font-size:18px;\"><strong>Your age in years</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Ihr Alter in Jahren</strong></span>"
     },
+    "Help": {
+      "en": "Enter your current age as a whole number (e.g., 25). Must be between 18 and 100.",
+      "de": "Geben Sie Ihr aktuelles Alter als ganze Zahl ein (z.B. 25). Muss zwischen 18 und 100 liegen."
+    },
+    "DisplayOrder": 2,
     "Units": "years",
-    "MinValue": 0,
-    "MaxValue": 120,
+    "MinValue": 18,
+    "MaxValue": 100,
     "DataType": "integer",
     "VariableType": "Continuous",
+    "InputType": "numerical",
+    "Validation": {
+      "type": "integer",
+      "min": 18,
+      "max": 100,
+      "errorMessage": {
+        "en": "Please enter a valid age between 18 and 100",
+        "de": "Bitte geben Sie ein gültiges Alter zwischen 18 und 100 ein"
+      }
+    },
     "Annotations": {
       "IsAbout": "snomed:397669002",
       "Label": "Age",
@@ -79,27 +129,26 @@
   },
   "sex": {
     "Description": {
-      "en": "Biological sex assigned at birth",
-      "de": "Biologisches Geschlecht bei Geburt"
+      "en": "<span style=\"font-size:18px;\"><strong>Biological sex assigned at birth</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Biologisches Geschlecht bei Geburt</strong></span>"
     },
+    "Help": {
+      "en": "Select the sex that was recorded on your original birth certificate.",
+      "de": "Wählen Sie das Geschlecht, das auf Ihrer ursprünglichen Geburtsurkunde vermerkt wurde."
+    },
+    "DisplayOrder": 3,
     "Levels": {
       "M": {
         "en": "Male",
-        "de": "Männlich",
-        "SnomedCode": "snomed:248153007",
-        "IRI": "http://snomed.info/id/248153007"
+        "de": "Männlich"
       },
       "F": {
         "en": "Female",
-        "de": "Weiblich",
-        "SnomedCode": "snomed:248152002",
-        "IRI": "http://snomed.info/id/248152002"
+        "de": "Weiblich"
       },
       "O": {
-        "en": "Other/Intersex",
-        "de": "Andere/Intersexuell",
-        "SnomedCode": "snomed:34000006",
-        "IRI": "http://snomed.info/id/34000006"
+        "en": "Intersex / Other",
+        "de": "Intersexuell / Andere"
       },
       "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
@@ -113,35 +162,20 @@
   },
   "gender": {
     "Description": {
-      "en": "Self-identified gender identity",
-      "de": "Selbstidentifizierte Geschlechtsidentität"
+      "en": "<span style=\"font-size:18px;\"><strong>Gender identity</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Geschlechtsidentität</strong></span>"
     },
+    "Help": {
+      "en": "Select the gender you currently identify with.",
+      "de": "Wählen Sie das Geschlecht, mit dem Sie sich aktuell identifizieren."
+    },
+    "DisplayOrder": 4,
     "Levels": {
-      "man": {
-        "en": "Man",
-        "de": "Mann",
-        "SnomedCode": "snomed:248153007"
-      },
-      "woman": {
-        "en": "Woman",
-        "de": "Frau",
-        "SnomedCode": "snomed:248152002"
-      },
-      "nonbinary": {
-        "en": "Non-binary/Genderqueer",
-        "de": "Nicht-binär/Genderqueer",
-        "SnomedCode": "snomed:33791000087105"
-      },
-      "trans_man": {
-        "en": "Transgender man",
-        "de": "Transgender Mann",
-        "SnomedCode": "snomed:407376001"
-      },
-      "trans_woman": {
-        "en": "Transgender woman",
-        "de": "Transgender Frau",
-        "SnomedCode": "snomed:407377005"
-      },
+      "man": {"en": "Man", "de": "Mann"},
+      "woman": {"en": "Woman", "de": "Frau"},
+      "nonbinary": {"en": "Non-binary / Genderqueer", "de": "Nicht-binär / Genderqueer"},
+      "trans_man": {"en": "Transgender man", "de": "Trans Mann"},
+      "trans_woman": {"en": "Transgender woman", "de": "Trans Frau"},
       "other": {"en": "Other", "de": "Andere"},
       "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
@@ -154,26 +188,19 @@
   },
   "handedness": {
     "Description": {
-      "en": "Dominant hand preference",
-      "de": "Händigkeit"
+      "en": "<span style=\"font-size:18px;\"><strong>Dominant hand</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Dominante Hand</strong></span>"
     },
+    "Help": {
+      "en": "Which hand do you primarily use for writing and fine motor tasks?",
+      "de": "Welche Hand verwenden Sie hauptsächlich zum Schreiben und für feinmotorische Aufgaben?"
+    },
+    "DisplayOrder": 5,
     "Levels": {
-      "R": {
-        "en": "Right-handed",
-        "de": "Rechtshändig",
-        "SnomedCode": "snomed:9640002"
-      },
-      "L": {
-        "en": "Left-handed",
-        "de": "Linkshändig",
-        "SnomedCode": "snomed:19935008"
-      },
-      "A": {
-        "en": "Ambidextrous",
-        "de": "Beidhändig",
-        "SnomedCode": "snomed:23481009"
-      },
-      "n/a": {"en": "Unknown", "de": "Unbekannt"}
+      "R": {"en": "Right-handed", "de": "Rechtshändig"},
+      "L": {"en": "Left-handed", "de": "Linkshändig"},
+      "A": {"en": "Ambidextrous (both hands equally)", "de": "Beidhändig (beide Hände gleich)"},
+      "n/a": {"en": "Unknown / Prefer not to answer", "de": "Unbekannt / Keine Angabe"}
     },
     "DataType": "string",
     "VariableType": "Categorical",
@@ -182,22 +209,238 @@
       "Label": "Handedness"
     }
   },
+  "native_language": {
+    "Description": {
+      "en": "<span style=\"font-size:18px;\"><strong>Native language (mother tongue)</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Muttersprache</strong></span>"
+    },
+    "Help": {
+      "en": "Select the language you learned first as a child and speak fluently. If your language is not listed, select 'Other'.",
+      "de": "Wählen Sie die Sprache, die Sie als Kind zuerst gelernt haben und fließend sprechen. Falls Ihre Sprache nicht aufgeführt ist, wählen Sie 'Andere'."
+    },
+    "DisplayOrder": 6,
+    "InputType": "dropdown",
+    "Levels": {
+      "de": {"en": "German (Deutsch)", "de": "Deutsch"},
+      "en": {"en": "English", "de": "Englisch"},
+      "fr": {"en": "French (Français)", "de": "Französisch"},
+      "es": {"en": "Spanish (Español)", "de": "Spanisch"},
+      "it": {"en": "Italian (Italiano)", "de": "Italienisch"},
+      "pt": {"en": "Portuguese (Português)", "de": "Portugiesisch"},
+      "nl": {"en": "Dutch (Nederlands)", "de": "Niederländisch"},
+      "pl": {"en": "Polish (Polski)", "de": "Polnisch"},
+      "cs": {"en": "Czech (Čeština)", "de": "Tschechisch"},
+      "hu": {"en": "Hungarian (Magyar)", "de": "Ungarisch"},
+      "ro": {"en": "Romanian (Română)", "de": "Rumänisch"},
+      "hr": {"en": "Croatian (Hrvatski)", "de": "Kroatisch"},
+      "sk": {"en": "Slovak (Slovenčina)", "de": "Slowakisch"},
+      "sl": {"en": "Slovenian (Slovenščina)", "de": "Slowenisch"},
+      "sr": {"en": "Serbian (Srpski)", "de": "Serbisch"},
+      "bs": {"en": "Bosnian (Bosanski)", "de": "Bosnisch"},
+      "ru": {"en": "Russian (Русский)", "de": "Russisch"},
+      "uk": {"en": "Ukrainian (Українська)", "de": "Ukrainisch"},
+      "tr": {"en": "Turkish (Türkçe)", "de": "Türkisch"},
+      "ar": {"en": "Arabic (العربية)", "de": "Arabisch"},
+      "fa": {"en": "Persian/Farsi (فارسی)", "de": "Persisch/Farsi"},
+      "zh": {"en": "Chinese (中文)", "de": "Chinesisch"},
+      "ja": {"en": "Japanese (日本語)", "de": "Japanisch"},
+      "ko": {"en": "Korean (한국어)", "de": "Koreanisch"},
+      "vi": {"en": "Vietnamese (Tiếng Việt)", "de": "Vietnamesisch"},
+      "th": {"en": "Thai (ไทย)", "de": "Thailändisch"},
+      "hi": {"en": "Hindi (हिन्दी)", "de": "Hindi"},
+      "bn": {"en": "Bengali (বাংলা)", "de": "Bengali"},
+      "ta": {"en": "Tamil (தமிழ்)", "de": "Tamil"},
+      "other": {"en": "Other language", "de": "Andere Sprache"}
+    },
+    "DataType": "string",
+    "OtherOption": {
+      "enabled": true,
+      "textInput": true,
+      "label": {"en": "Other (please specify)", "de": "Andere (bitte angeben)"}
+    },
+    "Annotations": {
+      "Standard": "ISO 639-1"
+    }
+  },
+  "country_of_birth": {
+    "Description": {
+      "en": "<span style=\"font-size:18px;\"><strong>Country of birth</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Geburtsland</strong></span>"
+    },
+    "Help": {
+      "en": "Select the country where you were born. If your country is not listed, select 'Other country'.",
+      "de": "Wählen Sie das Land, in dem Sie geboren wurden. Falls Ihr Land nicht aufgeführt ist, wählen Sie 'Anderes Land'."
+    },
+    "DisplayOrder": 7,
+    "InputType": "dropdown",
+    "Levels": {
+      "AT": {"en": "Austria", "de": "Österreich"},
+      "DE": {"en": "Germany", "de": "Deutschland"},
+      "CH": {"en": "Switzerland", "de": "Schweiz"},
+      "LI": {"en": "Liechtenstein", "de": "Liechtenstein"},
+      "IT": {"en": "Italy", "de": "Italien"},
+      "FR": {"en": "France", "de": "Frankreich"},
+      "ES": {"en": "Spain", "de": "Spanien"},
+      "PT": {"en": "Portugal", "de": "Portugal"},
+      "GB": {"en": "United Kingdom", "de": "Vereinigtes Königreich"},
+      "IE": {"en": "Ireland", "de": "Irland"},
+      "NL": {"en": "Netherlands", "de": "Niederlande"},
+      "BE": {"en": "Belgium", "de": "Belgien"},
+      "LU": {"en": "Luxembourg", "de": "Luxemburg"},
+      "DK": {"en": "Denmark", "de": "Dänemark"},
+      "SE": {"en": "Sweden", "de": "Schweden"},
+      "NO": {"en": "Norway", "de": "Norwegen"},
+      "FI": {"en": "Finland", "de": "Finnland"},
+      "PL": {"en": "Poland", "de": "Polen"},
+      "CZ": {"en": "Czech Republic", "de": "Tschechien"},
+      "HU": {"en": "Hungary", "de": "Ungarn"},
+      "SK": {"en": "Slovakia", "de": "Slowakei"},
+      "SI": {"en": "Slovenia", "de": "Slowenien"},
+      "HR": {"en": "Croatia", "de": "Kroatien"},
+      "BA": {"en": "Bosnia and Herzegovina", "de": "Bosnien und Herzegowina"},
+      "RS": {"en": "Serbia", "de": "Serbien"},
+      "ME": {"en": "Montenegro", "de": "Montenegro"},
+      "MK": {"en": "North Macedonia", "de": "Nordmazedonien"},
+      "AL": {"en": "Albania", "de": "Albanien"},
+      "XK": {"en": "Kosovo", "de": "Kosovo"},
+      "RO": {"en": "Romania", "de": "Rumänien"},
+      "BG": {"en": "Bulgaria", "de": "Bulgarien"},
+      "GR": {"en": "Greece", "de": "Griechenland"},
+      "TR": {"en": "Turkey", "de": "Türkei"},
+      "RU": {"en": "Russia", "de": "Russland"},
+      "UA": {"en": "Ukraine", "de": "Ukraine"},
+      "BY": {"en": "Belarus", "de": "Belarus"},
+      "MD": {"en": "Moldova", "de": "Moldawien"},
+      "US": {"en": "United States", "de": "Vereinigte Staaten"},
+      "CA": {"en": "Canada", "de": "Kanada"},
+      "MX": {"en": "Mexico", "de": "Mexiko"},
+      "BR": {"en": "Brazil", "de": "Brasilien"},
+      "AR": {"en": "Argentina", "de": "Argentinien"},
+      "CN": {"en": "China", "de": "China"},
+      "JP": {"en": "Japan", "de": "Japan"},
+      "KR": {"en": "South Korea", "de": "Südkorea"},
+      "IN": {"en": "India", "de": "Indien"},
+      "PK": {"en": "Pakistan", "de": "Pakistan"},
+      "BD": {"en": "Bangladesh", "de": "Bangladesch"},
+      "PH": {"en": "Philippines", "de": "Philippinen"},
+      "VN": {"en": "Vietnam", "de": "Vietnam"},
+      "TH": {"en": "Thailand", "de": "Thailand"},
+      "ID": {"en": "Indonesia", "de": "Indonesien"},
+      "MY": {"en": "Malaysia", "de": "Malaysia"},
+      "SG": {"en": "Singapore", "de": "Singapur"},
+      "AU": {"en": "Australia", "de": "Australien"},
+      "NZ": {"en": "New Zealand", "de": "Neuseeland"},
+      "ZA": {"en": "South Africa", "de": "Südafrika"},
+      "EG": {"en": "Egypt", "de": "Ägypten"},
+      "NG": {"en": "Nigeria", "de": "Nigeria"},
+      "MA": {"en": "Morocco", "de": "Marokko"},
+      "DZ": {"en": "Algeria", "de": "Algerien"},
+      "TN": {"en": "Tunisia", "de": "Tunesien"},
+      "IR": {"en": "Iran", "de": "Iran"},
+      "IQ": {"en": "Iraq", "de": "Irak"},
+      "SY": {"en": "Syria", "de": "Syrien"},
+      "AF": {"en": "Afghanistan", "de": "Afghanistan"},
+      "IL": {"en": "Israel", "de": "Israel"},
+      "SA": {"en": "Saudi Arabia", "de": "Saudi-Arabien"},
+      "AE": {"en": "United Arab Emirates", "de": "Vereinigte Arabische Emirate"},
+      "other": {"en": "Other country", "de": "Anderes Land"}
+    },
+    "DataType": "string",
+    "OtherOption": {
+      "enabled": true,
+      "textInput": true,
+      "label": {"en": "Other country (please specify)", "de": "Anderes Land (bitte angeben)"}
+    },
+    "Annotations": {
+      "Standard": "ISO 3166-1 alpha-2"
+    }
+  },
+  "country_of_residence": {
+    "Description": {
+      "en": "<span style=\"font-size:18px;\"><strong>Current country of residence</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Aktuelles Wohnsitzland</strong></span>"
+    },
+    "Help": {
+      "en": "Select the country where you currently live. If your country is not listed, select 'Other country'.",
+      "de": "Wählen Sie das Land, in dem Sie derzeit leben. Falls Ihr Land nicht aufgeführt ist, wählen Sie 'Anderes Land'."
+    },
+    "DisplayOrder": 8,
+    "InputType": "dropdown",
+    "Levels": {
+      "AT": {"en": "Austria", "de": "Österreich"},
+      "DE": {"en": "Germany", "de": "Deutschland"},
+      "CH": {"en": "Switzerland", "de": "Schweiz"},
+      "LI": {"en": "Liechtenstein", "de": "Liechtenstein"},
+      "IT": {"en": "Italy", "de": "Italien"},
+      "FR": {"en": "France", "de": "Frankreich"},
+      "ES": {"en": "Spain", "de": "Spanien"},
+      "PT": {"en": "Portugal", "de": "Portugal"},
+      "GB": {"en": "United Kingdom", "de": "Vereinigtes Königreich"},
+      "IE": {"en": "Ireland", "de": "Irland"},
+      "NL": {"en": "Netherlands", "de": "Niederlande"},
+      "BE": {"en": "Belgium", "de": "Belgien"},
+      "LU": {"en": "Luxembourg", "de": "Luxemburg"},
+      "DK": {"en": "Denmark", "de": "Dänemark"},
+      "SE": {"en": "Sweden", "de": "Schweden"},
+      "NO": {"en": "Norway", "de": "Norwegen"},
+      "FI": {"en": "Finland", "de": "Finnland"},
+      "PL": {"en": "Poland", "de": "Polen"},
+      "CZ": {"en": "Czech Republic", "de": "Tschechien"},
+      "HU": {"en": "Hungary", "de": "Ungarn"},
+      "SK": {"en": "Slovakia", "de": "Slowakei"},
+      "SI": {"en": "Slovenia", "de": "Slowenien"},
+      "HR": {"en": "Croatia", "de": "Kroatien"},
+      "BA": {"en": "Bosnia and Herzegovina", "de": "Bosnien und Herzegowina"},
+      "RS": {"en": "Serbia", "de": "Serbien"},
+      "ME": {"en": "Montenegro", "de": "Montenegro"},
+      "MK": {"en": "North Macedonia", "de": "Nordmazedonien"},
+      "AL": {"en": "Albania", "de": "Albanien"},
+      "XK": {"en": "Kosovo", "de": "Kosovo"},
+      "RO": {"en": "Romania", "de": "Rumänien"},
+      "BG": {"en": "Bulgaria", "de": "Bulgarien"},
+      "GR": {"en": "Greece", "de": "Griechenland"},
+      "TR": {"en": "Turkey", "de": "Türkei"},
+      "RU": {"en": "Russia", "de": "Russland"},
+      "UA": {"en": "Ukraine", "de": "Ukraine"},
+      "BY": {"en": "Belarus", "de": "Belarus"},
+      "MD": {"en": "Moldova", "de": "Moldawien"},
+      "US": {"en": "United States", "de": "Vereinigte Staaten"},
+      "CA": {"en": "Canada", "de": "Kanada"},
+      "AU": {"en": "Australia", "de": "Australien"},
+      "NZ": {"en": "New Zealand", "de": "Neuseeland"},
+      "other": {"en": "Other country", "de": "Anderes Land"}
+    },
+    "DataType": "string",
+    "OtherOption": {
+      "enabled": true,
+      "textInput": true,
+      "label": {"en": "Other country (please specify)", "de": "Anderes Land (bitte angeben)"}
+    },
+    "Annotations": {
+      "Standard": "ISO 3166-1 alpha-2"
+    }
+  },
   "education_level": {
     "Description": {
-      "en": "Highest level of education completed (ISCED 2011)",
-      "de": "Höchster Bildungsabschluss (ISCED 2011)"
+      "en": "<span style=\"font-size:18px;\"><strong>Highest level of education completed</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Höchster Bildungsabschluss</strong></span>"
     },
+    "Help": {
+      "en": "Select the highest level of formal education you have successfully completed.",
+      "de": "Wählen Sie den höchsten formalen Bildungsabschluss, den Sie erfolgreich abgeschlossen haben."
+    },
+    "DisplayOrder": 9,
     "Levels": {
-      "0": {"en": "Early childhood education", "de": "Frühkindliche Bildung"},
-      "1": {"en": "Primary education", "de": "Primarbereich (Grundschule)"},
-      "2": {"en": "Lower secondary education", "de": "Sekundarbereich I"},
-      "3": {"en": "Upper secondary education", "de": "Sekundarbereich II"},
-      "4": {"en": "Post-secondary non-tertiary education", "de": "Postsekundarer nicht-tertiärer Bereich"},
-      "5": {"en": "Short-cycle tertiary education", "de": "Kurzes tertiäres Studium"},
-      "6": {"en": "Bachelor or equivalent", "de": "Bachelor oder gleichwertig"},
-      "7": {"en": "Master or equivalent", "de": "Master oder gleichwertig"},
-      "8": {"en": "Doctoral or equivalent", "de": "Promotion oder gleichwertig"},
-      "n/a": {"en": "Not applicable", "de": "Nicht zutreffend"}
+      "0": {"en": "No formal education", "de": "Keine formale Bildung"},
+      "1": {"en": "Primary school", "de": "Grundschule"},
+      "2": {"en": "Lower secondary (middle school)", "de": "Sekundarstufe I (Hauptschule/Mittelschule)"},
+      "3": {"en": "Upper secondary (high school)", "de": "Sekundarstufe II (Gymnasium/Matura)"},
+      "4": {"en": "Vocational training / Apprenticeship", "de": "Berufsausbildung / Lehre"},
+      "5": {"en": "Some university (no degree)", "de": "Universität begonnen (ohne Abschluss)"},
+      "6": {"en": "Bachelor's degree", "de": "Bachelor"},
+      "7": {"en": "Master's degree", "de": "Master"},
+      "8": {"en": "Doctoral degree (PhD)", "de": "Doktorat (PhD)"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
     "DataType": "string",
     "VariableType": "Categorical",
@@ -210,14 +453,29 @@
   },
   "education_years": {
     "Description": {
-      "en": "Total number of years in formal education",
-      "de": "Gesamtanzahl der Jahre in formaler Ausbildung"
+      "en": "<span style=\"font-size:18px;\"><strong>Years of formal education</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Jahre formaler Bildung</strong></span>"
     },
+    "Help": {
+      "en": "Enter the total number of years in formal education (school + university). Example: 12 years school + 3 years university = 15. Enter a number between 0 and 30.",
+      "de": "Geben Sie die Gesamtzahl der Jahre in formaler Ausbildung ein (Schule + Universität). Beispiel: 12 Jahre Schule + 3 Jahre Uni = 15. Geben Sie eine Zahl zwischen 0 und 30 ein."
+    },
+    "DisplayOrder": 10,
     "Units": "years",
     "MinValue": 0,
     "MaxValue": 30,
     "DataType": "integer",
     "VariableType": "Continuous",
+    "InputType": "numerical",
+    "Validation": {
+      "type": "integer",
+      "min": 0,
+      "max": 30,
+      "errorMessage": {
+        "en": "Please enter a number between 0 and 30",
+        "de": "Bitte geben Sie eine Zahl zwischen 0 und 30 ein"
+      }
+    },
     "Annotations": {
       "IsAbout": "snomed:224530016",
       "Label": "Years of education"
@@ -225,18 +483,28 @@
   },
   "employment_status": {
     "Description": {
-      "en": "Current primary employment status",
-      "de": "Aktueller primärer Erwerbsstatus"
+      "en": "<span style=\"font-size:18px;\"><strong>Current employment status</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Aktueller Erwerbsstatus</strong></span>"
     },
+    "Help": {
+      "en": "Select your current primary employment situation.",
+      "de": "Wählen Sie Ihre aktuelle primäre Erwerbssituation."
+    },
+    "DisplayOrder": 11,
     "Levels": {
-      "employed_fulltime": {"en": "Employed full-time", "de": "Vollzeit berufstätig"},
-      "employed_parttime": {"en": "Employed part-time", "de": "Teilzeit berufstätig"},
-      "self_employed": {"en": "Self-employed", "de": "Selbstständig"},
-      "student": {"en": "Student/In training", "de": "Student/In Ausbildung"},
-      "unemployed": {"en": "Unemployed", "de": "Arbeitslos"},
+      "employed_fulltime": {"en": "Employed full-time (35+ hours/week)", "de": "Vollzeit berufstätig (35+ Std/Woche)"},
+      "employed_parttime": {"en": "Employed part-time (<35 hours/week)", "de": "Teilzeit berufstätig (<35 Std/Woche)"},
+      "self_employed": {"en": "Self-employed / Freelance", "de": "Selbstständig / Freiberuflich"},
+      "civil_servant": {"en": "Civil servant", "de": "Beamter/Beamtin"},
+      "apprentice": {"en": "Apprentice / Trainee", "de": "Auszubildende/r / Lehrling"},
+      "student": {"en": "Student", "de": "Student/in"},
+      "pupil": {"en": "School pupil", "de": "Schüler/in"},
+      "unemployed": {"en": "Unemployed / Job seeking", "de": "Arbeitslos / Arbeit suchend"},
       "retired": {"en": "Retired", "de": "Im Ruhestand"},
-      "homemaker": {"en": "Homemaker", "de": "Hausfrau/-mann"},
-      "unable_to_work": {"en": "Unable to work", "de": "Arbeitsunfähig"},
+      "homemaker": {"en": "Homemaker / Caregiver", "de": "Hausfrau/Hausmann / Pflegend"},
+      "parental_leave": {"en": "On parental leave", "de": "In Elternzeit"},
+      "military_service": {"en": "Military / Civil service", "de": "Militär / Zivildienst"},
+      "unable_to_work": {"en": "Unable to work (disability)", "de": "Arbeitsunfähig (Behinderung)"},
       "other": {"en": "Other", "de": "Sonstiges"},
       "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
@@ -244,142 +512,277 @@
   },
   "marital_status": {
     "Description": {
-      "en": "Current marital or partnership status",
-      "de": "Aktueller Familienstand"
+      "en": "Current relationship status",
+      "de": "Aktueller Beziehungsstatus"
     },
+    "Help": {
+      "en": "Select your current marital or partnership status.",
+      "de": "Wählen Sie Ihren aktuellen Familien- oder Partnerschaftsstatus."
+    },
+    "DisplayOrder": 12,
     "Levels": {
-      "single": {"en": "Single/Never married", "de": "Ledig"},
+      "single": {"en": "Single (never married)", "de": "Ledig (nie verheiratet)"},
+      "in_relationship": {"en": "In a relationship", "de": "In einer Beziehung"},
+      "cohabiting": {"en": "Living with partner (unmarried)", "de": "Mit Partner zusammenlebend (unverheiratet)"},
       "married": {"en": "Married", "de": "Verheiratet"},
-      "partnered": {"en": "Domestic partnership", "de": "Eingetragene Partnerschaft"},
-      "cohabiting": {"en": "Living with partner", "de": "Mit Partner zusammenlebend"},
-      "divorced": {"en": "Divorced", "de": "Geschieden"},
+      "registered_partnership": {"en": "Registered partnership", "de": "Eingetragene Partnerschaft"},
       "separated": {"en": "Separated", "de": "Getrennt lebend"},
+      "divorced": {"en": "Divorced", "de": "Geschieden"},
       "widowed": {"en": "Widowed", "de": "Verwitwet"},
-      "other": {"en": "Other", "de": "Sonstiges"},
       "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
-    },
-    "DataType": "string"
-  },
-  "native_language": {
-    "Description": {
-      "en": "Primary native language(s) - ISO 639-1 codes (e.g., 'en', 'de')",
-      "de": "Primäre Muttersprache(n) - ISO 639-1 Codes (z.B. 'de', 'en')"
-    },
-    "DataType": "string"
-  },
-  "country_of_birth": {
-    "Description": {
-      "en": "Country of birth - ISO 3166-1 alpha-2 code (e.g., 'DE', 'US')",
-      "de": "Geburtsland - ISO 3166-1 Alpha-2 Code (z.B. 'DE', 'US')"
-    },
-    "DataType": "string"
-  },
-  "country_of_residence": {
-    "Description": {
-      "en": "Current country of residence - ISO 3166-1 alpha-2 code",
-      "de": "Aktuelles Wohnsitzland - ISO 3166-1 Alpha-2 Code"
     },
     "DataType": "string"
   },
   "ethnicity": {
     "Description": {
-      "en": "Self-identified ethnic background (context-dependent, adjust as needed)",
-      "de": "Selbstidentifizierter ethnischer Hintergrund (kontextabhängig, bei Bedarf anpassen)"
+      "en": "Ethnic background",
+      "de": "Ethnische Herkunft"
     },
+    "Help": {
+      "en": "Select the ethnic group(s) you identify with.",
+      "de": "Wählen Sie die ethnische(n) Gruppe(n), mit der/denen Sie sich identifizieren."
+    },
+    "DisplayOrder": 13,
     "Levels": {
-      "white": {"en": "White/Caucasian", "de": "Weiß/Kaukasisch"},
-      "black": {"en": "Black/African/Caribbean", "de": "Schwarz/Afrikanisch/Karibisch"},
-      "asian": {"en": "Asian", "de": "Asiatisch"},
-      "hispanic": {"en": "Hispanic/Latino", "de": "Hispanisch/Latino"},
-      "indigenous": {"en": "Indigenous/Native", "de": "Indigen/Einheimisch"},
-      "middle_eastern": {"en": "Middle Eastern", "de": "Nahöstlich"},
-      "mixed": {"en": "Mixed/Multiple", "de": "Gemischt/Mehrere"},
-      "other": {"en": "Other", "de": "Andere"},
+      "white_european": {"en": "White / European", "de": "Weiß / Europäisch"},
+      "black_african": {"en": "Black / African / Caribbean", "de": "Schwarz / Afrikanisch / Karibisch"},
+      "asian_east": {"en": "East Asian (Chinese, Japanese, Korean)", "de": "Ostasiatisch (Chinesisch, Japanisch, Koreanisch)"},
+      "asian_south": {"en": "South Asian (Indian, Pakistani, Bangladeshi)", "de": "Südasiatisch (Indisch, Pakistanisch, Bangladeschisch)"},
+      "asian_southeast": {"en": "Southeast Asian (Vietnamese, Thai, Filipino)", "de": "Südostasiatisch (Vietnamesisch, Thai, Filipino)"},
+      "hispanic_latino": {"en": "Hispanic / Latino", "de": "Hispanisch / Latino"},
+      "middle_eastern": {"en": "Middle Eastern / North African", "de": "Nahöstlich / Nordafrikanisch"},
+      "indigenous": {"en": "Indigenous / Native", "de": "Indigen / Einheimisch"},
+      "mixed": {"en": "Mixed / Multiple ethnicities", "de": "Gemischt / Mehrere Ethnien"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
+    },
+    "DataType": "string",
+    "OtherOption": {
+      "enabled": true,
+      "textInput": true,
+      "label": {"en": "Other (please specify)", "de": "Andere (bitte angeben)"},
+      "outputField": "ethnicity_other"
+    }
+  },
+  "residence_type": {
+    "Description": {
+      "en": "Type of residential area",
+      "de": "Art des Wohngebiets"
+    },
+    "Help": {
+      "en": "Select the type of area where you currently live.",
+      "de": "Wählen Sie die Art des Gebiets, in dem Sie derzeit leben."
+    },
+    "DisplayOrder": 14,
+    "Levels": {
+      "urban_large": {"en": "Large city (>500,000 inhabitants)", "de": "Großstadt (>500.000 Einwohner)"},
+      "urban_medium": {"en": "Medium city (100,000-500,000)", "de": "Mittelstadt (100.000-500.000)"},
+      "urban_small": {"en": "Small city (20,000-100,000)", "de": "Kleinstadt (20.000-100.000)"},
+      "suburban": {"en": "Suburban / Town (<20,000)", "de": "Vorstädtisch / Kleinstadt (<20.000)"},
+      "rural": {"en": "Rural / Village", "de": "Ländlich / Dorf"},
       "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
     "DataType": "string"
   },
-  "vision": {
+  "income_bracket": {
     "Description": {
-      "en": "Visual acuity status",
-      "de": "Sehvermögen"
+      "en": "Annual household income (before taxes)",
+      "de": "Jährliches Haushaltseinkommen (brutto)"
     },
+    "Help": {
+      "en": "Select the approximate annual gross income of your household (all earners combined). Values in EUR/year.",
+      "de": "Wählen Sie das ungefähre jährliche Bruttoeinkommen Ihres Haushalts (alle Verdiener zusammen). Werte in EUR/Jahr."
+    },
+    "DisplayOrder": 15,
     "Levels": {
-      "normal": {"en": "Normal vision", "de": "Normales Sehvermögen"},
-      "corrected": {"en": "Corrected-to-normal (glasses/contacts)", "de": "Korrigiert auf normal (Brille/Kontaktlinsen)"},
-      "impaired": {"en": "Visually impaired", "de": "Sehbehindert"},
-      "n/a": {"en": "Unknown", "de": "Unbekannt"}
+      "1": {"en": "Less than €20,000", "de": "Weniger als €20.000"},
+      "2": {"en": "€20,000 - €40,000", "de": "€20.000 - €40.000"},
+      "3": {"en": "€40,000 - €60,000", "de": "€40.000 - €60.000"},
+      "4": {"en": "€60,000 - €80,000", "de": "€60.000 - €80.000"},
+      "5": {"en": "€80,000 - €100,000", "de": "€80.000 - €100.000"},
+      "6": {"en": "€100,000 - €150,000", "de": "€100.000 - €150.000"},
+      "7": {"en": "More than €150,000", "de": "Mehr als €150.000"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
-    "DataType": "string"
-  },
-  "hearing": {
-    "Description": {
-      "en": "Hearing ability status",
-      "de": "Hörvermögen"
-    },
-    "Levels": {
-      "normal": {"en": "Normal hearing", "de": "Normales Hörvermögen"},
-      "impaired": {"en": "Hearing impaired", "de": "Hörgeschädigt"},
-      "deaf": {"en": "Deaf", "de": "Gehörlos"},
-      "n/a": {"en": "Unknown", "de": "Unbekannt"}
-    },
-    "DataType": "string"
+    "DataType": "string",
+    "InputType": "slider",
+    "SliderConfig": {
+      "min": 1,
+      "max": 7,
+      "step": 1,
+      "showLabels": true,
+      "naOption": true
+    }
   },
   "height": {
     "Description": {
-      "en": "Body height in centimeters",
-      "de": "Körpergröße in Zentimetern"
+      "en": "<span style=\"font-size:18px;\"><strong>Height in centimeters</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Körpergröße in Zentimetern</strong></span>"
     },
+    "Help": {
+      "en": "Enter your height in centimeters (e.g., 175). Must be between 100 and 220 cm.",
+      "de": "Geben Sie Ihre Körpergröße in Zentimetern ein (z.B. 175). Muss zwischen 100 und 220 cm liegen."
+    },
+    "DisplayOrder": 16,
     "Units": "cm",
-    "MinValue": 50,
-    "MaxValue": 250,
-    "DataType": "number"
+    "MinValue": 100,
+    "MaxValue": 220,
+    "DataType": "integer",
+    "InputType": "numerical",
+    "Validation": {
+      "type": "integer",
+      "min": 100,
+      "max": 220,
+      "errorMessage": {
+        "en": "Please enter a height between 100 and 220 cm",
+        "de": "Bitte geben Sie eine Größe zwischen 100 und 220 cm ein"
+      }
+    },
+    "Annotations": {
+      "IsAbout": "snomed:1153637007",
+      "Label": "Body height"
+    }
   },
   "weight": {
     "Description": {
-      "en": "Body weight in kilograms",
-      "de": "Körpergewicht in Kilogramm"
+      "en": "<span style=\"font-size:18px;\"><strong>Weight in kilograms</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Körpergewicht in Kilogramm</strong></span>"
     },
+    "Help": {
+      "en": "Enter your current body weight in kilograms (e.g., 70). Must be between 30 and 250 kg.",
+      "de": "Geben Sie Ihr aktuelles Körpergewicht in Kilogramm ein (z.B. 70). Muss zwischen 30 und 250 kg liegen."
+    },
+    "DisplayOrder": 17,
     "Units": "kg",
-    "MinValue": 20,
-    "MaxValue": 300,
-    "DataType": "number"
+    "MinValue": 30,
+    "MaxValue": 250,
+    "DataType": "integer",
+    "InputType": "numerical",
+    "Validation": {
+      "type": "integer",
+      "min": 30,
+      "max": 250,
+      "errorMessage": {
+        "en": "Please enter a weight between 30 and 250 kg",
+        "de": "Bitte geben Sie ein Gewicht zwischen 30 und 250 kg ein"
+      }
+    },
+    "Annotations": {
+      "IsAbout": "snomed:27113001",
+      "Label": "Body weight"
+    }
   },
   "bmi": {
     "Description": {
-      "en": "Body Mass Index (weight/height²)",
-      "de": "Body-Mass-Index (Gewicht/Größe²)"
+      "en": "Body Mass Index",
+      "de": "Body-Mass-Index"
     },
+    "DisplayOrder": 18,
     "Units": "kg/m²",
     "MinValue": 10,
     "MaxValue": 60,
-    "DataType": "number"
+    "DataType": "number",
+    "InputType": "calculated",
+    "Calculation": {
+      "formula": "weight / ((height / 100) ** 2)",
+      "precision": 1,
+      "dependsOn": ["height", "weight"],
+      "hidden": true,
+      "displayMode": "readonly"
+    },
+    "Annotations": {
+      "IsAbout": "snomed:60621009",
+      "Label": "Body Mass Index"
+    }
+  },
+  "vision": {
+    "Description": {
+      "en": "<span style=\"font-size:18px;\"><strong>Vision / Eyesight</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Sehvermögen</strong></span>"
+    },
+    "Help": {
+      "en": "Select the option that best describes your current vision status.",
+      "de": "Wählen Sie die Option, die Ihren aktuellen Sehstatus am besten beschreibt."
+    },
+    "DisplayOrder": 19,
+    "Levels": {
+      "normal": {"en": "Normal vision (no correction needed)", "de": "Normales Sehvermögen (keine Korrektur nötig)"},
+      "corrected_glasses": {"en": "Corrected to normal with glasses", "de": "Mit Brille auf normal korrigiert"},
+      "corrected_contacts": {"en": "Corrected to normal with contact lenses", "de": "Mit Kontaktlinsen auf normal korrigiert"},
+      "corrected_surgery": {"en": "Corrected with surgery (LASIK, etc.)", "de": "Durch Operation korrigiert (LASIK, etc.)"},
+      "impaired_mild": {"en": "Mildly impaired (even with correction)", "de": "Leicht eingeschränkt (auch mit Korrektur)"},
+      "impaired_moderate": {"en": "Moderately impaired", "de": "Mäßig eingeschränkt"},
+      "impaired_severe": {"en": "Severely impaired / Legally blind", "de": "Stark eingeschränkt / Rechtlich blind"},
+      "blind": {"en": "Blind", "de": "Blind"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
+    },
+    "DataType": "string",
+    "Annotations": {
+      "IsAbout": "snomed:363983007",
+      "Label": "Visual acuity"
+    }
+  },
+  "hearing": {
+    "Description": {
+      "en": "<span style=\"font-size:18px;\"><strong>Hearing ability</strong></span>",
+      "de": "<span style=\"font-size:18px;\"><strong>Hörvermögen</strong></span>"
+    },
+    "Help": {
+      "en": "Select the option that best describes your current hearing status.",
+      "de": "Wählen Sie die Option, die Ihren aktuellen Hörstatus am besten beschreibt."
+    },
+    "DisplayOrder": 20,
+    "Levels": {
+      "normal": {"en": "Normal hearing (no aids needed)", "de": "Normales Hörvermögen (keine Hilfsmittel nötig)"},
+      "corrected_aid": {"en": "Corrected with hearing aid(s)", "de": "Mit Hörgerät(en) korrigiert"},
+      "corrected_implant": {"en": "Corrected with cochlear implant", "de": "Mit Cochlea-Implantat korrigiert"},
+      "impaired_mild": {"en": "Mildly impaired (even with aids)", "de": "Leicht eingeschränkt (auch mit Hilfsmitteln)"},
+      "impaired_moderate": {"en": "Moderately impaired", "de": "Mäßig eingeschränkt"},
+      "impaired_severe": {"en": "Severely impaired", "de": "Stark eingeschränkt"},
+      "deaf": {"en": "Deaf", "de": "Gehörlos"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
+    },
+    "DataType": "string",
+    "Annotations": {
+      "IsAbout": "snomed:47078008",
+      "Label": "Hearing ability"
+    }
   },
   "smoking_status": {
     "Description": {
-      "en": "Tobacco smoking history",
-      "de": "Raucheranamnese"
+      "en": "Smoking status",
+      "de": "Raucherstatus"
     },
+    "Help": {
+      "en": "Select your current smoking status (tobacco/nicotine).",
+      "de": "Wählen Sie Ihren aktuellen Raucherstatus (Tabak/Nikotin)."
+    },
+    "DisplayOrder": 21,
     "Levels": {
       "never": {"en": "Never smoked", "de": "Nie geraucht"},
-      "former": {"en": "Former smoker (quit >1 year)", "de": "Ehemaliger Raucher (>1 Jahr)"},
-      "recent_former": {"en": "Recent former smoker (quit <1 year)", "de": "Kürzlich aufgehört (<1 Jahr)"},
-      "current": {"en": "Current smoker", "de": "Aktueller Raucher"},
+      "former_long": {"en": "Former smoker (quit >1 year ago)", "de": "Ehemaliger Raucher (>1 Jahr aufgehört)"},
+      "former_recent": {"en": "Former smoker (quit <1 year ago)", "de": "Ehemaliger Raucher (<1 Jahr aufgehört)"},
+      "current_occasional": {"en": "Current occasional smoker", "de": "Aktuell Gelegenheitsraucher"},
+      "current_daily": {"en": "Current daily smoker", "de": "Aktuell täglicher Raucher"},
       "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
     "DataType": "string"
   },
   "alcohol_consumption": {
     "Description": {
-      "en": "Frequency of alcohol consumption",
+      "en": "Alcohol consumption frequency",
       "de": "Häufigkeit des Alkoholkonsums"
     },
+    "Help": {
+      "en": "How often do you typically consume alcoholic beverages?",
+      "de": "Wie oft konsumieren Sie typischerweise alkoholische Getränke?"
+    },
+    "DisplayOrder": 22,
     "Levels": {
-      "never": {"en": "Never", "de": "Nie"},
-      "rarely": {"en": "Rarely (few times per year)", "de": "Selten (ein paar Mal pro Jahr)"},
-      "monthly": {"en": "Monthly", "de": "Monatlich"},
-      "weekly": {"en": "Weekly (1-2 times)", "de": "Wöchentlich (1-2 Mal)"},
-      "frequent": {"en": "Several times per week", "de": "Mehrmals pro Woche"},
+      "never": {"en": "Never (abstinent)", "de": "Nie (abstinent)"},
+      "rarely": {"en": "Rarely (few times per year)", "de": "Selten (wenige Male pro Jahr)"},
+      "monthly": {"en": "Monthly (1-3 times/month)", "de": "Monatlich (1-3 mal/Monat)"},
+      "weekly": {"en": "Weekly (1-2 times/week)", "de": "Wöchentlich (1-2 mal/Woche)"},
+      "several_weekly": {"en": "Several times per week (3-6)", "de": "Mehrmals pro Woche (3-6)"},
       "daily": {"en": "Daily", "de": "Täglich"},
       "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
@@ -387,250 +790,239 @@
   },
   "physical_activity": {
     "Description": {
-      "en": "Frequency of moderate to vigorous physical activity (≥30 min)",
-      "de": "Häufigkeit von mäßiger bis intensiver körperlicher Aktivität (≥30 Min)"
+      "en": "Physical activity level",
+      "de": "Körperliche Aktivität"
     },
+    "Help": {
+      "en": "How often do you engage in moderate to vigorous physical activity (exercise, sports) for at least 30 minutes?",
+      "de": "Wie oft betreiben Sie moderate bis intensive körperliche Aktivität (Sport, Bewegung) für mindestens 30 Minuten?"
+    },
+    "DisplayOrder": 23,
     "Levels": {
-      "none": {"en": "None/Sedentary", "de": "Keine/Sitzend"},
-      "rare": {"en": "Less than once per week", "de": "Weniger als einmal pro Woche"},
-      "1-2_weekly": {"en": "1-2 times per week", "de": "1-2 Mal pro Woche"},
-      "3-5_weekly": {"en": "3-5 times per week", "de": "3-5 Mal pro Woche"},
-      "daily": {"en": "Daily or almost daily", "de": "Täglich oder fast täglich"},
-      "n/a": {"en": "Unknown", "de": "Unbekannt"}
-    },
-    "DataType": "string"
-  },
-  "residence_type": {
-    "Description": {
-      "en": "Type of residential area",
-      "de": "Art des Wohngebiets"
-    },
-    "Levels": {
-      "urban": {"en": "Urban/City (>100k inhabitants)", "de": "Städtisch/Stadt (>100k Einwohner)"},
-      "suburban": {"en": "Suburban/Town", "de": "Vorstädtisch/Kleinstadt"},
-      "rural": {"en": "Rural/Village", "de": "Ländlich/Dorf"},
-      "n/a": {"en": "Unknown", "de": "Unbekannt"}
-    },
-    "DataType": "string"
-  },
-  "income_bracket": {
-    "Description": {
-      "en": "Annual household gross income (currency context-dependent)",
-      "de": "Jährliches Brutto-Haushaltseinkommen (Währung kontextabhängig)"
-    },
-    "Levels": {
-      "1": {"en": "<20k", "de": "<20k"},
-      "2": {"en": "20-40k", "de": "20-40k"},
-      "3": {"en": "40-60k", "de": "40-60k"},
-      "4": {"en": "60-80k", "de": "60-80k"},
-      "5": {"en": "80-100k", "de": "80-100k"},
-      "6": {"en": "100-150k", "de": "100-150k"},
-      "7": {"en": ">150k", "de": ">150k"},
+      "sedentary": {"en": "Sedentary (no regular exercise)", "de": "Sitzend (kein regelmäßiger Sport)"},
+      "light": {"en": "Light (1-2 times per week)", "de": "Leicht (1-2 mal pro Woche)"},
+      "moderate": {"en": "Moderate (3-4 times per week)", "de": "Mäßig (3-4 mal pro Woche)"},
+      "active": {"en": "Active (5-6 times per week)", "de": "Aktiv (5-6 mal pro Woche)"},
+      "very_active": {"en": "Very active (daily)", "de": "Sehr aktiv (täglich)"},
       "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
     "DataType": "string"
   },
   "medication_current": {
     "Description": {
-      "en": "Currently taking any medications (prescription or OTC)",
-      "de": "Nimmt derzeit Medikamente ein (verschreibungspflichtig oder rezeptfrei)"
+      "en": "Currently taking medications?",
+      "de": "Nehmen Sie derzeit Medikamente ein?"
     },
+    "Help": {
+      "en": "Are you currently taking any prescription medications or regular over-the-counter medications?",
+      "de": "Nehmen Sie derzeit verschreibungspflichtige oder regelmäßige rezeptfreie Medikamente ein?"
+    },
+    "DisplayOrder": 24,
     "Levels": {
       "yes": {"en": "Yes", "de": "Ja"},
       "no": {"en": "No", "de": "Nein"},
       "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
-    "DataType": "string"
+    "DataType": "string",
+    "FollowUp": {
+      "showWhen": "yes",
+      "questions": ["medication_details"]
+    }
+  },
+  "medication_details": {
+    "Description": {
+      "en": "Medication details (optional)",
+      "de": "Medikamentendetails (optional)"
+    },
+    "Help": {
+      "en": "Please list the medications you are currently taking. This information is optional and will be kept confidential.",
+      "de": "Bitte listen Sie die Medikamente auf, die Sie derzeit einnehmen. Diese Angabe ist optional und wird vertraulich behandelt."
+    },
+    "DisplayOrder": 25,
+    "DataType": "string",
+    "InputType": "text",
+    "TextConfig": {
+      "multiline": true,
+      "rows": 2,
+      "placeholder": {
+        "en": "e.g., aspirin, blood pressure medication...",
+        "de": "z.B. Aspirin, Blutdruckmedikamente..."
+      }
+    },
+    "ConditionalDisplay": {
+      "showWhen": "medication_current == 'yes'",
+      "dependsOn": ["medication_current"]
+    }
   },
   "psychiatric_diagnosis": {
     "Description": {
-      "en": "History of psychiatric/mental health diagnosis",
-      "de": "Psychiatrische/psychische Diagnose in der Anamnese"
+      "en": "History of psychiatric/mental health diagnosis?",
+      "de": "Psychiatrische/psychische Diagnose in der Vorgeschichte?"
     },
+    "Help": {
+      "en": "Have you ever been diagnosed with a psychiatric or mental health condition by a healthcare professional?",
+      "de": "Wurde bei Ihnen jemals eine psychiatrische oder psychische Erkrankung von medizinischem Fachpersonal diagnostiziert?"
+    },
+    "DisplayOrder": 26,
     "Levels": {
       "yes": {"en": "Yes", "de": "Ja"},
       "no": {"en": "No", "de": "Nein"},
       "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
-    "DataType": "string"
+    "DataType": "string",
+    "FollowUp": {
+      "showWhen": "yes",
+      "questions": ["psychiatric_diagnosis_details"]
+    }
+  },
+  "psychiatric_diagnosis_details": {
+    "Description": {
+      "en": "Psychiatric diagnosis details (optional)",
+      "de": "Details zur psychiatrischen Diagnose (optional)"
+    },
+    "Help": {
+      "en": "Please specify the diagnosis. This information is optional and will be kept confidential.",
+      "de": "Bitte geben Sie die Diagnose an. Diese Angabe ist optional und wird vertraulich behandelt."
+    },
+    "DisplayOrder": 27,
+    "DataType": "string",
+    "InputType": "text",
+    "TextConfig": {
+      "multiline": true,
+      "rows": 2,
+      "placeholder": {
+        "en": "e.g., depression, anxiety, ADHD...",
+        "de": "z.B. Depression, Angststörung, ADHS..."
+      }
+    },
+    "ConditionalDisplay": {
+      "showWhen": "psychiatric_diagnosis == 'yes'",
+      "dependsOn": ["psychiatric_diagnosis"]
+    }
   },
   "neurological_diagnosis": {
     "Description": {
-      "en": "History of neurological diagnosis",
-      "de": "Neurologische Diagnose in der Anamnese"
+      "en": "History of neurological diagnosis?",
+      "de": "Neurologische Diagnose in der Vorgeschichte?"
     },
+    "Help": {
+      "en": "Have you ever been diagnosed with a neurological condition by a healthcare professional?",
+      "de": "Wurde bei Ihnen jemals eine neurologische Erkrankung von medizinischem Fachpersonal diagnostiziert?"
+    },
+    "DisplayOrder": 28,
     "Levels": {
       "yes": {"en": "Yes", "de": "Ja"},
       "no": {"en": "No", "de": "Nein"},
       "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
-    "DataType": "string"
-  },
-  "group": {
-    "Description": {
-      "en": "Study group assignment (e.g., control, patient, experimental)",
-      "de": "Studiengruppenzuordnung (z.B. Kontrolle, Patient, Experimental)"
-    },
-    "Levels": {},
     "DataType": "string",
-    "VariableType": "Categorical",
-    "Annotations": {
-      "IsAbout": "ncit:C41185",
-      "Label": "Study group"
+    "FollowUp": {
+      "showWhen": "yes",
+      "questions": ["neurological_diagnosis_details"]
     }
   },
-  "menstrual_cycle_duration": {
+  "neurological_diagnosis_details": {
     "Description": {
-      "en": "Duration of menstrual bleeding",
-      "de": "Dauer der Menstruationsblutung"
+      "en": "Neurological diagnosis details (optional)",
+      "de": "Details zur neurologischen Diagnose (optional)"
     },
-    "Levels": {
-      "short": {
-        "en": "Short duration (<3 days)",
-        "de": "Kurze Dauer (<3 Tage)",
-        "SnomedCode": "snomed:386819001"
-      },
-      "normal": {
-        "en": "Normal duration (3-7 days)",
-        "de": "Normale Dauer (3-7 Tage)",
-        "SnomedCode": "snomed:386819001"
-      },
-      "long": {
-        "en": "Long duration (>7 days)",
-        "de": "Lange Dauer (>7 Tage)",
-        "SnomedCode": "snomed:386818004"
-      },
-      "n/a": {
-        "en": "Not applicable/Prefer not to answer",
-        "de": "Nicht zutreffend/Keine Angabe"
+    "Help": {
+      "en": "Please specify the diagnosis. This information is optional and will be kept confidential.",
+      "de": "Bitte geben Sie die Diagnose an. Diese Angabe ist optional und wird vertraulich behandelt."
+    },
+    "DisplayOrder": 29,
+    "DataType": "string",
+    "InputType": "text",
+    "TextConfig": {
+      "multiline": true,
+      "rows": 2,
+      "placeholder": {
+        "en": "e.g., epilepsy, migraine, multiple sclerosis...",
+        "de": "z.B. Epilepsie, Migräne, Multiple Sklerose..."
       }
     },
-    "DataType": "string",
-    "VariableType": "Categorical",
-    "Annotations": {
-      "IsAbout": "snomed:386819001",
-      "Label": "Menstrual cycle duration"
+    "ConditionalDisplay": {
+      "showWhen": "neurological_diagnosis == 'yes'",
+      "dependsOn": ["neurological_diagnosis"]
     }
   },
   "menstrual_cycle_regularity": {
     "Description": {
-      "en": "Regularity of menstrual bleeding/cycle pattern",
-      "de": "Regelmäßigkeit der Menstruationsblutung/Zyklus"
+      "en": "Menstrual cycle regularity",
+      "de": "Regelmäßigkeit des Menstruationszyklus"
     },
+    "Help": {
+      "en": "How would you describe your menstrual cycle? (Only for females)",
+      "de": "Wie würden Sie Ihren Menstruationszyklus beschreiben? (Nur für Frauen)"
+    },
+    "DisplayOrder": 30,
     "Levels": {
-      "regular": {
-        "en": "Regular menstrual cycle",
-        "de": "Regelmäßiger Menstruationszyklus",
-        "SnomedCode": "snomed:386817009"
-      },
-      "irregular": {
-        "en": "Irregular menstrual cycle",
-        "de": "Unregelmäßiger Menstruationszyklus",
-        "SnomedCode": "snomed:445324005"
-      },
-      "n/a": {
-        "en": "Not applicable/Prefer not to answer",
-        "de": "Nicht zutreffend/Keine Angabe"
-      }
+      "regular": {"en": "Regular (predictable cycle)", "de": "Regelmäßig (vorhersehbarer Zyklus)"},
+      "irregular": {"en": "Irregular (unpredictable)", "de": "Unregelmäßig (unvorhersehbar)"},
+      "amenorrhea": {"en": "No menstruation (amenorrhea)", "de": "Keine Menstruation (Amenorrhoe)"},
+      "menopause": {"en": "Post-menopause", "de": "Nach der Menopause"},
+      "n/a": {"en": "Not applicable / Prefer not to answer", "de": "Nicht zutreffend / Keine Angabe"}
     },
     "DataType": "string",
-    "VariableType": "Categorical",
-    "Annotations": {
-      "IsAbout": "snomed:386817009",
-      "Label": "Menstrual cycle regularity"
+    "ConditionalDisplay": {
+      "showWhen": "sex == 'F'",
+      "dependsOn": ["sex"]
     }
   },
   "menstrual_cycle_length": {
     "Description": {
-      "en": "Average length of menstrual cycle in days",
-      "de": "Durchschnittliche Länge des Menstruationszyklus in Tagen"
+      "en": "Average menstrual cycle length (days)",
+      "de": "Durchschnittliche Zykluslänge (Tage)"
     },
+    "Help": {
+      "en": "Enter the average number of days from the start of one period to the start of the next (typically 21-35 days).",
+      "de": "Geben Sie die durchschnittliche Anzahl der Tage vom Beginn einer Periode bis zum Beginn der nächsten ein (typisch 21-35 Tage)."
+    },
+    "DisplayOrder": 31,
     "Units": "days",
-    "MinValue": 20,
-    "MaxValue": 40,
+    "MinValue": 21,
+    "MaxValue": 45,
     "DataType": "integer",
-    "VariableType": "Continuous",
-    "Annotations": {
-      "IsAbout": "snomed:248957007",
-      "Label": "Menstrual cycle length"
-    }
-  },
-  "menstrual_bleeding_intensity": {
-    "Description": {
-      "en": "Subjective intensity of menstrual bleeding",
-      "de": "Subjektive Intensität der Menstruationsblutung"
-    },
-    "Levels": {
-      "light": {
-        "en": "Light",
-        "de": "Leicht",
-        "SnomedCode": "snomed:386818004"
-      },
-      "moderate": {
-        "en": "Moderate",
-        "de": "Mäßig"
-      },
-      "heavy": {
-        "en": "Heavy (menorrhagia)",
-        "de": "Stark (Menorrhagie)",
-        "SnomedCode": "snomed:386819001"
-      },
-      "n/a": {
-        "en": "Not applicable/Prefer not to answer",
-        "de": "Nicht zutreffend/Keine Angabe"
+    "InputType": "numerical",
+    "Validation": {
+      "type": "integer",
+      "min": 21,
+      "max": 45,
+      "errorMessage": {
+        "en": "Please enter a number between 21 and 45 days",
+        "de": "Bitte geben Sie eine Zahl zwischen 21 und 45 Tagen ein"
       }
     },
-    "DataType": "string",
-    "VariableType": "Categorical",
-    "Annotations": {
-      "IsAbout": "snomed:248957007",
-      "Label": "Menstrual bleeding intensity"
+    "ConditionalDisplay": {
+      "showWhen": "sex == 'F'",
+      "dependsOn": ["sex"]
     }
   },
   "hormonal_contraceptive_use": {
     "Description": {
-      "en": "Current use of hormonal contraceptives",
-      "de": "Aktuelle Verwendung von hormonellen Verhütungsmitteln"
+      "en": "Hormonal contraceptive use",
+      "de": "Verwendung hormoneller Verhütungsmittel"
     },
+    "Help": {
+      "en": "Are you currently using any hormonal contraceptives?",
+      "de": "Verwenden Sie derzeit hormonelle Verhütungsmittel?"
+    },
+    "DisplayOrder": 32,
     "Levels": {
-      "none": {
-        "en": "Not using",
-        "de": "Nicht verwendend"
-      },
-      "oral": {
-        "en": "Oral contraceptive pill",
-        "de": "Antibabypille"
-      },
-      "injection": {
-        "en": "Injectable hormonal contraceptive (e.g., Depo-Provera)",
-        "de": "Spritze (z.B. Depot-Medroxyprogesterone)"
-      },
-      "patch": {
-        "en": "Patch or ring",
-        "de": "Pflaster oder Ring"
-      },
-      "implant": {
-        "en": "Subdermal implant",
-        "de": "Subkutanes Implantat"
-      },
-      "iud": {
-        "en": "Hormonal IUD",
-        "de": "Hormonelles Intrauterinpessar"
-      },
-      "other": {
-        "en": "Other hormonal method",
-        "de": "Andere hormonelle Methode"
-      },
-      "n/a": {
-        "en": "Prefer not to answer",
-        "de": "Keine Angabe"
-      }
+      "none": {"en": "Not using hormonal contraceptives", "de": "Keine hormonellen Verhütungsmittel"},
+      "pill": {"en": "Oral contraceptive pill", "de": "Antibabypille"},
+      "iud_hormonal": {"en": "Hormonal IUD (e.g., Mirena)", "de": "Hormonelle Spirale (z.B. Mirena)"},
+      "implant": {"en": "Implant (e.g., Implanon)", "de": "Implantat (z.B. Implanon)"},
+      "injection": {"en": "Injection (e.g., Depo-Provera)", "de": "Spritze (z.B. Dreimonatsspritze)"},
+      "patch": {"en": "Patch", "de": "Verhütungspflaster"},
+      "ring": {"en": "Vaginal ring (e.g., NuvaRing)", "de": "Vaginalring (z.B. NuvaRing)"},
+      "other": {"en": "Other hormonal method", "de": "Andere hormonelle Methode"},
+      "n/a": {"en": "Prefer not to answer", "de": "Keine Angabe"}
     },
     "DataType": "string",
-    "VariableType": "Categorical",
-    "Annotations": {
-      "IsAbout": "snomed:434551000124102",
-      "Label": "Hormonal contraceptive use"
+    "ConditionalDisplay": {
+      "showWhen": "sex == 'F'",
+      "dependsOn": ["sex"]
     }
   }
 }
