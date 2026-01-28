@@ -1410,6 +1410,23 @@ def generate_lss_from_customization(
 
         # Prepare question grouping for matrices
         grouped_questions = []
+
+        def _should_not_group(q):
+            """Check if a question should NOT be grouped into a matrix."""
+            orig = q.get("originalData", {})
+            input_type = orig.get("InputType", "").lower()
+            levels = q.get("levels") or orig.get("Levels", {})
+            has_other = "OtherOption" in orig and orig["OtherOption"].get("enabled", False)
+
+            return (
+                input_type == "dropdown" or
+                input_type == "numerical" or
+                input_type == "text" or
+                input_type == "calculated" or
+                has_other or  # Questions with "Other" option shouldn't be grouped
+                (levels and len(levels) > 10)  # Many options = use dropdown, not matrix
+            )
+
         if matrix_mode:
             if matrix_global:
                 # Global grouping: group all questions with identical levels
@@ -1417,6 +1434,11 @@ def generate_lss_from_customization(
                 level_to_idx = {}
 
                 for q in sorted_questions:
+                    # Skip grouping for certain question types
+                    if _should_not_group(q):
+                        level_groups.append([q])
+                        continue
+
                     levels = q.get("levels") or q.get("originalData", {}).get("Levels", {})
                     if levels and isinstance(levels, dict) and len(levels) > 0:
                         l_str = json.dumps(levels, sort_keys=True)
@@ -1434,6 +1456,15 @@ def generate_lss_from_customization(
                 last_levels_str = None
 
                 for q in sorted_questions:
+                    # Skip grouping for certain question types
+                    if _should_not_group(q):
+                        if current_group:
+                            grouped_questions.append(current_group)
+                            current_group = []
+                        grouped_questions.append([q])
+                        last_levels_str = None
+                        continue
+
                     levels = q.get("levels") or q.get("originalData", {}).get("Levels", {})
                     levels_str = json.dumps(levels, sort_keys=True) if levels else "NO_LEVELS"
 
