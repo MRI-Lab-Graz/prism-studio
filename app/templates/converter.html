@@ -624,36 +624,20 @@
                             </div>
 
                             <div class="row g-3 align-items-end">
-                                <div class="col-md-6">
+                                <div class="col-md-8">
                                     <label for="biometricsDataFile" class="form-label">Biometrics File (.xlsx, .csv, .tsv)</label>
                                     <input class="form-control" type="file" id="biometricsDataFile" accept=".xlsx,.csv,.tsv">
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <button class="btn btn-info text-white w-100" type="button" id="biometricsPreviewBtn" disabled>
-                                        <i class="fas fa-eye me-2"></i>Preview (Dry-Run)
+                                        <i class="fas fa-eye me-2"></i>Preview
                                     </button>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <button class="btn btn-warning text-white w-100" type="button" id="biometricsConvertBtn" disabled>
                                         <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
                                     </button>
                                 </div>
-
-                                {% if current_project.path %}
-                                <div class="col-12 mt-2">
-                                    <div class="alert alert-info py-2 mb-0">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        Biometrics will be saved to: <code>{{ current_project.path }}/code/biometrics/</code>
-                                    </div>
-                                </div>
-                                {% else %}
-                                <div class="col-12 mt-2">
-                                    <div class="alert alert-warning py-2 mb-0">
-                                        <i class="fas fa-exclamation-triangle me-1"></i>
-                                        Select a project to automatically save biometrics to the correct folder structure.
-                                    </div>
-                                </div>
-                                {% endif %}
 
                                 <div class="col-12 mt-3">
                                     <div class="row g-3 align-items-end">
@@ -667,11 +651,11 @@
                                             <div class="form-text text-warning">Creates 'ses-1', 'ses-2', etc.</div>
                                         </div>
                                         <div class="col-md-4">
-                                            <label for="biometricsUnknown" class="form-label">Unknown Items</label>
+                                            <label for="biometricsUnknown" class="form-label">Unknown Columns</label>
                                             <select class="form-select" id="biometricsUnknown">
-                                                <option value="warn" selected>Show warnings</option>
-                                                <option value="ignore">Skip silently</option>
-                                                <option value="error">Stop on unknown</option>
+                                                <option value="warn" selected>Warn (default)</option>
+                                                <option value="ignore">Ignore</option>
+                                                <option value="error">Error</option>
                                             </select>
                                         </div>
                                     </div>
@@ -1476,8 +1460,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Biometrics Convert ---
-    const biometricsLibraryPathInput = document.getElementById('biometricsLibraryPath');
-    const biometricsBrowseLibraryBtn = document.getElementById('biometricsBrowseLibraryBtn');
     const biometricsDataFile = document.getElementById('biometricsDataFile');
     const biometricsUnknown = document.getElementById('biometricsUnknown');
     const biometricsPreviewBtn = document.getElementById('biometricsPreviewBtn');
@@ -1560,24 +1542,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.path) {
                         convertLibraryPathInput.value = data.path;
                         refreshConvertLanguages();
-                    } else if (data.error) {
-                        alert('Folder picker unavailable: ' + data.error);
-                    }
-                })
-                .catch(err => {
-                    console.error('Browse error:', err);
-                    alert('Failed to open folder picker. Please enter path manually.');
-                });
-        });
-    }
-
-    if (biometricsBrowseLibraryBtn) {
-        biometricsBrowseLibraryBtn.addEventListener('click', function() {
-            fetch('/api/browse-folder')
-                .then(r => r.json())
-                .then(data => {
-                    if (data.path && biometricsLibraryPathInput) {
-                        biometricsLibraryPathInput.value = data.path;
                     } else if (data.error) {
                         alert('Folder picker unavailable: ' + data.error);
                     }
@@ -3573,56 +3537,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateBiometricsBtn() {
         const hasFile = biometricsDataFile && biometricsDataFile.files && biometricsDataFile.files.length === 1;
-        const hasLibraryPath = biometricsLibraryPathInput && biometricsLibraryPathInput.value.trim() !== '';
-        if (biometricsPreviewBtn) biometricsPreviewBtn.disabled = !(hasFile && hasLibraryPath);
-        if (biometricsConvertBtn) biometricsConvertBtn.disabled = !(hasFile && hasLibraryPath);
+        if (biometricsPreviewBtn) biometricsPreviewBtn.disabled = !hasFile;
+        if (biometricsConvertBtn) biometricsConvertBtn.disabled = !hasFile;
     }
 
     function checkBiometricsLibraryStructure() {
-        const libraryPath = biometricsLibraryPathInput ? biometricsLibraryPathInput.value.trim() : '';
-        const structureWarning = document.getElementById('biometricsStructureWarning');
-        const structureMessage = document.getElementById('biometricsStructureMessage');
-        
-        if (!libraryPath) {
-            if (structureWarning) structureWarning.classList.add('d-none');
-            return;
-        }
-        
-        const url = `/api/biometrics-check-library?library_path=${encodeURIComponent(libraryPath)}`;
-        fetch(url)
-            .then(r => r.json())
-            .then(data => {
-                if (structureWarning && structureMessage && data.structure) {
-                    const missing = data.structure.missing_items || [];
-                    if (missing.length > 0) {
-                        structureMessage.textContent = `The selected folder is missing: ${missing.join(', ')}. Expected library structure: survey/, biometrics/, participants.json`;
-                        structureWarning.classList.remove('d-none');
-                    } else {
-                        structureWarning.classList.add('d-none');
-                    }
-                } else if (structureWarning) {
-                    structureWarning.classList.add('d-none');
-                }
-            })
-            .catch(() => {
-                if (structureWarning) structureWarning.classList.add('d-none');
-            });
+        // Library path is auto-resolved on backend (project first, then global)
+        // No client-side check needed
     }
 
     if (biometricsDataFile) {
         biometricsDataFile.addEventListener('change', updateBiometricsBtn);
         updateBiometricsBtn();
-    }
-
-    if (biometricsLibraryPathInput) {
-        biometricsLibraryPathInput.addEventListener('change', function() {
-            checkBiometricsLibraryStructure();
-            updateBiometricsBtn();
-        });
-        biometricsLibraryPathInput.addEventListener('blur', function() {
-            checkBiometricsLibraryStructure();
-            updateBiometricsBtn();
-        });
     }
 
     function downloadCurrentBiometricsZip() {
@@ -3660,13 +3586,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const libraryPath = biometricsLibraryPathInput ? biometricsLibraryPathInput.value.trim() : '';
-            if (!libraryPath) {
-                biometricsError.textContent = 'Please select a biometrics template library folder first.';
-                biometricsError.classList.remove('d-none');
-                return;
-            }
-
             const file = biometricsDataFile.files && biometricsDataFile.files[0];
             if (!file) return;
 
@@ -3694,12 +3613,23 @@ document.addEventListener('DOMContentLoaded', function() {
             biometricsPreviewBtn.disabled = true;
             biometricsConvertBtn.disabled = true;
 
+            console.log('[Biometrics Preview] About to fetch /api/biometrics-convert');
+            console.log('[Biometrics Preview] FormData entries:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}: ${value instanceof File ? value.name : value}`);
+            }
+
             fetch('/api/biometrics-convert', {
                 method: 'POST',
                 body: formData,
             })
             .then(async response => {
+                console.log('[Biometrics Preview] Fetch completed, status:', response.status);
                 const data = await response.json();
+                
+                console.log('[Biometrics Preview] Response received:', data);
+                console.log('[Biometrics Preview] Response OK:', response.ok);
+                console.log('[Biometrics Preview] Log entries:', data.log ? data.log.length : 0);
                 
                 if (data.log && Array.isArray(data.log)) {
                     data.log.forEach(entry => {
@@ -3756,13 +3686,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 biometricsError.textContent = 'Please enter a session ID (e.g., 1, 2, 3).';
                 biometricsError.classList.remove('d-none');
                 document.getElementById('biometricsSession')?.focus();
-                return;
-            }
-
-            const libraryPath = biometricsLibraryPathInput ? biometricsLibraryPathInput.value.trim() : '';
-            if (!libraryPath) {
-                biometricsError.textContent = 'Please select a biometrics template library folder first.';
-                biometricsError.classList.remove('d-none');
                 return;
             }
 
@@ -3849,11 +3772,10 @@ document.addEventListener('DOMContentLoaded', function() {
             icon.classList.remove('fa-chevron-right');
             icon.classList.add('fa-chevron-down');
 
-            const libraryPath = biometricsLibraryPathInput ? biometricsLibraryPathInput.value.trim() : '';
             const file = biometricsDataFile.files && biometricsDataFile.files[0];
 
             appendLog(`Starting conversion of: ${file.name}`, 'info', biometricsLog);
-            appendLog(`Using library: ${libraryPath}`, 'step', biometricsLog);
+            appendLog(`Using library: auto-resolved (project or global)`, 'step', biometricsLog);
             const formData = new FormData();
             formData.append('data', file);
             // Library path is now resolved automatically (project first, then global)
@@ -4728,14 +4650,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateConvertLibrarySourceBadge(detectConvertLibrarySource());
             }
 
-            // Auto-fill Biometrics library path
-            if (biometricsLibraryPathInput && !biometricsLibraryPathInput.value) {
-                if (availableConvertPaths.global) {
-                    biometricsLibraryPathInput.value = availableConvertPaths.global;
-                } else if (data.library_path) {
-                    biometricsLibraryPathInput.value = data.library_path;
-                }
-            }
+            // Biometrics library path is auto-resolved on the backend
 
             console.log('Library paths initialized:', {
                 global: availableConvertPaths.global,

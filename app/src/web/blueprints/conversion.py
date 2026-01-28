@@ -1091,10 +1091,13 @@ def api_biometrics_detect():
 @conversion_bp.route("/api/biometrics-convert", methods=["POST"])
 def api_biometrics_convert():
     """Convert an uploaded biometrics table (.csv or .xlsx) into a PRISM/BIDS-style dataset ZIP."""
+    print("[DEBUG] api_biometrics_convert() called")  # DEBUG
     if not convert_biometrics_table_to_prism_dataset:
+        print("[DEBUG] convert_biometrics_table_to_prism_dataset not available!")  # DEBUG
         return jsonify({"error": "Biometrics conversion module not available"}), 500
 
     uploaded_file = request.files.get("data") or request.files.get("file")
+    print(f"[DEBUG] uploaded_file: {uploaded_file}")  # DEBUG
 
     if not uploaded_file or not getattr(uploaded_file, "filename", ""):
         return jsonify({"error": "Missing input file"}), 400
@@ -1146,11 +1149,27 @@ def api_biometrics_convert():
 
         if dry_run:
             log_msg("🔍 DRY-RUN MODE - No files will be created", "info")
-
+        
+        log_msg("", "info")
         log_msg(f"Starting biometrics conversion for {filename}", "info")
+        log_msg(f"Template library: {effective_biometrics_dir}", "step")
+        log_msg(f"Session: {session_override or 'auto-detect'}", "step")
+        log_msg(f"Sheet: {sheet}", "step")
+        log_msg("", "info")
         
         # Log the head to help debug delimiter/structure issues
         _log_file_head(input_path, suffix, log_msg)
+        
+        log_msg("", "info")
+        log_msg("Backend command:", "step")
+        log_msg(f"  convert_biometrics_table_to_prism_dataset(", "info")
+        log_msg(f"    input_path='{input_path.name}',", "info")
+        log_msg(f"    library_dir='{effective_biometrics_dir}',", "info")
+        log_msg(f"    session='{session_override}',", "info")
+        log_msg(f"    sheet={sheet},", "info")
+        log_msg(f"    unknown='{unknown}'", "info")
+        log_msg(f"  )", "info")
+        log_msg("", "info")
 
         if tasks_to_export:
             log_msg(f"Exporting tasks: {', '.join(tasks_to_export)}", "step")
