@@ -1,0 +1,340 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism.org/schemas/project/v1.0.0",
+  "version": "1.0.0",
+  "title": "PRISM Project Configuration",
+  "description": "Schema for project-level study design metadata. Complements BIDS dataset_description.json with procedure details needed for automatic methods section generation. File should be named: project.json (at dataset root, same level as dataset_description.json)",
+  "type": "object",
+  "properties": {
+    "Metadata": {
+      "type": "object",
+      "description": "Administrative metadata",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Version of this schema"
+        },
+        "CreationDate": {
+          "type": "string",
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$",
+          "description": "Date this file was created"
+        },
+        "LastModified": {
+          "type": "string",
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$",
+          "description": "Date this file was last modified"
+        }
+      },
+      "required": ["SchemaVersion"]
+    },
+    "StudyDesign": {
+      "type": "object",
+      "description": "Overall study design characteristics",
+      "properties": {
+        "Type": {
+          "type": "string",
+          "enum": [
+            "cross-sectional",
+            "longitudinal",
+            "randomized-controlled-trial",
+            "quasi-experimental",
+            "case-control",
+            "cohort",
+            "single-case",
+            "mixed-methods",
+            "other"
+          ],
+          "description": "Type of study design"
+        },
+        "TypeDescription": {
+          "type": "string",
+          "description": "Additional description of study design (e.g., '2x2 factorial design', 'Two-wave panel study with 4-week interval')"
+        },
+        "Blinding": {
+          "type": "string",
+          "enum": ["none", "single-blind", "double-blind", "triple-blind", ""],
+          "description": "Blinding procedure (for experimental studies)"
+        },
+        "Randomization": {
+          "type": "string",
+          "description": "Randomization procedure description (for experimental studies)"
+        },
+        "ControlCondition": {
+          "type": "string",
+          "description": "Description of control condition (for experimental studies)"
+        }
+      }
+    },
+    "Recruitment": {
+      "type": "object",
+      "description": "Participant recruitment information",
+      "properties": {
+        "Method": {
+          "type": "string",
+          "description": "How participants were recruited (e.g., 'Online advertisements and university mailing lists')"
+        },
+        "Location": {
+          "type": "string",
+          "description": "Geographic location of recruitment (e.g., 'Graz, Austria')"
+        },
+        "Period": {
+          "type": "object",
+          "description": "Recruitment period",
+          "properties": {
+            "Start": {
+              "type": "string",
+              "pattern": "^(\\d{4}(-\\d{2})?(-\\d{2})?)?$",
+              "description": "Start date (YYYY, YYYY-MM, or YYYY-MM-DD)"
+            },
+            "End": {
+              "type": "string",
+              "pattern": "^(\\d{4}(-\\d{2})?(-\\d{2})?)?$",
+              "description": "End date (YYYY, YYYY-MM, or YYYY-MM-DD)"
+            }
+          }
+        },
+        "Compensation": {
+          "type": "string",
+          "description": "Participant compensation (e.g., 'Course credit', '15 EUR', 'No compensation')"
+        },
+        "Platform": {
+          "type": "string",
+          "description": "Recruitment platform if applicable (e.g., 'Prolific', 'MTurk', 'SONA')"
+        }
+      }
+    },
+    "Eligibility": {
+      "type": "object",
+      "description": "Participant eligibility criteria",
+      "properties": {
+        "InclusionCriteria": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of inclusion criteria"
+        },
+        "ExclusionCriteria": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of exclusion criteria"
+        },
+        "TargetSampleSize": {
+          "type": "integer",
+          "description": "Planned/target sample size"
+        },
+        "PowerAnalysis": {
+          "type": "string",
+          "description": "Description of power analysis (if performed)"
+        }
+      }
+    },
+    "DataCollection": {
+      "type": "object",
+      "description": "Data collection methodology",
+      "properties": {
+        "Platform": {
+          "type": "string",
+          "description": "Primary data collection platform (e.g., 'LimeSurvey', 'REDCap', 'Qualtrics')"
+        },
+        "PlatformVersion": {
+          "type": "string",
+          "description": "Version of the platform"
+        },
+        "Method": {
+          "type": "string",
+          "enum": ["online", "in-person", "phone", "mixed", ""],
+          "description": "How data was collected"
+        },
+        "Setting": {
+          "type": "string",
+          "description": "Setting description (e.g., 'University laboratory', 'Participant homes via web browser')"
+        },
+        "AverageDuration": {
+          "type": "object",
+          "description": "Average time to complete all assessments",
+          "properties": {
+            "Value": { "type": "number" },
+            "Unit": {
+              "type": "string",
+              "enum": ["minutes", "hours"],
+              "default": "minutes"
+            }
+          }
+        },
+        "SupervisionLevel": {
+          "type": "string",
+          "enum": ["unsupervised", "remote-supervised", "in-person-supervised", ""],
+          "description": "Level of researcher supervision during data collection"
+        }
+      }
+    },
+    "Sessions": {
+      "type": "array",
+      "description": "Definition of study sessions and their task order",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^ses-[a-zA-Z0-9]+$",
+            "description": "Session identifier (e.g., 'ses-01', 'ses-baseline')"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable session label (e.g., 'Baseline', 'Follow-up 1')"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of what happens in this session"
+          },
+          "timingRelativeToBaseline": {
+            "type": "object",
+            "description": "Timing relative to first session",
+            "properties": {
+              "Value": { "type": "number" },
+              "Unit": {
+                "type": "string",
+                "enum": ["days", "weeks", "months", "years"]
+              }
+            }
+          },
+          "tasks": {
+            "type": "array",
+            "description": "Ordered list of tasks in this session",
+            "items": {
+              "type": "object",
+              "properties": {
+                "task": {
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9]+$",
+                  "description": "Task identifier (must match key in TaskDefinitions)"
+                },
+                "run": {
+                  "type": ["integer", "null"],
+                  "minimum": 1,
+                  "description": "Run number if task appears multiple times in session (null = auto-detect or single occurrence)"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Optional label for this task instance (e.g., 'Pre-intervention', 'Post-intervention')"
+                },
+                "optional": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Whether this task is optional"
+                },
+                "condition": {
+                  "type": "string",
+                  "description": "Condition/group assignment for this task (for between-subjects designs)"
+                }
+              },
+              "required": ["task"]
+            }
+          }
+        },
+        "required": ["id", "tasks"]
+      }
+    },
+    "TaskDefinitions": {
+      "type": "object",
+      "description": "Definitions of tasks used in the study. Keys are task identifiers used in Sessions.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "template": {
+            "type": "string",
+            "description": "Template filename (e.g., 'survey-panas.json')"
+          },
+          "modality": {
+            "type": "string",
+            "enum": ["survey", "biometrics", "physio", "eeg", "eyetracking", "func", "anat", "other"],
+            "description": "BIDS/PRISM modality"
+          },
+          "description": {
+            "type": "string",
+            "description": "Brief description of the task"
+          },
+          "duration": {
+            "type": "object",
+            "description": "Expected duration",
+            "properties": {
+              "Value": { "type": "number" },
+              "Unit": {
+                "type": "string",
+                "enum": ["minutes", "seconds"],
+                "default": "minutes"
+              }
+            }
+          },
+          "instructions": {
+            "type": "string",
+            "description": "Task-specific instructions (if different from template)"
+          }
+        },
+        "required": ["modality"]
+      }
+    },
+    "Conditions": {
+      "type": "object",
+      "description": "Experimental conditions/groups (for experimental designs)",
+      "properties": {
+        "Type": {
+          "type": "string",
+          "enum": ["between-subjects", "within-subjects", "mixed", ""],
+          "description": "Type of experimental design"
+        },
+        "Groups": {
+          "type": "array",
+          "description": "List of experimental groups/conditions",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Group identifier"
+              },
+              "label": {
+                "type": "string",
+                "description": "Human-readable group label"
+              },
+              "description": {
+                "type": "string",
+                "description": "Description of this condition"
+              }
+            },
+            "required": ["id", "label"]
+          }
+        }
+      }
+    },
+    "Procedure": {
+      "type": "object",
+      "description": "Additional procedural information not captured elsewhere",
+      "properties": {
+        "Overview": {
+          "type": "string",
+          "description": "Narrative overview of the procedure"
+        },
+        "InformedConsent": {
+          "type": "string",
+          "description": "How informed consent was obtained"
+        },
+        "Debriefing": {
+          "type": "string",
+          "description": "Debriefing procedure (if applicable)"
+        },
+        "QualityControl": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Quality control measures (e.g., 'Attention checks', 'Minimum completion time')"
+        },
+        "MissingDataHandling": {
+          "type": "string",
+          "description": "How missing data was handled"
+        }
+      }
+    }
+  },
+  "required": ["Metadata", "Sessions", "TaskDefinitions"],
+  "additionalProperties": false
+}
