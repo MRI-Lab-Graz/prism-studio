@@ -16,16 +16,22 @@ if str(project_root) not in sys.path:
 
 try:
     from .excel_base import (
+        norm_key,
         find_column_idx,
+        clean_variable_name,
         parse_levels as _base_parse_levels,
         detect_language,
+        sanitize_task_name,
     )
 except (ImportError, ValueError):
     # Fallback for different execution contexts
     from excel_base import (
+        norm_key,
         find_column_idx,
+        clean_variable_name,
         parse_levels as _base_parse_levels,
         detect_language,
+        sanitize_task_name,
     )
 
 
@@ -662,14 +668,12 @@ def process_excel_biometrics(
                 sidecar["Study"]["Instructions"] = {default_lang: meta["Instructions"]}
             elif meta.get("Instructions_en") or meta.get("Instructions_de"):
                 instr = {}
-                if meta.get("Instructions_en"):
-                    instr["en"] = meta["Instructions_en"]
-                if meta.get("Instructions_de"):
-                    instr["de"] = meta["Instructions_de"]
+                if meta.get("Instructions_en"): instr["en"] = meta["Instructions_en"]
+                if meta.get("Instructions_de"): instr["de"] = meta["Instructions_de"]
                 sidecar["Study"]["Instructions"] = instr
-                for lang_code in instr:
-                    if lang_code not in sidecar["I18n"]["Languages"]:
-                        sidecar["I18n"]["Languages"].append(lang_code)
+                for l in instr:
+                    if l not in sidecar["I18n"]["Languages"]:
+                        sidecar["I18n"]["Languages"].append(l)
 
             if meta.get("Reference"):
                 sidecar["Study"]["Reference"] = meta["Reference"]
