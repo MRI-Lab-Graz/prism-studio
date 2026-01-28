@@ -599,7 +599,6 @@ def api_template_editor_list_merged():
 
     # Get current project from session
     project_path = session.get("current_project_path")
-    app_settings = load_app_settings(app_root=str(Path(current_app.root_path)))
 
     templates = {}  # filename -> {name, source, path}
     sources_info = {
@@ -695,7 +694,6 @@ def api_template_editor_new():
 def api_template_editor_load():
     modality = (request.args.get("modality") or "").strip().lower()
     filename = (request.args.get("filename") or "").strip()
-    schema_version = (request.args.get("schema_version") or "stable").strip()
     library_path = (request.args.get("library_path") or "").strip() or None
     if modality not in {"survey", "biometrics"}:
         return jsonify({"error": "Invalid modality"}), 400

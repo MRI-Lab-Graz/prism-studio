@@ -1433,8 +1433,10 @@ def _export_recipe_legacy(
     written_count = 0
 
     participant_lookup = {}
+    participant_cols = []
     if participants_df is not None and "participant_id" in participants_df.columns:
         import pandas as pd
+        participant_cols = [c for c in participants_df.columns if c != "participant_id"]
         for _, p_row in participants_df.iterrows():
             p_id = p_row["participant_id"]
             rest = {k: v for k, v in p_row.items() if k != "participant_id" and pd.notna(v)}
