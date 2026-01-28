@@ -96,3 +96,4 @@ derivatives/
 # Harvest script
 scripts/harvest_testarchiv.py
 backup/
+PLAN-limesurvey-improvements.md
