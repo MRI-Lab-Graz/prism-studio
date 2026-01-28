@@ -77,7 +77,9 @@ class ParticipantsConverter:
             Mapping dict if file exists, None otherwise
         """
         if not self.mapping_file.exists():
-            self._log("INFO", f"No participants_mapping.json found at {self.mapping_file}")
+            self._log(
+                "INFO", f"No participants_mapping.json found at {self.mapping_file}"
+            )
             return None
 
         return self.load_mapping_from_file(self.mapping_file)
@@ -133,7 +135,9 @@ class ParticipantsConverter:
         # Validate each mapping
         for var_name, spec in mappings.items():
             if not isinstance(spec, dict):
-                errors.append(f"Mapping for '{var_name}' must be a dict, got {type(spec)}")
+                errors.append(
+                    f"Mapping for '{var_name}' must be a dict, got {type(spec)}"
+                )
                 continue
 
             # Check required fields in each mapping
@@ -148,7 +152,7 @@ class ParticipantsConverter:
         self,
         source_file: str | Path,
         mapping: Dict[str, Any],
-        output_file: Optional[str | Path] = None
+        output_file: Optional[str | Path] = None,
     ) -> Tuple[bool, pd.DataFrame | None, List[str]]:
         """
         Convert participant data from raw format to standardized format.
@@ -167,28 +171,33 @@ class ParticipantsConverter:
         # Load source data - handle multiple file formats
         try:
             file_ext = source_path.suffix.lower()
-            
-            if file_ext in ['.xlsx', '.xls']:
+
+            if file_ext in [".xlsx", ".xls"]:
                 # Excel file
                 df = pd.read_excel(source_path)
-                self._log("INFO", f"Loaded {len(df)} rows from Excel file {source_path.name}")
+                self._log(
+                    "INFO", f"Loaded {len(df)} rows from Excel file {source_path.name}"
+                )
                 messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
-            elif file_ext == '.csv':
+            elif file_ext == ".csv":
                 # CSV file
                 df = pd.read_csv(source_path)
                 self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
                 messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
-            elif file_ext in ['.tsv', '.txt']:
+            elif file_ext in [".tsv", ".txt"]:
                 # TSV file
                 df = pd.read_csv(source_path, sep="\t")
                 self._log("INFO", f"Loaded {len(df)} rows from {source_path.name}")
                 messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
             else:
                 # Try to detect separator automatically
-                df = pd.read_csv(source_path, sep=None, engine='python')
-                self._log("INFO", f"Loaded {len(df)} rows from {source_path.name} (auto-detected format)")
+                df = pd.read_csv(source_path, sep=None, engine="python")
+                self._log(
+                    "INFO",
+                    f"Loaded {len(df)} rows from {source_path.name} (auto-detected format)",
+                )
                 messages.append(f"✓ Loaded {len(df)} rows from {source_path.name}")
-                
+
         except Exception as e:
             self._log("ERROR", f"Failed to load {source_path.name}: {e}")
             messages.append(f"✗ Failed to load source file: {e}")
@@ -215,9 +224,11 @@ class ParticipantsConverter:
             if source_column not in df.columns:
                 self._log(
                     "WARNING",
-                    f"Source column '{source_column}' not found in {source_path.name}"
+                    f"Source column '{source_column}' not found in {source_path.name}",
                 )
-                messages.append(f"⚠ Skipping '{standard_variable}': source column '{source_column}' not found")
+                messages.append(
+                    f"⚠ Skipping '{standard_variable}': source column '{source_column}' not found"
+                )
                 continue
 
             # Extract and transform data
@@ -234,13 +245,17 @@ class ParticipantsConverter:
                     )
 
                     # Count unmapped values
-                    unmapped = sum(1 for v in column_data if v and v not in value_mapping.values())
+                    unmapped = sum(
+                        1 for v in column_data if v and v not in value_mapping.values()
+                    )
                     if unmapped > 0:
                         self._log(
                             "WARNING",
-                            f"'{standard_variable}': {unmapped}/{original_count} values not in mapping"
+                            f"'{standard_variable}': {unmapped}/{original_count} values not in mapping",
                         )
-                        messages.append(f"⚠ '{standard_variable}': {unmapped} values didn't match mapping (kept original)")
+                        messages.append(
+                            f"⚠ '{standard_variable}': {unmapped} values didn't match mapping (kept original)"
+                        )
 
                 output_df[standard_variable] = column_data
                 self._log("INFO", f"Mapped '{source_column}' → '{standard_variable}'")
@@ -268,9 +283,7 @@ class ParticipantsConverter:
             return False, output_df, messages
 
     def create_mapping_template(
-        self,
-        source_file: str | Path,
-        output_file: Optional[str | Path] = None
+        self, source_file: str | Path, output_file: Optional[str | Path] = None
     ) -> Tuple[bool, Dict[str, Any], List[str]]:
         """
         Create a template participants_mapping.json by inspecting a source file.
@@ -304,16 +317,25 @@ class ParticipantsConverter:
                 "participant_id": "Unique identifier for each participant (required)",
                 "age": "Age in years at time of data collection",
                 "sex": "Biological sex (use M, F, O, or n/a)",
-                "value_mapping": "Map source values (e.g., 1, 2) to standard codes (e.g., M, F)"
+                "value_mapping": "Map source values (e.g., 1, 2) to standard codes (e.g., M, F)",
             },
-            "mappings": {}
+            "mappings": {},
         }
 
         # Detect participant-relevant columns
         participant_columns = [
-            "participant_id", "sub_id", "subject_id",
-            "age", "sex", "gender", "education", "education_level",
-            "handedness", "group", "condition", "diagnosis"
+            "participant_id",
+            "sub_id",
+            "subject_id",
+            "age",
+            "sex",
+            "gender",
+            "education",
+            "education_level",
+            "handedness",
+            "group",
+            "condition",
+            "diagnosis",
         ]
 
         for col in df.columns:
@@ -329,12 +351,14 @@ class ParticipantsConverter:
                     "source_column": col,
                     "standard_variable": col_lower,  # Suggest standardized name
                     "type": "string",
-                    "sample_values": sample_values
+                    "sample_values": sample_values,
                 }
 
                 # If numeric, suggest value_mapping
                 if pd.api.types.is_numeric_dtype(df[col]):
-                    mapping_spec["note"] = "Numeric values detected - add 'value_mapping' if needed"
+                    mapping_spec["note"] = (
+                        "Numeric values detected - add 'value_mapping' if needed"
+                    )
 
                 template["mappings"][col] = mapping_spec
 
@@ -355,9 +379,7 @@ class ParticipantsConverter:
 
 
 def apply_participants_mapping(
-    dataset_path: str | Path,
-    source_file: str | Path,
-    log_callback=None
+    dataset_path: str | Path, source_file: str | Path, log_callback=None
 ) -> Tuple[bool, List[str]]:
     """
     High-level function to auto-detect and apply participants mapping.

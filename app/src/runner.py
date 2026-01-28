@@ -13,7 +13,12 @@ from jsonschema import validate, ValidationError
 
 from schema_manager import load_all_schemas
 from schema_manager import validate_schema_version
-from validator import DatasetValidator, MODALITY_PATTERNS, BIDS_MODALITIES, resolve_sidecar_path
+from validator import (
+    DatasetValidator,
+    MODALITY_PATTERNS,
+    BIDS_MODALITIES,
+    resolve_sidecar_path,
+)
 from stats import DatasetStats
 from system_files import filter_system_files
 from bids_integration import check_and_update_bidsignore
@@ -69,9 +74,13 @@ def validate_dataset(
         rawdata_marker = os.path.join(root_dir, "rawdata", "dataset_description.json")
         if os.path.exists(rawdata_marker):
             if verbose:
-                print(f"ℹ️  YODA layout detected. Focusing validation on {os.path.join(root_dir, 'rawdata')}")
+                print(
+                    f"ℹ️  YODA layout detected. Focusing validation on {os.path.join(root_dir, 'rawdata')}"
+                )
             root_dir = os.path.join(root_dir, "rawdata")
-            report_progress(0, 100, "Detected YODA layout, switching focus to rawdata/...")
+            report_progress(
+                0, 100, "Detected YODA layout, switching focus to rawdata/..."
+            )
 
     report_progress(0, 100, "Loading schemas...")
 
@@ -83,8 +92,9 @@ def validate_dataset(
         version_tag = schema_version or "stable"
         print(f"📋 Loaded {len(schemas)} schemas (version: {version_tag})")
         print(f"📁 Validating PRISM modalities: {list(MODALITY_PATTERNS.keys())}")
-        print("📁 Pass-through BIDS modalities: anat, func, fmap, dwi, eeg (use BIDS validator for these)")
-
+        print(
+            "📁 Pass-through BIDS modalities: anat, func, fmap, dwi, eeg (use BIDS validator for these)"
+        )
 
     # Initialize validator
     validator = DatasetValidator(schemas, library_path=library_path)
@@ -95,11 +105,13 @@ def validate_dataset(
     dataset_desc_path = os.path.join(root_dir, "dataset_description.json")
     if not os.path.exists(dataset_desc_path):
         if run_prism:
-            issues.append(("ERROR", "Missing dataset_description.json", dataset_desc_path))
+            issues.append(
+                ("ERROR", "Missing dataset_description.json", dataset_desc_path)
+            )
     else:
         # Register file in stats
         stats.register_file("dataset_description.json")
-        
+
         # Validate dataset_description.json against the dataset_description schema (if present)
         try:
             with open(dataset_desc_path, "r", encoding="utf-8") as f:
@@ -108,26 +120,52 @@ def validate_dataset(
             if run_prism:
                 dataset_schema = schemas.get("dataset_description")
                 if dataset_schema:
-                    version_issues = validate_schema_version(dataset_desc, dataset_schema)
+                    version_issues = validate_schema_version(
+                        dataset_desc, dataset_schema
+                    )
                     for level, msg in version_issues:
                         issues.append((level, msg, dataset_desc_path))
-                    
+
                     validate(instance=dataset_desc, schema=dataset_schema)
         except json.JSONDecodeError as e:
             if run_prism:
-                issues.append(("ERROR", f"dataset_description.json is not valid JSON: {e}", dataset_desc_path))
+                issues.append(
+                    (
+                        "ERROR",
+                        f"dataset_description.json is not valid JSON: {e}",
+                        dataset_desc_path,
+                    )
+                )
         except ValidationError as e:
             if run_prism:
                 # Format message to be more descriptive (include field path)
                 field_path = " -> ".join([str(p) for p in e.path])
                 prefix = f"{field_path}: " if field_path else ""
-                issues.append(("ERROR", f"dataset_description.json schema error: {prefix}{e.message}", dataset_desc_path))
+                issues.append(
+                    (
+                        "ERROR",
+                        f"dataset_description.json schema error: {prefix}{e.message}",
+                        dataset_desc_path,
+                    )
+                )
         except Exception as e:
             if run_prism:
-                issues.append(("ERROR", f"Error processing dataset_description.json: {e}", dataset_desc_path))
+                issues.append(
+                    (
+                        "ERROR",
+                        f"Error processing dataset_description.json: {e}",
+                        dataset_desc_path,
+                    )
+                )
 
     # Check for other top-level files
-    for top_file in ["participants.tsv", "participants.json", "README", "README.md", "CHANGES"]:
+    for top_file in [
+        "participants.tsv",
+        "participants.json",
+        "README",
+        "README.md",
+        "CHANGES",
+    ]:
         if os.path.exists(os.path.join(root_dir, top_file)):
             stats.register_file(top_file)
 
@@ -188,7 +226,9 @@ def validate_dataset(
         progress_pct = 20 + int((idx / max(total_subjects, 1)) * 70)
         report_progress(progress_pct, 100, f"Validating {item}...", item_path)
 
-        subject_issues = _validate_subject(item_path, item, validator, stats, root_dir, run_prism=run_prism)
+        subject_issues = _validate_subject(
+            item_path, item, validator, stats, root_dir, run_prism=run_prism
+        )
         issues.extend(subject_issues)
 
     report_progress(90, 100, "Checking consistency...")
@@ -255,14 +295,16 @@ def _run_bids_validator(root_dir, verbose=False):
     placeholders = _get_placeholder_files(root_dir)
 
     return _run_bids_validator_cli(
-        root_dir, 
-        verbose=verbose, 
-        placeholders=placeholders, 
-        structure_only=structure_only
+        root_dir,
+        verbose=verbose,
+        placeholders=placeholders,
+        structure_only=structure_only,
     )
 
 
-def _validate_subject(subject_dir, subject_id, validator, stats, root_dir, run_prism=True):
+def _validate_subject(
+    subject_dir, subject_id, validator, stats, root_dir, run_prism=True
+):
     issues = []
 
     all_items = os.listdir(subject_dir)
@@ -277,26 +319,43 @@ def _validate_subject(subject_dir, subject_id, validator, stats, root_dir, run_p
 
             if not filtered_contents:
                 if run_prism:
-                    issues.append(("ERROR", f"Empty directory found: {item}", item_path))
+                    issues.append(
+                        ("ERROR", f"Empty directory found: {item}", item_path)
+                    )
                 continue
 
             if item.startswith("ses-"):
                 issues.extend(
                     _validate_session(
-                        item_path, subject_id, item, validator, stats, root_dir, run_prism=run_prism
+                        item_path,
+                        subject_id,
+                        item,
+                        validator,
+                        stats,
+                        root_dir,
+                        run_prism=run_prism,
                     )
                 )
             elif item in MODALITY_PATTERNS or item in BIDS_MODALITIES:
                 issues.extend(
                     _validate_modality_dir(
-                        item_path, subject_id, None, item, validator, stats, root_dir, run_prism=run_prism
+                        item_path,
+                        subject_id,
+                        None,
+                        item,
+                        validator,
+                        stats,
+                        root_dir,
+                        run_prism=run_prism,
                     )
                 )
 
     return issues
 
 
-def _validate_session(session_dir, subject_id, session_id, validator, stats, root_dir, run_prism=True):
+def _validate_session(
+    session_dir, subject_id, session_id, validator, stats, root_dir, run_prism=True
+):
     issues = []
 
     all_items = os.listdir(session_dir)
@@ -311,7 +370,9 @@ def _validate_session(session_dir, subject_id, session_id, validator, stats, roo
 
             if not filtered_contents:
                 if run_prism:
-                    issues.append(("ERROR", f"Empty directory found: {item}", item_path))
+                    issues.append(
+                        ("ERROR", f"Empty directory found: {item}", item_path)
+                    )
                 continue
 
             if item in MODALITY_PATTERNS or item in BIDS_MODALITIES:
@@ -332,7 +393,14 @@ def _validate_session(session_dir, subject_id, session_id, validator, stats, roo
 
 
 def _validate_modality_dir(
-    modality_dir, subject_id, session_id, modality, validator, stats, root_dir, run_prism=True
+    modality_dir,
+    subject_id,
+    session_id,
+    modality,
+    validator,
+    stats,
+    root_dir,
+    run_prism=True,
 ):
     issues = []
 
@@ -394,7 +462,9 @@ def _validate_modality_dir(
                                         "biometrics", task, original_name
                                     )
                                 elif modality == "eyetracking" and task:
-                                    stats.add_description("eyetracking", task, original_name)
+                                    stats.add_description(
+                                        "eyetracking", task, original_name
+                                    )
                                 elif modality in ["physio", "physiological"] and task:
                                     stats.add_description("physio", task, original_name)
                                 elif task:

@@ -2,6 +2,7 @@
 Proxy module for anonymizer - imports from repo root src.
 This allows both app/src and repo/src imports to work.
 """
+
 from pathlib import Path
 import importlib.util
 

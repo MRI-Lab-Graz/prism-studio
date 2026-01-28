@@ -27,24 +27,24 @@ print()
 
 # Verify recipe path
 expected_recipe = str(repo_root / "official" / "recipe")
-if lib_paths['global_recipe_path'] == expected_recipe:
+if lib_paths["global_recipe_path"] == expected_recipe:
     print("✅ CORRECT! Recipe path points to official/recipe")
 else:
     print(f"❌ WRONG! Expected: {expected_recipe}")
     print(f"          Got:      {lib_paths['global_recipe_path']}")
 
 # Check if recipes exist
-if lib_paths['global_recipe_path']:
-    recipe_path = Path(lib_paths['global_recipe_path'])
+if lib_paths["global_recipe_path"]:
+    recipe_path = Path(lib_paths["global_recipe_path"])
     if recipe_path.exists():
-        survey_recipes = recipe_path / 'survey'
+        survey_recipes = recipe_path / "survey"
         if survey_recipes.exists():
-            count = len(list(survey_recipes.glob('*.json')))
+            count = len(list(survey_recipes.glob("*.json")))
             print(f"📊 Found {count} survey recipes")
-        
-        bio_recipes = recipe_path / 'biometrics'
+
+        bio_recipes = recipe_path / "biometrics"
         if bio_recipes.exists():
-            count = len(list(bio_recipes.glob('*.json')))
+            count = len(list(bio_recipes.glob("*.json")))
             print(f"📊 Found {count} biometric recipes")
 
 print()

@@ -69,7 +69,7 @@ def generate_index(library_path, output_file):
     # Generate Markdown
     md_content = "# Survey Library Catalog\n\n"
     md_content += f"**Total Instruments:** {len(records)}\n\n"
-    
+
     try:
         md_content += df.to_markdown(index=False)
     except ImportError:
@@ -88,17 +88,19 @@ def generate_index(library_path, output_file):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate a catalog of the survey library.")
-    parser.add_argument(
-        "--library", 
-        default="survey_library", 
-        help="Path to the survey library folder (default: survey_library)"
+    parser = argparse.ArgumentParser(
+        description="Generate a catalog of the survey library."
     )
     parser.add_argument(
-        "--output", 
-        default="survey_library/CATALOG.md", 
-        help="Path to the output Markdown file (default: survey_library/CATALOG.md)"
+        "--library",
+        default="survey_library",
+        help="Path to the survey library folder (default: survey_library)",
     )
-    
+    parser.add_argument(
+        "--output",
+        default="survey_library/CATALOG.md",
+        help="Path to the output Markdown file (default: survey_library/CATALOG.md)",
+    )
+
     args = parser.parse_args()
     generate_index(args.library, args.output)

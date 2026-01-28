@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, jsonify, request, current_app
 
 library_bp = Blueprint("library", __name__)
 
+
 @library_bp.route("/library")
 def library_view():
     """View the survey library management page"""
@@ -11,6 +12,7 @@ def library_view():
 
     surveys = survey_manager.list_surveys()
     return render_template("library.html", surveys=surveys)
+
 
 @library_bp.route("/library/edit/<filename>")
 def edit_survey(filename):
@@ -29,6 +31,7 @@ def edit_survey(filename):
     except Exception as e:
         return str(e), 500
 
+
 @library_bp.route("/library/api/draft/<filename>", methods=["POST"])
 def create_draft(filename):
     """Create a new draft from master"""
@@ -41,6 +44,7 @@ def create_draft(filename):
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @library_bp.route("/library/api/draft/<filename>", methods=["DELETE"])
 def discard_draft(filename):
@@ -55,6 +59,7 @@ def discard_draft(filename):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @library_bp.route("/library/api/save/<filename>", methods=["POST"])
 def save_draft(filename):
     """Save content to draft"""
@@ -68,6 +73,7 @@ def save_draft(filename):
         return jsonify({"success": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @library_bp.route("/library/api/publish/<filename>", methods=["POST"])
 def publish_draft(filename):

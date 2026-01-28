@@ -29,13 +29,13 @@ EXTRA_BIDSIGNORE_RULES = {
     "prism_summary.json",
     "validation_report.json",
     ".upload_manifest.json",
-    "survey/",      # Root survey definition folder
-    "derivatives/", # Explicitly ignore derivatives if needed
-    "*_survey.*",   # Ignore any survey related data/sidecars
-    "*_biometrics.*", # Ignore any biometrics related data/sidecars
-    "*_physio.*",     # Ignore any custom physio data/sidecars
-    "*_eyetrack.*",   # Ignore any custom eyetracking data/sidecars
-    "task-*_survey.json", # Root task templates
+    "survey/",  # Root survey definition folder
+    "derivatives/",  # Explicitly ignore derivatives if needed
+    "*_survey.*",  # Ignore any survey related data/sidecars
+    "*_biometrics.*",  # Ignore any biometrics related data/sidecars
+    "*_physio.*",  # Ignore any custom physio data/sidecars
+    "*_eyetrack.*",  # Ignore any custom eyetracking data/sidecars
+    "task-*_survey.json",  # Root task templates
     "task-*_biometrics.json",
     "task-*_physio.json",
     "task-*_eyetrack.json",
@@ -56,25 +56,43 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
     """
     # Skip creating .bidsignore in special directories (library folders, not datasets)
     dataset_root_name = os.path.basename(os.path.normpath(dataset_root))
-    skip_folders = {"official", "library", "survey_library", "templates", "reference_templates"}
-    
+    skip_folders = {
+        "official",
+        "library",
+        "survey_library",
+        "templates",
+        "reference_templates",
+    }
+
     if dataset_root_name in skip_folders:
         return []
-    
+
     # Also skip if path contains these folders (e.g., /path/to/official/something)
     normalized_path = os.path.normpath(dataset_root)
-    if any(f"/{folder}/" in f"/{normalized_path}/" or normalized_path.endswith(f"/{folder}") 
-           for folder in skip_folders):
+    if any(
+        f"/{folder}/" in f"/{normalized_path}/"
+        or normalized_path.endswith(f"/{folder}")
+        for folder in skip_folders
+    ):
         return []
-    
+
     bidsignore_path = os.path.join(dataset_root, ".bidsignore")
 
     # Determine which modalities are non-standard
     non_standard = [m for m in supported_modalities if m not in STANDARD_BIDS_FOLDERS]
-    
+
     # Always ensure we include these common PRISM/non-BIDS folders just in case
     # they are not in the current supported_modalities list
-    prism_folders = {"eyetracking", "physiological", "physio", "survey", "biometrics", "eeg", "metadata", "events"}
+    prism_folders = {
+        "eyetracking",
+        "physiological",
+        "physio",
+        "survey",
+        "biometrics",
+        "eeg",
+        "metadata",
+        "events",
+    }
     for pf in prism_folders:
         if pf not in STANDARD_BIDS_FOLDERS and pf not in non_standard:
             non_standard.append(pf)

@@ -36,12 +36,11 @@ from src.issues import get_fix_hint
 from src.schema_manager import load_schema
 from jsonschema import Draft7Validator
 
-
 # Available PRISM modalities
 PRISM_MODALITIES = ["survey", "biometrics", "physio", "eyetracking", "events"]
 
 # Valid project name pattern (no spaces, filesystem-safe)
-PROJECT_NAME_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+$')
+PROJECT_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
 
 
 class ProjectManager:
@@ -77,7 +76,7 @@ class ProjectManager:
         if not PROJECT_NAME_PATTERN.match(name):
             return {
                 "success": False,
-                "error": f"Invalid project name '{name}'. Only letters, numbers, underscores and hyphens allowed."
+                "error": f"Invalid project name '{name}'. Only letters, numbers, underscores and hyphens allowed.",
             }
 
         # Validate path doesn't exist or is empty
@@ -85,20 +84,20 @@ class ProjectManager:
             if any(project_path.iterdir()):
                 return {
                     "success": False,
-                    "error": f"Directory '{path}' already exists and is not empty"
+                    "error": f"Directory '{path}' already exists and is not empty",
                 }
-        
+
         # In the new YODA layout, sessions and modalities are not pre-selected.
         # We always create a standard structure that is populated later.
         sessions = 0  # Default to 0, since it's for later import
-        modalities = ["survey", "biometrics"] # Default core modalities for folders
+        modalities = ["survey", "biometrics"]  # Default core modalities for folders
 
         created_files = []
 
         try:
             # Create project root
             project_path.mkdir(parents=True, exist_ok=True)
-            
+
             # Create BIDS root (rawdata/)
             rawdata_path = project_path / "rawdata"
             rawdata_path.mkdir(exist_ok=True)
@@ -107,7 +106,9 @@ class ProjectManager:
             # 1. Create dataset_description.json in rawdata/
             desc_path = rawdata_path / "dataset_description.json"
             desc_content = self._create_dataset_description(name, config)
-            CrossPlatformFile.write_text(str(desc_path), json.dumps(desc_content, indent=2))
+            CrossPlatformFile.write_text(
+                str(desc_path), json.dumps(desc_content, indent=2)
+            )
             created_files.append("rawdata/dataset_description.json")
 
             # 2. Create .bidsignore in rawdata/
@@ -119,7 +120,9 @@ class ProjectManager:
             # 3. Create .prismrc.json in root (controls project-wide validation)
             prismrc_path = project_path / ".prismrc.json"
             prismrc_content = self._create_prismrc()
-            CrossPlatformFile.write_text(str(prismrc_path), json.dumps(prismrc_content, indent=2))
+            CrossPlatformFile.write_text(
+                str(prismrc_path), json.dumps(prismrc_content, indent=2)
+            )
             created_files.append(".prismrc.json")
 
             # 4. Create README.md in root
@@ -132,14 +135,16 @@ class ProjectManager:
             project_metadata_path = project_path / "project.json"
             project_metadata = self._create_project_metadata(name, config)
             CrossPlatformFile.write_text(
-                str(project_metadata_path), json.dumps(project_metadata, indent=2, ensure_ascii=False)
+                str(project_metadata_path),
+                json.dumps(project_metadata, indent=2, ensure_ascii=False),
             )
             created_files.append("project.json")
 
             contributors_path = project_path / "contributors.json"
             contributors = self._create_contributors_template(config)
             CrossPlatformFile.write_text(
-                str(contributors_path), json.dumps(contributors, indent=2, ensure_ascii=False)
+                str(contributors_path),
+                json.dumps(contributors, indent=2, ensure_ascii=False),
             )
             created_files.append("contributors.json")
 
@@ -178,15 +183,11 @@ class ProjectManager:
                 "success": True,
                 "path": str(project_path),
                 "created_files": created_files,
-                "message": f"Project '{name}' created successfully with {len(created_files)} files"
+                "message": f"Project '{name}' created successfully with {len(created_files)} files",
             }
 
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "created_files": created_files
-            }
+            return {"success": False, "error": str(e), "created_files": created_files}
 
     def validate_structure(self, path: str) -> Dict[str, Any]:
         """
@@ -209,7 +210,7 @@ class ProjectManager:
                 "valid": False,
                 "error": f"Path does not exist: {path}",
                 "issues": [],
-                "fixable_issues": []
+                "fixable_issues": [],
             }
 
         if not project_path.is_dir():
@@ -217,7 +218,7 @@ class ProjectManager:
                 "valid": False,
                 "error": f"Path is not a directory: {path}",
                 "issues": [],
-                "fixable_issues": []
+                "fixable_issues": [],
             }
 
         issues = []
@@ -230,7 +231,7 @@ class ProjectManager:
             "has_participants_tsv": False,
             "has_participants_json": False,
             "has_bidsignore": False,
-            "is_yoda": False
+            "is_yoda": False,
         }
 
         # Require project.json at the project root
@@ -238,16 +239,20 @@ class ProjectManager:
         if not project_json_path.exists():
             code = "PRISM010"
             msg = "Missing project.json at project root"
-            issues.append({
-                "code": code,
-                "message": msg,
-                "fix_hint": get_fix_hint(code, msg),
-                "fixable": False
-            })
+            issues.append(
+                {
+                    "code": code,
+                    "message": msg,
+                    "fix_hint": get_fix_hint(code, msg),
+                    "fixable": False,
+                }
+            )
 
         # Determine BIDS root: check for rawdata/ first (YODA layout)
         bids_root = project_path
-        if (project_path / "rawdata").is_dir() and (project_path / "rawdata" / "dataset_description.json").exists():
+        if (project_path / "rawdata").is_dir() and (
+            project_path / "rawdata" / "dataset_description.json"
+        ).exists():
             bids_root = project_path / "rawdata"
             stats["is_yoda"] = True
 
@@ -257,12 +262,14 @@ class ProjectManager:
         else:
             code = "PRISM001"
             msg = "Missing dataset_description.json"
-            issues.append({
-                "code": code,
-                "message": msg,
-                "fix_hint": get_fix_hint(code, msg),
-                "fixable": True
-            })
+            issues.append(
+                {
+                    "code": code,
+                    "message": msg,
+                    "fix_hint": get_fix_hint(code, msg),
+                    "fixable": True,
+                }
+            )
             fixable_issues.append(code)
 
         if (bids_root / "participants.tsv").exists():
@@ -270,12 +277,14 @@ class ProjectManager:
         else:
             code = "PRISM002"
             msg = "Missing participants.tsv"
-            issues.append({
-                "code": code,
-                "message": msg,
-                "fix_hint": get_fix_hint(code, msg),
-                "fixable": False
-            })
+            issues.append(
+                {
+                    "code": code,
+                    "message": msg,
+                    "fix_hint": get_fix_hint(code, msg),
+                    "fixable": False,
+                }
+            )
 
         if (bids_root / "participants.json").exists():
             stats["has_participants_json"] = True
@@ -295,7 +304,10 @@ class ProjectManager:
                             stats["sessions"].add(sub_item.name)
                             # Check modalities in session
                             for mod_item in sub_item.iterdir():
-                                if mod_item.is_dir() and mod_item.name in PRISM_MODALITIES:
+                                if (
+                                    mod_item.is_dir()
+                                    and mod_item.name in PRISM_MODALITIES
+                                ):
                                     stats["modalities"].add(mod_item.name)
                         elif sub_item.name in PRISM_MODALITIES:
                             # Direct modality folder (no session)
@@ -314,13 +326,17 @@ class ProjectManager:
                     fixable_issues.append(fix.issue_code)
                     # Add to issues if not already present
                     if not any(i.get("code") == fix.issue_code for i in issues):
-                        issues.append({
-                            "code": fix.issue_code,
-                            "message": fix.description,
-                            "fix_hint": get_fix_hint(fix.issue_code, fix.description),
-                            "fixable": True,
-                            "file_path": fix.file_path
-                        })
+                        issues.append(
+                            {
+                                "code": fix.issue_code,
+                                "message": fix.description,
+                                "fix_hint": get_fix_hint(
+                                    fix.issue_code, fix.description
+                                ),
+                                "fixable": True,
+                                "file_path": fix.file_path,
+                            }
+                        )
         except Exception:
             pass  # Fixer analysis failed, continue with basic checks
 
@@ -328,7 +344,7 @@ class ProjectManager:
             "valid": len([i for i in issues if not i.get("fixable", False)]) == 0,
             "issues": issues,
             "fixable_issues": fixable_issues,
-            "stats": stats
+            "stats": stats,
         }
 
     def get_fixable_issues(self, path: str) -> List[Dict[str, Any]]:
@@ -369,78 +385,97 @@ class ProjectManager:
             return {
                 "success": True,
                 "applied_fixes": [fix.to_dict() for fix in applied],
-                "count": len(applied)
+                "count": len(applied),
             }
         except Exception as e:
-            return {
-                "success": False,
-                "error": str(e),
-                "applied_fixes": []
-            }
+            return {"success": False, "error": str(e), "applied_fixes": []}
 
-    def validate_dataset_description(self, description: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def validate_dataset_description(
+        self, description: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """
         Validate a dataset_description dictionary against the schema.
-        
+
         Args:
             description: The dataset_description content as a dict
-            
+
         Returns:
             List of issue dicts, empty if valid
         """
         issues = []
-        
+
         # Load the schema
         schema_dir = Path(__file__).parent.parent / "schemas"
         schema = load_schema("dataset_description", str(schema_dir), version="stable")
-        
+
         if not schema:
-            return [{"code": "SCHEMA_ERROR", "message": "Could not load dataset_description schema", "level": "ERROR"}]
-            
+            return [
+                {
+                    "code": "SCHEMA_ERROR",
+                    "message": "Could not load dataset_description schema",
+                    "level": "ERROR",
+                }
+            ]
+
         try:
             # Use Draft7Validator to get all errors
             validator = Draft7Validator(schema)
             errors = sorted(validator.iter_errors(description), key=lambda e: e.path)
-            
+
             for error in errors:
                 # Format the field path for better reporting
                 field_path = " -> ".join([str(p) for p in error.path])
                 msg = f"{field_path}: {error.message}" if field_path else error.message
-                
+
                 # Check for specific hints from issues.py
-                code = "PRISM301" # General schema error
-                if "too short" in error.message.lower() or "minlength" in error.message.lower() or "minitems" in error.message.lower():
+                code = "PRISM301"  # General schema error
+                if (
+                    "too short" in error.message.lower()
+                    or "minlength" in error.message.lower()
+                    or "minitems" in error.message.lower()
+                ):
                     code = "PRISM301"
-                
-                issues.append({
-                    "code": code,
-                    "message": msg,
-                    "fix_hint": get_fix_hint(code, msg),
-                    "level": "ERROR"
-                })
+
+                issues.append(
+                    {
+                        "code": code,
+                        "message": msg,
+                        "fix_hint": get_fix_hint(code, msg),
+                        "level": "ERROR",
+                    }
+                )
         except Exception as e:
-            issues.append({"code": "VALIDATION_ERROR", "message": str(e), "level": "ERROR"})
-            
+            issues.append(
+                {"code": "VALIDATION_ERROR", "message": str(e), "level": "ERROR"}
+            )
+
         return issues
 
     # =========================================================================
     # Private helper methods
     # =========================================================================
 
-    def _create_dataset_description(self, name: str, config: Dict[str, Any] = None) -> Dict[str, Any]:
+    def _create_dataset_description(
+        self, name: str, config: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
         """Create dataset_description.json content following BIDS v1.10.1."""
         if config is None:
             config = {}
-            
+
         return {
             "Name": name,
             "BIDSVersion": "1.10.1",
             "DatasetType": config.get("dataset_type", "raw"),
-            "Description": config.get("description", "A PRISM-compatible dataset for psychological research."),
+            "Description": config.get(
+                "description", "A PRISM-compatible dataset for psychological research."
+            ),
             "License": config.get("license", "CC0"),
             "Authors": config.get("authors", ["TODO: Add author names"]),
             "Acknowledgements": config.get("acknowledgements", ""),
-            "HowToAcknowledge": config.get("how_to_acknowledge", "Please cite the original paper or the dataset DOI below."),
+            "HowToAcknowledge": config.get(
+                "how_to_acknowledge",
+                "Please cite the original paper or the dataset DOI below.",
+            ),
             "Funding": config.get("funding", []),
             "ReferencesAndLinks": config.get("references_and_links", []),
             "DatasetDOI": config.get("doi", ""),
@@ -452,10 +487,10 @@ class ProjectManager:
                 {
                     "Name": "PRISM Validator",
                     "Version": "1.1.1",
-                    "Description": "Dataset initialized and managed via PRISM Studio"
+                    "Description": "Dataset initialized and managed via PRISM Studio",
                 }
             ],
-            "SourceDatasets": config.get("source_datasets", [])
+            "SourceDatasets": config.get("source_datasets", []),
         }
 
     def _create_participants_tsv(self) -> str:
@@ -465,7 +500,9 @@ class ProjectManager:
     def _create_bidsignore(self, modalities: List[str]) -> str:
         """Create .bidsignore content."""
         content = "# .bidsignore - PRISM and YODA files excluded from BIDS validation\n"
-        content += "# This ensures compatibility with standard BIDS tools (fMRIPrep, etc.)\n\n"
+        content += (
+            "# This ensures compatibility with standard BIDS tools (fMRIPrep, etc.)\n\n"
+        )
 
         # Ignore project-level metadata
         content += "project.json\n"
@@ -499,13 +536,11 @@ class ProjectManager:
                 "derivatives/**",
                 "analysis/**",
                 "paper/**",
-                "code/**"
-            ]
+                "code/**",
+            ],
         }
 
-    def _create_readme(
-        self, name: str, sessions: int, modalities: List[str]
-    ) -> str:
+    def _create_readme(self, name: str, sessions: int, modalities: List[str]) -> str:
         """Create README.md content with YODA instructions."""
         today = date.today().isoformat()
 
@@ -595,7 +630,7 @@ Subfolders:
   • recipes/{modality}/  - Custom scoring recipes (transformation logic)
   • scripts/             - Analysis and processing scripts
 """
-            
+
             CrossPlatformFile.write_text(str(readme_path), content)
             created.append(f"{folder}/README")
 
@@ -604,7 +639,9 @@ Subfolders:
                 qc_path.mkdir(exist_ok=True)
                 created.append("derivatives/qc/")
                 qc_readme_path = qc_path / "README"
-                qc_content = "Quality control reports, validator outputs, and data snapshots.\n"
+                qc_content = (
+                    "Quality control reports, validator outputs, and data snapshots.\n"
+                )
                 CrossPlatformFile.write_text(str(qc_readme_path), qc_content)
                 created.append("derivatives/qc/README")
 
@@ -620,11 +657,11 @@ Subfolders:
     ) -> List[str]:
         """Create library & recipe folder structure under code/ (YODA-compliant)."""
         created = []
-        
+
         # Everything goes under code/ to follow YODA principles
         code_root = project_path / "code"
         code_root.mkdir(parents=True, exist_ok=True)
-        
+
         # 1. Library Root (JSON templates)
         library_root = code_root / "library"
         library_root.mkdir(parents=True, exist_ok=True)
@@ -647,14 +684,16 @@ Subfolders:
                 example_survey = self._create_example_survey_template()
                 lib_example_path = lib_mod_path / "survey-example.json"
                 CrossPlatformFile.write_text(
-                    str(lib_example_path), json.dumps(example_survey, indent=2, ensure_ascii=False)
+                    str(lib_example_path),
+                    json.dumps(example_survey, indent=2, ensure_ascii=False),
                 )
                 created.append(f"code/library/{mod}/survey-example.json")
             elif mod == "biometrics":
                 example_bio = self._create_example_biometrics_template()
                 lib_example_path = lib_mod_path / "biometrics-example.json"
                 CrossPlatformFile.write_text(
-                    str(lib_example_path), json.dumps(example_bio, indent=2, ensure_ascii=False)
+                    str(lib_example_path),
+                    json.dumps(example_bio, indent=2, ensure_ascii=False),
                 )
                 created.append(f"code/library/{mod}/biometrics-example.json")
 
@@ -665,26 +704,22 @@ Subfolders:
 
         return created
 
-    def _create_project_metadata(self, name: str, config: Dict[str, Any]) -> Dict[str, Any]:
+    def _create_project_metadata(
+        self, name: str, config: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Create project-level metadata template."""
         return {
             "name": name,
-            "paths": {
-                "rawdata": "rawdata",
-                "sourcedata": "sourcedata"
-            },
-            "app": {
-                "schema": "1",
-                "last_opened": date.today().isoformat()
-            },
+            "paths": {"rawdata": "rawdata", "sourcedata": "sourcedata"},
+            "app": {"schema": "1", "last_opened": date.today().isoformat()},
             "governance": {
                 "funding": config.get("funding", []),
                 "ethics_approvals": config.get("ethics_approvals", []),
                 "contacts": [],
                 "preregistration": "",
                 "data_access": "",
-                "notes": ""
-            }
+                "notes": "",
+            },
         }
 
     def _create_contributors_template(self, config: Dict[str, Any]) -> Dict[str, Any]:
@@ -692,22 +727,19 @@ Subfolders:
         authors = config.get("authors", []) or []
         contributors = []
         for author in authors:
-            contributors.append({
-                "name": author,
-                "roles": ["Conceptualization"],
-                "orcid": "",
-                "email": ""
-            })
+            contributors.append(
+                {
+                    "name": author,
+                    "roles": ["Conceptualization"],
+                    "orcid": "",
+                    "email": "",
+                }
+            )
         if not contributors:
-            contributors.append({
-                "name": "",
-                "roles": [],
-                "orcid": "",
-                "email": ""
-            })
+            contributors.append({"name": "", "roles": [], "orcid": "", "email": ""})
         return {
             "contributors": contributors,
-            "roles_reference": "https://credit.niso.org/"
+            "roles_reference": "https://credit.niso.org/",
         }
 
     def _create_citation_cff(self, name: str, config: Dict[str, Any]) -> str:
@@ -732,10 +764,7 @@ Subfolders:
 
     def _create_data_dictionary(self) -> str:
         """Create a minimal data dictionary template for sourcedata."""
-        return (
-            "file\tcolumn\tname\tunit\tlevels\tdescription\n"
-            "\t\t\t\t\t\n"
-        )
+        return "file\tcolumn\tname\tunit\tlevels\tdescription\n\t\t\t\t\t\n"
 
     def _create_example_survey_template(self) -> dict:
         """Create an example survey JSON template."""
@@ -745,18 +774,18 @@ Subfolders:
                 "FileFormat": "tsv",
                 "SoftwarePlatform": "Generic",
                 "Language": "en",
-                "Respondent": "self"
+                "Respondent": "self",
             },
             "Study": {
                 "TaskName": "example",
                 "OriginalName": "Example Survey",
                 "Version": "1.0",
-                "Description": "Example survey template - replace with your questionnaire"
+                "Description": "Example survey template - replace with your questionnaire",
             },
             "Metadata": {
                 "SchemaVersion": "1.1.1",
                 "CreationDate": date.today().isoformat(),
-                "Creator": "PRISM Project Manager"
+                "Creator": "PRISM Project Manager",
             },
             "Q01": {
                 "Description": "Example question 1 - replace with your items",
@@ -765,8 +794,8 @@ Subfolders:
                     "2": "Disagree",
                     "3": "Neutral",
                     "4": "Agree",
-                    "5": "Strongly agree"
-                }
+                    "5": "Strongly agree",
+                },
             },
             "Q02": {
                 "Description": "Example question 2 - replace with your items",
@@ -775,9 +804,9 @@ Subfolders:
                     "2": "Rarely",
                     "3": "Sometimes",
                     "4": "Often",
-                    "5": "Always"
-                }
-            }
+                    "5": "Always",
+                },
+            },
         }
 
     def _create_example_biometrics_template(self) -> dict:
@@ -786,31 +815,22 @@ Subfolders:
             "Technical": {
                 "StimulusType": "Measurement",
                 "FileFormat": "tsv",
-                "SoftwarePlatform": "Generic"
+                "SoftwarePlatform": "Generic",
             },
             "Study": {
                 "TaskName": "example",
                 "OriginalName": "Example Biometrics",
                 "Version": "1.0",
-                "Description": "Example biometrics template - replace with your measures"
+                "Description": "Example biometrics template - replace with your measures",
             },
             "Metadata": {
                 "SchemaVersion": "1.1.1",
                 "CreationDate": date.today().isoformat(),
-                "Creator": "PRISM Project Manager"
+                "Creator": "PRISM Project Manager",
             },
-            "height": {
-                "Description": "Height measurement",
-                "Unit": "cm"
-            },
-            "weight": {
-                "Description": "Weight measurement",
-                "Unit": "kg"
-            },
-            "heart_rate": {
-                "Description": "Resting heart rate",
-                "Unit": "bpm"
-            }
+            "height": {"Description": "Height measurement", "Unit": "cm"},
+            "weight": {"Description": "Weight measurement", "Unit": "kg"},
+            "heart_rate": {"Description": "Resting heart rate", "Unit": "bpm"},
         }
 
 

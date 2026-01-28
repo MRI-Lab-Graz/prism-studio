@@ -72,13 +72,15 @@ class DatasetFixer:
         """
         self.dataset_path = os.path.abspath(dataset_path)
         self.dry_run = dry_run
-        
+
         # Determine BIDS root (support YODA layout)
         self.bids_path = self.dataset_path
         if os.path.isdir(os.path.join(self.dataset_path, "rawdata")):
             # If rawdata exists AND (is empty OR contains BIDS markers), treat it as BIDS root
             rawdata = os.path.join(self.dataset_path, "rawdata")
-            if not os.listdir(rawdata) or os.path.exists(os.path.join(rawdata, "dataset_description.json")):
+            if not os.listdir(rawdata) or os.path.exists(
+                os.path.join(rawdata, "dataset_description.json")
+            ):
                 self.bids_path = rawdata
 
         self.fixes: List[FixAction] = []
@@ -272,8 +274,8 @@ class DatasetFixer:
 
     def _check_missing_sidecars(self):
         """Check for data files missing sidecar JSON files
-        
-        Respects BIDS inheritance: if a file can find a sidecar via inheritance 
+
+        Respects BIDS inheritance: if a file can find a sidecar via inheritance
         (e.g., root-level task-{name}_survey.json), it is NOT flagged as missing.
         """
         # Extensions that need sidecars
@@ -285,7 +287,17 @@ class DatasetFixer:
                 d
                 for d in dirs
                 if not d.startswith(".")
-                and d not in ["code", "library", "recipe", "recipes", "derivatives", "sourcedata", "analysis", "paper"]
+                and d
+                not in [
+                    "code",
+                    "library",
+                    "recipe",
+                    "recipes",
+                    "derivatives",
+                    "sourcedata",
+                    "analysis",
+                    "paper",
+                ]
             ]
 
             for filename in files:
@@ -352,7 +364,13 @@ class DatasetFixer:
         if not os.path.exists(config_path) and not os.path.exists(alt_config_path):
             config = {
                 "schemaVersion": "stable",
-                "ignorePaths": ["derivatives/**", "sourcedata/**", "analysis/**", "paper/**", "code/**"],
+                "ignorePaths": [
+                    "derivatives/**",
+                    "sourcedata/**",
+                    "analysis/**",
+                    "paper/**",
+                    "code/**",
+                ],
                 "strictMode": False,
                 "runBids": False,
             }
@@ -373,15 +391,15 @@ class DatasetFixer:
 
     def _has_inherited_sidecar(self, file_path: str, filename: str) -> bool:
         """Check if a file has an inherited sidecar via BIDS inheritance rules.
-        
+
         BIDS inheritance allows root-level sidecars to apply to all matching files.
-        For example: task-panas_survey.json in the root applies to all 
+        For example: task-panas_survey.json in the root applies to all
         sub-*/ses-*/survey/sub-*_ses-*_task-panas_survey.tsv files.
-        
+
         Args:
             file_path: Full path to the data file
             filename: Just the filename (basename)
-            
+
         Returns:
             True if an inherited sidecar exists
         """
@@ -396,7 +414,7 @@ class DatasetFixer:
         # Extract common BIDS entities from the filename
         # Look for patterns like task-<name>, survey-<name>, biometrics-<name>
         entities = ["task", "survey", "biometrics"]
-        
+
         for entity in entities:
             # Try to extract entity value: task-panas -> panas
             entity_pattern = f"{entity}-"
@@ -405,16 +423,18 @@ class DatasetFixer:
                 parts = stem.split(entity_pattern)
                 if len(parts) > 1:
                     value = parts[1].split("_")[0]  # Get value before next underscore
-                    
+
                     # Check for inherited sidecar at root level
                     # e.g., task-panas_survey.json
-                    suffix = stem.split("_")[-1]  # Get the last part (survey, biometrics, etc.)
+                    suffix = stem.split("_")[
+                        -1
+                    ]  # Get the last part (survey, biometrics, etc.)
                     inherited_name = f"{entity}-{value}_{suffix}.json"
                     inherited_path = os.path.join(self.bids_path, inherited_name)
-                    
+
                     if os.path.exists(inherited_path):
                         return True
-                    
+
                     # Also check in subdirectories like surveys/ or biometrics/
                     search_dirs = [
                         os.path.join(self.bids_path, "surveys"),
@@ -424,7 +444,7 @@ class DatasetFixer:
                         inherited_path = os.path.join(search_dir, inherited_name)
                         if os.path.exists(inherited_path):
                             return True
-        
+
         return False
 
     def _infer_modality(self, file_path: str, filename: str) -> str:

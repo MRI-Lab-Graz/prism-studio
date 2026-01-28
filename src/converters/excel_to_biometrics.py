@@ -26,12 +26,9 @@ try:
 except (ImportError, ValueError):
     # Fallback for different execution contexts
     from excel_base import (
-        norm_key,
         find_column_idx,
-        clean_variable_name,
         parse_levels as _base_parse_levels,
         detect_language,
-        sanitize_task_name,
     )
 
 
@@ -428,7 +425,9 @@ def process_excel_biometrics(
                 group = "participants"
             else:
                 # Pattern: pre_testname_...
-                match = re.match(r"^(pre|mid|post)_([a-zA-Z0-9]+)", var_name, re.IGNORECASE)
+                match = re.match(
+                    r"^(pre|mid|post)_([a-zA-Z0-9]+)", var_name, re.IGNORECASE
+                )
                 if match:
                     group = match.group(2).lower()
                 else:
@@ -565,7 +564,7 @@ def process_excel_biometrics(
                 entry["SessionHint"] = "ses-2"
             elif lowered_var.startswith("post_"):
                 entry["SessionHint"] = "ses-3"
-            
+
             # Heuristic: extract run from variable name suffix
             m_run = re.search(r"_(\d+)$", var_name)
             if m_run:
@@ -592,12 +591,14 @@ def process_excel_biometrics(
         if group in participant_groups:
             print(f"  - Skipping {group} group (dropped as requested)")
             continue
-        
+
         meta = group_meta.get(group, {})
         equipment_value = meta.get("Equipment") or equipment
         supervisor_value = meta.get("Supervisor") or supervisor
 
-        original_name = meta.get("OriginalName") or f"{format_group_name(group)} assessment"
+        original_name = (
+            meta.get("OriginalName") or f"{format_group_name(group)} assessment"
+        )
         study_description = (
             meta.get("StudyDescription") or f"Imported {group} biometrics data"
         )
@@ -611,9 +612,9 @@ def process_excel_biometrics(
                     for v in var_def["Levels"].values():
                         if isinstance(v, str):
                             all_texts.append(v)
-            
+
             default_lang = detect_language(all_texts)
-            
+
             # Convert to i18n format
             i18n_variables = {}
             for var_name, var_def in variables.items():
@@ -622,16 +623,13 @@ def process_excel_biometrics(
                     en_text = new_def["Description"]
                     new_def["Description"] = {
                         "en": en_text,
-                        "de": translate_text(en_text)
+                        "de": translate_text(en_text),
                     }
                 if isinstance(new_def.get("Levels"), dict):
                     new_levels = {}
                     for k, v in new_def["Levels"].items():
                         if isinstance(v, str):
-                            new_levels[k] = {
-                                "en": v,
-                                "de": translate_text(v)
-                            }
+                            new_levels[k] = {"en": v, "de": translate_text(v)}
                         else:
                             new_levels[k] = v
                     new_def["Levels"] = new_levels
@@ -654,7 +652,7 @@ def process_excel_biometrics(
                     "Protocol": meta.get("Protocol") or "",
                     "Description": {
                         "en": study_description,
-                        "de": translate_text(study_description)
+                        "de": translate_text(study_description),
                     },
                 },
                 "Metadata": {
@@ -668,8 +666,10 @@ def process_excel_biometrics(
                 sidecar["Study"]["Instructions"] = {default_lang: meta["Instructions"]}
             elif meta.get("Instructions_en") or meta.get("Instructions_de"):
                 instr = {}
-                if meta.get("Instructions_en"): instr["en"] = meta["Instructions_en"]
-                if meta.get("Instructions_de"): instr["de"] = meta["Instructions_de"]
+                if meta.get("Instructions_en"):
+                    instr["en"] = meta["Instructions_en"]
+                if meta.get("Instructions_de"):
+                    instr["de"] = meta["Instructions_de"]
                 sidecar["Study"]["Instructions"] = instr
                 for lang in instr:
                     if lang not in sidecar["I18n"]["Languages"]:
@@ -679,7 +679,7 @@ def process_excel_biometrics(
                 sidecar["Study"]["Reference"] = meta["Reference"]
             if meta.get("EstimatedDuration"):
                 sidecar["Study"]["EstimatedDuration"] = meta["EstimatedDuration"]
-            
+
             sidecar.update(i18n_variables)
 
             json_filename = f"biometrics-{group}.json"

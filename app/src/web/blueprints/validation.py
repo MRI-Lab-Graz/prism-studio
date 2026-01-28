@@ -6,7 +6,18 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app, send_file, session
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    jsonify,
+    flash,
+    redirect,
+    url_for,
+    current_app,
+    send_file,
+    session,
+)
 from werkzeug.utils import secure_filename
 
 from src.web import (
@@ -15,16 +26,18 @@ from src.web import (
     update_progress,
     get_progress,
     process_folder_upload as _process_folder_upload,
-    process_zip_upload as _process_zip_upload
+    process_zip_upload as _process_zip_upload,
 )
 
 validation_bp = Blueprint("validation", __name__)
+
 
 @validation_bp.route("/api/progress/<job_id>")
 def get_validation_progress(job_id):
     """Get progress for a validation job (polled by UI)."""
     progress_data = get_progress(job_id)
     return jsonify(progress_data)
+
 
 @validation_bp.route("/validate")
 def validate_dataset():
@@ -33,6 +46,7 @@ def validate_dataset():
     schema_dir = os.path.join(current_app.root_path, "schemas")
     try:
         from src.schema_manager import get_available_schema_versions
+
         available_versions = get_available_schema_versions(schema_dir)
     except Exception as e:
         print(f"Warning: Could not load schema versions: {e}")
@@ -54,6 +68,7 @@ def validate_dataset():
     # Use global settings if no project library found
     if not default_library_path:
         from src.config import get_effective_library_paths
+
         lib_paths = get_effective_library_paths(app_root=str(current_app.root_path))
         if lib_paths["global_library_path"]:
             default_library_path = lib_paths["global_library_path"]
@@ -66,6 +81,7 @@ def validate_dataset():
         schema_versions=available_versions,
         default_library_path=default_library_path,
     )
+
 
 @validation_bp.route("/upload", methods=["POST"])
 def upload_dataset():
@@ -99,7 +115,9 @@ def upload_dataset():
         ):
             all_files_json = request.form.get("all_files")
             all_files_list = json.loads(all_files_json) if all_files_json else []
-            dataset_path = _process_folder_upload(files, temp_dir, metadata_paths, all_files_list)
+            dataset_path = _process_folder_upload(
+                files, temp_dir, metadata_paths, all_files_list
+            )
             filename = f"folder_upload_{len(files)}_files"
         else:
             file = files[0]
@@ -113,7 +131,7 @@ def upload_dataset():
         validation_mode = request.form.get("validation_mode", "both")
         run_bids = validation_mode in ["both", "bids"]
         run_prism = validation_mode in ["both", "prism"]
-        
+
         show_bids_warnings = request.form.get("bids_warnings") == "true"
         job_id = request.form.get("job_id", str(uuid.uuid4()))
         library_path = request.form.get("library_path")
@@ -169,6 +187,7 @@ def upload_dataset():
         flash(f"Error processing dataset: {str(e)}", "error")
         return redirect(url_for("validation.validate_dataset"))
 
+
 @validation_bp.route("/validate_folder", methods=["POST"])
 def validate_folder():
     """Handle local folder validation"""
@@ -177,7 +196,11 @@ def validate_folder():
     if not folder_path:
         folder_path = (session.get("current_project_path") or "").strip()
 
-    if not folder_path or not os.path.exists(folder_path) or not os.path.isdir(folder_path):
+    if (
+        not folder_path
+        or not os.path.exists(folder_path)
+        or not os.path.isdir(folder_path)
+    ):
         flash("Invalid folder path", "error")
         return redirect(url_for("validation.validate_dataset"))
 
@@ -185,7 +208,7 @@ def validate_folder():
     validation_mode = request.form.get("validation_mode", "both")
     run_bids = validation_mode in ["both", "bids"]
     run_prism = validation_mode in ["both", "prism"]
-    
+
     show_bids_warnings = request.form.get("bids_warnings") == "true"
     job_id = request.form.get("job_id", str(uuid.uuid4()))
     library_path = request.form.get("library_path")
@@ -227,6 +250,7 @@ def validate_folder():
         flash(f"Error validating dataset: {str(e)}", "error")
         return redirect(url_for("validation.validate_dataset"))
 
+
 @validation_bp.route("/results/<result_id>")
 def show_results(result_id):
     """Display validation results"""
@@ -238,7 +262,7 @@ def show_results(result_id):
     data = validation_results[result_id]
     results = data["results"]
     dataset_stats = results.get("dataset_stats")
-    
+
     # Prepare dataset stats for display if needed
     if dataset_stats and not isinstance(dataset_stats, dict):
         try:
@@ -257,7 +281,9 @@ def show_results(result_id):
                 "total_sessions": len(unique_sessions),
                 "modalities": dict(sorted(modalities.items())),
                 "tasks": sorted(getattr(stats_obj, "tasks", set()) or set()),
-                "eyetracking": sorted(getattr(stats_obj, "eyetracking", set()) or set()),
+                "eyetracking": sorted(
+                    getattr(stats_obj, "eyetracking", set()) or set()
+                ),
                 "physio": sorted(getattr(stats_obj, "physio", set()) or set()),
                 "surveys": sorted(getattr(stats_obj, "surveys", set()) or set()),
                 "biometrics": sorted(getattr(stats_obj, "biometrics", set()) or set()),
@@ -267,7 +293,7 @@ def show_results(result_id):
         except Exception as stats_error:
             print(f"⚠️  Failed to prepare dataset stats for display: {stats_error}")
             dataset_stats = None
-    
+
     if not dataset_stats:
         dataset_stats = {
             "total_subjects": 0,
@@ -288,6 +314,7 @@ def show_results(result_id):
         filename=data.get("filename", "dataset"),
     )
 
+
 @validation_bp.route("/download_report/<result_id>")
 def download_report(result_id):
     """Download validation report as JSON"""
@@ -303,18 +330,22 @@ def download_report(result_id):
     report = {
         "dataset": data["filename"],
         "validation_timestamp": results.get("timestamp", ""),
-        "summary": results.get("summary", {
-            "total_files": 0,
-            "valid_files": 0,
-            "invalid_files": 0,
-            "total_errors": 0,
-            "total_warnings": 0,
-        }),
+        "summary": results.get(
+            "summary",
+            {
+                "total_files": 0,
+                "valid_files": 0,
+                "invalid_files": 0,
+                "total_errors": 0,
+                "total_warnings": 0,
+            },
+        ),
         "results": results,
     }
 
     # Create in-memory file
     import io
+
     output = io.BytesIO()
     output.write(json.dumps(report, indent=2).encode("utf-8"))
     output.seek(0)
@@ -325,6 +356,7 @@ def download_report(result_id):
         as_attachment=True,
         download_name=f"validation_report_{data['filename']}.json",
     )
+
 
 @validation_bp.route("/cleanup/<result_id>")
 def cleanup(result_id):
@@ -339,6 +371,7 @@ def cleanup(result_id):
 
     flash("Results cleaned up", "success")
     return redirect(url_for("validation.validate_dataset"))
+
 
 @validation_bp.route("/api/validate", methods=["POST"])
 def api_validate():
@@ -355,9 +388,7 @@ def api_validate():
 
         # Use unified validation function
         issues, stats = run_validation(
-            dataset_path, 
-            verbose=False,
-            library_path=library_path
+            dataset_path, verbose=False, library_path=library_path
         )
         results = format_validation_results(issues, stats, dataset_path)
 

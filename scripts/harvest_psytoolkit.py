@@ -163,11 +163,11 @@ BASE_URL = "https://www.psytoolkit.org/survey-library/"
 
 class PsyToolkitHarvester:
     """Harvests and converts PsyToolkit surveys to PRISM format."""
-    
+
     def __init__(self, output_dir: Path):
         self.output_dir = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        
+
     def fetch_survey_page(self, slug: str) -> Optional[str]:
         """Fetch the HTML content of a survey page."""
         url = urljoin(BASE_URL, f"{slug}.html")
@@ -178,189 +178,190 @@ class PsyToolkitHarvester:
         except requests.RequestException as e:
             print(f"✗ Failed to fetch {slug}: {e}")
             return None
-    
+
     def parse_survey_code(self, html: str) -> Optional[Dict]:
         """Extract survey items from PsyToolkit code block."""
-        soup = BeautifulSoup(html, 'html.parser')
-        
+        soup = BeautifulSoup(html, "html.parser")
+
         # Find the code block
-        code_block = soup.find('pre') or soup.find('code')
+        code_block = soup.find("pre") or soup.find("code")
         if not code_block:
             return None
-        
+
         code = code_block.get_text()
-        
+
         # Parse scale definition
-        scale_match = re.search(r'scale:\s*(\w+)\s*\n((?:-.+\n)+)', code)
+        scale_match = re.search(r"scale:\s*(\w+)\s*\n((?:-.+\n)+)", code)
         if not scale_match:
             return None
-        
+
         scale_name = scale_match.group(1)
         levels_text = scale_match.group(2)
-        levels = [line.strip('- ').strip() for line in levels_text.split('\n') if line.strip().startswith('-')]
-        
+        levels = [
+            line.strip("- ").strip()
+            for line in levels_text.split("\n")
+            if line.strip().startswith("-")
+        ]
+
         # Parse items
-        items_match = re.search(r'q:(.+?)(?:\n\n|\nl:|$)', code, re.DOTALL)
+        items_match = re.search(r"q:(.+?)(?:\n\n|\nl:|$)", code, re.DOTALL)
         if not items_match:
             return None
-        
+
         items_text = items_match.group(1)
         items = []
-        
+
         # Extract individual items
-        for line in items_text.split('\n'):
+        for line in items_text.split("\n"):
             line = line.strip()
-            if line.startswith('-') and not line.startswith('- {'):
-                item_text = line.strip('- ').strip()
-                is_reversed = '{reverse}' in item_text
-                item_text = re.sub(r'\{reverse\}\s*', '', item_text)
-                items.append({
-                    'text': item_text,
-                    'reversed': is_reversed
-                })
-        
-        return {
-            'scale_name': scale_name,
-            'levels': levels,
-            'items': items
-        }
-    
+            if line.startswith("-") and not line.startswith("- {"):
+                item_text = line.strip("- ").strip()
+                is_reversed = "{reverse}" in item_text
+                item_text = re.sub(r"\{reverse\}\s*", "", item_text)
+                items.append({"text": item_text, "reversed": is_reversed})
+
+        return {"scale_name": scale_name, "levels": levels, "items": items}
+
     def extract_metadata(self, html: str, slug: str) -> Dict:
         """Extract metadata from the survey page."""
-        soup = BeautifulSoup(html, 'html.parser')
-        
+        soup = BeautifulSoup(html, "html.parser")
+
         metadata = {
-            'slug': slug,
-            'title': '',
-            'authors': [],
-            'year': None,
-            'doi': '',
-            'citation': '',
-            'description': ''
+            "slug": slug,
+            "title": "",
+            "authors": [],
+            "year": None,
+            "doi": "",
+            "citation": "",
+            "description": "",
         }
-        
+
         # Extract title
-        h1 = soup.find('h1')
+        h1 = soup.find("h1")
         if h1:
-            metadata['title'] = h1.get_text().strip()
-        
+            metadata["title"] = h1.get_text().strip()
+
         # Extract references section
-        refs_section = soup.find('h2', string=re.compile('References?'))
+        refs_section = soup.find("h2", string=re.compile("References?"))
         if refs_section:
-            refs_list = refs_section.find_next('ul')
+            refs_list = refs_section.find_next("ul")
             if refs_list:
-                first_ref = refs_list.find('li')
+                first_ref = refs_list.find("li")
                 if first_ref:
                     ref_text = first_ref.get_text()
-                    metadata['citation'] = ref_text.strip()
-                    
+                    metadata["citation"] = ref_text.strip()
+
                     # Extract authors (before year in parentheses)
-                    authors_match = re.match(r'^([^(]+)\((\d{4})\)', ref_text)
+                    authors_match = re.match(r"^([^(]+)\((\d{4})\)", ref_text)
                     if authors_match:
                         authors_str = authors_match.group(1).strip()
-                        metadata['authors'] = [a.strip().rstrip('.') for a in authors_str.split(',')]
-                        metadata['year'] = int(authors_match.group(2))
-                    
+                        metadata["authors"] = [
+                            a.strip().rstrip(".") for a in authors_str.split(",")
+                        ]
+                        metadata["year"] = int(authors_match.group(2))
+
                     # Extract DOI
-                    doi_match = re.search(r'doi\.org/(10\.\S+)', ref_text)
+                    doi_match = re.search(r"doi\.org/(10\.\S+)", ref_text)
                     if doi_match:
-                        metadata['doi'] = f"https://doi.org/{doi_match.group(1)}"
-        
+                        metadata["doi"] = f"https://doi.org/{doi_match.group(1)}"
+
         return metadata
-    
-    def convert_to_prism(self, survey_data: Dict, metadata: Dict, prism_id: str) -> Dict:
+
+    def convert_to_prism(
+        self, survey_data: Dict, metadata: Dict, prism_id: str
+    ) -> Dict:
         """Convert parsed survey to PRISM bilingual JSON format."""
-        
+
         prism_survey = {
             "Study": {
                 "OriginalName": {
-                    "en": metadata['title'],
-                    "de": metadata['title']  # TODO: Add German translations
+                    "en": metadata["title"],
+                    "de": metadata["title"],  # TODO: Add German translations
                 },
                 "Abbreviation": prism_id.upper(),
-                "Authors": metadata['authors'],
-                "Year": metadata['year'],
-                "DOI": metadata['doi'],
-                "Citation": metadata['citation'],
-                "NumberOfItems": len(survey_data['items']),
+                "Authors": metadata["authors"],
+                "Year": metadata["year"],
+                "DOI": metadata["doi"],
+                "Citation": metadata["citation"],
+                "NumberOfItems": len(survey_data["items"]),
                 "License": {
                     "en": "Freely available for research purposes (verify with original publication)",
-                    "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)"
+                    "de": "Frei verfügbar für Forschungszwecke (mit Originalpublikation überprüfen)",
                 },
                 "Source": f"https://www.psytoolkit.org/survey-library/{metadata['slug']}.html",
                 "Instructions": {
                     "en": "Please read each statement and select the response that best describes you.",
-                    "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt."
-                }
+                    "de": "Bitte lesen Sie jede Aussage und wählen Sie die Antwort, die Sie am besten beschreibt.",
+                },
             }
         }
-        
+
         # Add items
-        for idx, item in enumerate(survey_data['items'], start=1):
+        for idx, item in enumerate(survey_data["items"], start=1):
             item_id = f"{prism_id.upper()}{idx:02d}"
-            
+
             # Create levels dict
             levels = {}
-            for level_idx, level_text in enumerate(survey_data['levels']):
+            for level_idx, level_text in enumerate(survey_data["levels"]):
                 levels[str(level_idx)] = {
                     "en": level_text,
-                    "de": level_text  # TODO: Add German translations
+                    "de": level_text,  # TODO: Add German translations
                 }
-            
+
             prism_survey[item_id] = {
                 "Description": {
-                    "en": item['text'],
-                    "de": item['text']  # TODO: Add German translations
+                    "en": item["text"],
+                    "de": item["text"],  # TODO: Add German translations
                 },
-                "Reversed": item['reversed'],
-                "Levels": levels
+                "Reversed": item["reversed"],
+                "Levels": levels,
             }
-        
+
         return prism_survey
-    
+
     def harvest_survey(self, slug: str, prism_id: str) -> bool:
         """Harvest a single survey and save to PRISM format."""
-        print(f"Harvesting {slug} → {prism_id}...", end=' ')
-        
+        print(f"Harvesting {slug} → {prism_id}...", end=" ")
+
         # Fetch page
         html = self.fetch_survey_page(slug)
         if not html:
             return False
-        
+
         # Parse survey code
         survey_data = self.parse_survey_code(html)
         if not survey_data:
             print("✗ Failed to parse survey code")
             return False
-        
+
         # Extract metadata
         metadata = self.extract_metadata(html, slug)
-        
+
         # Convert to PRISM format
         prism_survey = self.convert_to_prism(survey_data, metadata, prism_id)
-        
+
         # Save to file
         output_file = self.output_dir / f"survey-{prism_id}.json"
-        with open(output_file, 'w', encoding='utf-8') as f:
+        with open(output_file, "w", encoding="utf-8") as f:
             json.dump(prism_survey, f, indent=2, ensure_ascii=False)
-        
+
         print(f"✓ Saved to {output_file.name}")
         return True
-    
+
     def harvest_all(self):
         """Harvest all surveys in the mapping."""
         success_count = 0
         fail_count = 0
-        
+
         print(f"\nHarvesting {len(PSYTOOLKIT_SURVEYS)} surveys from PsyToolkit...\n")
-        
+
         for slug, prism_id in PSYTOOLKIT_SURVEYS.items():
             if self.harvest_survey(slug, prism_id):
                 success_count += 1
             else:
                 fail_count += 1
-        
-        print(f"\n{'='*60}")
+
+        print(f"\n{'=' * 60}")
         print(f"Harvest complete: {success_count} successful, {fail_count} failed")
         print(f"Output directory: {self.output_dir}")
 
@@ -369,30 +370,24 @@ def main():
     parser = argparse.ArgumentParser(
         description="Harvest surveys from PsyToolkit and convert to PRISM format"
     )
+    parser.add_argument("--all", action="store_true", help="Harvest all surveys")
     parser.add_argument(
-        '--all',
-        action='store_true',
-        help='Harvest all surveys'
+        "--survey",
+        nargs="+",
+        help="Harvest specific surveys by PRISM ID (e.g., phq9 gad7)",
     )
     parser.add_argument(
-        '--survey',
-        nargs='+',
-        help='Harvest specific surveys by PRISM ID (e.g., phq9 gad7)'
+        "--list", action="store_true", help="List all available surveys"
     )
     parser.add_argument(
-        '--list',
-        action='store_true',
-        help='List all available surveys'
-    )
-    parser.add_argument(
-        '--output',
+        "--output",
         type=Path,
-        default=Path(__file__).parent.parent / 'official' / 'library' / 'survey',
-        help='Output directory for harvested surveys'
+        default=Path(__file__).parent.parent / "official" / "library" / "survey",
+        help="Output directory for harvested surveys",
     )
-    
+
     args = parser.parse_args()
-    
+
     if args.list:
         print("\nAvailable surveys:")
         print("=" * 60)
@@ -400,9 +395,9 @@ def main():
             print(f"  {prism_id:20s} → {slug}")
         print(f"\nTotal: {len(PSYTOOLKIT_SURVEYS)} surveys")
         return
-    
+
     harvester = PsyToolkitHarvester(args.output)
-    
+
     if args.all:
         harvester.harvest_all()
     elif args.survey:
@@ -415,11 +410,13 @@ def main():
                 if p == prism_id:
                     slug = s
                     break
-            
+
             if slug:
                 harvester.harvest_survey(slug, prism_id)
             else:
-                print(f"✗ Survey '{prism_id}' not found. Use --list to see available surveys.")
+                print(
+                    f"✗ Survey '{prism_id}' not found. Use --list to see available surveys."
+                )
     else:
         parser.print_help()
 

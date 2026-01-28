@@ -99,7 +99,15 @@ def check_uniqueness(library_path):
 class LibraryValidator:
     def __init__(self, library_path):
         self.library_path = Path(library_path)
-        self.IGNORE_KEYS = {"Technical", "Study", "Metadata", "Questions", "I18n", "Scoring", "Normative"}
+        self.IGNORE_KEYS = {
+            "Technical",
+            "Study",
+            "Metadata",
+            "Questions",
+            "I18n",
+            "Scoring",
+            "Normative",
+        }
 
     def _template_files(self, exclude_file=None):
         if not self.library_path.exists():
@@ -132,7 +140,9 @@ class LibraryValidator:
     def _item_signature(self, item_def):
         # Items are considered identical if they share the same content,
         # ignoring both "AliasOf" (backward pointer) and "Aliases" (forward list)
-        normalized = {k: item_def[k] for k in sorted(item_def) if k not in ("AliasOf", "Aliases")}
+        normalized = {
+            k: item_def[k] for k in sorted(item_def) if k not in ("AliasOf", "Aliases")
+        }
         return json.dumps(normalized, sort_keys=True, ensure_ascii=False)
 
     def find_redundant_items(self):
@@ -149,7 +159,9 @@ class LibraryValidator:
                 if len(group) <= 1:
                     continue
 
-                canonical = [item_id for item_id, item_def in group if "AliasOf" not in item_def]
+                canonical = [
+                    item_id for item_id, item_def in group if "AliasOf" not in item_def
+                ]
                 alias_entries = [
                     (item_id, item_def.get("AliasOf"))
                     for item_id, item_def in group
@@ -157,17 +169,20 @@ class LibraryValidator:
                 ]
                 sorted_items = sorted(item_id for item_id, _ in group)
 
-                if alias_entries and len(canonical) == 1 and all(
-                    alias_target == canonical[0] for _, alias_target in alias_entries
+                if (
+                    alias_entries
+                    and len(canonical) == 1
+                    and all(
+                        alias_target == canonical[0]
+                        for _, alias_target in alias_entries
+                    )
                 ):
                     severity = "info"
                     alias_names = ", ".join(item for item, _ in alias_entries)
                     message = f"{file_path.name}: canonical '{canonical[0]}' has aliases ({alias_names}) that duplicate its content."
                 else:
                     severity = "warning"
-                    message = (
-                        f"{file_path.name}: items {', '.join(sorted_items)} share identical content; remove duplicates or mark them with AliasOf."
-                    )
+                    message = f"{file_path.name}: items {', '.join(sorted_items)} share identical content; remove duplicates or mark them with AliasOf."
 
                 issues.append(
                     {
@@ -196,7 +211,8 @@ class LibraryValidator:
         files = [
             f
             for f in self.library_path.glob("*.json")
-            if (f.name.startswith("survey-") or f.name.startswith("biometrics-")) and f.name != exclude_file
+            if (f.name.startswith("survey-") or f.name.startswith("biometrics-"))
+            and f.name != exclude_file
         ]
 
         for file_path in files:

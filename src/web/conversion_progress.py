@@ -5,7 +5,7 @@ Progress tracking for conversion jobs using Server-Sent Events (SSE).
 import json
 import queue
 import time
-from typing import Dict, Optional, Generator
+from typing import Dict, Generator
 from threading import Lock
 
 # Progress store: job_id -> {progress, message, status, step, queue}
@@ -26,11 +26,7 @@ def create_job(job_id: str) -> None:
 
 
 def update_conversion_progress(
-    job_id: str,
-    progress: int,
-    message: str,
-    step: int = 1,
-    status: str = "running"
+    job_id: str, progress: int, message: str, step: int = 1, status: str = "running"
 ) -> None:
     """Update progress for a conversion job and push to queue for SSE."""
     with _progress_lock:
@@ -45,12 +41,14 @@ def update_conversion_progress(
 
         # Push update to queue for SSE subscribers
         try:
-            job["queue"].put_nowait({
-                "progress": progress,
-                "message": message,
-                "step": step,
-                "status": job["status"],
-            })
+            job["queue"].put_nowait(
+                {
+                    "progress": progress,
+                    "message": message,
+                    "step": step,
+                    "status": job["status"],
+                }
+            )
         except queue.Full:
             pass  # Queue full, skip this update
 
@@ -102,7 +100,7 @@ def stream_progress(job_id: str, timeout: float = 30.0) -> Generator[str, None, 
 
         except queue.Empty:
             # Send heartbeat to keep connection alive
-            yield f": heartbeat\n\n"
+            yield ": heartbeat\n\n"
 
 
 def clear_conversion_progress(job_id: str) -> None:

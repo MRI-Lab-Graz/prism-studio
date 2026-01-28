@@ -25,15 +25,25 @@ if not getattr(sys, "frozen", False) and not sys.prefix.startswith(venv_path):
 project_root = Path(__file__).resolve().parent
 sys.path.append(str(project_root))
 
-from src.utils.io import ensure_dir as _ensure_dir, read_json as _read_json, write_json as _write_json  # noqa: E402
+from src.utils.io import (
+    ensure_dir as _ensure_dir,
+    read_json as _read_json,
+    write_json as _write_json,
+)  # noqa: E402
 
 from helpers.physio.convert_varioport import convert_varioport  # noqa: E402
 from src.library_validator import check_uniqueness  # noqa: E402
-from src.converters.limesurvey import convert_lsa_to_prism, batch_convert_lsa  # noqa: E402
+from src.converters.limesurvey import (
+    convert_lsa_to_prism,
+    batch_convert_lsa,
+)  # noqa: E402
 from src.converters.excel_to_survey import process_excel  # noqa: E402
 from src.converters.excel_to_biometrics import process_excel_biometrics  # noqa: E402
 from src.reporting import generate_methods_text  # noqa: E402
-from src.library_i18n import compile_survey_template, migrate_survey_template_to_i18n  # noqa: E402
+from src.library_i18n import (
+    compile_survey_template,
+    migrate_survey_template_to_i18n,
+)  # noqa: E402
 from src.recipes_surveys import compute_survey_recipes  # noqa: E402
 from src.config import get_effective_library_paths  # noqa: E402
 
@@ -111,14 +121,18 @@ def cmd_recipes_surveys(args):
             # Fallback to current directory
             repo_root = Path(project_root).resolve()
             print(f"ℹ️  Using default repository root: {repo_root}")
-    
+
     if not repo_root.exists() or not repo_root.is_dir():
         print(f"Error: --repo is not a directory: {repo_root}")
         sys.exit(1)
 
     out_format = str(getattr(args, "format", "flat") or "flat").strip().lower()
-    recipe_dir = (str(args.recipes).strip() if getattr(args, "recipes", None) else "") or None
-    survey_filter = (str(args.survey).strip() if getattr(args, "survey", None) else "") or None
+    recipe_dir = (
+        str(args.recipes).strip() if getattr(args, "recipes", None) else ""
+    ) or None
+    survey_filter = (
+        str(args.survey).strip() if getattr(args, "survey", None) else ""
+    ) or None
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
     include_raw = bool(getattr(args, "include_raw", False))
@@ -175,14 +189,18 @@ def cmd_recipes_biometrics(args):
             # Fallback to current directory
             repo_root = Path(project_root).resolve()
             print(f"ℹ️  Using default repository root: {repo_root}")
-    
+
     if not repo_root.exists() or not repo_root.is_dir():
         print(f"Error: --repo is not a directory: {repo_root}")
         sys.exit(1)
 
     out_format = str(getattr(args, "format", "flat") or "flat").strip().lower()
-    recipe_dir = (str(args.recipes).strip() if getattr(args, "recipes", None) else "") or None
-    biometric_filter = (str(args.biometric).strip() if getattr(args, "biometric", None) else "") or None
+    recipe_dir = (
+        str(args.recipes).strip() if getattr(args, "recipes", None) else ""
+    ) or None
+    biometric_filter = (
+        str(args.biometric).strip() if getattr(args, "biometric", None) else ""
+    ) or None
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
 
@@ -197,7 +215,9 @@ def cmd_recipes_biometrics(args):
             lang=lang,
             layout=layout,
         )
-        print(f"✅ Biometric recipe scoring complete: {result.written_files} file(s) written")
+        print(
+            f"✅ Biometric recipe scoring complete: {result.written_files} file(s) written"
+        )
         if result.flat_out_path:
             print(f"   Flat output: {result.flat_out_path}")
         if result.fallback_note:
@@ -379,7 +399,7 @@ def cmd_convert_physio(args):
         # sub-XXX_ses-YYY_task-<task>_<suffix>.edf
         out_base = f"{sub_id}_{ses_id}_task-{args.task}_{args.suffix}"
         out_edf = target_dir / f"{out_base}.edf"
-        
+
         # Root sidecar for BIDS inheritance
         out_root_json = output_dir / f"task-{args.task}_{args.suffix}.json"
 
@@ -491,7 +511,14 @@ def cmd_survey_convert(args):
                 continue
             if isinstance(data, dict) and "I18n" in data:
                 return True
-            reserved = {"Technical", "Study", "Metadata", "I18n", "Scoring", "Normative"}
+            reserved = {
+                "Technical",
+                "Study",
+                "Metadata",
+                "I18n",
+                "Scoring",
+                "Normative",
+            }
             for item_id, item_def in (data or {}).items():
                 if item_id in reserved or not isinstance(item_def, dict):
                     continue
@@ -621,62 +648,80 @@ def cmd_survey_convert(args):
             print(f"  - {c}")
 
     if args.dry_run:
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("DRY-RUN MODE: Conversion Preview")
-        print("="*80)
-        
+        print("=" * 80)
+
         if result.dry_run_preview:
             preview = result.dry_run_preview
-            
+
             # Summary
             print("\n📊 SUMMARY")
-            print(f"   Total participants in file: {preview['summary']['total_participants']}")
-            print(f"   Unique participants: {preview['summary']['unique_participants']}")
+            print(
+                f"   Total participants in file: {preview['summary']['total_participants']}"
+            )
+            print(
+                f"   Unique participants: {preview['summary']['unique_participants']}"
+            )
             print(f"   Tasks detected: {', '.join(preview['summary']['tasks'])}")
             print(f"   Total files to create: {preview['summary']['total_files']}")
-            
+
             # Data issues
-            if preview['data_issues']:
+            if preview["data_issues"]:
                 print(f"\n⚠️  DATA ISSUES FOUND ({len(preview['data_issues'])})")
-                print("   These issues should be fixed in your input data BEFORE conversion:\n")
-                
-                for issue in preview['data_issues'][:10]:  # Show first 10
-                    severity = issue['severity'].upper()
+                print(
+                    "   These issues should be fixed in your input data BEFORE conversion:\n"
+                )
+
+                for issue in preview["data_issues"][:10]:  # Show first 10
+                    severity = issue["severity"].upper()
                     print(f"   [{severity}] {issue['type']}")
                     print(f"   → {issue['message']}")
-                    
-                    if issue['type'] == 'duplicate_ids':
-                        print(f"   → Duplicates found: {list(issue['details'].keys())[:5]}")
-                    elif issue['type'] == 'unexpected_values':
-                        print(f"   → Column: {issue['column']} (task: {issue['task']}, item: {issue['item']})")
-                        print(f"   → Expected values: {', '.join(issue['expected'][:10])}")
-                        print(f"   → Unexpected values: {', '.join(str(v) for v in issue['unexpected'][:10])}")
-                    elif issue['type'] == 'out_of_range':
-                        print(f"   → Column: {issue['column']} (task: {issue['task']}, item: {issue['item']})")
+
+                    if issue["type"] == "duplicate_ids":
+                        print(
+                            f"   → Duplicates found: {list(issue['details'].keys())[:5]}"
+                        )
+                    elif issue["type"] == "unexpected_values":
+                        print(
+                            f"   → Column: {issue['column']} (task: {issue['task']}, item: {issue['item']})"
+                        )
+                        print(
+                            f"   → Expected values: {', '.join(issue['expected'][:10])}"
+                        )
+                        print(
+                            f"   → Unexpected values: {', '.join(str(v) for v in issue['unexpected'][:10])}"
+                        )
+                    elif issue["type"] == "out_of_range":
+                        print(
+                            f"   → Column: {issue['column']} (task: {issue['task']}, item: {issue['item']})"
+                        )
                         print(f"   → Expected range: {issue['range']}")
-                        print(f"   → Values out of range: {issue['out_of_range_count']}")
+                        print(
+                            f"   → Values out of range: {issue['out_of_range_count']}"
+                        )
                     print()
-                
-                if len(preview['data_issues']) > 10:
+
+                if len(preview["data_issues"]) > 10:
                     print(f"   ... and {len(preview['data_issues']) - 10} more issues")
             else:
                 print("\n✅ NO DATA ISSUES DETECTED")
-            
+
             # 📝 Participants.tsv Preview (NEW!)
             if "participants_tsv" in preview:
                 print("\n📝 PARTICIPANTS.TSV PREVIEW")
                 print("   This file will be created with the following structure:\n")
-                
+
                 tsv_preview = preview["participants_tsv"]
                 columns = tsv_preview["columns"]
                 sample_rows = tsv_preview["sample_rows"]
                 total_rows = tsv_preview["total_rows"]
-                
+
                 # Column names
                 print(f"   Columns ({len(columns)} total):")
                 for col in columns:
                     print(f"     • {col}")
-                
+
                 # Mapping details if present
                 if tsv_preview["mappings"]:
                     print("\n   Column Mappings:")
@@ -687,39 +732,51 @@ def cmd_survey_convert(args):
                         print(f"     {indicator} {output_col} ← {source_col}")
                         if has_mapping and mapping_info.get("value_mapping"):
                             print("        (has value transformation mapping)")
-                
+
                 # Sample data
-                print(f"\n   Sample Data (showing first {min(5, len(sample_rows))} of {total_rows} participants):")
+                print(
+                    f"\n   Sample Data (showing first {min(5, len(sample_rows))} of {total_rows} participants):"
+                )
                 print(f"   {'-' * 100}")
-                
+
                 # Header
                 header = " | ".join(f"{col:<20}" for col in columns)
                 print(f"   {header}")
                 print(f"   {'-' * 100}")
-                
+
                 # Rows
                 for row_data in sample_rows[:5]:
-                    row_str = " | ".join(f"{str(row_data.get(col, 'n/a')):<20}" for col in columns)
+                    row_str = " | ".join(
+                        f"{str(row_data.get(col, 'n/a')):<20}" for col in columns
+                    )
                     print(f"   {row_str}")
-                
+
                 if len(sample_rows) > 5:
-                    print(f"   ... and {len(sample_rows) - 5} more rows shown above (total {total_rows} participants)")
-                
+                    print(
+                        f"   ... and {len(sample_rows) - 5} more rows shown above (total {total_rows} participants)"
+                    )
+
                 print(f"   {'-' * 100}")
-                
+
                 # Notes
                 if tsv_preview["notes"]:
                     print("\n   📌 Notes:")
                     for note in tsv_preview["notes"]:
                         print(f"     • {note}")
-                
+
                 # Unused columns that could be added to participants.tsv
                 unused_cols = tsv_preview.get("unused_columns", [])
                 if unused_cols:
-                    print(f"\n   ⚠️  UNUSED COLUMNS ({len(unused_cols)} available for participants.tsv):")
-                    print("      These columns are not being imported as survey data and could be included")
-                    print("      in participants.tsv if you create/update participants_mapping.json:")
-                    
+                    print(
+                        f"\n   ⚠️  UNUSED COLUMNS ({len(unused_cols)} available for participants.tsv):"
+                    )
+                    print(
+                        "      These columns are not being imported as survey data and could be included"
+                    )
+                    print(
+                        "      in participants.tsv if you create/update participants_mapping.json:"
+                    )
+
                     displayed = 0
                     for item in unused_cols[:10]:  # Show first 10
                         # Handle both old format (string) and new format (dict with description)
@@ -734,61 +791,71 @@ def cmd_survey_convert(args):
                         else:
                             print(f"      • {item}")
                         displayed += 1
-                    
+
                     if len(unused_cols) > 10:
                         print(f"      ... and {len(unused_cols) - 10} more columns")
-                
+
                 print()
-            
+
             # Participants preview
             print("\n👥 PARTICIPANT SURVEY COMPLETENESS (first 10)")
-            for p in preview['participants'][:10]:
-                completeness = p['completeness_percent']
-                status = "✓" if completeness > 80 else ("⚠" if completeness > 50 else "✗")
+            for p in preview["participants"][:10]:
+                completeness = p["completeness_percent"]
+                status = (
+                    "✓" if completeness > 80 else ("⚠" if completeness > 50 else "✗")
+                )
                 print(f"   {status} {p['participant_id']} ({p['session_id']})")
                 print(f"      Raw ID: {p['raw_id']}")
-                print(f"      Completeness: {completeness}% ({p['total_items'] - p['missing_values']}/{p['total_items']} items)")
-            
-            if len(preview['participants']) > 10:
-                print(f"   ... and {len(preview['participants']) - 10} more participants")
-            
+                print(
+                    f"      Completeness: {completeness}% ({p['total_items'] - p['missing_values']}/{p['total_items']} items)"
+                )
+
+            if len(preview["participants"]) > 10:
+                print(
+                    f"   ... and {len(preview['participants']) - 10} more participants"
+                )
+
             # Column mapping preview
             print("\n📋 COLUMN MAPPING (first 15)")
             shown = 0
-            for col, info in list(preview['column_mapping'].items())[:15]:
-                run_info = f" (run {info['run']})" if info['run'] else ""
-                status = "⚠" if info.get('has_unexpected_values') else "✓"
+            for col, info in list(preview["column_mapping"].items())[:15]:
+                run_info = f" (run {info['run']})" if info["run"] else ""
+                status = "⚠" if info.get("has_unexpected_values") else "✓"
                 print(f"   {status} {col}")
-                print(f"      → Task: {info['task']}{run_info}, Item: {info['base_item']}")
-                print(f"      → Missing: {info['missing_percent']}% ({info['missing_count']} values)")
-                if info.get('has_unexpected_values'):
+                print(
+                    f"      → Task: {info['task']}{run_info}, Item: {info['base_item']}"
+                )
+                print(
+                    f"      → Missing: {info['missing_percent']}% ({info['missing_count']} values)"
+                )
+                if info.get("has_unexpected_values"):
                     print("      ⚠  Has unexpected values!")
                 shown += 1
-            
-            if len(preview['column_mapping']) > 15:
+
+            if len(preview["column_mapping"]) > 15:
                 print(f"   ... and {len(preview['column_mapping']) - 15} more columns")
-            
+
             # Files to create
             print("\n📁 FILES TO CREATE (showing structure)")
             file_types = {}
-            for f in preview['files_to_create']:
-                file_types[f['type']] = file_types.get(f['type'], 0) + 1
-            
+            for f in preview["files_to_create"]:
+                file_types[f["type"]] = file_types.get(f["type"], 0) + 1
+
             print(f"   Metadata files: {file_types.get('metadata', 0)}")
             print(f"   Sidecar files: {file_types.get('sidecar', 0)}")
             print(f"   Data files: {file_types.get('data', 0)}")
-            
+
             print("\n   Sample files:")
-            shown_by_type = {'metadata': 0, 'sidecar': 0, 'data': 0}
-            for f in preview['files_to_create']:
-                if shown_by_type[f['type']] < 3:
+            shown_by_type = {"metadata": 0, "sidecar": 0, "data": 0}
+            for f in preview["files_to_create"]:
+                if shown_by_type[f["type"]] < 3:
                     print(f"   - {f['path']}")
                     print(f"     {f['description']}")
-                    shown_by_type[f['type']] += 1
-        
-        print("\n" + "="*80)
+                    shown_by_type[f["type"]] += 1
+
+        print("\n" + "=" * 80)
         print("No files were created. Run without --dry-run to execute the conversion.")
-        print("="*80)
+        print("=" * 80)
         return
 
     print("\n✅ Survey conversion complete.")
@@ -1125,7 +1192,7 @@ def cmd_survey_import_limesurvey(args):
     print(f"Importing LimeSurvey structure from {args.input}...")
     try:
         convert_lsa_to_prism(args.input, args.output, task_name=args.task)
-        
+
         print("\nValidating imported files...")
         check_uniqueness(args.output)
     except Exception as e:
@@ -1168,7 +1235,7 @@ def cmd_survey_import_limesurvey_batch(args):
             id_column=args.subject_id_col,
             id_map_file=args.id_map,
         )
-        
+
         print("\nValidating imported files...")
         check_uniqueness(args.output_dir)
     except Exception as e:
@@ -1307,31 +1374,39 @@ def cmd_anonymize(args):
     """Anonymize a dataset for sharing."""
     from src.anonymizer import create_participant_mapping, anonymize_tsv_file
     import csv
-    
+
     dataset_path = Path(args.dataset).resolve()
-    output_path = Path(args.output).resolve() if args.output else dataset_path.parent / f"{dataset_path.name}_anonymized"
-    mapping_file = Path(args.mapping).resolve() if args.mapping else output_path / "code" / "anonymization_map.json"
-    
+    output_path = (
+        Path(args.output).resolve()
+        if args.output
+        else dataset_path.parent / f"{dataset_path.name}_anonymized"
+    )
+    mapping_file = (
+        Path(args.mapping).resolve()
+        if args.mapping
+        else output_path / "code" / "anonymization_map.json"
+    )
+
     if not dataset_path.exists() or not dataset_path.is_dir():
         print(f"Error: Dataset path not found: {dataset_path}")
         sys.exit(1)
-    
+
     print(f"Anonymizing dataset: {dataset_path}")
     print(f"Output will be saved to: {output_path}")
     print()
-    
+
     # Step 1: Collect all participant IDs
     participant_ids = set()
     # Check rawdata/ first (PRISM/YODA structure), then root (BIDS)
     participants_tsv = dataset_path / "rawdata" / "participants.tsv"
     if not participants_tsv.exists():
         participants_tsv = dataset_path / "participants.tsv"
-    
+
     if participants_tsv.exists():
-        with open(participants_tsv, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f, delimiter='\t')
+        with open(participants_tsv, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f, delimiter="\t")
             for row in reader:
-                pid = row.get('participant_id', '')
+                pid = row.get("participant_id", "")
                 if pid:
                     participant_ids.add(pid)
     else:
@@ -1339,17 +1414,17 @@ def cmd_anonymize(args):
         for sub_dir in dataset_path.glob("sub-*"):
             if sub_dir.is_dir():
                 participant_ids.add(sub_dir.name)
-    
+
     if not participant_ids:
         print("Error: No participants found in dataset")
         sys.exit(1)
-    
+
     print(f"Found {len(participant_ids)} participants")
-    
+
     # Step 2: Create or load mapping
     if mapping_file.exists() and not args.force:
         print(f"Loading existing mapping from: {mapping_file}")
-        with open(mapping_file, 'r', encoding='utf-8') as f:
+        with open(mapping_file, "r", encoding="utf-8") as f:
             data = json.load(f)
             participant_mapping = data.get("mapping", {})
     else:
@@ -1358,66 +1433,67 @@ def cmd_anonymize(args):
             list(participant_ids),
             mapping_file,
             id_length=args.id_length,
-            deterministic=not args.random
+            deterministic=not args.random,
         )
         print(f"✓ Mapping saved to: {mapping_file}")
         print("  ⚠️  KEEP THIS FILE SECURE! It allows re-identification.")
-    
+
     print()
     print("Sample mappings:")
     for i, (orig, anon) in enumerate(list(participant_mapping.items())[:3]):
         print(f"  {orig} → {anon}")
     print()
-    
+
     # Step 3: Copy dataset structure
     output_path.mkdir(parents=True, exist_ok=True)
-    
+
     # Copy and anonymize participants.tsv
     if participants_tsv.exists():
         print("Anonymizing participants.tsv...")
         output_participants = output_path / "participants.tsv"
         anonymize_tsv_file(participants_tsv, output_participants, participant_mapping)
         print(f"  ✓ {output_participants}")
-    
+
     # Step 4: Copy and anonymize survey/biometric data
     print("Anonymizing data files...")
     for tsv_file in dataset_path.rglob("*.tsv"):
         if tsv_file.name == "participants.tsv":
             continue  # Already handled
-        
+
         # Calculate relative path and update with anonymized IDs
         rel_path = tsv_file.relative_to(dataset_path)
         new_rel_path_str = str(rel_path)
-        
+
         # Replace participant IDs in path
         for orig_id, anon_id in participant_mapping.items():
             new_rel_path_str = new_rel_path_str.replace(orig_id, anon_id)
-        
+
         output_file = output_path / new_rel_path_str
         anonymize_tsv_file(tsv_file, output_file, participant_mapping)
         print(f"  ✓ {rel_path} → {new_rel_path_str}")
-    
+
     # Step 5: Copy JSON sidecars (with optional question masking)
     print("Copying metadata files...")
     for json_file in dataset_path.rglob("*.json"):
         rel_path = json_file.relative_to(dataset_path)
-        
+
         # Skip the mapping file itself
         if json_file == mapping_file:
             continue
-        
+
         # Replace participant IDs in path
         new_rel_path_str = str(rel_path)
         for orig_id, anon_id in participant_mapping.items():
             new_rel_path_str = new_rel_path_str.replace(orig_id, anon_id)
-        
+
         output_file = output_path / new_rel_path_str
         output_file.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # TODO: If mask_questions flag is set, process survey sidecars to mask question text
         import shutil
+
         shutil.copy2(json_file, output_file)
-    
+
     print()
     print("=" * 70)
     print("✅ Anonymization complete!")
@@ -1474,7 +1550,9 @@ def main():
         "create", help="Create a demo dataset"
     )
     parser_demo_create.add_argument(
-        "--output", default="archive/prism_demo_copy", help="Output path for the demo dataset"
+        "--output",
+        default="archive/prism_demo_copy",
+        help="Output path for the demo dataset",
     )
 
     # Command: survey
@@ -1594,9 +1672,7 @@ def main():
         "recipes",
         help="Compute scores/recipes from an already-valid PRISM dataset using recipes",
     )
-    recipes_subparsers = parser_recipes.add_subparsers(
-        dest="kind", help="Recipe kind"
-    )
+    recipes_subparsers = parser_recipes.add_subparsers(dest="kind", help="Recipe kind")
 
     parser_deriv_surveys = recipes_subparsers.add_parser(
         "surveys",
@@ -1611,7 +1687,11 @@ def main():
     )
     parser_deriv_surveys.add_argument(
         "--repo",
-        default=str(project_root.parent) if project_root.name == "app" else str(project_root),
+        default=(
+            str(project_root.parent)
+            if project_root.name == "app"
+            else str(project_root)
+        ),
         help=(
             "Path to the PRISM tools repository root (used to locate recipe JSONs under "
             "recipe/survey/*.json). Default: this script's folder."
@@ -1668,7 +1748,11 @@ def main():
     )
     parser_deriv_biometrics.add_argument(
         "--repo",
-        default=str(project_root.parent) if project_root.name == "app" else str(project_root),
+        default=(
+            str(project_root.parent)
+            if project_root.name == "app"
+            else str(project_root)
+        ),
         help=(
             "Path to the PRISM tools repository root (used to locate recipe JSONs under "
             "recipe/biometrics/*.json). Default: this script's folder."
@@ -1798,41 +1882,39 @@ def main():
     # Command: anonymize
     parser_anonymize = subparsers.add_parser(
         "anonymize",
-        help="Anonymize a dataset for sharing (randomize participant IDs, mask copyrighted questions)"
+        help="Anonymize a dataset for sharing (randomize participant IDs, mask copyrighted questions)",
     )
     parser_anonymize.add_argument(
-        "--dataset",
-        required=True,
-        help="Path to the PRISM dataset to anonymize"
+        "--dataset", required=True, help="Path to the PRISM dataset to anonymize"
     )
     parser_anonymize.add_argument(
         "--output",
-        help="Path for the anonymized output dataset (default: <dataset>_anonymized)"
+        help="Path for the anonymized output dataset (default: <dataset>_anonymized)",
     )
     parser_anonymize.add_argument(
         "--mapping",
-        help="Path to save/load the ID mapping file (default: <output>/code/anonymization_map.json)"
+        help="Path to save/load the ID mapping file (default: <output>/code/anonymization_map.json)",
     )
     parser_anonymize.add_argument(
         "--id-length",
         type=int,
         default=6,
-        help="Length of randomized ID codes (default: 6)"
+        help="Length of randomized ID codes (default: 6)",
     )
     parser_anonymize.add_argument(
         "--random",
         action="store_true",
-        help="Use truly random IDs (default: deterministic based on original IDs)"
+        help="Use truly random IDs (default: deterministic based on original IDs)",
     )
     parser_anonymize.add_argument(
         "--force",
         action="store_true",
-        help="Force creation of new mapping even if one exists"
+        help="Force creation of new mapping even if one exists",
     )
     parser_anonymize.add_argument(
         "--mask-questions",
         action="store_true",
-        help="Mask copyrighted question text (e.g., 'ADS Question 1' instead of full text)"
+        help="Mask copyrighted question text (e.g., 'ADS Question 1' instead of full text)",
     )
 
     # Subcommand: survey validate
@@ -1987,7 +2069,9 @@ def main():
     parser_lib_fill.add_argument(
         "--modality", choices=["survey", "biometrics"], required=True
     )
-    parser_lib_fill.add_argument("--path", required=True, help="Path to file or directory")
+    parser_lib_fill.add_argument(
+        "--path", required=True, help="Path to file or directory"
+    )
     parser_lib_fill.add_argument("--version", default="stable", help="Schema version")
 
     args = parser.parse_args()

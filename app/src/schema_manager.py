@@ -101,7 +101,7 @@ def load_all_schemas(schema_dir="schemas", version=None):
         schema = load_schema(modality, schema_dir, version)
         if schema:
             schemas[modality] = schema
-    
+
     # Aliases
     if "physio" in schemas:
         schemas["physiological"] = schemas["physio"]
