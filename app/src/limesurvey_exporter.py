@@ -925,7 +925,8 @@ def generate_lss_from_customization(
     language="en",
     ls_version="6",
     matrix_mode=True,
-    matrix_global=True
+    matrix_global=True,
+    survey_title=None
 ):
     """
     Generate a LimeSurvey Structure (.lss) file from a CustomizationState.
@@ -1412,9 +1413,11 @@ def generate_lss_from_customization(
     add_row(surveys_rows, survey_settings)
 
     # --- Survey Language Settings ---
-    survey_title = "Custom Survey"
-    if sorted_groups:
-        survey_title = sorted_groups[0].get("name", "Custom Survey")
+    # Use provided survey_title, or fall back to first group name
+    if not survey_title:
+        survey_title = "Custom Survey"
+        if sorted_groups:
+            survey_title = sorted_groups[0].get("name", "Custom Survey")
 
     # Note: Metadata is stored in hidden questions per group (relevance=0)
     # so it survives LimeSurvey import/export cycles
