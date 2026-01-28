@@ -13,9 +13,12 @@ def add_row(parent, data):
         child.text = str(value)
 
 
-# LimeSurvey has a 20-character limit on question codes in older versions (LS 2.x/early 3.x)
-# We use 20 as the safe maximum to ensure compatibility
-LS_QUESTION_CODE_MAX_LENGTH = 20
+# LimeSurvey question code limits:
+# - Official limit is 20 characters, but codes at exactly 20 chars can cause import issues
+# - We use 15 as a safe maximum to avoid edge cases and keep codes readable
+# - Must start with a letter (a-z, A-Z)
+# - Only alphanumeric characters allowed (no underscores, hyphens, spaces)
+LS_QUESTION_CODE_MAX_LENGTH = 15
 
 
 def _sanitize_question_code(code: str, max_length: int = LS_QUESTION_CODE_MAX_LENGTH) -> str:
@@ -23,13 +26,17 @@ def _sanitize_question_code(code: str, max_length: int = LS_QUESTION_CODE_MAX_LE
     Sanitize and truncate question code for LimeSurvey compatibility.
 
     LimeSurvey restrictions:
-    - Maximum 20 characters (older versions)
+    - Maximum 20 characters officially, but we use 15 to avoid edge-case issues
     - Must start with a letter (a-z, A-Z)
     - Only alphanumeric characters allowed (no underscores, hyphens, @, etc.)
 
+    For long codes that need truncation, a 2-character hash suffix is added to
+    ensure uniqueness (e.g., psychiatric_diagnosis vs psychiatric_diagnosis_details
+    won't collide after truncation).
+
     Args:
         code: Question code (e.g., "neurological_diagnosis" or "LOT-R01" or "@context")
-        max_length: Maximum allowed length (default: 20 for LS compatibility)
+        max_length: Maximum allowed length (default: 15 for safe LS compatibility)
 
     Returns:
         Sanitized code that is valid for LimeSurvey
@@ -38,8 +45,10 @@ def _sanitize_question_code(code: str, max_length: int = LS_QUESTION_CODE_MAX_LE
           "@context" -> "context"
           "_PRISM_META" -> "PRISMMETA"
           "123test" -> "Q123test"
+          "psychiatric_diagnosis" -> "psychidiagab" (truncated + hash suffix)
     """
     import re
+    import hashlib
 
     # Remove all non-alphanumeric characters (including @, _, -)
     sanitized = re.sub(r'[^a-zA-Z0-9]', '', code)
@@ -52,9 +61,13 @@ def _sanitize_question_code(code: str, max_length: int = LS_QUESTION_CODE_MAX_LE
     if not sanitized:
         sanitized = "Q"
 
-    # Truncate to max length
+    # Truncate to max length, adding hash suffix for long codes to prevent collisions
     if len(sanitized) > max_length:
-        sanitized = sanitized[:max_length]
+        # Reserve 2 characters for hash suffix to ensure uniqueness
+        # Use hash of ORIGINAL code (before sanitization) to distinguish similar codes
+        hash_suffix = hashlib.md5(code.encode()).hexdigest()[:2]
+        prefix_len = max_length - 2
+        sanitized = sanitized[:prefix_len] + hash_suffix
 
     return sanitized
 
@@ -88,14 +101,17 @@ def _apply_run_suffix(code: str, run: int | None) -> str:
 def _apply_ls_styling(text):
     """
     Apply LimeSurvey HTML styling to question text.
-    Wraps text with font-size and bold styling for better readability.
+    Creates professional, readable question formatting with proper sizing.
+    Uses heading-like styling for clear visual hierarchy.
     """
     if not text:
         return text
     # Don't double-wrap if already has styling
-    if '<span' in text or '<strong>' in text:
+    if '<span' in text or '<strong>' in text or '<div' in text or '<h' in text.lower():
         return text
-    return f'<span style="font-size:18px;"><strong>{text}</strong></span>'
+    # Professional heading-like styling: 22px bold, dark text, proper spacing
+    # Using inline styles to ensure they work across all LimeSurvey themes
+    return f'<p style="font-size:22px; font-weight:700; color:#1a1a1a; margin:0 0 8px 0; line-height:1.3;">{text}</p>'
 
 
 def _determine_ls_question_type(q_data, has_levels):
@@ -190,8 +206,10 @@ def _determine_ls_question_type(q_data, has_levels):
             extra_attrs["max_num_value_n"] = str(max_val)
         if q_data.get("DataType") == "integer":
             extra_attrs["num_value_int_only"] = "1"
-        # Default input width for numeric fields
-        extra_attrs["text_input_width"] = ls_config.get("inputWidth", "7%")
+        # Input width for numeric fields
+        # LimeSurvey uses numeric scale: 1=smallest (~7%), 2=small, etc.
+        input_width = ls_config.get("inputWidth", "1")  # Default to 1 (smallest)
+        extra_attrs["text_input_width"] = str(input_width)
         return "N", extra_attrs
 
     # Slider input - map to Array (Numbers) with slider display or 5-point
@@ -781,13 +799,21 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     levels = q_data.get("Levels")
                     input_type = q_data.get("InputType", "").lower()
 
-                    # Don't group dropdown questions or questions with >10 options
+                    # Check for template-level MatrixGrouping flag
+                    technical = data.get("Technical", {})
+                    matrix_grouping_disabled = technical.get("MatrixGrouping") is False
+                    has_other = "OtherOption" in q_data and q_data["OtherOption"].get("enabled", False)
+
+                    # Don't group: dropdown, numerical, text, calculated, questions with Other option,
+                    # questions with 6+ options (likely demographics), or if template disables grouping
                     should_not_group = (
+                        matrix_grouping_disabled or
                         input_type == "dropdown" or
                         input_type == "numerical" or
                         input_type == "text" or
                         input_type == "calculated" or
-                        (levels and len(levels) > 10)
+                        has_other or
+                        (levels and len(levels) >= 6)
                     )
 
                     if should_not_group:
@@ -815,13 +841,21 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     levels = q_data.get("Levels")
                     input_type = q_data.get("InputType", "").lower()
 
-                    # Don't group dropdown questions or questions with >10 options
+                    # Check for template-level MatrixGrouping flag
+                    technical = data.get("Technical", {})
+                    matrix_grouping_disabled = technical.get("MatrixGrouping") is False
+                    has_other = "OtherOption" in q_data and q_data["OtherOption"].get("enabled", False)
+
+                    # Don't group: dropdown, numerical, text, calculated, questions with Other option,
+                    # questions with 6+ options (likely demographics), or if template disables grouping
                     should_not_group = (
+                        matrix_grouping_disabled or
                         input_type == "dropdown" or
                         input_type == "numerical" or
                         input_type == "text" or
                         input_type == "calculated" or
-                        (levels and len(levels) > 10)
+                        has_other or
+                        (levels and len(levels) >= 6)
                     )
 
                     levels_str = (
@@ -1418,13 +1452,25 @@ def generate_lss_from_customization(
             levels = q.get("levels") or orig.get("Levels", {})
             has_other = "OtherOption" in orig and orig["OtherOption"].get("enabled", False)
 
+            # Check for template-level MatrixGrouping flag (passed from loader)
+            # This is more reliable than re-reading the file
+            matrix_grouping_disabled = q.get("matrixGroupingDisabled", False)
+
+            # Additional check: if the source file is participants.json, never group
+            source_file = q.get("sourceFile", "")
+            is_participants = "participants" in source_file.lower()
+
+            num_levels = len(levels) if levels else 0
+
             return (
+                matrix_grouping_disabled or  # Template explicitly disables matrix grouping
+                is_participants or  # Participants/demographics should never be grouped
                 input_type == "dropdown" or
                 input_type == "numerical" or
                 input_type == "text" or
                 input_type == "calculated" or
                 has_other or  # Questions with "Other" option shouldn't be grouped
-                (levels and len(levels) > 10)  # Many options = use dropdown, not matrix
+                num_levels >= 6  # 6+ options = likely demographic, not Likert scale
             )
 
         if matrix_mode:
@@ -1485,11 +1531,69 @@ def generate_lss_from_customization(
             # No grouping - each question is its own group
             grouped_questions = [[q] for q in sorted_questions]
 
+        # Cache for source file data to avoid re-reading
+        _source_file_cache = {}
+
+        def _get_question_from_source(q):
+            """Get full question data from source file (most reliable)."""
+            source_file = q.get("sourceFile")
+            q_code = q.get("questionCode")
+            if not source_file or not q_code:
+                print(f"[LSS-EXPORT] WARNING: Missing sourceFile or questionCode for question")
+                return None
+
+            if source_file not in _source_file_cache:
+                try:
+                    with open(source_file, "r", encoding="utf-8") as f:
+                        _source_file_cache[source_file] = json.load(f)
+                    print(f"[LSS-EXPORT] Loaded source file: {source_file}")
+                except Exception as e:
+                    print(f"[LSS-EXPORT] ERROR loading source file {source_file}: {e}")
+                    _source_file_cache[source_file] = None
+
+            template_data = _source_file_cache.get(source_file)
+            if not template_data:
+                print(f"[LSS-EXPORT] WARNING: No template data for {source_file}")
+                return None
+
+            # Check Questions section first, then top-level
+            questions_section = template_data.get("Questions", {})
+            if q_code in questions_section:
+                return questions_section[q_code]
+            if q_code in template_data:
+                return template_data[q_code]
+
+            print(f"[LSS-EXPORT] WARNING: Question '{q_code}' not found in {source_file}")
+            return None
+
         # Process question groups
         q_sort_order = 0
+        print(f"\n[LSS-EXPORT] Processing {len(grouped_questions)} question groups")
         for q_group in grouped_questions:
             first_q = q_group[0]
-            levels = first_q.get("levels") or first_q.get("originalData", {}).get("Levels", {})
+
+            # Get levels - try multiple sources for reliability
+            # Priority: 1) Source file (most reliable), 2) originalData, 3) levels field
+            q_code = first_q.get("questionCode", "unknown")
+            source_file = first_q.get("sourceFile", "")
+            source_q_data = _get_question_from_source(first_q)
+
+            print(f"\n[LSS-EXPORT] Question: {q_code}")
+            print(f"[LSS-EXPORT]   sourceFile: {source_file}")
+            print(f"[LSS-EXPORT]   source_q_data found: {source_q_data is not None}")
+
+            if source_q_data and source_q_data.get("Levels"):
+                levels = source_q_data.get("Levels", {})
+                print(f"[LSS-EXPORT]   Levels from SOURCE FILE: {len(levels)} items")
+                print(f"[LSS-EXPORT]   Level keys: {list(levels.keys())}")
+            else:
+                orig_levels = first_q.get("originalData", {}).get("Levels", {})
+                q_levels = first_q.get("levels", {})
+                levels = orig_levels or q_levels
+                print(f"[LSS-EXPORT]   originalData.Levels: {len(orig_levels)} items")
+                print(f"[LSS-EXPORT]   q.levels: {len(q_levels)} items")
+                print(f"[LSS-EXPORT]   Using: {len(levels)} items")
+
             is_matrix = len(q_group) > 1
 
             qid = str(qid_counter)
@@ -1497,7 +1601,8 @@ def generate_lss_from_customization(
             q_sort_order += 1
 
             # Relevance - use new helper function with originalData
-            original_data = first_q.get("originalData", {})
+            # Prefer source file data if available
+            original_data = source_q_data if source_q_data else first_q.get("originalData", {})
             relevance = _build_relevance_equation(original_data)
 
             if is_matrix:
@@ -1635,8 +1740,11 @@ def generate_lss_from_customization(
                 run_num = q.get("runNumber")
                 final_code = _apply_run_suffix(q_code, run_num)
 
+                # Use source file data as primary, fall back to originalData
+                # source_q_data is set earlier when we got levels
+                orig = source_q_data if source_q_data else q.get("originalData", {})
+
                 description = q.get("description", "")
-                orig = q.get("originalData", {})
                 if not description:
                     description = get_text(orig.get("Description", q_code), language)
                 # Apply LimeSurvey HTML styling to question text
@@ -1701,13 +1809,16 @@ def generate_lss_from_customization(
 
                 # Add Answers (skip "other" if OtherOption is enabled to avoid duplicate)
                 if levels:
+                    print(f"[LSS-EXPORT]   Writing {len(levels)} answers for {final_code}")
                     sort_ans = 0
                     for code, answer_text in levels.items():
                         # Skip "other" level if OtherOption is enabled (LimeSurvey will add its own)
                         if code.lower() == "other" and has_other:
+                            print(f"[LSS-EXPORT]     Skipping 'other' (OtherOption enabled)")
                             continue
                         sort_ans += 1
                         ans_text = get_text(answer_text, language)
+                        print(f"[LSS-EXPORT]     Answer {sort_ans}: code='{code}', text='{ans_text[:30]}...'")
                         ans_row = {
                             "qid": qid,
                             "code": code,
@@ -1733,6 +1844,8 @@ def generate_lss_from_customization(
                                     "sid": sid,
                                 },
                             )
+                else:
+                    print(f"[LSS-EXPORT]   WARNING: NO LEVELS for {final_code}!")
 
     # --- Survey Settings ---
     survey_settings = {
