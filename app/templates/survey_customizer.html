@@ -119,30 +119,6 @@
         margin-top: 0.25rem;
     }
 
-    /* Mandatory Toggle */
-    .mandatory-toggle {
-        cursor: pointer;
-        padding: 0.125rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        transition: all 0.2s;
-    }
-
-    .mandatory-toggle.mandatory {
-        background: #dc3545;
-        color: white;
-    }
-
-    .mandatory-toggle.optional {
-        background: #e9ecef;
-        color: #6c757d;
-    }
-
-    .mandatory-toggle:hover {
-        opacity: 0.8;
-    }
-
     /* Export Settings */
     .export-settings {
         background: #f8f9fa;
@@ -635,29 +611,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 qDiv.className = 'question-item';
                 qDiv.dataset.questionId = q.id;
                 qDiv.dataset.groupId = group.id;
+                const mandatoryId = `mandatory-${group.id}-${q.id}`;
+                const enabledId = `enabled-${group.id}-${q.id}`;
                 qDiv.innerHTML = `
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="flex-grow-1">
                             <i class="fas fa-grip-vertical drag-handle"></i>
                             <span class="question-code">${escapeHtml(q.questionCode)}</span>
-                            <span class="mandatory-toggle ${q.mandatory ? 'mandatory' : 'optional'}"
-                                  title="Click to toggle mandatory">
-                                ${q.mandatory ? 'Required' : 'Optional'}
-                            </span>
-                            ${q.runNumber > 1 ? `<span class="badge bg-info">run-${String(q.runNumber).padStart(2, '0')}</span>` : ''}
+                            ${q.runNumber > 1 ? `<span class="badge bg-info ms-1">run-${String(q.runNumber).padStart(2, '0')}</span>` : ''}
                         </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input question-enabled" type="checkbox"
-                                   ${q.enabled ? 'checked' : ''} title="Include in export">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="form-check form-switch" title="Required: Participant must answer this question">
+                                <input class="form-check-input question-mandatory" type="checkbox" id="${mandatoryId}"
+                                       ${q.mandatory ? 'checked' : ''}>
+                                <label class="form-check-label small text-muted" for="${mandatoryId}">Required</label>
+                            </div>
+                            <div class="form-check form-switch" title="Include: Export this question to LimeSurvey">
+                                <input class="form-check-input question-enabled" type="checkbox" id="${enabledId}"
+                                       ${q.enabled ? 'checked' : ''}>
+                                <label class="form-check-label small text-muted" for="${enabledId}">Include</label>
+                            </div>
                         </div>
                     </div>
                     <div class="question-desc" title="${escapeHtml(q.description || '')}">${escapeHtml(q.description || 'No description')}</div>
                 `;
 
                 // Mandatory toggle
-                qDiv.querySelector('.mandatory-toggle').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    toggleMandatory(group.id, q.id);
+                qDiv.querySelector('.question-mandatory').addEventListener('change', (e) => {
+                    toggleMandatory(group.id, q.id, e.target.checked);
                 });
 
                 // Enabled toggle
@@ -806,11 +787,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Toggle mandatory
-    function toggleMandatory(groupId, questionId) {
+    function toggleMandatory(groupId, questionId, mandatory) {
         const group = customizationState.groups.find(g => g.id === groupId);
         const question = group.questions.find(q => q.id === questionId);
-        question.mandatory = !question.mandatory;
-        renderQuestions();
+        question.mandatory = mandatory;
+        // No need to re-render, checkbox state is already updated
     }
 
     // Toggle enabled
