@@ -14,7 +14,8 @@
     "FileFormat": "tsv",
     "Language": "en",
     "Respondent": "self",
-    "AdministrationMethod": "web"
+    "AdministrationMethod": "web",
+    "MatrixGrouping": false
   },
   "I18n": {
     "Languages": [
@@ -116,7 +117,7 @@
     "VariableType": "Continuous",
     "LimeSurvey": {
       "questionType": "N",
-      "inputWidth": "7%",
+      "inputWidth": "1",
       "validation": {
         "min": 18,
         "max": 100,
@@ -947,6 +948,14 @@
     },
     "DataType": "string",
     "VariableType": "Categorical",
+    "OtherOption": {
+      "enabled": true,
+      "textInput": true,
+      "label": {
+        "en": "Other (please specify)",
+        "de": "Andere (bitte angeben)"
+      }
+    },
     "Annotations": {
       "IsAbout": "snomed:224530016",
       "Label": "Education level",
@@ -975,7 +984,7 @@
       "Label": "Years of education"
     },
     "LimeSurvey": {
-      "inputWidth": "7%"
+      "inputWidth": "1"
     }
   },
   "employment_status": {
@@ -1269,7 +1278,7 @@
       "Label": "Body height"
     },
     "LimeSurvey": {
-      "inputWidth": "7%"
+      "inputWidth": "1"
     }
   },
   "weight": {
@@ -1292,7 +1301,7 @@
       "Label": "Body weight"
     },
     "LimeSurvey": {
-      "inputWidth": "7%"
+      "inputWidth": "1"
     }
   },
   "bmi": {
@@ -1783,7 +1792,7 @@
       ]
     },
     "LimeSurvey": {
-      "inputWidth": "7%"
+      "inputWidth": "1"
     }
   },
   "hormonal_contraceptive_use": {
