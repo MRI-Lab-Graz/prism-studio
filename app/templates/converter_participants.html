@@ -1,0 +1,473 @@
+<!-- Participants Panel -->
+<div class="tab-pane fade" id="participants-panel" role="tabpanel" aria-labelledby="participants-tab">
+    <div class="card border-0">
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+                <div>
+                    <h5 class="mb-1">Participant Data Management</h5>
+                    <p class="text-muted mb-0">Extract and convert participant demographics from various data sources</p>
+                </div>
+            </div>
+
+            <!-- Structure Warning -->
+            <div id="participantsStructureWarning" class="alert alert-danger d-none mb-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Missing Structure:</strong> <span id="participantsStructureMessage">The selected folder is missing required items.</span>
+            </div>
+
+            <!-- Conversion Mode Selection -->
+            <div class="mb-4">
+                <h6 class="mb-3"><i class="fas fa-cog me-2 text-info"></i>Conversion Mode</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-check card p-3 border-info">
+                            <input class="form-check-input" type="radio" name="participantsMode" id="participantsFromFile" value="file" checked>
+                            <label class="form-check-label fw-bold" for="participantsFromFile">
+                                <i class="fas fa-file-upload me-2 text-info"></i>Import from File
+                            </label>
+                            <small class="text-muted d-block mt-1">
+                                Extract participant info from Excel/CSV/TSV/LimeSurvey files using participants.json template
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check card p-3 border-success">
+                            <input class="form-check-input" type="radio" name="participantsMode" id="participantsFromDataset" value="dataset">
+                            <label class="form-check-label fw-bold" for="participantsFromDataset">
+                                <i class="fas fa-database me-2 text-success"></i>Extract from Converted Dataset
+                            </label>
+                            <small class="text-muted d-block mt-1">
+                                Extract participant info from already converted survey or biometrics data
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Mode Input -->
+            <div id="participantsFileMode" class="mode-section">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="participantsDataFile" class="form-label">Participant Data File</label>
+                        <input class="form-control" type="file" id="participantsDataFile" accept=".xlsx,.csv,.tsv,.lsa">
+                        <small class="form-text text-muted">
+                            Supports: Excel (.xlsx), CSV (.csv), TSV (.tsv), LimeSurvey (.lsa)
+                        </small>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="participantsSheet" class="form-label">Sheet Name/Index (Excel only)</label>
+                        <input type="text" class="form-control" id="participantsSheet" placeholder="0">
+                        <small class="form-text text-muted">Leave empty for first sheet</small>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="participantsIdColumn" class="form-label">ID Column (optional)</label>
+                        <input type="text" class="form-control" id="participantsIdColumn" placeholder="participant_id">
+                        <small class="form-text text-muted">Auto-detected if empty</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dataset Mode Input -->
+            <div id="participantsDatasetMode" class="mode-section d-none">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    This mode extracts participant information from already converted survey or biometrics TSV files in your dataset.
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Data Sources to Extract From</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="extractFromSurvey" checked>
+                            <label class="form-check-label" for="extractFromSurvey">
+                                <i class="fas fa-clipboard-list me-1 text-warning"></i>Survey data
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="extractFromBiometrics" checked>
+                            <label class="form-check-label" for="extractFromBiometrics">
+                                <i class="fas fa-weight me-1 text-warning"></i>Biometrics data
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Merge Strategy</label>
+                        <select class="form-select" id="participantsMergeStrategy">
+                            <option value="conservative">Conservative (fill missing only)</option>
+                            <option value="priority">Priority (last import overwrites)</option>
+                            <option value="manual">Manual (report conflicts)</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            How to handle conflicting participant data from multiple sources
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Library Configuration -->
+            <div class="mt-4">
+                <h6 class="mb-3"><i class="fas fa-book me-2 text-primary"></i>Library Configuration</h6>
+                <div class="alert alert-light border">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="participantsUseProjectLibrary" checked>
+                                <label class="form-check-label" for="participantsUseProjectLibrary">
+                                    <i class="fas fa-folder-open me-1 text-primary"></i>Use Project Library
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                Check for participants.json in project library first
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="participantsUseGlobalLibrary" checked>
+                                <label class="form-check-label" for="participantsUseGlobalLibrary">
+                                    <i class="fas fa-book me-1 text-info"></i>Use Global Library
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                Fallback to official PRISM participants.json template
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row g-3 mt-3">
+                <div class="col-md-4">
+                    <button class="btn btn-outline-success text-dark w-100" type="button" data-bs-toggle="modal" data-bs-target="#participantMappingModal">
+                        <i class="fas fa-list-check me-2"></i>Create Participant Mapping
+                    </button>
+                    <small class="form-text text-muted">Define column mappings to participants.json schema</small>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-info text-white w-100" type="button" id="participantsPreviewBtn" disabled>
+                        <i class="fas fa-eye me-2"></i>Preview
+                    </button>
+                    <small class="form-text text-muted">Preview what will be extracted</small>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-success text-white w-100" type="button" id="participantsConvertBtn" disabled>
+                        <i class="fas fa-play me-2"></i>Extract & Convert
+                    </button>
+                    <small class="form-text text-muted">Generate participants.tsv and participants.json</small>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div id="participantsError" class="alert alert-danger d-none mt-3"></div>
+            <div id="participantsInfo" class="alert alert-info d-none mt-3"></div>
+            <div id="participantsSuccess" class="alert alert-success d-none mt-3"></div>
+
+            <!-- Existing Files Warning -->
+            <div id="participantsExistingFilesWarning" class="alert alert-warning d-none mt-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Existing Files Detected:</strong>
+                <span id="participantsExistingFilesMessage"></span>
+                <div class="mt-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="participantsForceOverwrite">
+                        <label class="form-check-label" for="participantsForceOverwrite">
+                            I understand that existing <code>participants.tsv</code> and <code>participants.json</code> will be overwritten
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Results -->
+            <div id="participantsPreviewResults" class="d-none mt-4">
+                <h6 class="mb-3">
+                    <i class="fas fa-table me-2 text-info"></i>Preview: Participant Data
+                    <span class="badge bg-info ms-2" id="participantsPreviewCount">0 participants</span>
+                </h6>
+                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm table-hover" id="participantsPreviewTable">
+                        <thead class="table-light sticky-top">
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Conversion Progress -->
+            <div id="participantsConversionProgress" class="d-none mt-4">
+                <h6><i class="fas fa-spinner fa-spin me-2 text-info"></i>Converting Participant Data...</h6>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" 
+                         role="progressbar" 
+                         style="width: 100%"
+                         id="participantsProgressBar">
+                    </div>
+                </div>
+                <div id="participantsConversionLog" class="mt-3 p-3 bg-light border rounded" style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.85rem;">
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+// Toggle between file and dataset mode
+document.querySelectorAll('input[name="participantsMode"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const fileMode = document.getElementById('participantsFileMode');
+        const datasetMode = document.getElementById('participantsDatasetMode');
+        
+        if (this.value === 'file') {
+            fileMode.classList.remove('d-none');
+            datasetMode.classList.add('d-none');
+        } else {
+            fileMode.classList.add('d-none');
+            datasetMode.classList.remove('d-none');
+        }
+        
+        // Reset buttons
+        document.getElementById('participantsPreviewBtn').disabled = true;
+        document.getElementById('participantsConvertBtn').disabled = true;
+        
+        // Check for existing files
+        checkExistingParticipantFiles();
+    });
+});
+
+// Enable buttons when file is selected (file mode)
+document.getElementById('participantsDataFile')?.addEventListener('change', function() {
+    const hasFile = this.files.length > 0;
+    document.getElementById('participantsPreviewBtn').disabled = !hasFile;
+    document.getElementById('participantsConvertBtn').disabled = !hasFile;
+    
+    // Check for existing files
+    if (hasFile) {
+        checkExistingParticipantFiles();
+    }
+});
+
+// Check for existing participant files
+async function checkExistingParticipantFiles() {
+    try {
+        const response = await fetch('/api/participants-check');
+        const data = await response.json();
+        
+        const warningDiv = document.getElementById('participantsExistingFilesWarning');
+        const messageSpan = document.getElementById('participantsExistingFilesMessage');
+        
+        if (data.exists) {
+            const files = Object.values(data.files).filter(f => f !== null);
+            messageSpan.textContent = `Found existing files: ${files.map(f => f.split('/').pop()).join(', ')}`;
+            warningDiv.classList.remove('d-none');
+        } else {
+            warningDiv.classList.add('d-none');
+        }
+    } catch (error) {
+        console.error('Error checking existing files:', error);
+    }
+}
+
+// Preview button handler
+document.getElementById('participantsPreviewBtn')?.addEventListener('click', async function() {
+    const mode = document.querySelector('input[name="participantsMode"]:checked').value;
+    const previewResults = document.getElementById('participantsPreviewResults');
+    const errorDiv = document.getElementById('participantsError');
+    
+    errorDiv.classList.add('d-none');
+    previewResults.classList.add('d-none');
+    
+    try {
+        const formData = new FormData();
+        formData.append('mode', mode);
+        
+        if (mode === 'file') {
+            const fileInput = document.getElementById('participantsDataFile');
+            if (!fileInput.files[0]) {
+                throw new Error('Please select a file');
+            }
+            formData.append('file', fileInput.files[0]);
+            
+            const sheet = document.getElementById('participantsSheet').value;
+            const idColumn = document.getElementById('participantsIdColumn').value;
+            if (sheet) formData.append('sheet', sheet);
+            if (idColumn) formData.append('id_column', idColumn);
+        } else {
+            formData.append('extract_from_survey', document.getElementById('extractFromSurvey').checked);
+            formData.append('extract_from_biometrics', document.getElementById('extractFromBiometrics').checked);
+        }
+        
+        const response = await fetch('/api/participants-preview', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Preview failed');
+        }
+        
+        // Display preview
+        const countBadge = document.getElementById('participantsPreviewCount');
+        countBadge.textContent = `${data.participant_count} participants`;
+        
+        const table = document.getElementById('participantsPreviewTable');
+        const thead = table.querySelector('thead');
+        const tbody = table.querySelector('tbody');
+        
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+        
+        if (mode === 'file' && data.preview_rows) {
+            // File mode: show table with columns
+            const headerRow = document.createElement('tr');
+            data.columns.forEach(col => {
+                const th = document.createElement('th');
+                th.textContent = col;
+                if (col === data.id_column) {
+                    th.innerHTML += ' <span class="badge bg-primary">ID</span>';
+                }
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            
+            data.preview_rows.forEach(row => {
+                const tr = document.createElement('tr');
+                data.columns.forEach(col => {
+                    const td = document.createElement('td');
+                    td.textContent = row[col] || '';
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        } else if (mode === 'dataset' && data.participants) {
+            // Dataset mode: show participant list
+            const headerRow = document.createElement('tr');
+            const th = document.createElement('th');
+            th.textContent = 'participant_id';
+            headerRow.appendChild(th);
+            thead.appendChild(headerRow);
+            
+            data.participants.forEach(pid => {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.textContent = pid;
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+            });
+            
+            if (data.total_participants > data.participants.length) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.innerHTML = `<em>... and ${data.total_participants - data.participants.length} more</em>`;
+                td.className = 'text-muted';
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+            }
+        }
+        
+        previewResults.classList.remove('d-none');
+        
+    } catch (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.classList.remove('d-none');
+    }
+});
+
+// Convert button handler
+document.getElementById('participantsConvertBtn')?.addEventListener('click', async function() {
+    const mode = document.querySelector('input[name="participantsMode"]:checked').value;
+    const errorDiv = document.getElementById('participantsError');
+    const successDiv = document.getElementById('participantsSuccess');
+    const progressDiv = document.getElementById('participantsConversionProgress');
+    const logDiv = document.getElementById('participantsConversionLog');
+    const warningDiv = document.getElementById('participantsExistingFilesWarning');
+    
+    errorDiv.classList.add('d-none');
+    successDiv.classList.add('d-none');
+    
+    // Check if user confirmed overwrite
+    if (!warningDiv.classList.contains('d-none')) {
+        const checkbox = document.getElementById('participantsForceOverwrite');
+        if (!checkbox.checked) {
+            errorDiv.textContent = 'Please confirm that you want to overwrite existing files';
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+    }
+    
+    progressDiv.classList.remove('d-none');
+    logDiv.innerHTML = '';
+    
+    try {
+        const formData = new FormData();
+        formData.append('mode', mode);
+        formData.append('force_overwrite', document.getElementById('participantsForceOverwrite')?.checked || false);
+        
+        if (mode === 'file') {
+            const fileInput = document.getElementById('participantsDataFile');
+            if (!fileInput.files[0]) {
+                throw new Error('Please select a file');
+            }
+            formData.append('file', fileInput.files[0]);
+            
+            const sheet = document.getElementById('participantsSheet').value;
+            const idColumn = document.getElementById('participantsIdColumn').value;
+            if (sheet) formData.append('sheet', sheet);
+            if (idColumn) formData.append('id_column', idColumn);
+        } else {
+            formData.append('extract_from_survey', document.getElementById('extractFromSurvey').checked);
+            formData.append('extract_from_biometrics', document.getElementById('extractFromBiometrics').checked);
+            formData.append('merge_strategy', document.getElementById('participantsMergeStrategy').value);
+        }
+        
+        const response = await fetch('/api/participants-convert', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        // Display log
+        if (data.log) {
+            data.log.forEach(entry => {
+                const line = document.createElement('div');
+                line.textContent = `[${entry.level}] ${entry.message}`;
+                line.className = entry.level === 'ERROR' ? 'text-danger' : (entry.level === 'WARNING' ? 'text-warning' : 'text-success');
+                logDiv.appendChild(line);
+            });
+        }
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Conversion failed');
+        }
+        
+        // Show success
+        successDiv.innerHTML = `
+            <i class="fas fa-check-circle me-2"></i>
+            <strong>Success!</strong> Created ${data.files_created.length} file(s):
+            <ul class="mb-0 mt-2">
+                ${data.files_created.map(f => `<li><code>${f.split('/').pop()}</code></li>`).join('')}
+            </ul>
+        `;
+        successDiv.classList.remove('d-none');
+        
+        // Hide warning
+        warningDiv.classList.add('d-none');
+        
+    } catch (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.classList.remove('d-none');
+    } finally {
+        progressDiv.classList.add('d-none');
+    }
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for existing files if project is loaded
+    if (window.currentProjectPath) {
+        checkExistingParticipantFiles();
+    }
+});
+</script>

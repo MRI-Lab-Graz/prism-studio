@@ -186,14 +186,18 @@ def convert_biometrics_table_to_prism_dataset(
     authors: list[str] | None = None,
     default_session: str = "ses-1",
     tasks_to_export: list[str] | None = None,
+    skip_participants: bool = False,
 ) -> BiometricsConvertResult:
     """Convert biometrics CSV/XLSX (wide format) into a PRISM/BIDS-style dataset.
 
     Writes:
     - dataset_description.json
-    - participants.tsv
+    - participants.tsv (optional, can be skipped with skip_participants=True)
     - task-<task>_biometrics.json (inherited sidecar, copied from library template)
     - sub-*/ses-*/biometrics/sub-*_ses-*_task-<task>_biometrics.tsv
+
+    Args:
+        skip_participants: If True, skip creating participants.tsv (default: False)
 
     unknown:
       - 'ignore': ignore unmapped columns
@@ -287,23 +291,24 @@ def convert_biometrics_table_to_prism_dataset(
     }
     _write_json(output_root / "dataset_description.json", dataset_description)
 
-    # participants.tsv
-    try:
-        import pandas as pd
-    except Exception as e:  # pragma: no cover
-        raise RuntimeError("pandas is required for biometrics conversion") from e
+    # participants.tsv (optional)
+    if not skip_participants:
+        try:
+            import pandas as pd
+        except Exception as e:  # pragma: no cover
+            raise RuntimeError("pandas is required for biometrics conversion") from e
 
-    participants = (
-        df[col_pid]
-        .astype(str)
-        .map(_normalize_sub_id)
-        .loc[lambda s: s.astype(str).str.len() > 0]
-        .drop_duplicates()
-        .sort_values()
-    )
-    pd.DataFrame({"participant_id": participants}).to_csv(
-        output_root / "participants.tsv", sep="\t", index=False
-    )
+        participants = (
+            df[col_pid]
+            .astype(str)
+            .map(_normalize_sub_id)
+            .loc[lambda s: s.astype(str).str.len() > 0]
+            .drop_duplicates()
+            .sort_values()
+        )
+        pd.DataFrame({"participant_id": participants}).to_csv(
+            output_root / "participants.tsv", sep="\t", index=False
+        )
 
     tasks_included: list[str] = []
 

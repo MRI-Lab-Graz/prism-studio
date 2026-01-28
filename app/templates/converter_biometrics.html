@@ -18,45 +18,35 @@
                 <strong>Missing Structure:</strong> <span id="biometricsStructureMessage">The selected folder is missing required items.</span>
             </div>
 
-            <div class="row g-3 align-items-end">
-                <div class="col-md-8">
+            <!-- Row 1: File upload and Session ID -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
                     <label for="biometricsDataFile" class="form-label">Biometrics File (.xlsx, .csv, .tsv)</label>
                     <input class="form-control" type="file" id="biometricsDataFile" accept=".xlsx,.csv,.tsv">
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-6">
+                    <label for="biometricsSession" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control border-warning" id="biometricsSession" placeholder="e.g. 1 (creates ses-1)" required>
+                    <div class="form-text text-warning">Creates 'ses-1', 'ses-2', etc.</div>
+                </div>
+            </div>
+
+            <!-- Row 2: Preview and Convert buttons -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
                     <button class="btn btn-info text-white w-100" type="button" id="biometricsPreviewBtn" disabled>
-                        <i class="fas fa-eye me-2"></i>Preview
+                        <i class="fas fa-eye me-2"></i>Preview (Dry-Run)
                     </button>
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-6">
                     <button class="btn btn-warning text-white w-100" type="button" id="biometricsConvertBtn" disabled>
                         <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
                     </button>
                 </div>
-
-                <div class="col-12 mt-3">
-                    <div class="row g-3 align-items-end">
-                        <div class="col-md-4">
-                            <label for="biometricsSheet" class="form-label">Excel Sheet (name or index)</label>
-                            <input type="text" class="form-control" id="biometricsSheet" placeholder="0" value="0">
-                        </div>
-                        <div class="col-md-4">
-                            <label for="biometricsSession" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control border-warning" id="biometricsSession" placeholder="e.g. 1 (creates ses-1)" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="biometricsUnknown" class="form-label">Unknown Columns</label>
-                            <select class="form-select" id="biometricsUnknown">
-                                <option value="warn" selected>Warn (default)</option>
-                                <option value="ignore">Ignore</option>
-                                <option value="error">Error</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
             </div>
-            <div id="biometricsError" class="alert alert-danger d-none mt-3"></div>
-            <div id="biometricsInfo" class="alert alert-info d-none mt-3"></div>
+
+            <div id="biometricsError" class="alert alert-danger d-none"></div>
+            <div id="biometricsInfo" class="alert alert-info d-none"></div>
 
             <!-- Detected Biometrics List -->
             <div id="biometricsDetectedContainer" class="d-none mt-3">
