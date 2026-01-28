@@ -1703,7 +1703,7 @@ def api_participants_preview():
             sheet = request.form.get("sheet", "0").strip() or "0"
             try:
                 sheet_arg = int(sheet) if sheet.isdigit() else sheet
-            except:
+            except (ValueError, TypeError):
                 sheet_arg = 0
             
             if suffix == ".xlsx":
@@ -1738,7 +1738,6 @@ def api_participants_preview():
             
             # SIMULATE CONVERSION: Show what the OUTPUT will look like
             # Check if participants.json exists in library to determine expected schema
-            converter = ParticipantsConverter(tmp_path)
             participants_json_path = library_path / "participants.json"
             
             # Build expected output columns based on participants.json if available
@@ -1748,7 +1747,7 @@ def api_participants_preview():
                     with open(participants_json_path, 'r') as f:
                         schema = json.load(f)
                         expected_columns = list(schema.keys())
-                except:
+                except (OSError, json.JSONDecodeError, KeyError):
                     pass
             
             # If no schema, use common participant columns
@@ -1885,7 +1884,6 @@ def api_participants_convert():
                 return jsonify({"error": "Missing input file"}), 400
             
             filename = secure_filename(uploaded_file.filename)
-            suffix = Path(filename).suffix.lower()
             
             tmp_dir = tempfile.mkdtemp(prefix="prism_participants_convert_")
             try:
@@ -1927,7 +1925,6 @@ def api_participants_convert():
             # Dataset mode: extract from converted data
             extract_from_survey = request.form.get("extract_from_survey", "true").lower() == "true"
             extract_from_biometrics = request.form.get("extract_from_biometrics", "true").lower() == "true"
-            merge_strategy = request.form.get("merge_strategy", "conservative")
             
             log_msg("INFO", "Extracting participant data from dataset...")
             
