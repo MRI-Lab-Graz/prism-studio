@@ -1,0 +1,34 @@
+
+======================================================================
+🔐 WINDOWS CODE SIGNING CONFIGURATION REPORT
+======================================================================
+
+📋 Configuration Details:
+----------------------------------------------------------------------
+✅ Signing Provider: SignPath.io
+   Version: v4
+   Project: prism-validator
+   Policy: release-signing
+   Wait for completion: Yes
+
+🔑 Required Secrets:
+----------------------------------------------------------------------
+✅ SIGNPATH_API_TOKEN
+✅ SIGNPATH_ORGANIZATION_ID
+
+📦 Artifact Configuration:
+----------------------------------------------------------------------
+✅ Target Executable: PrismValidator.exe
+   Input Path: dist/PrismValidator/PrismValidator.exe
+   Output Path: dist/PrismValidator/PrismValidator.exe
+
+⚙️  Execution Conditions:
+----------------------------------------------------------------------
+✅ Limited to Windows runners
+✅ Gracefully handles missing secrets
+
+📚 Documentation:
+----------------------------------------------------------------------
+✅ Found: docs/WINDOWS_BUILD.md
+
+======================================================================
