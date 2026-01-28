@@ -15,37 +15,8 @@
                 <strong>Missing Structure:</strong> <span id="participantsStructureMessage">The selected folder is missing required items.</span>
             </div>
 
-            <!-- Conversion Mode Selection -->
+            <!-- File Input -->
             <div class="mb-4">
-                <h6 class="mb-3"><i class="fas fa-cog me-2 text-info"></i>Conversion Mode</h6>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <div class="form-check card p-3 border-info">
-                            <input class="form-check-input" type="radio" name="participantsMode" id="participantsFromFile" value="file" checked>
-                            <label class="form-check-label fw-bold" for="participantsFromFile">
-                                <i class="fas fa-file-upload me-2 text-info"></i>Import from File
-                            </label>
-                            <small class="text-muted d-block mt-1">
-                                Extract participant info from Excel/CSV/TSV/LimeSurvey files using participants.json template
-                            </small>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-check card p-3 border-success">
-                            <input class="form-check-input" type="radio" name="participantsMode" id="participantsFromDataset" value="dataset">
-                            <label class="form-check-label fw-bold" for="participantsFromDataset">
-                                <i class="fas fa-database me-2 text-success"></i>Extract from Converted Dataset
-                            </label>
-                            <small class="text-muted d-block mt-1">
-                                Extract participant info from already converted survey or biometrics data
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- File Mode Input -->
-            <div id="participantsFileMode" class="mode-section">
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label for="participantsDataFile" class="form-label">Participant Data File</label>
@@ -67,75 +38,8 @@
                 </div>
             </div>
 
-            <!-- Dataset Mode Input -->
-            <div id="participantsDatasetMode" class="mode-section d-none">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    This mode extracts participant information from already converted survey or biometrics TSV files in your dataset.
-                </div>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Data Sources to Extract From</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="extractFromSurvey" checked>
-                            <label class="form-check-label" for="extractFromSurvey">
-                                <i class="fas fa-clipboard-list me-1 text-warning"></i>Survey data
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="extractFromBiometrics" checked>
-                            <label class="form-check-label" for="extractFromBiometrics">
-                                <i class="fas fa-weight me-1 text-warning"></i>Biometrics data
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Merge Strategy</label>
-                        <select class="form-select" id="participantsMergeStrategy">
-                            <option value="conservative">Conservative (fill missing only)</option>
-                            <option value="priority">Priority (last import overwrites)</option>
-                            <option value="manual">Manual (report conflicts)</option>
-                        </select>
-                        <small class="form-text text-muted">
-                            How to handle conflicting participant data from multiple sources
-                        </small>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Library Configuration -->
-            <div class="mt-4">
-                <h6 class="mb-3"><i class="fas fa-book me-2 text-primary"></i>Library Configuration</h6>
-                <div class="alert alert-light border">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="participantsUseProjectLibrary" checked>
-                                <label class="form-check-label" for="participantsUseProjectLibrary">
-                                    <i class="fas fa-folder-open me-1 text-primary"></i>Use Project Library
-                                </label>
-                            </div>
-                            <small class="text-muted d-block mt-1">
-                                Check for participants.json in project library first
-                            </small>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="participantsUseGlobalLibrary" checked>
-                                <label class="form-check-label" for="participantsUseGlobalLibrary">
-                                    <i class="fas fa-book me-1 text-info"></i>Use Global Library
-                                </label>
-                            </div>
-                            <small class="text-muted d-block mt-1">
-                                Fallback to official PRISM participants.json template
-                            </small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Action Buttons -->
-            <div class="row g-3 mt-3">
+            <div class="row g-3 mt-4">
                 <div class="col-md-4">
                     <button class="btn btn-outline-success text-dark w-100" type="button" data-bs-toggle="modal" data-bs-target="#participantMappingModal">
                         <i class="fas fa-list-check me-2"></i>Create Participant Mapping
@@ -206,45 +110,115 @@
                 </div>
             </div>
 
+            <!-- Participants Annotation Section -->
+            <div class="mt-5 pt-4 border-top">
+                <h5 class="mb-3">
+                    <i class="fas fa-brain text-success me-2"></i>Participant Annotation & Harmonization
+                </h5>
+                <p class="text-muted">
+                    Add descriptions, semantic annotations, and controlled vocabulary mappings to your participants data using NeuroBagel standards.
+                </p>
+                
+                <!-- Quick Actions -->
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <button class="btn btn-sm btn-outline-primary" id="editParticipantsBtn" onclick="openParticipantsEditor()">
+                        <i class="fas fa-edit me-1"></i>Edit participants.json
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" id="openNeurobagelBtn">
+                        <i class="fas fa-brain me-1"></i>Annotate Participants
+                    </button>
+                </div>
+                
+                <!-- NeuroBagel Widget (hidden by default) -->
+                <div id="neurobagelSection" style="display: none;">
+                    <div class="card border-success mb-3">
+                        <div class="card-header bg-success bg-opacity-10 d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-brain text-success me-2"></i>
+                                Participant Annotation
+                            </h6>
+                            <button class="btn btn-sm btn-outline-secondary" id="closeNeurobagelBtn">
+                                <i class="fas fa-arrow-left me-1"></i>Back
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <!-- Full NeuroBagel Tool Link (for controlled vocabularies) -->
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <strong>Need SNOMED-CT, NIDM or other controlled vocabularies?</strong><br>
+                                <small class="text-muted">Use the official NeuroBagel tool for full semantic harmonization with ontology lookups:</small>
+                                <div class="mt-2">
+                                    <a href="https://annotate.neurobagel.org/" target="_blank" class="btn btn-sm btn-info">
+                                        <i class="fas fa-external-link-alt me-1"></i>Open Full NeuroBagel Annotation Tool
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <p class="text-muted small mb-3">
+                                <strong>Quick Editor:</strong> Add descriptions and level labels to your participants.json. 
+                                This simplified editor auto-detects columns from your participants.tsv file.
+                            </p>
+                            
+                            <!-- Embedded NeuroBagel widget placeholder -->
+                            <div id="neurobagelWidgetContainer"></div>
+                            
+                            <div class="mt-3 d-flex gap-2">
+                                <button class="btn btn-success" id="saveNeurobagelBtn">
+                                    <i class="fas fa-save me-1"></i>Save to participants.json
+                                </button>
+                                <button class="btn btn-outline-secondary" id="cancelNeurobagelBtn">
+                                    <i class="fas fa-times me-1"></i>Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-light border mb-0" id="participantsHelp">
+                    <i class="fas fa-info-circle text-success me-2"></i>
+                    <strong>How participant annotation works:</strong>
+                    <ol class="mb-0 mt-2 small">
+                        <li>First, extract participant data using the form above (creates <code>participants.tsv</code>)</li>
+                        <li>Click <strong>Annotate Participants</strong> to add semantic descriptions and controlled vocabulary terms</li>
+                        <li>The annotation saves to <code>participants.json</code> following BIDS and NeuroBagel standards</li>
+                        <li>For advanced ontology lookups (SNOMED-CT, NIDM), use the full external tool linked above</li>
+                    </ol>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>
 
 <script>
-// Toggle between file and dataset mode
-document.querySelectorAll('input[name="participantsMode"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        const fileMode = document.getElementById('participantsFileMode');
-        const datasetMode = document.getElementById('participantsDatasetMode');
-        
-        if (this.value === 'file') {
-            fileMode.classList.remove('d-none');
-            datasetMode.classList.add('d-none');
-        } else {
-            fileMode.classList.add('d-none');
-            datasetMode.classList.remove('d-none');
-        }
-        
-        // Reset buttons
-        document.getElementById('participantsPreviewBtn').disabled = true;
-        document.getElementById('participantsConvertBtn').disabled = true;
-        
-        // Check for existing files
-        checkExistingParticipantFiles();
-    });
-});
-
-// Enable buttons when file is selected (file mode)
-document.getElementById('participantsDataFile')?.addEventListener('change', function() {
-    const hasFile = this.files.length > 0;
-    document.getElementById('participantsPreviewBtn').disabled = !hasFile;
-    document.getElementById('participantsConvertBtn').disabled = !hasFile;
+// Enable/disable buttons based on file selection
+function updateParticipantsButtonState() {
+    const fileInput = document.getElementById('participantsDataFile');
+    const hasFile = fileInput && fileInput.files.length > 0;
     
-    // Check for existing files
+    const previewBtn = document.getElementById('participantsPreviewBtn');
+    const convertBtn = document.getElementById('participantsConvertBtn');
+    
     if (hasFile) {
+        if (previewBtn) previewBtn.disabled = false;
+        if (convertBtn) convertBtn.disabled = false;
         checkExistingParticipantFiles();
+    } else {
+        if (previewBtn) previewBtn.disabled = true;
+        if (convertBtn) convertBtn.disabled = true;
     }
-});
+}
+
+// Attach event listener
+const fileInput = document.getElementById('participantsDataFile');
+if (fileInput) {
+    fileInput.addEventListener('change', updateParticipantsButtonState);
+}
+
+// Run immediately
+updateParticipantsButtonState();
 
 // Check for existing participant files
 async function checkExistingParticipantFiles() {
@@ -269,7 +243,6 @@ async function checkExistingParticipantFiles() {
 
 // Preview button handler
 document.getElementById('participantsPreviewBtn')?.addEventListener('click', async function() {
-    const mode = document.querySelector('input[name="participantsMode"]:checked').value;
     const previewResults = document.getElementById('participantsPreviewResults');
     const errorDiv = document.getElementById('participantsError');
     
@@ -277,24 +250,19 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
     previewResults.classList.add('d-none');
     
     try {
-        const formData = new FormData();
-        formData.append('mode', mode);
-        
-        if (mode === 'file') {
-            const fileInput = document.getElementById('participantsDataFile');
-            if (!fileInput.files[0]) {
-                throw new Error('Please select a file');
-            }
-            formData.append('file', fileInput.files[0]);
-            
-            const sheet = document.getElementById('participantsSheet').value;
-            const idColumn = document.getElementById('participantsIdColumn').value;
-            if (sheet) formData.append('sheet', sheet);
-            if (idColumn) formData.append('id_column', idColumn);
-        } else {
-            formData.append('extract_from_survey', document.getElementById('extractFromSurvey').checked);
-            formData.append('extract_from_biometrics', document.getElementById('extractFromBiometrics').checked);
+        const fileInput = document.getElementById('participantsDataFile');
+        if (!fileInput.files[0]) {
+            throw new Error('Please select a file');
         }
+        
+        const formData = new FormData();
+        formData.append('mode', 'file');
+        formData.append('file', fileInput.files[0]);
+        
+        const sheet = document.getElementById('participantsSheet').value;
+        const idColumn = document.getElementById('participantsIdColumn').value;
+        if (sheet) formData.append('sheet', sheet);
+        if (idColumn) formData.append('id_column', idColumn);
         
         const response = await fetch('/api/participants-preview', {
             method: 'POST',
@@ -318,53 +286,27 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
         thead.innerHTML = '';
         tbody.innerHTML = '';
         
-        if (mode === 'file' && data.preview_rows) {
-            // File mode: show table with columns
-            const headerRow = document.createElement('tr');
-            data.columns.forEach(col => {
-                const th = document.createElement('th');
-                th.textContent = col;
-                if (col === data.id_column) {
-                    th.innerHTML += ' <span class="badge bg-primary">ID</span>';
-                }
-                headerRow.appendChild(th);
-            });
-            thead.appendChild(headerRow);
-            
-            data.preview_rows.forEach(row => {
-                const tr = document.createElement('tr');
-                data.columns.forEach(col => {
-                    const td = document.createElement('td');
-                    td.textContent = row[col] || '';
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-        } else if (mode === 'dataset' && data.participants) {
-            // Dataset mode: show participant list
-            const headerRow = document.createElement('tr');
+        // Show table with columns
+        const headerRow = document.createElement('tr');
+        data.columns.forEach(col => {
             const th = document.createElement('th');
-            th.textContent = 'participant_id';
-            headerRow.appendChild(th);
-            thead.appendChild(headerRow);
-            
-            data.participants.forEach(pid => {
-                const tr = document.createElement('tr');
-                const td = document.createElement('td');
-                td.textContent = pid;
-                tr.appendChild(td);
-                tbody.appendChild(tr);
-            });
-            
-            if (data.total_participants > data.participants.length) {
-                const tr = document.createElement('tr');
-                const td = document.createElement('td');
-                td.innerHTML = `<em>... and ${data.total_participants - data.participants.length} more</em>`;
-                td.className = 'text-muted';
-                tr.appendChild(td);
-                tbody.appendChild(tr);
+            th.textContent = col;
+            if (col === data.id_column) {
+                th.innerHTML += ' <span class="badge bg-primary">ID</span>';
             }
-        }
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        
+        data.preview_rows.forEach(row => {
+            const tr = document.createElement('tr');
+            data.columns.forEach(col => {
+                const td = document.createElement('td');
+                td.textContent = row[col] || '';
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
         
         previewResults.classList.remove('d-none');
         
@@ -376,7 +318,6 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
 
 // Convert button handler
 document.getElementById('participantsConvertBtn')?.addEventListener('click', async function() {
-    const mode = document.querySelector('input[name="participantsMode"]:checked').value;
     const errorDiv = document.getElementById('participantsError');
     const successDiv = document.getElementById('participantsSuccess');
     const progressDiv = document.getElementById('participantsConversionProgress');
@@ -400,26 +341,20 @@ document.getElementById('participantsConvertBtn')?.addEventListener('click', asy
     logDiv.innerHTML = '';
     
     try {
+        const fileInput = document.getElementById('participantsDataFile');
+        if (!fileInput.files[0]) {
+            throw new Error('Please select a file');
+        }
+        
         const formData = new FormData();
-        formData.append('mode', mode);
+        formData.append('mode', 'file');
+        formData.append('file', fileInput.files[0]);
         formData.append('force_overwrite', document.getElementById('participantsForceOverwrite')?.checked || false);
         
-        if (mode === 'file') {
-            const fileInput = document.getElementById('participantsDataFile');
-            if (!fileInput.files[0]) {
-                throw new Error('Please select a file');
-            }
-            formData.append('file', fileInput.files[0]);
-            
-            const sheet = document.getElementById('participantsSheet').value;
-            const idColumn = document.getElementById('participantsIdColumn').value;
-            if (sheet) formData.append('sheet', sheet);
-            if (idColumn) formData.append('id_column', idColumn);
-        } else {
-            formData.append('extract_from_survey', document.getElementById('extractFromSurvey').checked);
-            formData.append('extract_from_biometrics', document.getElementById('extractFromBiometrics').checked);
-            formData.append('merge_strategy', document.getElementById('participantsMergeStrategy').value);
-        }
+        const sheet = document.getElementById('participantsSheet').value;
+        const idColumn = document.getElementById('participantsIdColumn').value;
+        if (sheet) formData.append('sheet', sheet);
+        if (idColumn) formData.append('id_column', idColumn);
         
         const response = await fetch('/api/participants-convert', {
             method: 'POST',
@@ -463,11 +398,213 @@ document.getElementById('participantsConvertBtn')?.addEventListener('click', asy
     }
 });
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Check for existing files if project is loaded
-    if (window.currentProjectPath) {
-        checkExistingParticipantFiles();
+// ===== NEUROBAGEL ANNOTATION HANDLERS =====
+
+// Function to open participants.json editor
+function openParticipantsEditor() {
+    const currentProjectPath = "{{ current_project.path or '' }}";
+    if (!currentProjectPath) {
+        const errorDiv = document.getElementById('participantsError');
+        errorDiv.textContent = 'Please select a project first from the top of the page';
+        errorDiv.classList.remove('d-none');
+        return;
+    }
+    
+    // Navigate to JSON editor with autoload flag and file type
+    window.location.href = `{{ url_for('json_editor.editor_index') }}?autoload=participants&from=converter`;
+}
+
+document.getElementById('openNeurobagelBtn')?.addEventListener('click', function() {
+    document.getElementById('neurobagelSection').style.display = 'block';
+    document.getElementById('participantsHelp').style.display = 'none';
+    loadNeurobagelWidget();
+});
+
+document.getElementById('closeNeurobagelBtn')?.addEventListener('click', function() {
+    document.getElementById('neurobagelSection').style.display = 'none';
+    document.getElementById('participantsHelp').style.display = 'block';
+});
+
+document.getElementById('cancelNeurobagelBtn')?.addEventListener('click', function() {
+    document.getElementById('neurobagelSection').style.display = 'none';
+    document.getElementById('participantsHelp').style.display = 'block';
+});
+
+document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async function() {
+    // Get the current state of the NeuroBagel widget if it has state
+    const widgetState = window.neurobagelWidgetState || {};
+    const allColumns = widgetState.allColumns || {};
+    
+    // Build the annotated participants.json (BIDS + NeuroBagel Enrichment)
+    const annotatedData = {};
+    
+    for (const [colName, colData] of Object.entries(allColumns)) {
+        annotatedData[colName] = {
+            Description: colData.description || colData.Description || ""
+        };
+        
+        // BIDS Standard: Unit
+        if (colData.unit) {
+            annotatedData[colName].Unit = colData.unit;
+        }
+        
+        // BIDS Standard: Levels
+        if (colData.levels && Object.keys(colData.levels).length > 0) {
+            annotatedData[colName].Levels = {};
+            for (const [levelKey, levelData] of Object.entries(colData.levels)) {
+                annotatedData[colName].Levels[levelKey] = levelData.label || levelKey;
+            }
+        }
+        
+        // NEUROBAGEL ENRICHMENT: Annotations Block
+        if (colData.standardized_variable || colData.data_type) {
+            annotatedData[colName].Annotations = {
+                "IsAbout": {
+                    "TermURL": colData.term_url || (colData.standardized_variable ? `nb:${colData.standardized_variable}` : null),
+                    "Label": colData.label || colData.standardized_variable || null
+                },
+                "VariableType": colData.data_type ? colData.data_type.charAt(0).toUpperCase() + colData.data_type.slice(1) : "Unknown"
+            };
+            
+            // Add units to annotations if continuous
+            if (colData.data_type === 'continuous' && colData.unit) {
+                annotatedData[colName].Annotations.Format = {
+                    "TermURL": "nb:FromFloat",
+                    "Label": "Float"
+                };
+            }
+            
+            // Add levels to annotations if categorical
+            if (colData.data_type === 'categorical' && colData.levels) {
+                annotatedData[colName].Annotations.Levels = {};
+                for (const [levelKey, levelData] of Object.entries(colData.levels)) {
+                    if (levelData.uri) {
+                        annotatedData[colName].Annotations.Levels[levelKey] = {
+                            "TermURL": levelData.uri,
+                            "Label": levelData.label || levelKey
+                        };
+                    }
+                }
+            }
+            
+            // Remove null/undefined from annotations
+            if (!annotatedData[colName].Annotations.IsAbout.TermURL) delete annotatedData[colName].Annotations.IsAbout;
+        }
+    }
+    
+    // Save to the project
+    try {
+        const response = await fetch('/api/projects/participants', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ schema: annotatedData })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            const successDiv = document.getElementById('participantsSuccess');
+            successDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i><strong>Success!</strong> Participants schema saved to participants.json';
+            successDiv.classList.remove('d-none');
+            
+            document.getElementById('neurobagelSection').style.display = 'none';
+            document.getElementById('participantsHelp').style.display = 'block';
+        } else {
+            alert('Failed to save: ' + result.error);
+        }
+    } catch (error) {
+        alert('Error saving participants schema: ' + error.message);
     }
 });
+
+async function loadNeurobagelWidget() {
+    const container = document.getElementById('neurobagelWidgetContainer');
+    if (!container) return;
+    
+    // Load existing participants.json if any to avoid data loss
+    try {
+        const schemaResponse = await fetch('/api/projects/participants');
+        const schemaData = await schemaResponse.json();
+        if (schemaData.success && schemaData.exists) {
+            window.existingParticipantsData = schemaData.schema;
+        }
+    } catch (error) {
+        console.warn('Could not load existing participants schema:', error);
+    }
+    
+    // Load local participants.tsv columns first for mapping
+    try {
+        const tsvResponse = await fetch('/api/projects/participants/columns');
+        const tsvData = await tsvResponse.json();
+        if (tsvData.columns) {
+            window.participantsTsvData = tsvData.columns;
+        }
+    } catch (error) {
+        console.warn('Could not load participants TSV columns:', error);
+    }
+    
+    // Check if widget is already loaded
+    if (container.querySelector('#neurobagelAnnotationWidget')) {
+        // Just re-render to update with latest TSV data if needed
+        if (window.renderNeurobagelWidget) {
+            await window.renderNeurobagelWidget();
+        }
+        return;
+    }
+    
+    try {
+        // Load the neurobagel widget HTML
+        const response = await fetch("{{ url_for('static', filename='neurobagel_widget.html') }}");
+        if (response.ok) {
+            const html = await response.text();
+            
+            // Parse HTML to separate markup from scripts
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Find and remove scripts
+            const scripts = doc.querySelectorAll('script');
+            const scriptTexts = [];
+            scripts.forEach(script => {
+                scriptTexts.push(script.textContent);
+                script.remove();
+            });
+            
+            // Insert the HTML without scripts
+            container.innerHTML = doc.body.innerHTML;
+            
+            // Execute scripts in order
+            scriptTexts.forEach(scriptText => {
+                try {
+                    new Function(scriptText)();
+                } catch (err) {
+                    console.error('Error executing widget script:', err);
+                }
+            });
+            
+            // Initialize widget after a short delay
+            await new Promise(resolve => setTimeout(resolve, 100));
+            if (window.renderNeurobagelWidget) {
+                await window.renderNeurobagelWidget();
+            }
+        } else {
+            container.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Use the <a href="https://annotate.neurobagel.org/" target="_blank">NeuroBagel Annotation Tool</a> 
+                    to annotate your participants.json file, then import it back here.
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading NeuroBagel widget:', error);
+        container.innerHTML = `
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Could not load embedded widget (${error.message}). Use the external 
+                <a href="https://annotate.neurobagel.org/" target="_blank">NeuroBagel Annotation Tool</a>.
+            </div>
+        `;
+    }
+}
+
 </script>
