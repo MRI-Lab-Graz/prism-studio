@@ -86,6 +86,8 @@
                     <i class="fas fa-table me-2 text-info"></i>Preview: Participant Data
                     <span class="badge bg-info ms-2" id="participantsPreviewCount">0 participants</span>
                 </h6>
+                
+                <!-- TSV Preview -->
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                     <table class="table table-sm table-hover" id="participantsPreviewTable">
                         <thead class="table-light sticky-top">
@@ -93,6 +95,26 @@
                         <tbody>
                         </tbody>
                     </table>
+                </div>
+                
+                <!-- NeuroBagel Schema Preview -->
+                <div id="neurobagelSchemaPreview" class="mt-4 d-none">
+                    <h6 class="mb-3">
+                        <i class="fas fa-brain me-2 text-success"></i>
+                        Suggested participants.json (NeuroBagel-compliant)
+                        <button class="btn btn-sm btn-outline-secondary ms-2" type="button" 
+                                data-bs-toggle="collapse" data-bs-target="#schemaDetails">
+                            <i class="fas fa-code me-1"></i>View JSON
+                        </button>
+                    </h6>
+                    
+                    <!-- Schema Summary Cards -->
+                    <div id="schemaSummary" class="row g-2 mb-3"></div>
+                    
+                    <!-- Collapsible JSON view -->
+                    <div class="collapse" id="schemaDetails">
+                        <pre class="bg-light p-3 rounded border" style="max-height: 400px; overflow: auto;"><code id="schemaJsonCode"></code></pre>
+                    </div>
                 </div>
             </div>
 
@@ -325,11 +347,69 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
         
         previewResults.classList.remove('d-none');
         
+        // Display NeuroBagel schema if available
+        if (data.neurobagel_schema) {
+            displayNeurobagelSchema(data.neurobagel_schema);
+        }
+        
     } catch (error) {
         errorDiv.textContent = error.message;
         errorDiv.classList.remove('d-none');
     }
 });
+
+function displayNeurobagelSchema(schema) {
+    const schemaPreview = document.getElementById('neurobagelSchemaPreview');
+    const schemaSummary = document.getElementById('schemaSummary');
+    const schemaJsonCode = document.getElementById('schemaJsonCode');
+    
+    // Clear previous content
+    schemaSummary.innerHTML = '';
+    
+    // Count annotations
+    let withNeurobagel = 0;
+    let categorical = 0;
+    let continuous = 0;
+    
+    for (const [col, def] of Object.entries(schema)) {
+        if (def.Annotations && def.Annotations.IsAbout) {
+            withNeurobagel++;
+        }
+        const varType = def.Annotations?.VariableType?.toLowerCase() || '';
+        if (varType === 'categorical') categorical++;
+        if (varType === 'continuous') continuous++;
+    }
+    
+    // Create summary cards
+    const totalCols = Object.keys(schema).length;
+    const cards = [
+        { icon: 'brain', label: 'NeuroBagel Mapped', value: withNeurobagel, color: 'success' },
+        { icon: 'tag', label: 'Categorical', value: categorical, color: 'info' },
+        { icon: 'chart-line', label: 'Continuous', value: continuous, color: 'primary' },
+        { icon: 'columns', label: 'Total Fields', value: totalCols, color: 'secondary' }
+    ];
+    
+    cards.forEach(card => {
+        const col = document.createElement('div');
+        col.className = 'col-md-3';
+        col.innerHTML = `
+            <div class="card border-${card.color}">
+                <div class="card-body text-center py-2">
+                    <i class="fas fa-${card.icon} text-${card.color} fa-2x mb-2"></i>
+                    <div class="h4 mb-0">${card.value}</div>
+                    <small class="text-muted">${card.label}</small>
+                </div>
+            </div>
+        `;
+        schemaSummary.appendChild(col);
+    });
+    
+    // Show JSON
+    schemaJsonCode.textContent = JSON.stringify(schema, null, 2);
+    
+    // Show the section
+    schemaPreview.classList.remove('d-none');
+}
 
 // Convert button handler
 document.getElementById('participantsConvertBtn')?.addEventListener('click', async function() {
