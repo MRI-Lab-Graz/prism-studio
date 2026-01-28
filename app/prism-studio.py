@@ -331,6 +331,17 @@ def index():
     return render_template("home.html")
 
 
+@app.route("/favicon.ico")
+def favicon_ico():
+    """Serve favicon directly with caching"""
+    from flask import send_from_directory
+    return send_from_directory(
+        app.static_folder, "prism2026.ico",
+        mimetype="image/png",
+        max_age=86400  # Cache for 24 hours
+    )
+
+
 @app.route("/specifications")
 def specifications():
     """Page explaining the PRISM specifications"""
