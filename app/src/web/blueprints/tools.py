@@ -293,6 +293,10 @@ def api_survey_customizer_load():
         if isinstance(base_group_name, dict):
             base_group_name = base_group_name.get("en") or next(iter(base_group_name.values()), Path(file_path).stem)
 
+        # Check if template disables matrix grouping (e.g., demographics templates)
+        technical = template_data.get("Technical", {})
+        matrix_grouping_disabled = technical.get("MatrixGrouping") is False
+
         # Extract questions
         if "Questions" in template_data and isinstance(template_data["Questions"], dict):
             all_questions = template_data["Questions"]
@@ -336,7 +340,8 @@ def api_survey_customizer_load():
                     "enabled": True,
                     "runNumber": current_run,
                     "levels": q_data.get("Levels", {}),
-                    "originalData": q_data
+                    "originalData": q_data,
+                    "matrixGroupingDisabled": matrix_grouping_disabled  # From template's Technical section
                 })
 
             # Create group with run suffix if multiple runs
