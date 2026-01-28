@@ -1,0 +1,272 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://prism.org/schemas/tool-limesurvey/v1.0.0",
+  "version": "1.0.0",
+  "title": "LimeSurvey Session Metadata",
+  "description": "Schema for LimeSurvey system variables and timing data. Separates survey platform metadata from questionnaire responses. Files should be named: sub-<label>_ses-<label>_tool-limesurvey_survey.<tsv|json>",
+  "type": "object",
+  "properties": {
+    "Metadata": {
+      "type": "object",
+      "description": "Administrative metadata",
+      "properties": {
+        "SchemaVersion": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Version of this schema"
+        },
+        "CreationDate": {
+          "type": "string",
+          "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$",
+          "description": "Date this file was created"
+        },
+        "Tool": {
+          "type": "string",
+          "const": "LimeSurvey",
+          "description": "Survey platform identifier"
+        },
+        "ToolVersion": {
+          "type": "string",
+          "description": "Version of LimeSurvey used (e.g., 3.28.66, 6.0.0)"
+        },
+        "SurveyId": {
+          "type": ["integer", "string"],
+          "description": "LimeSurvey survey ID"
+        },
+        "SurveyTitle": {
+          "type": "string",
+          "description": "Title of the survey in LimeSurvey"
+        }
+      },
+      "required": ["SchemaVersion", "Tool"]
+    },
+    "SystemFields": {
+      "type": "object",
+      "description": "Definitions for LimeSurvey system columns in the TSV",
+      "properties": {
+        "id": {
+          "type": "object",
+          "properties": {
+            "Description": {
+              "type": "string",
+              "default": "LimeSurvey response ID"
+            },
+            "DataType": {
+              "type": "string",
+              "const": "integer"
+            }
+          }
+        },
+        "startdate": {
+          "type": "object",
+          "properties": {
+            "Description": {
+              "type": "string",
+              "default": "Timestamp when participant started the survey"
+            },
+            "DataType": {
+              "type": "string",
+              "const": "string"
+            },
+            "Format": {
+              "type": "string",
+              "default": "ISO8601"
+            }
+          }
+        },
+        "submitdate": {
+          "type": "object",
+          "properties": {
+            "Description": {
+              "type": "string",
+              "default": "Timestamp when participant submitted the survey"
+            },
+            "DataType": {
+              "type": "string",
+              "const": "string"
+            },
+            "Format": {
+              "type": "string",
+              "default": "ISO8601"
+            }
+          }
+        },
+        "lastpage": {
+          "type": "object",
+          "properties": {
+            "Description": {
+              "type": "string",
+              "default": "Last page number viewed by participant"
+            },
+            "DataType": {
+              "type": "string",
+              "const": "integer"
+            }
+          }
+        },
+        "startlanguage": {
+          "type": "object",
+          "properties": {
+            "Description": {
+              "type": "string",
+              "default": "Language code at survey start"
+            },
+            "DataType": {
+              "type": "string",
+              "const": "string"
+            }
+          }
+        },
+        "seed": {
+          "type": "object",
+          "properties": {
+            "Description": {
+              "type": "string",
+              "default": "Randomization seed for question/answer order"
+            },
+            "DataType": {
+              "type": "string",
+              "const": "string"
+            }
+          }
+        },
+        "token": {
+          "type": "object",
+          "properties": {
+            "Description": {
+              "type": "string",
+              "default": "Participant access token (if token-based access enabled)"
+            },
+            "DataType": {
+              "type": "string",
+              "const": "string"
+            }
+          }
+        },
+        "datestamp": {
+          "type": "object",
+          "properties": {
+            "Description": {
+              "type": "string",
+              "default": "Date stamp of response"
+            },
+            "DataType": {
+              "type": "string",
+              "const": "string"
+            }
+          }
+        },
+        "ipaddr": {
+          "type": "object",
+          "properties": {
+            "Description": {
+              "type": "string",
+              "default": "IP address of respondent (if collected)"
+            },
+            "DataType": {
+              "type": "string",
+              "const": "string"
+            },
+            "SensitiveData": {
+              "type": "boolean",
+              "const": true
+            }
+          }
+        },
+        "refurl": {
+          "type": "object",
+          "properties": {
+            "Description": {
+              "type": "string",
+              "default": "Referrer URL (if collected)"
+            },
+            "DataType": {
+              "type": "string",
+              "const": "string"
+            }
+          }
+        },
+        "interviewtime": {
+          "type": "object",
+          "properties": {
+            "Description": {
+              "type": "string",
+              "default": "Total time spent on survey in seconds"
+            },
+            "DataType": {
+              "type": "string",
+              "const": "float"
+            },
+            "Unit": {
+              "type": "string",
+              "const": "seconds"
+            }
+          }
+        }
+      }
+    },
+    "Timings": {
+      "type": "object",
+      "description": "Per-group timing data. Keys are group names, values describe duration columns.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "Description": {
+            "type": "string",
+            "description": "Description of what this timing measures"
+          },
+          "GroupId": {
+            "type": ["integer", "string"],
+            "description": "LimeSurvey group ID"
+          },
+          "Unit": {
+            "type": "string",
+            "const": "seconds",
+            "description": "Time unit (always seconds)"
+          }
+        }
+      }
+    },
+    "DerivedFields": {
+      "type": "object",
+      "description": "Fields derived from system data during conversion",
+      "properties": {
+        "SurveyDuration": {
+          "type": "object",
+          "properties": {
+            "Description": {
+              "type": "string",
+              "default": "Total survey duration calculated from submitdate - startdate"
+            },
+            "Unit": {
+              "type": "string",
+              "const": "minutes"
+            },
+            "DataType": {
+              "type": "string",
+              "const": "float"
+            }
+          }
+        },
+        "CompletionStatus": {
+          "type": "object",
+          "properties": {
+            "Description": {
+              "type": "string",
+              "default": "Whether survey was completed"
+            },
+            "Levels": {
+              "type": "object",
+              "properties": {
+                "complete": { "type": "string", "const": "Survey submitted" },
+                "incomplete": { "type": "string", "const": "Survey not submitted" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": ["Metadata"],
+  "additionalProperties": false
+}
