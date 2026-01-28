@@ -58,7 +58,23 @@ def get_error_documentation_url(error_code: str) -> str:
 
 
 # Path utilities re-exported from specialized module
+from .path_utils import (
+    strip_temp_path,
+    extract_path_from_message,
+    shorten_path,
+    get_filename_from_path,
+)
+
 
 # Reporting utilities re-exported from specialized module
+from .reporting_utils import (
+    sanitize_jsonable,
+    format_validation_results,
+)
+
 
 # Survey utilities re-exported from specialized module
+from .survey_utils import (
+    list_survey_template_languages,
+)
+
