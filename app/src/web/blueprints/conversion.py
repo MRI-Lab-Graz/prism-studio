@@ -4,6 +4,7 @@ Handles survey, biometrics, and physio conversion routes.
 """
 
 import io
+import json
 import re
 import shutil
 import tempfile
@@ -1735,16 +1736,54 @@ def api_participants_preview():
             # Get library path for participants.json
             library_path = _resolve_effective_library_path()
             
+            # SIMULATE CONVERSION: Show what the OUTPUT will look like
+            # Check if participants.json exists in library to determine expected schema
+            converter = ParticipantsConverter(tmp_path)
+            participants_json_path = library_path / "participants.json"
+            
+            # Build expected output columns based on participants.json if available
+            expected_columns = []
+            if participants_json_path.exists():
+                try:
+                    with open(participants_json_path, 'r') as f:
+                        schema = json.load(f)
+                        expected_columns = list(schema.keys())
+                except:
+                    pass
+            
+            # If no schema, use common participant columns
+            if not expected_columns:
+                expected_columns = ["participant_id", "age", "sex", "handedness", "group"]
+            
+            # Filter to only columns that exist in the source data
+            output_columns = [id_column]  # Always include ID column first
+            for col in expected_columns:
+                if col != id_column and col in df.columns:
+                    output_columns.append(col)
+            
+            # If still empty (no matching columns), show a limited set from source
+            if len(output_columns) <= 1:
+                # Show all columns but warn it's raw
+                output_df = df[list(df.columns)]
+                simulation_note = "No participants.json schema found. Showing raw file structure."
+            else:
+                # Show only the columns that will be in participants.tsv
+                output_df = df[output_columns]
+                simulation_note = f"Simulated output with {len(output_columns)} participant columns."
+            
             # Preview first 20 rows
-            preview_df = df.head(20)
+            preview_df = output_df.head(20)
             
             return jsonify({
                 "status": "success",
-                "columns": list(df.columns),
+                "columns": list(output_df.columns),
                 "id_column": id_column,
                 "participant_count": len(df),
                 "preview_rows": preview_df.to_dict(orient="records"),
-                "library_path": str(library_path)
+                "library_path": str(library_path),
+                "simulation_note": simulation_note,
+                "total_source_columns": len(df.columns),
+                "extracted_columns": len(output_df.columns)
             })
         
         finally:
