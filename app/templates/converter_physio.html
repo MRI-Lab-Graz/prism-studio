@@ -1,0 +1,103 @@
+                <!-- Physio Panel -->
+                <div class="tab-pane fade" id="physio-panel" role="tabpanel" aria-labelledby="physio-tab">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas fa-heartbeat fa-2x text-warning"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Physiological Data Conversion</h5>
+                                    <p class="text-muted mb-0">Convert Varioport recordings (ECG, respiration) to PRISM format</p>
+                                </div>
+                            </div>
+
+                            <!-- Sub-tabs for single vs batch -->
+                            <ul class="nav nav-tabs nav-sm mb-3" id="physioSubTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="physio-single-tab" data-bs-toggle="tab" data-bs-target="#physio-single" type="button" role="tab">
+                                        <i class="fas fa-file me-1"></i>Single File
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="physio-batch-tab" data-bs-toggle="tab" data-bs-target="#physio-batch" type="button" role="tab">
+                                        <i class="fas fa-folder-open me-1"></i>Batch (Multiple Files)
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <div class="tab-content" id="physioSubTabContent">
+                                <!-- Single File -->
+                                <div class="tab-pane fade show active" id="physio-single" role="tabpanel">
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-4">
+                                            <label for="physioRawFile" class="form-label">Varioport Recording (.raw or .vpd)</label>
+                                            <input class="form-control" type="file" id="physioRawFile" accept=".raw,.vpd">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="physioTask" class="form-label">Task Name</label>
+                                            <input type="text" class="form-control" id="physioTask" value="rest">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="physioSamplingRate" class="form-label">Sampling Rate (optional)</label>
+                                            <input type="number" class="form-control" id="physioSamplingRate" placeholder="e.g. 256" step="any">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <button class="btn btn-warning text-white w-100" type="button" id="physioConvertBtn" disabled>
+                                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="physioError" class="alert alert-danger d-none mt-3"></div>
+                                    <div id="physioInfo" class="alert alert-info d-none mt-3"></div>
+                                </div>
+
+                                <!-- Batch -->
+                                <div class="tab-pane fade" id="physio-batch" role="tabpanel">
+                                    <div class="alert alert-light border mb-3">
+                                        <i class="fas fa-info-circle me-2 text-info"></i>
+                                        <strong>File naming required:</strong> <code>sub-XXX_ses-YYY_task-ZZZ.raw</code> or <code>.vpd</code>
+                                        <br><small class="text-muted">Example: <code>sub-003_ses-1_task-rest.raw</code> · Session is optional</small>
+                                    </div>
+                                    <div class="row g-3 align-items-end">
+                                        <div class="col-md-6">
+                                            <label for="physioBatchFiles" class="form-label">Select Physio Files</label>
+                                            <input class="form-control" type="file" id="physioBatchFiles" accept=".raw,.vpd" multiple>
+                                            <small class="text-muted">Select all files (Ctrl+A / Cmd+A)</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="physioBatchDatasetName" class="form-label">Dataset Name</label>
+                                            <input type="text" class="form-control" id="physioBatchDatasetName" value="Physio Dataset">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="physioBatchSamplingRate" class="form-label">Sampling Rate (optional)</label>
+                                            <input type="number" class="form-control" id="physioBatchSamplingRate" placeholder="e.g. 256" step="any">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <button class="btn btn-warning text-white w-100" type="button" id="physioBatchConvertBtn" disabled>
+                                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert All & Download
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div id="physioBatchError" class="alert alert-danger d-none mt-3"></div>
+                                    <div id="physioBatchInfo" class="alert alert-info d-none mt-3"></div>
+                                    <div id="physioBatchProgress" class="progress d-none mt-3" style="height: 25px;">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning text-dark" style="width: 100%">Converting...</div>
+                                    </div>
+                                    <!-- Log Window -->
+                                    <div id="physioBatchLogContainer" class="d-none mt-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <label class="form-label mb-0"><i class="fas fa-terminal me-2"></i>Conversion Log</label>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="physioBatchLogClearBtn">
+                                                <i class="fas fa-trash-alt me-1"></i>Clear
+                                            </button>
+                                        </div>
+                                        <div id="physioBatchLog" class="bg-dark text-light p-3 rounded font-monospace" 
+                                             style="height: 200px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
