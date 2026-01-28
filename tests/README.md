@@ -75,9 +75,35 @@ python3 -m pytest tests/test_validator.py -v
 - `test_runner.py` - Validation runner tests  
 - `test_unit.py` - Unit tests for various modules
 - `test_reorganization.py` - File organization tests
-- `test_windows_compatibility.py` - Cross-platform tests
+- `test_windows_compatibility.py` - Cross-platform tests (legacy)
 - `test_web_*.py` - Web interface tests
 - `test_participants_mapping.py` - Participants converter tests
+
+### Windows-Specific Tests
+
+Comprehensive test suite for Windows compatibility (since repo was built on macOS):
+
+- `test_windows_compatibility.py` - Core cross-platform utilities
+- `test_windows_paths.py` - Path handling (drive letters, UNC, long paths, reserved names)
+- `test_windows_web_uploads.py` - Web upload functionality on Windows
+- `test_windows_datasets.py` - Dataset validation on Windows filesystems
+- `test_github_signing.py` - GitHub Actions code signing configuration
+- `run_windows_tests.py` - Master test runner (Python)
+- `run_windows_tests.ps1` - Master test runner (PowerShell)
+
+**Run Windows tests:**
+```powershell
+# PowerShell (recommended on Windows)
+.\tests\run_windows_tests.ps1
+
+# Or with Python
+python tests/run_windows_tests.py
+
+# Individual tests
+python tests/test_windows_paths.py
+```
+
+See [WINDOWS_TESTING.md](../docs/WINDOWS_TESTING.md) for detailed documentation.
 
 ## Stress Testing
 
