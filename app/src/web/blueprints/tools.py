@@ -385,6 +385,10 @@ def api_survey_customizer_export():
     if not groups:
         return jsonify({"error": "No groups to export"}), 400
 
+    survey_title = survey_info.get("title", "").strip()
+    if not survey_title:
+        return jsonify({"error": "Survey name is required"}), 400
+
     language = survey_info.get("language", "en")
     ls_version = export_options.get("ls_version", "6")
     matrix_mode = export_options.get("matrix", True)
@@ -400,7 +404,8 @@ def api_survey_customizer_export():
             language=language,
             ls_version=ls_version,
             matrix_mode=matrix_mode,
-            matrix_global=matrix_global
+            matrix_global=matrix_global,
+            survey_title=survey_title
         )
 
         return send_file(

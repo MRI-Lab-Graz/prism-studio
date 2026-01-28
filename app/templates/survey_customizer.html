@@ -273,6 +273,15 @@
         <!-- Export Settings -->
         <div class="export-settings">
             <h5 class="mb-3"><i class="fas fa-cog me-2"></i>Export Settings</h5>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="export-option">
+                        <label class="form-label fw-bold">Survey Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="surveyName" placeholder="Enter survey name" required>
+                        <small class="text-muted">This name will appear as the survey title in LimeSurvey</small>
+                    </div>
+                </div>
+            </div>
             <div class="row">
                 <div class="col-md-4">
                     <div class="export-option">
@@ -893,7 +902,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Export
     exportBtn.addEventListener('click', async () => {
+        // Get and validate survey name
+        const surveyNameInput = document.getElementById('surveyName');
+        const surveyName = surveyNameInput.value.trim();
+
+        if (!surveyName) {
+            surveyNameInput.classList.add('is-invalid');
+            surveyNameInput.focus();
+            alert('Please enter a survey name before exporting.');
+            return;
+        }
+        surveyNameInput.classList.remove('is-invalid');
+
         // Update export options from UI
+        customizationState.survey.title = surveyName;
         customizationState.exportFormat = document.getElementById('exportFormat').value;
         customizationState.survey.language = document.getElementById('languageSelect').value;
         customizationState.exportOptions.ls_version = document.getElementById('lsVersionSelect').value;
