@@ -2341,12 +2341,6 @@ def _write_survey_participants(
     lower_to_col = {str(c).strip().lower(): str(c).strip() for c in df.columns}
 
     # Try to load participants_mapping.json from the project
-    # Determine project root for searching
-    if output_root.name == "rawdata":
-        search_root = output_root.parent
-    else:
-        search_root = output_root
-    
     participants_mapping = _load_participants_mapping(output_root)
     mapped_cols, col_renames, value_mappings = _get_mapped_columns(participants_mapping)
     
@@ -3233,8 +3227,10 @@ def _validate_survey_item_value(
     # Try numeric range tolerance
     try:
         def _to_float(x):
-            try: return float(str(x).strip())
-            except: return None
+            try:
+                return float(str(x).strip())
+            except (ValueError, TypeError, AttributeError):
+                return None
         
         v_num = _to_float(v_str)
         min_v = _to_float(item_schema.get("MinValue"))
@@ -3250,7 +3246,7 @@ def _validate_survey_item_value(
                 if min(l_nums) <= v_num <= max(l_nums):
                     items_using_tolerance.setdefault(task, set()).add(item_id)
                     return
-    except:
+    except (ValueError, TypeError, AttributeError):
         pass
 
     allowed = ", ".join(sorted(levels.keys()))

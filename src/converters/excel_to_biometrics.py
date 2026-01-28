@@ -671,9 +671,9 @@ def process_excel_biometrics(
                 if meta.get("Instructions_en"): instr["en"] = meta["Instructions_en"]
                 if meta.get("Instructions_de"): instr["de"] = meta["Instructions_de"]
                 sidecar["Study"]["Instructions"] = instr
-                for l in instr:
-                    if l not in sidecar["I18n"]["Languages"]:
-                        sidecar["I18n"]["Languages"].append(l)
+                for lang in instr:
+                    if lang not in sidecar["I18n"]["Languages"]:
+                        sidecar["I18n"]["Languages"].append(lang)
 
             if meta.get("Reference"):
                 sidecar["Study"]["Reference"] = meta["Reference"]

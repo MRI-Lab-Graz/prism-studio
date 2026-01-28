@@ -195,7 +195,6 @@ def run_validation(
     """
     # Support YODA layout: if dataset_path contains a rawdata/ folder, validate that instead
     # but only if it contains a dataset_description.json (BIDS root marker)
-    orig_dataset_path = dataset_path
     if os.path.isdir(os.path.join(dataset_path, "rawdata")):
         raw_marker = os.path.join(dataset_path, "rawdata", "dataset_description.json")
         if os.path.exists(raw_marker):

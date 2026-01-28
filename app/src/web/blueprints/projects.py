@@ -976,7 +976,7 @@ def export_project():
         
         try:
             # Perform export
-            stats = do_export(
+            do_export(
                 project_path=project_path,
                 output_zip=Path(temp_path),
                 anonymize=anonymize,
