@@ -1,0 +1,131 @@
+<!-- Biometrics Panel -->
+<div class="tab-pane fade" id="biometrics-panel" role="tabpanel" aria-labelledby="biometrics-tab">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+                <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                    <i class="fas fa-weight fa-2x text-warning"></i>
+                </div>
+                <div>
+                    <h5 class="mb-1">Biometrics Data Conversion</h5>
+                    <p class="text-muted mb-0">Convert physical measurements like grip strength, balance tests</p>
+                </div>
+            </div>
+
+            <!-- Structure Warning (missing folders/files) -->
+            <div id="biometricsStructureWarning" class="alert alert-danger d-none mb-3">
+                <i class="fas fa-folder-minus me-2"></i>
+                <strong>Missing Structure:</strong> <span id="biometricsStructureMessage">The selected folder is missing required items.</span>
+            </div>
+
+            <div class="row g-3 align-items-end">
+                <div class="col-md-8">
+                    <label for="biometricsDataFile" class="form-label">Biometrics File (.xlsx, .csv, .tsv)</label>
+                    <input class="form-control" type="file" id="biometricsDataFile" accept=".xlsx,.csv,.tsv">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-info text-white w-100" type="button" id="biometricsPreviewBtn" disabled>
+                        <i class="fas fa-eye me-2"></i>Preview
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-warning text-white w-100" type="button" id="biometricsConvertBtn" disabled>
+                        <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
+                    </button>
+                </div>
+
+                <div class="col-12 mt-3">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4">
+                            <label for="biometricsSheet" class="form-label">Excel Sheet (name or index)</label>
+                            <input type="text" class="form-control" id="biometricsSheet" placeholder="0" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="biometricsSession" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control border-warning" id="biometricsSession" placeholder="e.g. 1 (creates ses-1)" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="biometricsUnknown" class="form-label">Unknown Columns</label>
+                            <select class="form-select" id="biometricsUnknown">
+                                <option value="warn" selected>Warn (default)</option>
+                                <option value="ignore">Ignore</option>
+                                <option value="error">Error</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="biometricsError" class="alert alert-danger d-none mt-3"></div>
+            <div id="biometricsInfo" class="alert alert-info d-none mt-3"></div>
+
+            <!-- Detected Biometrics List -->
+            <div id="biometricsDetectedContainer" class="d-none mt-3">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning bg-opacity-10 fw-bold">
+                        <i class="fas fa-search me-2 text-warning"></i>Detected Biometrics
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-2">The following biometrics tasks were detected in your file. Select which ones to export:</p>
+                        <div id="biometricsDetectedList" class="row g-2">
+                            <!-- Dynamic checkboxes here -->
+                        </div>
+                        <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="biometricsSelectAll" checked>
+                                <label class="form-check-label small" for="biometricsSelectAll">Select All</label>
+                            </div>
+                            <button class="btn btn-sm btn-warning text-white" id="biometricsConfirmBtn">
+                                <i class="fas fa-check me-1"></i>Confirm & Convert
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conversion Log Output -->
+            <div id="biometricsLogContainer" class="d-none mt-3">
+                <div class="card border-secondary">
+                    <div class="card-header bg-dark text-white py-2 d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-terminal me-2"></i>Conversion Log</span>
+                        <button type="button" class="btn btn-sm btn-outline-light" id="toggleBiometricsLogBtn" title="Toggle log">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div class="card-body p-0" id="biometricsLogBody">
+                        <pre id="biometricsLog" class="m-0 p-3 bg-dark text-light" style="max-height: 300px; overflow-y: auto; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; white-space: pre-wrap;"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Validation Results -->
+            <div id="biometricsValidationResultsContainer" class="d-none mt-3">
+                <div class="card" id="biometricsValidationResultsCard">
+                    <div class="card-header py-2 d-flex justify-content-between align-items-center" id="biometricsValidationResultsHeader">
+                        <span><i class="fas fa-clipboard-check me-2"></i>Validation Results</span>
+                        <span id="biometricsValidationBadge" class="badge"></span>
+                    </div>
+                    <div class="card-body">
+                        <div id="biometricsValidationSummary" class="mb-3"></div>
+                        <div id="biometricsValidationDetails"></div>
+                        <div id="biometricsDownloadSection" class="d-none mt-3 text-center">
+                            <button class="btn btn-warning btn-lg text-white" id="biometricsDownloadZipBtn">
+                                <i class="fas fa-download me-2"></i>Download Validated Dataset
+                            </button>
+                            <p class="text-muted small mt-2">
+                                <i class="fas fa-check-circle me-1"></i>Dataset passed validation
+                            </p>
+                        </div>
+                        <div id="biometricsDownloadWarningSection" class="d-none mt-3 text-center">
+                            <button class="btn btn-warning btn-lg" id="biometricsDownloadZipWarningBtn">
+                                <i class="fas fa-download me-2"></i>Download Dataset (with warnings)
+                            </button>
+                            <p class="text-muted small mt-2">
+                                <i class="fas fa-exclamation-triangle me-1"></i>Dataset has warnings but can still be used
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

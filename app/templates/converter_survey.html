@@ -1,0 +1,346 @@
+                <!-- Survey Panel -->
+                <div class="tab-pane fade show active" id="survey-panel" role="tabpanel" aria-labelledby="survey-tab">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas fa-clipboard-list fa-2x text-warning"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1">Survey Data Conversion</h5>
+                                    <p class="text-muted mb-0">Convert questionnaire responses from Excel or LimeSurvey archives</p>
+                                </div>
+                            </div>
+
+                            <!-- Conversion Mode Toggle -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Conversion Mode</label>
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="convertMode" id="convertModeData" value="data" checked>
+                                        <label class="btn btn-outline-warning" for="convertModeData">
+                                            <i class="fas fa-table me-1"></i>Data Conversion
+                                            <small class="d-block text-muted">Convert responses to BIDS format</small>
+                                        </label>
+                                        <input type="radio" class="btn-check" name="convertMode" id="convertModeTemplate" value="template">
+                                        <label class="btn btn-outline-success" for="convertModeTemplate">
+                                            <i class="fas fa-file-code me-1"></i>Template Generation
+                                            <small class="d-block text-muted">Extract structure only (no data)</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Row 1: File upload -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-12">
+                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa, .lss)</label>
+                                    <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv,.lss">
+                                    <div class="form-text" id="convertFileHint">
+                                        <span class="text-info"><i class="fas fa-info-circle me-1"></i>LimeSurvey (.lss/.lsa) or Data Dictionary (.xlsx/.csv/.tsv)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Row 2: Dataset name and language -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-12" id="convertDatasetNameGroup">
+                                    <label for="convertDatasetName" class="form-label">Dataset/Survey Name (optional)</label>
+                                    <input type="text" class="form-control" id="convertDatasetName" placeholder="e.g. phq9">
+                                </div>
+                                <div class="col-md-6" id="convertLanguageGroup">
+                                    <label for="convertLanguage" class="form-label">Language</label>
+                                    <select class="form-select" id="convertLanguage">
+                                        <option value="auto" selected>Auto (template default)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Row 3: Participant ID (data conversion) or Template export (template generation) -->
+                            <div class="row g-3 mb-3">
+                                <!-- Participant ID selector (for data conversion) -->
+                                <div class="col-12" id="convertIdColumnGroup">
+                                    <label for="convertIdColumn" class="form-label">
+                                        Participant ID Column
+                                        <span id="idColumnStatus" class="ms-2 small"></span>
+                                    </label>
+                                    <select class="form-select" id="convertIdColumn">
+                                        <option value="auto" selected>Auto-detect</option>
+                                    </select>
+                                    <div class="form-text" id="idColumnHelp">
+                                        <i class="fas fa-info-circle me-1"></i>Upload a file to detect available columns
+                                    </div>
+                                </div>
+
+                                <!-- Template export mode (for template generation) -->
+                                <div class="col-12 d-none" id="convertTemplateExportGroup">
+                                    <label class="form-label">Template Export</label>
+                                    <select class="form-select" id="convertTemplateExport">
+                                        <option value="groups" selected>By questionnaire group</option>
+                                        <option value="questions">Individual questions</option>
+                                        <option value="combined">Combined (single file)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Row 4: ID Mapping, Session, Unknown Items, Strict Levels (conversion settings) -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-3" id="convertAliasGroup">
+                                    <label for="convertIdMapFile" class="form-label">ID Mapping File (optional)</label>
+                                    <input class="form-control" type="file" id="convertIdMapFile" accept=".tsv,.txt,.csv">
+                                    <div class="form-text">Map source IDs to participant_id (two-column TSV/CSV).</div>
+                                </div>
+                                <div class="col-md-3" id="convertSessionGroup">
+                                    <label for="convertSession" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control border-warning" id="convertSession" placeholder="e.g. 1, 2, 3..." required>
+                                    <div class="form-text text-warning">Creates 'ses-1', 'ses-2', etc.</div>
+                                </div>
+                                <div class="col-md-3" id="convertUnknownGroup">
+                                    <label for="convertUnknown" class="form-label">Unknown Items</label>
+                                    <select class="form-select" id="convertUnknown">
+                                        <option value="warn" selected>Show warnings</option>
+                                        <option value="ignore">Skip silently</option>
+                                        <option value="error">Stop on unknown</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end" id="convertStrictGroup">
+                                    <div class="w-100">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="convertStrictLevels">
+                                            <label class="form-check-label" for="convertStrictLevels">Strict Levels Validation</label>
+                                        </div>
+                                        <div class="form-text">Require defined levels for categorical responses.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Row 5: Duplicate ID Handling and Sourcedata Archiving -->
+                            <div class="row g-3 mb-3" id="convertAdvancedRow">
+                                <div class="col-md-4" id="convertDuplicateGroup">
+                                    <label for="convertDuplicateHandling" class="form-label">Duplicate ID Handling</label>
+                                    <select class="form-select" id="convertDuplicateHandling">
+                                        <option value="error" selected>Stop and report</option>
+                                        <option value="keep_first">Keep first occurrence</option>
+                                        <option value="keep_last">Keep last occurrence</option>
+                                        <option value="sessions">Create multiple sessions</option>
+                                    </select>
+                                    <div class="form-text">How to handle participants with duplicate IDs</div>
+                                </div>
+                                <div class="col-md-4" id="convertArchiveGroup">
+                                    <label class="form-label">Sourcedata Archive</label>
+                                    <div class="form-check form-switch mt-2">
+                                        <input class="form-check-input" type="checkbox" id="convertArchiveSourcedata">
+                                        <label class="form-check-label" for="convertArchiveSourcedata">Archive original file to sourcedata/</label>
+                                    </div>
+                                    <div class="form-text">Preserves the raw input file alongside converted data</div>
+                                </div>
+                            </div>
+
+                            <!-- Row 6: Convert button -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <button class="btn btn-info text-white w-100" type="button" id="previewBtn" disabled>
+                                        <i class="fas fa-eye me-2"></i>Preview (Dry-Run)
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button class="btn btn-warning text-white w-100" type="button" id="convertBtn" disabled>
+                                        <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Row 7: Participant Mapping button -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-12">
+                                    <button class="btn btn-outline-success w-100" type="button" id="createParticipantMappingBtn" disabled title="Creates a participants_mapping.json file to map unused survey columns to participants.tsv">
+                                        <i class="fas fa-list-check me-2"></i>Create Participant Mapping
+                                        <span class="badge bg-info ms-2" data-bs-toggle="tooltip" title="Map demographic/unused columns to participants.tsv (different from ID mapping)">?</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="convertError" class="alert alert-danger d-none mt-3"></div>
+                            <div id="convertInfo" class="alert alert-info d-none mt-3"></div>
+
+                            <!-- Conversion Log Output -->
+                            <div id="conversionLogContainer" class="d-none mt-3">
+                                <div class="card border-secondary">
+                                    <div class="card-header bg-dark text-white py-2 d-flex justify-content-between align-items-center">
+                                        <span><i class="fas fa-terminal me-2"></i>Conversion Log</span>
+                                        <button type="button" class="btn btn-sm btn-outline-light" id="toggleLogBtn" title="Toggle log">
+                                            <i class="fas fa-chevron-down"></i>
+                                        </button>
+                                    </div>
+                                    <div class="card-body p-0" id="conversionLogBody">
+                                        <pre id="conversionLog" class="m-0 p-3 bg-dark text-light" style="max-height: 300px; overflow-y: auto; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; white-space: pre-wrap;"></pre>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Validation Results -->
+                            <div id="validationResultsContainer" class="d-none mt-3">
+                                <div class="card" id="validationResultsCard">
+                                    <div class="card-header py-2 d-flex justify-content-between align-items-center" id="validationResultsHeader">
+                                        <span><i class="fas fa-clipboard-check me-2"></i>Validation Results</span>
+                                        <span id="validationBadge" class="badge"></span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="validationSummary" class="mb-3"></div>
+                                        <div id="validationDetails"></div>
+                                        <div id="downloadSection" class="d-none mt-3 text-center">
+                                            <button class="btn btn-warning btn-lg text-white" id="downloadZipBtn">
+                                                <i class="fas fa-download me-2"></i>Download Validated Dataset
+                                            </button>
+                                            <p class="text-muted small mt-2">
+                                                <i class="fas fa-check-circle me-1"></i>Dataset passed validation
+                                            </p>
+                                        </div>
+                                        <div id="downloadWarningSection" class="d-none mt-3 text-center">
+                                            <button class="btn btn-warning btn-lg" id="downloadZipWarningBtn">
+                                                <i class="fas fa-download me-2"></i>Download Dataset (with warnings)
+                                            </button>
+                                            <p class="text-muted small mt-2">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Dataset has warnings but can still be used
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Template Generation Results -->
+                            <div id="templateResultsContainer" class="d-none mt-3">
+                                <!-- Single template result -->
+                                <div id="templateResultSingle" class="d-none">
+                                    <div class="alert alert-success">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-check-circle me-2"></i>
+                                                <strong>Template generated!</strong>
+                                                <span id="templateQuestionCount" class="ms-2 badge bg-secondary"></span>
+                                            </div>
+                                            <div>
+                                                <button class="btn btn-sm btn-outline-success me-2" id="templatePreviewBtn">
+                                                    <i class="fas fa-eye me-1"></i>Preview
+                                                </button>
+                                                <button class="btn btn-sm btn-success" id="templateDownloadBtn">
+                                                    <i class="fas fa-download me-1"></i>Download JSON
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="templatePreview" class="d-none mt-2">
+                                        <pre class="bg-light p-3 rounded border" style="max-height: 400px; overflow-y: auto;"><code id="templatePreviewContent"></code></pre>
+                                    </div>
+                                </div>
+
+                                <!-- Multiple templates result (groups mode) -->
+                                <div id="templateResultGroups" class="d-none">
+                                    <div class="alert alert-success mb-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-check-circle me-2"></i>
+                                                <strong>Templates generated!</strong>
+                                                <span id="templateGroupCount" class="ms-2 badge bg-primary"></span>
+                                                <span id="templateTotalQuestions" class="ms-1 badge bg-secondary"></span>
+                                            </div>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-success" id="templateDownloadAllBtn">
+                                                    <i class="fas fa-download me-1"></i>Download ZIP
+                                                </button>
+                                                {% if current_project.path %}
+                                                <button class="btn btn-sm btn-primary" id="templateSaveToProjectBtn">
+                                                    <i class="fas fa-folder-plus me-1"></i>Save to Project
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="templateGroupList" class="row g-2"></div>
+                                </div>
+
+                                <!-- Individual questions result -->
+                                <div id="templateResultQuestions" class="d-none">
+                                    <div class="alert alert-success mb-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-check-circle me-2"></i>
+                                                <strong>Question templates extracted!</strong>
+                                                <span id="templateIndividualCount" class="ms-2 badge bg-info"></span>
+                                            </div>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-success" id="templateDownloadQuestionsBtn">
+                                                    <i class="fas fa-download me-1"></i>Download ZIP
+                                                </button>
+                                                {% if current_project.path %}
+                                                <button class="btn btn-sm btn-primary" id="templateSaveQuestionsToProjectBtn">
+                                                    <i class="fas fa-folder-plus me-1"></i>Save to Project
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="templateQuestionsList" class="row g-2"></div>
+                                </div>
+
+                                <!-- Save to Project Success -->
+                                <div id="templateSaveSuccess" class="alert alert-success d-none mt-3">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <span id="templateSaveSuccessMessage"></span>
+                                </div>
+
+                                <!-- Participant Metadata Section -->
+                                <div id="participantMetadataSection" class="d-none mt-4 border-top pt-3">
+                                    <h6 class="mb-3">
+                                        <i class="fas fa-users text-info me-2"></i>
+                                        Mark Participant Metadata Fields
+                                        <small class="text-muted ms-2">(fields that go into participants.tsv)</small>
+                                    </h6>
+
+                                    <div class="alert alert-info py-2 mb-3">
+                                        <small>
+                                            <i class="fas fa-lightbulb me-1"></i>
+                                            <strong>BIDS Tip:</strong> Mark demographic questions (age, sex, ID) as participant metadata.
+                                            These will be saved to <code>participants.json</code> instead of per-subject survey files.
+                                        </small>
+                                    </div>
+
+                                    <!-- Question list with checkboxes -->
+                                    <div id="participantFieldsList" class="mb-3" style="max-height: 300px; overflow-y: auto;">
+                                        <div class="text-muted">Loading extracted fields...</div>
+                                    </div>
+
+                                    <!-- BIDS field mapping suggestions -->
+                                    <div id="bidsFieldSuggestions" class="mb-3 d-none">
+                                        <h6 class="small text-muted mb-2">Suggested BIDS Mappings</h6>
+                                        <div id="bidsFieldSuggestionsList" class="d-flex flex-wrap gap-2"></div>
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="text-muted me-2">
+                                                <span id="selectedParticipantFieldsCount">0</span> fields selected
+                                            </span>
+                                        </div>
+                                        <div>
+                                            {% if current_project.path %}
+                                            <button type="button" class="btn btn-primary btn-sm" id="saveParticipantsJsonBtn" disabled>
+                                                <i class="fas fa-save me-1"></i>Save to participants.json
+                                            </button>
+                                            {% else %}
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="downloadParticipantsJsonBtn" disabled>
+                                                <i class="fas fa-download me-1"></i>Download participants.json
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Save status -->
+                                    <div id="participantsSaveStatus" class="mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
