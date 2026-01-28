@@ -24,20 +24,33 @@ def _sanitize_question_code(code: str, max_length: int = LS_QUESTION_CODE_MAX_LE
 
     LimeSurvey restrictions:
     - Maximum 20 characters (older versions)
-    - No underscores or hyphens allowed (will be auto-renamed)
-    - Should start with a letter
-    - Only alphanumeric characters allowed
+    - Must start with a letter (a-z, A-Z)
+    - Only alphanumeric characters allowed (no underscores, hyphens, @, etc.)
 
     Args:
-        code: Question code (e.g., "neurological_diagnosis" or "LOT-R01")
+        code: Question code (e.g., "neurological_diagnosis" or "LOT-R01" or "@context")
         max_length: Maximum allowed length (default: 20 for LS compatibility)
 
     Returns:
-        Sanitized code: underscores/hyphens removed, truncated if necessary
-        Example: "LOT-R_01" -> "LOTR01"
+        Sanitized code that is valid for LimeSurvey
+        Examples:
+          "LOT-R_01" -> "LOTR01"
+          "@context" -> "context"
+          "_PRISM_META" -> "PRISMMETA"
+          "123test" -> "Q123test"
     """
-    # Remove underscores and hyphens (LimeSurvey doesn't allow them in question codes)
-    sanitized = code.replace("_", "").replace("-", "")
+    import re
+
+    # Remove all non-alphanumeric characters (including @, _, -)
+    sanitized = re.sub(r'[^a-zA-Z0-9]', '', code)
+
+    # Ensure it starts with a letter (LimeSurvey requirement)
+    if sanitized and not sanitized[0].isalpha():
+        sanitized = "Q" + sanitized
+
+    # Handle empty result
+    if not sanitized:
+        sanitized = "Q"
 
     # Truncate to max length
     if len(sanitized) > max_length:
@@ -185,6 +198,103 @@ def _format_metadata_description(all_metadata, json_files):
     # Add generation info
     lines.append("")
     lines.append(f"--- Generated from {len(json_files)} PRISM template(s) on {datetime.now().strftime('%Y-%m-%d %H:%M')} ---")
+
+    return "\n".join(lines)
+
+
+def _extract_single_file_metadata(file_path, language="en"):
+    """
+    Extract metadata from a single JSON file.
+    Returns a dict with metadata fields, or None if extraction fails.
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return None
+
+    study = data.get("Study", {})
+    if not study:
+        return None
+
+    meta = {}
+
+    # Original name (with language support)
+    orig_name = study.get("OriginalName", "")
+    if isinstance(orig_name, dict):
+        meta["Name"] = orig_name.get(language, orig_name.get("en", str(orig_name)))
+    elif orig_name:
+        meta["Name"] = str(orig_name)
+
+    # Abbreviation
+    if study.get("Abbreviation"):
+        meta["Abbreviation"] = study["Abbreviation"]
+
+    # Authors
+    authors = study.get("Authors", [])
+    if authors:
+        if isinstance(authors, list):
+            meta["Authors"] = ", ".join(str(a) for a in authors)
+        else:
+            meta["Authors"] = str(authors)
+
+    # Year
+    if study.get("Year"):
+        meta["Year"] = str(study["Year"])
+
+    # DOI
+    if study.get("DOI"):
+        meta["DOI"] = study["DOI"]
+
+    # Citation
+    if study.get("Citation"):
+        meta["Citation"] = study["Citation"]
+
+    # Source (Manual URL)
+    if study.get("Source"):
+        meta["Manual"] = study["Source"]
+
+    # License (with language support)
+    license_info = study.get("License", "")
+    if isinstance(license_info, dict):
+        meta["License"] = license_info.get(language, license_info.get("en", ""))
+    elif license_info:
+        meta["License"] = str(license_info)
+
+    return meta if meta else None
+
+
+def _format_single_metadata_html(meta):
+    """
+    Format metadata for a single questionnaire as HTML for the hidden question.
+    Uses a structured format that can be parsed when re-importing.
+    """
+    if not meta:
+        return ""
+
+    lines = ['<div class="prism-metadata" style="display:none;">']
+    lines.append(f'<p><strong>PRISM Template Metadata</strong></p>')
+
+    if meta.get("Name"):
+        lines.append(f'<p><span class="meta-name">{meta["Name"]}</span></p>')
+    if meta.get("Abbreviation"):
+        lines.append(f'<p>Abbreviation: <span class="meta-abbrev">{meta["Abbreviation"]}</span></p>')
+    if meta.get("Authors"):
+        lines.append(f'<p>Authors: <span class="meta-authors">{meta["Authors"]}</span></p>')
+    if meta.get("Year"):
+        lines.append(f'<p>Year: <span class="meta-year">{meta["Year"]}</span></p>')
+    if meta.get("DOI"):
+        lines.append(f'<p>DOI: <span class="meta-doi">{meta["DOI"]}</span></p>')
+    if meta.get("Manual"):
+        lines.append(f'<p>Source: <span class="meta-source">{meta["Manual"]}</span></p>')
+    if meta.get("Citation"):
+        citation = " ".join(meta["Citation"].split())
+        lines.append(f'<p>Citation: <span class="meta-citation">{citation}</span></p>')
+    if meta.get("License"):
+        lines.append(f'<p>License: <span class="meta-license">{meta["License"]}</span></p>')
+
+    lines.append(f'<p>Generated: <span class="meta-generated">{datetime.now().strftime("%Y-%m-%d %H:%M")}</span></p>')
+    lines.append('</div>')
 
     return "\n".join(lines)
 
@@ -385,6 +495,53 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     "sid": sid,
                 },
             )
+
+        # --- Add hidden metadata question for this questionnaire ---
+        file_metadata = _extract_single_file_metadata(json_path, language)
+        if file_metadata:
+            meta_qid = str(qid_counter)
+            qid_counter += 1
+            # Unique code per group: PRISMMETAg1, PRISMMETAg2, etc.
+            meta_q_code = f"PRISMMETAg{group_sort_order}"
+
+            metadata_html = _format_single_metadata_html(file_metadata)
+
+            meta_q_data = {
+                "qid": meta_qid,
+                "parent_qid": "0",
+                "sid": sid,
+                "gid": gid,
+                "type": "X",  # Text Display (Boilerplate)
+                "title": meta_q_code,
+                "preg": "",
+                "other": "N",
+                "mandatory": "N",
+                "encrypted": "N",
+                "question_order": "0",  # First question in group
+                "scale_id": "0",
+                "same_default": "0",
+                "relevance": "0",  # Never shown to participants
+                "question_theme_name": "boilerplate",
+                "modulename": "",
+            }
+            if not is_v6:
+                meta_q_data["question"] = metadata_html
+                meta_q_data["help"] = ""
+                meta_q_data["language"] = language
+
+            add_row(questions_rows, meta_q_data)
+
+            if is_v6:
+                add_row(
+                    question_l10ns_rows,
+                    {
+                        "id": meta_qid,
+                        "qid": meta_qid,
+                        "question": metadata_html,
+                        "help": "",
+                        "language": language,
+                    },
+                )
 
         # Prepare Groups of Questions
         grouped_questions = []
@@ -707,9 +864,8 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
         except Exception:
             pass
 
-    # Extract metadata (Authors, DOI, Citation, Manual, License) from templates
-    all_metadata = _extract_metadata_from_files(json_files, language)
-    survey_description = _format_metadata_description(all_metadata, json_files)
+    # Note: Metadata is stored in hidden questions per group (relevance=0)
+    # so it survives LimeSurvey import/export cycles
 
     add_row(
         surveys_lang_rows,
@@ -717,7 +873,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
             "surveyls_survey_id": sid,
             "surveyls_language": language,
             "surveyls_title": survey_title,
-            "surveyls_description": survey_description,
+            "surveyls_description": "",  # Left empty - metadata is in hidden questions
             "surveyls_welcometext": "",
             "surveyls_endtext": "",
         },
@@ -909,6 +1065,59 @@ def generate_lss_from_customization(
                     "sid": sid,
                 },
             )
+
+        # --- Add hidden metadata question for this questionnaire ---
+        # Get source file from first question in group
+        source_file = None
+        if enabled_questions:
+            source_file = enabled_questions[0].get("sourceFile")
+
+        if source_file:
+            file_metadata = _extract_single_file_metadata(source_file, language)
+            if file_metadata:
+                meta_qid = str(qid_counter)
+                qid_counter += 1
+                # Unique code per group: PRISMMETAg1, PRISMMETAg2, etc.
+                meta_q_code = f"PRISMMETAg{group_sort_order}"
+
+                metadata_html = _format_single_metadata_html(file_metadata)
+
+                meta_q_data = {
+                    "qid": meta_qid,
+                    "parent_qid": "0",
+                    "sid": sid,
+                    "gid": gid,
+                    "type": "X",  # Text Display (Boilerplate)
+                    "title": meta_q_code,
+                    "preg": "",
+                    "other": "N",
+                    "mandatory": "N",
+                    "encrypted": "N",
+                    "question_order": "0",  # First question in group
+                    "scale_id": "0",
+                    "same_default": "0",
+                    "relevance": "0",  # Never shown to participants
+                    "question_theme_name": "boilerplate",
+                    "modulename": "",
+                }
+                if not is_v6:
+                    meta_q_data["question"] = metadata_html
+                    meta_q_data["help"] = ""
+                    meta_q_data["language"] = language
+
+                add_row(questions_rows, meta_q_data)
+
+                if is_v6:
+                    add_row(
+                        question_l10ns_rows,
+                        {
+                            "id": meta_qid,
+                            "qid": meta_qid,
+                            "question": metadata_html,
+                            "help": "",
+                            "language": language,
+                        },
+                    )
 
         # Sort questions by displayOrder
         sorted_questions = sorted(enabled_questions, key=lambda q: q.get("displayOrder", 0))
@@ -1207,20 +1416,8 @@ def generate_lss_from_customization(
     if sorted_groups:
         survey_title = sorted_groups[0].get("name", "Custom Survey")
 
-    # Extract source files from questions for metadata
-    source_files = set()
-    for grp in sorted_groups:
-        for q in grp.get("questions", []):
-            sf = q.get("sourceFile")
-            if sf:
-                source_files.add(sf)
-
-    # Format source files as list for metadata extraction
-    source_file_list = [{"path": sf} for sf in source_files]
-
-    # Extract metadata (Authors, DOI, Citation, Manual, License) from source files
-    all_metadata = _extract_metadata_from_files(source_file_list, language)
-    survey_description = _format_metadata_description(all_metadata, source_file_list)
+    # Note: Metadata is stored in hidden questions per group (relevance=0)
+    # so it survives LimeSurvey import/export cycles
 
     add_row(
         surveys_lang_rows,
@@ -1228,7 +1425,7 @@ def generate_lss_from_customization(
             "surveyls_survey_id": sid,
             "surveyls_language": language,
             "surveyls_title": survey_title,
-            "surveyls_description": survey_description,
+            "surveyls_description": "",  # Left empty - metadata is in hidden questions
             "surveyls_welcometext": "",
             "surveyls_endtext": "",
         },
