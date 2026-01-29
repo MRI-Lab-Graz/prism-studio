@@ -30,6 +30,55 @@
   .item-list .item-name {
     flex-grow: 1;
   }
+  .lang-bar {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .lang-bar .badge {
+    font-size: 0.8rem;
+  }
+  .lang-bar-warn {
+    border-color: #ffc107;
+    background: #fff8e1;
+  }
+  .preview-question-card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: #fff;
+  }
+  .preview-question-card .q-code {
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+  .preview-question-card .q-desc {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .preview-missing-translation {
+    color: #dc3545;
+    font-style: italic;
+    border: 1px dashed #dc3545;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    background: #fff5f5;
+  }
+  .preview-badge-reversed {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  .preview-badge-mandatory {
+    background-color: #0d6efd;
+  }
 </style>
 {% endblock %}
 
@@ -142,12 +191,35 @@
           <div class="card card-body" id="jsonDiffContainer"></div>
         </div>
 
+        <!-- Language Overview Bar -->
+        <div class="mt-3" id="languageBar" style="display:none;">
+          <div class="lang-bar" id="languageBarInner">
+            <span class="fw-bold small"><i class="fas fa-globe me-1"></i>Languages:</span>
+            <span id="langBadges"></span>
+            <span id="langPrimaryBadge"></span>
+            <span id="langWarningIndicator" class="text-warning small" style="display:none;" title="Language configuration mismatch"><i class="fas fa-exclamation-triangle"></i></span>
+            <div class="ms-auto d-flex gap-1">
+              <button class="btn btn-sm btn-outline-primary" id="btnAddLang" type="button" title="Add a language to all questions"><i class="fas fa-plus me-1"></i>Add Language</button>
+              <button class="btn btn-sm btn-outline-danger" id="btnRemoveLang" type="button" title="Remove a language from all questions"><i class="fas fa-minus me-1"></i>Remove Language</button>
+            </div>
+          </div>
+        </div>
+
         <div class="mt-4">
           <div class="d-flex align-items-center justify-content-between mb-2">
-            <label class="form-label mb-0">Template Editor</label>
-            <span class="text-muted small">Keys are fixed; edit values only.</span>
+            <ul class="nav nav-tabs mb-0" id="editorViewTabs">
+              <li class="nav-item">
+                <a class="nav-link active" href="#" data-view="editor" id="tabEditor"><i class="fas fa-edit me-1"></i>Editor</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#" data-view="preview" id="tabPreview"><i class="fas fa-eye me-1"></i>Preview</a>
+              </li>
+            </ul>
+            <span class="text-muted small" id="editorHint">Keys are fixed; edit values only.</span>
           </div>
 
+          <!-- Editor View -->
+          <div id="editorView">
           <div class="row g-3">
             <div class="col-lg-4">
               <div class="card">
@@ -244,6 +316,17 @@
           </div>
 
           <div class="form-text mt-2">Hover the ⓘ icons for additional schema details (type, allowed values, patterns).</div>
+          </div><!-- /editorView -->
+
+          <!-- Preview View (hidden by default) -->
+          <div id="previewView" style="display:none;">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <label class="form-label mb-0 fw-bold small">Preview language:</label>
+              <select id="previewLangSelect" class="form-select form-select-sm" style="width:auto;"></select>
+              <span class="text-muted small" id="previewLangCount"></span>
+            </div>
+            <div id="previewContent"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -284,6 +367,21 @@
   const btnValidate = document.getElementById('btnValidate');
   const btnSave = document.getElementById('btnSave');
   const btnDownload = document.getElementById('btnDownload');
+  const languageBarEl = document.getElementById('languageBar');
+  const langBadgesEl = document.getElementById('langBadges');
+  const langPrimaryBadgeEl = document.getElementById('langPrimaryBadge');
+  const langWarningEl = document.getElementById('langWarningIndicator');
+  const languageBarInnerEl = document.getElementById('languageBarInner');
+  const btnAddLang = document.getElementById('btnAddLang');
+  const btnRemoveLang = document.getElementById('btnRemoveLang');
+  const editorViewEl = document.getElementById('editorView');
+  const previewViewEl = document.getElementById('previewView');
+  const previewContentEl = document.getElementById('previewContent');
+  const previewLangSelectEl = document.getElementById('previewLangSelect');
+  const previewLangCountEl = document.getElementById('previewLangCount');
+  const tabEditorEl = document.getElementById('tabEditor');
+  const tabPreviewEl = document.getElementById('tabPreview');
+  const editorHintEl = document.getElementById('editorHint');
 
   const RESERVED_TOPLEVEL = new Set([
     'Technical', 'Study', 'Metadata', 'I18n', 'LimeSurvey', 'Scoring', 'Normative'
@@ -2187,6 +2285,349 @@
     renderMissingSummary();
   }
 
+  // ── Language detection & overview bar ──────────────────────────────
+  const LANG_CODE_RE = /^[a-z]{2}(-[A-Z]{2})?$/;
+
+  function detectLanguagesFromTemplate(tpl) {
+    if (!tpl || typeof tpl !== 'object') return [];
+    const langSet = new Set();
+    const items = itemKeysFromTemplate(tpl);
+    for (const key of items) {
+      const item = tpl[key];
+      if (!item || typeof item !== 'object') continue;
+      // Check Description
+      if (item.Description && typeof item.Description === 'object' && !Array.isArray(item.Description)) {
+        for (const k of Object.keys(item.Description)) {
+          if (LANG_CODE_RE.test(k)) langSet.add(k);
+        }
+      }
+      // Check Levels values
+      if (item.Levels && typeof item.Levels === 'object') {
+        for (const lv of Object.values(item.Levels)) {
+          if (lv && typeof lv === 'object' && !Array.isArray(lv)) {
+            for (const k of Object.keys(lv)) {
+              if (LANG_CODE_RE.test(k)) langSet.add(k);
+            }
+          }
+        }
+      }
+    }
+    return Array.from(langSet).sort();
+  }
+
+  function renderLanguageBar() {
+    if (!currentTemplate) {
+      languageBarEl.style.display = 'none';
+      return;
+    }
+    const langs = detectLanguagesFromTemplate(currentTemplate);
+    const primaryLang = currentTemplate.Technical?.Language || null;
+
+    // Always show when template is loaded
+    languageBarEl.style.display = '';
+
+    // Render badges
+    if (langs.length === 0) {
+      langBadgesEl.innerHTML = '<span class="badge bg-secondary">none detected</span>';
+    } else {
+      langBadgesEl.innerHTML = langs.map(l =>
+        `<span class="badge bg-info text-dark">${l}</span>`
+      ).join(' ');
+    }
+
+    // Primary language badge
+    if (primaryLang) {
+      langPrimaryBadgeEl.innerHTML = `<span class="badge bg-primary">Primary: ${primaryLang}</span>`;
+    } else {
+      langPrimaryBadgeEl.innerHTML = '<span class="badge bg-warning text-dark">No primary language set</span>';
+    }
+
+    // Warning indicator: mismatch between Technical.Language and detected keys
+    let showWarning = false;
+    if (primaryLang && langs.length > 0 && !langs.includes(primaryLang)) {
+      showWarning = true;
+      langWarningEl.title = `Technical.Language is '${primaryLang}' but content uses: ${langs.join(', ')}`;
+    }
+    langWarningEl.style.display = showWarning ? '' : 'none';
+    languageBarInnerEl.classList.toggle('lang-bar-warn', showWarning);
+  }
+
+  // Add Language: adds a language key to ALL question Descriptions and Levels
+  btnAddLang.addEventListener('click', () => {
+    if (!currentTemplate) return;
+    const newLang = prompt('Enter language code to add (e.g., en, de, fr):');
+    if (!newLang || !LANG_CODE_RE.test(newLang.trim())) {
+      if (newLang !== null) alert('Invalid language code. Use format like "en" or "de-AT".');
+      return;
+    }
+    const lang = newLang.trim();
+    const items = itemKeysFromTemplate(currentTemplate);
+    const primaryLang = currentTemplate.Technical?.Language || 'en';
+
+    for (const key of items) {
+      const item = currentTemplate[key];
+      if (!item || typeof item !== 'object') continue;
+
+      // Convert plain string Description to multilingual dict
+      if (typeof item.Description === 'string') {
+        const text = item.Description;
+        item.Description = {};
+        item.Description[primaryLang] = text;
+      }
+      // Add language key to Description if it's a dict
+      if (item.Description && typeof item.Description === 'object' && !Array.isArray(item.Description)) {
+        if (!(lang in item.Description)) {
+          item.Description[lang] = '';
+        }
+      }
+
+      // Add language key to each Levels value
+      if (item.Levels && typeof item.Levels === 'object') {
+        for (const [lk, lv] of Object.entries(item.Levels)) {
+          if (typeof lv === 'string') {
+            // Convert plain string level to multilingual dict
+            item.Levels[lk] = {};
+            item.Levels[lk][primaryLang] = lv;
+            item.Levels[lk][lang] = '';
+          } else if (lv && typeof lv === 'object' && !Array.isArray(lv)) {
+            if (!(lang in lv)) {
+              lv[lang] = '';
+            }
+          }
+        }
+      }
+    }
+
+    // Update I18n.Languages if it exists
+    if (currentTemplate.I18n && Array.isArray(currentTemplate.I18n.Languages)) {
+      if (!currentTemplate.I18n.Languages.includes(lang)) {
+        currentTemplate.I18n.Languages.push(lang);
+      }
+    }
+
+    // If no primary language set and this is the first, set it
+    if (!currentTemplate.Technical?.Language && items.length > 0) {
+      if (!currentTemplate.Technical) currentTemplate.Technical = {};
+      currentTemplate.Technical.Language = lang;
+    }
+
+    renderAll();
+  });
+
+  // Remove Language: strips a language key from ALL question Descriptions and Levels
+  btnRemoveLang.addEventListener('click', () => {
+    if (!currentTemplate) return;
+    const langs = detectLanguagesFromTemplate(currentTemplate);
+    if (langs.length === 0) {
+      alert('No languages detected in this template.');
+      return;
+    }
+    const lang = prompt(`Enter language code to remove (detected: ${langs.join(', ')}):`);
+    if (!lang || !LANG_CODE_RE.test(lang.trim())) {
+      if (lang !== null) alert('Invalid language code.');
+      return;
+    }
+    const code = lang.trim();
+    if (!langs.includes(code)) {
+      alert(`Language '${code}' not found in template content.`);
+      return;
+    }
+    if (!confirm(`Remove language '${code}' from ALL question Descriptions and Levels?`)) return;
+
+    const items = itemKeysFromTemplate(currentTemplate);
+    for (const key of items) {
+      const item = currentTemplate[key];
+      if (!item || typeof item !== 'object') continue;
+
+      // Remove from Description
+      if (item.Description && typeof item.Description === 'object' && !Array.isArray(item.Description)) {
+        delete item.Description[code];
+        // If only one key left, convert back to plain string
+        const remaining = Object.keys(item.Description);
+        if (remaining.length === 1) {
+          item.Description = item.Description[remaining[0]];
+        } else if (remaining.length === 0) {
+          item.Description = '';
+        }
+      }
+
+      // Remove from Levels
+      if (item.Levels && typeof item.Levels === 'object') {
+        for (const [lk, lv] of Object.entries(item.Levels)) {
+          if (lv && typeof lv === 'object' && !Array.isArray(lv)) {
+            delete lv[code];
+            const remaining = Object.keys(lv);
+            if (remaining.length === 1) {
+              item.Levels[lk] = lv[remaining[0]];
+            } else if (remaining.length === 0) {
+              item.Levels[lk] = '';
+            }
+          }
+        }
+      }
+    }
+
+    // Update I18n.Languages if it exists
+    if (currentTemplate.I18n && Array.isArray(currentTemplate.I18n.Languages)) {
+      currentTemplate.I18n.Languages = currentTemplate.I18n.Languages.filter(l => l !== code);
+    }
+
+    renderAll();
+  });
+
+  // ── View tab switching (Editor / Preview) ───────────────────────────
+  let currentView = 'editor';
+
+  function switchView(view) {
+    currentView = view;
+    tabEditorEl.classList.toggle('active', view === 'editor');
+    tabPreviewEl.classList.toggle('active', view === 'preview');
+    editorViewEl.style.display = view === 'editor' ? '' : 'none';
+    previewViewEl.style.display = view === 'preview' ? '' : 'none';
+    editorHintEl.style.display = view === 'editor' ? '' : 'none';
+    if (view === 'preview') renderPreview();
+  }
+
+  tabEditorEl.addEventListener('click', (e) => { e.preventDefault(); switchView('editor'); });
+  tabPreviewEl.addEventListener('click', (e) => { e.preventDefault(); switchView('preview'); });
+
+  // ── Preview rendering ───────────────────────────────────────────────
+  function renderPreview() {
+    previewContentEl.innerHTML = '';
+    if (!currentTemplate) {
+      previewContentEl.innerHTML = '<div class="text-muted">No template loaded.</div>';
+      return;
+    }
+
+    const langs = detectLanguagesFromTemplate(currentTemplate);
+    const primaryLang = currentTemplate.Technical?.Language || 'en';
+
+    // Populate language switcher
+    previewLangSelectEl.innerHTML = '';
+    const displayLangs = langs.length > 0 ? langs : [primaryLang];
+    for (const l of displayLangs) {
+      const opt = document.createElement('option');
+      opt.value = l;
+      opt.textContent = l;
+      if (l === primaryLang) opt.selected = true;
+      previewLangSelectEl.appendChild(opt);
+    }
+    previewLangCountEl.textContent = langs.length > 0 ? `${langs.length} language(s)` : 'No multilingual content';
+
+    renderPreviewQuestions(previewLangSelectEl.value);
+  }
+
+  previewLangSelectEl.addEventListener('change', () => {
+    renderPreviewQuestions(previewLangSelectEl.value);
+  });
+
+  function getLocalizedText(val, lang) {
+    if (!val) return { text: '', missing: true };
+    if (typeof val === 'string') return { text: val, missing: false };
+    if (typeof val === 'object' && !Array.isArray(val)) {
+      if (lang in val) return { text: val[lang], missing: false };
+      // Fallback to any available language
+      const keys = Object.keys(val);
+      if (keys.length > 0) return { text: val[keys[0]], missing: true };
+      return { text: '', missing: true };
+    }
+    return { text: String(val), missing: false };
+  }
+
+  function renderPreviewQuestions(lang) {
+    previewContentEl.innerHTML = '';
+    const items = itemKeysFromTemplate(currentTemplate);
+    if (!items.length) {
+      previewContentEl.innerHTML = '<div class="text-muted">No questions in this template.</div>';
+      return;
+    }
+
+    items.sort().forEach(key => {
+      const item = currentTemplate[key];
+      if (!item || typeof item !== 'object') return;
+
+      const card = document.createElement('div');
+      card.className = 'preview-question-card';
+
+      // Question code
+      const codeEl = document.createElement('div');
+      codeEl.className = 'q-code';
+      let codeText = key;
+      // Badges
+      if (item.Reversed === true) codeText += ' <span class="badge preview-badge-reversed ms-1">Reversed</span>';
+      const isMandatory = item.LimeSurvey?.mandatory === true || item.Required === true;
+      if (isMandatory) codeText += ' <span class="badge preview-badge-mandatory ms-1">Required</span>';
+      codeEl.innerHTML = codeText;
+      card.appendChild(codeEl);
+
+      // Description
+      const descEl = document.createElement('div');
+      descEl.className = 'q-desc';
+      const desc = getLocalizedText(item.Description, lang);
+      if (desc.missing && desc.text) {
+        descEl.innerHTML = `<span class="preview-missing-translation" title="No '${lang}' translation">${desc.text}</span>`;
+      } else if (desc.missing) {
+        descEl.innerHTML = `<span class="preview-missing-translation">No translation for '${lang}'</span>`;
+      } else {
+        descEl.textContent = desc.text || '(no description)';
+      }
+      card.appendChild(descEl);
+
+      // Instructions (if present)
+      if (item.Instructions) {
+        const instrEl = document.createElement('div');
+        instrEl.className = 'text-muted small mb-2';
+        const instr = getLocalizedText(item.Instructions, lang);
+        instrEl.innerHTML = `<em>${instr.text || ''}</em>`;
+        card.appendChild(instrEl);
+      }
+
+      // Response options
+      if (item.Levels && typeof item.Levels === 'object' && Object.keys(item.Levels).length > 0) {
+        const optionsDiv = document.createElement('div');
+        optionsDiv.className = 'ps-2';
+        const sortedKeys = Object.keys(item.Levels).sort((a, b) => Number(a) - Number(b));
+        for (const lk of sortedKeys) {
+          const lv = item.Levels[lk];
+          const row = document.createElement('div');
+          row.className = 'form-check mb-1';
+
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.className = 'form-check-input';
+          radio.name = `preview_${key}`;
+          radio.disabled = true;
+
+          const label = document.createElement('label');
+          label.className = 'form-check-label';
+          const lvText = getLocalizedText(lv, lang);
+          if (lvText.missing && lvText.text) {
+            label.innerHTML = `<span class="text-muted">${lk}:</span> <span class="preview-missing-translation" title="No '${lang}' translation">${lvText.text}</span>`;
+          } else if (lvText.missing) {
+            label.innerHTML = `<span class="text-muted">${lk}:</span> <span class="preview-missing-translation">No translation</span>`;
+          } else {
+            label.innerHTML = `<span class="text-muted">${lk}:</span> ${lvText.text}`;
+          }
+
+          row.appendChild(radio);
+          row.appendChild(label);
+          optionsDiv.appendChild(row);
+        }
+        card.appendChild(optionsDiv);
+      } else {
+        // Free text question
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'form-control form-control-sm';
+        input.placeholder = 'Free text response';
+        input.disabled = true;
+        card.appendChild(input);
+      }
+
+      previewContentEl.appendChild(card);
+    });
+  }
+
   function renderAll() {
     renderTopLevel();
     renderItemList();
@@ -2194,6 +2635,8 @@
     renderToolProperties();
     renderBulkEdit();
     renderJsonDiff();
+    renderLanguageBar();
+    if (currentView === 'preview') renderPreview();
   }
 
   // Store template metadata for source-aware loading
@@ -2357,13 +2800,23 @@
       template: obj
     });
 
+    // Build language warnings HTML (always shown, regardless of schema validity)
+    const langWarnings = data.language_warnings || [];
+    let langWarnHtml = '';
+    if (langWarnings.length > 0) {
+      const items = langWarnings.map(w =>
+        `<li><i class="fas fa-globe text-warning me-1"></i>${w.message}${w.details ? ` <small class="text-muted">(${w.details})</small>` : ''}</li>`
+      ).join('');
+      langWarnHtml = `<div class="alert alert-warning mt-2 mb-0"><strong>Language warnings:</strong><ul class="mb-0">${items}</ul></div>`;
+    }
+
     if (data.ok) {
       btnDownload.disabled = false;
       const successMessage = projectLibraryRoot
         ? `✅ Valid template! Ready to save to <code>${projectLibraryRoot}/${modalityEl.value}/</code>`
         : '⚠️ Valid template, but <strong>no project selected</strong>. Select a project to enable saving, or download the JSON.';
       btnSave.disabled = !projectLibraryRoot;
-      showAlert(projectLibraryRoot ? 'success' : 'warning', successMessage);
+      showAlert(projectLibraryRoot ? 'success' : 'warning', successMessage + langWarnHtml);
     } else {
       btnDownload.disabled = true;
       btnSave.disabled = true;
@@ -2374,7 +2827,7 @@
         return `<li>${link}: ${e.message}</li>`;
       }).join('');
       const extra = (data.errors || []).length > errs.length ? `<div class=\"mt-2 text-muted small\">(showing first ${errs.length} errors)</div>` : '';
-      showAlert('danger', `❌ Validation failed.<ul class=\"mb-0\">${list}</ul>${extra}`);
+      showAlert('danger', `❌ Validation failed.<ul class=\"mb-0\">${list}</ul>${extra}` + langWarnHtml);
       // Wire clicks to focus fields
       alertAreaEl.querySelectorAll('.error-link').forEach(a => {
         a.addEventListener('click', (ev) => { ev.preventDefault(); focusField(a.dataset.path); });
@@ -2641,9 +3094,12 @@
         return;
       }
 
-      // Prefer project library, then global library
+      // When a project is active, leave path empty so refreshTemplateList()
+      // uses the merged API (shows both global + project templates with
+      // source badges).  Only fall back to the global path when there is
+      // no project at all.
       if (data.project_library_path) {
-        libraryPathEl.value = data.project_library_path;
+        // path stays empty → merged API will be used
         libraryInfoEl.innerHTML = `<small class="text-success"><i class="fas fa-folder me-1"></i>Project: ${data.project_name || 'Current project'}</small>`;
       } else if (data.global_library_path) {
         libraryPathEl.value = data.global_library_path;
