@@ -318,6 +318,9 @@ def api_survey_customizer_load():
         technical = template_data.get("Technical", {})
         matrix_grouping_disabled = technical.get("MatrixGrouping") is False
 
+        # Detect actual languages in this template
+        template_languages = _detect_languages_from_template(template_data)
+
         # Extract questions
         if "Questions" in template_data and isinstance(
             template_data["Questions"], dict
@@ -458,6 +461,7 @@ def api_survey_customizer_load():
                     "sourceFile": file_path,
                     "runNumber": current_run,
                     "questions": questions,
+                    "detected_languages": template_languages,
                 }
             )
 
@@ -1602,6 +1606,13 @@ def _detect_languages_from_template(data):
             if isinstance(key, str) and (len(key) == 2 or (len(key) == 5 and key[2] == "-")):
                 langs.add(key)
 
+    # 2b. Technical.Language field
+    tech = data.get("Technical", {})
+    if isinstance(tech, dict):
+        tech_lang = tech.get("Language", "")
+        if isinstance(tech_lang, str) and len(tech_lang) >= 2:
+            langs.add(tech_lang[:2].lower())
+
     # 3. Inline lang-maps on question fields
     questions_section = data.get("Questions", {})
     items = questions_section if isinstance(questions_section, dict) else {}
@@ -1629,9 +1640,69 @@ def _detect_languages_from_template(data):
                 if isinstance(lv, dict):
                     langs.update(k for k in lv if isinstance(k, str) and len(k) <= 5)
 
-    # If nothing detected, assume English
+    # 4. Validate detected languages against actual content
+    tech_lang_code = ""
+    tech_sec = data.get("Technical", {})
+    if isinstance(tech_sec, dict):
+        tl = tech_sec.get("Language", "")
+        if isinstance(tl, str) and len(tl) >= 2:
+            tech_lang_code = tl[:2].lower()
+
+    if len(langs) > 1:
+        texts_by_lang = {l: [] for l in langs}
+        for _q_code, q_data in items.items():
+            if not isinstance(q_data, dict):
+                continue
+            desc = q_data.get("Description")
+            if isinstance(desc, dict):
+                for l in langs:
+                    texts_by_lang[l].append(desc.get(l, ""))
+
+        # 4a. Remove fake translations (all content identical to reference).
+        # Prefer Technical.Language as reference, then "en", then first sorted.
+        ref_lang = None
+        if tech_lang_code in langs and any(t for t in texts_by_lang.get(tech_lang_code, [])):
+            ref_lang = tech_lang_code
+        elif "en" in langs and any(t for t in texts_by_lang.get("en", [])):
+            ref_lang = "en"
+        else:
+            for l in sorted(langs):
+                if any(t for t in texts_by_lang.get(l, [])):
+                    ref_lang = l
+                    break
+
+        if ref_lang:
+            for l in list(langs):
+                if l == ref_lang:
+                    continue
+                l_texts = texts_by_lang.get(l, [])
+                ref_texts = texts_by_lang.get(ref_lang, [])
+                if l_texts and l_texts == ref_texts:
+                    langs.discard(l)
+
+        # 4b. Remove mislabeled keys: when Technical.Language is set and another
+        # language only appears in questions where the primary is absent
+        # (complementary, non-overlapping), it's likely a key mislabel.
+        if tech_lang_code and tech_lang_code in langs and len(langs) > 1:
+            for l in list(langs):
+                if l == tech_lang_code:
+                    continue
+                overlap = 0
+                for _q_code, q_data in items.items():
+                    if not isinstance(q_data, dict):
+                        continue
+                    desc = q_data.get("Description")
+                    if isinstance(desc, dict):
+                        if desc.get(tech_lang_code, "") and desc.get(l, ""):
+                            overlap += 1
+                if overlap == 0:
+                    langs.discard(l)
+
+    # If nothing detected, fall back to Technical.Language or assume English
     if not langs:
-        langs.add("en")
+        tech = data.get("Technical", {})
+        tech_lang = tech.get("Language", "") if isinstance(tech, dict) else ""
+        langs.add(tech_lang[:2].lower() if isinstance(tech_lang, str) and len(tech_lang) >= 2 else "en")
 
     return sorted(langs)
 

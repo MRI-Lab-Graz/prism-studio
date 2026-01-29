@@ -688,6 +688,25 @@ document.addEventListener('DOMContentLoaded', function() {
             customizationState.groups = result.groups;
             originalState = JSON.parse(JSON.stringify(customizationState));
 
+            // Recompute available languages from loaded groups' actual content
+            const groupLangs = new Set();
+            (result.groups || []).forEach(g => {
+                (g.detected_languages || []).forEach(l => groupLangs.add(l));
+            });
+            if (groupLangs.size > 0) {
+                customizationState.survey.languages = Array.from(groupLangs).sort();
+                // Ensure base language is valid
+                if (!groupLangs.has(customizationState.survey.base_language)) {
+                    customizationState.survey.base_language = customizationState.survey.languages[0];
+                }
+                if (!groupLangs.has(customizationState.survey.language)) {
+                    customizationState.survey.language = customizationState.survey.languages[0];
+                }
+                previewLanguage = customizationState.survey.base_language || customizationState.survey.languages[0];
+                updateLanguageTags();
+                updatePreviewLangSwitcher();
+            }
+
             renderGroups();
             renderQuestions();
             showCustomizer();
