@@ -876,7 +876,23 @@ def api_template_editor_validate():
     try:
         schema = _load_prism_schema(modality=modality, schema_version=schema_version)
         errors = _validate_against_schema(instance=template, schema=schema)
-        return jsonify({"ok": len(errors) == 0, "errors": errors}), 200
+
+        # Language consistency warnings (non-blocking)
+        lang_warnings = []
+        try:
+            from src.template_validator import TemplateValidator
+
+            lang_warnings = TemplateValidator.validate_language_consistency_from_data(
+                template, file_name="template"
+            )
+        except Exception:
+            pass  # Don't let language checks break schema validation
+
+        return jsonify({
+            "ok": len(errors) == 0,
+            "errors": errors,
+            "language_warnings": lang_warnings,
+        }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

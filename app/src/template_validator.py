@@ -563,6 +563,196 @@ class TemplateValidator:
 
         return errors
 
+    def _validate_language_consistency(
+        self, file_name: str, data: Dict[str, Any]
+    ) -> List[TemplateValidationError]:
+        """
+        Validate language consistency across template items.
+
+        Checks (all warnings):
+        1. Fake translations: identical content across languages
+        2. Inconsistent language keys: some items missing languages others have
+        3. Mislabeled keys: Technical.Language doesn't match description keys
+        4. Complementary keys: disjoint language sets across items
+        """
+        import re
+
+        errors = []
+        lang_re = re.compile(r"^[a-z]{2}(-[A-Z]{2})?$")
+        items = self._extract_items(data)
+        if not items:
+            return errors
+
+        technical_lang = None
+        if isinstance(data.get("Technical"), dict):
+            technical_lang = data["Technical"].get("Language")
+
+        # Collect per-item language keys from Description dicts
+        item_desc_langs: Dict[str, set] = {}
+        # Collect per-language description texts for fake-translation check
+        lang_desc_texts: Dict[str, List[str]] = {}
+
+        for item_id, item_def in items.items():
+            if not isinstance(item_def, dict):
+                continue
+            desc = item_def.get("Description")
+            if isinstance(desc, dict):
+                desc_langs = {k for k in desc if lang_re.match(k)}
+                item_desc_langs[item_id] = desc_langs
+                for lang_code in desc_langs:
+                    text = str(desc.get(lang_code, "")).strip()
+                    if text:
+                        lang_desc_texts.setdefault(lang_code, []).append(text)
+
+        if not item_desc_langs:
+            return errors
+
+        # Union of all detected language keys
+        all_langs = set()
+        for langs in item_desc_langs.values():
+            all_langs.update(langs)
+
+        if len(all_langs) < 2:
+            # Single-language templates only need Technical.Language check
+            if technical_lang and all_langs and technical_lang not in all_langs:
+                actual = ", ".join(sorted(all_langs))
+                errors.append(
+                    TemplateValidationError(
+                        file=file_name,
+                        error_type="i18n_validation",
+                        message=(
+                            f"Technical.Language is '{technical_lang}' but "
+                            f"question descriptions use '{actual}' keys"
+                        ),
+                        severity="warning",
+                    )
+                )
+            return errors
+
+        # Check 1: Fake translations (identical content between two languages)
+        lang_list = sorted(all_langs)
+        for i in range(len(lang_list)):
+            for j in range(i + 1, len(lang_list)):
+                la, lb = lang_list[i], lang_list[j]
+                identical_count = 0
+                compared = 0
+                for item_id, item_def in items.items():
+                    if not isinstance(item_def, dict):
+                        continue
+                    desc = item_def.get("Description")
+                    if not isinstance(desc, dict):
+                        continue
+                    text_a = str(desc.get(la, "")).strip()
+                    text_b = str(desc.get(lb, "")).strip()
+                    if text_a and text_b:
+                        compared += 1
+                        if text_a == text_b:
+                            identical_count += 1
+
+                if compared >= 3 and identical_count == compared:
+                    errors.append(
+                        TemplateValidationError(
+                            file=file_name,
+                            error_type="i18n_validation",
+                            message=(
+                                f"Language '{lb}' appears to have identical "
+                                f"content to '{la}' across all {compared} "
+                                f"questions (possible copy, not a real translation)"
+                            ),
+                            severity="warning",
+                        )
+                    )
+
+        # Check 2: Inconsistent language keys across items
+        for lang_code in sorted(all_langs):
+            items_with = [k for k, ls in item_desc_langs.items() if lang_code in ls]
+            items_without = [
+                k for k, ls in item_desc_langs.items() if lang_code not in ls
+            ]
+            if items_without and items_with:
+                errors.append(
+                    TemplateValidationError(
+                        file=file_name,
+                        error_type="i18n_validation",
+                        message=(
+                            f"Language '{lang_code}' is missing from "
+                            f"{len(items_without)} question(s) that have "
+                            f"multilingual descriptions"
+                        ),
+                        severity="warning",
+                        details=f"Missing in: {', '.join(sorted(items_without)[:5])}"
+                        + ("..." if len(items_without) > 5 else ""),
+                    )
+                )
+
+        # Check 3: Mislabeled keys — Technical.Language vs detected keys
+        if technical_lang and technical_lang not in all_langs:
+            actual = ", ".join(sorted(all_langs))
+            errors.append(
+                TemplateValidationError(
+                    file=file_name,
+                    error_type="i18n_validation",
+                    message=(
+                        f"Technical.Language is '{technical_lang}' but "
+                        f"question descriptions use '{actual}' keys"
+                    ),
+                    severity="warning",
+                )
+            )
+
+        # Check 4: Complementary keys — disjoint language sets across items
+        # e.g., some questions use only "en", others only "de"
+        per_item_sets = list(item_desc_langs.values())
+        if len(per_item_sets) >= 2:
+            union = set()
+            for s in per_item_sets:
+                union.update(s)
+            # Find pairs of languages that never co-occur in any single item
+            for i_idx in range(len(lang_list)):
+                for j_idx in range(i_idx + 1, len(lang_list)):
+                    la, lb = lang_list[i_idx], lang_list[j_idx]
+                    co_occur = any(
+                        la in s and lb in s for s in per_item_sets
+                    )
+                    la_only = any(la in s and lb not in s for s in per_item_sets)
+                    lb_only = any(lb in s and la not in s for s in per_item_sets)
+                    if not co_occur and la_only and lb_only:
+                        errors.append(
+                            TemplateValidationError(
+                                file=file_name,
+                                error_type="i18n_validation",
+                                message=(
+                                    f"Language keys '{la}' and '{lb}' appear "
+                                    f"in different questions with no overlap "
+                                    f"— possible mislabeling"
+                                ),
+                                severity="warning",
+                            )
+                        )
+
+        return errors
+
+    @staticmethod
+    def validate_language_consistency_from_data(
+        data: Dict[str, Any], file_name: str = "template"
+    ) -> List[Dict[str, Any]]:
+        """
+        Validate language consistency from template data (for API use).
+
+        Returns list of warning dicts with keys: path, message, severity.
+        """
+        validator = TemplateValidator.__new__(TemplateValidator)
+        raw_errors = validator._validate_language_consistency(file_name, data)
+        return [
+            {
+                "path": e.item or "(template)",
+                "message": e.message,
+                "severity": e.severity,
+                "details": e.details,
+            }
+            for e in raw_errors
+        ]
+
     @staticmethod
     def _is_valid_language_code(code: str) -> bool:
         """Check if a string is a valid language code (e.g., 'en', 'de', 'en-US')."""
