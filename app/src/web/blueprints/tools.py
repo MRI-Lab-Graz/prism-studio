@@ -279,6 +279,7 @@ def api_survey_customizer_load():
 
     data = request.get_json(silent=True) or {}
     files = data.get("files", [])
+    display_language = data.get("language", "en")
 
     if not files:
         return jsonify({"error": "No files provided"}), 400
@@ -307,8 +308,10 @@ def api_survey_customizer_load():
             or Path(file_path).stem
         )
         if isinstance(base_group_name, dict):
-            base_group_name = base_group_name.get("en") or next(
-                iter(base_group_name.values()), Path(file_path).stem
+            base_group_name = (
+                base_group_name.get(display_language)
+                or base_group_name.get("en")
+                or next(iter(base_group_name.values()), Path(file_path).stem)
             )
 
         # Check if template disables matrix grouping (e.g., demographics templates)
@@ -362,8 +365,10 @@ def api_survey_customizer_load():
 
                 description = q_data.get("Description", "")
                 if isinstance(description, dict):
-                    description = description.get("en") or next(
-                        iter(description.values()), ""
+                    description = (
+                        description.get(display_language)
+                        or description.get("en")
+                        or next(iter(description.values()), "")
                     )
 
                 # Extract tool-specific properties

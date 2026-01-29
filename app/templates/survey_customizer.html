@@ -637,7 +637,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('/api/survey-customizer/load', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ files: selectedFiles })
+                body: JSON.stringify({ files: selectedFiles, language: customizationState.survey.language || 'en' })
             });
 
             if (!response.ok) {
