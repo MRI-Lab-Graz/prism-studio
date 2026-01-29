@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Rumination Response Scale (RRS)",
-      "de": "Rumination Response Scale (RRS)"
+      "en": "Rumination Response Scale (RRS)"
     },
     "Abbreviation": "RRS",
     "Authors": [
@@ -25,551 +24,441 @@
   },
   "RRS01": {
     "Description": {
-      "en": "think about how alone you feel",
-      "de": "think about how alone you feel"
+      "en": "think about how alone you feel"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS02": {
     "Description": {
-      "en": "think âI wonât be able to do my job if I donât snap out of thisâ",
-      "de": "think âI wonât be able to do my job if I donât snap out of thisâ"
+      "en": "think âI wonât be able to do my job if I donât snap out of thisâ"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS03": {
     "Description": {
-      "en": "think about your feelings of fatigue and achiness",
-      "de": "think about your feelings of fatigue and achiness"
+      "en": "think about your feelings of fatigue and achiness"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS04": {
     "Description": {
-      "en": "think about how hard it is to concentrate",
-      "de": "think about how hard it is to concentrate"
+      "en": "think about how hard it is to concentrate"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS05": {
     "Description": {
-      "en": "think âWhat am I doing to deserve this?â",
-      "de": "think âWhat am I doing to deserve this?â"
+      "en": "think âWhat am I doing to deserve this?â"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS06": {
     "Description": {
-      "en": "think about how passive and unmotivated you feel.",
-      "de": "think about how passive and unmotivated you feel."
+      "en": "think about how passive and unmotivated you feel."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS07": {
     "Description": {
-      "en": "analyze recent events to try to understand why you are depressed",
-      "de": "analyze recent events to try to understand why you are depressed"
+      "en": "analyze recent events to try to understand why you are depressed"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS08": {
     "Description": {
-      "en": "think about how you donât seem to feel anything anymore",
-      "de": "think about how you donât seem to feel anything anymore"
+      "en": "think about how you donât seem to feel anything anymore"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS09": {
     "Description": {
-      "en": "think âWhy canât I get going?â",
-      "de": "think âWhy canât I get going?â"
+      "en": "think âWhy canât I get going?â"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS10": {
     "Description": {
-      "en": "think âWhy do I always react this way?â",
-      "de": "think âWhy do I always react this way?â"
+      "en": "think âWhy do I always react this way?â"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS11": {
     "Description": {
-      "en": "go away by yourself and think about why you feel this way",
-      "de": "go away by yourself and think about why you feel this way"
+      "en": "go away by yourself and think about why you feel this way"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS12": {
     "Description": {
-      "en": "write down what you are thinking about and analyze it",
-      "de": "write down what you are thinking about and analyze it"
+      "en": "write down what you are thinking about and analyze it"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS13": {
     "Description": {
-      "en": "think about a recent situation, wishing it had gone better",
-      "de": "think about a recent situation, wishing it had gone better"
+      "en": "think about a recent situation, wishing it had gone better"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS14": {
     "Description": {
-      "en": "think âI wonât be able to concentrate if I keep feeling this way.â",
-      "de": "think âI wonât be able to concentrate if I keep feeling this way.â"
+      "en": "think âI wonât be able to concentrate if I keep feeling this way.â"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS15": {
     "Description": {
-      "en": "think âWhy do I have problems other people donât have?â",
-      "de": "think âWhy do I have problems other people donât have?â"
+      "en": "think âWhy do I have problems other people donât have?â"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS16": {
     "Description": {
-      "en": "think âWhy canât I handle things better?â",
-      "de": "think âWhy canât I handle things better?â"
+      "en": "think âWhy canât I handle things better?â"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS17": {
     "Description": {
-      "en": "think about how sad you feel.",
-      "de": "think about how sad you feel."
+      "en": "think about how sad you feel."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS18": {
     "Description": {
-      "en": "think about all your shortcomings, failings, faults, mistakes",
-      "de": "think about all your shortcomings, failings, faults, mistakes"
+      "en": "think about all your shortcomings, failings, faults, mistakes"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS19": {
     "Description": {
-      "en": "think about how you donât feel up to doing anything",
-      "de": "think about how you donât feel up to doing anything"
+      "en": "think about how you donât feel up to doing anything"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS20": {
     "Description": {
-      "en": "analyze your personality to try to understand why you are depressed",
-      "de": "analyze your personality to try to understand why you are depressed"
+      "en": "analyze your personality to try to understand why you are depressed"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS21": {
     "Description": {
-      "en": "go someplace alone to think about your feelings",
-      "de": "go someplace alone to think about your feelings"
+      "en": "go someplace alone to think about your feelings"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   },
   "RRS22": {
     "Description": {
-      "en": "think about how angry you are with yourself",
-      "de": "think about how angry you are with yourself"
+      "en": "think about how angry you are with yourself"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "almost never",
-        "de": "almost never"
+        "en": "almost never"
       },
       "1": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "2": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "3": {
-        "en": "almost always",
-        "de": "almost always"
+        "en": "almost always"
       }
     }
   }

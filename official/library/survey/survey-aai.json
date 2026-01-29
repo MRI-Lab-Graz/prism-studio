@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Appearance Anxiety Inventory (AAI)",
-      "de": "Appearance Anxiety Inventory (AAI)"
+      "en": "Appearance Anxiety Inventory (AAI)"
     },
     "Abbreviation": "AAI",
     "Authors": [
@@ -35,291 +34,231 @@
   },
   "AAI01": {
     "Description": {
-      "en": "I check my appearance (e.g. in mirrors, by touching with my fingers or by taking photos of myself)",
-      "de": "I check my appearance (e.g. in mirrors, by touching with my fingers or by taking photos of myself)"
+      "en": "I check my appearance (e.g. in mirrors, by touching with my fingers or by taking photos of myself)"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} Rarely",
-        "de": "{score=1} Rarely"
+        "en": "{score=1} Rarely"
       },
       "2": {
-        "en": "{score=2} Sometimes",
-        "de": "{score=2} Sometimes"
+        "en": "{score=2} Sometimes"
       },
       "3": {
-        "en": "{score=3} Often",
-        "de": "{score=3} Often"
+        "en": "{score=3} Often"
       },
       "4": {
-        "en": "{score=4} All the time",
-        "de": "{score=4} All the time"
+        "en": "{score=4} All the time"
       }
     }
   },
   "AAI02": {
     "Description": {
-      "en": "I compare aspects of my appearance to others",
-      "de": "I compare aspects of my appearance to others"
+      "en": "I compare aspects of my appearance to others"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} Rarely",
-        "de": "{score=1} Rarely"
+        "en": "{score=1} Rarely"
       },
       "2": {
-        "en": "{score=2} Sometimes",
-        "de": "{score=2} Sometimes"
+        "en": "{score=2} Sometimes"
       },
       "3": {
-        "en": "{score=3} Often",
-        "de": "{score=3} Often"
+        "en": "{score=3} Often"
       },
       "4": {
-        "en": "{score=4} All the time",
-        "de": "{score=4} All the time"
+        "en": "{score=4} All the time"
       }
     }
   },
   "AAI03": {
     "Description": {
-      "en": "I avoid situations or people because of my appearance",
-      "de": "I avoid situations or people because of my appearance"
+      "en": "I avoid situations or people because of my appearance"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} Rarely",
-        "de": "{score=1} Rarely"
+        "en": "{score=1} Rarely"
       },
       "2": {
-        "en": "{score=2} Sometimes",
-        "de": "{score=2} Sometimes"
+        "en": "{score=2} Sometimes"
       },
       "3": {
-        "en": "{score=3} Often",
-        "de": "{score=3} Often"
+        "en": "{score=3} Often"
       },
       "4": {
-        "en": "{score=4} All the time",
-        "de": "{score=4} All the time"
+        "en": "{score=4} All the time"
       }
     }
   },
   "AAI04": {
     "Description": {
-      "en": "I think about how to camouflage or alter my appearance",
-      "de": "I think about how to camouflage or alter my appearance"
+      "en": "I think about how to camouflage or alter my appearance"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} Rarely",
-        "de": "{score=1} Rarely"
+        "en": "{score=1} Rarely"
       },
       "2": {
-        "en": "{score=2} Sometimes",
-        "de": "{score=2} Sometimes"
+        "en": "{score=2} Sometimes"
       },
       "3": {
-        "en": "{score=3} Often",
-        "de": "{score=3} Often"
+        "en": "{score=3} Often"
       },
       "4": {
-        "en": "{score=4} All the time",
-        "de": "{score=4} All the time"
+        "en": "{score=4} All the time"
       }
     }
   },
   "AAI05": {
     "Description": {
-      "en": "I avoid reflective surfaces, photos or videos of myself",
-      "de": "I avoid reflective surfaces, photos or videos of myself"
+      "en": "I avoid reflective surfaces, photos or videos of myself"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} Rarely",
-        "de": "{score=1} Rarely"
+        "en": "{score=1} Rarely"
       },
       "2": {
-        "en": "{score=2} Sometimes",
-        "de": "{score=2} Sometimes"
+        "en": "{score=2} Sometimes"
       },
       "3": {
-        "en": "{score=3} Often",
-        "de": "{score=3} Often"
+        "en": "{score=3} Often"
       },
       "4": {
-        "en": "{score=4} All the time",
-        "de": "{score=4} All the time"
+        "en": "{score=4} All the time"
       }
     }
   },
   "AAI06": {
     "Description": {
-      "en": "I try to camouflage or alter aspects of my appearance",
-      "de": "I try to camouflage or alter aspects of my appearance"
+      "en": "I try to camouflage or alter aspects of my appearance"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} Rarely",
-        "de": "{score=1} Rarely"
+        "en": "{score=1} Rarely"
       },
       "2": {
-        "en": "{score=2} Sometimes",
-        "de": "{score=2} Sometimes"
+        "en": "{score=2} Sometimes"
       },
       "3": {
-        "en": "{score=3} Often",
-        "de": "{score=3} Often"
+        "en": "{score=3} Often"
       },
       "4": {
-        "en": "{score=4} All the time",
-        "de": "{score=4} All the time"
+        "en": "{score=4} All the time"
       }
     }
   },
   "AAI07": {
     "Description": {
-      "en": "I brood about past events or reasons to explain why I look the way I do",
-      "de": "I brood about past events or reasons to explain why I look the way I do"
+      "en": "I brood about past events or reasons to explain why I look the way I do"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} Rarely",
-        "de": "{score=1} Rarely"
+        "en": "{score=1} Rarely"
       },
       "2": {
-        "en": "{score=2} Sometimes",
-        "de": "{score=2} Sometimes"
+        "en": "{score=2} Sometimes"
       },
       "3": {
-        "en": "{score=3} Often",
-        "de": "{score=3} Often"
+        "en": "{score=3} Often"
       },
       "4": {
-        "en": "{score=4} All the time",
-        "de": "{score=4} All the time"
+        "en": "{score=4} All the time"
       }
     }
   },
   "AAI08": {
     "Description": {
-      "en": "I am focused on how I feel I look rather than on my surroundings",
-      "de": "I am focused on how I feel I look rather than on my surroundings"
+      "en": "I am focused on how I feel I look rather than on my surroundings"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} Rarely",
-        "de": "{score=1} Rarely"
+        "en": "{score=1} Rarely"
       },
       "2": {
-        "en": "{score=2} Sometimes",
-        "de": "{score=2} Sometimes"
+        "en": "{score=2} Sometimes"
       },
       "3": {
-        "en": "{score=3} Often",
-        "de": "{score=3} Often"
+        "en": "{score=3} Often"
       },
       "4": {
-        "en": "{score=4} All the time",
-        "de": "{score=4} All the time"
+        "en": "{score=4} All the time"
       }
     }
   },
   "AAI09": {
     "Description": {
-      "en": "I discuss my appearance with others or question them about it",
-      "de": "I discuss my appearance with others or question them about it"
+      "en": "I discuss my appearance with others or question them about it"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} Rarely",
-        "de": "{score=1} Rarely"
+        "en": "{score=1} Rarely"
       },
       "2": {
-        "en": "{score=2} Sometimes",
-        "de": "{score=2} Sometimes"
+        "en": "{score=2} Sometimes"
       },
       "3": {
-        "en": "{score=3} Often",
-        "de": "{score=3} Often"
+        "en": "{score=3} Often"
       },
       "4": {
-        "en": "{score=4} All the time",
-        "de": "{score=4} All the time"
+        "en": "{score=4} All the time"
       }
     }
   },
   "AAI10": {
     "Description": {
-      "en": "I try to prevent people from seeing aspects of my appearance within particular situations (e.g. by changing my posture, avoiding bright lights)",
-      "de": "I try to prevent people from seeing aspects of my appearance within particular situations (e.g. by changing my posture, avoiding bright lights)"
+      "en": "I try to prevent people from seeing aspects of my appearance within particular situations (e.g. by changing my posture, avoiding bright lights)"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} Rarely",
-        "de": "{score=1} Rarely"
+        "en": "{score=1} Rarely"
       },
       "2": {
-        "en": "{score=2} Sometimes",
-        "de": "{score=2} Sometimes"
+        "en": "{score=2} Sometimes"
       },
       "3": {
-        "en": "{score=3} Often",
-        "de": "{score=3} Often"
+        "en": "{score=3} Often"
       },
       "4": {
-        "en": "{score=4} All the time",
-        "de": "{score=4} All the time"
+        "en": "{score=4} All the time"
       }
     }
   }

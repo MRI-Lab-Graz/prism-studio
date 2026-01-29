@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Short Grit Scale (Grit-S)",
-      "de": "Short Grit Scale (Grit-S)"
+      "en": "Short Grit Scale (Grit-S)"
     },
     "Abbreviation": "GRIT-S",
     "Authors": [
@@ -31,117 +30,93 @@
   },
   "GRIT-S01": {
     "Description": {
-      "en": "New ideas and projects sometimes distract me from previous ones.",
-      "de": "New ideas and projects sometimes distract me from previous ones."
+      "en": "New ideas and projects sometimes distract me from previous ones."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very much like me",
-        "de": "Very much like me"
+        "en": "Very much like me"
       },
       "1": {
-        "en": "Mostly like me",
-        "de": "Mostly like me"
+        "en": "Mostly like me"
       },
       "2": {
-        "en": "Somewhat like me",
-        "de": "Somewhat like me"
+        "en": "Somewhat like me"
       },
       "3": {
-        "en": "Not much like me",
-        "de": "Not much like me"
+        "en": "Not much like me"
       },
       "4": {
-        "en": "Not like me at all",
-        "de": "Not like me at all"
+        "en": "Not like me at all"
       }
     }
   },
   "GRIT-S02": {
     "Description": {
-      "en": "I have been obsessed with a certain idea or project for a short time but later lost interest.",
-      "de": "I have been obsessed with a certain idea or project for a short time but later lost interest."
+      "en": "I have been obsessed with a certain idea or project for a short time but later lost interest."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very much like me",
-        "de": "Very much like me"
+        "en": "Very much like me"
       },
       "1": {
-        "en": "Mostly like me",
-        "de": "Mostly like me"
+        "en": "Mostly like me"
       },
       "2": {
-        "en": "Somewhat like me",
-        "de": "Somewhat like me"
+        "en": "Somewhat like me"
       },
       "3": {
-        "en": "Not much like me",
-        "de": "Not much like me"
+        "en": "Not much like me"
       },
       "4": {
-        "en": "Not like me at all",
-        "de": "Not like me at all"
+        "en": "Not like me at all"
       }
     }
   },
   "GRIT-S03": {
     "Description": {
-      "en": "I often set a goal but later choose to pursue a different one.",
-      "de": "I often set a goal but later choose to pursue a different one."
+      "en": "I often set a goal but later choose to pursue a different one."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very much like me",
-        "de": "Very much like me"
+        "en": "Very much like me"
       },
       "1": {
-        "en": "Mostly like me",
-        "de": "Mostly like me"
+        "en": "Mostly like me"
       },
       "2": {
-        "en": "Somewhat like me",
-        "de": "Somewhat like me"
+        "en": "Somewhat like me"
       },
       "3": {
-        "en": "Not much like me",
-        "de": "Not much like me"
+        "en": "Not much like me"
       },
       "4": {
-        "en": "Not like me at all",
-        "de": "Not like me at all"
+        "en": "Not like me at all"
       }
     }
   },
   "GRIT-S04": {
     "Description": {
-      "en": "I have difficulty maintaining my focus on projects that take more than a few months to complete.",
-      "de": "I have difficulty maintaining my focus on projects that take more than a few months to complete."
+      "en": "I have difficulty maintaining my focus on projects that take more than a few months to complete."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very much like me",
-        "de": "Very much like me"
+        "en": "Very much like me"
       },
       "1": {
-        "en": "Mostly like me",
-        "de": "Mostly like me"
+        "en": "Mostly like me"
       },
       "2": {
-        "en": "Somewhat like me",
-        "de": "Somewhat like me"
+        "en": "Somewhat like me"
       },
       "3": {
-        "en": "Not much like me",
-        "de": "Not much like me"
+        "en": "Not much like me"
       },
       "4": {
-        "en": "Not like me at all",
-        "de": "Not like me at all"
+        "en": "Not like me at all"
       }
     }
   }

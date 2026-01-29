@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Child Adolescent Bullying Scale (CABS)",
-      "de": "Child Adolescent Bullying Scale (CABS)"
+      "en": "Child Adolescent Bullying Scale (CABS)"
     },
     "Abbreviation": "CABS",
     "Authors": [
@@ -31,1161 +30,921 @@
   },
   "CABS01": {
     "Description": {
-      "en": "Kids try to make me feel bad on purpose",
-      "de": "Kids try to make me feel bad on purpose"
+      "en": "Kids try to make me feel bad on purpose"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS02": {
     "Description": {
-      "en": "One or more kids at my school are mean to me",
-      "de": "One or more kids at my school are mean to me"
+      "en": "One or more kids at my school are mean to me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS03": {
     "Description": {
-      "en": "Kids at my school make fun of me to make me feel bad",
-      "de": "Kids at my school make fun of me to make me feel bad"
+      "en": "Kids at my school make fun of me to make me feel bad"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS04": {
     "Description": {
-      "en": "Kids at my school try to turn others against me",
-      "de": "Kids at my school try to turn others against me"
+      "en": "Kids at my school try to turn others against me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS05": {
     "Description": {
-      "en": "Kids have tried to get me in trouble",
-      "de": "Kids have tried to get me in trouble"
+      "en": "Kids have tried to get me in trouble"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS06": {
     "Description": {
-      "en": "I get bullied at school",
-      "de": "I get bullied at school"
+      "en": "I get bullied at school"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS07": {
     "Description": {
-      "en": "I have had my stuff taken or damaged on purpose by another student",
-      "de": "I have had my stuff taken or damaged on purpose by another student"
+      "en": "I have had my stuff taken or damaged on purpose by another student"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS08": {
     "Description": {
-      "en": "I have been hurt by another student on purpose",
-      "de": "I have been hurt by another student on purpose"
+      "en": "I have been hurt by another student on purpose"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS09": {
     "Description": {
-      "en": "I have been threatened by another student in a mean or hurtful way",
-      "de": "I have been threatened by another student in a mean or hurtful way"
+      "en": "I have been threatened by another student in a mean or hurtful way"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS10": {
     "Description": {
-      "en": "There are times that I do not want to go to school because I am being bullied",
-      "de": "There are times that I do not want to go to school because I am being bullied"
+      "en": "There are times that I do not want to go to school because I am being bullied"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS11": {
     "Description": {
-      "en": "I wish I could go to another school because I am being bullied",
-      "de": "I wish I could go to another school because I am being bullied"
+      "en": "I wish I could go to another school because I am being bullied"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS12": {
     "Description": {
-      "en": "I have pretended to be sick so I could stay home from school because I am being bullied",
-      "de": "I have pretended to be sick so I could stay home from school because I am being bullied"
+      "en": "I have pretended to be sick so I could stay home from school because I am being bullied"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS13": {
     "Description": {
-      "en": "Kids at my school ignore me on purpose",
-      "de": "Kids at my school ignore me on purpose"
+      "en": "Kids at my school ignore me on purpose"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS14": {
     "Description": {
-      "en": "Kids post or text mean or hurtful messages, comments, or photos about me online",
-      "de": "Kids post or text mean or hurtful messages, comments, or photos about me online"
+      "en": "Kids post or text mean or hurtful messages, comments, or photos about me online"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS15": {
     "Description": {
-      "en": "Kids at my school joke or tease me in a way that bothers me",
-      "de": "Kids at my school joke or tease me in a way that bothers me"
+      "en": "Kids at my school joke or tease me in a way that bothers me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS16": {
     "Description": {
-      "en": "I am bothered when kids at my school tease me",
-      "de": "I am bothered when kids at my school tease me"
+      "en": "I am bothered when kids at my school tease me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS17": {
     "Description": {
-      "en": "I worry about bullying so much that I cannot pay attention at school",
-      "de": "I worry about bullying so much that I cannot pay attention at school"
+      "en": "I worry about bullying so much that I cannot pay attention at school"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS18": {
     "Description": {
-      "en": "Kids at my school talk behind my back, share my secrets, or spread rumors about me",
-      "de": "Kids at my school talk behind my back, share my secrets, or spread rumors about me"
+      "en": "Kids at my school talk behind my back, share my secrets, or spread rumors about me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS19": {
     "Description": {
-      "en": "Kids leave me out or ignore me because I am different",
-      "de": "Kids leave me out or ignore me because I am different"
+      "en": "Kids leave me out or ignore me because I am different"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS20": {
     "Description": {
-      "en": "I have had upsetting memories of being bullied",
-      "de": "I have had upsetting memories of being bullied"
+      "en": "I have had upsetting memories of being bullied"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS21": {
     "Description": {
-      "en": "Kids at my school make fun of me to make me feel bad",
-      "de": "Kids at my school make fun of me to make me feel bad"
+      "en": "Kids at my school make fun of me to make me feel bad"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS22": {
     "Description": {
-      "en": "I get bullied at school",
-      "de": "I get bullied at school"
+      "en": "I get bullied at school"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS23": {
     "Description": {
-      "en": "There are times that I do not want to go to school because I am being bullied",
-      "de": "There are times that I do not want to go to school because I am being bullied"
+      "en": "There are times that I do not want to go to school because I am being bullied"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS24": {
     "Description": {
-      "en": "One or more kids at my school are mean to me",
-      "de": "One or more kids at my school are mean to me"
+      "en": "One or more kids at my school are mean to me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS25": {
     "Description": {
-      "en": "Kids at my school try to turn others against me",
-      "de": "Kids at my school try to turn others against me"
+      "en": "Kids at my school try to turn others against me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS26": {
     "Description": {
-      "en": "Kids at my school talk behind my back, share my secrets, or spread rumors about me",
-      "de": "Kids at my school talk behind my back, share my secrets, or spread rumors about me"
+      "en": "Kids at my school talk behind my back, share my secrets, or spread rumors about me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS27": {
     "Description": {
-      "en": "Kids leave me out or ignore me because I am different",
-      "de": "Kids leave me out or ignore me because I am different"
+      "en": "Kids leave me out or ignore me because I am different"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS28": {
     "Description": {
-      "en": "Kids at my school joke or tease me in a way that bothers me",
-      "de": "Kids at my school joke or tease me in a way that bothers me"
+      "en": "Kids at my school joke or tease me in a way that bothers me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS29": {
     "Description": {
-      "en": "I wish I could go to another school because I am being bullied",
-      "de": "I wish I could go to another school because I am being bullied"
+      "en": "I wish I could go to another school because I am being bullied"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS30": {
     "Description": {
-      "en": "Kids at my school ignore me on purpose",
-      "de": "Kids at my school ignore me on purpose"
+      "en": "Kids at my school ignore me on purpose"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS31": {
     "Description": {
-      "en": "I have been threatened by another student in a mean or hurtful way",
-      "de": "I have been threatened by another student in a mean or hurtful way"
+      "en": "I have been threatened by another student in a mean or hurtful way"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS32": {
     "Description": {
-      "en": "I worry about bullying so much that I cannot pay attention at school",
-      "de": "I worry about bullying so much that I cannot pay attention at school"
+      "en": "I worry about bullying so much that I cannot pay attention at school"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS33": {
     "Description": {
-      "en": "Kids try to make me feel bad on purpose",
-      "de": "Kids try to make me feel bad on purpose"
+      "en": "Kids try to make me feel bad on purpose"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS34": {
     "Description": {
-      "en": "I have pretended to be sick so I could stay home from school because I am being bullied",
-      "de": "I have pretended to be sick so I could stay home from school because I am being bullied"
+      "en": "I have pretended to be sick so I could stay home from school because I am being bullied"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS35": {
     "Description": {
-      "en": "I have been hurt by another student on purpose",
-      "de": "I have been hurt by another student on purpose"
+      "en": "I have been hurt by another student on purpose"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS36": {
     "Description": {
-      "en": "Kids post or text mean or hurtful messages, comments, or photos about me on line",
-      "de": "Kids post or text mean or hurtful messages, comments, or photos about me on line"
+      "en": "Kids post or text mean or hurtful messages, comments, or photos about me on line"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS37": {
     "Description": {
-      "en": "I have had upsetting memories of being bullied",
-      "de": "I have had upsetting memories of being bullied"
+      "en": "I have had upsetting memories of being bullied"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS38": {
     "Description": {
-      "en": "I am bothered when kids at school tease me",
-      "de": "I am bothered when kids at school tease me"
+      "en": "I am bothered when kids at school tease me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS39": {
     "Description": {
-      "en": "Kids have tried to get me in trouble",
-      "de": "Kids have tried to get me in trouble"
+      "en": "Kids have tried to get me in trouble"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CABS40": {
     "Description": {
-      "en": "I have had my stuff taken or damaged on purpose by another student",
-      "de": "I have had my stuff taken or damaged on purpose by another student"
+      "en": "I have had my stuff taken or damaged on purpose by another student"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   }

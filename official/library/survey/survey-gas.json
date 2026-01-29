@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Gaming Addiction Scale",
-      "de": "Gaming Addiction Scale"
+      "en": "Gaming Addiction Scale"
     },
     "Abbreviation": "GAS",
     "Authors": [
@@ -28,204 +27,162 @@
   },
   "GAS01": {
     "Description": {
-      "en": "did you think about playing a game all day long?",
-      "de": "did you think about playing a game all day long?"
+      "en": "did you think about playing a game all day long?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=0} rarely",
-        "de": "{score=0} rarely"
+        "en": "{score=0} rarely"
       },
       "2": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "3": {
-        "en": "{score=1} often",
-        "de": "{score=1} often"
+        "en": "{score=1} often"
       },
       "4": {
-        "en": "{score=1} very often",
-        "de": "{score=1} very often"
+        "en": "{score=1} very often"
       }
     }
   },
   "GAS02": {
     "Description": {
-      "en": "did you spend increasing amounts of time on games?",
-      "de": "did you spend increasing amounts of time on games?"
+      "en": "did you spend increasing amounts of time on games?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=0} rarely",
-        "de": "{score=0} rarely"
+        "en": "{score=0} rarely"
       },
       "2": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "3": {
-        "en": "{score=1} often",
-        "de": "{score=1} often"
+        "en": "{score=1} often"
       },
       "4": {
-        "en": "{score=1} very often",
-        "de": "{score=1} very often"
+        "en": "{score=1} very often"
       }
     }
   },
   "GAS03": {
     "Description": {
-      "en": "did you play games to forget about real life?",
-      "de": "did you play games to forget about real life?"
+      "en": "did you play games to forget about real life?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=0} rarely",
-        "de": "{score=0} rarely"
+        "en": "{score=0} rarely"
       },
       "2": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "3": {
-        "en": "{score=1} often",
-        "de": "{score=1} often"
+        "en": "{score=1} often"
       },
       "4": {
-        "en": "{score=1} very often",
-        "de": "{score=1} very often"
+        "en": "{score=1} very often"
       }
     }
   },
   "GAS04": {
     "Description": {
-      "en": "have others unsuccessfully tried to reduce your game use?",
-      "de": "have others unsuccessfully tried to reduce your game use?"
+      "en": "have others unsuccessfully tried to reduce your game use?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=0} rarely",
-        "de": "{score=0} rarely"
+        "en": "{score=0} rarely"
       },
       "2": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "3": {
-        "en": "{score=1} often",
-        "de": "{score=1} often"
+        "en": "{score=1} often"
       },
       "4": {
-        "en": "{score=1} very often",
-        "de": "{score=1} very often"
+        "en": "{score=1} very often"
       }
     }
   },
   "GAS05": {
     "Description": {
-      "en": "have you felt bad when you were unable to play?",
-      "de": "have you felt bad when you were unable to play?"
+      "en": "have you felt bad when you were unable to play?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=0} rarely",
-        "de": "{score=0} rarely"
+        "en": "{score=0} rarely"
       },
       "2": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "3": {
-        "en": "{score=1} often",
-        "de": "{score=1} often"
+        "en": "{score=1} often"
       },
       "4": {
-        "en": "{score=1} very often",
-        "de": "{score=1} very often"
+        "en": "{score=1} very often"
       }
     }
   },
   "GAS06": {
     "Description": {
-      "en": "did you have fights with others (e.g., family, friends) over your time spent on games?",
-      "de": "did you have fights with others (e.g., family, friends) over your time spent on games?"
+      "en": "did you have fights with others (e.g., family, friends) over your time spent on games?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=0} rarely",
-        "de": "{score=0} rarely"
+        "en": "{score=0} rarely"
       },
       "2": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "3": {
-        "en": "{score=1} often",
-        "de": "{score=1} often"
+        "en": "{score=1} often"
       },
       "4": {
-        "en": "{score=1} very often",
-        "de": "{score=1} very often"
+        "en": "{score=1} very often"
       }
     }
   },
   "GAS07": {
     "Description": {
-      "en": "have you neglected other important activities (e.g., school, work, sports) to play games?",
-      "de": "have you neglected other important activities (e.g., school, work, sports) to play games?"
+      "en": "have you neglected other important activities (e.g., school, work, sports) to play games?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=0} rarely",
-        "de": "{score=0} rarely"
+        "en": "{score=0} rarely"
       },
       "2": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "3": {
-        "en": "{score=1} often",
-        "de": "{score=1} often"
+        "en": "{score=1} often"
       },
       "4": {
-        "en": "{score=1} very often",
-        "de": "{score=1} very often"
+        "en": "{score=1} very often"
       }
     }
   }

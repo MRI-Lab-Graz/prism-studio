@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Concise Conscientiousness Measure (CCM-S)",
-      "de": "Concise Conscientiousness Measure (CCM-S)"
+      "en": "Concise Conscientiousness Measure (CCM-S)"
     },
     "Abbreviation": "CCMS",
     "Authors": [
@@ -37,465 +36,369 @@
   },
   "CCMS01": {
     "Description": {
-      "en": "I am always prepared.",
-      "de": "I am always prepared."
+      "en": "I am always prepared."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS02": {
     "Description": {
-      "en": "I do more than what's expected of me.",
-      "de": "I do more than what's expected of me."
+      "en": "I do more than what's expected of me."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS03": {
     "Description": {
-      "en": "I make an effort.",
-      "de": "I make an effort."
+      "en": "I make an effort."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS04": {
     "Description": {
-      "en": "I work hard.",
-      "de": "I work hard."
+      "en": "I work hard."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS05": {
     "Description": {
-      "en": "I behave properly.",
-      "de": "I behave properly."
+      "en": "I behave properly."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS06": {
     "Description": {
-      "en": "I look at the facts.",
-      "de": "I look at the facts."
+      "en": "I look at the facts."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS07": {
     "Description": {
-      "en": "I make careful choices.",
-      "de": "I make careful choices."
+      "en": "I make careful choices."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS08": {
     "Description": {
-      "en": "I think ahead.",
-      "de": "I think ahead."
+      "en": "I think ahead."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS09": {
     "Description": {
-      "en": "I continue until everything is perfect.",
-      "de": "I continue until everything is perfect."
+      "en": "I continue until everything is perfect."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS10": {
     "Description": {
-      "en": "I detect mistakes.",
-      "de": "I detect mistakes."
+      "en": "I detect mistakes."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS11": {
     "Description": {
-      "en": "I go straight for the goal.",
-      "de": "I go straight for the goal."
+      "en": "I go straight for the goal."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS12": {
     "Description": {
-      "en": "I try to outdo others.",
-      "de": "I try to outdo others."
+      "en": "I try to outdo others."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS13": {
     "Description": {
-      "en": "I am a goal-oriented person.",
-      "de": "I am a goal-oriented person."
+      "en": "I am a goal-oriented person."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS14": {
     "Description": {
-      "en": "I do things according to a plan.",
-      "de": "I do things according to a plan."
+      "en": "I do things according to a plan."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS15": {
     "Description": {
-      "en": "I like to plan ahead.",
-      "de": "I like to plan ahead."
+      "en": "I like to plan ahead."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   },
   "CCMS16": {
     "Description": {
-      "en": "I make plans and stick to them.",
-      "de": "I make plans and stick to them."
+      "en": "I make plans and stick to them."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "1. Not at all like me",
-        "de": "1. Not at all like me"
+        "en": "1. Not at all like me"
       },
       "1": {
-        "en": "2. ..",
-        "de": "2. .."
+        "en": "2. .."
       },
       "2": {
-        "en": "3. ..",
-        "de": "3. .."
+        "en": "3. .."
       },
       "3": {
-        "en": "4. ..",
-        "de": "4. .."
+        "en": "4. .."
       },
       "4": {
-        "en": "5. Very much like me",
-        "de": "5. Very much like me"
+        "en": "5. Very much like me"
       }
     }
   }

@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Impulsivity Scale for Children (ISC)",
-      "de": "Impulsivity Scale for Children (ISC)"
+      "en": "Impulsivity Scale for Children (ISC)"
     },
     "Abbreviation": "ISC",
     "Authors": [
@@ -28,233 +27,185 @@
   },
   "ISC01": {
     "Description": {
-      "en": "I forgot something I needed for class.",
-      "de": "I forgot something I needed for class."
+      "en": "I forgot something I needed for class."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Almost never",
-        "de": "Almost never"
+        "en": "Almost never"
       },
       "1": {
-        "en": "About once a month",
-        "de": "About once a month"
+        "en": "About once a month"
       },
       "2": {
-        "en": "About 2-3 times a month",
-        "de": "About 2-3 times a month"
+        "en": "About 2-3 times a month"
       },
       "3": {
-        "en": "About once a week",
-        "de": "About once a week"
+        "en": "About once a week"
       },
       "4": {
-        "en": "At least once a day",
-        "de": "At least once a day"
+        "en": "At least once a day"
       }
     }
   },
   "ISC02": {
     "Description": {
-      "en": "I interrupted other students while they were talking.",
-      "de": "I interrupted other students while they were talking."
+      "en": "I interrupted other students while they were talking."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Almost never",
-        "de": "Almost never"
+        "en": "Almost never"
       },
       "1": {
-        "en": "About once a month",
-        "de": "About once a month"
+        "en": "About once a month"
       },
       "2": {
-        "en": "About 2-3 times a month",
-        "de": "About 2-3 times a month"
+        "en": "About 2-3 times a month"
       },
       "3": {
-        "en": "About once a week",
-        "de": "About once a week"
+        "en": "About once a week"
       },
       "4": {
-        "en": "At least once a day",
-        "de": "At least once a day"
+        "en": "At least once a day"
       }
     }
   },
   "ISC03": {
     "Description": {
-      "en": "I said something rude.",
-      "de": "I said something rude."
+      "en": "I said something rude."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Almost never",
-        "de": "Almost never"
+        "en": "Almost never"
       },
       "1": {
-        "en": "About once a month",
-        "de": "About once a month"
+        "en": "About once a month"
       },
       "2": {
-        "en": "About 2-3 times a month",
-        "de": "About 2-3 times a month"
+        "en": "About 2-3 times a month"
       },
       "3": {
-        "en": "About once a week",
-        "de": "About once a week"
+        "en": "About once a week"
       },
       "4": {
-        "en": "At least once a day",
-        "de": "At least once a day"
+        "en": "At least once a day"
       }
     }
   },
   "ISC04": {
     "Description": {
-      "en": "I couldn't find something because my desk, locker, or bedroom was messy.",
-      "de": "I couldn't find something because my desk, locker, or bedroom was messy."
+      "en": "I couldn't find something because my desk, locker, or bedroom was messy."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Almost never",
-        "de": "Almost never"
+        "en": "Almost never"
       },
       "1": {
-        "en": "About once a month",
-        "de": "About once a month"
+        "en": "About once a month"
       },
       "2": {
-        "en": "About 2-3 times a month",
-        "de": "About 2-3 times a month"
+        "en": "About 2-3 times a month"
       },
       "3": {
-        "en": "About once a week",
-        "de": "About once a week"
+        "en": "About once a week"
       },
       "4": {
-        "en": "At least once a day",
-        "de": "At least once a day"
+        "en": "At least once a day"
       }
     }
   },
   "ISC05": {
     "Description": {
-      "en": "I lost my temper at home or at school.",
-      "de": "I lost my temper at home or at school."
+      "en": "I lost my temper at home or at school."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Almost never",
-        "de": "Almost never"
+        "en": "Almost never"
       },
       "1": {
-        "en": "About once a month",
-        "de": "About once a month"
+        "en": "About once a month"
       },
       "2": {
-        "en": "About 2-3 times a month",
-        "de": "About 2-3 times a month"
+        "en": "About 2-3 times a month"
       },
       "3": {
-        "en": "About once a week",
-        "de": "About once a week"
+        "en": "About once a week"
       },
       "4": {
-        "en": "At least once a day",
-        "de": "At least once a day"
+        "en": "At least once a day"
       }
     }
   },
   "ISC06": {
     "Description": {
-      "en": "I did not remember what my teacher told me to do.",
-      "de": "I did not remember what my teacher told me to do."
+      "en": "I did not remember what my teacher told me to do."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Almost never",
-        "de": "Almost never"
+        "en": "Almost never"
       },
       "1": {
-        "en": "About once a month",
-        "de": "About once a month"
+        "en": "About once a month"
       },
       "2": {
-        "en": "About 2-3 times a month",
-        "de": "About 2-3 times a month"
+        "en": "About 2-3 times a month"
       },
       "3": {
-        "en": "About once a week",
-        "de": "About once a week"
+        "en": "About once a week"
       },
       "4": {
-        "en": "At least once a day",
-        "de": "At least once a day"
+        "en": "At least once a day"
       }
     }
   },
   "ISC07": {
     "Description": {
-      "en": "My mind wandered when I should have been listening.",
-      "de": "My mind wandered when I should have been listening."
+      "en": "My mind wandered when I should have been listening."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Almost never",
-        "de": "Almost never"
+        "en": "Almost never"
       },
       "1": {
-        "en": "About once a month",
-        "de": "About once a month"
+        "en": "About once a month"
       },
       "2": {
-        "en": "About 2-3 times a month",
-        "de": "About 2-3 times a month"
+        "en": "About 2-3 times a month"
       },
       "3": {
-        "en": "About once a week",
-        "de": "About once a week"
+        "en": "About once a week"
       },
       "4": {
-        "en": "At least once a day",
-        "de": "At least once a day"
+        "en": "At least once a day"
       }
     }
   },
   "ISC08": {
     "Description": {
-      "en": "I talked back to my teacher or parent when I was upset.",
-      "de": "I talked back to my teacher or parent when I was upset."
+      "en": "I talked back to my teacher or parent when I was upset."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Almost never",
-        "de": "Almost never"
+        "en": "Almost never"
       },
       "1": {
-        "en": "About once a month",
-        "de": "About once a month"
+        "en": "About once a month"
       },
       "2": {
-        "en": "About 2-3 times a month",
-        "de": "About 2-3 times a month"
+        "en": "About 2-3 times a month"
       },
       "3": {
-        "en": "About once a week",
-        "de": "About once a week"
+        "en": "About once a week"
       },
       "4": {
-        "en": "At least once a day",
-        "de": "At least once a day"
+        "en": "At least once a day"
       }
     }
   }

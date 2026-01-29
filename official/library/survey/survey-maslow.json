@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Maslow’s Hierarchy of Needs",
-      "de": "Maslow’s Hierarchy of Needs"
+      "en": "Maslow’s Hierarchy of Needs"
     },
     "Abbreviation": "MASLOW",
     "Authors": [
@@ -25,436 +24,346 @@
   },
   "MASLOW01": {
     "Description": {
-      "en": "the quality of the food I eat every day",
-      "de": "the quality of the food I eat every day"
+      "en": "the quality of the food I eat every day"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   },
   "MASLOW02": {
     "Description": {
-      "en": "the amount of food that I eat every day",
-      "de": "the amount of food that I eat every day"
+      "en": "the amount of food that I eat every day"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   },
   "MASLOW03": {
     "Description": {
-      "en": "the quality of the water I drink every day",
-      "de": "the quality of the water I drink every day"
+      "en": "the quality of the water I drink every day"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   },
   "MASLOW04": {
     "Description": {
-      "en": "the amount of water that I drink every day",
-      "de": "the amount of water that I drink every day"
+      "en": "the amount of water that I drink every day"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   },
   "MASLOW05": {
     "Description": {
-      "en": "the amount of heating I have when the weather is cold",
-      "de": "the amount of heating I have when the weather is cold"
+      "en": "the amount of heating I have when the weather is cold"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   },
   "MASLOW06": {
     "Description": {
-      "en": "the amount of cooling I have when the weather is hot",
-      "de": "the amount of cooling I have when the weather is hot"
+      "en": "the amount of cooling I have when the weather is hot"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   },
   "MASLOW07": {
     "Description": {
-      "en": "the quality of the air I breathe every day",
-      "de": "the quality of the air I breathe every day"
+      "en": "the quality of the air I breathe every day"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   },
   "MASLOW08": {
     "Description": {
-      "en": "the amount of sex I am having",
-      "de": "the amount of sex I am having"
+      "en": "the amount of sex I am having"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   },
   "MASLOW09": {
     "Description": {
-      "en": "the quality of sex I am having",
-      "de": "the quality of sex I am having"
+      "en": "the quality of sex I am having"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   },
   "MASLOW10": {
     "Description": {
-      "en": "every aspect of my physical health",
-      "de": "every aspect of my physical health"
+      "en": "every aspect of my physical health"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   },
   "MASLOW11": {
     "Description": {
-      "en": "the amount of sleep I get to feel thoroughly relaxed",
-      "de": "the amount of sleep I get to feel thoroughly relaxed"
+      "en": "the amount of sleep I get to feel thoroughly relaxed"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   },
   "MASLOW12": {
     "Description": {
-      "en": "the quality of sleep I get to feel fully refreshed",
-      "de": "the quality of sleep I get to feel fully refreshed"
+      "en": "the quality of sleep I get to feel fully refreshed"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   },
   "MASLOW13": {
     "Description": {
-      "en": "the amount of exercise I get to keep me healthy",
-      "de": "the amount of exercise I get to keep me healthy"
+      "en": "the amount of exercise I get to keep me healthy"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   },
   "MASLOW14": {
     "Description": {
-      "en": "the type of exercise I get to keep my body toned",
-      "de": "the type of exercise I get to keep my body toned"
+      "en": "the type of exercise I get to keep my body toned"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   },
   "MASLOW15": {
     "Description": {
-      "en": "my overall physical strength",
-      "de": "my overall physical strength"
+      "en": "my overall physical strength"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Completely unsatisfied",
-        "de": "Completely unsatisfied"
+        "en": "Completely unsatisfied"
       },
       "1": {
-        "en": "Somewhat unsatisfied",
-        "de": "Somewhat unsatisfied"
+        "en": "Somewhat unsatisfied"
       },
       "2": {
-        "en": "Neither unsatisfied nor satisfied",
-        "de": "Neither unsatisfied nor satisfied"
+        "en": "Neither unsatisfied nor satisfied"
       },
       "3": {
-        "en": "Somewhat satisfied",
-        "de": "Somewhat satisfied"
+        "en": "Somewhat satisfied"
       },
       "4": {
-        "en": "Completely satisfied",
-        "de": "Completely satisfied"
+        "en": "Completely satisfied"
       }
     }
   }

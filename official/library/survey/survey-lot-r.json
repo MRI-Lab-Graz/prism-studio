@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Optimism (LOT-R)",
-      "de": "Optimism (LOT-R)"
+      "en": "Optimism (LOT-R)"
     },
     "Abbreviation": "LOT-R",
     "Authors": [
@@ -27,204 +26,162 @@
   },
   "LOT-R01": {
     "Description": {
-      "en": "In uncertain times, I usually expect the best.",
-      "de": "In uncertain times, I usually expect the best."
+      "en": "In uncertain times, I usually expect the best."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} strongly disagree",
-        "de": "{score=0} strongly disagree"
+        "en": "{score=0} strongly disagree"
       },
       "1": {
-        "en": "{score=1} disagree",
-        "de": "{score=1} disagree"
+        "en": "{score=1} disagree"
       },
       "2": {
-        "en": "{score=2} neutral",
-        "de": "{score=2} neutral"
+        "en": "{score=2} neutral"
       },
       "3": {
-        "en": "{score=3} agree",
-        "de": "{score=3} agree"
+        "en": "{score=3} agree"
       },
       "4": {
-        "en": "{score=4} strongly agree",
-        "de": "{score=4} strongly agree"
+        "en": "{score=4} strongly agree"
       }
     }
   },
   "LOT-R02": {
     "Description": {
-      "en": "It's easy for me to relax.",
-      "de": "It's easy for me to relax."
+      "en": "It's easy for me to relax."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} strongly disagree",
-        "de": "{score=0} strongly disagree"
+        "en": "{score=0} strongly disagree"
       },
       "1": {
-        "en": "{score=1} disagree",
-        "de": "{score=1} disagree"
+        "en": "{score=1} disagree"
       },
       "2": {
-        "en": "{score=2} neutral",
-        "de": "{score=2} neutral"
+        "en": "{score=2} neutral"
       },
       "3": {
-        "en": "{score=3} agree",
-        "de": "{score=3} agree"
+        "en": "{score=3} agree"
       },
       "4": {
-        "en": "{score=4} strongly agree",
-        "de": "{score=4} strongly agree"
+        "en": "{score=4} strongly agree"
       }
     }
   },
   "LOT-R03": {
     "Description": {
-      "en": "I'm always optimistic about my future.",
-      "de": "I'm always optimistic about my future."
+      "en": "I'm always optimistic about my future."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} strongly disagree",
-        "de": "{score=0} strongly disagree"
+        "en": "{score=0} strongly disagree"
       },
       "1": {
-        "en": "{score=1} disagree",
-        "de": "{score=1} disagree"
+        "en": "{score=1} disagree"
       },
       "2": {
-        "en": "{score=2} neutral",
-        "de": "{score=2} neutral"
+        "en": "{score=2} neutral"
       },
       "3": {
-        "en": "{score=3} agree",
-        "de": "{score=3} agree"
+        "en": "{score=3} agree"
       },
       "4": {
-        "en": "{score=4} strongly agree",
-        "de": "{score=4} strongly agree"
+        "en": "{score=4} strongly agree"
       }
     }
   },
   "LOT-R04": {
     "Description": {
-      "en": "I enjoy my friends a lot.",
-      "de": "I enjoy my friends a lot."
+      "en": "I enjoy my friends a lot."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} strongly disagree",
-        "de": "{score=0} strongly disagree"
+        "en": "{score=0} strongly disagree"
       },
       "1": {
-        "en": "{score=1} disagree",
-        "de": "{score=1} disagree"
+        "en": "{score=1} disagree"
       },
       "2": {
-        "en": "{score=2} neutral",
-        "de": "{score=2} neutral"
+        "en": "{score=2} neutral"
       },
       "3": {
-        "en": "{score=3} agree",
-        "de": "{score=3} agree"
+        "en": "{score=3} agree"
       },
       "4": {
-        "en": "{score=4} strongly agree",
-        "de": "{score=4} strongly agree"
+        "en": "{score=4} strongly agree"
       }
     }
   },
   "LOT-R05": {
     "Description": {
-      "en": "It's important for me to keep busy.",
-      "de": "It's important for me to keep busy."
+      "en": "It's important for me to keep busy."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} strongly disagree",
-        "de": "{score=0} strongly disagree"
+        "en": "{score=0} strongly disagree"
       },
       "1": {
-        "en": "{score=1} disagree",
-        "de": "{score=1} disagree"
+        "en": "{score=1} disagree"
       },
       "2": {
-        "en": "{score=2} neutral",
-        "de": "{score=2} neutral"
+        "en": "{score=2} neutral"
       },
       "3": {
-        "en": "{score=3} agree",
-        "de": "{score=3} agree"
+        "en": "{score=3} agree"
       },
       "4": {
-        "en": "{score=4} strongly agree",
-        "de": "{score=4} strongly agree"
+        "en": "{score=4} strongly agree"
       }
     }
   },
   "LOT-R06": {
     "Description": {
-      "en": "I don't get upset too easily.",
-      "de": "I don't get upset too easily."
+      "en": "I don't get upset too easily."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} strongly disagree",
-        "de": "{score=0} strongly disagree"
+        "en": "{score=0} strongly disagree"
       },
       "1": {
-        "en": "{score=1} disagree",
-        "de": "{score=1} disagree"
+        "en": "{score=1} disagree"
       },
       "2": {
-        "en": "{score=2} neutral",
-        "de": "{score=2} neutral"
+        "en": "{score=2} neutral"
       },
       "3": {
-        "en": "{score=3} agree",
-        "de": "{score=3} agree"
+        "en": "{score=3} agree"
       },
       "4": {
-        "en": "{score=4} strongly agree",
-        "de": "{score=4} strongly agree"
+        "en": "{score=4} strongly agree"
       }
     }
   },
   "LOT-R07": {
     "Description": {
-      "en": "Overall, I expect more good things to happen to me than bad.",
-      "de": "Overall, I expect more good things to happen to me than bad."
+      "en": "Overall, I expect more good things to happen to me than bad."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} strongly disagree",
-        "de": "{score=0} strongly disagree"
+        "en": "{score=0} strongly disagree"
       },
       "1": {
-        "en": "{score=1} disagree",
-        "de": "{score=1} disagree"
+        "en": "{score=1} disagree"
       },
       "2": {
-        "en": "{score=2} neutral",
-        "de": "{score=2} neutral"
+        "en": "{score=2} neutral"
       },
       "3": {
-        "en": "{score=3} agree",
-        "de": "{score=3} agree"
+        "en": "{score=3} agree"
       },
       "4": {
-        "en": "{score=4} strongly agree",
-        "de": "{score=4} strongly agree"
+        "en": "{score=4} strongly agree"
       }
     }
   }

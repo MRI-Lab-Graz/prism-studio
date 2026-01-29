@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Measure of Anxiety in Selection Interviews (MASI)",
-      "de": "Measure of Anxiety in Selection Interviews (MASI)"
+      "en": "Measure of Anxiety in Selection Interviews (MASI)"
     },
     "Abbreviation": "MASI",
     "Authors": [
@@ -26,813 +25,645 @@
   },
   "MASI01": {
     "Description": {
-      "en": "I become so apprehensive in job interviews that I am unable to express my thoughts clearly.",
-      "de": "I become so apprehensive in job interviews that I am unable to express my thoughts clearly."
+      "en": "I become so apprehensive in job interviews that I am unable to express my thoughts clearly."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI02": {
     "Description": {
-      "en": "I get so anxious while taking job interviews that I have trouble answering questions that I know.",
-      "de": "I get so anxious while taking job interviews that I have trouble answering questions that I know."
+      "en": "I get so anxious while taking job interviews that I have trouble answering questions that I know."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI03": {
     "Description": {
-      "en": "During job interviews, I often canât think of a thing to say.",
-      "de": "During job interviews, I often canât think of a thing to say."
+      "en": "During job interviews, I often canât think of a thing to say."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI04": {
     "Description": {
-      "en": "During job interviews I find it hard to understand what the interviewer is asking me.",
-      "de": "During job interviews I find it hard to understand what the interviewer is asking me."
+      "en": "During job interviews I find it hard to understand what the interviewer is asking me."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI05": {
     "Description": {
-      "en": "I often feel uneasy about my appearance when I am being interviewed for a job.",
-      "de": "I often feel uneasy about my appearance when I am being interviewed for a job."
+      "en": "I often feel uneasy about my appearance when I am being interviewed for a job."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI06": {
     "Description": {
-      "en": "Before a job interview I am so nervous that I spend an excessive amount of time on my appearance.",
-      "de": "Before a job interview I am so nervous that I spend an excessive amount of time on my appearance."
+      "en": "Before a job interview I am so nervous that I spend an excessive amount of time on my appearance."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI07": {
     "Description": {
-      "en": "In job interviews, I worry that the interviewer will focus on what I consider to be my least attractive physical features.",
-      "de": "In job interviews, I worry that the interviewer will focus on what I consider to be my least attractive physical features."
+      "en": "In job interviews, I worry that the interviewer will focus on what I consider to be my least attractive physical features."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI08": {
     "Description": {
-      "en": "If I do not look my absolute best in a job interview, I find it very hard to be relaxed.",
-      "de": "If I do not look my absolute best in a job interview, I find it very hard to be relaxed."
+      "en": "If I do not look my absolute best in a job interview, I find it very hard to be relaxed."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI09": {
     "Description": {
-      "en": "I feel uneasy if my hair is not perfect when I walk into a job interview.",
-      "de": "I feel uneasy if my hair is not perfect when I walk into a job interview."
+      "en": "I feel uneasy if my hair is not perfect when I walk into a job interview."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI10": {
     "Description": {
-      "en": "During a job interview, I worry about whether I have dressed appropriately.",
-      "de": "During a job interview, I worry about whether I have dressed appropriately."
+      "en": "During a job interview, I worry about whether I have dressed appropriately."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI11": {
     "Description": {
-      "en": "While taking a job interview, I become concerned that the interviewer will perceive me as socially awkward.",
-      "de": "While taking a job interview, I become concerned that the interviewer will perceive me as socially awkward."
+      "en": "While taking a job interview, I become concerned that the interviewer will perceive me as socially awkward."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI12": {
     "Description": {
-      "en": "I become very uptight about having to socially interact with a job interviewer.",
-      "de": "I become very uptight about having to socially interact with a job interviewer."
+      "en": "I become very uptight about having to socially interact with a job interviewer."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI13": {
     "Description": {
-      "en": "I get afraid about what kind of personal impression I am making on job interviewers.",
-      "de": "I get afraid about what kind of personal impression I am making on job interviewers."
+      "en": "I get afraid about what kind of personal impression I am making on job interviewers."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI14": {
     "Description": {
-      "en": "During a job interview, I worry that my actions will not be considered socially appropriate.",
-      "de": "During a job interview, I worry that my actions will not be considered socially appropriate."
+      "en": "During a job interview, I worry that my actions will not be considered socially appropriate."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI15": {
     "Description": {
-      "en": "I worry about whether job interviewers will like me as a person.",
-      "de": "I worry about whether job interviewers will like me as a person."
+      "en": "I worry about whether job interviewers will like me as a person."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI16": {
     "Description": {
-      "en": "When meeting a job interviewer, I worry that my handshake will not be correct.",
-      "de": "When meeting a job interviewer, I worry that my handshake will not be correct."
+      "en": "When meeting a job interviewer, I worry that my handshake will not be correct."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI17": {
     "Description": {
-      "en": "In job interviews, I get very nervous about whether my performance is good enough.",
-      "de": "In job interviews, I get very nervous about whether my performance is good enough."
+      "en": "In job interviews, I get very nervous about whether my performance is good enough."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI18": {
     "Description": {
-      "en": "I am overwhelmed by thoughts of doing poorly when I am in job interview situations.",
-      "de": "I am overwhelmed by thoughts of doing poorly when I am in job interview situations."
+      "en": "I am overwhelmed by thoughts of doing poorly when I am in job interview situations."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI19": {
     "Description": {
-      "en": "I worry that my job interview performance will be lower than that of other applicants.",
-      "de": "I worry that my job interview performance will be lower than that of other applicants."
+      "en": "I worry that my job interview performance will be lower than that of other applicants."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI20": {
     "Description": {
-      "en": "During a job interview, I am so troubled by thoughts of failing that my performance is reduced.",
-      "de": "During a job interview, I am so troubled by thoughts of failing that my performance is reduced."
+      "en": "During a job interview, I am so troubled by thoughts of failing that my performance is reduced."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI21": {
     "Description": {
-      "en": "During a job interview, I worry about what will happen if I donât get the job.",
-      "de": "During a job interview, I worry about what will happen if I donât get the job."
+      "en": "During a job interview, I worry about what will happen if I donât get the job."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI22": {
     "Description": {
-      "en": "While taking a job interview, I worry about whether I am a good candidate for the job.",
-      "de": "While taking a job interview, I worry about whether I am a good candidate for the job."
+      "en": "While taking a job interview, I worry about whether I am a good candidate for the job."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI23": {
     "Description": {
-      "en": "During job interviews, my hands shake.",
-      "de": "During job interviews, my hands shake."
+      "en": "During job interviews, my hands shake."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI24": {
     "Description": {
-      "en": "My heartbeat is faster than usual during job interviews.",
-      "de": "My heartbeat is faster than usual during job interviews."
+      "en": "My heartbeat is faster than usual during job interviews."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI25": {
     "Description": {
-      "en": "It is hard for me to avoid fidgeting during a job interview.",
-      "de": "It is hard for me to avoid fidgeting during a job interview."
+      "en": "It is hard for me to avoid fidgeting during a job interview."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI26": {
     "Description": {
-      "en": "Job interviews often make me perspire (e.g., sweaty palms and underarms).",
-      "de": "Job interviews often make me perspire (e.g., sweaty palms and underarms)."
+      "en": "Job interviews often make me perspire (e.g., sweaty palms and underarms)."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI27": {
     "Description": {
-      "en": "My mouth gets very dry during job interviews.",
-      "de": "My mouth gets very dry during job interviews."
+      "en": "My mouth gets very dry during job interviews."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "MASI28": {
     "Description": {
-      "en": "I often feel sick to my stomach when I am interviewed for a job.",
-      "de": "I often feel sick to my stomach when I am interviewed for a job."
+      "en": "I often feel sick to my stomach when I am interviewed for a job."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "feel neutral",
-        "de": "feel neutral"
+        "en": "feel neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   }

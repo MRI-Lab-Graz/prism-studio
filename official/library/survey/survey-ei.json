@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Emotional Intelligence",
-      "de": "Emotional Intelligence"
+      "en": "Emotional Intelligence"
     },
     "Abbreviation": "EI",
     "Authors": [
@@ -37,871 +36,691 @@
   },
   "EI01": {
     "Description": {
-      "en": "I know when to speak about my personal problems to others.",
-      "de": "I know when to speak about my personal problems to others."
+      "en": "I know when to speak about my personal problems to others."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI02": {
     "Description": {
-      "en": "When I am faced with obstacles, I remember times I faced similar obstacles and overcame them.",
-      "de": "When I am faced with obstacles, I remember times I faced similar obstacles and overcame them."
+      "en": "When I am faced with obstacles, I remember times I faced similar obstacles and overcame them."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI03": {
     "Description": {
-      "en": "I expect that I will do well on most things I try.",
-      "de": "I expect that I will do well on most things I try."
+      "en": "I expect that I will do well on most things I try."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI04": {
     "Description": {
-      "en": "Other people find it easy to confide in me.",
-      "de": "Other people find it easy to confide in me."
+      "en": "Other people find it easy to confide in me."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI05": {
     "Description": {
-      "en": "Some of the major events of my life have led me to re-evaluate what is important and not important.",
-      "de": "Some of the major events of my life have led me to re-evaluate what is important and not important."
+      "en": "Some of the major events of my life have led me to re-evaluate what is important and not important."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI06": {
     "Description": {
-      "en": "When my mood changes, I see new possibilities.",
-      "de": "When my mood changes, I see new possibilities."
+      "en": "When my mood changes, I see new possibilities."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI07": {
     "Description": {
-      "en": "Emotions are some of the things that make my life worth living.",
-      "de": "Emotions are some of the things that make my life worth living."
+      "en": "Emotions are some of the things that make my life worth living."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI08": {
     "Description": {
-      "en": "I am aware of my emotions as I experience them.",
-      "de": "I am aware of my emotions as I experience them."
+      "en": "I am aware of my emotions as I experience them."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI09": {
     "Description": {
-      "en": "I expect good things to happen.",
-      "de": "I expect good things to happen."
+      "en": "I expect good things to happen."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI10": {
     "Description": {
-      "en": "I like to share my emotions with others.",
-      "de": "I like to share my emotions with others."
+      "en": "I like to share my emotions with others."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI11": {
     "Description": {
-      "en": "When I experience a positive emotion, I know how to make it last.",
-      "de": "When I experience a positive emotion, I know how to make it last."
+      "en": "When I experience a positive emotion, I know how to make it last."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI12": {
     "Description": {
-      "en": "I arrange events others enjoy.",
-      "de": "I arrange events others enjoy."
+      "en": "I arrange events others enjoy."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI13": {
     "Description": {
-      "en": "I seek out activities that make me happy.",
-      "de": "I seek out activities that make me happy."
+      "en": "I seek out activities that make me happy."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI14": {
     "Description": {
-      "en": "I am aware of the nonverbal messages I send to others.",
-      "de": "I am aware of the nonverbal messages I send to others."
+      "en": "I am aware of the nonverbal messages I send to others."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI15": {
     "Description": {
-      "en": "I present myself in a way that makes a good impression on others.",
-      "de": "I present myself in a way that makes a good impression on others."
+      "en": "I present myself in a way that makes a good impression on others."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI16": {
     "Description": {
-      "en": "When I am in a positive mood, solving problems is easy for me.",
-      "de": "When I am in a positive mood, solving problems is easy for me."
+      "en": "When I am in a positive mood, solving problems is easy for me."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI17": {
     "Description": {
-      "en": "By looking at their facial expressions, I recognize the emotions people are experiencing.",
-      "de": "By looking at their facial expressions, I recognize the emotions people are experiencing."
+      "en": "By looking at their facial expressions, I recognize the emotions people are experiencing."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI18": {
     "Description": {
-      "en": "I know why my emotions change.",
-      "de": "I know why my emotions change."
+      "en": "I know why my emotions change."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI19": {
     "Description": {
-      "en": "When I am in a positive mood, I am able to come up with new ideas.",
-      "de": "When I am in a positive mood, I am able to come up with new ideas."
+      "en": "When I am in a positive mood, I am able to come up with new ideas."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI20": {
     "Description": {
-      "en": "I have control over my emotions.",
-      "de": "I have control over my emotions."
+      "en": "I have control over my emotions."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI21": {
     "Description": {
-      "en": "I easily recognize my emotions as I experience them.",
-      "de": "I easily recognize my emotions as I experience them."
+      "en": "I easily recognize my emotions as I experience them."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI22": {
     "Description": {
-      "en": "I motivate myself by imagining a good outcome to tasks I take on.",
-      "de": "I motivate myself by imagining a good outcome to tasks I take on."
+      "en": "I motivate myself by imagining a good outcome to tasks I take on."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI23": {
     "Description": {
-      "en": "I compliment others when they have done something well.",
-      "de": "I compliment others when they have done something well."
+      "en": "I compliment others when they have done something well."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI24": {
     "Description": {
-      "en": "I am aware of the nonverbal messages other people send.",
-      "de": "I am aware of the nonverbal messages other people send."
+      "en": "I am aware of the nonverbal messages other people send."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI25": {
     "Description": {
-      "en": "When another person tells me about an important event in his or her life, I almost feel as though I have experienced this event myself.",
-      "de": "When another person tells me about an important event in his or her life, I almost feel as though I have experienced this event myself."
+      "en": "When another person tells me about an important event in his or her life, I almost feel as though I have experienced this event myself."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI26": {
     "Description": {
-      "en": "When I feel a change in emotions, I tend to come up with new ideas.",
-      "de": "When I feel a change in emotions, I tend to come up with new ideas."
+      "en": "When I feel a change in emotions, I tend to come up with new ideas."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI27": {
     "Description": {
-      "en": "I know what other people are feeling just by looking at them.",
-      "de": "I know what other people are feeling just by looking at them."
+      "en": "I know what other people are feeling just by looking at them."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI28": {
     "Description": {
-      "en": "I help other people feel better when they are down.",
-      "de": "I help other people feel better when they are down."
+      "en": "I help other people feel better when they are down."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI29": {
     "Description": {
-      "en": "I use good moods to help myself keep trying in the face of obstacles.",
-      "de": "I use good moods to help myself keep trying in the face of obstacles."
+      "en": "I use good moods to help myself keep trying in the face of obstacles."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "EI30": {
     "Description": {
-      "en": "I can tell how people are feeling by listening to the tone of their voice.",
-      "de": "I can tell how people are feeling by listening to the tone of their voice."
+      "en": "I can tell how people are feeling by listening to the tone of their voice."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither disagree nor agree",
-        "de": "neither disagree nor agree"
+        "en": "neither disagree nor agree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   }

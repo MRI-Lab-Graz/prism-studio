@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Resilience (BRS)",
-      "de": "Resilience (BRS)"
+      "en": "Resilience (BRS)"
     },
     "Abbreviation": "BRS",
     "Authors": [
@@ -34,88 +33,70 @@
   },
   "BRS01": {
     "Description": {
-      "en": "I tend to bounce back quickly after hard times",
-      "de": "I tend to bounce back quickly after hard times"
+      "en": "I tend to bounce back quickly after hard times"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly agree",
-        "de": "Strongly agree"
+        "en": "Strongly agree"
       }
     }
   },
   "BRS02": {
     "Description": {
-      "en": "It does not take me long to recover from a stressful event",
-      "de": "It does not take me long to recover from a stressful event"
+      "en": "It does not take me long to recover from a stressful event"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly agree",
-        "de": "Strongly agree"
+        "en": "Strongly agree"
       }
     }
   },
   "BRS03": {
     "Description": {
-      "en": "I usually come through difficult times with little trouble",
-      "de": "I usually come through difficult times with little trouble"
+      "en": "I usually come through difficult times with little trouble"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly agree",
-        "de": "Strongly agree"
+        "en": "Strongly agree"
       }
     }
   }

@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Pathological Internet Use (PIU)",
-      "de": "Pathological Internet Use (PIU)"
+      "en": "Pathological Internet Use (PIU)"
     },
     "Abbreviation": "PIU",
     "Authors": [
@@ -26,188 +25,155 @@
   },
   "PIU01": {
     "Description": {
-      "en": "I have been told I spend too much time online",
-      "de": "I have been told I spend too much time online"
+      "en": "I have been told I spend too much time online"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} yes",
-        "de": "{score=1} yes"
+        "en": "{score=1} yes"
       },
       "1": {
-        "en": "{score=0} no",
-        "de": "{score=0} no"
+        "en": "{score=0} no"
       }
     }
   },
   "PIU02": {
     "Description": {
-      "en": "If it has been a while since I last logged on, I find it hard to stop thinking about what will be waiting for me when I do",
-      "de": "If it has been a while since I last logged on, I find it hard to stop thinking about what will be waiting for me when I do"
+      "en": "If it has been a while since I last logged on, I find it hard to stop thinking about what will be waiting for me when I do"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} yes",
-        "de": "{score=1} yes"
+        "en": "{score=1} yes"
       },
       "1": {
-        "en": "{score=0} no",
-        "de": "{score=0} no"
+        "en": "{score=0} no"
       }
     }
   },
   "PIU03": {
     "Description": {
-      "en": "I feel guilty about the amount of time I spend online",
-      "de": "I feel guilty about the amount of time I spend online"
+      "en": "I feel guilty about the amount of time I spend online"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} yes",
-        "de": "{score=1} yes"
+        "en": "{score=1} yes"
       },
       "1": {
-        "en": "{score=0} no",
-        "de": "{score=0} no"
+        "en": "{score=0} no"
       }
     }
   },
   "PIU04": {
     "Description": {
-      "en": "I have gone online to make myself feel better when I was down or anxious",
-      "de": "I have gone online to make myself feel better when I was down or anxious"
+      "en": "I have gone online to make myself feel better when I was down or anxious"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} yes",
-        "de": "{score=1} yes"
+        "en": "{score=1} yes"
       },
       "1": {
-        "en": "{score=0} no",
-        "de": "{score=0} no"
+        "en": "{score=0} no"
       }
     }
   },
   "PIU05": {
     "Description": {
-      "en": "I have attempted to spend less time online but have not been able to",
-      "de": "I have attempted to spend less time online but have not been able to"
+      "en": "I have attempted to spend less time online but have not been able to"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} yes",
-        "de": "{score=1} yes"
+        "en": "{score=1} yes"
       },
       "1": {
-        "en": "{score=0} no",
-        "de": "{score=0} no"
+        "en": "{score=0} no"
       }
     }
   },
   "PIU06": {
     "Description": {
-      "en": "I have routinely cut short on sleep to spend more time online",
-      "de": "I have routinely cut short on sleep to spend more time online"
+      "en": "I have routinely cut short on sleep to spend more time online"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} yes",
-        "de": "{score=1} yes"
+        "en": "{score=1} yes"
       },
       "1": {
-        "en": "{score=0} no",
-        "de": "{score=0} no"
+        "en": "{score=0} no"
       }
     }
   },
   "PIU07": {
     "Description": {
-      "en": "I have used online to talk to others at times when I was feeling isolated",
-      "de": "I have used online to talk to others at times when I was feeling isolated"
+      "en": "I have used online to talk to others at times when I was feeling isolated"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} yes",
-        "de": "{score=1} yes"
+        "en": "{score=1} yes"
       },
       "1": {
-        "en": "{score=0} no",
-        "de": "{score=0} no"
+        "en": "{score=0} no"
       }
     }
   },
   "PIU08": {
     "Description": {
-      "en": "I have missed classes or work because of online activities",
-      "de": "I have missed classes or work because of online activities"
+      "en": "I have missed classes or work because of online activities"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} yes",
-        "de": "{score=1} yes"
+        "en": "{score=1} yes"
       },
       "1": {
-        "en": "{score=0} no",
-        "de": "{score=0} no"
+        "en": "{score=0} no"
       }
     }
   },
   "PIU09": {
     "Description": {
-      "en": "I have gotten into trouble with my employer or school because of being online",
-      "de": "I have gotten into trouble with my employer or school because of being online"
+      "en": "I have gotten into trouble with my employer or school because of being online"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} yes",
-        "de": "{score=1} yes"
+        "en": "{score=1} yes"
       },
       "1": {
-        "en": "{score=0} no",
-        "de": "{score=0} no"
+        "en": "{score=0} no"
       }
     }
   },
   "PIU10": {
     "Description": {
-      "en": "I have missed social engagements because of online activities",
-      "de": "I have missed social engagements because of online activities"
+      "en": "I have missed social engagements because of online activities"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} yes",
-        "de": "{score=1} yes"
+        "en": "{score=1} yes"
       },
       "1": {
-        "en": "{score=0} no",
-        "de": "{score=0} no"
+        "en": "{score=0} no"
       }
     }
   },
   "PIU11": {
     "Description": {
-      "en": "I have tried to hide from others how much time I am actually online",
-      "de": "I have tried to hide from others how much time I am actually online"
+      "en": "I have tried to hide from others how much time I am actually online"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} yes",
-        "de": "{score=1} yes"
+        "en": "{score=1} yes"
       },
       "1": {
-        "en": "{score=0} no",
-        "de": "{score=0} no"
+        "en": "{score=0} no"
       }
     }
   }

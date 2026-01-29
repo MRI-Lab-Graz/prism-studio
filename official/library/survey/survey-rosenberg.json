@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Rosenberg Self-Esteem Scale (RSES)",
-      "de": "Rosenberg Self-Esteem Scale (RSES)"
+      "en": "Rosenberg Self-Esteem Scale (RSES)"
     },
     "Abbreviation": "ROSENBERG",
     "Authors": [],
@@ -22,126 +21,101 @@
   },
   "ROSENBERG01": {
     "Description": {
-      "en": "At times, I think I am no good at all.",
-      "de": "At times, I think I am no good at all."
+      "en": "At times, I think I am no good at all."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} strongly agree",
-        "de": "{score=0} strongly agree"
+        "en": "{score=0} strongly agree"
       },
       "1": {
-        "en": "{score=1} agree",
-        "de": "{score=1} agree"
+        "en": "{score=1} agree"
       },
       "2": {
-        "en": "{score=2} disagree",
-        "de": "{score=2} disagree"
+        "en": "{score=2} disagree"
       },
       "3": {
-        "en": "{score=3} strongly disagree",
-        "de": "{score=3} strongly disagree"
+        "en": "{score=3} strongly disagree"
       }
     }
   },
   "ROSENBERG02": {
     "Description": {
-      "en": "I feel I do not have much to be proud of.",
-      "de": "I feel I do not have much to be proud of."
+      "en": "I feel I do not have much to be proud of."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} strongly agree",
-        "de": "{score=0} strongly agree"
+        "en": "{score=0} strongly agree"
       },
       "1": {
-        "en": "{score=1} agree",
-        "de": "{score=1} agree"
+        "en": "{score=1} agree"
       },
       "2": {
-        "en": "{score=2} disagree",
-        "de": "{score=2} disagree"
+        "en": "{score=2} disagree"
       },
       "3": {
-        "en": "{score=3} strongly disagree",
-        "de": "{score=3} strongly disagree"
+        "en": "{score=3} strongly disagree"
       }
     }
   },
   "ROSENBERG03": {
     "Description": {
-      "en": "I certainly feel useless at times.",
-      "de": "I certainly feel useless at times."
+      "en": "I certainly feel useless at times."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} strongly agree",
-        "de": "{score=0} strongly agree"
+        "en": "{score=0} strongly agree"
       },
       "1": {
-        "en": "{score=1} agree",
-        "de": "{score=1} agree"
+        "en": "{score=1} agree"
       },
       "2": {
-        "en": "{score=2} disagree",
-        "de": "{score=2} disagree"
+        "en": "{score=2} disagree"
       },
       "3": {
-        "en": "{score=3} strongly disagree",
-        "de": "{score=3} strongly disagree"
+        "en": "{score=3} strongly disagree"
       }
     }
   },
   "ROSENBERG04": {
     "Description": {
-      "en": "I wish I could have more respect for myself.",
-      "de": "I wish I could have more respect for myself."
+      "en": "I wish I could have more respect for myself."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} strongly agree",
-        "de": "{score=0} strongly agree"
+        "en": "{score=0} strongly agree"
       },
       "1": {
-        "en": "{score=1} agree",
-        "de": "{score=1} agree"
+        "en": "{score=1} agree"
       },
       "2": {
-        "en": "{score=2} disagree",
-        "de": "{score=2} disagree"
+        "en": "{score=2} disagree"
       },
       "3": {
-        "en": "{score=3} strongly disagree",
-        "de": "{score=3} strongly disagree"
+        "en": "{score=3} strongly disagree"
       }
     }
   },
   "ROSENBERG05": {
     "Description": {
-      "en": "All in all, I am inclined to feel that I am a failure.",
-      "de": "All in all, I am inclined to feel that I am a failure."
+      "en": "All in all, I am inclined to feel that I am a failure."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} strongly agree",
-        "de": "{score=0} strongly agree"
+        "en": "{score=0} strongly agree"
       },
       "1": {
-        "en": "{score=1} agree",
-        "de": "{score=1} agree"
+        "en": "{score=1} agree"
       },
       "2": {
-        "en": "{score=2} disagree",
-        "de": "{score=2} disagree"
+        "en": "{score=2} disagree"
       },
       "3": {
-        "en": "{score=3} strongly disagree",
-        "de": "{score=3} strongly disagree"
+        "en": "{score=3} strongly disagree"
       }
     }
   }

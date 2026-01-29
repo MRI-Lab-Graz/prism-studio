@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Psychopathy (LSRP)",
-      "de": "Psychopathy (LSRP)"
+      "en": "Psychopathy (LSRP)"
     },
     "Abbreviation": "LSRP",
     "Authors": [
@@ -29,276 +28,221 @@
   },
   "LSRP01": {
     "Description": {
-      "en": "Success is based on survival of the fittest; I am not concerned about the losers",
-      "de": "Success is based on survival of the fittest; I am not concerned about the losers"
+      "en": "Success is based on survival of the fittest; I am not concerned about the losers"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "disagree somewhat",
-        "de": "disagree somewhat"
+        "en": "disagree somewhat"
       },
       "2": {
-        "en": "agree somewhat",
-        "de": "agree somewhat"
+        "en": "agree somewhat"
       },
       "3": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "LSRP02": {
     "Description": {
-      "en": "For me, what's right is whatever I can get away with",
-      "de": "For me, what's right is whatever I can get away with"
+      "en": "For me, what's right is whatever I can get away with"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "disagree somewhat",
-        "de": "disagree somewhat"
+        "en": "disagree somewhat"
       },
       "2": {
-        "en": "agree somewhat",
-        "de": "agree somewhat"
+        "en": "agree somewhat"
       },
       "3": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "LSRP03": {
     "Description": {
-      "en": "In today's world, I feel justified in doing anything I can get away with to succeed",
-      "de": "In today's world, I feel justified in doing anything I can get away with to succeed"
+      "en": "In today's world, I feel justified in doing anything I can get away with to succeed"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "disagree somewhat",
-        "de": "disagree somewhat"
+        "en": "disagree somewhat"
       },
       "2": {
-        "en": "agree somewhat",
-        "de": "agree somewhat"
+        "en": "agree somewhat"
       },
       "3": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "LSRP04": {
     "Description": {
-      "en": "My main purpose in life is getting as many goodies as I can",
-      "de": "My main purpose in life is getting as many goodies as I can"
+      "en": "My main purpose in life is getting as many goodies as I can"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "disagree somewhat",
-        "de": "disagree somewhat"
+        "en": "disagree somewhat"
       },
       "2": {
-        "en": "agree somewhat",
-        "de": "agree somewhat"
+        "en": "agree somewhat"
       },
       "3": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "LSRP05": {
     "Description": {
-      "en": "Making a lot of money is my most important goal",
-      "de": "Making a lot of money is my most important goal"
+      "en": "Making a lot of money is my most important goal"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "disagree somewhat",
-        "de": "disagree somewhat"
+        "en": "disagree somewhat"
       },
       "2": {
-        "en": "agree somewhat",
-        "de": "agree somewhat"
+        "en": "agree somewhat"
       },
       "3": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "LSRP06": {
     "Description": {
-      "en": "I let others worry about higher values; my main concern is with the bottom line",
-      "de": "I let others worry about higher values; my main concern is with the bottom line"
+      "en": "I let others worry about higher values; my main concern is with the bottom line"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "disagree somewhat",
-        "de": "disagree somewhat"
+        "en": "disagree somewhat"
       },
       "2": {
-        "en": "agree somewhat",
-        "de": "agree somewhat"
+        "en": "agree somewhat"
       },
       "3": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "LSRP07": {
     "Description": {
-      "en": "People who are stupid enough to get ripped off usually deserve it",
-      "de": "People who are stupid enough to get ripped off usually deserve it"
+      "en": "People who are stupid enough to get ripped off usually deserve it"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "disagree somewhat",
-        "de": "disagree somewhat"
+        "en": "disagree somewhat"
       },
       "2": {
-        "en": "agree somewhat",
-        "de": "agree somewhat"
+        "en": "agree somewhat"
       },
       "3": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "LSRP08": {
     "Description": {
-      "en": "Looking out for myself is my top priority",
-      "de": "Looking out for myself is my top priority"
+      "en": "Looking out for myself is my top priority"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "disagree somewhat",
-        "de": "disagree somewhat"
+        "en": "disagree somewhat"
       },
       "2": {
-        "en": "agree somewhat",
-        "de": "agree somewhat"
+        "en": "agree somewhat"
       },
       "3": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "LSRP09": {
     "Description": {
-      "en": "I tell other people what they want to hear so that they will do what I want them to do",
-      "de": "I tell other people what they want to hear so that they will do what I want them to do"
+      "en": "I tell other people what they want to hear so that they will do what I want them to do"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "disagree somewhat",
-        "de": "disagree somewhat"
+        "en": "disagree somewhat"
       },
       "2": {
-        "en": "agree somewhat",
-        "de": "agree somewhat"
+        "en": "agree somewhat"
       },
       "3": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "LSRP10": {
     "Description": {
-      "en": "I often admire a really clever scam",
-      "de": "I often admire a really clever scam"
+      "en": "I often admire a really clever scam"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "disagree somewhat",
-        "de": "disagree somewhat"
+        "en": "disagree somewhat"
       },
       "2": {
-        "en": "agree somewhat",
-        "de": "agree somewhat"
+        "en": "agree somewhat"
       },
       "3": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "LSRP11": {
     "Description": {
-      "en": "I enjoy manipulating other people's feelings",
-      "de": "I enjoy manipulating other people's feelings"
+      "en": "I enjoy manipulating other people's feelings"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "disagree somewhat",
-        "de": "disagree somewhat"
+        "en": "disagree somewhat"
       },
       "2": {
-        "en": "agree somewhat",
-        "de": "agree somewhat"
+        "en": "agree somewhat"
       },
       "3": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   }

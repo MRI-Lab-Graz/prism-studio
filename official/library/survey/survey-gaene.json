@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Generalized Acceptance of EvolutioN Evaluation (GAENE)",
-      "de": "Generalized Acceptance of EvolutioN Evaluation (GAENE)"
+      "en": "Generalized Acceptance of EvolutioN Evaluation (GAENE)"
     },
     "Abbreviation": "GAENE",
     "Authors": [
@@ -29,378 +28,300 @@
   },
   "GAENE01": {
     "Description": {
-      "en": "Everyone should understand evolution.",
-      "de": "Everyone should understand evolution."
+      "en": "Everyone should understand evolution."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "I don't know / no opinion",
-        "de": "I don't know / no opinion"
+        "en": "I don't know / no opinion"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "GAENE02": {
     "Description": {
-      "en": "It is important to let people know about how strong the evidence that supports evolution is.",
-      "de": "It is important to let people know about how strong the evidence that supports evolution is."
+      "en": "It is important to let people know about how strong the evidence that supports evolution is."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "I don't know / no opinion",
-        "de": "I don't know / no opinion"
+        "en": "I don't know / no opinion"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "GAENE03": {
     "Description": {
-      "en": "Some parts of evolution theory could be true.",
-      "de": "Some parts of evolution theory could be true."
+      "en": "Some parts of evolution theory could be true."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "I don't know / no opinion",
-        "de": "I don't know / no opinion"
+        "en": "I don't know / no opinion"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "GAENE04": {
     "Description": {
-      "en": "Evolutionary theory applies to all plants and animals, including humans.",
-      "de": "Evolutionary theory applies to all plants and animals, including humans."
+      "en": "Evolutionary theory applies to all plants and animals, including humans."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "I don't know / no opinion",
-        "de": "I don't know / no opinion"
+        "en": "I don't know / no opinion"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "GAENE05": {
     "Description": {
-      "en": "People who plan to become biologists need to understand evolution.",
-      "de": "People who plan to become biologists need to understand evolution."
+      "en": "People who plan to become biologists need to understand evolution."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "I don't know / no opinion",
-        "de": "I don't know / no opinion"
+        "en": "I don't know / no opinion"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "GAENE06": {
     "Description": {
-      "en": "I would be willing to argue in favor of evolutionary in a public forum such as a school club, church group, or meeting of public school parents.",
-      "de": "I would be willing to argue in favor of evolutionary in a public forum such as a school club, church group, or meeting of public school parents."
+      "en": "I would be willing to argue in favor of evolutionary in a public forum such as a school club, church group, or meeting of public school parents."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "I don't know / no opinion",
-        "de": "I don't know / no opinion"
+        "en": "I don't know / no opinion"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "GAENE07": {
     "Description": {
-      "en": "Simple organisms such as bacteria change over time.",
-      "de": "Simple organisms such as bacteria change over time."
+      "en": "Simple organisms such as bacteria change over time."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "I don't know / no opinion",
-        "de": "I don't know / no opinion"
+        "en": "I don't know / no opinion"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "GAENE08": {
     "Description": {
-      "en": "Nothing in biology makes sense without evolution.",
-      "de": "Nothing in biology makes sense without evolution."
+      "en": "Nothing in biology makes sense without evolution."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "I don't know / no opinion",
-        "de": "I don't know / no opinion"
+        "en": "I don't know / no opinion"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "GAENE09": {
     "Description": {
-      "en": "Understanding evolution helps me understand the other parts of biology.",
-      "de": "Understanding evolution helps me understand the other parts of biology."
+      "en": "Understanding evolution helps me understand the other parts of biology."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "I don't know / no opinion",
-        "de": "I don't know / no opinion"
+        "en": "I don't know / no opinion"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "GAENE10": {
     "Description": {
-      "en": "I would be willing to argue in favor of evolution in a small group of friends.",
-      "de": "I would be willing to argue in favor of evolution in a small group of friends."
+      "en": "I would be willing to argue in favor of evolution in a small group of friends."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "I don't know / no opinion",
-        "de": "I don't know / no opinion"
+        "en": "I don't know / no opinion"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "GAENE11": {
     "Description": {
-      "en": "Evolution is a good explanation of how humans first emerged on the earth.",
-      "de": "Evolution is a good explanation of how humans first emerged on the earth."
+      "en": "Evolution is a good explanation of how humans first emerged on the earth."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "I don't know / no opinion",
-        "de": "I don't know / no opinion"
+        "en": "I don't know / no opinion"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "GAENE12": {
     "Description": {
-      "en": "Evolution is a scientific fact.",
-      "de": "Evolution is a scientific fact."
+      "en": "Evolution is a scientific fact."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "I don't know / no opinion",
-        "de": "I don't know / no opinion"
+        "en": "I don't know / no opinion"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "GAENE13": {
     "Description": {
-      "en": "Evolution is a good explanation of how new species arise.",
-      "de": "Evolution is a good explanation of how new species arise."
+      "en": "Evolution is a good explanation of how new species arise."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly disagree",
-        "de": "Strongly disagree"
+        "en": "Strongly disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "I don't know / no opinion",
-        "de": "I don't know / no opinion"
+        "en": "I don't know / no opinion"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   }
