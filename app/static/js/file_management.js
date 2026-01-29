@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --------------------
     const organizeFiles = document.getElementById('organizeFiles');
     const organizeModality = document.getElementById('organizeModality');
-    const organizeBtn = document.getElementById('organizeBtn');
+    const organizeDryRunBtn = document.getElementById('organizeDryRunBtn');
     const organizeCopyBtn = document.getElementById('organizeCopyBtn');
     const organizeError = document.getElementById('organizeError');
     const organizeInfo = document.getElementById('organizeInfo');
@@ -30,19 +30,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const organizeLogContainer = document.getElementById('organizeLogContainer');
     const organizeLog = document.getElementById('organizeLog');
     const organizeLogClearBtn = document.getElementById('organizeLogClearBtn');
+    const organizeFolder = document.getElementById('organizeFolder');
     const organizeTargetRoot = () => {
         const checked = document.querySelector('input[name="organizeTargetRoot"]:checked');
         return checked ? checked.value : 'rawdata';
     };
 
+    function getOrganizeFiles() {
+        const fileList = [];
+        if (organizeFiles && organizeFiles.files) {
+            fileList.push(...Array.from(organizeFiles.files));
+        }
+        if (organizeFolder && organizeFolder.files) {
+            fileList.push(...Array.from(organizeFolder.files));
+        }
+        return fileList;
+    }
+
     function updateOrganizeBtn() {
-        const hasFiles = organizeFiles && organizeFiles.files && organizeFiles.files.length > 0;
-        if (organizeBtn) organizeBtn.disabled = !hasFiles;
+        const hasFiles = getOrganizeFiles().length > 0;
+        if (organizeDryRunBtn) organizeDryRunBtn.disabled = !hasFiles;
         if (organizeCopyBtn) organizeCopyBtn.disabled = !hasFiles;
     }
 
     if (organizeFiles) {
         organizeFiles.addEventListener('change', updateOrganizeBtn);
+        updateOrganizeBtn();
+    }
+
+    if (organizeFolder) {
+        organizeFolder.addEventListener('change', updateOrganizeBtn);
         updateOrganizeBtn();
     }
 
@@ -55,16 +72,17 @@ document.addEventListener('DOMContentLoaded', () => {
     async function runOrganizer(opts = {}) {
         const saveToProject = opts.saveToProject === true;
         const skipDownload = opts.skipDownload === true;
+        const dryRun = opts.dryRun === true;
         if (!organizeFiles) return;
         if (organizeError) organizeError.classList.add('d-none');
         if (organizeInfo) organizeInfo.classList.add('d-none');
         if (organizeProgress) organizeProgress.classList.remove('d-none');
         if (organizeLogContainer) organizeLogContainer.classList.remove('d-none');
         if (organizeLog) organizeLog.textContent = '';
-        if (organizeBtn) organizeBtn.disabled = true;
+        if (organizeDryRunBtn) organizeDryRunBtn.disabled = true;
         if (organizeCopyBtn) organizeCopyBtn.disabled = true;
 
-        const files = Array.from(organizeFiles.files);
+        const files = getOrganizeFiles();
         const modality = organizeModality ? organizeModality.value : 'anat';
         const destRoot = organizeTargetRoot();
         const datasetName = 'Organized Dataset';
@@ -75,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('modality', modality);
         formData.append('save_to_project', saveToProject);
         formData.append('dest_root', destRoot);
+        formData.append('dry_run', dryRun);
 
         try {
             const response = await fetch('/api/batch-convert', {
@@ -89,25 +108,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const result = await response.json();
 
-            if (result.log && organizeLog) {
-                organizeLog.textContent = result.log;
+            // Display logs
+            if (result.logs && organizeLog) {
+                const logText = result.logs.map(l => l.message).join('\n');
+                organizeLog.textContent = logText;
             }
 
-            if (!skipDownload && result.zip) {
-                downloadBase64Zip(result.zip, `${datasetName}_prism.zip`);
-            }
+            if (result.dry_run) {
+                if (organizeInfo) {
+                    const newCount = result.new_files || 0;
+                    const existingCount = result.existing_files || 0;
+                    organizeInfo.innerHTML = `<i class="fas fa-check-circle me-2 text-success"></i>Dry run complete: ${result.converted || 0} files would be organized.<br>📄 <strong>New:</strong> ${newCount} · 📋 <strong>Existing (will overwrite):</strong> ${existingCount}<br>Review the log above, then click "Copy to Project" to execute.`;
+                    organizeInfo.classList.remove('d-none');
+                }
+            } else {
+                const warnings = result.warnings || [];
+                if (warnings.length && organizeError) {
+                    organizeError.innerHTML = warnings.map(w => `<div><i class="fas fa-exclamation-triangle me-2"></i>${w}</div>`).join('');
+                    organizeError.classList.remove('d-none');
+                }
 
-            const warnings = result.warnings || [];
-            if (warnings.length && organizeError) {
-                organizeError.innerHTML = warnings.map(w => `<div><i class="fas fa-exclamation-triangle me-2"></i>${w}</div>`).join('');
-                organizeError.classList.remove('d-none');
-            }
-
-            if (organizeInfo) {
-                const savedText = result.project_saved ? ' Copied to project.' : '';
-                const zipText = skipDownload ? '' : ' ZIP download started.';
-                organizeInfo.textContent = `Organized ${result.converted || 0} files. ${result.errors || 0} errors.${savedText}${zipText}`.trim();
-                organizeInfo.classList.remove('d-none');
+                if (organizeInfo) {
+                    const savedText = result.project_saved ? ' Copied to project.' : '';
+                    const zipText = skipDownload ? '' : ' ZIP download started.';
+                    organizeInfo.textContent = `Organized ${result.converted || 0} files. ${result.errors || 0} errors.${savedText}${zipText}`.trim();
+                    organizeInfo.classList.remove('d-none');
+                }
             }
         } catch (err) {
             if (organizeError) {
@@ -120,8 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    if (organizeBtn) {
-        organizeBtn.addEventListener('click', () => runOrganizer({ saveToProject: false, skipDownload: false }));
+    if (organizeDryRunBtn) {
+        organizeDryRunBtn.addEventListener('click', () => runOrganizer({ dryRun: true }));
     }
 
     if (organizeCopyBtn) {
