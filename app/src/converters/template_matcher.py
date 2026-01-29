@@ -57,6 +57,7 @@ class TemplateMatch:
     only_in_import: list[str] = field(default_factory=list)
     only_in_library: list[str] = field(default_factory=list)
     is_participants: bool = False  # True if matched against participants.json
+    source: str = "global"  # "global" | "project" — where the matched template lives
 
     def to_dict(self) -> dict:
         """Serialize for JSON API responses."""
@@ -72,6 +73,7 @@ class TemplateMatch:
             "only_in_import": self.only_in_import,
             "only_in_library": self.only_in_library,
             "is_participants": self.is_participants,
+            "source": self.source,
         }
         # Add suggested action based on confidence
         if self.is_participants:
@@ -194,6 +196,7 @@ def _load_project_templates(project_path: str | Path) -> dict[str, dict]:
             "path": json_path,
             "json": sidecar,
             "structure": _extract_template_structure(sidecar),
+            "source": "project",
         }
 
     if templates:
@@ -231,13 +234,15 @@ def _match_by_name(
 
     candidates = []
     for task_key, tdata in templates.items():
+        # Strip __project__ prefix for name comparison
+        real_key = task_key.removeprefix("__project__")
         sidecar = tdata["json"]
         study = sidecar.get("Study", {})
         abbreviation = str(study.get("Abbreviation", "")).lower().strip()
         task_name = str(study.get("TaskName", "")).lower().strip()
 
         for name in names_to_try:
-            if name == task_key:
+            if name == real_key:
                 candidates.append(task_key)
                 break
             elif name == abbreviation:
@@ -378,11 +383,23 @@ def match_against_library(
     if global_templates is None:
         global_templates = _load_global_templates()
 
-    # Merge project templates with global (project takes priority for same key)
-    all_templates = dict(global_templates) if global_templates else {}
+    # Build combined template pool with source tracking.
+    # Global templates get source="global"; project templates already have
+    # source="project" from _load_project_templates().
+    # Project templates are added separately (not merged) so both versions
+    # can compete — the best structural match wins regardless of source.
+    all_templates: dict[str, dict] = {}
+    if global_templates:
+        for key, tdata in global_templates.items():
+            entry = dict(tdata)
+            entry.setdefault("source", "global")
+            all_templates[key] = entry
     if project_path:
         project_templates = _load_project_templates(project_path)
-        all_templates.update(project_templates)
+        for key, tdata in project_templates.items():
+            # Use a prefixed key so project and global versions both compete
+            proj_key = f"__project__{key}"
+            all_templates[proj_key] = tdata
 
     # Extract imported item codes, excluding hidden metadata questions
     imported_struct = {
@@ -402,17 +419,22 @@ def match_against_library(
         if base not in norm_to_original:
             norm_to_original[base] = code
 
-    # Name-based candidates (for prioritization, not exclusion)
-    name_candidates = set()
+    # Name-based candidates (for prioritization, not exclusion).
+    # _match_by_name works on the real task key, so we need to resolve
+    # __project__ prefixed keys back to their real names for comparison.
+    name_candidates_raw = set()
     if group_name:
-        name_candidates = set(_match_by_name(group_name, all_templates))
-    # Also try the Study.Abbreviation from the imported template itself
+        name_candidates_raw = set(_match_by_name(group_name, all_templates))
     imp_study = prism_json.get("Study", {})
     imp_abbr = str(imp_study.get("Abbreviation", "")).strip()
     imp_task = str(imp_study.get("TaskName", "")).strip()
     for label in (imp_abbr, imp_task):
         if label:
-            name_candidates.update(_match_by_name(label, all_templates))
+            name_candidates_raw.update(_match_by_name(label, all_templates))
+    # Also add __project__ prefixed versions so project entries get the boost
+    name_candidates = set(name_candidates_raw)
+    for key in name_candidates_raw:
+        name_candidates.add(f"__project__{key}")
 
     best_match: Optional[TemplateMatch] = None
     best_overlap_ratio = 0.0
@@ -421,6 +443,10 @@ def match_against_library(
         lib_struct = tdata["structure"]
         if not lib_struct:
             continue
+
+        # Resolve the real template key (strip __project__ prefix)
+        real_key = task_key.removeprefix("__project__")
+        template_source = tdata.get("source", "global")
 
         # Compute overlap using normalized imported codes
         overlap = imported_normalized & lib_struct
@@ -483,7 +509,7 @@ def match_against_library(
         if effective_ratio > best_overlap_ratio:
             best_overlap_ratio = effective_ratio
             best_match = TemplateMatch(
-                template_key=task_key,
+                template_key=real_key,
                 template_path=str(tdata["path"].name),
                 confidence=confidence,
                 overlap_count=overlap_count,
@@ -493,6 +519,7 @@ def match_against_library(
                 runs_detected=runs_detected,
                 only_in_import=only_in_import,
                 only_in_library=only_in_library,
+                source=template_source,
             )
 
     # If no survey template matched, check against participants template
@@ -503,12 +530,13 @@ def match_against_library(
 
     if best_match:
         logger.info(
-            "Template match: %s -> %s (confidence=%s, overlap=%d/%d%s)",
+            "Template match: %s -> %s (confidence=%s, overlap=%d/%d, source=%s%s)",
             group_name or "unknown",
             best_match.template_key,
             best_match.confidence,
             best_match.overlap_count,
             best_match.template_items,
+            best_match.source,
             ", participants" if best_match.is_participants else "",
         )
 
