@@ -163,6 +163,20 @@
         text-decoration: underline;
     }
 
+    .ts-field {
+        display: none;
+    }
+
+    .ts-field.visible {
+        display: block;
+    }
+
+    .html-hint {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-left: 0.25rem;
+    }
+
     .lang-tag {
         display: inline-block;
         padding: 0.15rem 0.4rem;
@@ -517,6 +531,64 @@ document.addEventListener('DOMContentLoaded', function() {
         return '';
     }
 
+    // Field definitions per question type
+    // Universal fields are always shown; type-specific fields show/hide based on detected type
+    const QUESTION_TYPE_FIELDS = {
+        universal: ['questionType', 'cssClass', 'hidden', 'pageBreak', 'relevance', 'helpText'],
+        'N': ['validationMin', 'validationMax', 'integerOnly', 'inputWidth', 'inputSize', 'maximumChars', 'prefix', 'suffix', 'placeholder'],
+        'S': ['inputWidth', 'inputSize', 'displayRows', 'maximumChars', 'numbersOnly', 'prefix', 'suffix', 'placeholder'],
+        'T': ['inputWidth', 'inputSize', 'displayRows', 'maximumChars', 'numbersOnly', 'placeholder'],
+        'L': ['displayColumns', 'alphasort'],
+        '!': ['dropdownSize', 'dropdownPrefix', 'categorySeparator', 'alphasort'],
+        'F': ['answerWidth', 'repeatHeadings', 'useDropdown'],
+        '*': ['equation', 'numbersOnly'],
+        'X': []
+    };
+
+    /**
+     * Detect the LimeSurvey question type for a question.
+     * Mirrors Python _determine_ls_question_type() logic.
+     */
+    function detectQuestionType(question) {
+        // If toolOverrides has an explicit type, use it
+        const ov = question.toolOverrides || {};
+        if (ov.questionType) return ov.questionType;
+
+        const orig = question.originalData || {};
+        const lsConfig = orig.LimeSurvey || {};
+
+        // Check LimeSurvey section explicit type
+        if (lsConfig.questionType) return lsConfig.questionType;
+
+        const inputType = (orig.InputType || '').toLowerCase();
+        const levels = orig.Levels || question.levels || {};
+        const hasLevels = levels && typeof levels === 'object' && Object.keys(levels).length > 0;
+
+        // Calculated field
+        if (inputType === 'calculated' || orig.Calculation) return '*';
+
+        // Numerical
+        if (inputType === 'numerical') return 'N';
+
+        // Slider
+        if (inputType === 'slider') return 'K';
+
+        // Dropdown
+        if (inputType === 'dropdown') return '!';
+
+        // Many levels -> dropdown
+        if (hasLevels && Object.keys(levels).length > 10) return '!';
+
+        // Text
+        if (inputType === 'text') {
+            const textConfig = orig.TextConfig || {};
+            return textConfig.multiline ? 'T' : 'S';
+        }
+
+        // Default based on levels
+        return hasLevels ? 'L' : 'T';
+    }
+
     // Load data from sessionStorage
     function loadFromSessionStorage() {
         loadingOverlay.classList.remove('d-none');
@@ -758,13 +830,29 @@ document.addEventListener('DOMContentLoaded', function() {
                             container.innerHTML = buildToolSettingsPanel(gid, quest);
                             activeToolSettingsPanel = container;
 
-                            // Auto-save on change
-                            container.querySelectorAll('input, select').forEach(input => {
-                                input.addEventListener('change', () => {
-                                    const p = container.querySelector('.tool-settings-panel');
-                                    if (p) saveToolSettings(gid, qid, p);
+                            const panel = container.querySelector('.tool-settings-panel');
+                            if (panel) {
+                                // Show correct type-specific fields
+                                updateTypeSpecificFields(panel);
+
+                                // Wire question type change to update visible fields
+                                const typeSelect = panel.querySelector('.ts-questionType');
+                                if (typeSelect) {
+                                    typeSelect.addEventListener('change', () => {
+                                        updateTypeSpecificFields(panel);
+                                        saveToolSettings(gid, qid, panel);
+                                    });
+                                }
+
+                                // Auto-save on change for all inputs
+                                panel.querySelectorAll('input, select').forEach(input => {
+                                    if (input !== typeSelect) {
+                                        input.addEventListener('change', () => {
+                                            saveToolSettings(gid, qid, panel);
+                                        });
+                                    }
                                 });
-                            });
+                            }
                         }
                     }
                 });
@@ -1127,13 +1215,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function buildToolSettingsPanel(groupId, question) {
         const ov = question.toolOverrides || {};
         const panelId = `tool-panel-${groupId}-${question.id}`;
+        const detectedType = detectQuestionType(question);
         return `
-            <div class="tool-settings-panel" id="${panelId}">
+            <div class="tool-settings-panel" id="${panelId}" data-detected-type="${detectedType}">
+                <!-- Row 1: Universal fields -->
                 <div class="row g-2">
                     <div class="col-md-3">
                         <label class="form-label">Question Type</label>
-                        <select class="form-select ts-questionType" data-gid="${groupId}" data-qid="${question.id}">
-                            <option value="">Auto-detect</option>
+                        <select class="form-select ts-questionType">
+                            <option value="">Auto-detect (${detectedType})</option>
                             <option value="L" ${ov.questionType === 'L' ? 'selected' : ''}>L - List (Radio)</option>
                             <option value="!" ${ov.questionType === '!' ? 'selected' : ''}>! - List (Dropdown)</option>
                             <option value="F" ${ov.questionType === 'F' ? 'selected' : ''}>F - Array (Matrix)</option>
@@ -1144,60 +1234,170 @@ document.addEventListener('DOMContentLoaded', function() {
                             <option value="X" ${ov.questionType === 'X' ? 'selected' : ''}>X - Boilerplate</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Input Width (1-12)</label>
-                        <input type="number" class="form-control ts-inputWidth" min="1" max="12"
-                               value="${ov.inputWidth || ''}" data-gid="${groupId}" data-qid="${question.id}">
+                    <div class="col-md-3">
+                        <label class="form-label">CSS Class</label>
+                        <input type="text" class="form-control ts-cssClass" placeholder="e.g. my-class"
+                               value="${escapeHtml(ov.cssClass || '')}">
                     </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Display Rows</label>
-                        <input type="number" class="form-control ts-displayRows" min="1" max="50"
-                               value="${ov.displayRows || ''}" data-gid="${groupId}" data-qid="${question.id}">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Val. Min</label>
-                        <input type="number" class="form-control ts-validationMin"
-                               value="${ov.validationMin != null ? ov.validationMin : ''}" data-gid="${groupId}" data-qid="${question.id}">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Val. Max</label>
-                        <input type="number" class="form-control ts-validationMax"
-                               value="${ov.validationMax != null ? ov.validationMax : ''}" data-gid="${groupId}" data-qid="${question.id}">
-                    </div>
-                    <div class="col-md-1 d-flex align-items-end">
-                        <div class="form-check" title="Integer Only">
-                            <input class="form-check-input ts-integerOnly" type="checkbox"
-                                   ${ov.integerOnly ? 'checked' : ''} data-gid="${groupId}" data-qid="${question.id}">
-                            <label class="form-check-label small">Int</label>
+                    <div class="col-md-2 d-flex align-items-end gap-3">
+                        <div class="form-check" title="Hidden question">
+                            <input class="form-check-input ts-hidden" type="checkbox" ${ov.hidden ? 'checked' : ''}>
+                            <label class="form-check-label small">Hidden</label>
+                        </div>
+                        <div class="form-check" title="Page break before this question">
+                            <input class="form-check-input ts-pageBreak" type="checkbox" ${ov.pageBreak ? 'checked' : ''}>
+                            <label class="form-check-label small">Page break</label>
                         </div>
                     </div>
                 </div>
+                <!-- Row 2: Universal continued -->
                 <div class="row g-2 mt-1">
                     <div class="col-md-4">
                         <label class="form-label">Relevance (Logic)</label>
                         <input type="text" class="form-control ts-relevance" placeholder="e.g. Q1 == 'Y'"
-                               value="${escapeHtml(ov.relevance || '')}" data-gid="${groupId}" data-qid="${question.id}">
+                               value="${escapeHtml(ov.relevance || '')}">
                     </div>
                     <div class="col-md-4">
+                        <label class="form-label">Help Text <span class="html-hint" title="HTML tags are supported"><i class="fas fa-code"></i> HTML</span></label>
+                        <input type="text" class="form-control ts-helpText"
+                               value="${escapeHtml(ov.helpText || '')}">
+                    </div>
+                </div>
+                <!-- Row 3: Type-specific fields -->
+                <div class="row g-2 mt-1">
+                    <!-- Numerical / Text shared -->
+                    <div class="col-md-2 ts-field" data-for-types="N,S,T">
+                        <label class="form-label">Input Width (1-12)</label>
+                        <input type="number" class="form-control ts-inputWidth" min="1" max="12"
+                               value="${ov.inputWidth || ''}">
+                    </div>
+                    <div class="col-md-2 ts-field" data-for-types="N,S,T">
+                        <label class="form-label">Input Size</label>
+                        <input type="number" class="form-control ts-inputSize" min="1"
+                               value="${ov.inputSize || ''}">
+                    </div>
+                    <div class="col-md-2 ts-field" data-for-types="S,T">
+                        <label class="form-label">Display Rows</label>
+                        <input type="number" class="form-control ts-displayRows" min="1" max="50"
+                               value="${ov.displayRows || ''}">
+                    </div>
+                    <div class="col-md-2 ts-field" data-for-types="N,S,T">
+                        <label class="form-label">Max Chars</label>
+                        <input type="number" class="form-control ts-maximumChars" min="1"
+                               value="${ov.maximumChars || ''}">
+                    </div>
+                    <!-- Numerical validation -->
+                    <div class="col-md-2 ts-field" data-for-types="N">
+                        <label class="form-label">Val. Min</label>
+                        <input type="number" class="form-control ts-validationMin"
+                               value="${ov.validationMin != null ? ov.validationMin : ''}">
+                    </div>
+                    <div class="col-md-2 ts-field" data-for-types="N">
+                        <label class="form-label">Val. Max</label>
+                        <input type="number" class="form-control ts-validationMax"
+                               value="${ov.validationMax != null ? ov.validationMax : ''}">
+                    </div>
+                    <div class="col-md-1 ts-field d-flex align-items-end" data-for-types="N">
+                        <div class="form-check" title="Integer Only">
+                            <input class="form-check-input ts-integerOnly" type="checkbox" ${ov.integerOnly ? 'checked' : ''}>
+                            <label class="form-check-label small">Int</label>
+                        </div>
+                    </div>
+                    <!-- Prefix / Suffix / Placeholder (Numerical & Text) -->
+                    <div class="col-md-2 ts-field" data-for-types="N,S,T">
+                        <label class="form-label">Prefix</label>
+                        <input type="text" class="form-control ts-prefix" value="${escapeHtml(ov.prefix || '')}">
+                    </div>
+                    <div class="col-md-2 ts-field" data-for-types="N,S">
+                        <label class="form-label">Suffix</label>
+                        <input type="text" class="form-control ts-suffix" value="${escapeHtml(ov.suffix || '')}">
+                    </div>
+                    <div class="col-md-2 ts-field" data-for-types="N,S,T">
+                        <label class="form-label">Placeholder</label>
+                        <input type="text" class="form-control ts-placeholder" value="${escapeHtml(ov.placeholder || '')}">
+                    </div>
+                    <!-- Numbers Only (Text & Equation) -->
+                    <div class="col-md-1 ts-field d-flex align-items-end" data-for-types="S,T,*">
+                        <div class="form-check" title="Numbers only">
+                            <input class="form-check-input ts-numbersOnly" type="checkbox" ${ov.numbersOnly ? 'checked' : ''}>
+                            <label class="form-check-label small">Num</label>
+                        </div>
+                    </div>
+                    <!-- List Radio specific -->
+                    <div class="col-md-2 ts-field" data-for-types="L">
+                        <label class="form-label">Display Columns</label>
+                        <input type="number" class="form-control ts-displayColumns" min="1" max="4"
+                               value="${ov.displayColumns || ''}">
+                    </div>
+                    <div class="col-md-1 ts-field d-flex align-items-end" data-for-types="L,!">
+                        <div class="form-check" title="Sort answers alphabetically">
+                            <input class="form-check-input ts-alphasort" type="checkbox" ${ov.alphasort ? 'checked' : ''}>
+                            <label class="form-check-label small">Sort</label>
+                        </div>
+                    </div>
+                    <!-- List Dropdown specific -->
+                    <div class="col-md-2 ts-field" data-for-types="!">
+                        <label class="form-label">Dropdown Size</label>
+                        <input type="number" class="form-control ts-dropdownSize" min="1"
+                               value="${ov.dropdownSize || ''}">
+                    </div>
+                    <div class="col-md-2 ts-field" data-for-types="!">
+                        <label class="form-label">Dropdown Prefix</label>
+                        <select class="form-select ts-dropdownPrefix">
+                            <option value="" ${!ov.dropdownPrefix ? 'selected' : ''}>Default</option>
+                            <option value="none" ${ov.dropdownPrefix === 'none' ? 'selected' : ''}>None</option>
+                            <option value="order" ${ov.dropdownPrefix === 'order' ? 'selected' : ''}>Order number</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 ts-field" data-for-types="!">
+                        <label class="form-label">Category Separator</label>
+                        <input type="text" class="form-control ts-categorySeparator"
+                               value="${escapeHtml(ov.categorySeparator || '')}">
+                    </div>
+                    <!-- Array/Matrix specific -->
+                    <div class="col-md-2 ts-field" data-for-types="F">
+                        <label class="form-label">Answer Width (%)</label>
+                        <input type="number" class="form-control ts-answerWidth" min="1" max="100"
+                               value="${ov.answerWidth || ''}">
+                    </div>
+                    <div class="col-md-2 ts-field" data-for-types="F">
+                        <label class="form-label">Repeat Headings</label>
+                        <input type="number" class="form-control ts-repeatHeadings" min="0"
+                               value="${ov.repeatHeadings || ''}">
+                    </div>
+                    <div class="col-md-1 ts-field d-flex align-items-end" data-for-types="F">
+                        <div class="form-check" title="Use dropdown instead of radio in matrix">
+                            <input class="form-check-input ts-useDropdown" type="checkbox" ${ov.useDropdown ? 'checked' : ''}>
+                            <label class="form-check-label small">Drop</label>
+                        </div>
+                    </div>
+                    <!-- Equation specific -->
+                    <div class="col-md-4 ts-field" data-for-types="*">
                         <label class="form-label">Equation</label>
                         <input type="text" class="form-control ts-equation" placeholder="Calculated field formula"
-                               value="${escapeHtml(ov.equation || '')}" data-gid="${groupId}" data-qid="${question.id}">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Help Text</label>
-                        <input type="text" class="form-control ts-helpText"
-                               value="${escapeHtml(ov.helpText || '')}" data-gid="${groupId}" data-qid="${question.id}">
-                    </div>
-                    <div class="col-md-1 d-flex align-items-end">
-                        <div class="form-check" title="Hidden question">
-                            <input class="form-check-input ts-hidden" type="checkbox"
-                                   ${ov.hidden ? 'checked' : ''} data-gid="${groupId}" data-qid="${question.id}">
-                            <label class="form-check-label small">Hide</label>
-                        </div>
+                               value="${escapeHtml(ov.equation || '')}">
                     </div>
                 </div>
             </div>
         `;
+    }
+
+    /**
+     * Show/hide type-specific fields based on the active question type.
+     */
+    function updateTypeSpecificFields(panelEl) {
+        const typeSelect = panelEl.querySelector('.ts-questionType');
+        const detectedType = panelEl.dataset.detectedType || 'T';
+        const activeType = typeSelect.value || detectedType;
+
+        panelEl.querySelectorAll('.ts-field').forEach(field => {
+            const forTypes = (field.dataset.forTypes || '').split(',');
+            if (forTypes.includes(activeType)) {
+                field.classList.add('visible');
+            } else {
+                field.classList.remove('visible');
+            }
+        });
     }
 
     // Save tool settings from panel inputs back to question state
@@ -1209,40 +1409,63 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const ov = question.toolOverrides || {};
 
-        const qType = panelEl.querySelector('.ts-questionType')?.value;
-        if (qType) ov.questionType = qType;
-        else delete ov.questionType;
+        // Helpers: read value, set or delete from ov
+        function readVal(selector, key, parser) {
+            const el = panelEl.querySelector(selector);
+            if (!el) return;
+            const v = el.value;
+            if (v !== '' && v !== undefined) {
+                ov[key] = parser ? parser(v) : v;
+            } else {
+                delete ov[key];
+            }
+        }
+        function readBool(selector, key) {
+            const el = panelEl.querySelector(selector);
+            if (!el) return;
+            if (el.checked) ov[key] = true;
+            else delete ov[key];
+        }
 
-        const iw = panelEl.querySelector('.ts-inputWidth')?.value;
-        if (iw) ov.inputWidth = parseInt(iw, 10);
-        else delete ov.inputWidth;
+        // Universal fields
+        readVal('.ts-questionType', 'questionType', null);
+        readVal('.ts-cssClass', 'cssClass', null);
+        readBool('.ts-hidden', 'hidden');
+        readBool('.ts-pageBreak', 'pageBreak');
+        readVal('.ts-relevance', 'relevance', null);
+        readVal('.ts-helpText', 'helpText', null);
 
-        const dr = panelEl.querySelector('.ts-displayRows')?.value;
-        if (dr) ov.displayRows = parseInt(dr, 10);
-        else delete ov.displayRows;
+        // Numerical / Text shared
+        readVal('.ts-inputWidth', 'inputWidth', v => parseInt(v, 10));
+        readVal('.ts-inputSize', 'inputSize', v => parseInt(v, 10));
+        readVal('.ts-displayRows', 'displayRows', v => parseInt(v, 10));
+        readVal('.ts-maximumChars', 'maximumChars', v => parseInt(v, 10));
+        readVal('.ts-prefix', 'prefix', null);
+        readVal('.ts-suffix', 'suffix', null);
+        readVal('.ts-placeholder', 'placeholder', null);
 
-        const vMin = panelEl.querySelector('.ts-validationMin')?.value;
-        if (vMin !== '') ov.validationMin = parseFloat(vMin);
-        else delete ov.validationMin;
+        // Numerical validation
+        readVal('.ts-validationMin', 'validationMin', v => parseFloat(v));
+        readVal('.ts-validationMax', 'validationMax', v => parseFloat(v));
+        readBool('.ts-integerOnly', 'integerOnly');
 
-        const vMax = panelEl.querySelector('.ts-validationMax')?.value;
-        if (vMax !== '') ov.validationMax = parseFloat(vMax);
-        else delete ov.validationMax;
+        // Text / Equation
+        readBool('.ts-numbersOnly', 'numbersOnly');
 
-        ov.integerOnly = panelEl.querySelector('.ts-integerOnly')?.checked || false;
-        ov.hidden = panelEl.querySelector('.ts-hidden')?.checked || false;
+        // List Radio / Dropdown
+        readVal('.ts-displayColumns', 'displayColumns', v => parseInt(v, 10));
+        readBool('.ts-alphasort', 'alphasort');
+        readVal('.ts-dropdownSize', 'dropdownSize', v => parseInt(v, 10));
+        readVal('.ts-dropdownPrefix', 'dropdownPrefix', null);
+        readVal('.ts-categorySeparator', 'categorySeparator', null);
 
-        const rel = panelEl.querySelector('.ts-relevance')?.value;
-        if (rel) ov.relevance = rel;
-        else delete ov.relevance;
+        // Array/Matrix
+        readVal('.ts-answerWidth', 'answerWidth', v => parseInt(v, 10));
+        readVal('.ts-repeatHeadings', 'repeatHeadings', v => parseInt(v, 10));
+        readBool('.ts-useDropdown', 'useDropdown');
 
-        const eq = panelEl.querySelector('.ts-equation')?.value;
-        if (eq) ov.equation = eq;
-        else delete ov.equation;
-
-        const ht = panelEl.querySelector('.ts-helpText')?.value;
-        if (ht) ov.helpText = ht;
-        else delete ov.helpText;
+        // Equation
+        readVal('.ts-equation', 'equation', null);
 
         question.toolOverrides = ov;
     }
