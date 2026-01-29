@@ -1937,7 +1937,7 @@ def generate_lss_from_customization(
                     add_row(questions_rows, q_data_row)
 
                     for lang in languages:
-                        desc = get_text(orig.get("Description", q_code), lang)
+                        desc = tool_ov.get("questionText") or get_text(orig.get("Description", q_code), lang)
                         if not desc:
                             desc = q.get("description", q_code)
                         desc = _apply_ls_styling(desc)
@@ -1949,7 +1949,7 @@ def generate_lss_from_customization(
                         l10n_id_counter += 1
                 else:
                     for lang in languages:
-                        desc = get_text(orig.get("Description", q_code), lang)
+                        desc = tool_ov.get("questionText") or get_text(orig.get("Description", q_code), lang)
                         if not desc:
                             desc = q.get("description", q_code)
                         desc = _apply_ls_styling(desc)

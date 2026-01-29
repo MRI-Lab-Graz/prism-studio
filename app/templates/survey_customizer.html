@@ -1250,7 +1250,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                 </div>
-                <!-- Row 2: Universal continued -->
+                <!-- Row 2: Question text override -->
+                <div class="row g-2 mt-1">
+                    <div class="col-md-8">
+                        <label class="form-label">Question Text <span class="html-hint" title="HTML tags are supported"><i class="fas fa-code"></i> HTML</span></label>
+                        <input type="text" class="form-control ts-questionText" placeholder="${escapeHtml(question.description || '')}"
+                               value="${escapeHtml(ov.questionText || '')}">
+                    </div>
+                </div>
+                <!-- Row 3: Relevance and help -->
                 <div class="row g-2 mt-1">
                     <div class="col-md-4">
                         <label class="form-label">Relevance (Logic)</label>
@@ -1432,6 +1440,7 @@ document.addEventListener('DOMContentLoaded', function() {
         readVal('.ts-cssClass', 'cssClass', null);
         readBool('.ts-hidden', 'hidden');
         readBool('.ts-pageBreak', 'pageBreak');
+        readVal('.ts-questionText', 'questionText', null);
         readVal('.ts-relevance', 'relevance', null);
         readVal('.ts-helpText', 'helpText', null);
 
