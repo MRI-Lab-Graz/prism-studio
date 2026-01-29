@@ -38,6 +38,7 @@ PHYSIO_EXTENSIONS = {".raw", ".vpd", ".edf"}
 EYETRACKING_EXTENSIONS = {".edf"}
 GENERIC_EXTENSIONS = {
     ".tsv",
+    ".tsv.gz",
     ".csv",
     ".txt",
     ".json",
@@ -65,6 +66,15 @@ class ConvertedFile:
 
 
 @dataclass
+class FileConflict:
+    """A file conflict when output already exists."""
+
+    output_path: Path
+    source_path: Path | None = None
+    reason: str = "File already exists"  # "identical" or "different"
+
+
+@dataclass
 class BatchConvertResult:
     """Result of batch conversion."""
 
@@ -72,6 +82,9 @@ class BatchConvertResult:
     output_folder: Path
     converted: list[ConvertedFile] = field(default_factory=list)
     skipped: list[tuple[Path, str]] = field(default_factory=list)  # (path, reason)
+    conflicts: list[FileConflict] = field(default_factory=list)  # File conflicts
+    existing_files: int = 0  # Count of files that already exist (for dry-run reporting)
+    new_files: int = 0  # Count of files that would be created (for dry-run reporting)
 
     @property
     def success_count(self) -> int:
@@ -117,6 +130,62 @@ def detect_modality(ext: str) -> str | None:
     elif ext_lower in GENERIC_EXTENSIONS:
         return "generic"
     return None
+
+
+def _files_identical(path1: Path, path2: Path) -> bool:
+    """Check if two files have identical content (for binary and text files)."""
+    try:
+        if not path1.exists() or not path2.exists():
+            return False
+        # For large files, compare size first
+        if path1.stat().st_size != path2.stat().st_size:
+            return False
+        # For small files, compare content
+        if path1.stat().st_size < 1_000_000:  # < 1 MB
+            return path1.read_bytes() == path2.read_bytes()
+        # For larger files, just trust size comparison
+        return True
+    except Exception:
+        return False
+
+
+def safe_write_file(
+    source_path: Path,
+    dest_path: Path,
+    *,
+    allow_overwrite: bool = True,
+) -> tuple[bool, str | None]:
+    """Safely write a file, checking for conflicts.
+
+    Args:
+        source_path: Path to source file to copy
+        dest_path: Path to destination
+        allow_overwrite: If False, skip if file exists
+
+    Returns:
+        (success: bool, conflict_reason: str | None)
+        - (True, None): File written successfully
+        - (False, None): Source file not found
+        - (False, "identical"): File exists with same content (skipped)
+        - (False, "different"): File exists with different content (conflict)
+    """
+    if not source_path.exists():
+        return False, None
+
+    if dest_path.exists():
+        # Check if content is identical
+        if _files_identical(source_path, dest_path):
+            return False, "identical"
+        # Content differs
+        if not allow_overwrite:
+            return False, "different"
+
+    try:
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_path, dest_path)
+        return True, None
+    except Exception as e:
+        return False, f"error: {e}"
 
 
 def _create_physio_sidecar(
@@ -550,6 +619,7 @@ def batch_convert_folder(
     physio_sampling_rate: float | None = None,
     modality_filter: str = "all",
     log_callback: Callable | None = None,
+    dry_run: bool = False,
 ) -> BatchConvertResult:
     """Batch convert all supported files from a flat folder structure.
 
@@ -578,6 +648,8 @@ def batch_convert_folder(
     )
 
     log(f"📂 Scanning source folder: {source_folder.name}", "info")
+    if dry_run:
+        log("🧪 DRY RUN MODE - No files will be written", "info")
 
     # Find all supported files
     all_extensions = set()
@@ -683,10 +755,30 @@ def batch_convert_folder(
         result.converted.append(converted)
 
         if converted.success:
-            log(
-                f"✅ [{idx}/{len(files_to_process)}] Success: {file_path.name} → {converted.modality}/",
-                "success",
-            )
+            # Track file existence for dry-run reporting
+            if dry_run and converted.output_files:
+                files_exist = sum(1 for f in converted.output_files if f.exists())
+                result.existing_files += files_exist
+                result.new_files += len(converted.output_files) - files_exist
+            
+            if dry_run:
+                # In dry run, show what would be created
+                if converted.output_files:
+                    output_paths = ", ".join([f.name for f in converted.output_files])
+                    log(
+                        f"✅ [{idx}/{len(files_to_process)}] Would create: {file_path.name} → {converted.modality}/ ({output_paths})",
+                        "success",
+                    )
+                else:
+                    log(
+                        f"✅ [{idx}/{len(files_to_process)}] Would process: {file_path.name} → {converted.modality}/",
+                        "success",
+                    )
+            else:
+                log(
+                    f"✅ [{idx}/{len(files_to_process)}] Success: {file_path.name} → {converted.modality}/",
+                    "success",
+                )
         else:
             log(
                 f"❌ [{idx}/{len(files_to_process)}] Error: {file_path.name} - {converted.error}",
@@ -695,12 +787,22 @@ def batch_convert_folder(
 
     # Summary
     log("", "info")
-    log("📊 Conversion complete:", "info")
-    log(f"   ✅ Successful: {result.success_count}", "success")
+    if dry_run:
+        log("🧪 DRY RUN SUMMARY:", "info")
+        log(f"   ✅ Would organize: {result.success_count} files", "success")
+        log(f"   📄 New files: {result.new_files}", "info")
+        log(f"   📋 Existing files (will be overwritten): {result.existing_files}", "warning")
+    else:
+        log("📊 Conversion complete:", "info")
+        log(f"   ✅ Successful: {result.success_count}", "success")
     if result.error_count > 0:
         log(f"   ❌ Errors: {result.error_count}", "error")
     if result.skipped:
         log(f"   ⏭️  Skipped: {len(result.skipped)}", "warning")
+    if result.conflicts:
+        log(f"   ⚠️  Conflicts: {len(result.conflicts)}", "warning")
+    if dry_run:
+        log("💡 Run 'Copy to Project' when you're ready to execute.", "info")
 
     return result
 
