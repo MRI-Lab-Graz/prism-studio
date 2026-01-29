@@ -1,0 +1,58 @@
+name: Improvement
+description: Suggest an enhancement to existing functionality
+title: "[Improvement]: "
+labels: ["type: improvement", "status: needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggest an improvement to something that already exists in PRISM Studio.
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current behavior
+      description: How does the feature currently work?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed
+    attributes:
+      label: Proposed improvement
+      description: How should it work instead? What would be better?
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+      description: Why is this improvement valuable? Who benefits?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which part of PRISM Studio does this affect?
+      options:
+        - Validation engine (prism.py)
+        - Web UI (prism-studio.py)
+        - Data converter (prism_tools.py)
+        - Template editor
+        - Survey customizer
+        - LimeSurvey import/export
+        - JSON schemas
+        - CLI tools
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Screenshots, examples, or references that illustrate the improvement.
