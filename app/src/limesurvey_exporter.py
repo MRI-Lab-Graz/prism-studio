@@ -1890,6 +1890,34 @@ def generate_lss_from_customization(
                 if tool_ov.get("equation"):
                     extra_attrs["equation"] = tool_ov["equation"]
 
+                # Additional toolOverride → LS attribute mappings
+                _ov_to_ls = {
+                    "cssClass": "cssclass",
+                    "pageBreak": "page_break",
+                    "maximumChars": "maximum_chars",
+                    "numbersOnly": "numbers_only",
+                    "inputSize": "input_size",
+                    "prefix": "prefix",
+                    "suffix": "suffix",
+                    "placeholder": "placeholder",
+                    "displayColumns": "display_columns",
+                    "alphasort": "alphasort",
+                    "dropdownSize": "dropdown_size",
+                    "dropdownPrefix": "dropdown_prefix",
+                    "categorySeparator": "category_separator",
+                    "answerWidth": "answer_width",
+                    "repeatHeadings": "repeat_headings",
+                    "useDropdown": "use_dropdown",
+                }
+                for ov_key, ls_attr in _ov_to_ls.items():
+                    val = tool_ov.get(ov_key)
+                    if val is not None and val != "" and val is not False:
+                        # Boolean True → "1" for LS attributes
+                        if isinstance(val, bool):
+                            extra_attrs[ls_attr] = "1"
+                        else:
+                            extra_attrs[ls_attr] = str(val)
+
                 # Relevance — toolOverride takes precedence
                 if tool_ov.get("relevance"):
                     relevance = tool_ov["relevance"]

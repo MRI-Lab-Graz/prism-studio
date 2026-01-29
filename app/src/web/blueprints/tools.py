@@ -393,6 +393,29 @@ def api_survey_customizer_load():
                             if "integerOnly" in val:
                                 tool_overrides["integerOnly"] = val["integerOnly"]
 
+                    # Additional LS-specific properties
+                    _ls_simple_keys = {
+                        "cssclass": "cssClass",
+                        "page_break": "pageBreak",
+                        "maximum_chars": "maximumChars",
+                        "numbers_only": "numbersOnly",
+                        "display_columns": "displayColumns",
+                        "alphasort": "alphasort",
+                        "dropdown_size": "dropdownSize",
+                        "dropdown_prefix": "dropdownPrefix",
+                        "category_separator": "categorySeparator",
+                        "answer_width": "answerWidth",
+                        "repeat_headings": "repeatHeadings",
+                        "use_dropdown": "useDropdown",
+                        "input_size": "inputSize",
+                        "prefix": "prefix",
+                        "suffix": "suffix",
+                        "placeholder": "placeholder",
+                    }
+                    for ls_key, ov_key in _ls_simple_keys.items():
+                        if ls_key in ls_props:
+                            tool_overrides[ov_key] = ls_props[ls_key]
+
                 questions.append(
                     {
                         "id": str(uuid_module.uuid4()),
