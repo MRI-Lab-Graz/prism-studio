@@ -1133,6 +1133,9 @@ document.addEventListener('DOMContentLoaded', function() {
         customizationState.groups.splice(groupIdx, 1);
         customizationState.groups.forEach((g, i) => g.order = i);
 
+        // Recalculate run numbers so remaining runs are sequential
+        recalculateRunNumbers();
+
         renderGroups();
         renderQuestions();
     }
