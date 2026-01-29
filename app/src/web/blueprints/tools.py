@@ -894,6 +894,70 @@ def api_template_editor_save():
         return jsonify({"error": str(e)}), 500
 
 
+@tools_bp.route("/api/template-editor/import-lsq-lsg", methods=["POST"])
+def api_template_editor_import_lsq_lsg():
+    """Import a .lsq or .lsg file and return a PRISM template for the editor."""
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    file = request.files["file"]
+    if not file.filename:
+        return jsonify({"error": "No file selected"}), 400
+
+    filename_lower = file.filename.lower()
+    if filename_lower.endswith(".lsq"):
+        source_type = "lsq"
+    elif filename_lower.endswith(".lsg"):
+        source_type = "lsg"
+    else:
+        return jsonify({"error": "Unsupported file type. Use .lsq or .lsg"}), 400
+
+    try:
+        xml_content = file.read()
+        if not xml_content:
+            return jsonify({"error": "File is empty"}), 400
+
+        from src.converters.limesurvey import parse_lsq_xml, parse_lsg_xml
+
+        if source_type == "lsq":
+            template = parse_lsq_xml(xml_content)
+        else:
+            template = parse_lsg_xml(xml_content)
+
+        if template is None:
+            return jsonify({"error": "Failed to parse XML file"}), 400
+
+        # Determine item count and languages
+        from src.converters.limesurvey import LIMESURVEY_QUESTION_TYPES  # noqa: F811
+
+        reserved = {"Technical", "Study", "Metadata", "I18n", "LimeSurvey", "Scoring", "Normative"}
+        item_keys = [k for k in template if k not in reserved]
+        item_count = len(item_keys)
+
+        languages = []
+        i18n = template.get("I18n")
+        if i18n and isinstance(i18n, dict):
+            languages = i18n.get("Languages", [])
+        if not languages:
+            lang = template.get("Technical", {}).get("Language", "en")
+            languages = [lang]
+
+        # Build suggested filename
+        task_name = template.get("Study", {}).get("TaskName", "imported")
+        suggested_filename = f"survey-{task_name}.json"
+
+        return jsonify({
+            "template": template,
+            "suggested_filename": suggested_filename,
+            "source_type": source_type,
+            "item_count": item_count,
+            "languages": languages,
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Import failed: {str(e)}"}), 500
+
+
 @tools_bp.route("/api/recipes-surveys", methods=["POST"])
 def api_recipes_surveys():
     """Run survey-recipes generation inside an existing PRISM dataset."""
