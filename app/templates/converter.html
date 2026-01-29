@@ -1628,7 +1628,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const matchDiv = document.createElement('div');
             matchDiv.id = 'templateSingleMatch';
             matchDiv.className = 'alert alert-info py-2 mt-2 mb-0';
-            matchDiv.innerHTML = `<i class="fas ${icon} me-1"></i><span class="badge ${badgeClass} me-2">${m.confidence}</span>Matches library template: <strong>${m.template_key}</strong> (${details.join(', ')})${actionLabel ? ` &mdash; <em>${actionLabel}</em>` : ''}`;
+            const srcLabel = m.source === 'project' ? 'project template' : 'library template';
+            const srcIcon = m.source === 'project' ? 'fa-folder' : 'fa-globe';
+            matchDiv.innerHTML = `<i class="fas ${icon} me-1"></i><span class="badge ${badgeClass} me-2">${m.confidence}</span>Matches ${srcLabel}: <strong>${m.template_key}</strong> <span class="badge bg-light text-dark border ms-1"><i class="fas ${srcIcon} me-1"></i>${m.source === 'project' ? 'project' : 'library'}</span> (${details.join(', ')})${actionLabel ? ` &mdash; <em>${actionLabel}</em>` : ''}`;
             container.querySelector('.alert')?.after(matchDiv);
         } else if (m === null) {
             const matchDiv = document.createElement('div');
@@ -1708,13 +1710,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         ? `<small class="d-block text-muted" style="font-size:0.7rem">${diffParts.join(', ')}</small>`
                         : '';
                     // Show "Use Library" button for exact/high matches
+                    const sourceLabel = m.source === 'project' ? 'project' : 'library';
+                    const sourceIcon = m.source === 'project' ? 'fa-folder' : 'fa-globe';
                     const useLibBtn = (m.suggested_action === 'use_library' || m.suggested_action === 'use_participants')
-                        ? `<button class="btn btn-sm btn-outline-primary use-library-btn mt-1" data-name="${name}" data-template-key="${m.template_key}" data-is-participants="${m.is_participants || false}"><i class="fas fa-book me-1"></i>Use library version</button>`
+                        ? `<button class="btn btn-sm btn-outline-primary use-library-btn mt-1" data-name="${name}" data-template-key="${m.template_key}" data-is-participants="${m.is_participants || false}"><i class="fas fa-book me-1"></i>Use ${sourceLabel} version</button>`
                         : '';
                     matchHtml = `
                         <div class="mt-1 pt-1 border-top">
                             <span class="badge ${badgeClass}" title="${detailStr}">
                                 <i class="fas ${icon} me-1"></i>${m.confidence} match: ${m.template_key}
+                            </span>
+                            <span class="badge bg-light text-dark border ms-1" title="Matched from ${sourceLabel}">
+                                <i class="fas ${sourceIcon} me-1"></i>${sourceLabel}
                             </span>
                             ${diffHtml}
                             ${useLibBtn}
