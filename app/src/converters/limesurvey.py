@@ -260,6 +260,145 @@ def _parse_survey_metadata(root, get_text):
     return metadata
 
 
+def _parse_answers_into_questions(root, questions_map, get_text, *, track_scales=False):
+    """Parse <answers> section and attach levels to questions_map entries.
+
+    Args:
+        root: XML root element containing <answers> section
+        questions_map: Dict mapping qid -> question data (modified in place)
+        get_text: Helper to extract text from XML elements
+        track_scales: If True, also populate levels_by_scale for dual-scale
+                      array questions (needed by parse_lss_xml_by_questions)
+    """
+    answers_section = root.find("answers")
+    if answers_section is None:
+        return
+
+    rows = answers_section.find("rows")
+    if rows is None:
+        return
+
+    for row in rows.findall("row"):
+        qid = get_text(row, "qid")
+        code = get_text(row, "code")
+        answer = get_text(row, "answer")
+        lang = get_text(row, "language")
+
+        if qid not in questions_map:
+            continue
+
+        if track_scales:
+            scale_id = get_text(row, "scale_id") or "0"
+
+            # Handle "None" text from LimeSurvey (unlabeled scale points)
+            if answer and answer.lower() == "none":
+                answer = ""
+
+            # Support multiple scales (for dual-scale arrays)
+            if "levels" not in questions_map[qid]:
+                questions_map[qid]["levels"] = {}
+            if "levels_by_scale" not in questions_map[qid]:
+                questions_map[qid]["levels_by_scale"] = {}
+            if scale_id not in questions_map[qid]["levels_by_scale"]:
+                questions_map[qid]["levels_by_scale"][scale_id] = {}
+
+            # Store as multilingual dict if language is present
+            if lang and lang.strip():
+                if code not in questions_map[qid]["levels"]:
+                    questions_map[qid]["levels"][code] = {}
+                if isinstance(questions_map[qid]["levels"][code], dict):
+                    questions_map[qid]["levels"][code][lang] = answer
+                else:
+                    questions_map[qid]["levels"][code] = {lang: answer}
+
+                if code not in questions_map[qid]["levels_by_scale"][scale_id]:
+                    questions_map[qid]["levels_by_scale"][scale_id][code] = {}
+                if isinstance(questions_map[qid]["levels_by_scale"][scale_id][code], dict):
+                    questions_map[qid]["levels_by_scale"][scale_id][code][lang] = answer
+                else:
+                    questions_map[qid]["levels_by_scale"][scale_id][code] = {lang: answer}
+            else:
+                questions_map[qid]["levels"][code] = answer
+                questions_map[qid]["levels_by_scale"][scale_id][code] = answer
+        else:
+            # Simple mode: just map code -> answer text (possibly multilingual)
+            if lang and lang.strip():
+                if code not in questions_map[qid]["levels"]:
+                    questions_map[qid]["levels"][code] = {}
+                if isinstance(questions_map[qid]["levels"][code], dict):
+                    questions_map[qid]["levels"][code][lang] = answer
+                else:
+                    questions_map[qid]["levels"][code] = {lang: answer}
+            else:
+                questions_map[qid]["levels"][code] = answer
+
+
+def _detect_languages(root, get_text):
+    """Detect all languages present in a LimeSurvey XML structure.
+
+    Checks surveys_languagesettings, questions, and answers sections for
+    language attributes.
+
+    Returns:
+        tuple: (languages_list, default_language)
+    """
+    languages = set()
+    default_language = "en"
+
+    # Check surveys_languagesettings
+    lang_section = root.find("surveys_languagesettings")
+    if lang_section is not None:
+        rows = lang_section.find("rows")
+        if rows is not None:
+            for row in rows.findall("row"):
+                lang = get_text(row, "surveyls_language")
+                if lang and lang.strip():
+                    languages.add(lang.strip())
+
+    # Check surveys section for base language
+    surveys_section = root.find("surveys")
+    if surveys_section is not None:
+        rows = surveys_section.find("rows")
+        if rows is not None:
+            for row in rows.findall("row"):
+                lang = get_text(row, "language")
+                if lang and lang.strip():
+                    default_language = lang.strip()
+                    languages.add(lang.strip())
+                # Check additional_languages
+                addl = get_text(row, "additional_languages")
+                if addl and addl.strip():
+                    for al in addl.strip().split():
+                        if al.strip():
+                            languages.add(al.strip())
+                break
+
+    # Check questions section for language diversity
+    questions_section = root.find("questions")
+    if questions_section is not None:
+        rows = questions_section.find("rows")
+        if rows is not None:
+            for row in rows.findall("row"):
+                lang = get_text(row, "language")
+                if lang and lang.strip():
+                    languages.add(lang.strip())
+
+    # Check answers section
+    answers_section = root.find("answers")
+    if answers_section is not None:
+        rows = answers_section.find("rows")
+        if rows is not None:
+            for row in rows.findall("row"):
+                lang = get_text(row, "language")
+                if lang and lang.strip():
+                    languages.add(lang.strip())
+
+    if not languages:
+        languages.add(default_language)
+
+    return sorted(languages), default_language
+
+
 def _parse_lss_structure(root, get_text):
     """Parse LimeSurvey XML structure to extract questions, groups, subquestions, and attributes.
 
@@ -545,6 +684,273 @@ def _build_standard_prism_questions(questions_map, groups_map, language="en"):
     return prism_questions
 
 
+def _build_prism_template_from_parsed(
+    questions_map, groups_map, languages, default_language="en", source_type="lsq"
+):
+    """Convert parsed LimeSurvey data into a PRISM template with per-item LimeSurvey dicts.
+
+    Produces a template suitable for the Template Editor, with full LimeSurvey
+    tool-specific properties on each item for round-trip export.
+
+    Args:
+        questions_map: Dict from _parse_lss_structure with question data
+        groups_map: Dict from _parse_lss_structure with group data
+        languages: List of language codes found in the source
+        default_language: Primary language code
+        source_type: "lsq" or "lsg" (affects metadata)
+
+    Returns:
+        Dict: Complete PRISM template with metadata sections and per-item entries
+    """
+    prism_questions = {}
+
+    # Sort questions by group order, then question order
+    sorted_questions = sorted(
+        questions_map.items(),
+        key=lambda x: (
+            groups_map.get(x[1]["gid"], {}).get("order", 0),
+            x[1]["question_order"],
+        ),
+    )
+
+    array_types = {"F", "A", "B", "C", "E", "H", "1", ";", ":"}
+
+    for qid, q_data in sorted_questions:
+        q_type = q_data.get("type", "")
+        title = q_data.get("title", "")
+        question_text = q_data.get("question", "")
+        levels = q_data.get("levels", {})
+        subquestions = q_data.get("subquestions", [])
+        attributes = q_data.get("attributes", {})
+
+        # Build LimeSurvey tool-specific properties
+        ls_props = {
+            "questionType": q_type,
+            "questionTypeName": _get_question_type_name(q_type),
+            "mandatory": q_data.get("mandatory", False),
+            "inputWidth": attributes.get("text_input_width", None),
+            "hidden": bool(attributes.get("hidden", False)),
+            "other": q_data.get("other", False),
+            "helpText": {},
+            "relevance": q_data.get("relevance") or "1",
+            "displayRows": attributes.get("display_rows", None),
+            "equation": None,
+            "validation": {
+                "min": attributes.get("min_num_value_n", None),
+                "max": attributes.get("max_num_value_n", None),
+                "integerOnly": bool(attributes.get("num_value_int_only", False)),
+            },
+        }
+
+        # Handle help text - could be per-language in attributes
+        help_text = q_data.get("help") or ""
+        if help_text:
+            ls_props["helpText"] = {default_language: help_text}
+        # Check for language-specific help in attributes
+        for attr_key, attr_val in attributes.items():
+            if attr_key.startswith("help_"):
+                lang = attr_key[5:]
+                if lang and isinstance(attr_val, str):
+                    ls_props["helpText"][lang] = attr_val
+
+        # Equation type
+        if q_type == "*":
+            ls_props["equation"] = question_text
+
+        # Ensure inputWidth is numeric or None
+        if ls_props["inputWidth"] is not None:
+            try:
+                ls_props["inputWidth"] = int(ls_props["inputWidth"])
+            except (ValueError, TypeError):
+                ls_props["inputWidth"] = None
+
+        # Ensure validation numbers are numeric or None
+        for vk in ("min", "max"):
+            if ls_props["validation"][vk] is not None:
+                try:
+                    ls_props["validation"][vk] = float(ls_props["validation"][vk])
+                    if ls_props["validation"][vk] == int(ls_props["validation"][vk]):
+                        ls_props["validation"][vk] = int(ls_props["validation"][vk])
+                except (ValueError, TypeError):
+                    ls_props["validation"][vk] = None
+
+        if q_type in array_types and subquestions:
+            # Matrix question: flatten subquestions to individual items
+            multilingual_levels = {}
+            for code, answer_text in levels.items():
+                if isinstance(answer_text, dict):
+                    multilingual_levels[code] = answer_text
+                else:
+                    multilingual_levels[code] = {
+                        default_language: str(answer_text) if answer_text else ""
+                    }
+
+            for sq in subquestions:
+                sq_code = sq.get("code", "")
+                sq_text = sq.get("text", "")
+
+                full_desc = sq_text if sq_text else question_text
+                entry = {
+                    "Description": (
+                        {default_language: full_desc} if full_desc else {default_language: ""}
+                    ),
+                    "LimeSurvey": dict(ls_props),  # Copy for each subquestion
+                }
+                if multilingual_levels:
+                    entry["Levels"] = multilingual_levels
+
+                prism_questions[sq_code] = entry
+        else:
+            # Non-matrix question: single entry
+            entry = {
+                "Description": (
+                    {default_language: question_text}
+                    if question_text
+                    else {default_language: ""}
+                ),
+                "LimeSurvey": ls_props,
+            }
+
+            if levels:
+                multilingual_levels = {}
+                for code, answer_text in levels.items():
+                    if isinstance(answer_text, dict):
+                        multilingual_levels[code] = answer_text
+                    else:
+                        multilingual_levels[code] = {
+                            default_language: str(answer_text) if answer_text else ""
+                        }
+                entry["Levels"] = multilingual_levels
+
+            prism_questions[title] = entry
+
+    # Infer DataType from question type for each item
+    numeric_types = {"N", "K", "A", "B"}
+    text_types = {"S", "T", "U", "Q"}
+    for key, entry in prism_questions.items():
+        ls = entry.get("LimeSurvey", {})
+        qt = ls.get("questionType", "")
+        if qt in numeric_types:
+            entry["DataType"] = "integer"
+        elif qt in text_types:
+            entry["DataType"] = "string"
+
+    # Determine task name from groups or questions
+    task_name = ""
+    if groups_map:
+        first_group = min(groups_map.values(), key=lambda g: g.get("order", 0))
+        task_name = first_group.get("name", "")
+    if not task_name and sorted_questions:
+        first_q = sorted_questions[0][1]
+        title = first_q.get("title", "")
+        prefix = re.match(r"([a-zA-Z]+)", title)
+        task_name = prefix.group(1) if prefix else title
+
+    normalized_task = sanitize_task_name(task_name) if task_name else "imported"
+
+    # Build template with metadata
+    template = {
+        "Technical": {
+            "StimulusType": "Questionnaire",
+            "FileFormat": "tsv",
+            "SoftwarePlatform": "LimeSurvey",
+            "Language": default_language,
+            "Respondent": "self",
+            "ResponseType": ["online"],
+        },
+        "Study": {
+            "TaskName": normalized_task,
+            "OriginalName": task_name,
+            "Version": "1.0",
+            "Description": f"Imported from LimeSurvey .{source_type}: {task_name}",
+            "ItemCount": len(prism_questions),
+            "LicenseID": "Proprietary",
+            "License": "Proprietary / Copyright protected. Please ensure you have a valid license for this instrument.",
+        },
+        "Metadata": {
+            "SchemaVersion": "1.1.1",
+            "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
+            "Creator": "limesurvey_to_prism.py",
+        },
+    }
+
+    # Add I18n section if multiple languages detected
+    if len(languages) > 1:
+        template["I18n"] = {
+            "Languages": languages,
+            "DefaultLanguage": default_language,
+        }
+
+    template.update(prism_questions)
+    return template
+
+
+def parse_lsq_xml(xml_content):
+    """Parse a .lsq (LimeSurvey single question export) into a PRISM template dict.
+
+    .lsq files contain: <questions>, <subquestions>, <answers>, <question_attributes>
+    but no <groups> or <surveys> sections.
+
+    Args:
+        xml_content: XML content as bytes or string
+
+    Returns:
+        dict: PRISM template with per-item LimeSurvey properties, or None on error
+    """
+    try:
+        root = ET.fromstring(xml_content)
+    except ET.ParseError as e:
+        print(f"Error parsing .lsq XML: {e}")
+        return None
+
+    def get_text(element, tag):
+        child = element.find(tag)
+        val = child.text if child is not None else ""
+        return val or ""
+
+    questions_map, groups_map = _parse_lss_structure(root, get_text)
+    _parse_answers_into_questions(root, questions_map, get_text)
+
+    languages, default_language = _detect_languages(root, get_text)
+
+    return _build_prism_template_from_parsed(
+        questions_map, groups_map, languages, default_language, source_type="lsq"
+    )
+
+
+def parse_lsg_xml(xml_content):
+    """Parse a .lsg (LimeSurvey question group export) into a PRISM template dict.
+
+    .lsg files contain: <groups>, <questions>, <subquestions>, <answers>,
+    <question_attributes> but no <surveys> section.
+
+    Args:
+        xml_content: XML content as bytes or string
+
+    Returns:
+        dict: PRISM template with per-item LimeSurvey properties, or None on error
+    """
+    try:
+        root = ET.fromstring(xml_content)
+    except ET.ParseError as e:
+        print(f"Error parsing .lsg XML: {e}")
+        return None
+
+    def get_text(element, tag):
+        child = element.find(tag)
+        val = child.text if child is not None else ""
+        return val or ""
+
+    questions_map, groups_map = _parse_lss_structure(root, get_text)
+    _parse_answers_into_questions(root, questions_map, get_text)
+
+    languages, default_language = _detect_languages(root, get_text)
+
+    return _build_prism_template_from_parsed(
+        questions_map, groups_map, languages, default_language, source_type="lsg"
+    )
+
+
 def parse_lss_xml(xml_content, task_name=None, use_standard_format=True):
     """Parse a LimeSurvey .lss XML blob into a Prism sidecar dict.
 
@@ -573,18 +979,7 @@ def parse_lss_xml(xml_content, task_name=None, use_standard_format=True):
     questions_map, groups_map = _parse_lss_structure(root, get_text)
 
     # 2. Parse Answers
-    # Map qid -> {code: answer, ...}
-    answers_section = root.find("answers")
-    if answers_section is not None:
-        rows = answers_section.find("rows")
-        if rows is not None:
-            for row in rows.findall("row"):
-                qid = get_text(row, "qid")
-                code = get_text(row, "code")
-                answer = get_text(row, "answer")
-
-                if qid in questions_map:
-                    questions_map[qid]["levels"][code] = answer
+    _parse_answers_into_questions(root, questions_map, get_text)
 
     # 3. Construct Prism JSON
     language = survey_meta.get("language", "en")
@@ -754,16 +1149,7 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
     questions_map, groups_map = _parse_lss_structure(root, get_text)
 
     # Parse Answers
-    answers_section = root.find("answers")
-    if answers_section is not None:
-        rows = answers_section.find("rows")
-        if rows is not None:
-            for row in rows.findall("row"):
-                qid = get_text(row, "qid")
-                code = get_text(row, "code")
-                answer = get_text(row, "answer")
-                if qid in questions_map:
-                    questions_map[qid]["levels"][code] = answer
+    _parse_answers_into_questions(root, questions_map, get_text)
 
     # Group questions by their group ID, preserving full question data
     grouped_questions = {}  # gid -> list of (qid, q_data)
@@ -997,32 +1383,8 @@ def parse_lss_xml_by_questions(xml_content):
 
     questions_map, groups_map = _parse_lss_structure(root, get_text)
 
-    # Parse Answers
-    answers_section = root.find("answers")
-    if answers_section is not None:
-        rows = answers_section.find("rows")
-        if rows is not None:
-            for row in rows.findall("row"):
-                qid = get_text(row, "qid")
-                code = get_text(row, "code")
-                answer = get_text(row, "answer")
-                scale_id = get_text(row, "scale_id") or "0"
-
-                # Handle "None" text from LimeSurvey (unlabeled scale points)
-                if answer and answer.lower() == "none":
-                    answer = ""
-
-                if qid in questions_map:
-                    # Support multiple scales (for dual-scale arrays)
-                    if "levels" not in questions_map[qid]:
-                        questions_map[qid]["levels"] = {}
-                    if scale_id not in questions_map[qid].get("levels_by_scale", {}):
-                        if "levels_by_scale" not in questions_map[qid]:
-                            questions_map[qid]["levels_by_scale"] = {}
-                        questions_map[qid]["levels_by_scale"][scale_id] = {}
-
-                    questions_map[qid]["levels"][code] = answer
-                    questions_map[qid]["levels_by_scale"][scale_id][code] = answer
+    # Parse Answers (with scale tracking for dual-scale arrays)
+    _parse_answers_into_questions(root, questions_map, get_text, track_scales=True)
 
     # Build individual question JSONs
     result = {}
