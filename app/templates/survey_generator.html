@@ -114,41 +114,38 @@
     <div class="row mb-3">
         <div class="col-12">
             <h2><i class="fas fa-file-export text-info me-2"></i>Survey & Boilerplate</h2>
-            <p class="text-muted mb-0">Select questionnaires from the library to export to LimeSurvey (.lss) or generate a methods boilerplate.</p>
+            <p class="text-muted mb-0">Select questionnaires from the library to export for a survey tool or generate a methods boilerplate.</p>
         </div>
     </div>
 
     {% include 'includes/project_banner.html' %}
 
-    <!-- Source Info + Search Bar -->
-    <div class="card mb-3">
-        <div class="card-body py-2">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <i class="fas fa-book-open text-info me-1"></i>
-                    <span id="sourceInfoText" class="text-muted small">Loading...</span>
-                    <button class="btn btn-sm btn-link text-secondary p-0 ms-2" id="reloadLibraryBtn" title="Reload">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                </div>
-                <div class="col-md-6">
-                    <div class="search-container">
-                        <i class="fas fa-search"></i>
-                        <input type="text" class="form-control form-control-sm" id="templateSearch"
-                               placeholder="Search templates by name, description, or filename...">
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Source Info -->
+    <div class="d-flex align-items-center mb-2">
+        <i class="fas fa-book-open text-info me-1"></i>
+        <span id="sourceInfoText" class="text-muted small">Loading...</span>
+        <button class="btn btn-sm btn-link text-secondary p-0 ms-1" id="reloadLibraryBtn" title="Reload">
+            <i class="fas fa-sync-alt"></i>
+        </button>
     </div>
 
     <div id="libraryError" class="alert alert-danger d-none"></div>
 
-    <!-- Toolbar: Language + Export Settings in one row -->
+    <!-- Toolbar: Target Tool + Language + Tool-specific settings -->
     <div id="toolbarCard" class="card mb-3 d-none">
         <div class="card-body py-2">
             <div class="row align-items-center g-2">
                 <div class="col-auto">
+                    <label class="form-label mb-0 small fw-bold">Target Tool</label>
+                </div>
+                <div class="col-auto">
+                    <select class="form-select form-select-sm" id="targetToolSelect" style="width:auto;">
+                        <option value="limesurvey">LimeSurvey</option>
+                        <!-- Future: <option value="redcap">REDCap</option> -->
+                        <!-- Future: <option value="qualtrics">Qualtrics</option> -->
+                    </select>
+                </div>
+                <div class="col-auto border-start ps-2">
                     <label class="form-label mb-0 small fw-bold">Base Language</label>
                 </div>
                 <div class="col-auto">
@@ -158,10 +155,11 @@
                     <label class="form-label mb-0 small fw-bold ms-2">Export Languages</label>
                 </div>
                 <div class="col-auto" id="exportLanguageCheckboxes"></div>
-                <div class="col-auto ms-auto">
+                <!-- LimeSurvey-specific options -->
+                <div class="col-auto ms-auto tool-options-limesurvey">
                     <label class="form-label mb-0 small fw-bold">LS Version</label>
                 </div>
-                <div class="col-auto">
+                <div class="col-auto tool-options-limesurvey">
                     <select class="form-select form-select-sm" id="lsVersionSelect" style="width:auto;">
                         <option value="6">5.x / 6.x</option>
                         <option value="3" selected>3.x / 4.x</option>
@@ -178,6 +176,13 @@
     </div>
 
     <div id="libraryContent" class="d-none">
+        <!-- Search bar above templates -->
+        <div class="search-container mb-3">
+            <i class="fas fa-search"></i>
+            <input type="text" class="form-control" id="templateSearch"
+                   placeholder="Search templates by name, description, or filename...">
+        </div>
+
         <!-- Sections: Survey, Biometrics, Participants, Other -->
         <div id="surveySection" class="d-none mb-3">
             <div class="d-flex align-items-center mb-2">
@@ -256,11 +261,43 @@ document.addEventListener('DOMContentLoaded', function() {
     const sourceInfoText = document.getElementById('sourceInfoText');
     const reloadLibraryBtn = document.getElementById('reloadLibraryBtn');
     const templateSearch = document.getElementById('templateSearch');
+    const targetToolSelect = document.getElementById('targetToolSelect');
 
     let currentLibraryData = null;
     let currentLanguage = 'en';
     let selectedExportLanguages = ['en'];
     let allDetectedLanguages = [];
+
+    // Target tool configuration
+    const toolConfig = {
+        limesurvey: { label: 'LimeSurvey', exportEndpoint: '/api/generate-lss', fileExt: '.lss', optionsClass: 'tool-options-limesurvey' },
+        // Future tools:
+        // redcap: { label: 'REDCap', exportEndpoint: '/api/generate-redcap', fileExt: '.csv', optionsClass: 'tool-options-redcap' },
+        // qualtrics: { label: 'Qualtrics', exportEndpoint: '/api/generate-qsf', fileExt: '.qsf', optionsClass: 'tool-options-qualtrics' },
+    };
+
+    function getSelectedTool() { return targetToolSelect.value; }
+    function getToolConfig() { return toolConfig[getSelectedTool()] || toolConfig.limesurvey; }
+
+    // Show/hide tool-specific option groups based on selected tool
+    function updateToolOptions() {
+        const tool = getSelectedTool();
+        Object.values(toolConfig).forEach(cfg => {
+            document.querySelectorAll('.' + cfg.optionsClass).forEach(el => {
+                el.style.display = 'none';
+            });
+        });
+        const activeCfg = toolConfig[tool];
+        if (activeCfg) {
+            document.querySelectorAll('.' + activeCfg.optionsClass).forEach(el => {
+                el.style.display = '';
+            });
+        }
+        // Update Quick Export button label
+        generateLssBtn.innerHTML = `<i class="fas fa-file-export me-1"></i>Quick Export (${activeCfg ? activeCfg.fileExt : ''})`;
+    }
+
+    targetToolSelect.addEventListener('change', updateToolOptions);
 
     const sectionConfig = {
         survey:       { container: 'surveySection',       list: 'surveyList',       count: 'surveyCount' },
@@ -723,26 +760,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const files = collectSelectedFiles(false);
         if (files.length === 0) { alert("Select at least one file and one question."); return; }
 
+        const cfg = getToolConfig();
         generateLssBtn.disabled = true;
         generateLssBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>...';
 
-        fetch('/api/generate-lss', {
+        const payload = {
+            files, languages: selectedExportLanguages, base_language: currentLanguage,
+            language: currentLanguage, target_tool: getSelectedTool(),
+        };
+        // Tool-specific payload fields
+        if (getSelectedTool() === 'limesurvey') {
+            payload.ls_version = document.getElementById('lsVersionSelect').value;
+        }
+
+        fetch(cfg.exportEndpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                files, languages: selectedExportLanguages, base_language: currentLanguage,
-                language: currentLanguage, ls_version: document.getElementById('lsVersionSelect').value,
-            }),
+            body: JSON.stringify(payload),
         })
         .then(r => { if (r.ok) return r.blob(); throw new Error('Export failed'); })
         .then(blob => {
             const langSuffix = selectedExportLanguages.length > 1 ? selectedExportLanguages.join('_') : currentLanguage;
-            downloadBlobObj(blob, `survey_export_${langSuffix}.lss`);
+            downloadBlobObj(blob, `survey_export_${langSuffix}${cfg.fileExt}`);
         })
         .catch(err => alert(err.message))
         .finally(() => {
             generateLssBtn.disabled = false;
-            generateLssBtn.innerHTML = '<i class="fas fa-file-export me-1"></i>Quick Export (.lss)';
+            generateLssBtn.innerHTML = `<i class="fas fa-file-export me-1"></i>Quick Export (${cfg.fileExt})`;
         });
     });
 
@@ -751,13 +795,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const files = collectSelectedFiles(true);
         if (files.length === 0) { alert("Select at least one file and one question."); return; }
 
-        sessionStorage.setItem('surveyCustomizerData', JSON.stringify({
+        const payload = {
             selectedFiles: files,
             languages: selectedExportLanguages,
             base_language: currentLanguage,
             language: currentLanguage,
-            ls_version: document.getElementById('lsVersionSelect').value,
-        }));
+            target_tool: getSelectedTool(),
+        };
+        // Tool-specific session data
+        if (getSelectedTool() === 'limesurvey') {
+            payload.ls_version = document.getElementById('lsVersionSelect').value;
+        }
+
+        sessionStorage.setItem('surveyCustomizerData', JSON.stringify(payload));
         window.location.href = '/survey-customizer';
     });
 
@@ -775,6 +825,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Init ---
+    updateToolOptions();
     loadMergedLibrary();
 });
 </script>

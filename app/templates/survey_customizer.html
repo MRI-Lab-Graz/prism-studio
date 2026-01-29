@@ -534,15 +534,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Set language and version
+            // Set language, version, and target tool
             customizationState.survey.language = data.language || 'en';
             customizationState.survey.languages = data.languages || [data.language || 'en'];
             customizationState.survey.base_language = data.base_language || data.language || 'en';
             customizationState.exportOptions.ls_version = data.ls_version || '3';
+            customizationState.exportOptions.target_tool = data.target_tool || 'limesurvey';
 
             // Update UI
             document.getElementById('languageSelect').value = customizationState.survey.language;
             document.getElementById('lsVersionSelect').value = customizationState.exportOptions.ls_version;
+            const targetToolEl = document.getElementById('targetTool');
+            if (targetToolEl && data.target_tool) targetToolEl.value = data.target_tool;
 
             // Display language tags
             updateLanguageTags();
