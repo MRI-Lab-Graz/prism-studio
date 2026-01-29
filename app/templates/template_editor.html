@@ -243,7 +243,7 @@
             </div>
           </div>
 
-          <div class="form-text mt-2">Hover the ⓘ icons for schema guidance (description, allowed values, patterns).</div>
+          <div class="form-text mt-2">Hover the ⓘ icons for additional schema details (type, allowed values, patterns).</div>
         </div>
       </div>
     </div>
@@ -903,6 +903,95 @@
         render();
         return container;
       }
+
+      // Arrays of structured objects (e.g., References) -> card-based add/remove editor
+      if (items.type === 'object' && items.properties) {
+        const container = document.createElement('div');
+        const list = document.createElement('div');
+        container.appendChild(list);
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'btn btn-sm btn-outline-primary mt-2';
+        addBtn.textContent = 'Add entry';
+        container.appendChild(addBtn);
+
+        function renderObjectArray() {
+          list.innerHTML = '';
+          if (!currentVal.length) {
+            const p = document.createElement('div');
+            p.className = 'text-muted small';
+            p.textContent = 'No entries. Click "Add entry" to add one.';
+            list.appendChild(p);
+          }
+
+          currentVal.forEach((entry, idx) => {
+            const card = document.createElement('div');
+            card.className = 'border rounded p-2 mb-2 bg-light';
+
+            const header = document.createElement('div');
+            header.className = 'd-flex justify-content-between align-items-center mb-2';
+            const title = document.createElement('span');
+            title.className = 'fw-bold small';
+            // Show a summary from the first string field or index
+            const summaryField = Object.keys(items.properties).find(k => {
+              const s = items.properties[k];
+              const st = Array.isArray(s.type) ? s.type : [s.type];
+              return st.includes('string') && entry[k];
+            });
+            title.textContent = summaryField ? `#${idx + 1}: ${String(entry[summaryField]).substring(0, 40)}` : `Entry #${idx + 1}`;
+
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'btn btn-sm btn-outline-danger';
+            delBtn.textContent = 'Remove';
+            delBtn.addEventListener('click', () => {
+              currentVal.splice(idx, 1);
+              onChange([...currentVal]);
+              renderObjectArray();
+            });
+            header.appendChild(title);
+            header.appendChild(delBtn);
+            card.appendChild(header);
+
+            const itemRequired = items.required || [];
+            const fieldNames = sortedFieldNames(items.properties, itemRequired);
+            for (const fname of fieldNames) {
+              const fSchema = items.properties[fname];
+              const fieldDiv = document.createElement('div');
+              fieldDiv.className = 'mb-2';
+
+              const fLabel = makeLabel(fname, fSchema, itemRequired.includes(fname));
+              fieldDiv.appendChild(fLabel);
+
+              if (entry[fname] === undefined) {
+                entry[fname] = schemaExample(fSchema);
+              }
+              const fInput = createInput(fSchema, entry[fname], (v) => {
+                entry[fname] = v;
+                onChange([...currentVal]);
+                // Update the summary title
+                const newSummary = summaryField ? `#${idx + 1}: ${String(entry[summaryField] || '').substring(0, 40)}` : `Entry #${idx + 1}`;
+                title.textContent = newSummary;
+              });
+              fieldDiv.appendChild(fInput);
+              card.appendChild(fieldDiv);
+            }
+
+            list.appendChild(card);
+          });
+          enableTooltips();
+        }
+
+        addBtn.addEventListener('click', () => {
+          currentVal.push(schemaExample(items) || {});
+          onChange([...currentVal]);
+          renderObjectArray();
+        });
+
+        renderObjectArray();
+        return container;
+      }
     }
 
     // Detect if value is a translation table (object with lang keys like "de", "en", etc.)
@@ -915,9 +1004,62 @@
       return keys.every(k => langPattern.test(k));
     }
 
+    // Range objects: {min: number, max: number} — e.g., AgeRange, AdministrationTime, ScoringTime
+    if (allowsObject && fieldSchema.properties && fieldSchema.properties.min && fieldSchema.properties.max
+        && Object.keys(fieldSchema.properties).length === 2) {
+      const container = document.createElement('div');
+      container.className = 'input-group';
+
+      const currentObj = (typeof value === 'object' && value && !Array.isArray(value)) ? value : {};
+
+      const minLabel = document.createElement('span');
+      minLabel.className = 'input-group-text';
+      minLabel.textContent = 'Min';
+      container.appendChild(minLabel);
+
+      const minInp = document.createElement('input');
+      minInp.type = 'number';
+      minInp.className = 'form-control';
+      minInp.placeholder = '—';
+      minInp.value = (currentObj.min != null) ? String(currentObj.min) : '';
+      container.appendChild(minInp);
+
+      const sep = document.createElement('span');
+      sep.className = 'input-group-text';
+      sep.textContent = 'to';
+      container.appendChild(sep);
+
+      const maxLabel = document.createElement('span');
+      maxLabel.className = 'input-group-text';
+      maxLabel.textContent = 'Max';
+      container.appendChild(maxLabel);
+
+      const maxInp = document.createElement('input');
+      maxInp.type = 'number';
+      maxInp.className = 'form-control';
+      maxInp.placeholder = '—';
+      maxInp.value = (currentObj.max != null) ? String(currentObj.max) : '';
+      container.appendChild(maxInp);
+
+      function syncRange() {
+        const minVal = minInp.value !== '' ? parseFloat(minInp.value) : null;
+        const maxVal = maxInp.value !== '' ? parseFloat(maxInp.value) : null;
+        if (minVal !== null && maxVal !== null) {
+          onChange({ min: minVal, max: maxVal });
+        } else if (minVal === null && maxVal === null) {
+          onChange(null);
+        } else {
+          onChange({ min: minVal, max: maxVal });
+        }
+      }
+      minInp.addEventListener('input', syncRange);
+      maxInp.addEventListener('input', syncRange);
+      return container;
+    }
+
     // Special: string|object fields that can hold translations (Description, etc.)
-    // Trigger if: allows both string and object AND (has additionalProperties OR value is already a translation object)
-    if (allowsObject && allowsString && (fieldSchema.additionalProperties || fieldSchema.patternProperties || isTranslationObject(value))) {
+    // Trigger if: allows both string and object AND (has patternProperties OR value is already a translation object)
+    if (allowsObject && allowsString && (fieldSchema.patternProperties || isTranslationObject(value))) {
       const container = document.createElement('div');
       container.className = 'border rounded p-2';
 
@@ -1196,6 +1338,50 @@
       return container;
     }
 
+    // String|object hybrid fields that are currently plain strings (Construct, Description, Instructions, etc.)
+    // Render as text input with a "Convert to multilingual" toggle
+    if (allowsObject && allowsString && !isTranslationObject(value)) {
+      const container = document.createElement('div');
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'form-control';
+      inp.value = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
+      inp.placeholder = '— Not set —';
+      if (fieldSchema.pattern) inp.pattern = fieldSchema.pattern;
+      inp.addEventListener('input', () => onChange(inp.value));
+      container.appendChild(inp);
+
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = 'btn btn-sm btn-outline-secondary mt-1';
+      toggleBtn.innerHTML = '<i class="fas fa-globe me-1"></i>Convert to multilingual';
+      toggleBtn.addEventListener('click', () => {
+        const currentVal = inp.value || '';
+        const lang = (currentTemplate && currentTemplate.Technical && currentTemplate.Technical.Language) || 'en';
+        const translationObj = {};
+        translationObj[lang] = currentVal;
+        onChange(translationObj);
+        // Replace this container with the translation table by re-rendering the parent section
+        const parentCol = container.closest('[data-field-path]');
+        if (parentCol) {
+          const path = parentCol.getAttribute('data-field-path');
+          const parts = path.split('/');
+          if (parts.length === 2) {
+            // Re-render the whole section to pick up the new translation object
+            const sectionKey = parts[0];
+            const mount = parentCol.closest('.row')?.parentElement;
+            if (mount && currentTemplate[sectionKey]) {
+              const sch = getSectionSchema(sectionKey);
+              if (sch) renderSection(sectionKey, currentTemplate[sectionKey], sch, mount);
+              enableTooltips();
+            }
+          }
+        }
+      });
+      container.appendChild(toggleBtn);
+      return container;
+    }
+
     if (allowsArray || allowsObject) {
       // Fallback: complex JSON (kept, but minimized in typical flows)
       const ta = document.createElement('textarea');
@@ -1218,11 +1404,77 @@
     const inp = document.createElement('input');
     inp.type = 'text';
     inp.className = 'form-control';
-    inp.value = (value === undefined || value === null) ? '' : String(value);
+
+    // Auto-strip DOI URL prefixes for fields with a DOI pattern
+    const isDOI = fieldSchema.pattern && /^\^.*10\\\.\\d/.test(fieldSchema.pattern);
+    function stripDOIPrefix(v) {
+      if (!isDOI || typeof v !== 'string') return v;
+      return v.replace(/^https?:\/\/(?:dx\.)?doi\.org\//, '');
+    }
+
+    const initVal = (value === undefined || value === null) ? '' : stripDOIPrefix(String(value));
+    inp.value = initVal;
     inp.placeholder = (value === undefined || value === null) ? '— Not set —' : (schemaExample(fieldSchema) ? String(schemaExample(fieldSchema)) : '');
     if (fieldSchema.pattern) inp.pattern = fieldSchema.pattern;
-    inp.addEventListener('input', () => onChange(inp.value));
+    inp.addEventListener('input', () => {
+      const cleaned = stripDOIPrefix(inp.value);
+      if (cleaned !== inp.value) inp.value = cleaned;
+      onChange(inp.value);
+    });
+    if (isDOI && initVal !== String(value || '')) onChange(initVal);
     return inp;
+  }
+
+  // Sub-group definitions for the Technical section
+  const TECHNICAL_GROUPS = [
+    { label: null, fields: new Set(['StimulusType', 'FileFormat', 'Language', 'Respondent', 'AdministrationMethod']) },
+    { label: 'Data Collection Software', fields: new Set(['SoftwarePlatform', 'SoftwareVersion']) },
+    { label: 'Equipment & Location', fields: new Set(['Equipment', 'EquipmentManufacturer', 'EquipmentModel', 'CalibrationDate', 'Supervisor', 'Location']) },
+  ];
+
+  function renderFieldInRow(sectionKey, name, fieldSchema, required, targetObj, row) {
+    const col = document.createElement('div');
+    col.className = 'col-md-6';
+
+    const isRequired = required.includes(name);
+    col.appendChild(makeLabel(name, fieldSchema, isRequired));
+
+    const isMissing = (targetObj[name] === undefined || targetObj[name] === null);
+    targetObj[name] = normalizeValueForSchema(fieldSchema, targetObj[name]);
+
+    const input = createInput(fieldSchema, targetObj[name], (v) => {
+      targetObj[name] = v;
+      btnDownload.disabled = true;
+      renderMissingSummary();
+      renderJsonDiff();
+    });
+    input.id = `field_${sectionKey}_${name}`;
+    input.setAttribute('data-field-path', `${sectionKey}/${name}`);
+
+    if (input.classList.contains('form-check-input')) {
+      const wrap = document.createElement('div');
+      wrap.className = 'form-check';
+      wrap.appendChild(input);
+      col.appendChild(wrap);
+    } else {
+      col.appendChild(input);
+    }
+
+    if (fieldSchema.description) {
+      const helpText = document.createElement('div');
+      helpText.className = 'form-text text-muted small';
+      helpText.textContent = fieldSchema.description;
+      col.appendChild(helpText);
+    }
+
+    if (isMissing && isRequired) {
+      const hint = document.createElement('div');
+      hint.className = 'form-text text-warning';
+      hint.textContent = 'Required';
+      col.appendChild(hint);
+    }
+
+    row.appendChild(col);
   }
 
   function renderSection(sectionKey, targetObj, sectionSchema, mountEl) {
@@ -1239,49 +1491,46 @@
     const required = sectionSchema.required || [];
     const names = sortedFieldNames(props, required);
 
+    // For Technical section, render in sub-groups with dividers
+    if (sectionKey === 'Technical') {
+      const usedFields = new Set();
+      for (const group of TECHNICAL_GROUPS) {
+        const groupFields = names.filter(n => group.fields.has(n));
+        if (!groupFields.length) continue;
+
+        if (group.label) {
+          const divider = document.createElement('div');
+          divider.className = 'col-12 mt-3 mb-1';
+          divider.innerHTML = `<hr class="mb-1"><small class="text-muted fw-bold text-uppercase">${group.label}</small>`;
+          mountEl.appendChild(divider);
+        }
+
+        const row = document.createElement('div');
+        row.className = 'row g-3';
+        for (const name of groupFields) {
+          usedFields.add(name);
+          renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
+        }
+        mountEl.appendChild(row);
+      }
+      // Render any remaining fields not in any group
+      const remaining = names.filter(n => !usedFields.has(n));
+      if (remaining.length) {
+        const row = document.createElement('div');
+        row.className = 'row g-3 mt-2';
+        for (const name of remaining) {
+          renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
+        }
+        mountEl.appendChild(row);
+      }
+      renderMissingSummary();
+      return;
+    }
+
     const row = document.createElement('div');
     row.className = 'row g-3';
     for (const name of names) {
-      const fieldSchema = props[name];
-      const col = document.createElement('div');
-      col.className = 'col-md-6';
-
-      const isRequired = required.includes(name);
-      col.appendChild(makeLabel(name, fieldSchema, isRequired));
-
-      // Track whether the value is missing (not set in loaded template)
-      const isMissing = (targetObj[name] === undefined || targetObj[name] === null);
-      targetObj[name] = normalizeValueForSchema(fieldSchema, targetObj[name]);
-
-      const input = createInput(fieldSchema, targetObj[name], (v) => {
-        targetObj[name] = v;
-        btnDownload.disabled = true;
-        renderMissingSummary();
-        renderJsonDiff();
-      });
-      // Tag input for quick navigation from error list/summary
-      input.id = `field_${sectionKey}_${name}`;
-      input.setAttribute('data-field-path', `${sectionKey}/${name}`);
-
-      // checkbox layout
-      if (input.classList.contains('form-check-input')) {
-        const wrap = document.createElement('div');
-        wrap.className = 'form-check';
-        wrap.appendChild(input);
-        col.appendChild(wrap);
-      } else {
-        col.appendChild(input);
-      }
-
-      // Visual hint for missing fields (both required and optional)
-      if (isMissing) {
-        const hint = document.createElement('div');
-        hint.className = isRequired ? 'form-text text-warning' : 'form-text text-muted';
-        hint.textContent = isRequired ? 'Required: not set' : 'Not set';
-        col.appendChild(hint);
-      }
-
-      row.appendChild(col);
+      renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
     }
     mountEl.appendChild(row);
     renderMissingSummary();
