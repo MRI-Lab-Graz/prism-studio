@@ -190,18 +190,34 @@
                         </div>
                         <div id="organizerCollapse" class="collapse show">
                             <div class="card-body">
+                                <div class="alert alert-warning border">
+                                    <h6 class="fw-bold mb-2"><i class="fas fa-copy me-2"></i>File Organizer (Copy Only)</h6>
+                                    <p class="small mb-2"><strong>Purpose:</strong> Copies and reorganizes files into BIDS/PRISM folder structure.</p>
+                                    <p class="small mb-0"><i class="fas fa-exclamation-triangle me-1"></i><strong>Note:</strong> This tool does NOT validate file contents or metadata. Use the Validator tool to check for errors.</p>
+                                </div>
+
                                 <div class="alert alert-light border mb-4">
                                     <h6 class="fw-bold"><i class="fas fa-info-circle me-2 text-info"></i>How it works:</h6>
                                     <p class="small mb-2">This tool takes a flat list of files and organizes them into <code>sub-XXX/ses-YYY/modality/</code> folders.</p>
                                     <p class="small mb-0"><strong>Required naming:</strong> <code>sub-XXX_ses-YYY_task-ZZZ.ext</code> (Session is optional)</p>
                                 </div>
 
-                                <div class="row g-3 align-items-end">
-                                    <div class="col-md-5">
+                                <!-- File Selection Row -->
+                                <div class="row g-3 mb-3">
+                                    <div class="col-md-6 d-flex flex-column">
                                         <label for="organizeFiles" class="form-label">Select Files to Organize</label>
-                                        <input class="form-control" type="file" id="organizeFiles" multiple>
-                                        <div class="form-text">Supports .edf, .tsv, .nii.gz, .json, .png, etc.</div>
+                                        <input class="form-control flex-grow-1" type="file" id="organizeFiles" multiple>
+                                        <div class="form-text">Supports .edf, .tsv, .tsv.gz, .nii.gz, .json, .png, etc.</div>
                                     </div>
+                                    <div class="col-md-6 d-flex flex-column">
+                                        <label for="organizeFolder" class="form-label">Or Select a Folder</label>
+                                        <input class="form-control flex-grow-1" type="file" id="organizeFolder" webkitdirectory directory multiple>
+                                        <div class="form-text">Folder uploads are flattened to filenames (subfolders ignored).</div>
+                                    </div>
+                                </div>
+
+                                <!-- Options Row -->
+                                <div class="row g-3 align-items-end mb-3">
                                     <div class="col-md-3">
                                         <label for="organizeModality" class="form-label">Target Modality</label>
                                         <select class="form-select" id="organizeModality">
@@ -228,9 +244,13 @@
                                             <small class="text-muted">Requires an active project.</small>
                                         </div>
                                     </div>
+                                </div>
+
+                                <!-- Action Buttons Row -->
+                                <div class="row g-3 align-items-end">
                                     <div class="col-md-6 d-flex flex-wrap gap-2">
-                                        <button class="btn btn-warning text-white flex-grow-1" type="button" id="organizeBtn" disabled>
-                                            <i class="fas fa-folder-plus me-2"></i>Organize & Download
+                                        <button class="btn btn-info text-white flex-grow-1" type="button" id="organizeDryRunBtn" disabled>
+                                            <i class="fas fa-play-circle me-2"></i>Dry Run
                                         </button>
                                         <button class="btn btn-success flex-grow-1" type="button" id="organizeCopyBtn" disabled>
                                             <i class="fas fa-copy me-2"></i>Copy to Project

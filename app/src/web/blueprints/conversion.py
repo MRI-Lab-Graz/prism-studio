@@ -1705,6 +1705,7 @@ def api_batch_convert():
     if dest_root not in {"rawdata", "sourcedata"}:
         dest_root = "rawdata"
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
+    dry_run = (request.form.get("dry_run") or "false").lower() == "true"
 
     try:
         sampling_rate = float(sampling_rate_str) if sampling_rate_str else None
@@ -1721,6 +1722,7 @@ def api_batch_convert():
         ".vpd",
         ".edf",
         ".tsv",
+        ".tsv.gz",
         ".csv",
         ".txt",
         ".json",
@@ -1737,9 +1739,12 @@ def api_batch_convert():
             continue
         filename = secure_filename(f.filename)
 
-        # Handle .nii.gz
-        if filename.lower().endswith(".nii.gz"):
+        # Handle .nii.gz and .tsv.gz
+        lower_name = filename.lower()
+        if lower_name.endswith(".nii.gz"):
             ext = ".nii.gz"
+        elif lower_name.endswith(".tsv.gz"):
+            ext = ".tsv.gz"
         else:
             ext = Path(filename).suffix.lower()
 
@@ -1768,9 +1773,33 @@ def api_batch_convert():
             physio_sampling_rate=sampling_rate,
             modality_filter=modality_filter,
             log_callback=log_callback,
+            dry_run=dry_run,
         )
 
+        if dry_run:
+            # For dry run, just return the logs (no file creation)
+            return jsonify({
+                "converted": result.success_count,
+                "errors": result.error_count,
+                "new_files": result.new_files,
+                "existing_files": result.existing_files,
+                "logs": logs,
+                "dry_run": True,
+            })
+
         create_dataset_description(output_dir, name=dataset_name)
+
+        # Check for conflicts (files with different content)
+        if result.conflicts:
+            conflicts_info = [
+                {"path": str(c.output_path.relative_to(output_dir)), "reason": c.reason}
+                for c in result.conflicts
+            ]
+            return jsonify({
+                "error": f"File conflicts detected: {len(result.conflicts)} files already exist with different content. Please use different names or delete existing files.",
+                "conflicts": conflicts_info,
+                "logs": logs,
+            }), 409
 
         project_saved = False
         project_root = None

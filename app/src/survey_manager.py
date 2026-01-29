@@ -3,7 +3,11 @@ import shutil
 import os
 from pathlib import Path
 from datetime import datetime
-from library_validator import LibraryValidator
+
+try:
+    from src.library_validator import LibraryValidator
+except ImportError:
+    from library_validator import LibraryValidator
 
 
 class SurveyManager:

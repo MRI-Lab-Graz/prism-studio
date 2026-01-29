@@ -65,18 +65,31 @@ def get_error_documentation_url(error_code: str) -> str:
 
 
 # Path utilities re-exported from specialized module
-from .path_utils import (
-    strip_temp_path,
-    extract_path_from_message,
-    shorten_path,
-    get_filename_from_path,
-)
+try:
+    from src.web.path_utils import (
+        strip_temp_path,
+        strip_temp_path_from_message,
+        extract_path_from_message,
+        shorten_path,
+        get_filename_from_path,
+    )
+except ImportError:
+    from .path_utils import (
+        strip_temp_path,
+        strip_temp_path_from_message,
+        extract_path_from_message,
+        shorten_path,
+        get_filename_from_path,
+    )
 
 # Reporting utilities re-exported from specialized module
-from .reporting_utils import (
-    sanitize_jsonable,
-    format_validation_results,
-)
+try:
+    from src.web.reporting_utils import format_validation_results, sanitize_jsonable
+except ImportError:
+    from .reporting_utils import format_validation_results, sanitize_jsonable
 
 # Survey utilities re-exported from specialized module
-from .survey_utils import list_survey_template_languages
+try:
+    from src.web.survey_utils import list_survey_template_languages
+except ImportError:
+    from .survey_utils import list_survey_template_languages
