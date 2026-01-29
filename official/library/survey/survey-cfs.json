@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Cognitive Flexibility Scale (CFS)",
-      "de": "Cognitive Flexibility Scale (CFS)"
+      "en": "Cognitive Flexibility Scale (CFS)"
     },
     "Abbreviation": "CFS",
     "Authors": [
@@ -26,265 +25,209 @@
   },
   "CFS01": {
     "Description": {
-      "en": "I can communicate an idea in many different ways.",
-      "de": "I can communicate an idea in many different ways."
+      "en": "I can communicate an idea in many different ways."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=6} strongly agree",
-        "de": "{score=6} strongly agree"
+        "en": "{score=6} strongly agree"
       },
       "1": {
-        "en": "{score=5} agree",
-        "de": "{score=5} agree"
+        "en": "{score=5} agree"
       },
       "2": {
-        "en": "{score=4} slightly agree",
-        "de": "{score=4} slightly agree"
+        "en": "{score=4} slightly agree"
       },
       "3": {
-        "en": "{score=3} slightly disagree",
-        "de": "{score=3} slightly disagree"
+        "en": "{score=3} slightly disagree"
       },
       "4": {
-        "en": "{score=2} disagree",
-        "de": "{score=2} disagree"
+        "en": "{score=2} disagree"
       },
       "5": {
-        "en": "{score=1} strongly disagree",
-        "de": "{score=1} strongly disagree"
+        "en": "{score=1} strongly disagree"
       }
     }
   },
   "CFS02": {
     "Description": {
-      "en": "I can find workable solutions to seemingly unsolvable problems.",
-      "de": "I can find workable solutions to seemingly unsolvable problems."
+      "en": "I can find workable solutions to seemingly unsolvable problems."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=6} strongly agree",
-        "de": "{score=6} strongly agree"
+        "en": "{score=6} strongly agree"
       },
       "1": {
-        "en": "{score=5} agree",
-        "de": "{score=5} agree"
+        "en": "{score=5} agree"
       },
       "2": {
-        "en": "{score=4} slightly agree",
-        "de": "{score=4} slightly agree"
+        "en": "{score=4} slightly agree"
       },
       "3": {
-        "en": "{score=3} slightly disagree",
-        "de": "{score=3} slightly disagree"
+        "en": "{score=3} slightly disagree"
       },
       "4": {
-        "en": "{score=2} disagree",
-        "de": "{score=2} disagree"
+        "en": "{score=2} disagree"
       },
       "5": {
-        "en": "{score=1} strongly disagree",
-        "de": "{score=1} strongly disagree"
+        "en": "{score=1} strongly disagree"
       }
     }
   },
   "CFS03": {
     "Description": {
-      "en": "I am willing to work at creative solutions to problems.",
-      "de": "I am willing to work at creative solutions to problems."
+      "en": "I am willing to work at creative solutions to problems."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=6} strongly agree",
-        "de": "{score=6} strongly agree"
+        "en": "{score=6} strongly agree"
       },
       "1": {
-        "en": "{score=5} agree",
-        "de": "{score=5} agree"
+        "en": "{score=5} agree"
       },
       "2": {
-        "en": "{score=4} slightly agree",
-        "de": "{score=4} slightly agree"
+        "en": "{score=4} slightly agree"
       },
       "3": {
-        "en": "{score=3} slightly disagree",
-        "de": "{score=3} slightly disagree"
+        "en": "{score=3} slightly disagree"
       },
       "4": {
-        "en": "{score=2} disagree",
-        "de": "{score=2} disagree"
+        "en": "{score=2} disagree"
       },
       "5": {
-        "en": "{score=1} strongly disagree",
-        "de": "{score=1} strongly disagree"
+        "en": "{score=1} strongly disagree"
       }
     }
   },
   "CFS04": {
     "Description": {
-      "en": "In any given situation, I am able to act appropriately.",
-      "de": "In any given situation, I am able to act appropriately."
+      "en": "In any given situation, I am able to act appropriately."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=6} strongly agree",
-        "de": "{score=6} strongly agree"
+        "en": "{score=6} strongly agree"
       },
       "1": {
-        "en": "{score=5} agree",
-        "de": "{score=5} agree"
+        "en": "{score=5} agree"
       },
       "2": {
-        "en": "{score=4} slightly agree",
-        "de": "{score=4} slightly agree"
+        "en": "{score=4} slightly agree"
       },
       "3": {
-        "en": "{score=3} slightly disagree",
-        "de": "{score=3} slightly disagree"
+        "en": "{score=3} slightly disagree"
       },
       "4": {
-        "en": "{score=2} disagree",
-        "de": "{score=2} disagree"
+        "en": "{score=2} disagree"
       },
       "5": {
-        "en": "{score=1} strongly disagree",
-        "de": "{score=1} strongly disagree"
+        "en": "{score=1} strongly disagree"
       }
     }
   },
   "CFS05": {
     "Description": {
-      "en": "My behavior is a result of conscious decisions that I make.",
-      "de": "My behavior is a result of conscious decisions that I make."
+      "en": "My behavior is a result of conscious decisions that I make."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=6} strongly agree",
-        "de": "{score=6} strongly agree"
+        "en": "{score=6} strongly agree"
       },
       "1": {
-        "en": "{score=5} agree",
-        "de": "{score=5} agree"
+        "en": "{score=5} agree"
       },
       "2": {
-        "en": "{score=4} slightly agree",
-        "de": "{score=4} slightly agree"
+        "en": "{score=4} slightly agree"
       },
       "3": {
-        "en": "{score=3} slightly disagree",
-        "de": "{score=3} slightly disagree"
+        "en": "{score=3} slightly disagree"
       },
       "4": {
-        "en": "{score=2} disagree",
-        "de": "{score=2} disagree"
+        "en": "{score=2} disagree"
       },
       "5": {
-        "en": "{score=1} strongly disagree",
-        "de": "{score=1} strongly disagree"
+        "en": "{score=1} strongly disagree"
       }
     }
   },
   "CFS06": {
     "Description": {
-      "en": "I have many possible ways of behaving in any given situation.",
-      "de": "I have many possible ways of behaving in any given situation."
+      "en": "I have many possible ways of behaving in any given situation."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=6} strongly agree",
-        "de": "{score=6} strongly agree"
+        "en": "{score=6} strongly agree"
       },
       "1": {
-        "en": "{score=5} agree",
-        "de": "{score=5} agree"
+        "en": "{score=5} agree"
       },
       "2": {
-        "en": "{score=4} slightly agree",
-        "de": "{score=4} slightly agree"
+        "en": "{score=4} slightly agree"
       },
       "3": {
-        "en": "{score=3} slightly disagree",
-        "de": "{score=3} slightly disagree"
+        "en": "{score=3} slightly disagree"
       },
       "4": {
-        "en": "{score=2} disagree",
-        "de": "{score=2} disagree"
+        "en": "{score=2} disagree"
       },
       "5": {
-        "en": "{score=1} strongly disagree",
-        "de": "{score=1} strongly disagree"
+        "en": "{score=1} strongly disagree"
       }
     }
   },
   "CFS07": {
     "Description": {
-      "en": "I am willing to listen and consider alternatives for handling a problem.",
-      "de": "I am willing to listen and consider alternatives for handling a problem."
+      "en": "I am willing to listen and consider alternatives for handling a problem."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=6} strongly agree",
-        "de": "{score=6} strongly agree"
+        "en": "{score=6} strongly agree"
       },
       "1": {
-        "en": "{score=5} agree",
-        "de": "{score=5} agree"
+        "en": "{score=5} agree"
       },
       "2": {
-        "en": "{score=4} slightly agree",
-        "de": "{score=4} slightly agree"
+        "en": "{score=4} slightly agree"
       },
       "3": {
-        "en": "{score=3} slightly disagree",
-        "de": "{score=3} slightly disagree"
+        "en": "{score=3} slightly disagree"
       },
       "4": {
-        "en": "{score=2} disagree",
-        "de": "{score=2} disagree"
+        "en": "{score=2} disagree"
       },
       "5": {
-        "en": "{score=1} strongly disagree",
-        "de": "{score=1} strongly disagree"
+        "en": "{score=1} strongly disagree"
       }
     }
   },
   "CFS08": {
     "Description": {
-      "en": "I have the self-confidence necessary to try different ways of behaving",
-      "de": "I have the self-confidence necessary to try different ways of behaving"
+      "en": "I have the self-confidence necessary to try different ways of behaving"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=6} strongly agree",
-        "de": "{score=6} strongly agree"
+        "en": "{score=6} strongly agree"
       },
       "1": {
-        "en": "{score=5} agree",
-        "de": "{score=5} agree"
+        "en": "{score=5} agree"
       },
       "2": {
-        "en": "{score=4} slightly agree",
-        "de": "{score=4} slightly agree"
+        "en": "{score=4} slightly agree"
       },
       "3": {
-        "en": "{score=3} slightly disagree",
-        "de": "{score=3} slightly disagree"
+        "en": "{score=3} slightly disagree"
       },
       "4": {
-        "en": "{score=2} disagree",
-        "de": "{score=2} disagree"
+        "en": "{score=2} disagree"
       },
       "5": {
-        "en": "{score=1} strongly disagree",
-        "de": "{score=1} strongly disagree"
+        "en": "{score=1} strongly disagree"
       }
     }
   }

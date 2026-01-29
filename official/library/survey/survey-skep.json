@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Skepticism towards advertisements (SKEP)",
-      "de": "Skepticism towards advertisements (SKEP)"
+      "en": "Skepticism towards advertisements (SKEP)"
     },
     "Abbreviation": "SKEP",
     "Authors": [
@@ -26,146 +25,116 @@
   },
   "SKEP01": {
     "Description": {
-      "en": "We can depend on getting the truth in most advertising.",
-      "de": "We can depend on getting the truth in most advertising."
+      "en": "We can depend on getting the truth in most advertising."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "SKEP02": {
     "Description": {
-      "en": "Advertising's aim is to inform the consumer.",
-      "de": "Advertising's aim is to inform the consumer."
+      "en": "Advertising's aim is to inform the consumer."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "SKEP03": {
     "Description": {
-      "en": "Advertising is generally truthful.",
-      "de": "Advertising is generally truthful."
+      "en": "Advertising is generally truthful."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "SKEP04": {
     "Description": {
-      "en": "Advertising is truth well told.",
-      "de": "Advertising is truth well told."
+      "en": "Advertising is truth well told."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "SKEP05": {
     "Description": {
-      "en": "I feel I've been accurately informed after viewing most advertisements.",
-      "de": "I feel I've been accurately informed after viewing most advertisements."
+      "en": "I feel I've been accurately informed after viewing most advertisements."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   }

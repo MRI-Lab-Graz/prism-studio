@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Lying in Everyday Situations Scale (LiES)",
-      "de": "Lying in Everyday Situations Scale (LiES)"
+      "en": "Lying in Everyday Situations Scale (LiES)"
     },
     "Abbreviation": "LIES",
     "Authors": [
@@ -27,260 +26,204 @@
   },
   "LIES01": {
     "Description": {
-      "en": "I lie in order to escape conflicts or disagreements with other people.",
-      "de": "I lie in order to escape conflicts or disagreements with other people."
+      "en": "I lie in order to escape conflicts or disagreements with other people."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly *disagree*<br>1",
-        "de": "Strongly *disagree*<br>1"
+        "en": "Strongly *disagree*<br>1"
       },
       "1": {
-        "en": "<br><br>2",
-        "de": "<br><br>2"
+        "en": "<br><br>2"
       },
       "2": {
-        "en": "<br><br>3",
-        "de": "<br><br>3"
+        "en": "<br><br>3"
       },
       "3": {
-        "en": "Neither agree nor disagree<br>4",
-        "de": "Neither agree nor disagree<br>4"
+        "en": "Neither agree nor disagree<br>4"
       },
       "4": {
-        "en": "<br><br>5",
-        "de": "<br><br>5"
+        "en": "<br><br>5"
       },
       "5": {
-        "en": "<br><br>6",
-        "de": "<br><br>6"
+        "en": "<br><br>6"
       },
       "6": {
-        "en": "Strongly *agree*<br>7",
-        "de": "Strongly *agree*<br>7"
+        "en": "Strongly *agree*<br>7"
       }
     }
   },
   "LIES02": {
     "Description": {
-      "en": "I lie to hide the bad things I've done.",
-      "de": "I lie to hide the bad things I've done."
+      "en": "I lie to hide the bad things I've done."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly *disagree*<br>1",
-        "de": "Strongly *disagree*<br>1"
+        "en": "Strongly *disagree*<br>1"
       },
       "1": {
-        "en": "<br><br>2",
-        "de": "<br><br>2"
+        "en": "<br><br>2"
       },
       "2": {
-        "en": "<br><br>3",
-        "de": "<br><br>3"
+        "en": "<br><br>3"
       },
       "3": {
-        "en": "Neither agree nor disagree<br>4",
-        "de": "Neither agree nor disagree<br>4"
+        "en": "Neither agree nor disagree<br>4"
       },
       "4": {
-        "en": "<br><br>5",
-        "de": "<br><br>5"
+        "en": "<br><br>5"
       },
       "5": {
-        "en": "<br><br>6",
-        "de": "<br><br>6"
+        "en": "<br><br>6"
       },
       "6": {
-        "en": "Strongly *agree*<br>7",
-        "de": "Strongly *agree*<br>7"
+        "en": "Strongly *agree*<br>7"
       }
     }
   },
   "LIES03": {
     "Description": {
-      "en": "I tell lies so I will not have confrontations with people.",
-      "de": "I tell lies so I will not have confrontations with people."
+      "en": "I tell lies so I will not have confrontations with people."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly *disagree*<br>1",
-        "de": "Strongly *disagree*<br>1"
+        "en": "Strongly *disagree*<br>1"
       },
       "1": {
-        "en": "<br><br>2",
-        "de": "<br><br>2"
+        "en": "<br><br>2"
       },
       "2": {
-        "en": "<br><br>3",
-        "de": "<br><br>3"
+        "en": "<br><br>3"
       },
       "3": {
-        "en": "Neither agree nor disagree<br>4",
-        "de": "Neither agree nor disagree<br>4"
+        "en": "Neither agree nor disagree<br>4"
       },
       "4": {
-        "en": "<br><br>5",
-        "de": "<br><br>5"
+        "en": "<br><br>5"
       },
       "5": {
-        "en": "<br><br>6",
-        "de": "<br><br>6"
+        "en": "<br><br>6"
       },
       "6": {
-        "en": "Strongly *agree*<br>7",
-        "de": "Strongly *agree*<br>7"
+        "en": "Strongly *agree*<br>7"
       }
     }
   },
   "LIES04": {
     "Description": {
-      "en": "I lie in order to hide shameful things about myself.",
-      "de": "I lie in order to hide shameful things about myself."
+      "en": "I lie in order to hide shameful things about myself."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly *disagree*<br>1",
-        "de": "Strongly *disagree*<br>1"
+        "en": "Strongly *disagree*<br>1"
       },
       "1": {
-        "en": "<br><br>2",
-        "de": "<br><br>2"
+        "en": "<br><br>2"
       },
       "2": {
-        "en": "<br><br>3",
-        "de": "<br><br>3"
+        "en": "<br><br>3"
       },
       "3": {
-        "en": "Neither agree nor disagree<br>4",
-        "de": "Neither agree nor disagree<br>4"
+        "en": "Neither agree nor disagree<br>4"
       },
       "4": {
-        "en": "<br><br>5",
-        "de": "<br><br>5"
+        "en": "<br><br>5"
       },
       "5": {
-        "en": "<br><br>6",
-        "de": "<br><br>6"
+        "en": "<br><br>6"
       },
       "6": {
-        "en": "Strongly *agree*<br>7",
-        "de": "Strongly *agree*<br>7"
+        "en": "Strongly *agree*<br>7"
       }
     }
   },
   "LIES05": {
     "Description": {
-      "en": "I lie to stay out of arguments with people.",
-      "de": "I lie to stay out of arguments with people."
+      "en": "I lie to stay out of arguments with people."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly *disagree*<br>1",
-        "de": "Strongly *disagree*<br>1"
+        "en": "Strongly *disagree*<br>1"
       },
       "1": {
-        "en": "<br><br>2",
-        "de": "<br><br>2"
+        "en": "<br><br>2"
       },
       "2": {
-        "en": "<br><br>3",
-        "de": "<br><br>3"
+        "en": "<br><br>3"
       },
       "3": {
-        "en": "Neither agree nor disagree<br>4",
-        "de": "Neither agree nor disagree<br>4"
+        "en": "Neither agree nor disagree<br>4"
       },
       "4": {
-        "en": "<br><br>5",
-        "de": "<br><br>5"
+        "en": "<br><br>5"
       },
       "5": {
-        "en": "<br><br>6",
-        "de": "<br><br>6"
+        "en": "<br><br>6"
       },
       "6": {
-        "en": "Strongly *agree*<br>7",
-        "de": "Strongly *agree*<br>7"
+        "en": "Strongly *agree*<br>7"
       }
     }
   },
   "LIES06": {
     "Description": {
-      "en": "I lie in order to be friendly and cordial with others.",
-      "de": "I lie in order to be friendly and cordial with others."
+      "en": "I lie in order to be friendly and cordial with others."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly *disagree*<br>1",
-        "de": "Strongly *disagree*<br>1"
+        "en": "Strongly *disagree*<br>1"
       },
       "1": {
-        "en": "<br><br>2",
-        "de": "<br><br>2"
+        "en": "<br><br>2"
       },
       "2": {
-        "en": "<br><br>3",
-        "de": "<br><br>3"
+        "en": "<br><br>3"
       },
       "3": {
-        "en": "Neither agree nor disagree<br>4",
-        "de": "Neither agree nor disagree<br>4"
+        "en": "Neither agree nor disagree<br>4"
       },
       "4": {
-        "en": "<br><br>5",
-        "de": "<br><br>5"
+        "en": "<br><br>5"
       },
       "5": {
-        "en": "<br><br>6",
-        "de": "<br><br>6"
+        "en": "<br><br>6"
       },
       "6": {
-        "en": "Strongly *agree*<br>7",
-        "de": "Strongly *agree*<br>7"
+        "en": "Strongly *agree*<br>7"
       }
     }
   },
   "LIES07": {
     "Description": {
-      "en": "I tell lies in order to spare another's feelings.",
-      "de": "I tell lies in order to spare another's feelings."
+      "en": "I tell lies in order to spare another's feelings."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly *disagree*<br>1",
-        "de": "Strongly *disagree*<br>1"
+        "en": "Strongly *disagree*<br>1"
       },
       "1": {
-        "en": "<br><br>2",
-        "de": "<br><br>2"
+        "en": "<br><br>2"
       },
       "2": {
-        "en": "<br><br>3",
-        "de": "<br><br>3"
+        "en": "<br><br>3"
       },
       "3": {
-        "en": "Neither agree nor disagree<br>4",
-        "de": "Neither agree nor disagree<br>4"
+        "en": "Neither agree nor disagree<br>4"
       },
       "4": {
-        "en": "<br><br>5",
-        "de": "<br><br>5"
+        "en": "<br><br>5"
       },
       "5": {
-        "en": "<br><br>6",
-        "de": "<br><br>6"
+        "en": "<br><br>6"
       },
       "6": {
-        "en": "Strongly *agree*<br>7",
-        "de": "Strongly *agree*<br>7"
+        "en": "Strongly *agree*<br>7"
       }
     }
   }

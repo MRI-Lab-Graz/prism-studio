@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Service to Others in Sobriety (SOS) questionnaire",
-      "de": "Service to Others in Sobriety (SOS) questionnaire"
+      "en": "Service to Others in Sobriety (SOS) questionnaire"
     },
     "Abbreviation": "SOS",
     "Authors": [
@@ -37,349 +36,277 @@
   },
   "SOS01": {
     "Description": {
-      "en": "Take calls or spent time with a sponsee?",
-      "de": "Take calls or spent time with a sponsee?"
+      "en": "Take calls or spent time with a sponsee?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": "rarely",
-        "de": "rarely"
+        "en": "rarely"
       },
       "2": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "3": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "4": {
-        "en": "always",
-        "de": "always"
+        "en": "always"
       }
     }
   },
   "SOS02": {
     "Description": {
-      "en": "Guide an alcoholic/addict through the 12-Steps?",
-      "de": "Guide an alcoholic/addict through the 12-Steps?"
+      "en": "Guide an alcoholic/addict through the 12-Steps?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": "rarely",
-        "de": "rarely"
+        "en": "rarely"
       },
       "2": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "3": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "4": {
-        "en": "always",
-        "de": "always"
+        "en": "always"
       }
     }
   },
   "SOS03": {
     "Description": {
-      "en": "Hold a service position in a 12-Step program?",
-      "de": "Hold a service position in a 12-Step program?"
+      "en": "Hold a service position in a 12-Step program?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": "rarely",
-        "de": "rarely"
+        "en": "rarely"
       },
       "2": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "3": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "4": {
-        "en": "always",
-        "de": "always"
+        "en": "always"
       }
     }
   },
   "SOS04": {
     "Description": {
-      "en": "Say something positive to an alcoholic/addict?",
-      "de": "Say something positive to an alcoholic/addict?"
+      "en": "Say something positive to an alcoholic/addict?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": "rarely",
-        "de": "rarely"
+        "en": "rarely"
       },
       "2": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "3": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "4": {
-        "en": "always",
-        "de": "always"
+        "en": "always"
       }
     }
   },
   "SOS05": {
     "Description": {
-      "en": "Listen to an alcoholic/addict?",
-      "de": "Listen to an alcoholic/addict?"
+      "en": "Listen to an alcoholic/addict?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": "rarely",
-        "de": "rarely"
+        "en": "rarely"
       },
       "2": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "3": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "4": {
-        "en": "always",
-        "de": "always"
+        "en": "always"
       }
     }
   },
   "SOS06": {
     "Description": {
-      "en": "Say hello to a newcomer?",
-      "de": "Say hello to a newcomer?"
+      "en": "Say hello to a newcomer?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": "rarely",
-        "de": "rarely"
+        "en": "rarely"
       },
       "2": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "3": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "4": {
-        "en": "always",
-        "de": "always"
+        "en": "always"
       }
     }
   },
   "SOS07": {
     "Description": {
-      "en": "Reach out to an alcoholic/addict having a hard time?",
-      "de": "Reach out to an alcoholic/addict having a hard time?"
+      "en": "Reach out to an alcoholic/addict having a hard time?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": "rarely",
-        "de": "rarely"
+        "en": "rarely"
       },
       "2": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "3": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "4": {
-        "en": "always",
-        "de": "always"
+        "en": "always"
       }
     }
   },
   "SOS08": {
     "Description": {
-      "en": "Share a personal story with an alcoholic/addict?",
-      "de": "Share a personal story with an alcoholic/addict?"
+      "en": "Share a personal story with an alcoholic/addict?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": "rarely",
-        "de": "rarely"
+        "en": "rarely"
       },
       "2": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "3": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "4": {
-        "en": "always",
-        "de": "always"
+        "en": "always"
       }
     }
   },
   "SOS09": {
     "Description": {
-      "en": "Read program literature to an alcoholic/addict?",
-      "de": "Read program literature to an alcoholic/addict?"
+      "en": "Read program literature to an alcoholic/addict?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": "rarely",
-        "de": "rarely"
+        "en": "rarely"
       },
       "2": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "3": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "4": {
-        "en": "always",
-        "de": "always"
+        "en": "always"
       }
     }
   },
   "SOS10": {
     "Description": {
-      "en": "Encourage an alcoholic/addict to go to a meeting?",
-      "de": "Encourage an alcoholic/addict to go to a meeting?"
+      "en": "Encourage an alcoholic/addict to go to a meeting?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": "rarely",
-        "de": "rarely"
+        "en": "rarely"
       },
       "2": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "3": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "4": {
-        "en": "always",
-        "de": "always"
+        "en": "always"
       }
     }
   },
   "SOS11": {
     "Description": {
-      "en": "Donate money to Alcoholics Anonymous or Narcotics Anonymous?",
-      "de": "Donate money to Alcoholics Anonymous or Narcotics Anonymous?"
+      "en": "Donate money to Alcoholics Anonymous or Narcotics Anonymous?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": "rarely",
-        "de": "rarely"
+        "en": "rarely"
       },
       "2": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "3": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "4": {
-        "en": "always",
-        "de": "always"
+        "en": "always"
       }
     }
   },
   "SOS12": {
     "Description": {
-      "en": "Put away chairs after a meeting?",
-      "de": "Put away chairs after a meeting?"
+      "en": "Put away chairs after a meeting?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": "rarely",
-        "de": "rarely"
+        "en": "rarely"
       },
       "2": {
-        "en": "sometimes",
-        "de": "sometimes"
+        "en": "sometimes"
       },
       "3": {
-        "en": "often",
-        "de": "often"
+        "en": "often"
       },
       "4": {
-        "en": "always",
-        "de": "always"
+        "en": "always"
       }
     }
   }

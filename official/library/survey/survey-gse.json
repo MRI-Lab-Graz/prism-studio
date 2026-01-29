@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Generalized Self Efficacy scale (GSE)",
-      "de": "Generalized Self Efficacy scale (GSE)"
+      "en": "Generalized Self Efficacy scale (GSE)"
     },
     "Abbreviation": "GSE",
     "Authors": [
@@ -25,251 +24,201 @@
   },
   "GSE01": {
     "Description": {
-      "en": "I can always manage to solve difficult problems if I try hard enough.",
-      "de": "I can always manage to solve difficult problems if I try hard enough."
+      "en": "I can always manage to solve difficult problems if I try hard enough."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "not at all true",
-        "de": "not at all true"
+        "en": "not at all true"
       },
       "1": {
-        "en": "hardly true",
-        "de": "hardly true"
+        "en": "hardly true"
       },
       "2": {
-        "en": "moderately true",
-        "de": "moderately true"
+        "en": "moderately true"
       },
       "3": {
-        "en": "exactly true",
-        "de": "exactly true"
+        "en": "exactly true"
       }
     }
   },
   "GSE02": {
     "Description": {
-      "en": "If someone opposes me, I can find the means and ways to get what I want.",
-      "de": "If someone opposes me, I can find the means and ways to get what I want."
+      "en": "If someone opposes me, I can find the means and ways to get what I want."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "not at all true",
-        "de": "not at all true"
+        "en": "not at all true"
       },
       "1": {
-        "en": "hardly true",
-        "de": "hardly true"
+        "en": "hardly true"
       },
       "2": {
-        "en": "moderately true",
-        "de": "moderately true"
+        "en": "moderately true"
       },
       "3": {
-        "en": "exactly true",
-        "de": "exactly true"
+        "en": "exactly true"
       }
     }
   },
   "GSE03": {
     "Description": {
-      "en": "I am certain that I can accomplish my goals.",
-      "de": "I am certain that I can accomplish my goals."
+      "en": "I am certain that I can accomplish my goals."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "not at all true",
-        "de": "not at all true"
+        "en": "not at all true"
       },
       "1": {
-        "en": "hardly true",
-        "de": "hardly true"
+        "en": "hardly true"
       },
       "2": {
-        "en": "moderately true",
-        "de": "moderately true"
+        "en": "moderately true"
       },
       "3": {
-        "en": "exactly true",
-        "de": "exactly true"
+        "en": "exactly true"
       }
     }
   },
   "GSE04": {
     "Description": {
-      "en": "I am confident that I could deal efficiently with unexpected events.",
-      "de": "I am confident that I could deal efficiently with unexpected events."
+      "en": "I am confident that I could deal efficiently with unexpected events."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "not at all true",
-        "de": "not at all true"
+        "en": "not at all true"
       },
       "1": {
-        "en": "hardly true",
-        "de": "hardly true"
+        "en": "hardly true"
       },
       "2": {
-        "en": "moderately true",
-        "de": "moderately true"
+        "en": "moderately true"
       },
       "3": {
-        "en": "exactly true",
-        "de": "exactly true"
+        "en": "exactly true"
       }
     }
   },
   "GSE05": {
     "Description": {
-      "en": "Thanks to my resourcefulness, I can handle unforeseen situations.",
-      "de": "Thanks to my resourcefulness, I can handle unforeseen situations."
+      "en": "Thanks to my resourcefulness, I can handle unforeseen situations."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "not at all true",
-        "de": "not at all true"
+        "en": "not at all true"
       },
       "1": {
-        "en": "hardly true",
-        "de": "hardly true"
+        "en": "hardly true"
       },
       "2": {
-        "en": "moderately true",
-        "de": "moderately true"
+        "en": "moderately true"
       },
       "3": {
-        "en": "exactly true",
-        "de": "exactly true"
+        "en": "exactly true"
       }
     }
   },
   "GSE06": {
     "Description": {
-      "en": "I can solve most problems if I invest the necessary effort.",
-      "de": "I can solve most problems if I invest the necessary effort."
+      "en": "I can solve most problems if I invest the necessary effort."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "not at all true",
-        "de": "not at all true"
+        "en": "not at all true"
       },
       "1": {
-        "en": "hardly true",
-        "de": "hardly true"
+        "en": "hardly true"
       },
       "2": {
-        "en": "moderately true",
-        "de": "moderately true"
+        "en": "moderately true"
       },
       "3": {
-        "en": "exactly true",
-        "de": "exactly true"
+        "en": "exactly true"
       }
     }
   },
   "GSE07": {
     "Description": {
-      "en": "I can remain calm when facing difficulties because I can rely on my coping abilities.",
-      "de": "I can remain calm when facing difficulties because I can rely on my coping abilities."
+      "en": "I can remain calm when facing difficulties because I can rely on my coping abilities."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "not at all true",
-        "de": "not at all true"
+        "en": "not at all true"
       },
       "1": {
-        "en": "hardly true",
-        "de": "hardly true"
+        "en": "hardly true"
       },
       "2": {
-        "en": "moderately true",
-        "de": "moderately true"
+        "en": "moderately true"
       },
       "3": {
-        "en": "exactly true",
-        "de": "exactly true"
+        "en": "exactly true"
       }
     }
   },
   "GSE08": {
     "Description": {
-      "en": "When I am confronted with a problem, I can find several solutions.",
-      "de": "When I am confronted with a problem, I can find several solutions."
+      "en": "When I am confronted with a problem, I can find several solutions."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "not at all true",
-        "de": "not at all true"
+        "en": "not at all true"
       },
       "1": {
-        "en": "hardly true",
-        "de": "hardly true"
+        "en": "hardly true"
       },
       "2": {
-        "en": "moderately true",
-        "de": "moderately true"
+        "en": "moderately true"
       },
       "3": {
-        "en": "exactly true",
-        "de": "exactly true"
+        "en": "exactly true"
       }
     }
   },
   "GSE09": {
     "Description": {
-      "en": "If I am in trouble, I can think of a good solution.",
-      "de": "If I am in trouble, I can think of a good solution."
+      "en": "If I am in trouble, I can think of a good solution."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "not at all true",
-        "de": "not at all true"
+        "en": "not at all true"
       },
       "1": {
-        "en": "hardly true",
-        "de": "hardly true"
+        "en": "hardly true"
       },
       "2": {
-        "en": "moderately true",
-        "de": "moderately true"
+        "en": "moderately true"
       },
       "3": {
-        "en": "exactly true",
-        "de": "exactly true"
+        "en": "exactly true"
       }
     }
   },
   "GSE10": {
     "Description": {
-      "en": "I can handle whatever comes my way.",
-      "de": "I can handle whatever comes my way."
+      "en": "I can handle whatever comes my way."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "not at all true",
-        "de": "not at all true"
+        "en": "not at all true"
       },
       "1": {
-        "en": "hardly true",
-        "de": "hardly true"
+        "en": "hardly true"
       },
       "2": {
-        "en": "moderately true",
-        "de": "moderately true"
+        "en": "moderately true"
       },
       "3": {
-        "en": "exactly true",
-        "de": "exactly true"
+        "en": "exactly true"
       }
     }
   }

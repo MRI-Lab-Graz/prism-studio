@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Loneliness (TILS)",
-      "de": "Loneliness (TILS)"
+      "en": "Loneliness (TILS)"
     },
     "Abbreviation": "LONELINESS-3",
     "Authors": [
@@ -26,64 +25,52 @@
   },
   "LONELINESS-301": {
     "Description": {
-      "en": "How often do you feel that you lack companionship?",
-      "de": "How often do you feel that you lack companionship?"
+      "en": "How often do you feel that you lack companionship?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Hardly ever",
-        "de": "Hardly ever"
+        "en": "Hardly ever"
       },
       "1": {
-        "en": "Some of the time",
-        "de": "Some of the time"
+        "en": "Some of the time"
       },
       "2": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       }
     }
   },
   "LONELINESS-302": {
     "Description": {
-      "en": "How often do you feel left out?",
-      "de": "How often do you feel left out?"
+      "en": "How often do you feel left out?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Hardly ever",
-        "de": "Hardly ever"
+        "en": "Hardly ever"
       },
       "1": {
-        "en": "Some of the time",
-        "de": "Some of the time"
+        "en": "Some of the time"
       },
       "2": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       }
     }
   },
   "LONELINESS-303": {
     "Description": {
-      "en": "How often do you feel isolated from others?",
-      "de": "How often do you feel isolated from others?"
+      "en": "How often do you feel isolated from others?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Hardly ever",
-        "de": "Hardly ever"
+        "en": "Hardly ever"
       },
       "1": {
-        "en": "Some of the time",
-        "de": "Some of the time"
+        "en": "Some of the time"
       },
       "2": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       }
     }
   }

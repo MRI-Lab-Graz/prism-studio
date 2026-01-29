@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Self-consciousness scale (revised version)",
-      "de": "Self-consciousness scale (revised version)"
+      "en": "Self-consciousness scale (revised version)"
     },
     "Abbreviation": "SCSR",
     "Authors": [
@@ -26,476 +25,381 @@
   },
   "SCSR01": {
     "Description": {
-      "en": "I'm always trying to figure myself out",
-      "de": "I'm always trying to figure myself out"
+      "en": "I'm always trying to figure myself out"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR02": {
     "Description": {
-      "en": "I'm concerned about my style of doing things",
-      "de": "I'm concerned about my style of doing things"
+      "en": "I'm concerned about my style of doing things"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR03": {
     "Description": {
-      "en": "It takes me time to get over my shyness in new situations",
-      "de": "It takes me time to get over my shyness in new situations"
+      "en": "It takes me time to get over my shyness in new situations"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR04": {
     "Description": {
-      "en": "I think about myself a lot",
-      "de": "I think about myself a lot"
+      "en": "I think about myself a lot"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR05": {
     "Description": {
-      "en": "I care a lot about how I present myself to others",
-      "de": "I care a lot about how I present myself to others"
+      "en": "I care a lot about how I present myself to others"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR06": {
     "Description": {
-      "en": "I often daydream about myself",
-      "de": "I often daydream about myself"
+      "en": "I often daydream about myself"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR07": {
     "Description": {
-      "en": "It's hard for me to work when someone is watching me",
-      "de": "It's hard for me to work when someone is watching me"
+      "en": "It's hard for me to work when someone is watching me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR08": {
     "Description": {
-      "en": "I get embarrassed very easily",
-      "de": "I get embarrassed very easily"
+      "en": "I get embarrassed very easily"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR09": {
     "Description": {
-      "en": "I'm self-conscious about the way I look",
-      "de": "I'm self-conscious about the way I look"
+      "en": "I'm self-conscious about the way I look"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR10": {
     "Description": {
-      "en": "I generally pay attention to my inner feelings",
-      "de": "I generally pay attention to my inner feelings"
+      "en": "I generally pay attention to my inner feelings"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR11": {
     "Description": {
-      "en": "I usually worry about making a good impression",
-      "de": "I usually worry about making a good impression"
+      "en": "I usually worry about making a good impression"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR12": {
     "Description": {
-      "en": "I'm constantly thinking about my reasons for doing things",
-      "de": "I'm constantly thinking about my reasons for doing things"
+      "en": "I'm constantly thinking about my reasons for doing things"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR13": {
     "Description": {
-      "en": "I feel nervous when I speak in front of a group",
-      "de": "I feel nervous when I speak in front of a group"
+      "en": "I feel nervous when I speak in front of a group"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR14": {
     "Description": {
-      "en": "Before I leave my house, I check how I look",
-      "de": "Before I leave my house, I check how I look"
+      "en": "Before I leave my house, I check how I look"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR15": {
     "Description": {
-      "en": "I sometimes step back (in my mind) in order to examine myself from a distance",
-      "de": "I sometimes step back (in my mind) in order to examine myself from a distance"
+      "en": "I sometimes step back (in my mind) in order to examine myself from a distance"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR16": {
     "Description": {
-      "en": "I'm concerned about what other people think of me",
-      "de": "I'm concerned about what other people think of me"
+      "en": "I'm concerned about what other people think of me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR17": {
     "Description": {
-      "en": "I'm quick to notice changes in my mood",
-      "de": "I'm quick to notice changes in my mood"
+      "en": "I'm quick to notice changes in my mood"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR18": {
     "Description": {
-      "en": "I'm usually aware of my appearance",
-      "de": "I'm usually aware of my appearance"
+      "en": "I'm usually aware of my appearance"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   },
   "SCSR19": {
     "Description": {
-      "en": "I know the way my mind works when I work through a problem",
-      "de": "I know the way my mind works when I work through a problem"
+      "en": "I know the way my mind works when I work through a problem"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=3} a lot like me",
-        "de": "{score=3} a lot like me"
+        "en": "{score=3} a lot like me"
       },
       "1": {
-        "en": "{score=2} somewhat like me",
-        "de": "{score=2} somewhat like me"
+        "en": "{score=2} somewhat like me"
       },
       "2": {
-        "en": "{score=1} a little like me",
-        "de": "{score=1} a little like me"
+        "en": "{score=1} a little like me"
       },
       "3": {
-        "en": "{score=0} not like me at all",
-        "de": "{score=0} not like me at all"
+        "en": "{score=0} not like me at all"
       }
     }
   }

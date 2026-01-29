@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Social Intelligence (TromsÃ¸ Social Intelligence Scale, TSIS)",
-      "de": "Social Intelligence (TromsÃ¸ Social Intelligence Scale, TSIS)"
+      "en": "Social Intelligence (TromsÃ¸ Social Intelligence Scale, TSIS)"
     },
     "Abbreviation": "TSIS",
     "Authors": [
@@ -26,371 +25,291 @@
   },
   "TSIS01": {
     "Description": {
-      "en": "I can predict other peoples' behavior.",
-      "de": "I can predict other peoples' behavior."
+      "en": "I can predict other peoples' behavior."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Describes me extremely poorly",
-        "de": "Describes me extremely poorly"
+        "en": "Describes me extremely poorly"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "Describes me extremely well",
-        "de": "Describes me extremely well"
+        "en": "Describes me extremely well"
       }
     }
   },
   "TSIS02": {
     "Description": {
-      "en": "I know how my actions will make others feel.",
-      "de": "I know how my actions will make others feel."
+      "en": "I know how my actions will make others feel."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Describes me extremely poorly",
-        "de": "Describes me extremely poorly"
+        "en": "Describes me extremely poorly"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "Describes me extremely well",
-        "de": "Describes me extremely well"
+        "en": "Describes me extremely well"
       }
     }
   },
   "TSIS03": {
     "Description": {
-      "en": "I understand other peoples' feelings.",
-      "de": "I understand other peoples' feelings."
+      "en": "I understand other peoples' feelings."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Describes me extremely poorly",
-        "de": "Describes me extremely poorly"
+        "en": "Describes me extremely poorly"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "Describes me extremely well",
-        "de": "Describes me extremely well"
+        "en": "Describes me extremely well"
       }
     }
   },
   "TSIS04": {
     "Description": {
-      "en": "I fit in easily in social situations.",
-      "de": "I fit in easily in social situations."
+      "en": "I fit in easily in social situations."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Describes me extremely poorly",
-        "de": "Describes me extremely poorly"
+        "en": "Describes me extremely poorly"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "Describes me extremely well",
-        "de": "Describes me extremely well"
+        "en": "Describes me extremely well"
       }
     }
   },
   "TSIS05": {
     "Description": {
-      "en": "I understand others' wishes.",
-      "de": "I understand others' wishes."
+      "en": "I understand others' wishes."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Describes me extremely poorly",
-        "de": "Describes me extremely poorly"
+        "en": "Describes me extremely poorly"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "Describes me extremely well",
-        "de": "Describes me extremely well"
+        "en": "Describes me extremely well"
       }
     }
   },
   "TSIS06": {
     "Description": {
-      "en": "I am good at entering new situations and meeting people for the first time.",
-      "de": "I am good at entering new situations and meeting people for the first time."
+      "en": "I am good at entering new situations and meeting people for the first time."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Describes me extremely poorly",
-        "de": "Describes me extremely poorly"
+        "en": "Describes me extremely poorly"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "Describes me extremely well",
-        "de": "Describes me extremely well"
+        "en": "Describes me extremely well"
       }
     }
   },
   "TSIS07": {
     "Description": {
-      "en": "I can often understand what others are trying to accomplish without the need for them to say anything.",
-      "de": "I can often understand what others are trying to accomplish without the need for them to say anything."
+      "en": "I can often understand what others are trying to accomplish without the need for them to say anything."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Describes me extremely poorly",
-        "de": "Describes me extremely poorly"
+        "en": "Describes me extremely poorly"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "Describes me extremely well",
-        "de": "Describes me extremely well"
+        "en": "Describes me extremely well"
       }
     }
   },
   "TSIS08": {
     "Description": {
-      "en": "I can predict how others will react to my behavior.",
-      "de": "I can predict how others will react to my behavior."
+      "en": "I can predict how others will react to my behavior."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Describes me extremely poorly",
-        "de": "Describes me extremely poorly"
+        "en": "Describes me extremely poorly"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "Describes me extremely well",
-        "de": "Describes me extremely well"
+        "en": "Describes me extremely well"
       }
     }
   },
   "TSIS09": {
     "Description": {
-      "en": "I am good at getting on good terms with new people.",
-      "de": "I am good at getting on good terms with new people."
+      "en": "I am good at getting on good terms with new people."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Describes me extremely poorly",
-        "de": "Describes me extremely poorly"
+        "en": "Describes me extremely poorly"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "Describes me extremely well",
-        "de": "Describes me extremely well"
+        "en": "Describes me extremely well"
       }
     }
   },
   "TSIS10": {
     "Description": {
-      "en": "I can often understand what others really mean through their expression, body language, etc.",
-      "de": "I can often understand what others really mean through their expression, body language, etc."
+      "en": "I can often understand what others really mean through their expression, body language, etc."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Describes me extremely poorly",
-        "de": "Describes me extremely poorly"
+        "en": "Describes me extremely poorly"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "Describes me extremely well",
-        "de": "Describes me extremely well"
+        "en": "Describes me extremely well"
       }
     }
   }

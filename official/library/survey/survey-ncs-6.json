@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Need for Cognition (NCS-6)",
-      "de": "Need for Cognition (NCS-6)"
+      "en": "Need for Cognition (NCS-6)"
     },
     "Abbreviation": "NCS-6",
     "Authors": [
@@ -29,117 +28,93 @@
   },
   "NCS-601": {
     "Description": {
-      "en": "I would prefer complex to simple problems.",
-      "de": "I would prefer complex to simple problems."
+      "en": "I would prefer complex to simple problems."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic",
-        "de": "extremely uncharacteristic"
+        "en": "extremely uncharacteristic"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": "extremely characteristic",
-        "de": "extremely characteristic"
+        "en": "extremely characteristic"
       }
     }
   },
   "NCS-602": {
     "Description": {
-      "en": "I like to have the responsibility of handling a situation that requires a lot of thinking.",
-      "de": "I like to have the responsibility of handling a situation that requires a lot of thinking."
+      "en": "I like to have the responsibility of handling a situation that requires a lot of thinking."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic",
-        "de": "extremely uncharacteristic"
+        "en": "extremely uncharacteristic"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": "extremely characteristic",
-        "de": "extremely characteristic"
+        "en": "extremely characteristic"
       }
     }
   },
   "NCS-603": {
     "Description": {
-      "en": "I really enjoy a task that involves coming up with new solutions to problems.",
-      "de": "I really enjoy a task that involves coming up with new solutions to problems."
+      "en": "I really enjoy a task that involves coming up with new solutions to problems."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic",
-        "de": "extremely uncharacteristic"
+        "en": "extremely uncharacteristic"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": "extremely characteristic",
-        "de": "extremely characteristic"
+        "en": "extremely characteristic"
       }
     }
   },
   "NCS-604": {
     "Description": {
-      "en": "I would prefer a task that is intellectual, difficult, and important to one that is somewhat important but does not require much thought.",
-      "de": "I would prefer a task that is intellectual, difficult, and important to one that is somewhat important but does not require much thought."
+      "en": "I would prefer a task that is intellectual, difficult, and important to one that is somewhat important but does not require much thought."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic",
-        "de": "extremely uncharacteristic"
+        "en": "extremely uncharacteristic"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": "extremely characteristic",
-        "de": "extremely characteristic"
+        "en": "extremely characteristic"
       }
     }
   }

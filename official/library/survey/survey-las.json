@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Love Attitudes Scale (Short Form)",
-      "de": "Love Attitudes Scale (Short Form)"
+      "en": "Love Attitudes Scale (Short Form)"
     },
     "Abbreviation": "LAS",
     "Authors": [
@@ -26,697 +25,553 @@
   },
   "LAS01": {
     "Description": {
-      "en": "My partner and I have the right physical \"chemistry\" between us.",
-      "de": "My partner and I have the right physical \"chemistry\" between us."
+      "en": "My partner and I have the right physical \"chemistry\" between us."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS02": {
     "Description": {
-      "en": "I feel that my lover and I were meant for each other.",
-      "de": "I feel that my lover and I were meant for each other."
+      "en": "I feel that my lover and I were meant for each other."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS03": {
     "Description": {
-      "en": "My partner fits my ideal standards of physical beauty/handsomness.",
-      "de": "My partner fits my ideal standards of physical beauty/handsomness."
+      "en": "My partner fits my ideal standards of physical beauty/handsomness."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS04": {
     "Description": {
-      "en": "I believe that what my partner doesn't know about me won't hurt him/her.",
-      "de": "I believe that what my partner doesn't know about me won't hurt him/her."
+      "en": "I believe that what my partner doesn't know about me won't hurt him/her."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS05": {
     "Description": {
-      "en": "I have sometimes had to keep my partner from finding out about other lovers.",
-      "de": "I have sometimes had to keep my partner from finding out about other lovers."
+      "en": "I have sometimes had to keep my partner from finding out about other lovers."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS06": {
     "Description": {
-      "en": "My partner would get upset if he/she knew of some of the things I've done with other people.",
-      "de": "My partner would get upset if he/she knew of some of the things I've done with other people."
+      "en": "My partner would get upset if he/she knew of some of the things I've done with other people."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS07": {
     "Description": {
-      "en": "Our love is the best kind because it grew out of a long friendship.",
-      "de": "Our love is the best kind because it grew out of a long friendship."
+      "en": "Our love is the best kind because it grew out of a long friendship."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS08": {
     "Description": {
-      "en": "Our friendship merged gradually into love over time.",
-      "de": "Our friendship merged gradually into love over time."
+      "en": "Our friendship merged gradually into love over time."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS09": {
     "Description": {
-      "en": "Our love relationship is the most satisfying because it developed from a good friendship.",
-      "de": "Our love relationship is the most satisfying because it developed from a good friendship."
+      "en": "Our love relationship is the most satisfying because it developed from a good friendship."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS10": {
     "Description": {
-      "en": "A main consideration in choosing my partner was how he/she would reflect on my family.",
-      "de": "A main consideration in choosing my partner was how he/she would reflect on my family."
+      "en": "A main consideration in choosing my partner was how he/she would reflect on my family."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS11": {
     "Description": {
-      "en": "An important factor in choosing my partner was whether or not he/she would be a good parent.",
-      "de": "An important factor in choosing my partner was whether or not he/she would be a good parent."
+      "en": "An important factor in choosing my partner was whether or not he/she would be a good parent."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS12": {
     "Description": {
-      "en": "One consideration in choosing my partner was how he/she would reflect on my career.",
-      "de": "One consideration in choosing my partner was how he/she would reflect on my career."
+      "en": "One consideration in choosing my partner was how he/she would reflect on my career."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS13": {
     "Description": {
-      "en": "When my partner doesn't pay attention to me, I feel sick all over.",
-      "de": "When my partner doesn't pay attention to me, I feel sick all over."
+      "en": "When my partner doesn't pay attention to me, I feel sick all over."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS14": {
     "Description": {
-      "en": "I cannot relax if I suspect that my partner is with someone else.",
-      "de": "I cannot relax if I suspect that my partner is with someone else."
+      "en": "I cannot relax if I suspect that my partner is with someone else."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS15": {
     "Description": {
-      "en": "If my partner ignores me for a while, I sometimes do stupid things to try to get his/her attention back.",
-      "de": "If my partner ignores me for a while, I sometimes do stupid things to try to get his/her attention back."
+      "en": "If my partner ignores me for a while, I sometimes do stupid things to try to get his/her attention back."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS16": {
     "Description": {
-      "en": "I would rather suffer myself than let my partner suffer.",
-      "de": "I would rather suffer myself than let my partner suffer."
+      "en": "I would rather suffer myself than let my partner suffer."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS17": {
     "Description": {
-      "en": "I cannot be happy unless I place my partner's happiness before my own.",
-      "de": "I cannot be happy unless I place my partner's happiness before my own."
+      "en": "I cannot be happy unless I place my partner's happiness before my own."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS18": {
     "Description": {
-      "en": "I am usually willing to sacrifice my own wishes to let my partner achieve his/hers.",
-      "de": "I am usually willing to sacrifice my own wishes to let my partner achieve his/hers."
+      "en": "I am usually willing to sacrifice my own wishes to let my partner achieve his/hers."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS19": {
     "Description": {
-      "en": "My partner and I really understand each other.",
-      "de": "My partner and I really understand each other."
+      "en": "My partner and I really understand each other."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS20": {
     "Description": {
-      "en": "I enjoy playing the \"game of love\" with my partner and a number of other partners.",
-      "de": "I enjoy playing the \"game of love\" with my partner and a number of other partners."
+      "en": "I enjoy playing the \"game of love\" with my partner and a number of other partners."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS21": {
     "Description": {
-      "en": "Our love is a really deep friendship, not a mysterious, mystical emotion.",
-      "de": "Our love is a really deep friendship, not a mysterious, mystical emotion."
+      "en": "Our love is a really deep friendship, not a mysterious, mystical emotion."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS22": {
     "Description": {
-      "en": "Before getting involved with my partner, I tried to figure out how compatible his/her hereditary background would be with mine case we ever had children.",
-      "de": "Before getting involved with my partner, I tried to figure out how compatible his/her hereditary background would be with mine case we ever had children."
+      "en": "Before getting involved with my partner, I tried to figure out how compatible his/her hereditary background would be with mine case we ever had children."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS23": {
     "Description": {
-      "en": "Since I've been in love with my partner I've had trouble concentrating on anything else.",
-      "de": "Since I've been in love with my partner I've had trouble concentrating on anything else."
+      "en": "Since I've been in love with my partner I've had trouble concentrating on anything else."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   },
   "LAS24": {
     "Description": {
-      "en": "I would endure all things for the sake of my partner.",
-      "de": "I would endure all things for the sake of my partner."
+      "en": "I would endure all things for the sake of my partner."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       },
       "1": {
-        "en": "moderately agree",
-        "de": "moderately agree"
+        "en": "moderately agree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "moderately disagree",
-        "de": "moderately disagree"
+        "en": "moderately disagree"
       },
       "4": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       }
     }
   }

@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Body Esteem Scale (BES)",
-      "de": "Body Esteem Scale (BES)"
+      "en": "Body Esteem Scale (BES)"
     },
     "Abbreviation": "BES",
     "Authors": [
@@ -25,59 +24,47 @@
   },
   "BES01": {
     "Description": {
-      "en": "Man",
-      "de": "Man"
+      "en": "Man"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strong negative feelings",
-        "de": "strong negative feelings"
+        "en": "strong negative feelings"
       },
       "1": {
-        "en": "moderate negative feelings",
-        "de": "moderate negative feelings"
+        "en": "moderate negative feelings"
       },
       "2": {
-        "en": "no feeling one way or the other",
-        "de": "no feeling one way or the other"
+        "en": "no feeling one way or the other"
       },
       "3": {
-        "en": "moderate positive feelings",
-        "de": "moderate positive feelings"
+        "en": "moderate positive feelings"
       },
       "4": {
-        "en": "strong positive feelings",
-        "de": "strong positive feelings"
+        "en": "strong positive feelings"
       }
     }
   },
   "BES02": {
     "Description": {
-      "en": "Woman",
-      "de": "Woman"
+      "en": "Woman"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strong negative feelings",
-        "de": "strong negative feelings"
+        "en": "strong negative feelings"
       },
       "1": {
-        "en": "moderate negative feelings",
-        "de": "moderate negative feelings"
+        "en": "moderate negative feelings"
       },
       "2": {
-        "en": "no feeling one way or the other",
-        "de": "no feeling one way or the other"
+        "en": "no feeling one way or the other"
       },
       "3": {
-        "en": "moderate positive feelings",
-        "de": "moderate positive feelings"
+        "en": "moderate positive feelings"
       },
       "4": {
-        "en": "strong positive feelings",
-        "de": "strong positive feelings"
+        "en": "strong positive feelings"
       }
     }
   }

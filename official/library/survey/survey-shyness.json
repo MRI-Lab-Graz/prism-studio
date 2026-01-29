@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Shyness Scale (McCroskey)",
-      "de": "Shyness Scale (McCroskey)"
+      "en": "Shyness Scale (McCroskey)"
     },
     "Abbreviation": "SHYNESS",
     "Authors": [
@@ -27,204 +26,162 @@
   },
   "SHYNESS01": {
     "Description": {
-      "en": "I am a shy person.",
-      "de": "I am a shy person."
+      "en": "I am a shy person."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "SHYNESS02": {
     "Description": {
-      "en": "Other people think I am shy.",
-      "de": "Other people think I am shy."
+      "en": "Other people think I am shy."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "SHYNESS03": {
     "Description": {
-      "en": "I tend to be very quiet in class.",
-      "de": "I tend to be very quiet in class."
+      "en": "I tend to be very quiet in class."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "SHYNESS04": {
     "Description": {
-      "en": "I don't talk much.",
-      "de": "I don't talk much."
+      "en": "I don't talk much."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "SHYNESS05": {
     "Description": {
-      "en": "I am a quiet person.",
-      "de": "I am a quiet person."
+      "en": "I am a quiet person."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "SHYNESS06": {
     "Description": {
-      "en": "Most people talk more than I do.",
-      "de": "Most people talk more than I do."
+      "en": "Most people talk more than I do."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "SHYNESS07": {
     "Description": {
-      "en": "Other people think I am very quiet.",
-      "de": "Other people think I am very quiet."
+      "en": "Other people think I am very quiet."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   }

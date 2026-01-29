@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Barratt’s Impulsiveness scale (BIS)",
-      "de": "Barratt’s Impulsiveness scale (BIS)"
+      "en": "Barratt’s Impulsiveness scale (BIS)"
     },
     "Abbreviation": "BIS",
     "Authors": [
@@ -24,126 +23,101 @@
   },
   "BIS01": {
     "Description": {
-      "en": "I do things without thinking.",
-      "de": "I do things without thinking."
+      "en": "I do things without thinking."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Rarely/Never",
-        "de": "Rarely/Never"
+        "en": "Rarely/Never"
       },
       "1": {
-        "en": "Occasionally",
-        "de": "Occasionally"
+        "en": "Occasionally"
       },
       "2": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "3": {
-        "en": "Almost Always/Always",
-        "de": "Almost Always/Always"
+        "en": "Almost Always/Always"
       }
     }
   },
   "BIS02": {
     "Description": {
-      "en": "I make-up my mind quickly.",
-      "de": "I make-up my mind quickly."
+      "en": "I make-up my mind quickly."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Rarely/Never",
-        "de": "Rarely/Never"
+        "en": "Rarely/Never"
       },
       "1": {
-        "en": "Occasionally",
-        "de": "Occasionally"
+        "en": "Occasionally"
       },
       "2": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "3": {
-        "en": "Almost Always/Always",
-        "de": "Almost Always/Always"
+        "en": "Almost Always/Always"
       }
     }
   },
   "BIS03": {
     "Description": {
-      "en": "I am happy-go-lucky.",
-      "de": "I am happy-go-lucky."
+      "en": "I am happy-go-lucky."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Rarely/Never",
-        "de": "Rarely/Never"
+        "en": "Rarely/Never"
       },
       "1": {
-        "en": "Occasionally",
-        "de": "Occasionally"
+        "en": "Occasionally"
       },
       "2": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "3": {
-        "en": "Almost Always/Always",
-        "de": "Almost Always/Always"
+        "en": "Almost Always/Always"
       }
     }
   },
   "BIS04": {
     "Description": {
-      "en": "I don't \"pay attention.\"",
-      "de": "I don't \"pay attention.\""
+      "en": "I don't \"pay attention.\""
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Rarely/Never",
-        "de": "Rarely/Never"
+        "en": "Rarely/Never"
       },
       "1": {
-        "en": "Occasionally",
-        "de": "Occasionally"
+        "en": "Occasionally"
       },
       "2": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "3": {
-        "en": "Almost Always/Always",
-        "de": "Almost Always/Always"
+        "en": "Almost Always/Always"
       }
     }
   },
   "BIS05": {
     "Description": {
-      "en": "I have \"racing\" thoughts.",
-      "de": "I have \"racing\" thoughts."
+      "en": "I have \"racing\" thoughts."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Rarely/Never",
-        "de": "Rarely/Never"
+        "en": "Rarely/Never"
       },
       "1": {
-        "en": "Occasionally",
-        "de": "Occasionally"
+        "en": "Occasionally"
       },
       "2": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "3": {
-        "en": "Almost Always/Always",
-        "de": "Almost Always/Always"
+        "en": "Almost Always/Always"
       }
     }
   }

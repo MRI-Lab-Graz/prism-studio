@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Test Anxiety Inventory (TAI-5)",
-      "de": "Test Anxiety Inventory (TAI-5)"
+      "en": "Test Anxiety Inventory (TAI-5)"
     },
     "Abbreviation": "TAI5",
     "Authors": [
@@ -24,126 +23,101 @@
   },
   "TAI501": {
     "Description": {
-      "en": "During tests I feel very tense.",
-      "de": "During tests I feel very tense."
+      "en": "During tests I feel very tense."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Rarely or never",
-        "de": "Rarely or never"
+        "en": "Rarely or never"
       },
       "1": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "2": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "3": {
-        "en": "Always",
-        "de": "Always"
+        "en": "Always"
       }
     }
   },
   "TAI502": {
     "Description": {
-      "en": "I wish examinations did not bother me so much.",
-      "de": "I wish examinations did not bother me so much."
+      "en": "I wish examinations did not bother me so much."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Rarely or never",
-        "de": "Rarely or never"
+        "en": "Rarely or never"
       },
       "1": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "2": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "3": {
-        "en": "Always",
-        "de": "Always"
+        "en": "Always"
       }
     }
   },
   "TAI503": {
     "Description": {
-      "en": "I seem to defeat myself while working on important tests.",
-      "de": "I seem to defeat myself while working on important tests."
+      "en": "I seem to defeat myself while working on important tests."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Rarely or never",
-        "de": "Rarely or never"
+        "en": "Rarely or never"
       },
       "1": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "2": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "3": {
-        "en": "Always",
-        "de": "Always"
+        "en": "Always"
       }
     }
   },
   "TAI504": {
     "Description": {
-      "en": "I feel very panicky when I take an important test.",
-      "de": "I feel very panicky when I take an important test."
+      "en": "I feel very panicky when I take an important test."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Rarely or never",
-        "de": "Rarely or never"
+        "en": "Rarely or never"
       },
       "1": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "2": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "3": {
-        "en": "Always",
-        "de": "Always"
+        "en": "Always"
       }
     }
   },
   "TAI505": {
     "Description": {
-      "en": "During examinations I get so nervous that I forget facts I really know.",
-      "de": "During examinations I get so nervous that I forget facts I really know."
+      "en": "During examinations I get so nervous that I forget facts I really know."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Rarely or never",
-        "de": "Rarely or never"
+        "en": "Rarely or never"
       },
       "1": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "2": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "3": {
-        "en": "Always",
-        "de": "Always"
+        "en": "Always"
       }
     }
   }

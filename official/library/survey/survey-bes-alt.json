@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Belonging, engagement, and self-confidence in higher education (BES)",
-      "de": "Belonging, engagement, and self-confidence in higher education (BES)"
+      "en": "Belonging, engagement, and self-confidence in higher education (BES)"
     },
     "Abbreviation": "BES-ALT",
     "Authors": [
@@ -25,349 +24,277 @@
   },
   "BES-ALT01": {
     "Description": {
-      "en": "I am motivated towards my studies",
-      "de": "I am motivated towards my studies"
+      "en": "I am motivated towards my studies"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=5} Strongly Agree",
-        "de": "{score=5} Strongly Agree"
+        "en": "{score=5} Strongly Agree"
       },
       "1": {
-        "en": "{score=4} Tend to Agree",
-        "de": "{score=4} Tend to Agree"
+        "en": "{score=4} Tend to Agree"
       },
       "2": {
-        "en": "{score=3} Neutral",
-        "de": "{score=3} Neutral"
+        "en": "{score=3} Neutral"
       },
       "3": {
-        "en": "{score=2} Tend to Disagree",
-        "de": "{score=2} Tend to Disagree"
+        "en": "{score=2} Tend to Disagree"
       },
       "4": {
-        "en": "{score=1} Strongly Disagree",
-        "de": "{score=1} Strongly Disagree"
+        "en": "{score=1} Strongly Disagree"
       }
     }
   },
   "BES-ALT02": {
     "Description": {
-      "en": "I feel at home in this university",
-      "de": "I feel at home in this university"
+      "en": "I feel at home in this university"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=5} Strongly Agree",
-        "de": "{score=5} Strongly Agree"
+        "en": "{score=5} Strongly Agree"
       },
       "1": {
-        "en": "{score=4} Tend to Agree",
-        "de": "{score=4} Tend to Agree"
+        "en": "{score=4} Tend to Agree"
       },
       "2": {
-        "en": "{score=3} Neutral",
-        "de": "{score=3} Neutral"
+        "en": "{score=3} Neutral"
       },
       "3": {
-        "en": "{score=2} Tend to Disagree",
-        "de": "{score=2} Tend to Disagree"
+        "en": "{score=2} Tend to Disagree"
       },
       "4": {
-        "en": "{score=1} Strongly Disagree",
-        "de": "{score=1} Strongly Disagree"
+        "en": "{score=1} Strongly Disagree"
       }
     }
   },
   "BES-ALT03": {
     "Description": {
-      "en": "I expect to do well on my programme",
-      "de": "I expect to do well on my programme"
+      "en": "I expect to do well on my programme"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=5} Strongly Agree",
-        "de": "{score=5} Strongly Agree"
+        "en": "{score=5} Strongly Agree"
       },
       "1": {
-        "en": "{score=4} Tend to Agree",
-        "de": "{score=4} Tend to Agree"
+        "en": "{score=4} Tend to Agree"
       },
       "2": {
-        "en": "{score=3} Neutral",
-        "de": "{score=3} Neutral"
+        "en": "{score=3} Neutral"
       },
       "3": {
-        "en": "{score=2} Tend to Disagree",
-        "de": "{score=2} Tend to Disagree"
+        "en": "{score=2} Tend to Disagree"
       },
       "4": {
-        "en": "{score=1} Strongly Disagree",
-        "de": "{score=1} Strongly Disagree"
+        "en": "{score=1} Strongly Disagree"
       }
     }
   },
   "BES-ALT04": {
     "Description": {
-      "en": "Being at this university is an enriching experience",
-      "de": "Being at this university is an enriching experience"
+      "en": "Being at this university is an enriching experience"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=5} Strongly Agree",
-        "de": "{score=5} Strongly Agree"
+        "en": "{score=5} Strongly Agree"
       },
       "1": {
-        "en": "{score=4} Tend to Agree",
-        "de": "{score=4} Tend to Agree"
+        "en": "{score=4} Tend to Agree"
       },
       "2": {
-        "en": "{score=3} Neutral",
-        "de": "{score=3} Neutral"
+        "en": "{score=3} Neutral"
       },
       "3": {
-        "en": "{score=2} Tend to Disagree",
-        "de": "{score=2} Tend to Disagree"
+        "en": "{score=2} Tend to Disagree"
       },
       "4": {
-        "en": "{score=1} Strongly Disagree",
-        "de": "{score=1} Strongly Disagree"
+        "en": "{score=1} Strongly Disagree"
       }
     }
   },
   "BES-ALT05": {
     "Description": {
-      "en": "I try to make connections between what I learn from different parts of my programme",
-      "de": "I try to make connections between what I learn from different parts of my programme"
+      "en": "I try to make connections between what I learn from different parts of my programme"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=5} Strongly Agree",
-        "de": "{score=5} Strongly Agree"
+        "en": "{score=5} Strongly Agree"
       },
       "1": {
-        "en": "{score=4} Tend to Agree",
-        "de": "{score=4} Tend to Agree"
+        "en": "{score=4} Tend to Agree"
       },
       "2": {
-        "en": "{score=3} Neutral",
-        "de": "{score=3} Neutral"
+        "en": "{score=3} Neutral"
       },
       "3": {
-        "en": "{score=2} Tend to Disagree",
-        "de": "{score=2} Tend to Disagree"
+        "en": "{score=2} Tend to Disagree"
       },
       "4": {
-        "en": "{score=1} Strongly Disagree",
-        "de": "{score=1} Strongly Disagree"
+        "en": "{score=1} Strongly Disagree"
       }
     }
   },
   "BES-ALT06": {
     "Description": {
-      "en": "I try to do a bit more on the programme than it asks me to",
-      "de": "I try to do a bit more on the programme than it asks me to"
+      "en": "I try to do a bit more on the programme than it asks me to"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=5} Strongly Agree",
-        "de": "{score=5} Strongly Agree"
+        "en": "{score=5} Strongly Agree"
       },
       "1": {
-        "en": "{score=4} Tend to Agree",
-        "de": "{score=4} Tend to Agree"
+        "en": "{score=4} Tend to Agree"
       },
       "2": {
-        "en": "{score=3} Neutral",
-        "de": "{score=3} Neutral"
+        "en": "{score=3} Neutral"
       },
       "3": {
-        "en": "{score=2} Tend to Disagree",
-        "de": "{score=2} Tend to Disagree"
+        "en": "{score=2} Tend to Disagree"
       },
       "4": {
-        "en": "{score=1} Strongly Disagree",
-        "de": "{score=1} Strongly Disagree"
+        "en": "{score=1} Strongly Disagree"
       }
     }
   },
   "BES-ALT07": {
     "Description": {
-      "en": "I seek out academic staff in order to discuss topics relevant to my programme",
-      "de": "I seek out academic staff in order to discuss topics relevant to my programme"
+      "en": "I seek out academic staff in order to discuss topics relevant to my programme"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=5} Strongly Agree",
-        "de": "{score=5} Strongly Agree"
+        "en": "{score=5} Strongly Agree"
       },
       "1": {
-        "en": "{score=4} Tend to Agree",
-        "de": "{score=4} Tend to Agree"
+        "en": "{score=4} Tend to Agree"
       },
       "2": {
-        "en": "{score=3} Neutral",
-        "de": "{score=3} Neutral"
+        "en": "{score=3} Neutral"
       },
       "3": {
-        "en": "{score=2} Tend to Disagree",
-        "de": "{score=2} Tend to Disagree"
+        "en": "{score=2} Tend to Disagree"
       },
       "4": {
-        "en": "{score=1} Strongly Disagree",
-        "de": "{score=1} Strongly Disagree"
+        "en": "{score=1} Strongly Disagree"
       }
     }
   },
   "BES-ALT08": {
     "Description": {
-      "en": "I put a lot of effort into the work I do",
-      "de": "I put a lot of effort into the work I do"
+      "en": "I put a lot of effort into the work I do"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=5} Strongly Agree",
-        "de": "{score=5} Strongly Agree"
+        "en": "{score=5} Strongly Agree"
       },
       "1": {
-        "en": "{score=4} Tend to Agree",
-        "de": "{score=4} Tend to Agree"
+        "en": "{score=4} Tend to Agree"
       },
       "2": {
-        "en": "{score=3} Neutral",
-        "de": "{score=3} Neutral"
+        "en": "{score=3} Neutral"
       },
       "3": {
-        "en": "{score=2} Tend to Disagree",
-        "de": "{score=2} Tend to Disagree"
+        "en": "{score=2} Tend to Disagree"
       },
       "4": {
-        "en": "{score=1} Strongly Disagree",
-        "de": "{score=1} Strongly Disagree"
+        "en": "{score=1} Strongly Disagree"
       }
     }
   },
   "BES-ALT09": {
     "Description": {
-      "en": "I have found this department to be welcoming",
-      "de": "I have found this department to be welcoming"
+      "en": "I have found this department to be welcoming"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=5} Strongly Agree",
-        "de": "{score=5} Strongly Agree"
+        "en": "{score=5} Strongly Agree"
       },
       "1": {
-        "en": "{score=4} Tend to Agree",
-        "de": "{score=4} Tend to Agree"
+        "en": "{score=4} Tend to Agree"
       },
       "2": {
-        "en": "{score=3} Neutral",
-        "de": "{score=3} Neutral"
+        "en": "{score=3} Neutral"
       },
       "3": {
-        "en": "{score=2} Tend to Disagree",
-        "de": "{score=2} Tend to Disagree"
+        "en": "{score=2} Tend to Disagree"
       },
       "4": {
-        "en": "{score=1} Strongly Disagree",
-        "de": "{score=1} Strongly Disagree"
+        "en": "{score=1} Strongly Disagree"
       }
     }
   },
   "BES-ALT10": {
     "Description": {
-      "en": "I use feedback on my work to help me improve what I do",
-      "de": "I use feedback on my work to help me improve what I do"
+      "en": "I use feedback on my work to help me improve what I do"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=5} Strongly Agree",
-        "de": "{score=5} Strongly Agree"
+        "en": "{score=5} Strongly Agree"
       },
       "1": {
-        "en": "{score=4} Tend to Agree",
-        "de": "{score=4} Tend to Agree"
+        "en": "{score=4} Tend to Agree"
       },
       "2": {
-        "en": "{score=3} Neutral",
-        "de": "{score=3} Neutral"
+        "en": "{score=3} Neutral"
       },
       "3": {
-        "en": "{score=2} Tend to Disagree",
-        "de": "{score=2} Tend to Disagree"
+        "en": "{score=2} Tend to Disagree"
       },
       "4": {
-        "en": "{score=1} Strongly Disagree",
-        "de": "{score=1} Strongly Disagree"
+        "en": "{score=1} Strongly Disagree"
       }
     }
   },
   "BES-ALT11": {
     "Description": {
-      "en": "I am shown respect by members of staff in this department",
-      "de": "I am shown respect by members of staff in this department"
+      "en": "I am shown respect by members of staff in this department"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=5} Strongly Agree",
-        "de": "{score=5} Strongly Agree"
+        "en": "{score=5} Strongly Agree"
       },
       "1": {
-        "en": "{score=4} Tend to Agree",
-        "de": "{score=4} Tend to Agree"
+        "en": "{score=4} Tend to Agree"
       },
       "2": {
-        "en": "{score=3} Neutral",
-        "de": "{score=3} Neutral"
+        "en": "{score=3} Neutral"
       },
       "3": {
-        "en": "{score=2} Tend to Disagree",
-        "de": "{score=2} Tend to Disagree"
+        "en": "{score=2} Tend to Disagree"
       },
       "4": {
-        "en": "{score=1} Strongly Disagree",
-        "de": "{score=1} Strongly Disagree"
+        "en": "{score=1} Strongly Disagree"
       }
     }
   },
   "BES-ALT12": {
     "Description": {
-      "en": "Iâm confident of completing my programme successfully",
-      "de": "Iâm confident of completing my programme successfully"
+      "en": "Iâm confident of completing my programme successfully"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=5} Strongly Agree",
-        "de": "{score=5} Strongly Agree"
+        "en": "{score=5} Strongly Agree"
       },
       "1": {
-        "en": "{score=4} Tend to Agree",
-        "de": "{score=4} Tend to Agree"
+        "en": "{score=4} Tend to Agree"
       },
       "2": {
-        "en": "{score=3} Neutral",
-        "de": "{score=3} Neutral"
+        "en": "{score=3} Neutral"
       },
       "3": {
-        "en": "{score=2} Tend to Disagree",
-        "de": "{score=2} Tend to Disagree"
+        "en": "{score=2} Tend to Disagree"
       },
       "4": {
-        "en": "{score=1} Strongly Disagree",
-        "de": "{score=1} Strongly Disagree"
+        "en": "{score=1} Strongly Disagree"
       }
     }
   }

@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "The Brief Irritability Test (BITe)",
-      "de": "The Brief Irritability Test (BITe)"
+      "en": "The Brief Irritability Test (BITe)"
     },
     "Abbreviation": "BITE",
     "Authors": [
@@ -31,166 +30,131 @@
   },
   "BITE01": {
     "Description": {
-      "en": "I have been grumpy",
-      "de": "I have been grumpy"
+      "en": "I have been grumpy"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Never",
-        "de": "Never"
+        "en": "Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very often",
-        "de": "Very often"
+        "en": "Very often"
       },
       "5": {
-        "en": "Always",
-        "de": "Always"
+        "en": "Always"
       }
     }
   },
   "BITE02": {
     "Description": {
-      "en": "I have been feeling like I might snap",
-      "de": "I have been feeling like I might snap"
+      "en": "I have been feeling like I might snap"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Never",
-        "de": "Never"
+        "en": "Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very often",
-        "de": "Very often"
+        "en": "Very often"
       },
       "5": {
-        "en": "Always",
-        "de": "Always"
+        "en": "Always"
       }
     }
   },
   "BITE03": {
     "Description": {
-      "en": "Other people have been getting on my nerves",
-      "de": "Other people have been getting on my nerves"
+      "en": "Other people have been getting on my nerves"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Never",
-        "de": "Never"
+        "en": "Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very often",
-        "de": "Very often"
+        "en": "Very often"
       },
       "5": {
-        "en": "Always",
-        "de": "Always"
+        "en": "Always"
       }
     }
   },
   "BITE04": {
     "Description": {
-      "en": "Things have been bothering me more than they normally do",
-      "de": "Things have been bothering me more than they normally do"
+      "en": "Things have been bothering me more than they normally do"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Never",
-        "de": "Never"
+        "en": "Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very often",
-        "de": "Very often"
+        "en": "Very often"
       },
       "5": {
-        "en": "Always",
-        "de": "Always"
+        "en": "Always"
       }
     }
   },
   "BITE05": {
     "Description": {
-      "en": "I have been feeling irritable",
-      "de": "I have been feeling irritable"
+      "en": "I have been feeling irritable"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Never",
-        "de": "Never"
+        "en": "Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very often",
-        "de": "Very often"
+        "en": "Very often"
       },
       "5": {
-        "en": "Always",
-        "de": "Always"
+        "en": "Always"
       }
     }
   }

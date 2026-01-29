@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Relationship satisfaction (PN-SMD)",
-      "de": "Relationship satisfaction (PN-SMD)"
+      "en": "Relationship satisfaction (PN-SMD)"
     },
     "Abbreviation": "PNSMD",
     "Authors": [
@@ -33,288 +32,225 @@
   },
   "PNSMD01": {
     "Description": {
-      "en": "Interesting",
-      "de": "Interesting"
+      "en": "Interesting"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} A tiny bit",
-        "de": "{score=1} A tiny bit"
+        "en": "{score=1} A tiny bit"
       },
       "2": {
-        "en": "{score=2} A little",
-        "de": "{score=2} A little"
+        "en": "{score=2} A little"
       },
       "3": {
-        "en": "{score=3} Somewhat",
-        "de": "{score=3} Somewhat"
+        "en": "{score=3} Somewhat"
       },
       "4": {
-        "en": "{score=4} Mostly",
-        "de": "{score=4} Mostly"
+        "en": "{score=4} Mostly"
       },
       "5": {
-        "en": "{score=5} Very",
-        "de": "{score=5} Very"
+        "en": "{score=5} Very"
       },
       "6": {
-        "en": "{score=6} Extremely",
-        "de": "{score=6} Extremely"
+        "en": "{score=6} Extremely"
       },
       "7": {
-        "en": "{score=7} Completely",
-        "de": "{score=7} Completely"
+        "en": "{score=7} Completely"
       }
     }
   },
   "PNSMD02": {
     "Description": {
-      "en": "Full",
-      "de": "Full"
+      "en": "Full"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} A tiny bit",
-        "de": "{score=1} A tiny bit"
+        "en": "{score=1} A tiny bit"
       },
       "2": {
-        "en": "{score=2} A little",
-        "de": "{score=2} A little"
+        "en": "{score=2} A little"
       },
       "3": {
-        "en": "{score=3} Somewhat",
-        "de": "{score=3} Somewhat"
+        "en": "{score=3} Somewhat"
       },
       "4": {
-        "en": "{score=4} Mostly",
-        "de": "{score=4} Mostly"
+        "en": "{score=4} Mostly"
       },
       "5": {
-        "en": "{score=5} Very",
-        "de": "{score=5} Very"
+        "en": "{score=5} Very"
       },
       "6": {
-        "en": "{score=6} Extremely",
-        "de": "{score=6} Extremely"
+        "en": "{score=6} Extremely"
       },
       "7": {
-        "en": "{score=7} Completely",
-        "de": "{score=7} Completely"
+        "en": "{score=7} Completely"
       }
     }
   },
   "PNSMD03": {
     "Description": {
-      "en": "Sturdy",
-      "de": "Sturdy"
+      "en": "Sturdy"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} A tiny bit",
-        "de": "{score=1} A tiny bit"
+        "en": "{score=1} A tiny bit"
       },
       "2": {
-        "en": "{score=2} A little",
-        "de": "{score=2} A little"
+        "en": "{score=2} A little"
       },
       "3": {
-        "en": "{score=3} Somewhat",
-        "de": "{score=3} Somewhat"
+        "en": "{score=3} Somewhat"
       },
       "4": {
-        "en": "{score=4} Mostly",
-        "de": "{score=4} Mostly"
+        "en": "{score=4} Mostly"
       },
       "5": {
-        "en": "{score=5} Very",
-        "de": "{score=5} Very"
+        "en": "{score=5} Very"
       },
       "6": {
-        "en": "{score=6} Extremely",
-        "de": "{score=6} Extremely"
+        "en": "{score=6} Extremely"
       },
       "7": {
-        "en": "{score=7} Completely",
-        "de": "{score=7} Completely"
+        "en": "{score=7} Completely"
       }
     }
   },
   "PNSMD04": {
     "Description": {
-      "en": "Enjoyable",
-      "de": "Enjoyable"
+      "en": "Enjoyable"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} A tiny bit",
-        "de": "{score=1} A tiny bit"
+        "en": "{score=1} A tiny bit"
       },
       "2": {
-        "en": "{score=2} A little",
-        "de": "{score=2} A little"
+        "en": "{score=2} A little"
       },
       "3": {
-        "en": "{score=3} Somewhat",
-        "de": "{score=3} Somewhat"
+        "en": "{score=3} Somewhat"
       },
       "4": {
-        "en": "{score=4} Mostly",
-        "de": "{score=4} Mostly"
+        "en": "{score=4} Mostly"
       },
       "5": {
-        "en": "{score=5} Very",
-        "de": "{score=5} Very"
+        "en": "{score=5} Very"
       },
       "6": {
-        "en": "{score=6} Extremely",
-        "de": "{score=6} Extremely"
+        "en": "{score=6} Extremely"
       },
       "7": {
-        "en": "{score=7} Completely",
-        "de": "{score=7} Completely"
+        "en": "{score=7} Completely"
       }
     }
   },
   "PNSMD05": {
     "Description": {
-      "en": "Good",
-      "de": "Good"
+      "en": "Good"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} A tiny bit",
-        "de": "{score=1} A tiny bit"
+        "en": "{score=1} A tiny bit"
       },
       "2": {
-        "en": "{score=2} A little",
-        "de": "{score=2} A little"
+        "en": "{score=2} A little"
       },
       "3": {
-        "en": "{score=3} Somewhat",
-        "de": "{score=3} Somewhat"
+        "en": "{score=3} Somewhat"
       },
       "4": {
-        "en": "{score=4} Mostly",
-        "de": "{score=4} Mostly"
+        "en": "{score=4} Mostly"
       },
       "5": {
-        "en": "{score=5} Very",
-        "de": "{score=5} Very"
+        "en": "{score=5} Very"
       },
       "6": {
-        "en": "{score=6} Extremely",
-        "de": "{score=6} Extremely"
+        "en": "{score=6} Extremely"
       },
       "7": {
-        "en": "{score=7} Completely",
-        "de": "{score=7} Completely"
+        "en": "{score=7} Completely"
       }
     }
   },
   "PNSMD06": {
     "Description": {
-      "en": "Friendly",
-      "de": "Friendly"
+      "en": "Friendly"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} A tiny bit",
-        "de": "{score=1} A tiny bit"
+        "en": "{score=1} A tiny bit"
       },
       "2": {
-        "en": "{score=2} A little",
-        "de": "{score=2} A little"
+        "en": "{score=2} A little"
       },
       "3": {
-        "en": "{score=3} Somewhat",
-        "de": "{score=3} Somewhat"
+        "en": "{score=3} Somewhat"
       },
       "4": {
-        "en": "{score=4} Mostly",
-        "de": "{score=4} Mostly"
+        "en": "{score=4} Mostly"
       },
       "5": {
-        "en": "{score=5} Very",
-        "de": "{score=5} Very"
+        "en": "{score=5} Very"
       },
       "6": {
-        "en": "{score=6} Extremely",
-        "de": "{score=6} Extremely"
+        "en": "{score=6} Extremely"
       },
       "7": {
-        "en": "{score=7} Completely",
-        "de": "{score=7} Completely"
+        "en": "{score=7} Completely"
       }
     }
   },
   "PNSMD07": {
     "Description": {
-      "en": "Hopeful",
-      "de": "Hopeful"
+      "en": "Hopeful"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Not at all",
-        "de": "{score=0} Not at all"
+        "en": "{score=0} Not at all"
       },
       "1": {
-        "en": "{score=1} A tiny bit",
-        "de": "{score=1} A tiny bit"
+        "en": "{score=1} A tiny bit"
       },
       "2": {
-        "en": "{score=2} A little",
-        "de": "{score=2} A little"
+        "en": "{score=2} A little"
       },
       "3": {
-        "en": "{score=3} Somewhat",
-        "de": "{score=3} Somewhat"
+        "en": "{score=3} Somewhat"
       },
       "4": {
-        "en": "{score=4} Mostly",
-        "de": "{score=4} Mostly"
+        "en": "{score=4} Mostly"
       },
       "5": {
-        "en": "{score=5} Very",
-        "de": "{score=5} Very"
+        "en": "{score=5} Very"
       },
       "6": {
-        "en": "{score=6} Extremely",
-        "de": "{score=6} Extremely"
+        "en": "{score=6} Extremely"
       },
       "7": {
-        "en": "{score=7} Completely",
-        "de": "{score=7} Completely"
+        "en": "{score=7} Completely"
       }
     }
   }

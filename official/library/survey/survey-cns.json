@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Connectedness to Nature Scale (CNS)",
-      "de": "Connectedness to Nature Scale (CNS)"
+      "en": "Connectedness to Nature Scale (CNS)"
     },
     "Abbreviation": "CNS",
     "Authors": [
@@ -26,320 +25,254 @@
   },
   "CNS01": {
     "Description": {
-      "en": "I often feel a sense of oneness with the natural world around me.",
-      "de": "I often feel a sense of oneness with the natural world around me."
+      "en": "I often feel a sense of oneness with the natural world around me."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CNS02": {
     "Description": {
-      "en": "I think of the natural world as a community to which I belong.",
-      "de": "I think of the natural world as a community to which I belong."
+      "en": "I think of the natural world as a community to which I belong."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CNS03": {
     "Description": {
-      "en": "I recognize and appreciate the intelligence of other living organisms.",
-      "de": "I recognize and appreciate the intelligence of other living organisms."
+      "en": "I recognize and appreciate the intelligence of other living organisms."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CNS04": {
     "Description": {
-      "en": "When I think of my life, I imagine myself to be part of a larger cyclical process of living.",
-      "de": "When I think of my life, I imagine myself to be part of a larger cyclical process of living."
+      "en": "When I think of my life, I imagine myself to be part of a larger cyclical process of living."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CNS05": {
     "Description": {
-      "en": "I often feel a kinship with animals and plants.",
-      "de": "I often feel a kinship with animals and plants."
+      "en": "I often feel a kinship with animals and plants."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CNS06": {
     "Description": {
-      "en": "I feel as though I belong to the Earth as equally as it belongs to me.",
-      "de": "I feel as though I belong to the Earth as equally as it belongs to me."
+      "en": "I feel as though I belong to the Earth as equally as it belongs to me."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CNS07": {
     "Description": {
-      "en": "I have a deep understanding of how my actions affect the natural world.",
-      "de": "I have a deep understanding of how my actions affect the natural world."
+      "en": "I have a deep understanding of how my actions affect the natural world."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CNS08": {
     "Description": {
-      "en": "I often feel part of the web of life.",
-      "de": "I often feel part of the web of life."
+      "en": "I often feel part of the web of life."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CNS09": {
     "Description": {
-      "en": "I feel that all inhabitants of Earth, human, and nonhuman, share a common âlife forceâ.",
-      "de": "I feel that all inhabitants of Earth, human, and nonhuman, share a common âlife forceâ."
+      "en": "I feel that all inhabitants of Earth, human, and nonhuman, share a common âlife forceâ."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CNS10": {
     "Description": {
-      "en": "Like a tree can be part of a forest, I feel embedded within the broader natural world.",
-      "de": "Like a tree can be part of a forest, I feel embedded within the broader natural world."
+      "en": "Like a tree can be part of a forest, I feel embedded within the broader natural world."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "CNS11": {
     "Description": {
-      "en": "I often feel like I am only a small part of the natural world around me, and that I am no more important than the grass on the ground or the birds in the trees.",
-      "de": "I often feel like I am only a small part of the natural world around me, and that I am no more important than the grass on the ground or the birds in the trees."
+      "en": "I often feel like I am only a small part of the natural world around me, and that I am no more important than the grass on the ground or the birds in the trees."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neutral",
-        "de": "neutral"
+        "en": "neutral"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   }

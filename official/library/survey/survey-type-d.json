@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Type D Personality (DS14)",
-      "de": "Type D Personality (DS14)"
+      "en": "Type D Personality (DS14)"
     },
     "Abbreviation": "TYPE-D",
     "Authors": [
@@ -35,349 +34,277 @@
   },
   "TYPE-D01": {
     "Description": {
-      "en": "I often make a fuss about unimportant things",
-      "de": "I often make a fuss about unimportant things"
+      "en": "I often make a fuss about unimportant things"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} FALSE",
-        "de": "{score=0} FALSE"
+        "en": "{score=0} FALSE"
       },
       "1": {
-        "en": "{score=1} RATHER FALSE",
-        "de": "{score=1} RATHER FALSE"
+        "en": "{score=1} RATHER FALSE"
       },
       "2": {
-        "en": "{score=2} NEUTRAL",
-        "de": "{score=2} NEUTRAL"
+        "en": "{score=2} NEUTRAL"
       },
       "3": {
-        "en": "{score=3} RATHER TRUE",
-        "de": "{score=3} RATHER TRUE"
+        "en": "{score=3} RATHER TRUE"
       },
       "4": {
-        "en": "{score=4} TRUE",
-        "de": "{score=4} TRUE"
+        "en": "{score=4} TRUE"
       }
     }
   },
   "TYPE-D02": {
     "Description": {
-      "en": "I often feel unhappy",
-      "de": "I often feel unhappy"
+      "en": "I often feel unhappy"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} FALSE",
-        "de": "{score=0} FALSE"
+        "en": "{score=0} FALSE"
       },
       "1": {
-        "en": "{score=1} RATHER FALSE",
-        "de": "{score=1} RATHER FALSE"
+        "en": "{score=1} RATHER FALSE"
       },
       "2": {
-        "en": "{score=2} NEUTRAL",
-        "de": "{score=2} NEUTRAL"
+        "en": "{score=2} NEUTRAL"
       },
       "3": {
-        "en": "{score=3} RATHER TRUE",
-        "de": "{score=3} RATHER TRUE"
+        "en": "{score=3} RATHER TRUE"
       },
       "4": {
-        "en": "{score=4} TRUE",
-        "de": "{score=4} TRUE"
+        "en": "{score=4} TRUE"
       }
     }
   },
   "TYPE-D03": {
     "Description": {
-      "en": "I am often irritated",
-      "de": "I am often irritated"
+      "en": "I am often irritated"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} FALSE",
-        "de": "{score=0} FALSE"
+        "en": "{score=0} FALSE"
       },
       "1": {
-        "en": "{score=1} RATHER FALSE",
-        "de": "{score=1} RATHER FALSE"
+        "en": "{score=1} RATHER FALSE"
       },
       "2": {
-        "en": "{score=2} NEUTRAL",
-        "de": "{score=2} NEUTRAL"
+        "en": "{score=2} NEUTRAL"
       },
       "3": {
-        "en": "{score=3} RATHER TRUE",
-        "de": "{score=3} RATHER TRUE"
+        "en": "{score=3} RATHER TRUE"
       },
       "4": {
-        "en": "{score=4} TRUE",
-        "de": "{score=4} TRUE"
+        "en": "{score=4} TRUE"
       }
     }
   },
   "TYPE-D04": {
     "Description": {
-      "en": "I often feel inhibited in social interactions",
-      "de": "I often feel inhibited in social interactions"
+      "en": "I often feel inhibited in social interactions"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} FALSE",
-        "de": "{score=0} FALSE"
+        "en": "{score=0} FALSE"
       },
       "1": {
-        "en": "{score=1} RATHER FALSE",
-        "de": "{score=1} RATHER FALSE"
+        "en": "{score=1} RATHER FALSE"
       },
       "2": {
-        "en": "{score=2} NEUTRAL",
-        "de": "{score=2} NEUTRAL"
+        "en": "{score=2} NEUTRAL"
       },
       "3": {
-        "en": "{score=3} RATHER TRUE",
-        "de": "{score=3} RATHER TRUE"
+        "en": "{score=3} RATHER TRUE"
       },
       "4": {
-        "en": "{score=4} TRUE",
-        "de": "{score=4} TRUE"
+        "en": "{score=4} TRUE"
       }
     }
   },
   "TYPE-D05": {
     "Description": {
-      "en": "I take a gloomy view of things",
-      "de": "I take a gloomy view of things"
+      "en": "I take a gloomy view of things"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} FALSE",
-        "de": "{score=0} FALSE"
+        "en": "{score=0} FALSE"
       },
       "1": {
-        "en": "{score=1} RATHER FALSE",
-        "de": "{score=1} RATHER FALSE"
+        "en": "{score=1} RATHER FALSE"
       },
       "2": {
-        "en": "{score=2} NEUTRAL",
-        "de": "{score=2} NEUTRAL"
+        "en": "{score=2} NEUTRAL"
       },
       "3": {
-        "en": "{score=3} RATHER TRUE",
-        "de": "{score=3} RATHER TRUE"
+        "en": "{score=3} RATHER TRUE"
       },
       "4": {
-        "en": "{score=4} TRUE",
-        "de": "{score=4} TRUE"
+        "en": "{score=4} TRUE"
       }
     }
   },
   "TYPE-D06": {
     "Description": {
-      "en": "I find it hard to start a conversation",
-      "de": "I find it hard to start a conversation"
+      "en": "I find it hard to start a conversation"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} FALSE",
-        "de": "{score=0} FALSE"
+        "en": "{score=0} FALSE"
       },
       "1": {
-        "en": "{score=1} RATHER FALSE",
-        "de": "{score=1} RATHER FALSE"
+        "en": "{score=1} RATHER FALSE"
       },
       "2": {
-        "en": "{score=2} NEUTRAL",
-        "de": "{score=2} NEUTRAL"
+        "en": "{score=2} NEUTRAL"
       },
       "3": {
-        "en": "{score=3} RATHER TRUE",
-        "de": "{score=3} RATHER TRUE"
+        "en": "{score=3} RATHER TRUE"
       },
       "4": {
-        "en": "{score=4} TRUE",
-        "de": "{score=4} TRUE"
+        "en": "{score=4} TRUE"
       }
     }
   },
   "TYPE-D07": {
     "Description": {
-      "en": "I am often in a bad mood",
-      "de": "I am often in a bad mood"
+      "en": "I am often in a bad mood"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} FALSE",
-        "de": "{score=0} FALSE"
+        "en": "{score=0} FALSE"
       },
       "1": {
-        "en": "{score=1} RATHER FALSE",
-        "de": "{score=1} RATHER FALSE"
+        "en": "{score=1} RATHER FALSE"
       },
       "2": {
-        "en": "{score=2} NEUTRAL",
-        "de": "{score=2} NEUTRAL"
+        "en": "{score=2} NEUTRAL"
       },
       "3": {
-        "en": "{score=3} RATHER TRUE",
-        "de": "{score=3} RATHER TRUE"
+        "en": "{score=3} RATHER TRUE"
       },
       "4": {
-        "en": "{score=4} TRUE",
-        "de": "{score=4} TRUE"
+        "en": "{score=4} TRUE"
       }
     }
   },
   "TYPE-D08": {
     "Description": {
-      "en": "I am closed kind of person",
-      "de": "I am closed kind of person"
+      "en": "I am closed kind of person"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} FALSE",
-        "de": "{score=0} FALSE"
+        "en": "{score=0} FALSE"
       },
       "1": {
-        "en": "{score=1} RATHER FALSE",
-        "de": "{score=1} RATHER FALSE"
+        "en": "{score=1} RATHER FALSE"
       },
       "2": {
-        "en": "{score=2} NEUTRAL",
-        "de": "{score=2} NEUTRAL"
+        "en": "{score=2} NEUTRAL"
       },
       "3": {
-        "en": "{score=3} RATHER TRUE",
-        "de": "{score=3} RATHER TRUE"
+        "en": "{score=3} RATHER TRUE"
       },
       "4": {
-        "en": "{score=4} TRUE",
-        "de": "{score=4} TRUE"
+        "en": "{score=4} TRUE"
       }
     }
   },
   "TYPE-D09": {
     "Description": {
-      "en": "I would rather keep other people at a distance",
-      "de": "I would rather keep other people at a distance"
+      "en": "I would rather keep other people at a distance"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} FALSE",
-        "de": "{score=0} FALSE"
+        "en": "{score=0} FALSE"
       },
       "1": {
-        "en": "{score=1} RATHER FALSE",
-        "de": "{score=1} RATHER FALSE"
+        "en": "{score=1} RATHER FALSE"
       },
       "2": {
-        "en": "{score=2} NEUTRAL",
-        "de": "{score=2} NEUTRAL"
+        "en": "{score=2} NEUTRAL"
       },
       "3": {
-        "en": "{score=3} RATHER TRUE",
-        "de": "{score=3} RATHER TRUE"
+        "en": "{score=3} RATHER TRUE"
       },
       "4": {
-        "en": "{score=4} TRUE",
-        "de": "{score=4} TRUE"
+        "en": "{score=4} TRUE"
       }
     }
   },
   "TYPE-D10": {
     "Description": {
-      "en": "I often find myself worrying about something",
-      "de": "I often find myself worrying about something"
+      "en": "I often find myself worrying about something"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} FALSE",
-        "de": "{score=0} FALSE"
+        "en": "{score=0} FALSE"
       },
       "1": {
-        "en": "{score=1} RATHER FALSE",
-        "de": "{score=1} RATHER FALSE"
+        "en": "{score=1} RATHER FALSE"
       },
       "2": {
-        "en": "{score=2} NEUTRAL",
-        "de": "{score=2} NEUTRAL"
+        "en": "{score=2} NEUTRAL"
       },
       "3": {
-        "en": "{score=3} RATHER TRUE",
-        "de": "{score=3} RATHER TRUE"
+        "en": "{score=3} RATHER TRUE"
       },
       "4": {
-        "en": "{score=4} TRUE",
-        "de": "{score=4} TRUE"
+        "en": "{score=4} TRUE"
       }
     }
   },
   "TYPE-D11": {
     "Description": {
-      "en": "I am often down in the dumps",
-      "de": "I am often down in the dumps"
+      "en": "I am often down in the dumps"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} FALSE",
-        "de": "{score=0} FALSE"
+        "en": "{score=0} FALSE"
       },
       "1": {
-        "en": "{score=1} RATHER FALSE",
-        "de": "{score=1} RATHER FALSE"
+        "en": "{score=1} RATHER FALSE"
       },
       "2": {
-        "en": "{score=2} NEUTRAL",
-        "de": "{score=2} NEUTRAL"
+        "en": "{score=2} NEUTRAL"
       },
       "3": {
-        "en": "{score=3} RATHER TRUE",
-        "de": "{score=3} RATHER TRUE"
+        "en": "{score=3} RATHER TRUE"
       },
       "4": {
-        "en": "{score=4} TRUE",
-        "de": "{score=4} TRUE"
+        "en": "{score=4} TRUE"
       }
     }
   },
   "TYPE-D12": {
     "Description": {
-      "en": "When socializing, I don't find the right things to talk about",
-      "de": "When socializing, I don't find the right things to talk about"
+      "en": "When socializing, I don't find the right things to talk about"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} FALSE",
-        "de": "{score=0} FALSE"
+        "en": "{score=0} FALSE"
       },
       "1": {
-        "en": "{score=1} RATHER FALSE",
-        "de": "{score=1} RATHER FALSE"
+        "en": "{score=1} RATHER FALSE"
       },
       "2": {
-        "en": "{score=2} NEUTRAL",
-        "de": "{score=2} NEUTRAL"
+        "en": "{score=2} NEUTRAL"
       },
       "3": {
-        "en": "{score=3} RATHER TRUE",
-        "de": "{score=3} RATHER TRUE"
+        "en": "{score=3} RATHER TRUE"
       },
       "4": {
-        "en": "{score=4} TRUE",
-        "de": "{score=4} TRUE"
+        "en": "{score=4} TRUE"
       }
     }
   }

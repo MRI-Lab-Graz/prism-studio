@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Buss-Perry Aggression Questionnaire (BPAQ)",
-      "de": "Buss-Perry Aggression Questionnaire (BPAQ)"
+      "en": "Buss-Perry Aggression Questionnaire (BPAQ)"
     },
     "Abbreviation": "BPAQ",
     "Authors": [
@@ -26,784 +25,622 @@
   },
   "BPAQ01": {
     "Description": {
-      "en": "Once in a while I can't control the urge to strike another person.",
-      "de": "Once in a while I can't control the urge to strike another person."
+      "en": "Once in a while I can't control the urge to strike another person."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ02": {
     "Description": {
-      "en": "Given enough provocation, I may hit another person.",
-      "de": "Given enough provocation, I may hit another person."
+      "en": "Given enough provocation, I may hit another person."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ03": {
     "Description": {
-      "en": "If somebody hits me, I hit back.",
-      "de": "If somebody hits me, I hit back."
+      "en": "If somebody hits me, I hit back."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ04": {
     "Description": {
-      "en": "I get into fights a little more than the average person.",
-      "de": "I get into fights a little more than the average person."
+      "en": "I get into fights a little more than the average person."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ05": {
     "Description": {
-      "en": "If I have to resort to violence to protect my rights, I will.",
-      "de": "If I have to resort to violence to protect my rights, I will."
+      "en": "If I have to resort to violence to protect my rights, I will."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ06": {
     "Description": {
-      "en": "There are people who pushed me so far that we came to blows.",
-      "de": "There are people who pushed me so far that we came to blows."
+      "en": "There are people who pushed me so far that we came to blows."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ07": {
     "Description": {
-      "en": "I have threatened people I know.",
-      "de": "I have threatened people I know."
+      "en": "I have threatened people I know."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ08": {
     "Description": {
-      "en": "I have become so mad that I have broken things.",
-      "de": "I have become so mad that I have broken things."
+      "en": "I have become so mad that I have broken things."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ09": {
     "Description": {
-      "en": "I tell my friends openly when I disagree with them.",
-      "de": "I tell my friends openly when I disagree with them."
+      "en": "I tell my friends openly when I disagree with them."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ10": {
     "Description": {
-      "en": "I often find myself disagreeing with people.",
-      "de": "I often find myself disagreeing with people."
+      "en": "I often find myself disagreeing with people."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ11": {
     "Description": {
-      "en": "When people annoy me, I may tell them what I think of them.",
-      "de": "When people annoy me, I may tell them what I think of them."
+      "en": "When people annoy me, I may tell them what I think of them."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ12": {
     "Description": {
-      "en": "I can't help getting into arguments when people disagree with me.",
-      "de": "I can't help getting into arguments when people disagree with me."
+      "en": "I can't help getting into arguments when people disagree with me."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ13": {
     "Description": {
-      "en": "My friends say that I'm somewhat argumentative.",
-      "de": "My friends say that I'm somewhat argumentative."
+      "en": "My friends say that I'm somewhat argumentative."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ14": {
     "Description": {
-      "en": "I flare up quickly but get over it quickly.",
-      "de": "I flare up quickly but get over it quickly."
+      "en": "I flare up quickly but get over it quickly."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ15": {
     "Description": {
-      "en": "When frustrated, I let my irritation show.",
-      "de": "When frustrated, I let my irritation show."
+      "en": "When frustrated, I let my irritation show."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ16": {
     "Description": {
-      "en": "I sometimes feel like a powder keg ready to explode.",
-      "de": "I sometimes feel like a powder keg ready to explode."
+      "en": "I sometimes feel like a powder keg ready to explode."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ17": {
     "Description": {
-      "en": "Some of my friends think I'm a hothead.",
-      "de": "Some of my friends think I'm a hothead."
+      "en": "Some of my friends think I'm a hothead."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ18": {
     "Description": {
-      "en": "Sometimes I fly off the handle for no good reason.",
-      "de": "Sometimes I fly off the handle for no good reason."
+      "en": "Sometimes I fly off the handle for no good reason."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ19": {
     "Description": {
-      "en": "I have trouble controlling my temper.",
-      "de": "I have trouble controlling my temper."
+      "en": "I have trouble controlling my temper."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ20": {
     "Description": {
-      "en": "I am sometimes eaten up with jealousy.",
-      "de": "I am sometimes eaten up with jealousy."
+      "en": "I am sometimes eaten up with jealousy."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ21": {
     "Description": {
-      "en": "At times I feel I have gotten a raw deal out of life.",
-      "de": "At times I feel I have gotten a raw deal out of life."
+      "en": "At times I feel I have gotten a raw deal out of life."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ22": {
     "Description": {
-      "en": "Other people always seem to get the breaks.",
-      "de": "Other people always seem to get the breaks."
+      "en": "Other people always seem to get the breaks."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ23": {
     "Description": {
-      "en": "I wonder why sometimes I feel so bitter about things.",
-      "de": "I wonder why sometimes I feel so bitter about things."
+      "en": "I wonder why sometimes I feel so bitter about things."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ24": {
     "Description": {
-      "en": "I know that \"friends\" talk about me behind my back.",
-      "de": "I know that \"friends\" talk about me behind my back."
+      "en": "I know that \"friends\" talk about me behind my back."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ25": {
     "Description": {
-      "en": "I am suspicious of overly friendly strangers.",
-      "de": "I am suspicious of overly friendly strangers."
+      "en": "I am suspicious of overly friendly strangers."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ26": {
     "Description": {
-      "en": "I sometimes feel that people are laughing at me behind my back.",
-      "de": "I sometimes feel that people are laughing at me behind my back."
+      "en": "I sometimes feel that people are laughing at me behind my back."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   },
   "BPAQ27": {
     "Description": {
-      "en": "When people are especially nice, I wonder what they want.",
-      "de": "When people are especially nice, I wonder what they want."
+      "en": "When people are especially nice, I wonder what they want."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "extremely uncharacteristic<br>of me",
-        "de": "extremely uncharacteristic<br>of me"
+        "en": "extremely uncharacteristic<br>of me"
       },
       "1": {
-        "en": "uncharacteristic of me",
-        "de": "uncharacteristic of me"
+        "en": "uncharacteristic of me"
       },
       "2": {
-        "en": "neither characteristic<br>nor uncharacteristic of me",
-        "de": "neither characteristic<br>nor uncharacteristic of me"
+        "en": "neither characteristic<br>nor uncharacteristic of me"
       },
       "3": {
-        "en": "characteristic of me",
-        "de": "characteristic of me"
+        "en": "characteristic of me"
       },
       "4": {
-        "en": "extremely characteristic<br>of me",
-        "de": "extremely characteristic<br>of me"
+        "en": "extremely characteristic<br>of me"
       }
     }
   }

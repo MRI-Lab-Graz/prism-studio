@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Brief Histrionic Personality Scale (BHPS)",
-      "de": "Brief Histrionic Personality Scale (BHPS)"
+      "en": "Brief Histrionic Personality Scale (BHPS)"
     },
     "Abbreviation": "BHPS",
     "Authors": [
@@ -24,276 +23,221 @@
   },
   "BHPS01": {
     "Description": {
-      "en": "I find it exciting to flirt with others",
-      "de": "I find it exciting to flirt with others"
+      "en": "I find it exciting to flirt with others"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never true",
-        "de": "never true"
+        "en": "never true"
       },
       "1": {
-        "en": "seldom true",
-        "de": "seldom true"
+        "en": "seldom true"
       },
       "2": {
-        "en": "very often true",
-        "de": "very often true"
+        "en": "very often true"
       },
       "3": {
-        "en": "always true",
-        "de": "always true"
+        "en": "always true"
       }
     }
   },
   "BHPS02": {
     "Description": {
-      "en": "I like to be the center of attention",
-      "de": "I like to be the center of attention"
+      "en": "I like to be the center of attention"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never true",
-        "de": "never true"
+        "en": "never true"
       },
       "1": {
-        "en": "seldom true",
-        "de": "seldom true"
+        "en": "seldom true"
       },
       "2": {
-        "en": "very often true",
-        "de": "very often true"
+        "en": "very often true"
       },
       "3": {
-        "en": "always true",
-        "de": "always true"
+        "en": "always true"
       }
     }
   },
   "BHPS03": {
     "Description": {
-      "en": "I always seem to have new friends",
-      "de": "I always seem to have new friends"
+      "en": "I always seem to have new friends"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never true",
-        "de": "never true"
+        "en": "never true"
       },
       "1": {
-        "en": "seldom true",
-        "de": "seldom true"
+        "en": "seldom true"
       },
       "2": {
-        "en": "very often true",
-        "de": "very often true"
+        "en": "very often true"
       },
       "3": {
-        "en": "always true",
-        "de": "always true"
+        "en": "always true"
       }
     }
   },
   "BHPS04": {
     "Description": {
-      "en": "Iâd prefer not to commit to just one romantic partner",
-      "de": "Iâd prefer not to commit to just one romantic partner"
+      "en": "Iâd prefer not to commit to just one romantic partner"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never true",
-        "de": "never true"
+        "en": "never true"
       },
       "1": {
-        "en": "seldom true",
-        "de": "seldom true"
+        "en": "seldom true"
       },
       "2": {
-        "en": "very often true",
-        "de": "very often true"
+        "en": "very often true"
       },
       "3": {
-        "en": "always true",
-        "de": "always true"
+        "en": "always true"
       }
     }
   },
   "BHPS05": {
     "Description": {
-      "en": "I flirt even with people who Iâm not attracted to",
-      "de": "I flirt even with people who Iâm not attracted to"
+      "en": "I flirt even with people who Iâm not attracted to"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never true",
-        "de": "never true"
+        "en": "never true"
       },
       "1": {
-        "en": "seldom true",
-        "de": "seldom true"
+        "en": "seldom true"
       },
       "2": {
-        "en": "very often true",
-        "de": "very often true"
+        "en": "very often true"
       },
       "3": {
-        "en": "always true",
-        "de": "always true"
+        "en": "always true"
       }
     }
   },
   "BHPS06": {
     "Description": {
-      "en": "I tend to be the \"life of the party\"",
-      "de": "I tend to be the \"life of the party\""
+      "en": "I tend to be the \"life of the party\""
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never true",
-        "de": "never true"
+        "en": "never true"
       },
       "1": {
-        "en": "seldom true",
-        "de": "seldom true"
+        "en": "seldom true"
       },
       "2": {
-        "en": "very often true",
-        "de": "very often true"
+        "en": "very often true"
       },
       "3": {
-        "en": "always true",
-        "de": "always true"
+        "en": "always true"
       }
     }
   },
   "BHPS07": {
     "Description": {
-      "en": "A lot of people find me sexually appealing",
-      "de": "A lot of people find me sexually appealing"
+      "en": "A lot of people find me sexually appealing"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never true",
-        "de": "never true"
+        "en": "never true"
       },
       "1": {
-        "en": "seldom true",
-        "de": "seldom true"
+        "en": "seldom true"
       },
       "2": {
-        "en": "very often true",
-        "de": "very often true"
+        "en": "very often true"
       },
       "3": {
-        "en": "always true",
-        "de": "always true"
+        "en": "always true"
       }
     }
   },
   "BHPS08": {
     "Description": {
-      "en": "I know how to make people like me right away",
-      "de": "I know how to make people like me right away"
+      "en": "I know how to make people like me right away"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never true",
-        "de": "never true"
+        "en": "never true"
       },
       "1": {
-        "en": "seldom true",
-        "de": "seldom true"
+        "en": "seldom true"
       },
       "2": {
-        "en": "very often true",
-        "de": "very often true"
+        "en": "very often true"
       },
       "3": {
-        "en": "always true",
-        "de": "always true"
+        "en": "always true"
       }
     }
   },
   "BHPS09": {
     "Description": {
-      "en": "I get frustrated when people donât notice me",
-      "de": "I get frustrated when people donât notice me"
+      "en": "I get frustrated when people donât notice me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never true",
-        "de": "never true"
+        "en": "never true"
       },
       "1": {
-        "en": "seldom true",
-        "de": "seldom true"
+        "en": "seldom true"
       },
       "2": {
-        "en": "very often true",
-        "de": "very often true"
+        "en": "very often true"
       },
       "3": {
-        "en": "always true",
-        "de": "always true"
+        "en": "always true"
       }
     }
   },
   "BHPS10": {
     "Description": {
-      "en": "Iâm very interested in material things like cars, shoes, etc.",
-      "de": "Iâm very interested in material things like cars, shoes, etc."
+      "en": "Iâm very interested in material things like cars, shoes, etc."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never true",
-        "de": "never true"
+        "en": "never true"
       },
       "1": {
-        "en": "seldom true",
-        "de": "seldom true"
+        "en": "seldom true"
       },
       "2": {
-        "en": "very often true",
-        "de": "very often true"
+        "en": "very often true"
       },
       "3": {
-        "en": "always true",
-        "de": "always true"
+        "en": "always true"
       }
     }
   },
   "BHPS11": {
     "Description": {
-      "en": "I like it when I know someone desires me sexually",
-      "de": "I like it when I know someone desires me sexually"
+      "en": "I like it when I know someone desires me sexually"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never true",
-        "de": "never true"
+        "en": "never true"
       },
       "1": {
-        "en": "seldom true",
-        "de": "seldom true"
+        "en": "seldom true"
       },
       "2": {
-        "en": "very often true",
-        "de": "very often true"
+        "en": "very often true"
       },
       "3": {
-        "en": "always true",
-        "de": "always true"
+        "en": "always true"
       }
     }
   }

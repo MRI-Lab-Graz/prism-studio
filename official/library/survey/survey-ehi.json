@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "The Edinburgh Handedness Inventory (short form)",
-      "de": "The Edinburgh Handedness Inventory (short form)"
+      "en": "The Edinburgh Handedness Inventory (short form)"
     },
     "Abbreviation": "EHI",
     "Authors": [
@@ -25,117 +24,93 @@
   },
   "EHI01": {
     "Description": {
-      "en": "Writing",
-      "de": "Writing"
+      "en": "Writing"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=-100} Always left",
-        "de": "{score=-100} Always left"
+        "en": "{score=-100} Always left"
       },
       "1": {
-        "en": "{score=-50} Usually left",
-        "de": "{score=-50} Usually left"
+        "en": "{score=-50} Usually left"
       },
       "2": {
-        "en": "{score=0} Both equally",
-        "de": "{score=0} Both equally"
+        "en": "{score=0} Both equally"
       },
       "3": {
-        "en": "{score=50} Usually right",
-        "de": "{score=50} Usually right"
+        "en": "{score=50} Usually right"
       },
       "4": {
-        "en": "{score=100} Always right",
-        "de": "{score=100} Always right"
+        "en": "{score=100} Always right"
       }
     }
   },
   "EHI02": {
     "Description": {
-      "en": "Throwing",
-      "de": "Throwing"
+      "en": "Throwing"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=-100} Always left",
-        "de": "{score=-100} Always left"
+        "en": "{score=-100} Always left"
       },
       "1": {
-        "en": "{score=-50} Usually left",
-        "de": "{score=-50} Usually left"
+        "en": "{score=-50} Usually left"
       },
       "2": {
-        "en": "{score=0} Both equally",
-        "de": "{score=0} Both equally"
+        "en": "{score=0} Both equally"
       },
       "3": {
-        "en": "{score=50} Usually right",
-        "de": "{score=50} Usually right"
+        "en": "{score=50} Usually right"
       },
       "4": {
-        "en": "{score=100} Always right",
-        "de": "{score=100} Always right"
+        "en": "{score=100} Always right"
       }
     }
   },
   "EHI03": {
     "Description": {
-      "en": "Toothbrush",
-      "de": "Toothbrush"
+      "en": "Toothbrush"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=-100} Always left",
-        "de": "{score=-100} Always left"
+        "en": "{score=-100} Always left"
       },
       "1": {
-        "en": "{score=-50} Usually left",
-        "de": "{score=-50} Usually left"
+        "en": "{score=-50} Usually left"
       },
       "2": {
-        "en": "{score=0} Both equally",
-        "de": "{score=0} Both equally"
+        "en": "{score=0} Both equally"
       },
       "3": {
-        "en": "{score=50} Usually right",
-        "de": "{score=50} Usually right"
+        "en": "{score=50} Usually right"
       },
       "4": {
-        "en": "{score=100} Always right",
-        "de": "{score=100} Always right"
+        "en": "{score=100} Always right"
       }
     }
   },
   "EHI04": {
     "Description": {
-      "en": "Spoon",
-      "de": "Spoon"
+      "en": "Spoon"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=-100} Always left",
-        "de": "{score=-100} Always left"
+        "en": "{score=-100} Always left"
       },
       "1": {
-        "en": "{score=-50} Usually left",
-        "de": "{score=-50} Usually left"
+        "en": "{score=-50} Usually left"
       },
       "2": {
-        "en": "{score=0} Both equally",
-        "de": "{score=0} Both equally"
+        "en": "{score=0} Both equally"
       },
       "3": {
-        "en": "{score=50} Usually right",
-        "de": "{score=50} Usually right"
+        "en": "{score=50} Usually right"
       },
       "4": {
-        "en": "{score=100} Always right",
-        "de": "{score=100} Always right"
+        "en": "{score=100} Always right"
       }
     }
   }

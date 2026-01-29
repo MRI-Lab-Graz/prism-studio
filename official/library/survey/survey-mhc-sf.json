@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Mental Health Continuum Short Form (MHC-SF)",
-      "de": "Mental Health Continuum Short Form (MHC-SF)"
+      "en": "Mental Health Continuum Short Form (MHC-SF)"
     },
     "Abbreviation": "MHC-SF",
     "Authors": [
@@ -25,463 +24,365 @@
   },
   "MHC-SF01": {
     "Description": {
-      "en": "happy",
-      "de": "happy"
+      "en": "happy"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Never",
-        "de": "{score=0} Never"
+        "en": "{score=0} Never"
       },
       "1": {
-        "en": "{score=1} Once or Twice",
-        "de": "{score=1} Once or Twice"
+        "en": "{score=1} Once or Twice"
       },
       "2": {
-        "en": "{score=2} About once a week",
-        "de": "{score=2} About once a week"
+        "en": "{score=2} About once a week"
       },
       "3": {
-        "en": "{score=3} About 2 or 3 times a week",
-        "de": "{score=3} About 2 or 3 times a week"
+        "en": "{score=3} About 2 or 3 times a week"
       },
       "4": {
-        "en": "{score=4} Almost every day",
-        "de": "{score=4} Almost every day"
+        "en": "{score=4} Almost every day"
       },
       "5": {
-        "en": "{score=5} Every day",
-        "de": "{score=5} Every day"
+        "en": "{score=5} Every day"
       }
     }
   },
   "MHC-SF02": {
     "Description": {
-      "en": "interested in life",
-      "de": "interested in life"
+      "en": "interested in life"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Never",
-        "de": "{score=0} Never"
+        "en": "{score=0} Never"
       },
       "1": {
-        "en": "{score=1} Once or Twice",
-        "de": "{score=1} Once or Twice"
+        "en": "{score=1} Once or Twice"
       },
       "2": {
-        "en": "{score=2} About once a week",
-        "de": "{score=2} About once a week"
+        "en": "{score=2} About once a week"
       },
       "3": {
-        "en": "{score=3} About 2 or 3 times a week",
-        "de": "{score=3} About 2 or 3 times a week"
+        "en": "{score=3} About 2 or 3 times a week"
       },
       "4": {
-        "en": "{score=4} Almost every day",
-        "de": "{score=4} Almost every day"
+        "en": "{score=4} Almost every day"
       },
       "5": {
-        "en": "{score=5} Every day",
-        "de": "{score=5} Every day"
+        "en": "{score=5} Every day"
       }
     }
   },
   "MHC-SF03": {
     "Description": {
-      "en": "satisfied with life",
-      "de": "satisfied with life"
+      "en": "satisfied with life"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Never",
-        "de": "{score=0} Never"
+        "en": "{score=0} Never"
       },
       "1": {
-        "en": "{score=1} Once or Twice",
-        "de": "{score=1} Once or Twice"
+        "en": "{score=1} Once or Twice"
       },
       "2": {
-        "en": "{score=2} About once a week",
-        "de": "{score=2} About once a week"
+        "en": "{score=2} About once a week"
       },
       "3": {
-        "en": "{score=3} About 2 or 3 times a week",
-        "de": "{score=3} About 2 or 3 times a week"
+        "en": "{score=3} About 2 or 3 times a week"
       },
       "4": {
-        "en": "{score=4} Almost every day",
-        "de": "{score=4} Almost every day"
+        "en": "{score=4} Almost every day"
       },
       "5": {
-        "en": "{score=5} Every day",
-        "de": "{score=5} Every day"
+        "en": "{score=5} Every day"
       }
     }
   },
   "MHC-SF04": {
     "Description": {
-      "en": "that you had something important to contribute to society",
-      "de": "that you had something important to contribute to society"
+      "en": "that you had something important to contribute to society"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Never",
-        "de": "{score=0} Never"
+        "en": "{score=0} Never"
       },
       "1": {
-        "en": "{score=1} Once or Twice",
-        "de": "{score=1} Once or Twice"
+        "en": "{score=1} Once or Twice"
       },
       "2": {
-        "en": "{score=2} About once a week",
-        "de": "{score=2} About once a week"
+        "en": "{score=2} About once a week"
       },
       "3": {
-        "en": "{score=3} About 2 or 3 times a week",
-        "de": "{score=3} About 2 or 3 times a week"
+        "en": "{score=3} About 2 or 3 times a week"
       },
       "4": {
-        "en": "{score=4} Almost every day",
-        "de": "{score=4} Almost every day"
+        "en": "{score=4} Almost every day"
       },
       "5": {
-        "en": "{score=5} Every day",
-        "de": "{score=5} Every day"
+        "en": "{score=5} Every day"
       }
     }
   },
   "MHC-SF05": {
     "Description": {
-      "en": "that you belonged to a community (like a social group, or your neighborhood)",
-      "de": "that you belonged to a community (like a social group, or your neighborhood)"
+      "en": "that you belonged to a community (like a social group, or your neighborhood)"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Never",
-        "de": "{score=0} Never"
+        "en": "{score=0} Never"
       },
       "1": {
-        "en": "{score=1} Once or Twice",
-        "de": "{score=1} Once or Twice"
+        "en": "{score=1} Once or Twice"
       },
       "2": {
-        "en": "{score=2} About once a week",
-        "de": "{score=2} About once a week"
+        "en": "{score=2} About once a week"
       },
       "3": {
-        "en": "{score=3} About 2 or 3 times a week",
-        "de": "{score=3} About 2 or 3 times a week"
+        "en": "{score=3} About 2 or 3 times a week"
       },
       "4": {
-        "en": "{score=4} Almost every day",
-        "de": "{score=4} Almost every day"
+        "en": "{score=4} Almost every day"
       },
       "5": {
-        "en": "{score=5} Every day",
-        "de": "{score=5} Every day"
+        "en": "{score=5} Every day"
       }
     }
   },
   "MHC-SF06": {
     "Description": {
-      "en": "that our society is a good place, or is becoming a better place, for all people",
-      "de": "that our society is a good place, or is becoming a better place, for all people"
+      "en": "that our society is a good place, or is becoming a better place, for all people"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Never",
-        "de": "{score=0} Never"
+        "en": "{score=0} Never"
       },
       "1": {
-        "en": "{score=1} Once or Twice",
-        "de": "{score=1} Once or Twice"
+        "en": "{score=1} Once or Twice"
       },
       "2": {
-        "en": "{score=2} About once a week",
-        "de": "{score=2} About once a week"
+        "en": "{score=2} About once a week"
       },
       "3": {
-        "en": "{score=3} About 2 or 3 times a week",
-        "de": "{score=3} About 2 or 3 times a week"
+        "en": "{score=3} About 2 or 3 times a week"
       },
       "4": {
-        "en": "{score=4} Almost every day",
-        "de": "{score=4} Almost every day"
+        "en": "{score=4} Almost every day"
       },
       "5": {
-        "en": "{score=5} Every day",
-        "de": "{score=5} Every day"
+        "en": "{score=5} Every day"
       }
     }
   },
   "MHC-SF07": {
     "Description": {
-      "en": "that people are basically good",
-      "de": "that people are basically good"
+      "en": "that people are basically good"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Never",
-        "de": "{score=0} Never"
+        "en": "{score=0} Never"
       },
       "1": {
-        "en": "{score=1} Once or Twice",
-        "de": "{score=1} Once or Twice"
+        "en": "{score=1} Once or Twice"
       },
       "2": {
-        "en": "{score=2} About once a week",
-        "de": "{score=2} About once a week"
+        "en": "{score=2} About once a week"
       },
       "3": {
-        "en": "{score=3} About 2 or 3 times a week",
-        "de": "{score=3} About 2 or 3 times a week"
+        "en": "{score=3} About 2 or 3 times a week"
       },
       "4": {
-        "en": "{score=4} Almost every day",
-        "de": "{score=4} Almost every day"
+        "en": "{score=4} Almost every day"
       },
       "5": {
-        "en": "{score=5} Every day",
-        "de": "{score=5} Every day"
+        "en": "{score=5} Every day"
       }
     }
   },
   "MHC-SF08": {
     "Description": {
-      "en": "that the way our society works makes sense to you",
-      "de": "that the way our society works makes sense to you"
+      "en": "that the way our society works makes sense to you"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Never",
-        "de": "{score=0} Never"
+        "en": "{score=0} Never"
       },
       "1": {
-        "en": "{score=1} Once or Twice",
-        "de": "{score=1} Once or Twice"
+        "en": "{score=1} Once or Twice"
       },
       "2": {
-        "en": "{score=2} About once a week",
-        "de": "{score=2} About once a week"
+        "en": "{score=2} About once a week"
       },
       "3": {
-        "en": "{score=3} About 2 or 3 times a week",
-        "de": "{score=3} About 2 or 3 times a week"
+        "en": "{score=3} About 2 or 3 times a week"
       },
       "4": {
-        "en": "{score=4} Almost every day",
-        "de": "{score=4} Almost every day"
+        "en": "{score=4} Almost every day"
       },
       "5": {
-        "en": "{score=5} Every day",
-        "de": "{score=5} Every day"
+        "en": "{score=5} Every day"
       }
     }
   },
   "MHC-SF09": {
     "Description": {
-      "en": "that you liked most parts of your personality",
-      "de": "that you liked most parts of your personality"
+      "en": "that you liked most parts of your personality"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Never",
-        "de": "{score=0} Never"
+        "en": "{score=0} Never"
       },
       "1": {
-        "en": "{score=1} Once or Twice",
-        "de": "{score=1} Once or Twice"
+        "en": "{score=1} Once or Twice"
       },
       "2": {
-        "en": "{score=2} About once a week",
-        "de": "{score=2} About once a week"
+        "en": "{score=2} About once a week"
       },
       "3": {
-        "en": "{score=3} About 2 or 3 times a week",
-        "de": "{score=3} About 2 or 3 times a week"
+        "en": "{score=3} About 2 or 3 times a week"
       },
       "4": {
-        "en": "{score=4} Almost every day",
-        "de": "{score=4} Almost every day"
+        "en": "{score=4} Almost every day"
       },
       "5": {
-        "en": "{score=5} Every day",
-        "de": "{score=5} Every day"
+        "en": "{score=5} Every day"
       }
     }
   },
   "MHC-SF10": {
     "Description": {
-      "en": "good at managing the responsibilities of your daily life",
-      "de": "good at managing the responsibilities of your daily life"
+      "en": "good at managing the responsibilities of your daily life"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Never",
-        "de": "{score=0} Never"
+        "en": "{score=0} Never"
       },
       "1": {
-        "en": "{score=1} Once or Twice",
-        "de": "{score=1} Once or Twice"
+        "en": "{score=1} Once or Twice"
       },
       "2": {
-        "en": "{score=2} About once a week",
-        "de": "{score=2} About once a week"
+        "en": "{score=2} About once a week"
       },
       "3": {
-        "en": "{score=3} About 2 or 3 times a week",
-        "de": "{score=3} About 2 or 3 times a week"
+        "en": "{score=3} About 2 or 3 times a week"
       },
       "4": {
-        "en": "{score=4} Almost every day",
-        "de": "{score=4} Almost every day"
+        "en": "{score=4} Almost every day"
       },
       "5": {
-        "en": "{score=5} Every day",
-        "de": "{score=5} Every day"
+        "en": "{score=5} Every day"
       }
     }
   },
   "MHC-SF11": {
     "Description": {
-      "en": "that you had warm and trusting relationships with others",
-      "de": "that you had warm and trusting relationships with others"
+      "en": "that you had warm and trusting relationships with others"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Never",
-        "de": "{score=0} Never"
+        "en": "{score=0} Never"
       },
       "1": {
-        "en": "{score=1} Once or Twice",
-        "de": "{score=1} Once or Twice"
+        "en": "{score=1} Once or Twice"
       },
       "2": {
-        "en": "{score=2} About once a week",
-        "de": "{score=2} About once a week"
+        "en": "{score=2} About once a week"
       },
       "3": {
-        "en": "{score=3} About 2 or 3 times a week",
-        "de": "{score=3} About 2 or 3 times a week"
+        "en": "{score=3} About 2 or 3 times a week"
       },
       "4": {
-        "en": "{score=4} Almost every day",
-        "de": "{score=4} Almost every day"
+        "en": "{score=4} Almost every day"
       },
       "5": {
-        "en": "{score=5} Every day",
-        "de": "{score=5} Every day"
+        "en": "{score=5} Every day"
       }
     }
   },
   "MHC-SF12": {
     "Description": {
-      "en": "that you had experiences that challenged you to grow and become a better person",
-      "de": "that you had experiences that challenged you to grow and become a better person"
+      "en": "that you had experiences that challenged you to grow and become a better person"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Never",
-        "de": "{score=0} Never"
+        "en": "{score=0} Never"
       },
       "1": {
-        "en": "{score=1} Once or Twice",
-        "de": "{score=1} Once or Twice"
+        "en": "{score=1} Once or Twice"
       },
       "2": {
-        "en": "{score=2} About once a week",
-        "de": "{score=2} About once a week"
+        "en": "{score=2} About once a week"
       },
       "3": {
-        "en": "{score=3} About 2 or 3 times a week",
-        "de": "{score=3} About 2 or 3 times a week"
+        "en": "{score=3} About 2 or 3 times a week"
       },
       "4": {
-        "en": "{score=4} Almost every day",
-        "de": "{score=4} Almost every day"
+        "en": "{score=4} Almost every day"
       },
       "5": {
-        "en": "{score=5} Every day",
-        "de": "{score=5} Every day"
+        "en": "{score=5} Every day"
       }
     }
   },
   "MHC-SF13": {
     "Description": {
-      "en": "confident to think or express your own ideas and opinions",
-      "de": "confident to think or express your own ideas and opinions"
+      "en": "confident to think or express your own ideas and opinions"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Never",
-        "de": "{score=0} Never"
+        "en": "{score=0} Never"
       },
       "1": {
-        "en": "{score=1} Once or Twice",
-        "de": "{score=1} Once or Twice"
+        "en": "{score=1} Once or Twice"
       },
       "2": {
-        "en": "{score=2} About once a week",
-        "de": "{score=2} About once a week"
+        "en": "{score=2} About once a week"
       },
       "3": {
-        "en": "{score=3} About 2 or 3 times a week",
-        "de": "{score=3} About 2 or 3 times a week"
+        "en": "{score=3} About 2 or 3 times a week"
       },
       "4": {
-        "en": "{score=4} Almost every day",
-        "de": "{score=4} Almost every day"
+        "en": "{score=4} Almost every day"
       },
       "5": {
-        "en": "{score=5} Every day",
-        "de": "{score=5} Every day"
+        "en": "{score=5} Every day"
       }
     }
   },
   "MHC-SF14": {
     "Description": {
-      "en": "that your life has a sense of direction or meaning to it",
-      "de": "that your life has a sense of direction or meaning to it"
+      "en": "that your life has a sense of direction or meaning to it"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Never",
-        "de": "{score=0} Never"
+        "en": "{score=0} Never"
       },
       "1": {
-        "en": "{score=1} Once or Twice",
-        "de": "{score=1} Once or Twice"
+        "en": "{score=1} Once or Twice"
       },
       "2": {
-        "en": "{score=2} About once a week",
-        "de": "{score=2} About once a week"
+        "en": "{score=2} About once a week"
       },
       "3": {
-        "en": "{score=3} About 2 or 3 times a week",
-        "de": "{score=3} About 2 or 3 times a week"
+        "en": "{score=3} About 2 or 3 times a week"
       },
       "4": {
-        "en": "{score=4} Almost every day",
-        "de": "{score=4} Almost every day"
+        "en": "{score=4} Almost every day"
       },
       "5": {
-        "en": "{score=5} Every day",
-        "de": "{score=5} Every day"
+        "en": "{score=5} Every day"
       }
     }
   }

@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Short Autism Spectrum Quotient",
-      "de": "Short Autism Spectrum Quotient"
+      "en": "Short Autism Spectrum Quotient"
     },
     "Abbreviation": "AQ10",
     "Authors": [
@@ -29,101 +28,81 @@
   },
   "AQ1001": {
     "Description": {
-      "en": "I often notice small sounds when others do not",
-      "de": "I often notice small sounds when others do not"
+      "en": "I often notice small sounds when others do not"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} Definitely agree",
-        "de": "{score=1} Definitely agree"
+        "en": "{score=1} Definitely agree"
       },
       "1": {
-        "en": "{score=1} Slightly agree",
-        "de": "{score=1} Slightly agree"
+        "en": "{score=1} Slightly agree"
       },
       "2": {
-        "en": "{score=0} Slightly disagree",
-        "de": "{score=0} Slightly disagree"
+        "en": "{score=0} Slightly disagree"
       },
       "3": {
-        "en": "{score=0} Definitely disagree",
-        "de": "{score=0} Definitely disagree"
+        "en": "{score=0} Definitely disagree"
       }
     }
   },
   "AQ1002": {
     "Description": {
-      "en": "When Iâm reading a story I find it difficult to work out the charactersâ intentions",
-      "de": "When Iâm reading a story I find it difficult to work out the charactersâ intentions"
+      "en": "When Iâm reading a story I find it difficult to work out the charactersâ intentions"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} Definitely agree",
-        "de": "{score=1} Definitely agree"
+        "en": "{score=1} Definitely agree"
       },
       "1": {
-        "en": "{score=1} Slightly agree",
-        "de": "{score=1} Slightly agree"
+        "en": "{score=1} Slightly agree"
       },
       "2": {
-        "en": "{score=0} Slightly disagree",
-        "de": "{score=0} Slightly disagree"
+        "en": "{score=0} Slightly disagree"
       },
       "3": {
-        "en": "{score=0} Definitely disagree",
-        "de": "{score=0} Definitely disagree"
+        "en": "{score=0} Definitely disagree"
       }
     }
   },
   "AQ1003": {
     "Description": {
-      "en": "I like to collect information about categories of things (e.g. types of car, types of bird, types of train, types of plant etc)",
-      "de": "I like to collect information about categories of things (e.g. types of car, types of bird, types of train, types of plant etc)"
+      "en": "I like to collect information about categories of things (e.g. types of car, types of bird, types of train, types of plant etc)"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} Definitely agree",
-        "de": "{score=1} Definitely agree"
+        "en": "{score=1} Definitely agree"
       },
       "1": {
-        "en": "{score=1} Slightly agree",
-        "de": "{score=1} Slightly agree"
+        "en": "{score=1} Slightly agree"
       },
       "2": {
-        "en": "{score=0} Slightly disagree",
-        "de": "{score=0} Slightly disagree"
+        "en": "{score=0} Slightly disagree"
       },
       "3": {
-        "en": "{score=0} Definitely disagree",
-        "de": "{score=0} Definitely disagree"
+        "en": "{score=0} Definitely disagree"
       }
     }
   },
   "AQ1004": {
     "Description": {
-      "en": "I find it difficult to work out peopleâs intentions",
-      "de": "I find it difficult to work out peopleâs intentions"
+      "en": "I find it difficult to work out peopleâs intentions"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} Definitely agree",
-        "de": "{score=1} Definitely agree"
+        "en": "{score=1} Definitely agree"
       },
       "1": {
-        "en": "{score=1} Slightly agree",
-        "de": "{score=1} Slightly agree"
+        "en": "{score=1} Slightly agree"
       },
       "2": {
-        "en": "{score=0} Slightly disagree",
-        "de": "{score=0} Slightly disagree"
+        "en": "{score=0} Slightly disagree"
       },
       "3": {
-        "en": "{score=0} Definitely disagree",
-        "de": "{score=0} Definitely disagree"
+        "en": "{score=0} Definitely disagree"
       }
     }
   }

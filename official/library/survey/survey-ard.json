@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Dominance Scale (for relationship research)",
-      "de": "Dominance Scale (for relationship research)"
+      "en": "Dominance Scale (for relationship research)"
     },
     "Abbreviation": "ARD",
     "Authors": [
@@ -26,551 +25,441 @@
   },
   "ARD01": {
     "Description": {
-      "en": "I try to keep my partner from spending time with opposite sex friends.",
-      "de": "I try to keep my partner from spending time with opposite sex friends."
+      "en": "I try to keep my partner from spending time with opposite sex friends."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD02": {
     "Description": {
-      "en": "If my partner and I can't agree, I usually have the final say.",
-      "de": "If my partner and I can't agree, I usually have the final say."
+      "en": "If my partner and I can't agree, I usually have the final say."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD03": {
     "Description": {
-      "en": "It bothers me when my partner makes plans without talking to me first.",
-      "de": "It bothers me when my partner makes plans without talking to me first."
+      "en": "It bothers me when my partner makes plans without talking to me first."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD04": {
     "Description": {
-      "en": "I hate losing arguments with my partner.",
-      "de": "I hate losing arguments with my partner."
+      "en": "I hate losing arguments with my partner."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD05": {
     "Description": {
-      "en": "My partner should not keep any secrets from me.",
-      "de": "My partner should not keep any secrets from me."
+      "en": "My partner should not keep any secrets from me."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD06": {
     "Description": {
-      "en": "I insist on knowing where my partner is at all times.",
-      "de": "I insist on knowing where my partner is at all times."
+      "en": "I insist on knowing where my partner is at all times."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD07": {
     "Description": {
-      "en": "When my partner and I watch TV I hold the remote control.",
-      "de": "When my partner and I watch TV I hold the remote control."
+      "en": "When my partner and I watch TV I hold the remote control."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD08": {
     "Description": {
-      "en": "It would bother me if my partner made more money than I did.",
-      "de": "It would bother me if my partner made more money than I did."
+      "en": "It would bother me if my partner made more money than I did."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD09": {
     "Description": {
-      "en": "I tend to be jealous.",
-      "de": "I tend to be jealous."
+      "en": "I tend to be jealous."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD10": {
     "Description": {
-      "en": "Things are easier in my relationship if I am in charge.",
-      "de": "Things are easier in my relationship if I am in charge."
+      "en": "Things are easier in my relationship if I am in charge."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD11": {
     "Description": {
-      "en": "Sometimes I have to remind my partner of who's boss.",
-      "de": "Sometimes I have to remind my partner of who's boss."
+      "en": "Sometimes I have to remind my partner of who's boss."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD12": {
     "Description": {
-      "en": "I have a right to know everything my partner does.",
-      "de": "I have a right to know everything my partner does."
+      "en": "I have a right to know everything my partner does."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD13": {
     "Description": {
-      "en": "It would make me mad if my partner did something I had said not to do.",
-      "de": "It would make me mad if my partner did something I had said not to do."
+      "en": "It would make me mad if my partner did something I had said not to do."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD14": {
     "Description": {
-      "en": "If my partner and I can't agree, I should have the final say.",
-      "de": "If my partner and I can't agree, I should have the final say."
+      "en": "If my partner and I can't agree, I should have the final say."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD15": {
     "Description": {
-      "en": "My partner needs to remember that I am in charge.",
-      "de": "My partner needs to remember that I am in charge."
+      "en": "My partner needs to remember that I am in charge."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD16": {
     "Description": {
-      "en": "It's hard for my partner to learn new things.",
-      "de": "It's hard for my partner to learn new things."
+      "en": "It's hard for my partner to learn new things."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD17": {
     "Description": {
-      "en": "My partner makes a lot of mistakes.",
-      "de": "My partner makes a lot of mistakes."
+      "en": "My partner makes a lot of mistakes."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD18": {
     "Description": {
-      "en": "I sometimes think my partner is unattractive.",
-      "de": "I sometimes think my partner is unattractive."
+      "en": "I sometimes think my partner is unattractive."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD19": {
     "Description": {
-      "en": "My partner doesn't know how to act in public.",
-      "de": "My partner doesn't know how to act in public."
+      "en": "My partner doesn't know how to act in public."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD20": {
     "Description": {
-      "en": "I often tell my partner how to do something.",
-      "de": "I often tell my partner how to do something."
+      "en": "I often tell my partner how to do something."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD21": {
     "Description": {
-      "en": "I dominate my partner.",
-      "de": "I dominate my partner."
+      "en": "I dominate my partner."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "ARD22": {
     "Description": {
-      "en": "I have a right to be involved with anything my partner does.",
-      "de": "I have a right to be involved with anything my partner does."
+      "en": "I have a right to be involved with anything my partner does."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=4} Strongly agree",
-        "de": "{score=4} Strongly agree"
+        "en": "{score=4} Strongly agree"
       },
       "1": {
-        "en": "{score=3} Agree",
-        "de": "{score=3} Agree"
+        "en": "{score=3} Agree"
       },
       "2": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "3": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   }

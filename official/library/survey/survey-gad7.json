@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Generalized Anxiety Disorder (GAD-7)",
-      "de": "Generalized Anxiety Disorder (GAD-7)"
+      "en": "Generalized Anxiety Disorder (GAD-7)"
     },
     "Abbreviation": "GAD7",
     "Authors": [
@@ -31,176 +30,141 @@
   },
   "GAD701": {
     "Description": {
-      "en": "Feeling nervous, anxious or on edge",
-      "de": "Feeling nervous, anxious or on edge"
+      "en": "Feeling nervous, anxious or on edge"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} several days",
-        "de": "{score=1} several days"
+        "en": "{score=1} several days"
       },
       "2": {
-        "en": "{score=2} more than half the days",
-        "de": "{score=2} more than half the days"
+        "en": "{score=2} more than half the days"
       },
       "3": {
-        "en": "{score=3} nearly every day",
-        "de": "{score=3} nearly every day"
+        "en": "{score=3} nearly every day"
       }
     }
   },
   "GAD702": {
     "Description": {
-      "en": "Not being able to stop or control worrying",
-      "de": "Not being able to stop or control worrying"
+      "en": "Not being able to stop or control worrying"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} several days",
-        "de": "{score=1} several days"
+        "en": "{score=1} several days"
       },
       "2": {
-        "en": "{score=2} more than half the days",
-        "de": "{score=2} more than half the days"
+        "en": "{score=2} more than half the days"
       },
       "3": {
-        "en": "{score=3} nearly every day",
-        "de": "{score=3} nearly every day"
+        "en": "{score=3} nearly every day"
       }
     }
   },
   "GAD703": {
     "Description": {
-      "en": "Worrying too much about different things",
-      "de": "Worrying too much about different things"
+      "en": "Worrying too much about different things"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} several days",
-        "de": "{score=1} several days"
+        "en": "{score=1} several days"
       },
       "2": {
-        "en": "{score=2} more than half the days",
-        "de": "{score=2} more than half the days"
+        "en": "{score=2} more than half the days"
       },
       "3": {
-        "en": "{score=3} nearly every day",
-        "de": "{score=3} nearly every day"
+        "en": "{score=3} nearly every day"
       }
     }
   },
   "GAD704": {
     "Description": {
-      "en": "Trouble relaxing",
-      "de": "Trouble relaxing"
+      "en": "Trouble relaxing"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} several days",
-        "de": "{score=1} several days"
+        "en": "{score=1} several days"
       },
       "2": {
-        "en": "{score=2} more than half the days",
-        "de": "{score=2} more than half the days"
+        "en": "{score=2} more than half the days"
       },
       "3": {
-        "en": "{score=3} nearly every day",
-        "de": "{score=3} nearly every day"
+        "en": "{score=3} nearly every day"
       }
     }
   },
   "GAD705": {
     "Description": {
-      "en": "Being so restless that it is hard to sit still",
-      "de": "Being so restless that it is hard to sit still"
+      "en": "Being so restless that it is hard to sit still"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} several days",
-        "de": "{score=1} several days"
+        "en": "{score=1} several days"
       },
       "2": {
-        "en": "{score=2} more than half the days",
-        "de": "{score=2} more than half the days"
+        "en": "{score=2} more than half the days"
       },
       "3": {
-        "en": "{score=3} nearly every day",
-        "de": "{score=3} nearly every day"
+        "en": "{score=3} nearly every day"
       }
     }
   },
   "GAD706": {
     "Description": {
-      "en": "Becoming easily annoyed or irritable",
-      "de": "Becoming easily annoyed or irritable"
+      "en": "Becoming easily annoyed or irritable"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} several days",
-        "de": "{score=1} several days"
+        "en": "{score=1} several days"
       },
       "2": {
-        "en": "{score=2} more than half the days",
-        "de": "{score=2} more than half the days"
+        "en": "{score=2} more than half the days"
       },
       "3": {
-        "en": "{score=3} nearly every day",
-        "de": "{score=3} nearly every day"
+        "en": "{score=3} nearly every day"
       }
     }
   },
   "GAD707": {
     "Description": {
-      "en": "Feeling afraid as if something awful might happen",
-      "de": "Feeling afraid as if something awful might happen"
+      "en": "Feeling afraid as if something awful might happen"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} several days",
-        "de": "{score=1} several days"
+        "en": "{score=1} several days"
       },
       "2": {
-        "en": "{score=2} more than half the days",
-        "de": "{score=2} more than half the days"
+        "en": "{score=2} more than half the days"
       },
       "3": {
-        "en": "{score=3} nearly every day",
-        "de": "{score=3} nearly every day"
+        "en": "{score=3} nearly every day"
       }
     }
   }

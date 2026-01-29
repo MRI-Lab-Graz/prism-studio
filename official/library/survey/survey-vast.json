@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Varieties of Sadistic Tendencies (VAST)",
-      "de": "Varieties of Sadistic Tendencies (VAST)"
+      "en": "Varieties of Sadistic Tendencies (VAST)"
     },
     "Abbreviation": "VAST",
     "Authors": [
@@ -24,668 +23,530 @@
   },
   "VAST01": {
     "Description": {
-      "en": "In video games, I like the realistic blood spurts.",
-      "de": "In video games, I like the realistic blood spurts."
+      "en": "In video games, I like the realistic blood spurts."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST02": {
     "Description": {
-      "en": "I sometimes replay my favorite scenes from gory slasher films.",
-      "de": "I sometimes replay my favorite scenes from gory slasher films."
+      "en": "I sometimes replay my favorite scenes from gory slasher films."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST03": {
     "Description": {
-      "en": "I enjoy watching cage fighting (or mixed martial arts), where there is no escape.",
-      "de": "I enjoy watching cage fighting (or mixed martial arts), where there is no escape."
+      "en": "I enjoy watching cage fighting (or mixed martial arts), where there is no escape."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST04": {
     "Description": {
-      "en": "In car-racing, itâs the accidents that I enjoy most.",
-      "de": "In car-racing, itâs the accidents that I enjoy most."
+      "en": "In car-racing, itâs the accidents that I enjoy most."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST05": {
     "Description": {
-      "en": "I love the YouTube clips of people fighting.",
-      "de": "I love the YouTube clips of people fighting."
+      "en": "I love the YouTube clips of people fighting."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST06": {
     "Description": {
-      "en": "I enjoy physically hurting people.",
-      "de": "I enjoy physically hurting people."
+      "en": "I enjoy physically hurting people."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST07": {
     "Description": {
-      "en": "I was purposely cruel to someone in high school.",
-      "de": "I was purposely cruel to someone in high school."
+      "en": "I was purposely cruel to someone in high school."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST08": {
     "Description": {
-      "en": "I enjoy hurting my partner during sex (or pretending to).",
-      "de": "I enjoy hurting my partner during sex (or pretending to)."
+      "en": "I enjoy hurting my partner during sex (or pretending to)."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST09": {
     "Description": {
-      "en": "I can dominate others using fear.",
-      "de": "I can dominate others using fear."
+      "en": "I can dominate others using fear."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST10": {
     "Description": {
-      "en": "I enjoy making people suffer.",
-      "de": "I enjoy making people suffer."
+      "en": "I enjoy making people suffer."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST11": {
     "Description": {
-      "en": "I enjoy mocking losers to their face.",
-      "de": "I enjoy mocking losers to their face."
+      "en": "I enjoy mocking losers to their face."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST12": {
     "Description": {
-      "en": "I enjoy tormenting animals â especially the nasty ones.",
-      "de": "I enjoy tormenting animals â especially the nasty ones."
+      "en": "I enjoy tormenting animals â especially the nasty ones."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST13": {
     "Description": {
-      "en": "Iâm considered to be a kind person.",
-      "de": "Iâm considered to be a kind person."
+      "en": "Iâm considered to be a kind person."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST14": {
     "Description": {
-      "en": "By staying strong, one can better help others.Â",
-      "de": "By staying strong, one can better help others.Â"
+      "en": "By staying strong, one can better help others.Â"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST15": {
     "Description": {
-      "en": "Iâd do anything â even break the law â for those I love.",
-      "de": "Iâd do anything â even break the law â for those I love."
+      "en": "Iâd do anything â even break the law â for those I love."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST16": {
     "Description": {
-      "en": "I go out of my way to help family members.",
-      "de": "I go out of my way to help family members."
+      "en": "I go out of my way to help family members."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST17": {
     "Description": {
-      "en": "I have ambitions to make the world a better place.",
-      "de": "I have ambitions to make the world a better place."
+      "en": "I have ambitions to make the world a better place."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST18": {
     "Description": {
-      "en": "My goal is to be a missionary and help others.",
-      "de": "My goal is to be a missionary and help others."
+      "en": "My goal is to be a missionary and help others."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST19": {
     "Description": {
-      "en": "I give money to poor people on the street.",
-      "de": "I give money to poor people on the street."
+      "en": "I give money to poor people on the street."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST20": {
     "Description": {
-      "en": "Iâm worried that we have already seriously damaged the Earth.",
-      "de": "Iâm worried that we have already seriously damaged the Earth."
+      "en": "Iâm worried that we have already seriously damaged the Earth."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST21": {
     "Description": {
-      "en": "I want to spend my life helping sick children.",
-      "de": "I want to spend my life helping sick children."
+      "en": "I want to spend my life helping sick children."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST22": {
     "Description": {
-      "en": "I have had some really good friends.",
-      "de": "I have had some really good friends."
+      "en": "I have had some really good friends."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "VAST23": {
     "Description": {
-      "en": "I am a religious person.",
-      "de": "I am a religious person."
+      "en": "I am a religious person."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "3": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "4": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   }

@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Short 15-item Big Five Inventory (BFI-S)",
-      "de": "Short 15-item Big Five Inventory (BFI-S)"
+      "en": "Short 15-item Big Five Inventory (BFI-S)"
     },
     "Abbreviation": "BFI-S",
     "Authors": [
@@ -33,408 +32,320 @@
   },
   "BFI-S01": {
     "Description": {
-      "en": "worries a lot",
-      "de": "worries a lot"
+      "en": "worries a lot"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "BFI-S02": {
     "Description": {
-      "en": "gets nervous easily",
-      "de": "gets nervous easily"
+      "en": "gets nervous easily"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "BFI-S03": {
     "Description": {
-      "en": "is talkative",
-      "de": "is talkative"
+      "en": "is talkative"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "BFI-S04": {
     "Description": {
-      "en": "is outgoing, sociable",
-      "de": "is outgoing, sociable"
+      "en": "is outgoing, sociable"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "BFI-S05": {
     "Description": {
-      "en": "is original, comes up with new ideas",
-      "de": "is original, comes up with new ideas"
+      "en": "is original, comes up with new ideas"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "BFI-S06": {
     "Description": {
-      "en": "values artistic, aesthetic experiences",
-      "de": "values artistic, aesthetic experiences"
+      "en": "values artistic, aesthetic experiences"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "BFI-S07": {
     "Description": {
-      "en": "has an active imagination",
-      "de": "has an active imagination"
+      "en": "has an active imagination"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "BFI-S08": {
     "Description": {
-      "en": "has a forgiving nature",
-      "de": "has a forgiving nature"
+      "en": "has a forgiving nature"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "BFI-S09": {
     "Description": {
-      "en": "is considerate and kind to almost everyone",
-      "de": "is considerate and kind to almost everyone"
+      "en": "is considerate and kind to almost everyone"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "BFI-S10": {
     "Description": {
-      "en": "does a thorough job",
-      "de": "does a thorough job"
+      "en": "does a thorough job"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "BFI-S11": {
     "Description": {
-      "en": "does things efficiently",
-      "de": "does things efficiently"
+      "en": "does things efficiently"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   }

@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Abbreviated Math Anxiety Scale (AMAS)",
-      "de": "Abbreviated Math Anxiety Scale (AMAS)"
+      "en": "Abbreviated Math Anxiety Scale (AMAS)"
     },
     "Abbreviation": "AMAS",
     "Authors": [
@@ -27,262 +26,208 @@
   },
   "AMAS01": {
     "Description": {
-      "en": "Having to use the tables in the back of a mathematics book.",
-      "de": "Having to use the tables in the back of a mathematics book."
+      "en": "Having to use the tables in the back of a mathematics book."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Low Anxiety",
-        "de": "Low Anxiety"
+        "en": "Low Anxiety"
       },
       "1": {
-        "en": "Some Anxiety",
-        "de": "Some Anxiety"
+        "en": "Some Anxiety"
       },
       "2": {
-        "en": "Moderate Anxiety",
-        "de": "Moderate Anxiety"
+        "en": "Moderate Anxiety"
       },
       "3": {
-        "en": "Quite a bit of Anxiety",
-        "de": "Quite a bit of Anxiety"
+        "en": "Quite a bit of Anxiety"
       },
       "4": {
-        "en": "High Anxiety",
-        "de": "High Anxiety"
+        "en": "High Anxiety"
       }
     }
   },
   "AMAS02": {
     "Description": {
-      "en": "Thinking about an upcoming mathematics test one day before.",
-      "de": "Thinking about an upcoming mathematics test one day before."
+      "en": "Thinking about an upcoming mathematics test one day before."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Low Anxiety",
-        "de": "Low Anxiety"
+        "en": "Low Anxiety"
       },
       "1": {
-        "en": "Some Anxiety",
-        "de": "Some Anxiety"
+        "en": "Some Anxiety"
       },
       "2": {
-        "en": "Moderate Anxiety",
-        "de": "Moderate Anxiety"
+        "en": "Moderate Anxiety"
       },
       "3": {
-        "en": "Quite a bit of Anxiety",
-        "de": "Quite a bit of Anxiety"
+        "en": "Quite a bit of Anxiety"
       },
       "4": {
-        "en": "High Anxiety",
-        "de": "High Anxiety"
+        "en": "High Anxiety"
       }
     }
   },
   "AMAS03": {
     "Description": {
-      "en": "Watching a teacher work an algebraic equation on the blackboard.",
-      "de": "Watching a teacher work an algebraic equation on the blackboard."
+      "en": "Watching a teacher work an algebraic equation on the blackboard."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Low Anxiety",
-        "de": "Low Anxiety"
+        "en": "Low Anxiety"
       },
       "1": {
-        "en": "Some Anxiety",
-        "de": "Some Anxiety"
+        "en": "Some Anxiety"
       },
       "2": {
-        "en": "Moderate Anxiety",
-        "de": "Moderate Anxiety"
+        "en": "Moderate Anxiety"
       },
       "3": {
-        "en": "Quite a bit of Anxiety",
-        "de": "Quite a bit of Anxiety"
+        "en": "Quite a bit of Anxiety"
       },
       "4": {
-        "en": "High Anxiety",
-        "de": "High Anxiety"
+        "en": "High Anxiety"
       }
     }
   },
   "AMAS04": {
     "Description": {
-      "en": "Taking an examination in a mathematics course.",
-      "de": "Taking an examination in a mathematics course."
+      "en": "Taking an examination in a mathematics course."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Low Anxiety",
-        "de": "Low Anxiety"
+        "en": "Low Anxiety"
       },
       "1": {
-        "en": "Some Anxiety",
-        "de": "Some Anxiety"
+        "en": "Some Anxiety"
       },
       "2": {
-        "en": "Moderate Anxiety",
-        "de": "Moderate Anxiety"
+        "en": "Moderate Anxiety"
       },
       "3": {
-        "en": "Quite a bit of Anxiety",
-        "de": "Quite a bit of Anxiety"
+        "en": "Quite a bit of Anxiety"
       },
       "4": {
-        "en": "High Anxiety",
-        "de": "High Anxiety"
+        "en": "High Anxiety"
       }
     }
   },
   "AMAS05": {
     "Description": {
-      "en": "Being given a homework assignment of many difficult problems which is due the next class meeting.",
-      "de": "Being given a homework assignment of many difficult problems which is due the next class meeting."
+      "en": "Being given a homework assignment of many difficult problems which is due the next class meeting."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Low Anxiety",
-        "de": "Low Anxiety"
+        "en": "Low Anxiety"
       },
       "1": {
-        "en": "Some Anxiety",
-        "de": "Some Anxiety"
+        "en": "Some Anxiety"
       },
       "2": {
-        "en": "Moderate Anxiety",
-        "de": "Moderate Anxiety"
+        "en": "Moderate Anxiety"
       },
       "3": {
-        "en": "Quite a bit of Anxiety",
-        "de": "Quite a bit of Anxiety"
+        "en": "Quite a bit of Anxiety"
       },
       "4": {
-        "en": "High Anxiety",
-        "de": "High Anxiety"
+        "en": "High Anxiety"
       }
     }
   },
   "AMAS06": {
     "Description": {
-      "en": "Listening to a lecture in mathematics class.",
-      "de": "Listening to a lecture in mathematics class."
+      "en": "Listening to a lecture in mathematics class."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Low Anxiety",
-        "de": "Low Anxiety"
+        "en": "Low Anxiety"
       },
       "1": {
-        "en": "Some Anxiety",
-        "de": "Some Anxiety"
+        "en": "Some Anxiety"
       },
       "2": {
-        "en": "Moderate Anxiety",
-        "de": "Moderate Anxiety"
+        "en": "Moderate Anxiety"
       },
       "3": {
-        "en": "Quite a bit of Anxiety",
-        "de": "Quite a bit of Anxiety"
+        "en": "Quite a bit of Anxiety"
       },
       "4": {
-        "en": "High Anxiety",
-        "de": "High Anxiety"
+        "en": "High Anxiety"
       }
     }
   },
   "AMAS07": {
     "Description": {
-      "en": "Listening to another student explain a mathematics formula.",
-      "de": "Listening to another student explain a mathematics formula."
+      "en": "Listening to another student explain a mathematics formula."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Low Anxiety",
-        "de": "Low Anxiety"
+        "en": "Low Anxiety"
       },
       "1": {
-        "en": "Some Anxiety",
-        "de": "Some Anxiety"
+        "en": "Some Anxiety"
       },
       "2": {
-        "en": "Moderate Anxiety",
-        "de": "Moderate Anxiety"
+        "en": "Moderate Anxiety"
       },
       "3": {
-        "en": "Quite a bit of Anxiety",
-        "de": "Quite a bit of Anxiety"
+        "en": "Quite a bit of Anxiety"
       },
       "4": {
-        "en": "High Anxiety",
-        "de": "High Anxiety"
+        "en": "High Anxiety"
       }
     }
   },
   "AMAS08": {
     "Description": {
-      "en": "Being given a âpopâ quiz in a mathematics class.",
-      "de": "Being given a âpopâ quiz in a mathematics class."
+      "en": "Being given a âpopâ quiz in a mathematics class."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Low Anxiety",
-        "de": "Low Anxiety"
+        "en": "Low Anxiety"
       },
       "1": {
-        "en": "Some Anxiety",
-        "de": "Some Anxiety"
+        "en": "Some Anxiety"
       },
       "2": {
-        "en": "Moderate Anxiety",
-        "de": "Moderate Anxiety"
+        "en": "Moderate Anxiety"
       },
       "3": {
-        "en": "Quite a bit of Anxiety",
-        "de": "Quite a bit of Anxiety"
+        "en": "Quite a bit of Anxiety"
       },
       "4": {
-        "en": "High Anxiety",
-        "de": "High Anxiety"
+        "en": "High Anxiety"
       }
     }
   },
   "AMAS09": {
     "Description": {
-      "en": "Starting a new chapter in a mathematics book.",
-      "de": "Starting a new chapter in a mathematics book."
+      "en": "Starting a new chapter in a mathematics book."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Low Anxiety",
-        "de": "Low Anxiety"
+        "en": "Low Anxiety"
       },
       "1": {
-        "en": "Some Anxiety",
-        "de": "Some Anxiety"
+        "en": "Some Anxiety"
       },
       "2": {
-        "en": "Moderate Anxiety",
-        "de": "Moderate Anxiety"
+        "en": "Moderate Anxiety"
       },
       "3": {
-        "en": "Quite a bit of Anxiety",
-        "de": "Quite a bit of Anxiety"
+        "en": "Quite a bit of Anxiety"
       },
       "4": {
-        "en": "High Anxiety",
-        "de": "High Anxiety"
+        "en": "High Anxiety"
       }
     }
   }

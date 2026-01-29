@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Scale of Positive and Negative Experience (SPANE)",
-      "de": "Scale of Positive and Negative Experience (SPANE)"
+      "en": "Scale of Positive and Negative Experience (SPANE)"
     },
     "Abbreviation": "SPANE",
     "Authors": [
@@ -36,349 +35,277 @@
   },
   "SPANE01": {
     "Description": {
-      "en": "Positive",
-      "de": "Positive"
+      "en": "Positive"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very Rarely or Never",
-        "de": "Very Rarely or Never"
+        "en": "Very Rarely or Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very Often or Always",
-        "de": "Very Often or Always"
+        "en": "Very Often or Always"
       }
     }
   },
   "SPANE02": {
     "Description": {
-      "en": "Negative",
-      "de": "Negative"
+      "en": "Negative"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very Rarely or Never",
-        "de": "Very Rarely or Never"
+        "en": "Very Rarely or Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very Often or Always",
-        "de": "Very Often or Always"
+        "en": "Very Often or Always"
       }
     }
   },
   "SPANE03": {
     "Description": {
-      "en": "Good",
-      "de": "Good"
+      "en": "Good"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very Rarely or Never",
-        "de": "Very Rarely or Never"
+        "en": "Very Rarely or Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very Often or Always",
-        "de": "Very Often or Always"
+        "en": "Very Often or Always"
       }
     }
   },
   "SPANE04": {
     "Description": {
-      "en": "Bad",
-      "de": "Bad"
+      "en": "Bad"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very Rarely or Never",
-        "de": "Very Rarely or Never"
+        "en": "Very Rarely or Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very Often or Always",
-        "de": "Very Often or Always"
+        "en": "Very Often or Always"
       }
     }
   },
   "SPANE05": {
     "Description": {
-      "en": "Pleasant",
-      "de": "Pleasant"
+      "en": "Pleasant"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very Rarely or Never",
-        "de": "Very Rarely or Never"
+        "en": "Very Rarely or Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very Often or Always",
-        "de": "Very Often or Always"
+        "en": "Very Often or Always"
       }
     }
   },
   "SPANE06": {
     "Description": {
-      "en": "Unpleasant",
-      "de": "Unpleasant"
+      "en": "Unpleasant"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very Rarely or Never",
-        "de": "Very Rarely or Never"
+        "en": "Very Rarely or Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very Often or Always",
-        "de": "Very Often or Always"
+        "en": "Very Often or Always"
       }
     }
   },
   "SPANE07": {
     "Description": {
-      "en": "Happy",
-      "de": "Happy"
+      "en": "Happy"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very Rarely or Never",
-        "de": "Very Rarely or Never"
+        "en": "Very Rarely or Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very Often or Always",
-        "de": "Very Often or Always"
+        "en": "Very Often or Always"
       }
     }
   },
   "SPANE08": {
     "Description": {
-      "en": "Sad",
-      "de": "Sad"
+      "en": "Sad"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very Rarely or Never",
-        "de": "Very Rarely or Never"
+        "en": "Very Rarely or Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very Often or Always",
-        "de": "Very Often or Always"
+        "en": "Very Often or Always"
       }
     }
   },
   "SPANE09": {
     "Description": {
-      "en": "Afraid",
-      "de": "Afraid"
+      "en": "Afraid"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very Rarely or Never",
-        "de": "Very Rarely or Never"
+        "en": "Very Rarely or Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very Often or Always",
-        "de": "Very Often or Always"
+        "en": "Very Often or Always"
       }
     }
   },
   "SPANE10": {
     "Description": {
-      "en": "Joyful",
-      "de": "Joyful"
+      "en": "Joyful"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very Rarely or Never",
-        "de": "Very Rarely or Never"
+        "en": "Very Rarely or Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very Often or Always",
-        "de": "Very Often or Always"
+        "en": "Very Often or Always"
       }
     }
   },
   "SPANE11": {
     "Description": {
-      "en": "Angry",
-      "de": "Angry"
+      "en": "Angry"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very Rarely or Never",
-        "de": "Very Rarely or Never"
+        "en": "Very Rarely or Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very Often or Always",
-        "de": "Very Often or Always"
+        "en": "Very Often or Always"
       }
     }
   },
   "SPANE12": {
     "Description": {
-      "en": "Contented",
-      "de": "Contented"
+      "en": "Contented"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Very Rarely or Never",
-        "de": "Very Rarely or Never"
+        "en": "Very Rarely or Never"
       },
       "1": {
-        "en": "Rarely",
-        "de": "Rarely"
+        "en": "Rarely"
       },
       "2": {
-        "en": "Sometimes",
-        "de": "Sometimes"
+        "en": "Sometimes"
       },
       "3": {
-        "en": "Often",
-        "de": "Often"
+        "en": "Often"
       },
       "4": {
-        "en": "Very Often or Always",
-        "de": "Very Often or Always"
+        "en": "Very Often or Always"
       }
     }
   }
