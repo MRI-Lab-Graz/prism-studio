@@ -973,30 +973,28 @@ document.addEventListener('DOMContentLoaded', function() {
             groupsBySource[source].push({ group, index });
         });
 
-        // For each source with multiple runs, reassign run numbers based on position
+        // For each source, reassign run numbers based on position
         Object.entries(groupsBySource).forEach(([source, entries]) => {
-            if (entries.length <= 1) return; // Single run, no change needed
-
             // Sort by current position (index)
             entries.sort((a, b) => a.index - b.index);
 
-            // Reassign run numbers 1, 2, 3, ... based on position
+            const isMultiRun = entries.length > 1;
+
             entries.forEach((entry, runIdx) => {
-                const newRunNumber = runIdx + 1;
                 const group = entry.group;
-
-                // Update group runNumber
-                group.runNumber = newRunNumber;
-
-                // Update group name to reflect new run number
-                // Extract base name (remove existing " (Run X)" suffix)
                 let baseName = group.name.replace(/\s*\(Run \d+\)$/, '');
-                group.name = entries.length > 1 ? `${baseName} (Run ${newRunNumber})` : baseName;
 
-                // Update all questions in this group
-                group.questions.forEach(q => {
-                    q.runNumber = newRunNumber;
-                });
+                if (isMultiRun) {
+                    const newRunNumber = runIdx + 1;
+                    group.runNumber = newRunNumber;
+                    group.name = `${baseName} (Run ${newRunNumber})`;
+                    group.questions.forEach(q => { q.runNumber = newRunNumber; });
+                } else {
+                    // Single run remaining — clear run markers entirely
+                    group.runNumber = null;
+                    group.name = baseName;
+                    group.questions.forEach(q => { q.runNumber = null; });
+                }
             });
         });
     }
