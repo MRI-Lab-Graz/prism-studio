@@ -2082,7 +2082,7 @@ def limesurvey_to_prism():
                     }
                     result["total_questions"] += q_count
 
-                # Match each group against the global library
+                # Match each group against the template library
                 try:
                     from src.converters.template_matcher import (
                         match_groups_against_library,
@@ -2092,7 +2092,10 @@ def limesurvey_to_prism():
                         name: data["prism_json"]
                         for name, data in result["questionnaires"].items()
                     }
-                    matches = match_groups_against_library(groups_for_matching)
+                    matches = match_groups_against_library(
+                        groups_for_matching,
+                        project_path=session.get("current_project_path"),
+                    )
                     for name, match in matches.items():
                         result["questionnaires"][name]["template_match"] = (
                             match.to_dict() if match else None
@@ -2145,13 +2148,16 @@ def limesurvey_to_prism():
                     "log": logs,
                 }
 
-                # Match combined template against the global library
+                # Match combined template against the template library
                 try:
                     from src.converters.template_matcher import (
                         match_against_library,
                     )
 
-                    match = match_against_library(combined_json)
+                    match = match_against_library(
+                        combined_json,
+                        project_path=session.get("current_project_path"),
+                    )
                     combined_result["template_match"] = (
                         match.to_dict() if match else None
                     )
@@ -2310,7 +2316,7 @@ def limesurvey_to_prism():
                 }
                 result["total_questions"] += q_count
 
-            # Match each group against the global library
+            # Match each group against the template library
             try:
                 from src.converters.template_matcher import (
                     match_groups_against_library,
@@ -2320,7 +2326,10 @@ def limesurvey_to_prism():
                     name: data["prism_json"]
                     for name, data in result["questionnaires"].items()
                 }
-                matches = match_groups_against_library(groups_for_matching)
+                matches = match_groups_against_library(
+                    groups_for_matching,
+                    project_path=session.get("current_project_path"),
+                )
                 for name, match in matches.items():
                     result["questionnaires"][name]["template_match"] = (
                         match.to_dict() if match else None
@@ -2379,14 +2388,16 @@ def limesurvey_to_prism():
                 "log": logs,
             }
 
-            # Match combined template against the global library
+            # Match combined template against the template library
             try:
                 from src.converters.template_matcher import (
                     match_against_library,
                 )
 
                 match = match_against_library(
-                    prism_data, group_name=task_name
+                    prism_data,
+                    group_name=task_name,
+                    project_path=session.get("current_project_path"),
                 )
                 combined_result["template_match"] = (
                     match.to_dict() if match else None
@@ -2404,16 +2415,36 @@ def limesurvey_to_prism():
 
 @tools_bp.route("/api/library-template/<template_key>", methods=["GET"])
 def get_library_template(template_key):
-    """Fetch a global library template by its key (task name).
+    """Fetch a library template by its key (task name).
+
+    Checks both project-specific and global templates. Project templates
+    take priority over global ones.
 
     Returns the full template JSON so the frontend can swap a generated
-    template with the official library version.
+    template with the library version.
     """
     try:
         from src.converters.survey import _load_global_templates
+        from src.converters.template_matcher import _load_project_templates
 
-        templates = _load_global_templates()
         key = template_key.lower().strip()
+
+        # Check project templates first
+        project_path = session.get("current_project_path")
+        if project_path:
+            project_templates = _load_project_templates(project_path)
+            if key in project_templates:
+                tdata = project_templates[key]
+                return jsonify({
+                    "success": True,
+                    "template_key": key,
+                    "filename": tdata["path"].name,
+                    "prism_json": tdata["json"],
+                    "source": "project",
+                })
+
+        # Fall back to global templates
+        templates = _load_global_templates()
         if key not in templates:
             return jsonify({"error": f"Template '{template_key}' not found in library"}), 404
 
@@ -2423,6 +2454,7 @@ def get_library_template(template_key):
             "template_key": key,
             "filename": tdata["path"].name,
             "prism_json": tdata["json"],
+            "source": "global",
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500

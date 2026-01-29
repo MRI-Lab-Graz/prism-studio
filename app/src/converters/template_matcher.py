@@ -1,7 +1,8 @@
 """Template matching for LimeSurvey imports.
 
-Compares imported questionnaire structures against the global template library
-to detect whether imported groups match known standardized instruments.
+Compares imported questionnaire structures against the template library
+(both global and project-specific) to detect whether imported questionnaire
+groups match known standardized instruments.
 """
 
 from __future__ import annotations
@@ -11,12 +12,16 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
+from pathlib import Path
+
 from .survey import (
     _extract_template_structure,
     _load_global_templates,
     _load_global_participants_template,
+    _is_participant_template,
     _NON_ITEM_TOPLEVEL_KEYS,
 )
+from ..utils.io import read_json as _read_json
 
 logger = logging.getLogger(__name__)
 
@@ -152,6 +157,51 @@ def _strip_run_from_group_name(name: str) -> str:
     if m:
         return m.group(1)
     return name
+
+
+def _load_project_templates(project_path: str | Path) -> dict[str, dict]:
+    """Load templates from a project's local library.
+
+    Looks for survey-*.json files in {project_path}/code/library/survey/.
+    Returns the same format as _load_global_templates().
+
+    Args:
+        project_path: Path to the project root directory.
+
+    Returns:
+        Dict mapping task_name -> {"path": Path, "json": dict, "structure": set}.
+        Empty dict if project has no local templates.
+    """
+    project_dir = Path(project_path)
+    survey_dir = project_dir / "code" / "library" / "survey"
+    if not survey_dir.is_dir():
+        return {}
+
+    templates = {}
+    for json_path in sorted(survey_dir.glob("survey-*.json")):
+        if _is_participant_template(json_path):
+            continue
+        try:
+            sidecar = _read_json(json_path)
+        except Exception:
+            continue
+
+        task_from_name = json_path.stem.replace("survey-", "")
+        task = str(sidecar.get("Study", {}).get("TaskName") or task_from_name).strip()
+        task_norm = task.lower() or task_from_name.lower()
+
+        templates[task_norm] = {
+            "path": json_path,
+            "json": sidecar,
+            "structure": _extract_template_structure(sidecar),
+        }
+
+    if templates:
+        logger.debug(
+            "Loaded %d project templates from %s", len(templates), survey_dir
+        )
+
+    return templates
 
 
 def _match_by_name(
@@ -302,8 +352,12 @@ def match_against_library(
     prism_json: dict,
     global_templates: Optional[dict[str, dict]] = None,
     group_name: str = "",
+    project_path: Optional[str | Path] = None,
 ) -> Optional[TemplateMatch]:
-    """Match a single PRISM template against the global library.
+    """Match a single PRISM template against the template library.
+
+    Checks both global templates and project-specific templates (if a project
+    path is provided). Project templates take priority over global ones.
 
     Uses a multi-signal approach:
     1. Name pre-filter (group name vs Study.Abbreviation/TaskName)
@@ -316,12 +370,19 @@ def match_against_library(
         prism_json: The imported PRISM template dict.
         global_templates: Pre-loaded global templates. If None, loads automatically.
         group_name: Optional LimeSurvey group name for name-based matching.
+        project_path: Optional project root path to also check project templates.
 
     Returns:
         TemplateMatch if a match is found, None otherwise.
     """
     if global_templates is None:
         global_templates = _load_global_templates()
+
+    # Merge project templates with global (project takes priority for same key)
+    all_templates = dict(global_templates) if global_templates else {}
+    if project_path:
+        project_templates = _load_project_templates(project_path)
+        all_templates.update(project_templates)
 
     # Extract imported item codes, excluding hidden metadata questions
     imported_struct = {
@@ -344,19 +405,19 @@ def match_against_library(
     # Name-based candidates (for prioritization, not exclusion)
     name_candidates = set()
     if group_name:
-        name_candidates = set(_match_by_name(group_name, global_templates))
+        name_candidates = set(_match_by_name(group_name, all_templates))
     # Also try the Study.Abbreviation from the imported template itself
     imp_study = prism_json.get("Study", {})
     imp_abbr = str(imp_study.get("Abbreviation", "")).strip()
     imp_task = str(imp_study.get("TaskName", "")).strip()
     for label in (imp_abbr, imp_task):
         if label:
-            name_candidates.update(_match_by_name(label, global_templates))
+            name_candidates.update(_match_by_name(label, all_templates))
 
     best_match: Optional[TemplateMatch] = None
     best_overlap_ratio = 0.0
 
-    for task_key, tdata in (global_templates.items() if global_templates else []):
+    for task_key, tdata in (all_templates.items() if all_templates else []):
         lib_struct = tdata["structure"]
         if not lib_struct:
             continue
@@ -457,12 +518,14 @@ def match_against_library(
 def match_groups_against_library(
     groups: dict[str, dict],
     global_templates: Optional[dict[str, dict]] = None,
+    project_path: Optional[str | Path] = None,
 ) -> dict[str, Optional[TemplateMatch]]:
     """Match multiple questionnaire groups against the library.
 
     Args:
         groups: Dict mapping group_name -> prism_json template dict.
         global_templates: Pre-loaded global templates. If None, loads once.
+        project_path: Optional project root path to also check project templates.
 
     Returns:
         Dict mapping group_name -> TemplateMatch or None.
@@ -473,6 +536,7 @@ def match_groups_against_library(
     results = {}
     for group_name, prism_json in groups.items():
         results[group_name] = match_against_library(
-            prism_json, global_templates, group_name=group_name
+            prism_json, global_templates, group_name=group_name,
+            project_path=project_path,
         )
     return results
