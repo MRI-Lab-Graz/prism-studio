@@ -1,8 +1,11 @@
 import json
+import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime
 import os
 import io
+
+logger = logging.getLogger(__name__)
 
 
 def add_row(parent, data):
@@ -1660,8 +1663,8 @@ def generate_lss_from_customization(
             source_file = q.get("sourceFile")
             q_code = q.get("questionCode")
             if not source_file or not q_code:
-                print(
-                    "[LSS-EXPORT] WARNING: Missing sourceFile or questionCode for question"
+                logger.warning(
+                    "Missing sourceFile or questionCode for question"
                 )
                 return None
 
@@ -1669,14 +1672,14 @@ def generate_lss_from_customization(
                 try:
                     with open(source_file, "r", encoding="utf-8") as f:
                         _source_file_cache[source_file] = json.load(f)
-                    print(f"[LSS-EXPORT] Loaded source file: {source_file}")
+                    logger.debug("Loaded source file: %s", source_file)
                 except Exception as e:
-                    print(f"[LSS-EXPORT] ERROR loading source file {source_file}: {e}")
+                    logger.error("Error loading source file %s: %s", source_file, e)
                     _source_file_cache[source_file] = None
 
             template_data = _source_file_cache.get(source_file)
             if not template_data:
-                print(f"[LSS-EXPORT] WARNING: No template data for {source_file}")
+                logger.warning("No template data for %s", source_file)
                 return None
 
             # Check Questions section first, then top-level
@@ -1686,14 +1689,12 @@ def generate_lss_from_customization(
             if q_code in template_data:
                 return template_data[q_code]
 
-            print(
-                f"[LSS-EXPORT] WARNING: Question '{q_code}' not found in {source_file}"
-            )
+            logger.warning("Question '%s' not found in %s", q_code, source_file)
             return None
 
         # Process question groups
         q_sort_order = 0
-        print(f"\n[LSS-EXPORT] Processing {len(grouped_questions)} question groups")
+        logger.debug("Processing %d question groups", len(grouped_questions))
         for q_group in grouped_questions:
             first_q = q_group[0]
 
@@ -1703,21 +1704,17 @@ def generate_lss_from_customization(
             source_file = first_q.get("sourceFile", "")
             source_q_data = _get_question_from_source(first_q)
 
-            print(f"\n[LSS-EXPORT] Question: {q_code}")
-            print(f"[LSS-EXPORT]   sourceFile: {source_file}")
-            print(f"[LSS-EXPORT]   source_q_data found: {source_q_data is not None}")
+            logger.debug(
+                "Question: %s (sourceFile=%s, source_q_data=%s)",
+                q_code, source_file, source_q_data is not None,
+            )
 
             if source_q_data and source_q_data.get("Levels"):
                 levels = source_q_data.get("Levels", {})
-                print(f"[LSS-EXPORT]   Levels from SOURCE FILE: {len(levels)} items")
-                print(f"[LSS-EXPORT]   Level keys: {list(levels.keys())}")
             else:
                 orig_levels = first_q.get("originalData", {}).get("Levels", {})
                 q_levels = first_q.get("levels", {})
                 levels = orig_levels or q_levels
-                print(f"[LSS-EXPORT]   originalData.Levels: {len(orig_levels)} items")
-                print(f"[LSS-EXPORT]   q.levels: {len(q_levels)} items")
-                print(f"[LSS-EXPORT]   Using: {len(levels)} items")
 
             is_matrix = len(q_group) > 1
 
@@ -1947,26 +1944,17 @@ def generate_lss_from_customization(
 
                 # Add Answers (skip "other" if OtherOption is enabled to avoid duplicate)
                 if levels:
-                    print(
-                        f"[LSS-EXPORT]   Writing {len(levels)} answers for {final_code}"
-                    )
                     sort_ans = 0
                     used_answer_codes = set()  # Track used codes to avoid collisions
                     for code, answer_text in levels.items():
                         # Skip "other" level if OtherOption is enabled (LimeSurvey will add its own)
                         if code.lower() == "other" and has_other:
-                            print(
-                                "[LSS-EXPORT]     Skipping 'other' (OtherOption enabled)"
-                            )
                             continue
                         sort_ans += 1
                         ans_text = get_text(answer_text, language)
                         # Sanitize answer code (LimeSurvey has 5-char limit)
                         sanitized_code = _sanitize_answer_code(code, used_answer_codes)
                         used_answer_codes.add(sanitized_code)
-                        print(
-                            f"[LSS-EXPORT]     Answer {sort_ans}: code='{code}' -> '{sanitized_code}', text='{ans_text[:30]}...'"
-                        )
                         ans_row = {
                             "qid": qid,
                             "code": sanitized_code,
@@ -1993,7 +1981,7 @@ def generate_lss_from_customization(
                                 },
                             )
                 else:
-                    print(f"[LSS-EXPORT]   WARNING: NO LEVELS for {final_code}!")
+                    logger.warning("No levels for %s", final_code)
 
     # --- Survey Settings ---
     survey_settings = {
