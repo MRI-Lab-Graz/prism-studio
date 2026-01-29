@@ -1469,8 +1469,25 @@ def generate_lss_from_customization(
     qaid_counter = 1
     l10n_id_counter = 1
 
-    def get_text(obj, lang):
-        """Get localized text from a multilingual object."""
+    def get_text(obj, lang, i18n_data=None, path=None):
+        """
+        Get localized text.
+        1. Checks i18n_data[lang] using the provided path (e.g. "age.Description")
+        2. If not found, checks if obj is a dict (inline translation)
+        3. Otherwise returns obj as string
+        """
+        if i18n_data and lang in i18n_data and path:
+            parts = path.split(".")
+            curr = i18n_data[lang]
+            for p in parts:
+                if isinstance(curr, dict) and p in curr:
+                    curr = curr[p]
+                else:
+                    curr = None
+                    break
+            if curr:
+                return str(curr)
+
         if isinstance(obj, dict):
             return obj.get(lang, obj.get("en", next(iter(obj.values()), "")))
         return str(obj) if obj else ""
@@ -1700,6 +1717,16 @@ def generate_lss_from_customization(
             logger.warning("Question '%s' not found in %s", q_code, source_file)
             return None
 
+        def _get_i18n_from_source(q):
+            """Get I18n data from cached source file."""
+            source_file = q.get("sourceFile")
+            if not source_file:
+                return {}
+            template_data = _source_file_cache.get(source_file)
+            if not template_data:
+                return {}
+            return template_data.get("I18n", {})
+
         # Process question groups
         q_sort_order = 0
         logger.debug("Processing %d question groups", len(grouped_questions))
@@ -1788,7 +1815,9 @@ def generate_lss_from_customization(
                     run_num = q.get("runNumber")
                     sub_q_code = _apply_run_suffix(q_code, run_num)
 
-                    orig = q.get("originalData", {})
+                    sub_source_data = _get_question_from_source(q)
+                    sub_orig = sub_source_data if sub_source_data else q.get("originalData", {})
+                    sub_i18n = _get_i18n_from_source(q)
 
                     if is_v6:
                         sub_q_row = {
@@ -1800,7 +1829,7 @@ def generate_lss_from_customization(
                         add_row(subquestions_rows, sub_q_row)
 
                         for lang in languages:
-                            sq_desc = get_text(orig.get("Description", q_code), lang)
+                            sq_desc = get_text(sub_orig.get("Description", q_code), lang, sub_i18n, f"{q_code}.Description")
                             if not sq_desc:
                                 sq_desc = q.get("description", q_code)
                             add_row(question_l10ns_rows, {
@@ -1810,7 +1839,7 @@ def generate_lss_from_customization(
                             l10n_id_counter += 1
                     else:
                         for lang in languages:
-                            sq_desc = get_text(orig.get("Description", q_code), lang)
+                            sq_desc = get_text(sub_orig.get("Description", q_code), lang, sub_i18n, f"{q_code}.Description")
                             if not sq_desc:
                                 sq_desc = q.get("description", q_code)
                             sub_q_row = {
@@ -1824,6 +1853,8 @@ def generate_lss_from_customization(
 
                 # Add Answers for the matrix (only once)
                 if levels:
+                    first_q_code = first_q.get("questionCode", "")
+                    matrix_i18n = _get_i18n_from_source(first_q)
                     sort_ans = 0
                     used_answer_codes = set()
                     for code, answer_text in levels.items():
@@ -1839,7 +1870,7 @@ def generate_lss_from_customization(
                             add_row(answers_rows, ans_row)
 
                             for lang in languages:
-                                a_text = get_text(answer_text, lang)
+                                a_text = get_text(answer_text, lang, matrix_i18n, f"{first_q_code}.Levels.{code}")
                                 add_row(answer_l10ns_rows, {
                                     "id": str(l10n_id_counter), "qid": qid, "code": sanitized_code,
                                     "answer": a_text, "language": lang, "sid": sid,
@@ -1847,7 +1878,7 @@ def generate_lss_from_customization(
                                 l10n_id_counter += 1
                         else:
                             for lang in languages:
-                                a_text = get_text(answer_text, lang)
+                                a_text = get_text(answer_text, lang, matrix_i18n, f"{first_q_code}.Levels.{code}")
                                 ans_row = {
                                     "qid": qid, "code": sanitized_code,
                                     "sortorder": str(sort_ans), "assessment_value": "0", "scale_id": "0",
@@ -1862,6 +1893,7 @@ def generate_lss_from_customization(
                 final_code = _apply_run_suffix(q_code, run_num)
 
                 orig = source_q_data if source_q_data else q.get("originalData", {})
+                i18n_data = _get_i18n_from_source(q)
                 is_mandatory = q.get("mandatory", True)
 
                 # Apply toolOverrides if present
@@ -1937,11 +1969,11 @@ def generate_lss_from_customization(
                     add_row(questions_rows, q_data_row)
 
                     for lang in languages:
-                        desc = tool_ov.get("questionText") or get_text(orig.get("Description", q_code), lang)
+                        desc = tool_ov.get("questionText") or get_text(orig.get("Description", q_code), lang, i18n_data, f"{q_code}.Description")
                         if not desc:
                             desc = q.get("description", q_code)
                         desc = _apply_ls_styling(desc)
-                        h_text = tool_ov.get("helpText") or get_text(orig.get("Help", ""), lang)
+                        h_text = tool_ov.get("helpText") or get_text(orig.get("Help", ""), lang, i18n_data, f"{q_code}.Help")
                         add_row(question_l10ns_rows, {
                             "id": str(l10n_id_counter), "qid": qid,
                             "question": desc, "help": h_text, "language": lang, "sid": sid,
@@ -1949,11 +1981,11 @@ def generate_lss_from_customization(
                         l10n_id_counter += 1
                 else:
                     for lang in languages:
-                        desc = tool_ov.get("questionText") or get_text(orig.get("Description", q_code), lang)
+                        desc = tool_ov.get("questionText") or get_text(orig.get("Description", q_code), lang, i18n_data, f"{q_code}.Description")
                         if not desc:
                             desc = q.get("description", q_code)
                         desc = _apply_ls_styling(desc)
-                        h_text = tool_ov.get("helpText") or get_text(orig.get("Help", ""), lang)
+                        h_text = tool_ov.get("helpText") or get_text(orig.get("Help", ""), lang, i18n_data, f"{q_code}.Help")
                         q_data_row = {
                             "qid": qid, "parent_qid": "0", "sid": sid, "gid": gid,
                             "type": q_type, "title": final_code,
@@ -1992,7 +2024,7 @@ def generate_lss_from_customization(
                             add_row(answers_rows, ans_row)
 
                             for lang in languages:
-                                a_text = get_text(answer_text, lang)
+                                a_text = get_text(answer_text, lang, i18n_data, f"{q_code}.Levels.{code}")
                                 add_row(answer_l10ns_rows, {
                                     "id": str(l10n_id_counter), "qid": qid, "code": sanitized_code,
                                     "answer": a_text, "language": lang, "sid": sid,
@@ -2000,7 +2032,7 @@ def generate_lss_from_customization(
                                 l10n_id_counter += 1
                         else:
                             for lang in languages:
-                                a_text = get_text(answer_text, lang)
+                                a_text = get_text(answer_text, lang, i18n_data, f"{q_code}.Levels.{code}")
                                 ans_row = {
                                     "qid": qid, "code": sanitized_code,
                                     "sortorder": str(sort_ans), "assessment_value": "0", "scale_id": "0",
