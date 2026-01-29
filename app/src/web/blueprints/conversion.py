@@ -638,38 +638,39 @@ def api_survey_convert_preview():
         if validation_result is not None:
             response_data["validation"] = validation_result
 
-        # Match identified tasks against the global library
+        # Match identified tasks against the template library
         if result.tasks_included:
             try:
                 from src.converters.template_matcher import match_against_library
                 from src.converters.survey import _load_global_templates
 
                 global_templates = _load_global_templates()
-                if global_templates:
-                    template_matches = {}
-                    for task_name in result.tasks_included:
-                        # Load the task's template from the survey dir
-                        task_template_path = (
-                            effective_survey_dir / f"survey-{task_name}.json"
-                        )
-                        if task_template_path.exists():
-                            import json as _json
+                project_path = session.get("current_project_path")
+                template_matches = {}
+                for task_name in result.tasks_included:
+                    # Load the task's template from the survey dir
+                    task_template_path = (
+                        effective_survey_dir / f"survey-{task_name}.json"
+                    )
+                    if task_template_path.exists():
+                        import json as _json
 
-                            with open(
-                                task_template_path, "r", encoding="utf-8"
-                            ) as tf:
-                                task_json = _json.load(tf)
-                            match = match_against_library(
-                                task_json,
-                                global_templates,
-                                group_name=task_name,
-                            )
-                            template_matches[task_name] = (
-                                match.to_dict() if match else None
-                            )
-                        else:
-                            template_matches[task_name] = None
-                    response_data["template_matches"] = template_matches
+                        with open(
+                            task_template_path, "r", encoding="utf-8"
+                        ) as tf:
+                            task_json = _json.load(tf)
+                        match = match_against_library(
+                            task_json,
+                            global_templates,
+                            group_name=task_name,
+                            project_path=project_path,
+                        )
+                        template_matches[task_name] = (
+                            match.to_dict() if match else None
+                        )
+                    else:
+                        template_matches[task_name] = None
+                response_data["template_matches"] = template_matches
             except Exception:
                 pass  # Template matching is non-critical
 
