@@ -1614,6 +1614,30 @@ document.addEventListener('DOMContentLoaded', function() {
         container.classList.remove('d-none');
         document.getElementById('templateQuestionCount').textContent = `${data.question_count} questions`;
 
+        // Show template match info if available
+        const matchContainer = document.getElementById('templateSingleMatch');
+        if (matchContainer) matchContainer.remove();
+        const m = data.template_match;
+        if (m) {
+            const badgeClass = {exact: 'bg-success', high: 'bg-success', medium: 'bg-warning text-dark', low: 'bg-secondary'}[m.confidence] || 'bg-secondary';
+            const icon = {exact: 'fa-check-circle', high: 'fa-check', medium: 'fa-question-circle', low: 'fa-minus-circle'}[m.confidence] || 'fa-circle';
+            const actionLabel = {use_library: 'Use library template instead', review: 'Review differences', create_new: 'Create new template'}[m.suggested_action] || '';
+            const details = [];
+            if (m.overlap_count !== undefined) details.push(`${m.overlap_count}/${m.template_items} items match`);
+            if (m.levels_match === true) details.push('levels verified');
+            const matchDiv = document.createElement('div');
+            matchDiv.id = 'templateSingleMatch';
+            matchDiv.className = 'alert alert-info py-2 mt-2 mb-0';
+            matchDiv.innerHTML = `<i class="fas ${icon} me-1"></i><span class="badge ${badgeClass} me-2">${m.confidence}</span>Matches library template: <strong>${m.template_key}</strong> (${details.join(', ')})${actionLabel ? ` &mdash; <em>${actionLabel}</em>` : ''}`;
+            container.querySelector('.alert')?.after(matchDiv);
+        } else if (m === null) {
+            const matchDiv = document.createElement('div');
+            matchDiv.id = 'templateSingleMatch';
+            matchDiv.className = 'alert alert-light py-2 mt-2 mb-0 border';
+            matchDiv.innerHTML = '<i class="fas fa-plus-circle me-1"></i>No matching library template found &mdash; this will be a new template.';
+            container.querySelector('.alert')?.after(matchDiv);
+        }
+
         // Setup preview button
         const previewBtn = document.getElementById('templatePreviewBtn');
         const previewDiv = document.getElementById('templatePreview');
@@ -1655,6 +1679,57 @@ document.addEventListener('DOMContentLoaded', function() {
             for (const [name, info] of Object.entries(data.questionnaires || {})) {
                 const card = document.createElement('div');
                 card.className = 'col-md-4';
+
+                // Build template match badge if available
+                let matchHtml = '';
+                const m = info.template_match;
+                if (m) {
+                    const badgeClass = {
+                        exact: 'bg-success',
+                        high: 'bg-success',
+                        medium: 'bg-warning text-dark',
+                        low: 'bg-secondary'
+                    }[m.confidence] || 'bg-secondary';
+                    const icon = {
+                        exact: 'fa-check-circle',
+                        high: 'fa-check',
+                        medium: 'fa-question-circle',
+                        low: 'fa-minus-circle'
+                    }[m.confidence] || 'fa-circle';
+                    const details = [];
+                    if (m.overlap_count !== undefined) details.push(`${m.overlap_count}/${m.template_items} items`);
+                    if (m.levels_match === true) details.push('levels verified');
+                    if (m.runs_detected > 1) details.push(`${m.runs_detected} runs`);
+                    const detailStr = details.length ? details.join(', ') : '';
+                    const diffParts = [];
+                    if (m.only_in_import && m.only_in_import.length) diffParts.push(`+${m.only_in_import.length} extra`);
+                    if (m.only_in_library && m.only_in_library.length) diffParts.push(`${m.only_in_library.length} missing`);
+                    const diffHtml = diffParts.length
+                        ? `<small class="d-block text-muted" style="font-size:0.7rem">${diffParts.join(', ')}</small>`
+                        : '';
+                    // Show "Use Library" button for exact/high matches
+                    const useLibBtn = (m.suggested_action === 'use_library' || m.suggested_action === 'use_participants')
+                        ? `<button class="btn btn-sm btn-outline-primary use-library-btn mt-1" data-name="${name}" data-template-key="${m.template_key}" data-is-participants="${m.is_participants || false}"><i class="fas fa-book me-1"></i>Use library version</button>`
+                        : '';
+                    matchHtml = `
+                        <div class="mt-1 pt-1 border-top">
+                            <span class="badge ${badgeClass}" title="${detailStr}">
+                                <i class="fas ${icon} me-1"></i>${m.confidence} match: ${m.template_key}
+                            </span>
+                            ${diffHtml}
+                            ${useLibBtn}
+                        </div>
+                    `;
+                } else if (m === null) {
+                    matchHtml = `
+                        <div class="mt-1 pt-1 border-top">
+                            <span class="badge bg-light text-dark border">
+                                <i class="fas fa-plus-circle me-1"></i>No library match
+                            </span>
+                        </div>
+                    `;
+                }
+
                 card.innerHTML = `
                     <div class="card h-100">
                         <div class="card-body py-2">
@@ -1667,11 +1742,46 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <i class="fas fa-download"></i>
                                 </button>
                             </div>
+                            ${matchHtml}
                         </div>
                     </div>
                 `;
                 listEl.appendChild(card);
             }
+
+            // "Use Library" button handlers - swap generated template with library version
+            listEl.querySelectorAll('.use-library-btn').forEach(btn => {
+                btn.onclick = async () => {
+                    const groupName = btn.dataset.name;
+                    const templateKey = btn.dataset.templateKey;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+                    try {
+                        const resp = await fetch(`/api/library-template/${encodeURIComponent(templateKey)}`);
+                        const result = await resp.json();
+                        if (result.success && result.prism_json) {
+                            // Swap the template in the data object
+                            data.questionnaires[groupName].prism_json = result.prism_json;
+                            data.questionnaires[groupName].suggested_filename = result.filename;
+                            // Update the card visually
+                            const card = btn.closest('.card');
+                            const matchDiv = btn.closest('.border-top');
+                            matchDiv.innerHTML = `
+                                <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Using library: ${templateKey}</span>
+                                <small class="d-block text-muted mt-1">${result.filename}</small>
+                            `;
+                        } else {
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fas fa-book me-1"></i>Use library version';
+                            alert('Error: ' + (result.error || 'Failed to load library template'));
+                        }
+                    } catch (e) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-book me-1"></i>Use library version';
+                        alert('Error loading template: ' + e.message);
+                    }
+                };
+            });
 
             // Add download handlers
             listEl.querySelectorAll('.download-template-btn').forEach(btn => {
@@ -1691,7 +1801,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // Download all as ZIP
+        // Download all as ZIP (deduplicate runs of the same template)
         const downloadAllBtn = document.getElementById('templateDownloadAllBtn');
         if (downloadAllBtn) {
             downloadAllBtn.onclick = async () => {
@@ -1701,8 +1811,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 const zip = new JSZip();
+                const addedKeys = new Set();
                 for (const [name, info] of Object.entries(data.questionnaires || {})) {
-                    zip.file(info.suggested_filename || `survey-${name}.json`, JSON.stringify(info.prism_json, null, 2));
+                    const m = info.template_match;
+                    // Skip participants templates
+                    if (m && m.is_participants) continue;
+                    // Deduplicate runs: use library filename, skip if already added
+                    const filename = (m && m.template_path) ? m.template_path : (info.suggested_filename || `survey-${name}.json`);
+                    const dedupeKey = (m && m.template_key) ? m.template_key : filename;
+                    if (addedKeys.has(dedupeKey)) continue;
+                    addedKeys.add(dedupeKey);
+                    zip.file(filename, JSON.stringify(info.prism_json, null, 2));
                 }
                 const blob = await zip.generateAsync({ type: 'blob' });
                 const url = URL.createObjectURL(blob);
@@ -1815,13 +1934,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
         saveBtn.onclick = async () => {
             const templates = [];
+            const savedKeys = new Set();  // Deduplicate runs of same template
 
             if (mode === 'groups') {
                 for (const [name, info] of Object.entries(data.questionnaires || {})) {
-                    templates.push({
-                        filename: info.suggested_filename || `survey-${name}.json`,
-                        content: info.prism_json
-                    });
+                    const m = info.template_match;
+
+                    // Skip participants templates (handled separately)
+                    if (m && m.is_participants) continue;
+
+                    // Deduplicate: if multiple groups matched the same library
+                    // template (e.g. run1/run2/run3 of BRS), save only once
+                    // using the library filename
+                    if (m && m.template_key) {
+                        if (savedKeys.has(m.template_key)) continue;
+                        savedKeys.add(m.template_key);
+                        templates.push({
+                            filename: m.template_path || info.suggested_filename || `survey-${name}.json`,
+                            content: info.prism_json
+                        });
+                    } else {
+                        templates.push({
+                            filename: info.suggested_filename || `survey-${name}.json`,
+                            content: info.prism_json
+                        });
+                    }
                 }
             } else {
                 for (const [code, qData] of Object.entries(data.questions || {})) {
@@ -1832,6 +1969,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                     }
                 }
+            }
+
+            if (templates.length === 0) {
+                alert('No templates to save (all matched library templates or participants).');
+                return;
             }
 
             try {
@@ -1846,7 +1988,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const msgSpan = document.getElementById('templateSaveSuccessMessage');
                 if (result.success) {
                     successDiv?.classList.remove('d-none');
-                    msgSpan.textContent = `Saved ${result.saved_files?.length || templates.length} templates to project library!`;
+                    const skipped = Object.keys(data.questionnaires || {}).length - templates.length;
+                    let msg = `Saved ${result.saved_files?.length || templates.length} template(s) to ${result.library_path}`;
+                    if (skipped > 0) msg += ` (${skipped} duplicate run(s) skipped)`;
+                    msgSpan.textContent = msg;
                 } else {
                     alert('Error: ' + (result.error || 'Unknown error'));
                 }

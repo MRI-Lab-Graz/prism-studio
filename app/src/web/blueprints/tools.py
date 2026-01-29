@@ -2082,6 +2082,32 @@ def limesurvey_to_prism():
                     }
                     result["total_questions"] += q_count
 
+                # Match each group against the global library
+                try:
+                    from src.converters.template_matcher import (
+                        match_groups_against_library,
+                    )
+
+                    groups_for_matching = {
+                        name: data["prism_json"]
+                        for name, data in result["questionnaires"].items()
+                    }
+                    matches = match_groups_against_library(groups_for_matching)
+                    for name, match in matches.items():
+                        result["questionnaires"][name]["template_match"] = (
+                            match.to_dict() if match else None
+                        )
+                        if match:
+                            log(
+                                f"Library match: {name} → {match.template_key} "
+                                f"({match.confidence}, {match.overlap_count}/{match.template_items} items)",
+                                "info",
+                            )
+                        else:
+                            log(f"No library match for: {name}", "info")
+                except Exception as e:
+                    log(f"Template matching skipped: {e}", "warning")
+
                 log("Group template generation complete.", "success")
                 return jsonify(result)
 
@@ -2109,17 +2135,31 @@ def limesurvey_to_prism():
 
                 validate_template(combined_json, "Combined template")
                 safe_name = sanitize_task_name(task_name)
+
+                combined_result = {
+                    "success": True,
+                    "mode": "combined",
+                    "prism_json": combined_json,
+                    "suggested_filename": f"survey-{safe_name}.json",
+                    "question_count": total_q,
+                    "log": logs,
+                }
+
+                # Match combined template against the global library
+                try:
+                    from src.converters.template_matcher import (
+                        match_against_library,
+                    )
+
+                    match = match_against_library(combined_json)
+                    combined_result["template_match"] = (
+                        match.to_dict() if match else None
+                    )
+                except Exception as e:
+                    log(f"Template matching skipped: {e}", "warning")
+
                 log("Combined template generation complete.", "success")
-                return jsonify(
-                    {
-                        "success": True,
-                        "mode": "combined",
-                        "prism_json": combined_json,
-                        "suggested_filename": f"survey-{safe_name}.json",
-                        "question_count": total_q,
-                        "log": logs,
-                    }
-                )
+                return jsonify(combined_result)
 
         # Branch 2: LimeSurvey
         log("Detected LimeSurvey source. Parsing XML structure...", "info")
@@ -2270,6 +2310,32 @@ def limesurvey_to_prism():
                 }
                 result["total_questions"] += q_count
 
+            # Match each group against the global library
+            try:
+                from src.converters.template_matcher import (
+                    match_groups_against_library,
+                )
+
+                groups_for_matching = {
+                    name: data["prism_json"]
+                    for name, data in result["questionnaires"].items()
+                }
+                matches = match_groups_against_library(groups_for_matching)
+                for name, match in matches.items():
+                    result["questionnaires"][name]["template_match"] = (
+                        match.to_dict() if match else None
+                    )
+                    if match:
+                        log(
+                            f"Library match: {name} → {match.template_key} "
+                            f"({match.confidence}, {match.overlap_count}/{match.template_items} items)",
+                            "info",
+                        )
+                    else:
+                        log(f"No library match for: {name}", "info")
+            except Exception as e:
+                log(f"Template matching skipped: {e}", "warning")
+
             log("Group template generation complete.", "success")
             return jsonify(result)
 
@@ -2290,35 +2356,76 @@ def limesurvey_to_prism():
             safe_name = sanitize_task_name(task_name)
             suggested_filename = f"survey-{safe_name}.json"
 
-            log("Combined template generation complete.", "success")
-            return jsonify(
-                {
-                    "success": True,
-                    "mode": "combined",
-                    "prism_json": prism_data,
-                    "suggested_filename": suggested_filename,
-                    "question_count": len(
-                        [
-                            k
-                            for k in prism_data.keys()
-                            if k
-                            not in [
-                                "Technical",
-                                "Study",
-                                "Metadata",
-                                "I18n",
-                                "Scoring",
-                                "Normative",
-                            ]
+            combined_result = {
+                "success": True,
+                "mode": "combined",
+                "prism_json": prism_data,
+                "suggested_filename": suggested_filename,
+                "question_count": len(
+                    [
+                        k
+                        for k in prism_data.keys()
+                        if k
+                        not in [
+                            "Technical",
+                            "Study",
+                            "Metadata",
+                            "I18n",
+                            "Scoring",
+                            "Normative",
                         ]
-                    ),
-                    "log": logs,
-                }
-            )
+                    ]
+                ),
+                "log": logs,
+            }
+
+            # Match combined template against the global library
+            try:
+                from src.converters.template_matcher import (
+                    match_against_library,
+                )
+
+                match = match_against_library(
+                    prism_data, group_name=task_name
+                )
+                combined_result["template_match"] = (
+                    match.to_dict() if match else None
+                )
+            except Exception as e:
+                log(f"Template matching skipped: {e}", "warning")
+
+            log("Combined template generation complete.", "success")
+            return jsonify(combined_result)
 
     except Exception as e:
         log(f"Critical error: {str(e)}", "error")
         return jsonify({"error": str(e), "log": logs}), 500
+
+
+@tools_bp.route("/api/library-template/<template_key>", methods=["GET"])
+def get_library_template(template_key):
+    """Fetch a global library template by its key (task name).
+
+    Returns the full template JSON so the frontend can swap a generated
+    template with the official library version.
+    """
+    try:
+        from src.converters.survey import _load_global_templates
+
+        templates = _load_global_templates()
+        key = template_key.lower().strip()
+        if key not in templates:
+            return jsonify({"error": f"Template '{template_key}' not found in library"}), 404
+
+        tdata = templates[key]
+        return jsonify({
+            "success": True,
+            "template_key": key,
+            "filename": tdata["path"].name,
+            "prism_json": tdata["json"],
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @tools_bp.route("/api/limesurvey-save-to-project", methods=["POST"])
