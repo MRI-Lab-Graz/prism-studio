@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Perceived Stress Scale (PSS)",
-      "de": "Perceived Stress Scale (PSS)"
+      "en": "Perceived Stress Scale (PSS)"
     },
     "Abbreviation": "PSS",
     "Authors": [
@@ -29,204 +28,162 @@
   },
   "PSS01": {
     "Description": {
-      "en": "In the last month, how often have you been upset because of something that happened unexpectedly?",
-      "de": "In the last month, how often have you been upset because of something that happened unexpectedly?"
+      "en": "In the last month, how often have you been upset because of something that happened unexpectedly?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} almost never",
-        "de": "{score=1} almost never"
+        "en": "{score=1} almost never"
       },
       "2": {
-        "en": "{score=2} sometimes",
-        "de": "{score=2} sometimes"
+        "en": "{score=2} sometimes"
       },
       "3": {
-        "en": "{score=3} fairly often",
-        "de": "{score=3} fairly often"
+        "en": "{score=3} fairly often"
       },
       "4": {
-        "en": "{score=4} very often",
-        "de": "{score=4} very often"
+        "en": "{score=4} very often"
       }
     }
   },
   "PSS02": {
     "Description": {
-      "en": "In the last month, how often have you felt that you were unable to control the important things in your life?",
-      "de": "In the last month, how often have you felt that you were unable to control the important things in your life?"
+      "en": "In the last month, how often have you felt that you were unable to control the important things in your life?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} almost never",
-        "de": "{score=1} almost never"
+        "en": "{score=1} almost never"
       },
       "2": {
-        "en": "{score=2} sometimes",
-        "de": "{score=2} sometimes"
+        "en": "{score=2} sometimes"
       },
       "3": {
-        "en": "{score=3} fairly often",
-        "de": "{score=3} fairly often"
+        "en": "{score=3} fairly often"
       },
       "4": {
-        "en": "{score=4} very often",
-        "de": "{score=4} very often"
+        "en": "{score=4} very often"
       }
     }
   },
   "PSS03": {
     "Description": {
-      "en": "In the last month, how often have you felt nervous and \"stressed\"?",
-      "de": "In the last month, how often have you felt nervous and \"stressed\"?"
+      "en": "In the last month, how often have you felt nervous and \"stressed\"?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} almost never",
-        "de": "{score=1} almost never"
+        "en": "{score=1} almost never"
       },
       "2": {
-        "en": "{score=2} sometimes",
-        "de": "{score=2} sometimes"
+        "en": "{score=2} sometimes"
       },
       "3": {
-        "en": "{score=3} fairly often",
-        "de": "{score=3} fairly often"
+        "en": "{score=3} fairly often"
       },
       "4": {
-        "en": "{score=4} very often",
-        "de": "{score=4} very often"
+        "en": "{score=4} very often"
       }
     }
   },
   "PSS04": {
     "Description": {
-      "en": "In the last month, how often have you found that you could not cope with all the things that you had to do?",
-      "de": "In the last month, how often have you found that you could not cope with all the things that you had to do?"
+      "en": "In the last month, how often have you found that you could not cope with all the things that you had to do?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} almost never",
-        "de": "{score=1} almost never"
+        "en": "{score=1} almost never"
       },
       "2": {
-        "en": "{score=2} sometimes",
-        "de": "{score=2} sometimes"
+        "en": "{score=2} sometimes"
       },
       "3": {
-        "en": "{score=3} fairly often",
-        "de": "{score=3} fairly often"
+        "en": "{score=3} fairly often"
       },
       "4": {
-        "en": "{score=4} very often",
-        "de": "{score=4} very often"
+        "en": "{score=4} very often"
       }
     }
   },
   "PSS05": {
     "Description": {
-      "en": "In the last month, how often have you been angered because of things that happened that were outside of your control?",
-      "de": "In the last month, how often have you been angered because of things that happened that were outside of your control?"
+      "en": "In the last month, how often have you been angered because of things that happened that were outside of your control?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} almost never",
-        "de": "{score=1} almost never"
+        "en": "{score=1} almost never"
       },
       "2": {
-        "en": "{score=2} sometimes",
-        "de": "{score=2} sometimes"
+        "en": "{score=2} sometimes"
       },
       "3": {
-        "en": "{score=3} fairly often",
-        "de": "{score=3} fairly often"
+        "en": "{score=3} fairly often"
       },
       "4": {
-        "en": "{score=4} very often",
-        "de": "{score=4} very often"
+        "en": "{score=4} very often"
       }
     }
   },
   "PSS06": {
     "Description": {
-      "en": "In the last month, how often have you found yourself thinking about things that you have to accomplish?",
-      "de": "In the last month, how often have you found yourself thinking about things that you have to accomplish?"
+      "en": "In the last month, how often have you found yourself thinking about things that you have to accomplish?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} almost never",
-        "de": "{score=1} almost never"
+        "en": "{score=1} almost never"
       },
       "2": {
-        "en": "{score=2} sometimes",
-        "de": "{score=2} sometimes"
+        "en": "{score=2} sometimes"
       },
       "3": {
-        "en": "{score=3} fairly often",
-        "de": "{score=3} fairly often"
+        "en": "{score=3} fairly often"
       },
       "4": {
-        "en": "{score=4} very often",
-        "de": "{score=4} very often"
+        "en": "{score=4} very often"
       }
     }
   },
   "PSS07": {
     "Description": {
-      "en": "In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?",
-      "de": "In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?"
+      "en": "In the last month, how often have you felt difficulties were piling up so high that you could not overcome them?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} almost never",
-        "de": "{score=1} almost never"
+        "en": "{score=1} almost never"
       },
       "2": {
-        "en": "{score=2} sometimes",
-        "de": "{score=2} sometimes"
+        "en": "{score=2} sometimes"
       },
       "3": {
-        "en": "{score=3} fairly often",
-        "de": "{score=3} fairly often"
+        "en": "{score=3} fairly often"
       },
       "4": {
-        "en": "{score=4} very often",
-        "de": "{score=4} very often"
+        "en": "{score=4} very often"
       }
     }
   }

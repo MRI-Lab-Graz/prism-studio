@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Hypoglycemia Symptoms Checklist (HSC-7)",
-      "de": "Hypoglycemia Symptoms Checklist (HSC-7)"
+      "en": "Hypoglycemia Symptoms Checklist (HSC-7)"
     },
     "Abbreviation": "HSC7",
     "Authors": [
@@ -28,176 +27,141 @@
   },
   "HSC701": {
     "Description": {
-      "en": "Clumsy",
-      "de": "Clumsy"
+      "en": "Clumsy"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Not at all",
-        "de": "Not at all"
+        "en": "Not at all"
       },
       "1": {
-        "en": "A little",
-        "de": "A little"
+        "en": "A little"
       },
       "2": {
-        "en": "Fairly",
-        "de": "Fairly"
+        "en": "Fairly"
       },
       "3": {
-        "en": "Very",
-        "de": "Very"
+        "en": "Very"
       }
     }
   },
   "HSC702": {
     "Description": {
-      "en": "Confused",
-      "de": "Confused"
+      "en": "Confused"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Not at all",
-        "de": "Not at all"
+        "en": "Not at all"
       },
       "1": {
-        "en": "A little",
-        "de": "A little"
+        "en": "A little"
       },
       "2": {
-        "en": "Fairly",
-        "de": "Fairly"
+        "en": "Fairly"
       },
       "3": {
-        "en": "Very",
-        "de": "Very"
+        "en": "Very"
       }
     }
   },
   "HSC703": {
     "Description": {
-      "en": "Difficulty in speaking",
-      "de": "Difficulty in speaking"
+      "en": "Difficulty in speaking"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Not at all",
-        "de": "Not at all"
+        "en": "Not at all"
       },
       "1": {
-        "en": "A little",
-        "de": "A little"
+        "en": "A little"
       },
       "2": {
-        "en": "Fairly",
-        "de": "Fairly"
+        "en": "Fairly"
       },
       "3": {
-        "en": "Very",
-        "de": "Very"
+        "en": "Very"
       }
     }
   },
   "HSC704": {
     "Description": {
-      "en": "Weak",
-      "de": "Weak"
+      "en": "Weak"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Not at all",
-        "de": "Not at all"
+        "en": "Not at all"
       },
       "1": {
-        "en": "A little",
-        "de": "A little"
+        "en": "A little"
       },
       "2": {
-        "en": "Fairly",
-        "de": "Fairly"
+        "en": "Fairly"
       },
       "3": {
-        "en": "Very",
-        "de": "Very"
+        "en": "Very"
       }
     }
   },
   "HSC705": {
     "Description": {
-      "en": "Heart beating",
-      "de": "Heart beating"
+      "en": "Heart beating"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Not at all",
-        "de": "Not at all"
+        "en": "Not at all"
       },
       "1": {
-        "en": "A little",
-        "de": "A little"
+        "en": "A little"
       },
       "2": {
-        "en": "Fairly",
-        "de": "Fairly"
+        "en": "Fairly"
       },
       "3": {
-        "en": "Very",
-        "de": "Very"
+        "en": "Very"
       }
     }
   },
   "HSC706": {
     "Description": {
-      "en": "Shivering",
-      "de": "Shivering"
+      "en": "Shivering"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Not at all",
-        "de": "Not at all"
+        "en": "Not at all"
       },
       "1": {
-        "en": "A little",
-        "de": "A little"
+        "en": "A little"
       },
       "2": {
-        "en": "Fairly",
-        "de": "Fairly"
+        "en": "Fairly"
       },
       "3": {
-        "en": "Very",
-        "de": "Very"
+        "en": "Very"
       }
     }
   },
   "HSC707": {
     "Description": {
-      "en": "Sweating",
-      "de": "Sweating"
+      "en": "Sweating"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Not at all",
-        "de": "Not at all"
+        "en": "Not at all"
       },
       "1": {
-        "en": "A little",
-        "de": "A little"
+        "en": "A little"
       },
       "2": {
-        "en": "Fairly",
-        "de": "Fairly"
+        "en": "Fairly"
       },
       "3": {
-        "en": "Very",
-        "de": "Very"
+        "en": "Very"
       }
     }
   }

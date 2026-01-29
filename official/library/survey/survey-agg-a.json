@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Aggressive behavior scale (for adolescents)",
-      "de": "Aggressive behavior scale (for adolescents)"
+      "en": "Aggressive behavior scale (for adolescents)"
     },
     "Abbreviation": "AGG-A",
     "Authors": [
@@ -27,408 +26,320 @@
   },
   "AGG-A01": {
     "Description": {
-      "en": "I teased students to make them angry.",
-      "de": "I teased students to make them angry."
+      "en": "I teased students to make them angry."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} 1 time",
-        "de": "{score=1} 1 time"
+        "en": "{score=1} 1 time"
       },
       "2": {
-        "en": "{score=2} 2 times",
-        "de": "{score=2} 2 times"
+        "en": "{score=2} 2 times"
       },
       "3": {
-        "en": "{score=3} 3 times",
-        "de": "{score=3} 3 times"
+        "en": "{score=3} 3 times"
       },
       "4": {
-        "en": "{score=4} 4 times",
-        "de": "{score=4} 4 times"
+        "en": "{score=4} 4 times"
       },
       "5": {
-        "en": "{score=5} 5 times",
-        "de": "{score=5} 5 times"
+        "en": "{score=5} 5 times"
       },
       "6": {
-        "en": "{score=6} 6 times or more",
-        "de": "{score=6} 6 times or more"
+        "en": "{score=6} 6 times or more"
       }
     }
   },
   "AGG-A02": {
     "Description": {
-      "en": "I got angry very easily with someone.",
-      "de": "I got angry very easily with someone."
+      "en": "I got angry very easily with someone."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} 1 time",
-        "de": "{score=1} 1 time"
+        "en": "{score=1} 1 time"
       },
       "2": {
-        "en": "{score=2} 2 times",
-        "de": "{score=2} 2 times"
+        "en": "{score=2} 2 times"
       },
       "3": {
-        "en": "{score=3} 3 times",
-        "de": "{score=3} 3 times"
+        "en": "{score=3} 3 times"
       },
       "4": {
-        "en": "{score=4} 4 times",
-        "de": "{score=4} 4 times"
+        "en": "{score=4} 4 times"
       },
       "5": {
-        "en": "{score=5} 5 times",
-        "de": "{score=5} 5 times"
+        "en": "{score=5} 5 times"
       },
       "6": {
-        "en": "{score=6} 6 times or more",
-        "de": "{score=6} 6 times or more"
+        "en": "{score=6} 6 times or more"
       }
     }
   },
   "AGG-A03": {
     "Description": {
-      "en": "I fought back when someone hit me first.",
-      "de": "I fought back when someone hit me first."
+      "en": "I fought back when someone hit me first."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} 1 time",
-        "de": "{score=1} 1 time"
+        "en": "{score=1} 1 time"
       },
       "2": {
-        "en": "{score=2} 2 times",
-        "de": "{score=2} 2 times"
+        "en": "{score=2} 2 times"
       },
       "3": {
-        "en": "{score=3} 3 times",
-        "de": "{score=3} 3 times"
+        "en": "{score=3} 3 times"
       },
       "4": {
-        "en": "{score=4} 4 times",
-        "de": "{score=4} 4 times"
+        "en": "{score=4} 4 times"
       },
       "5": {
-        "en": "{score=5} 5 times",
-        "de": "{score=5} 5 times"
+        "en": "{score=5} 5 times"
       },
       "6": {
-        "en": "{score=6} 6 times or more",
-        "de": "{score=6} 6 times or more"
+        "en": "{score=6} 6 times or more"
       }
     }
   },
   "AGG-A04": {
     "Description": {
-      "en": "I said things about other kids to make other students laugh.",
-      "de": "I said things about other kids to make other students laugh."
+      "en": "I said things about other kids to make other students laugh."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} 1 time",
-        "de": "{score=1} 1 time"
+        "en": "{score=1} 1 time"
       },
       "2": {
-        "en": "{score=2} 2 times",
-        "de": "{score=2} 2 times"
+        "en": "{score=2} 2 times"
       },
       "3": {
-        "en": "{score=3} 3 times",
-        "de": "{score=3} 3 times"
+        "en": "{score=3} 3 times"
       },
       "4": {
-        "en": "{score=4} 4 times",
-        "de": "{score=4} 4 times"
+        "en": "{score=4} 4 times"
       },
       "5": {
-        "en": "{score=5} 5 times",
-        "de": "{score=5} 5 times"
+        "en": "{score=5} 5 times"
       },
       "6": {
-        "en": "{score=6} 6 times or more",
-        "de": "{score=6} 6 times or more"
+        "en": "{score=6} 6 times or more"
       }
     }
   },
   "AGG-A05": {
     "Description": {
-      "en": "I encouraged other students to fight.",
-      "de": "I encouraged other students to fight."
+      "en": "I encouraged other students to fight."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} 1 time",
-        "de": "{score=1} 1 time"
+        "en": "{score=1} 1 time"
       },
       "2": {
-        "en": "{score=2} 2 times",
-        "de": "{score=2} 2 times"
+        "en": "{score=2} 2 times"
       },
       "3": {
-        "en": "{score=3} 3 times",
-        "de": "{score=3} 3 times"
+        "en": "{score=3} 3 times"
       },
       "4": {
-        "en": "{score=4} 4 times",
-        "de": "{score=4} 4 times"
+        "en": "{score=4} 4 times"
       },
       "5": {
-        "en": "{score=5} 5 times",
-        "de": "{score=5} 5 times"
+        "en": "{score=5} 5 times"
       },
       "6": {
-        "en": "{score=6} 6 times or more",
-        "de": "{score=6} 6 times or more"
+        "en": "{score=6} 6 times or more"
       }
     }
   },
   "AGG-A06": {
     "Description": {
-      "en": "I pushed or shoved other students.",
-      "de": "I pushed or shoved other students."
+      "en": "I pushed or shoved other students."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} 1 time",
-        "de": "{score=1} 1 time"
+        "en": "{score=1} 1 time"
       },
       "2": {
-        "en": "{score=2} 2 times",
-        "de": "{score=2} 2 times"
+        "en": "{score=2} 2 times"
       },
       "3": {
-        "en": "{score=3} 3 times",
-        "de": "{score=3} 3 times"
+        "en": "{score=3} 3 times"
       },
       "4": {
-        "en": "{score=4} 4 times",
-        "de": "{score=4} 4 times"
+        "en": "{score=4} 4 times"
       },
       "5": {
-        "en": "{score=5} 5 times",
-        "de": "{score=5} 5 times"
+        "en": "{score=5} 5 times"
       },
       "6": {
-        "en": "{score=6} 6 times or more",
-        "de": "{score=6} 6 times or more"
+        "en": "{score=6} 6 times or more"
       }
     }
   },
   "AGG-A07": {
     "Description": {
-      "en": "I was angry most of the day.",
-      "de": "I was angry most of the day."
+      "en": "I was angry most of the day."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} 1 time",
-        "de": "{score=1} 1 time"
+        "en": "{score=1} 1 time"
       },
       "2": {
-        "en": "{score=2} 2 times",
-        "de": "{score=2} 2 times"
+        "en": "{score=2} 2 times"
       },
       "3": {
-        "en": "{score=3} 3 times",
-        "de": "{score=3} 3 times"
+        "en": "{score=3} 3 times"
       },
       "4": {
-        "en": "{score=4} 4 times",
-        "de": "{score=4} 4 times"
+        "en": "{score=4} 4 times"
       },
       "5": {
-        "en": "{score=5} 5 times",
-        "de": "{score=5} 5 times"
+        "en": "{score=5} 5 times"
       },
       "6": {
-        "en": "{score=6} 6 times or more",
-        "de": "{score=6} 6 times or more"
+        "en": "{score=6} 6 times or more"
       }
     }
   },
   "AGG-A08": {
     "Description": {
-      "en": "I got into a physical fight because I was angry.",
-      "de": "I got into a physical fight because I was angry."
+      "en": "I got into a physical fight because I was angry."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} 1 time",
-        "de": "{score=1} 1 time"
+        "en": "{score=1} 1 time"
       },
       "2": {
-        "en": "{score=2} 2 times",
-        "de": "{score=2} 2 times"
+        "en": "{score=2} 2 times"
       },
       "3": {
-        "en": "{score=3} 3 times",
-        "de": "{score=3} 3 times"
+        "en": "{score=3} 3 times"
       },
       "4": {
-        "en": "{score=4} 4 times",
-        "de": "{score=4} 4 times"
+        "en": "{score=4} 4 times"
       },
       "5": {
-        "en": "{score=5} 5 times",
-        "de": "{score=5} 5 times"
+        "en": "{score=5} 5 times"
       },
       "6": {
-        "en": "{score=6} 6 times or more",
-        "de": "{score=6} 6 times or more"
+        "en": "{score=6} 6 times or more"
       }
     }
   },
   "AGG-A09": {
     "Description": {
-      "en": "I slapped or kicked someone.",
-      "de": "I slapped or kicked someone."
+      "en": "I slapped or kicked someone."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} 1 time",
-        "de": "{score=1} 1 time"
+        "en": "{score=1} 1 time"
       },
       "2": {
-        "en": "{score=2} 2 times",
-        "de": "{score=2} 2 times"
+        "en": "{score=2} 2 times"
       },
       "3": {
-        "en": "{score=3} 3 times",
-        "de": "{score=3} 3 times"
+        "en": "{score=3} 3 times"
       },
       "4": {
-        "en": "{score=4} 4 times",
-        "de": "{score=4} 4 times"
+        "en": "{score=4} 4 times"
       },
       "5": {
-        "en": "{score=5} 5 times",
-        "de": "{score=5} 5 times"
+        "en": "{score=5} 5 times"
       },
       "6": {
-        "en": "{score=6} 6 times or more",
-        "de": "{score=6} 6 times or more"
+        "en": "{score=6} 6 times or more"
       }
     }
   },
   "AGG-A10": {
     "Description": {
-      "en": "I called other students bad names.",
-      "de": "I called other students bad names."
+      "en": "I called other students bad names."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} 1 time",
-        "de": "{score=1} 1 time"
+        "en": "{score=1} 1 time"
       },
       "2": {
-        "en": "{score=2} 2 times",
-        "de": "{score=2} 2 times"
+        "en": "{score=2} 2 times"
       },
       "3": {
-        "en": "{score=3} 3 times",
-        "de": "{score=3} 3 times"
+        "en": "{score=3} 3 times"
       },
       "4": {
-        "en": "{score=4} 4 times",
-        "de": "{score=4} 4 times"
+        "en": "{score=4} 4 times"
       },
       "5": {
-        "en": "{score=5} 5 times",
-        "de": "{score=5} 5 times"
+        "en": "{score=5} 5 times"
       },
       "6": {
-        "en": "{score=6} 6 times or more",
-        "de": "{score=6} 6 times or more"
+        "en": "{score=6} 6 times or more"
       }
     }
   },
   "AGG-A11": {
     "Description": {
-      "en": "I threatened to hurt or to hit someone.",
-      "de": "I threatened to hurt or to hit someone."
+      "en": "I threatened to hurt or to hit someone."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} never",
-        "de": "{score=0} never"
+        "en": "{score=0} never"
       },
       "1": {
-        "en": "{score=1} 1 time",
-        "de": "{score=1} 1 time"
+        "en": "{score=1} 1 time"
       },
       "2": {
-        "en": "{score=2} 2 times",
-        "de": "{score=2} 2 times"
+        "en": "{score=2} 2 times"
       },
       "3": {
-        "en": "{score=3} 3 times",
-        "de": "{score=3} 3 times"
+        "en": "{score=3} 3 times"
       },
       "4": {
-        "en": "{score=4} 4 times",
-        "de": "{score=4} 4 times"
+        "en": "{score=4} 4 times"
       },
       "5": {
-        "en": "{score=5} 5 times",
-        "de": "{score=5} 5 times"
+        "en": "{score=5} 5 times"
       },
       "6": {
-        "en": "{score=6} 6 times or more",
-        "de": "{score=6} 6 times or more"
+        "en": "{score=6} 6 times or more"
       }
     }
   }

@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "ZuckermanâKuhlman Personality Questionnaire (Shortened, ZKPQ-50-CC)",
-      "de": "ZuckermanâKuhlman Personality Questionnaire (Shortened, ZKPQ-50-CC)"
+      "en": "ZuckermanâKuhlman Personality Questionnaire (Shortened, ZKPQ-50-CC)"
     },
     "Abbreviation": "ZKPQ",
     "Authors": [
@@ -35,647 +34,533 @@
   },
   "ZKPQ01": {
     "Description": {
-      "en": "I do not like to waste time just sitting around and relaxing.",
-      "de": "I do not like to waste time just sitting around and relaxing."
+      "en": "I do not like to waste time just sitting around and relaxing."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ02": {
     "Description": {
-      "en": "I lead a busier life than most people.",
-      "de": "I lead a busier life than most people."
+      "en": "I lead a busier life than most people."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ03": {
     "Description": {
-      "en": "I like to be doing things all of the time.",
-      "de": "I like to be doing things all of the time."
+      "en": "I like to be doing things all of the time."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ04": {
     "Description": {
-      "en": "When on vacation I like to engage in active sports rather than just lie around.",
-      "de": "When on vacation I like to engage in active sports rather than just lie around."
+      "en": "When on vacation I like to engage in active sports rather than just lie around."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ05": {
     "Description": {
-      "en": "I like to wear myself out with hard work or exercise.",
-      "de": "I like to wear myself out with hard work or exercise."
+      "en": "I like to wear myself out with hard work or exercise."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ06": {
     "Description": {
-      "en": "I like to be active as soon as I wake up in the morning.",
-      "de": "I like to be active as soon as I wake up in the morning."
+      "en": "I like to be active as soon as I wake up in the morning."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ07": {
     "Description": {
-      "en": "I like to keep busy all the time.",
-      "de": "I like to keep busy all the time."
+      "en": "I like to keep busy all the time."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ08": {
     "Description": {
-      "en": "When I do things, I do them with lots of energy.",
-      "de": "When I do things, I do them with lots of energy."
+      "en": "When I do things, I do them with lots of energy."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ09": {
     "Description": {
-      "en": "When I get mad, I say ugly things.",
-      "de": "When I get mad, I say ugly things."
+      "en": "When I get mad, I say ugly things."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ10": {
     "Description": {
-      "en": "It's natural for me to curse when I am mad.",
-      "de": "It's natural for me to curse when I am mad."
+      "en": "It's natural for me to curse when I am mad."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ11": {
     "Description": {
-      "en": "If people annoy me I do not hesitate to tell them so.",
-      "de": "If people annoy me I do not hesitate to tell them so."
+      "en": "If people annoy me I do not hesitate to tell them so."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ12": {
     "Description": {
-      "en": "When people disagree with me I cannot help getting into an argument with them.",
-      "de": "When people disagree with me I cannot help getting into an argument with them."
+      "en": "When people disagree with me I cannot help getting into an argument with them."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ13": {
     "Description": {
-      "en": "I have a very strong temper.",
-      "de": "I have a very strong temper."
+      "en": "I have a very strong temper."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ14": {
     "Description": {
-      "en": "I can't help being a little rude to people I do not like.",
-      "de": "I can't help being a little rude to people I do not like."
+      "en": "I can't help being a little rude to people I do not like."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ15": {
     "Description": {
-      "en": "When people shout at me, I shout back.",
-      "de": "When people shout at me, I shout back."
+      "en": "When people shout at me, I shout back."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ16": {
     "Description": {
-      "en": "I often do things on impulse.",
-      "de": "I often do things on impulse."
+      "en": "I often do things on impulse."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ17": {
     "Description": {
-      "en": "I would like to take off on a trip with no preplanned or definite routes or timetables.",
-      "de": "I would like to take off on a trip with no preplanned or definite routes or timetables."
+      "en": "I would like to take off on a trip with no preplanned or definite routes or timetables."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ18": {
     "Description": {
-      "en": "I enjoy getting into new situations where you can't predict how things will turn out.",
-      "de": "I enjoy getting into new situations where you can't predict how things will turn out."
+      "en": "I enjoy getting into new situations where you can't predict how things will turn out."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ19": {
     "Description": {
-      "en": "I sometimes like to do things that are a little frightening.",
-      "de": "I sometimes like to do things that are a little frightening."
+      "en": "I sometimes like to do things that are a little frightening."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ20": {
     "Description": {
-      "en": "I'll try anything once.",
-      "de": "I'll try anything once."
+      "en": "I'll try anything once."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ21": {
     "Description": {
-      "en": "I would like the kind of life where one is on the move and travelling a lot, with lots of change and excitement.",
-      "de": "I would like the kind of life where one is on the move and travelling a lot, with lots of change and excitement."
+      "en": "I would like the kind of life where one is on the move and travelling a lot, with lots of change and excitement."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ22": {
     "Description": {
-      "en": "I sometimes do \"crazy\" things just for fun.",
-      "de": "I sometimes do \"crazy\" things just for fun."
+      "en": "I sometimes do \"crazy\" things just for fun."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ23": {
     "Description": {
-      "en": "I prefer friends who are excitingly unpredictable.",
-      "de": "I prefer friends who are excitingly unpredictable."
+      "en": "I prefer friends who are excitingly unpredictable."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ24": {
     "Description": {
-      "en": "I often get so carried away by new and exciting things and ideas that I never think of possible complications.",
-      "de": "I often get so carried away by new and exciting things and ideas that I never think of possible complications."
+      "en": "I often get so carried away by new and exciting things and ideas that I never think of possible complications."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ25": {
     "Description": {
-      "en": "I like \"wild\" uninhibited parties.",
-      "de": "I like \"wild\" uninhibited parties."
+      "en": "I like \"wild\" uninhibited parties."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ26": {
     "Description": {
-      "en": "My body often feels all tightened up for no apparent reason.",
-      "de": "My body often feels all tightened up for no apparent reason."
+      "en": "My body often feels all tightened up for no apparent reason."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ27": {
     "Description": {
-      "en": "I frequently get emotionally upset.",
-      "de": "I frequently get emotionally upset."
+      "en": "I frequently get emotionally upset."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ28": {
     "Description": {
-      "en": "I tend to be oversensitive and easily hurt by thoughtless remarks and actions of others.",
-      "de": "I tend to be oversensitive and easily hurt by thoughtless remarks and actions of others."
+      "en": "I tend to be oversensitive and easily hurt by thoughtless remarks and actions of others."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ29": {
     "Description": {
-      "en": "I am easily frightened.",
-      "de": "I am easily frightened."
+      "en": "I am easily frightened."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ30": {
     "Description": {
-      "en": "I sometimes feel panicky.",
-      "de": "I sometimes feel panicky."
+      "en": "I sometimes feel panicky."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ31": {
     "Description": {
-      "en": "I often feel unsure of myself.",
-      "de": "I often feel unsure of myself."
+      "en": "I often feel unsure of myself."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ32": {
     "Description": {
-      "en": "I often worry about things that other people think are unimportant.",
-      "de": "I often worry about things that other people think are unimportant."
+      "en": "I often worry about things that other people think are unimportant."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ33": {
     "Description": {
-      "en": "I often feel like crying sometimes without a reason.",
-      "de": "I often feel like crying sometimes without a reason."
+      "en": "I often feel like crying sometimes without a reason."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ34": {
     "Description": {
-      "en": "I often feel uncomfortable and ill at ease for no real reason.",
-      "de": "I often feel uncomfortable and ill at ease for no real reason."
+      "en": "I often feel uncomfortable and ill at ease for no real reason."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ35": {
     "Description": {
-      "en": "I spend as much time with my friends as I can.",
-      "de": "I spend as much time with my friends as I can."
+      "en": "I spend as much time with my friends as I can."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ36": {
     "Description": {
-      "en": "At parties, I enjoy mingling with many people whether I already know them or not.",
-      "de": "At parties, I enjoy mingling with many people whether I already know them or not."
+      "en": "At parties, I enjoy mingling with many people whether I already know them or not."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ37": {
     "Description": {
-      "en": "I am a very sociable person.",
-      "de": "I am a very sociable person."
+      "en": "I am a very sociable person."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   },
   "ZKPQ38": {
     "Description": {
-      "en": "I probably spend more time than I should socializing with friends.",
-      "de": "I probably spend more time than I should socializing with friends."
+      "en": "I probably spend more time than I should socializing with friends."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} True",
-        "de": "{score=1} True"
+        "en": "{score=1} True"
       },
       "1": {
-        "en": "{score=0} False",
-        "de": "{score=0} False"
+        "en": "{score=0} False"
       }
     }
   }

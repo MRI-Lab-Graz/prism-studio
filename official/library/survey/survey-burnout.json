@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Teacher burnout",
-      "de": "Teacher burnout"
+      "en": "Teacher burnout"
     },
     "Abbreviation": "BURNOUT",
     "Authors": [
@@ -25,581 +24,461 @@
   },
   "BURNOUT01": {
     "Description": {
-      "en": "I am bored with my job.",
-      "de": "I am bored with my job."
+      "en": "I am bored with my job."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT02": {
     "Description": {
-      "en": "I am tired of my students.",
-      "de": "I am tired of my students."
+      "en": "I am tired of my students."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT03": {
     "Description": {
-      "en": "I am weary with all of my job responsibilities.",
-      "de": "I am weary with all of my job responsibilities."
+      "en": "I am weary with all of my job responsibilities."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT04": {
     "Description": {
-      "en": "My job doesn't excite me any more.",
-      "de": "My job doesn't excite me any more."
+      "en": "My job doesn't excite me any more."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT05": {
     "Description": {
-      "en": "I dislike going to my job.",
-      "de": "I dislike going to my job."
+      "en": "I dislike going to my job."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT06": {
     "Description": {
-      "en": "I feel alienated at work.",
-      "de": "I feel alienated at work."
+      "en": "I feel alienated at work."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT07": {
     "Description": {
-      "en": "I feel frustrated at work.",
-      "de": "I feel frustrated at work."
+      "en": "I feel frustrated at work."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT08": {
     "Description": {
-      "en": "I avoid communication with students.",
-      "de": "I avoid communication with students."
+      "en": "I avoid communication with students."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT09": {
     "Description": {
-      "en": "I avoid communication with my colleagues.",
-      "de": "I avoid communication with my colleagues."
+      "en": "I avoid communication with my colleagues."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT10": {
     "Description": {
-      "en": "I communicate in a hostile manner at work.",
-      "de": "I communicate in a hostile manner at work."
+      "en": "I communicate in a hostile manner at work."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT11": {
     "Description": {
-      "en": "I feel ill at work.",
-      "de": "I feel ill at work."
+      "en": "I feel ill at work."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT12": {
     "Description": {
-      "en": "I think about calling my students ugly names.",
-      "de": "I think about calling my students ugly names."
+      "en": "I think about calling my students ugly names."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT13": {
     "Description": {
-      "en": "I avoid looking at my students.",
-      "de": "I avoid looking at my students."
+      "en": "I avoid looking at my students."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT14": {
     "Description": {
-      "en": "My students make me sick.",
-      "de": "My students make me sick."
+      "en": "My students make me sick."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT15": {
     "Description": {
-      "en": "I feel sick to my stomach when I think about work.",
-      "de": "I feel sick to my stomach when I think about work."
+      "en": "I feel sick to my stomach when I think about work."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT16": {
     "Description": {
-      "en": "I wish people would leave me alone at work.",
-      "de": "I wish people would leave me alone at work."
+      "en": "I wish people would leave me alone at work."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT17": {
     "Description": {
-      "en": "I dread going to school.",
-      "de": "I dread going to school."
+      "en": "I dread going to school."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT18": {
     "Description": {
-      "en": "I am apathetic about my job.",
-      "de": "I am apathetic about my job."
+      "en": "I am apathetic about my job."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT19": {
     "Description": {
-      "en": "I feel stressed at work.",
-      "de": "I feel stressed at work."
+      "en": "I feel stressed at work."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "BURNOUT20": {
     "Description": {
-      "en": "I have problems concentrating at work.",
-      "de": "I have problems concentrating at work."
+      "en": "I have problems concentrating at work."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neutral",
-        "de": "Neutral"
+        "en": "Neutral"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   }

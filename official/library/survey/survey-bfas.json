@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Facebook Addition Scale (BFAS)",
-      "de": "Facebook Addition Scale (BFAS)"
+      "en": "Facebook Addition Scale (BFAS)"
     },
     "Abbreviation": "BFAS",
     "Authors": [
@@ -31,175 +30,139 @@
   },
   "BFAS01": {
     "Description": {
-      "en": "spent a lot of time thinking about Facebook or planned use of Facebook?",
-      "de": "spent a lot of time thinking about Facebook or planned use of Facebook?"
+      "en": "spent a lot of time thinking about Facebook or planned use of Facebook?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} very rarely",
-        "de": "{score=0} very rarely"
+        "en": "{score=0} very rarely"
       },
       "1": {
-        "en": "{score=0} rarely",
-        "de": "{score=0} rarely"
+        "en": "{score=0} rarely"
       },
       "2": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "3": {
-        "en": "{score=1} often",
-        "de": "{score=1} often"
+        "en": "{score=1} often"
       },
       "4": {
-        "en": "{score=1} very often",
-        "de": "{score=1} very often"
+        "en": "{score=1} very often"
       }
     }
   },
   "BFAS02": {
     "Description": {
-      "en": "felt an urge to use Facebook more and more?",
-      "de": "felt an urge to use Facebook more and more?"
+      "en": "felt an urge to use Facebook more and more?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} very rarely",
-        "de": "{score=0} very rarely"
+        "en": "{score=0} very rarely"
       },
       "1": {
-        "en": "{score=0} rarely",
-        "de": "{score=0} rarely"
+        "en": "{score=0} rarely"
       },
       "2": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "3": {
-        "en": "{score=1} often",
-        "de": "{score=1} often"
+        "en": "{score=1} often"
       },
       "4": {
-        "en": "{score=1} very often",
-        "de": "{score=1} very often"
+        "en": "{score=1} very often"
       }
     }
   },
   "BFAS03": {
     "Description": {
-      "en": "used Facebook in order to forget about personal problems?",
-      "de": "used Facebook in order to forget about personal problems?"
+      "en": "used Facebook in order to forget about personal problems?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} very rarely",
-        "de": "{score=0} very rarely"
+        "en": "{score=0} very rarely"
       },
       "1": {
-        "en": "{score=0} rarely",
-        "de": "{score=0} rarely"
+        "en": "{score=0} rarely"
       },
       "2": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "3": {
-        "en": "{score=1} often",
-        "de": "{score=1} often"
+        "en": "{score=1} often"
       },
       "4": {
-        "en": "{score=1} very often",
-        "de": "{score=1} very often"
+        "en": "{score=1} very often"
       }
     }
   },
   "BFAS04": {
     "Description": {
-      "en": "tried to cut down on the use of Facebook without success?",
-      "de": "tried to cut down on the use of Facebook without success?"
+      "en": "tried to cut down on the use of Facebook without success?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} very rarely",
-        "de": "{score=0} very rarely"
+        "en": "{score=0} very rarely"
       },
       "1": {
-        "en": "{score=0} rarely",
-        "de": "{score=0} rarely"
+        "en": "{score=0} rarely"
       },
       "2": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "3": {
-        "en": "{score=1} often",
-        "de": "{score=1} often"
+        "en": "{score=1} often"
       },
       "4": {
-        "en": "{score=1} very often",
-        "de": "{score=1} very often"
+        "en": "{score=1} very often"
       }
     }
   },
   "BFAS05": {
     "Description": {
-      "en": "become restless or troubled if you have been prohibited from using Facebook?",
-      "de": "become restless or troubled if you have been prohibited from using Facebook?"
+      "en": "become restless or troubled if you have been prohibited from using Facebook?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} very rarely",
-        "de": "{score=0} very rarely"
+        "en": "{score=0} very rarely"
       },
       "1": {
-        "en": "{score=0} rarely",
-        "de": "{score=0} rarely"
+        "en": "{score=0} rarely"
       },
       "2": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "3": {
-        "en": "{score=1} often",
-        "de": "{score=1} often"
+        "en": "{score=1} often"
       },
       "4": {
-        "en": "{score=1} very often",
-        "de": "{score=1} very often"
+        "en": "{score=1} very often"
       }
     }
   },
   "BFAS06": {
     "Description": {
-      "en": "used Facebook so much that it has had a negative impact on your job/studies?",
-      "de": "used Facebook so much that it has had a negative impact on your job/studies?"
+      "en": "used Facebook so much that it has had a negative impact on your job/studies?"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} very rarely",
-        "de": "{score=0} very rarely"
+        "en": "{score=0} very rarely"
       },
       "1": {
-        "en": "{score=0} rarely",
-        "de": "{score=0} rarely"
+        "en": "{score=0} rarely"
       },
       "2": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "3": {
-        "en": "{score=1} often",
-        "de": "{score=1} often"
+        "en": "{score=1} often"
       },
       "4": {
-        "en": "{score=1} very often",
-        "de": "{score=1} very often"
+        "en": "{score=1} very often"
       }
     }
   }

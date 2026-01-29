@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Satisfaction with life scale (SWLS)",
-      "de": "Satisfaction with life scale (SWLS)"
+      "en": "Satisfaction with life scale (SWLS)"
     },
     "Abbreviation": "SWLS",
     "Authors": [
@@ -31,186 +30,146 @@
   },
   "SWLS01": {
     "Description": {
-      "en": "In most ways my life is close to my ideal.",
-      "de": "In most ways my life is close to my ideal."
+      "en": "In most ways my life is close to my ideal."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=7} Strongly agree",
-        "de": "{score=7} Strongly agree"
+        "en": "{score=7} Strongly agree"
       },
       "1": {
-        "en": "{score=6} Agree",
-        "de": "{score=6} Agree"
+        "en": "{score=6} Agree"
       },
       "2": {
-        "en": "{score=5} Slightly agree",
-        "de": "{score=5} Slightly agree"
+        "en": "{score=5} Slightly agree"
       },
       "3": {
-        "en": "{score=4} Neither agree nor disagree",
-        "de": "{score=4} Neither agree nor disagree"
+        "en": "{score=4} Neither agree nor disagree"
       },
       "4": {
-        "en": "{score=3} Slightly disagree",
-        "de": "{score=3} Slightly disagree"
+        "en": "{score=3} Slightly disagree"
       },
       "5": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "6": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "SWLS02": {
     "Description": {
-      "en": "The conditions of my life are excellent.",
-      "de": "The conditions of my life are excellent."
+      "en": "The conditions of my life are excellent."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=7} Strongly agree",
-        "de": "{score=7} Strongly agree"
+        "en": "{score=7} Strongly agree"
       },
       "1": {
-        "en": "{score=6} Agree",
-        "de": "{score=6} Agree"
+        "en": "{score=6} Agree"
       },
       "2": {
-        "en": "{score=5} Slightly agree",
-        "de": "{score=5} Slightly agree"
+        "en": "{score=5} Slightly agree"
       },
       "3": {
-        "en": "{score=4} Neither agree nor disagree",
-        "de": "{score=4} Neither agree nor disagree"
+        "en": "{score=4} Neither agree nor disagree"
       },
       "4": {
-        "en": "{score=3} Slightly disagree",
-        "de": "{score=3} Slightly disagree"
+        "en": "{score=3} Slightly disagree"
       },
       "5": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "6": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "SWLS03": {
     "Description": {
-      "en": "I am satisfied with my life.",
-      "de": "I am satisfied with my life."
+      "en": "I am satisfied with my life."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=7} Strongly agree",
-        "de": "{score=7} Strongly agree"
+        "en": "{score=7} Strongly agree"
       },
       "1": {
-        "en": "{score=6} Agree",
-        "de": "{score=6} Agree"
+        "en": "{score=6} Agree"
       },
       "2": {
-        "en": "{score=5} Slightly agree",
-        "de": "{score=5} Slightly agree"
+        "en": "{score=5} Slightly agree"
       },
       "3": {
-        "en": "{score=4} Neither agree nor disagree",
-        "de": "{score=4} Neither agree nor disagree"
+        "en": "{score=4} Neither agree nor disagree"
       },
       "4": {
-        "en": "{score=3} Slightly disagree",
-        "de": "{score=3} Slightly disagree"
+        "en": "{score=3} Slightly disagree"
       },
       "5": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "6": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "SWLS04": {
     "Description": {
-      "en": "So far I have gotten the important things I want in life.",
-      "de": "So far I have gotten the important things I want in life."
+      "en": "So far I have gotten the important things I want in life."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=7} Strongly agree",
-        "de": "{score=7} Strongly agree"
+        "en": "{score=7} Strongly agree"
       },
       "1": {
-        "en": "{score=6} Agree",
-        "de": "{score=6} Agree"
+        "en": "{score=6} Agree"
       },
       "2": {
-        "en": "{score=5} Slightly agree",
-        "de": "{score=5} Slightly agree"
+        "en": "{score=5} Slightly agree"
       },
       "3": {
-        "en": "{score=4} Neither agree nor disagree",
-        "de": "{score=4} Neither agree nor disagree"
+        "en": "{score=4} Neither agree nor disagree"
       },
       "4": {
-        "en": "{score=3} Slightly disagree",
-        "de": "{score=3} Slightly disagree"
+        "en": "{score=3} Slightly disagree"
       },
       "5": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "6": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "SWLS05": {
     "Description": {
-      "en": "If I could live my life over, I would change almost nothing.",
-      "de": "If I could live my life over, I would change almost nothing."
+      "en": "If I could live my life over, I would change almost nothing."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=7} Strongly agree",
-        "de": "{score=7} Strongly agree"
+        "en": "{score=7} Strongly agree"
       },
       "1": {
-        "en": "{score=6} Agree",
-        "de": "{score=6} Agree"
+        "en": "{score=6} Agree"
       },
       "2": {
-        "en": "{score=5} Slightly agree",
-        "de": "{score=5} Slightly agree"
+        "en": "{score=5} Slightly agree"
       },
       "3": {
-        "en": "{score=4} Neither agree nor disagree",
-        "de": "{score=4} Neither agree nor disagree"
+        "en": "{score=4} Neither agree nor disagree"
       },
       "4": {
-        "en": "{score=3} Slightly disagree",
-        "de": "{score=3} Slightly disagree"
+        "en": "{score=3} Slightly disagree"
       },
       "5": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "6": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   }

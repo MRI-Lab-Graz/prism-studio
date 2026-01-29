@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Critical Social Justice Scale (CSJAS)",
-      "de": "Critical Social Justice Scale (CSJAS)"
+      "en": "Critical Social Justice Scale (CSJAS)"
     },
     "Abbreviation": "CSJAS",
     "Authors": [
@@ -25,101 +24,81 @@
   },
   "CSJAS01": {
     "Description": {
-      "en": "If white people have on average a higher level of income than black people, it is because of racism.",
-      "de": "If white people have on average a higher level of income than black people, it is because of racism."
+      "en": "If white people have on average a higher level of income than black people, it is because of racism."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Completely disagree",
-        "de": "{score=0} Completely disagree"
+        "en": "{score=0} Completely disagree"
       },
       "1": {
-        "en": "{score=1} Somewhat disagree",
-        "de": "{score=1} Somewhat disagree"
+        "en": "{score=1} Somewhat disagree"
       },
       "2": {
-        "en": "{score=2} Somewhat agree",
-        "de": "{score=2} Somewhat agree"
+        "en": "{score=2} Somewhat agree"
       },
       "3": {
-        "en": "{score=3} Completely agree",
-        "de": "{score=3} Completely agree"
+        "en": "{score=3} Completely agree"
       }
     }
   },
   "CSJAS02": {
     "Description": {
-      "en": "University reading lists should include fewer white or European authors.",
-      "de": "University reading lists should include fewer white or European authors."
+      "en": "University reading lists should include fewer white or European authors."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Completely disagree",
-        "de": "{score=0} Completely disagree"
+        "en": "{score=0} Completely disagree"
       },
       "1": {
-        "en": "{score=1} Somewhat disagree",
-        "de": "{score=1} Somewhat disagree"
+        "en": "{score=1} Somewhat disagree"
       },
       "2": {
-        "en": "{score=2} Somewhat agree",
-        "de": "{score=2} Somewhat agree"
+        "en": "{score=2} Somewhat agree"
       },
       "3": {
-        "en": "{score=3} Completely agree",
-        "de": "{score=3} Completely agree"
+        "en": "{score=3} Completely agree"
       }
     }
   },
   "CSJAS03": {
     "Description": {
-      "en": "Microaggressions<sup>â¹</sup> should be challenged often and actively.<BR>(<sup>â¹</sup>â=âverbal communication or act, which can be seen to reflect negative attitudes towards a minority group, regardless of original intent)",
-      "de": "Microaggressions<sup>â¹</sup> should be challenged often and actively.<BR>(<sup>â¹</sup>â=âverbal communication or act, which can be seen to reflect negative attitudes towards a minority group, regardless of original intent)"
+      "en": "Microaggressions<sup>â¹</sup> should be challenged often and actively.<BR>(<sup>â¹</sup>â=âverbal communication or act, which can be seen to reflect negative attitudes towards a minority group, regardless of original intent)"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Completely disagree",
-        "de": "{score=0} Completely disagree"
+        "en": "{score=0} Completely disagree"
       },
       "1": {
-        "en": "{score=1} Somewhat disagree",
-        "de": "{score=1} Somewhat disagree"
+        "en": "{score=1} Somewhat disagree"
       },
       "2": {
-        "en": "{score=2} Somewhat agree",
-        "de": "{score=2} Somewhat agree"
+        "en": "{score=2} Somewhat agree"
       },
       "3": {
-        "en": "{score=3} Completely agree",
-        "de": "{score=3} Completely agree"
+        "en": "{score=3} Completely agree"
       }
     }
   },
   "CSJAS04": {
     "Description": {
-      "en": "A white person cannot understand how a black person feels equally well as another black person.",
-      "de": "A white person cannot understand how a black person feels equally well as another black person."
+      "en": "A white person cannot understand how a black person feels equally well as another black person."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} Completely disagree",
-        "de": "{score=0} Completely disagree"
+        "en": "{score=0} Completely disagree"
       },
       "1": {
-        "en": "{score=1} Somewhat disagree",
-        "de": "{score=1} Somewhat disagree"
+        "en": "{score=1} Somewhat disagree"
       },
       "2": {
-        "en": "{score=2} Somewhat agree",
-        "de": "{score=2} Somewhat agree"
+        "en": "{score=2} Somewhat agree"
       },
       "3": {
-        "en": "{score=3} Completely agree",
-        "de": "{score=3} Completely agree"
+        "en": "{score=3} Completely agree"
       }
     }
   }

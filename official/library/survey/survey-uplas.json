@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Loneliness (UPLAS)",
-      "de": "Loneliness (UPLAS)"
+      "en": "Loneliness (UPLAS)"
     },
     "Abbreviation": "UPLAS",
     "Authors": [
@@ -25,501 +24,401 @@
   },
   "UPLAS01": {
     "Description": {
-      "en": "I feel that I am always being left alone.",
-      "de": "I feel that I am always being left alone."
+      "en": "I feel that I am always being left alone."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS02": {
     "Description": {
-      "en": "I feel that I am misunderstood.",
-      "de": "I feel that I am misunderstood."
+      "en": "I feel that I am misunderstood."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS03": {
     "Description": {
-      "en": "I feel that others reject me.",
-      "de": "I feel that others reject me."
+      "en": "I feel that others reject me."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS04": {
     "Description": {
-      "en": "I sense that people are not interested in making friends with me.",
-      "de": "I sense that people are not interested in making friends with me."
+      "en": "I sense that people are not interested in making friends with me."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS05": {
     "Description": {
-      "en": "I feel that nobody likes me.",
-      "de": "I feel that nobody likes me."
+      "en": "I feel that nobody likes me."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS06": {
     "Description": {
-      "en": "I donât have a meaningful relationship with people.",
-      "de": "I donât have a meaningful relationship with people."
+      "en": "I donât have a meaningful relationship with people."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS07": {
     "Description": {
-      "en": "I pity myself.",
-      "de": "I pity myself."
+      "en": "I pity myself."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS08": {
     "Description": {
-      "en": "I feel that nobody appreciates me.",
-      "de": "I feel that nobody appreciates me."
+      "en": "I feel that nobody appreciates me."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS09": {
     "Description": {
-      "en": "I am dissatisfied with my relationships.",
-      "de": "I am dissatisfied with my relationships."
+      "en": "I am dissatisfied with my relationships."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS10": {
     "Description": {
-      "en": "I feel alone even in a group.",
-      "de": "I feel alone even in a group."
+      "en": "I feel alone even in a group."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS11": {
     "Description": {
-      "en": "I feel hopeless about the misfortunes of my life.",
-      "de": "I feel hopeless about the misfortunes of my life."
+      "en": "I feel hopeless about the misfortunes of my life."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS12": {
     "Description": {
-      "en": "I feel worthless.",
-      "de": "I feel worthless."
+      "en": "I feel worthless."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS13": {
     "Description": {
-      "en": "I have no confidence to get involved in relationships.",
-      "de": "I have no confidence to get involved in relationships."
+      "en": "I have no confidence to get involved in relationships."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS14": {
     "Description": {
-      "en": "I feel that others always look at my faults.",
-      "de": "I feel that others always look at my faults."
+      "en": "I feel that others always look at my faults."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS15": {
     "Description": {
-      "en": "I feel that I am a failure in life.",
-      "de": "I feel that I am a failure in life."
+      "en": "I feel that I am a failure in life."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS16": {
     "Description": {
-      "en": "I feel disconnected with people.",
-      "de": "I feel disconnected with people."
+      "en": "I feel disconnected with people."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS17": {
     "Description": {
-      "en": "I usually think of sad things in life.",
-      "de": "I usually think of sad things in life."
+      "en": "I usually think of sad things in life."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS18": {
     "Description": {
-      "en": "I am helpless when I think about the future.",
-      "de": "I am helpless when I think about the future."
+      "en": "I am helpless when I think about the future."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS19": {
     "Description": {
-      "en": "I feel inadequate when it comes to relationships.",
-      "de": "I feel inadequate when it comes to relationships."
+      "en": "I feel inadequate when it comes to relationships."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   },
   "UPLAS20": {
     "Description": {
-      "en": "I feel empty even if I do many things.",
-      "de": "I feel empty even if I do many things."
+      "en": "I feel empty even if I do many things."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Strongly Disagree",
-        "de": "Strongly Disagree"
+        "en": "Strongly Disagree"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "3": {
-        "en": "Strongly Agree",
-        "de": "Strongly Agree"
+        "en": "Strongly Agree"
       }
     }
   }

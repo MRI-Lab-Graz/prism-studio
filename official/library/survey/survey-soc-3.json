@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Spheres of Control Scale (SOC-3)",
-      "de": "Spheres of Control Scale (SOC-3)"
+      "en": "Spheres of Control Scale (SOC-3)"
     },
     "Abbreviation": "SOC-3",
     "Authors": [
@@ -27,556 +26,436 @@
   },
   "SOC-301": {
     "Description": {
-      "en": "I can usually achieve what I want if I work hard for it.",
-      "de": "I can usually achieve what I want if I work hard for it."
+      "en": "I can usually achieve what I want if I work hard for it."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "SOC-302": {
     "Description": {
-      "en": "By taking an active part in political and social affairs,   we the people can influence world events.",
-      "de": "By taking an active part in political and social affairs,   we the people can influence world events."
+      "en": "By taking an active part in political and social affairs,   we the people can influence world events."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "SOC-303": {
     "Description": {
-      "en": "Once I make plans, I am almost certain to make them work.",
-      "de": "Once I make plans, I am almost certain to make them work."
+      "en": "Once I make plans, I am almost certain to make them work."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "SOC-304": {
     "Description": {
-      "en": "I have no trouble making and keeping friends.",
-      "de": "I have no trouble making and keeping friends."
+      "en": "I have no trouble making and keeping friends."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "SOC-305": {
     "Description": {
-      "en": "The average citizen can have an influence on government decisions.",
-      "de": "The average citizen can have an influence on government decisions."
+      "en": "The average citizen can have an influence on government decisions."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "SOC-306": {
     "Description": {
-      "en": "I can learn almost anything if I set my mind to it.",
-      "de": "I can learn almost anything if I set my mind to it."
+      "en": "I can learn almost anything if I set my mind to it."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "SOC-307": {
     "Description": {
-      "en": "I can usually develop a personal relationship with someone I find appealing.",
-      "de": "I can usually develop a personal relationship with someone I find appealing."
+      "en": "I can usually develop a personal relationship with someone I find appealing."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "SOC-308": {
     "Description": {
-      "en": "My major accomplishments are entirely due to my hard work and ability.",
-      "de": "My major accomplishments are entirely due to my hard work and ability."
+      "en": "My major accomplishments are entirely due to my hard work and ability."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "SOC-309": {
     "Description": {
-      "en": "I can usually steer a conversation toward the topics I want to talk about.",
-      "de": "I can usually steer a conversation toward the topics I want to talk about."
+      "en": "I can usually steer a conversation toward the topics I want to talk about."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "SOC-310": {
     "Description": {
-      "en": "With enough effort we can wipe out political corruption.",
-      "de": "With enough effort we can wipe out political corruption."
+      "en": "With enough effort we can wipe out political corruption."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "SOC-311": {
     "Description": {
-      "en": "One of the major reasons we have wars is because people don't take enough interest in politics.",
-      "de": "One of the major reasons we have wars is because people don't take enough interest in politics."
+      "en": "One of the major reasons we have wars is because people don't take enough interest in politics."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "SOC-312": {
     "Description": {
-      "en": "If there's someone I want to meet, I can usually arrange it.",
-      "de": "If there's someone I want to meet, I can usually arrange it."
+      "en": "If there's someone I want to meet, I can usually arrange it."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "SOC-313": {
     "Description": {
-      "en": "Almost anything is possible for me if I really want it.",
-      "de": "Almost anything is possible for me if I really want it."
+      "en": "Almost anything is possible for me if I really want it."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "SOC-314": {
     "Description": {
-      "en": "I find it easy to play an important part in most group situations.",
-      "de": "I find it easy to play an important part in most group situations."
+      "en": "I find it easy to play an important part in most group situations."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   },
   "SOC-315": {
     "Description": {
-      "en": "In the long run, we the voters are responsible for bad government on a national as well as a local level.",
-      "de": "In the long run, we the voters are responsible for bad government on a national as well as a local level."
+      "en": "In the long run, we the voters are responsible for bad government on a national as well as a local level."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "strongly disagree",
-        "de": "strongly disagree"
+        "en": "strongly disagree"
       },
       "1": {
-        "en": "disagree",
-        "de": "disagree"
+        "en": "disagree"
       },
       "2": {
-        "en": "somewhat disagree",
-        "de": "somewhat disagree"
+        "en": "somewhat disagree"
       },
       "3": {
-        "en": "neither agree nor disagree",
-        "de": "neither agree nor disagree"
+        "en": "neither agree nor disagree"
       },
       "4": {
-        "en": "somewhat agree",
-        "de": "somewhat agree"
+        "en": "somewhat agree"
       },
       "5": {
-        "en": "agree",
-        "de": "agree"
+        "en": "agree"
       },
       "6": {
-        "en": "strongly agree",
-        "de": "strongly agree"
+        "en": "strongly agree"
       }
     }
   }

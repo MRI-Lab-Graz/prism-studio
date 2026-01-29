@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "BIG5 Ten Item Personality Inventory (TIPI)",
-      "de": "BIG5 Ten Item Personality Inventory (TIPI)"
+      "en": "BIG5 Ten Item Personality Inventory (TIPI)"
     },
     "Abbreviation": "TIPI",
     "Authors": [
@@ -26,186 +25,146 @@
   },
   "TIPI01": {
     "Description": {
-      "en": "Extroverted, enthusiastic",
-      "de": "Extroverted, enthusiastic"
+      "en": "Extroverted, enthusiastic"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree moderately",
-        "de": "Disagree moderately"
+        "en": "Disagree moderately"
       },
       "2": {
-        "en": "Disagree a little",
-        "de": "Disagree a little"
+        "en": "Disagree a little"
       },
       "3": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "4": {
-        "en": "Agree a little",
-        "de": "Agree a little"
+        "en": "Agree a little"
       },
       "5": {
-        "en": "Agree moderately",
-        "de": "Agree moderately"
+        "en": "Agree moderately"
       },
       "6": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   },
   "TIPI02": {
     "Description": {
-      "en": "Dependable, self-disciplined",
-      "de": "Dependable, self-disciplined"
+      "en": "Dependable, self-disciplined"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree moderately",
-        "de": "Disagree moderately"
+        "en": "Disagree moderately"
       },
       "2": {
-        "en": "Disagree a little",
-        "de": "Disagree a little"
+        "en": "Disagree a little"
       },
       "3": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "4": {
-        "en": "Agree a little",
-        "de": "Agree a little"
+        "en": "Agree a little"
       },
       "5": {
-        "en": "Agree moderately",
-        "de": "Agree moderately"
+        "en": "Agree moderately"
       },
       "6": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   },
   "TIPI03": {
     "Description": {
-      "en": "Open to new experiences, complex",
-      "de": "Open to new experiences, complex"
+      "en": "Open to new experiences, complex"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree moderately",
-        "de": "Disagree moderately"
+        "en": "Disagree moderately"
       },
       "2": {
-        "en": "Disagree a little",
-        "de": "Disagree a little"
+        "en": "Disagree a little"
       },
       "3": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "4": {
-        "en": "Agree a little",
-        "de": "Agree a little"
+        "en": "Agree a little"
       },
       "5": {
-        "en": "Agree moderately",
-        "de": "Agree moderately"
+        "en": "Agree moderately"
       },
       "6": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   },
   "TIPI04": {
     "Description": {
-      "en": "Sympathetic, warm",
-      "de": "Sympathetic, warm"
+      "en": "Sympathetic, warm"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree moderately",
-        "de": "Disagree moderately"
+        "en": "Disagree moderately"
       },
       "2": {
-        "en": "Disagree a little",
-        "de": "Disagree a little"
+        "en": "Disagree a little"
       },
       "3": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "4": {
-        "en": "Agree a little",
-        "de": "Agree a little"
+        "en": "Agree a little"
       },
       "5": {
-        "en": "Agree moderately",
-        "de": "Agree moderately"
+        "en": "Agree moderately"
       },
       "6": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   },
   "TIPI05": {
     "Description": {
-      "en": "Calm, emotionally stable",
-      "de": "Calm, emotionally stable"
+      "en": "Calm, emotionally stable"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree moderately",
-        "de": "Disagree moderately"
+        "en": "Disagree moderately"
       },
       "2": {
-        "en": "Disagree a little",
-        "de": "Disagree a little"
+        "en": "Disagree a little"
       },
       "3": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "4": {
-        "en": "Agree a little",
-        "de": "Agree a little"
+        "en": "Agree a little"
       },
       "5": {
-        "en": "Agree moderately",
-        "de": "Agree moderately"
+        "en": "Agree moderately"
       },
       "6": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   }

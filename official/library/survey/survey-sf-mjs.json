@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Multi-dimensional (romantic) jealousy scale",
-      "de": "Multi-dimensional (romantic) jealousy scale"
+      "en": "Multi-dimensional (romantic) jealousy scale"
     },
     "Abbreviation": "SF-MJS",
     "Authors": [
@@ -29,186 +28,146 @@
   },
   "SF-MJS01": {
     "Description": {
-      "en": "I suspect that X is secretly seeing someone of the opposite sex.",
-      "de": "I suspect that X is secretly seeing someone of the opposite sex."
+      "en": "I suspect that X is secretly seeing someone of the opposite sex."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "all the time",
-        "de": "all the time"
+        "en": "all the time"
       }
     }
   },
   "SF-MJS02": {
     "Description": {
-      "en": "I suspect that X may be attracted to someone else.",
-      "de": "I suspect that X may be attracted to someone else."
+      "en": "I suspect that X may be attracted to someone else."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "all the time",
-        "de": "all the time"
+        "en": "all the time"
       }
     }
   },
   "SF-MJS03": {
     "Description": {
-      "en": "I suspect that X may be physically intimate with another member of the opposite sex behind my back.",
-      "de": "I suspect that X may be physically intimate with another member of the opposite sex behind my back."
+      "en": "I suspect that X may be physically intimate with another member of the opposite sex behind my back."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "all the time",
-        "de": "all the time"
+        "en": "all the time"
       }
     }
   },
   "SF-MJS04": {
     "Description": {
-      "en": "I think that X is secretly developing an intimate relationship with someone of the opposite sex.",
-      "de": "I think that X is secretly developing an intimate relationship with someone of the opposite sex."
+      "en": "I think that X is secretly developing an intimate relationship with someone of the opposite sex."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "all the time",
-        "de": "all the time"
+        "en": "all the time"
       }
     }
   },
   "SF-MJS05": {
     "Description": {
-      "en": "I suspect that X is crazy about members of the opposite sex.",
-      "de": "I suspect that X is crazy about members of the opposite sex."
+      "en": "I suspect that X is crazy about members of the opposite sex."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "never",
-        "de": "never"
+        "en": "never"
       },
       "1": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "2": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "3": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "4": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "5": {
-        "en": ".",
-        "de": "."
+        "en": "."
       },
       "6": {
-        "en": "all the time",
-        "de": "all the time"
+        "en": "all the time"
       }
     }
   }

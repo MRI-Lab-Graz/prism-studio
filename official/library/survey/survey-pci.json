@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Procrastinatory Cognitions Inventory (PCI)",
-      "de": "Procrastinatory Cognitions Inventory (PCI)"
+      "en": "Procrastinatory Cognitions Inventory (PCI)"
     },
     "Abbreviation": "PCI",
     "Authors": [
@@ -29,523 +28,415 @@
   },
   "PCI01": {
     "Description": {
-      "en": "Why canât I do what I should be doing.",
-      "de": "Why canât I do what I should be doing."
+      "en": "Why canât I do what I should be doing."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI02": {
     "Description": {
-      "en": "I need to start earlier.",
-      "de": "I need to start earlier."
+      "en": "I need to start earlier."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI03": {
     "Description": {
-      "en": "I should be more responsible.",
-      "de": "I should be more responsible."
+      "en": "I should be more responsible."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI04": {
     "Description": {
-      "en": "I should be doing more studying.",
-      "de": "I should be doing more studying."
+      "en": "I should be doing more studying."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI05": {
     "Description": {
-      "en": "No matter how much I try, I still put things off.",
-      "de": "No matter how much I try, I still put things off."
+      "en": "No matter how much I try, I still put things off."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI06": {
     "Description": {
-      "en": "People expect me to work and study more.",
-      "de": "People expect me to work and study more."
+      "en": "People expect me to work and study more."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI07": {
     "Description": {
-      "en": "Why canât I just get started.",
-      "de": "Why canât I just get started."
+      "en": "Why canât I just get started."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI08": {
     "Description": {
-      "en": "I know Iâm behind but I can catch up.",
-      "de": "I know Iâm behind but I can catch up."
+      "en": "I know Iâm behind but I can catch up."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI09": {
     "Description": {
-      "en": "Iâm behind in my studies this time, but next time it will be different.",
-      "de": "Iâm behind in my studies this time, but next time it will be different."
+      "en": "Iâm behind in my studies this time, but next time it will be different."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI10": {
     "Description": {
-      "en": "Iâm letting myself down.",
-      "de": "Iâm letting myself down."
+      "en": "Iâm letting myself down."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI11": {
     "Description": {
-      "en": "This is not how I want to be.",
-      "de": "This is not how I want to be."
+      "en": "This is not how I want to be."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI12": {
     "Description": {
-      "en": "It would be great if everything in my life were done on time.",
-      "de": "It would be great if everything in my life were done on time."
+      "en": "It would be great if everything in my life were done on time."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI13": {
     "Description": {
-      "en": "Iâm such a procrastinator, Iâll never reach my goals.",
-      "de": "Iâm such a procrastinator, Iâll never reach my goals."
+      "en": "Iâm such a procrastinator, Iâll never reach my goals."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI14": {
     "Description": {
-      "en": "I need deadlines to get me going.",
-      "de": "I need deadlines to get me going."
+      "en": "I need deadlines to get me going."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI15": {
     "Description": {
-      "en": "I can turn it in late.",
-      "de": "I can turn it in late."
+      "en": "I can turn it in late."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI16": {
     "Description": {
-      "en": "I really donât like studying.",
-      "de": "I really donât like studying."
+      "en": "I really donât like studying."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI17": {
     "Description": {
-      "en": "Why canât I finish things that I start.",
-      "de": "Why canât I finish things that I start."
+      "en": "Why canât I finish things that I start."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   },
   "PCI18": {
     "Description": {
-      "en": "Why didnât I start earlier.",
-      "de": "Why didnât I start earlier."
+      "en": "Why didnât I start earlier."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=0} not at all",
-        "de": "{score=0} not at all"
+        "en": "{score=0} not at all"
       },
       "1": {
-        "en": "{score=1} sometimes",
-        "de": "{score=1} sometimes"
+        "en": "{score=1} sometimes"
       },
       "2": {
-        "en": "{score=2} moderately often",
-        "de": "{score=2} moderately often"
+        "en": "{score=2} moderately often"
       },
       "3": {
-        "en": "{score=3} often",
-        "de": "{score=3} often"
+        "en": "{score=3} often"
       },
       "4": {
-        "en": "{score=4} all of the time",
-        "de": "{score=4} all of the time"
+        "en": "{score=4} all of the time"
       }
     }
   }

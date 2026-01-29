@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Flourishing Scale (FS)",
-      "de": "Flourishing Scale (FS)"
+      "en": "Flourishing Scale (FS)"
     },
     "Abbreviation": "FS",
     "Authors": [
@@ -36,297 +35,233 @@
   },
   "FS01": {
     "Description": {
-      "en": "I lead a purposeful and meaningful life",
-      "de": "I lead a purposeful and meaningful life"
+      "en": "I lead a purposeful and meaningful life"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=7} Strongly agree",
-        "de": "{score=7} Strongly agree"
+        "en": "{score=7} Strongly agree"
       },
       "1": {
-        "en": "{score=6} Agree",
-        "de": "{score=6} Agree"
+        "en": "{score=6} Agree"
       },
       "2": {
-        "en": "{score=5} Slightly agree",
-        "de": "{score=5} Slightly agree"
+        "en": "{score=5} Slightly agree"
       },
       "3": {
-        "en": "{score=4} Neither agree nor disagree",
-        "de": "{score=4} Neither agree nor disagree"
+        "en": "{score=4} Neither agree nor disagree"
       },
       "4": {
-        "en": "{score=3} Slightly disagree",
-        "de": "{score=3} Slightly disagree"
+        "en": "{score=3} Slightly disagree"
       },
       "5": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "6": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "FS02": {
     "Description": {
-      "en": "My social relationships are supportive and rewarding",
-      "de": "My social relationships are supportive and rewarding"
+      "en": "My social relationships are supportive and rewarding"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=7} Strongly agree",
-        "de": "{score=7} Strongly agree"
+        "en": "{score=7} Strongly agree"
       },
       "1": {
-        "en": "{score=6} Agree",
-        "de": "{score=6} Agree"
+        "en": "{score=6} Agree"
       },
       "2": {
-        "en": "{score=5} Slightly agree",
-        "de": "{score=5} Slightly agree"
+        "en": "{score=5} Slightly agree"
       },
       "3": {
-        "en": "{score=4} Neither agree nor disagree",
-        "de": "{score=4} Neither agree nor disagree"
+        "en": "{score=4} Neither agree nor disagree"
       },
       "4": {
-        "en": "{score=3} Slightly disagree",
-        "de": "{score=3} Slightly disagree"
+        "en": "{score=3} Slightly disagree"
       },
       "5": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "6": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "FS03": {
     "Description": {
-      "en": "I am engaged and interested in my daily activities",
-      "de": "I am engaged and interested in my daily activities"
+      "en": "I am engaged and interested in my daily activities"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=7} Strongly agree",
-        "de": "{score=7} Strongly agree"
+        "en": "{score=7} Strongly agree"
       },
       "1": {
-        "en": "{score=6} Agree",
-        "de": "{score=6} Agree"
+        "en": "{score=6} Agree"
       },
       "2": {
-        "en": "{score=5} Slightly agree",
-        "de": "{score=5} Slightly agree"
+        "en": "{score=5} Slightly agree"
       },
       "3": {
-        "en": "{score=4} Neither agree nor disagree",
-        "de": "{score=4} Neither agree nor disagree"
+        "en": "{score=4} Neither agree nor disagree"
       },
       "4": {
-        "en": "{score=3} Slightly disagree",
-        "de": "{score=3} Slightly disagree"
+        "en": "{score=3} Slightly disagree"
       },
       "5": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "6": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "FS04": {
     "Description": {
-      "en": "I actively contribute to the happiness and well-being of others",
-      "de": "I actively contribute to the happiness and well-being of others"
+      "en": "I actively contribute to the happiness and well-being of others"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=7} Strongly agree",
-        "de": "{score=7} Strongly agree"
+        "en": "{score=7} Strongly agree"
       },
       "1": {
-        "en": "{score=6} Agree",
-        "de": "{score=6} Agree"
+        "en": "{score=6} Agree"
       },
       "2": {
-        "en": "{score=5} Slightly agree",
-        "de": "{score=5} Slightly agree"
+        "en": "{score=5} Slightly agree"
       },
       "3": {
-        "en": "{score=4} Neither agree nor disagree",
-        "de": "{score=4} Neither agree nor disagree"
+        "en": "{score=4} Neither agree nor disagree"
       },
       "4": {
-        "en": "{score=3} Slightly disagree",
-        "de": "{score=3} Slightly disagree"
+        "en": "{score=3} Slightly disagree"
       },
       "5": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "6": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "FS05": {
     "Description": {
-      "en": "I am competent and capable in the activities that are important to me",
-      "de": "I am competent and capable in the activities that are important to me"
+      "en": "I am competent and capable in the activities that are important to me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=7} Strongly agree",
-        "de": "{score=7} Strongly agree"
+        "en": "{score=7} Strongly agree"
       },
       "1": {
-        "en": "{score=6} Agree",
-        "de": "{score=6} Agree"
+        "en": "{score=6} Agree"
       },
       "2": {
-        "en": "{score=5} Slightly agree",
-        "de": "{score=5} Slightly agree"
+        "en": "{score=5} Slightly agree"
       },
       "3": {
-        "en": "{score=4} Neither agree nor disagree",
-        "de": "{score=4} Neither agree nor disagree"
+        "en": "{score=4} Neither agree nor disagree"
       },
       "4": {
-        "en": "{score=3} Slightly disagree",
-        "de": "{score=3} Slightly disagree"
+        "en": "{score=3} Slightly disagree"
       },
       "5": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "6": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "FS06": {
     "Description": {
-      "en": "I am a good person and live a good life",
-      "de": "I am a good person and live a good life"
+      "en": "I am a good person and live a good life"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=7} Strongly agree",
-        "de": "{score=7} Strongly agree"
+        "en": "{score=7} Strongly agree"
       },
       "1": {
-        "en": "{score=6} Agree",
-        "de": "{score=6} Agree"
+        "en": "{score=6} Agree"
       },
       "2": {
-        "en": "{score=5} Slightly agree",
-        "de": "{score=5} Slightly agree"
+        "en": "{score=5} Slightly agree"
       },
       "3": {
-        "en": "{score=4} Neither agree nor disagree",
-        "de": "{score=4} Neither agree nor disagree"
+        "en": "{score=4} Neither agree nor disagree"
       },
       "4": {
-        "en": "{score=3} Slightly disagree",
-        "de": "{score=3} Slightly disagree"
+        "en": "{score=3} Slightly disagree"
       },
       "5": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "6": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "FS07": {
     "Description": {
-      "en": "I am optimistic about my future",
-      "de": "I am optimistic about my future"
+      "en": "I am optimistic about my future"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=7} Strongly agree",
-        "de": "{score=7} Strongly agree"
+        "en": "{score=7} Strongly agree"
       },
       "1": {
-        "en": "{score=6} Agree",
-        "de": "{score=6} Agree"
+        "en": "{score=6} Agree"
       },
       "2": {
-        "en": "{score=5} Slightly agree",
-        "de": "{score=5} Slightly agree"
+        "en": "{score=5} Slightly agree"
       },
       "3": {
-        "en": "{score=4} Neither agree nor disagree",
-        "de": "{score=4} Neither agree nor disagree"
+        "en": "{score=4} Neither agree nor disagree"
       },
       "4": {
-        "en": "{score=3} Slightly disagree",
-        "de": "{score=3} Slightly disagree"
+        "en": "{score=3} Slightly disagree"
       },
       "5": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "6": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   },
   "FS08": {
     "Description": {
-      "en": "People respect me",
-      "de": "People respect me"
+      "en": "People respect me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=7} Strongly agree",
-        "de": "{score=7} Strongly agree"
+        "en": "{score=7} Strongly agree"
       },
       "1": {
-        "en": "{score=6} Agree",
-        "de": "{score=6} Agree"
+        "en": "{score=6} Agree"
       },
       "2": {
-        "en": "{score=5} Slightly agree",
-        "de": "{score=5} Slightly agree"
+        "en": "{score=5} Slightly agree"
       },
       "3": {
-        "en": "{score=4} Neither agree nor disagree",
-        "de": "{score=4} Neither agree nor disagree"
+        "en": "{score=4} Neither agree nor disagree"
       },
       "4": {
-        "en": "{score=3} Slightly disagree",
-        "de": "{score=3} Slightly disagree"
+        "en": "{score=3} Slightly disagree"
       },
       "5": {
-        "en": "{score=2} Disagree",
-        "de": "{score=2} Disagree"
+        "en": "{score=2} Disagree"
       },
       "6": {
-        "en": "{score=1} Strongly disagree",
-        "de": "{score=1} Strongly disagree"
+        "en": "{score=1} Strongly disagree"
       }
     }
   }

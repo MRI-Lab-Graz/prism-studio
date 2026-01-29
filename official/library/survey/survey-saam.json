@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "State Adult Attachment Measure (SAAM)",
-      "de": "State Adult Attachment Measure (SAAM)"
+      "en": "State Adult Attachment Measure (SAAM)"
     },
     "Abbreviation": "SAAM",
     "Authors": [
@@ -31,778 +30,610 @@
   },
   "SAAM01": {
     "Description": {
-      "en": "I wish someone would tell me they really love me",
-      "de": "I wish someone would tell me they really love me"
+      "en": "I wish someone would tell me they really love me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM02": {
     "Description": {
-      "en": "I would be uncomfortable having a good friend or a relationship partner close to me",
-      "de": "I would be uncomfortable having a good friend or a relationship partner close to me"
+      "en": "I would be uncomfortable having a good friend or a relationship partner close to me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM03": {
     "Description": {
-      "en": "I feel alone and yet don't feel like getting close to others",
-      "de": "I feel alone and yet don't feel like getting close to others"
+      "en": "I feel alone and yet don't feel like getting close to others"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM04": {
     "Description": {
-      "en": "I feel loved",
-      "de": "I feel loved"
+      "en": "I feel loved"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM05": {
     "Description": {
-      "en": "I wish someone close could see me now",
-      "de": "I wish someone close could see me now"
+      "en": "I wish someone close could see me now"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM06": {
     "Description": {
-      "en": "If something went wrong right now I feel like I could depend on someone",
-      "de": "If something went wrong right now I feel like I could depend on someone"
+      "en": "If something went wrong right now I feel like I could depend on someone"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM07": {
     "Description": {
-      "en": "I feel like others care about me",
-      "de": "I feel like others care about me"
+      "en": "I feel like others care about me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM08": {
     "Description": {
-      "en": "I feel a strong need to be unconditionally loved right now",
-      "de": "I feel a strong need to be unconditionally loved right now"
+      "en": "I feel a strong need to be unconditionally loved right now"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM09": {
     "Description": {
-      "en": "I am afraid someone will want to get too close to me",
-      "de": "I am afraid someone will want to get too close to me"
+      "en": "I am afraid someone will want to get too close to me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM10": {
     "Description": {
-      "en": "If someone tried to get close to me, I would try to keep my distance",
-      "de": "If someone tried to get close to me, I would try to keep my distance"
+      "en": "If someone tried to get close to me, I would try to keep my distance"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM11": {
     "Description": {
-      "en": "I feel relaxed knowing that close others are there for me right now",
-      "de": "I feel relaxed knowing that close others are there for me right now"
+      "en": "I feel relaxed knowing that close others are there for me right now"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM12": {
     "Description": {
-      "en": "I really need to feel loved right now",
-      "de": "I really need to feel loved right now"
+      "en": "I really need to feel loved right now"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM13": {
     "Description": {
-      "en": "I feel like I have someone to rely on",
-      "de": "I feel like I have someone to rely on"
+      "en": "I feel like I have someone to rely on"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM14": {
     "Description": {
-      "en": "I want to share my feelings with someone",
-      "de": "I want to share my feelings with someone"
+      "en": "I want to share my feelings with someone"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM15": {
     "Description": {
-      "en": "I feel like I am loved by others but I really don't care",
-      "de": "I feel like I am loved by others but I really don't care"
+      "en": "I feel like I am loved by others but I really don't care"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM16": {
     "Description": {
-      "en": "The idea of being emotionally close to someone makes me nervous",
-      "de": "The idea of being emotionally close to someone makes me nervous"
+      "en": "The idea of being emotionally close to someone makes me nervous"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM17": {
     "Description": {
-      "en": "I want to talk with someone who cares for me about things that are worrying me",
-      "de": "I want to talk with someone who cares for me about things that are worrying me"
+      "en": "I want to talk with someone who cares for me about things that are worrying me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM18": {
     "Description": {
-      "en": "I feel secure and close to other people",
-      "de": "I feel secure and close to other people"
+      "en": "I feel secure and close to other people"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM19": {
     "Description": {
-      "en": "I really need someone's emotional support",
-      "de": "I really need someone's emotional support"
+      "en": "I really need someone's emotional support"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM20": {
     "Description": {
-      "en": "I feel I can trust the people who are close to me",
-      "de": "I feel I can trust the people who are close to me"
+      "en": "I feel I can trust the people who are close to me"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   },
   "SAAM21": {
     "Description": {
-      "en": "I have mixed feelings about being close to other people",
-      "de": "I have mixed feelings about being close to other people"
+      "en": "I have mixed feelings about being close to other people"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "disagree strongly",
-        "de": "disagree strongly"
+        "en": "disagree strongly"
       },
       "1": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "2": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "3": {
-        "en": "neutral / mixed",
-        "de": "neutral / mixed"
+        "en": "neutral / mixed"
       },
       "4": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "5": {
-        "en": "...",
-        "de": "..."
+        "en": "..."
       },
       "6": {
-        "en": "agree strongly",
-        "de": "agree strongly"
+        "en": "agree strongly"
       }
     }
   }

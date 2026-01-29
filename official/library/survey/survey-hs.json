@@ -1,8 +1,7 @@
 {
   "Study": {
     "OriginalName": {
-      "en": "Healthy Selfishness (HS)",
-      "de": "Healthy Selfishness (HS)"
+      "en": "Healthy Selfishness (HS)"
     },
     "Abbreviation": "HS",
     "Authors": [
@@ -26,291 +25,231 @@
   },
   "HS01": {
     "Description": {
-      "en": "I have healthy boundaries.",
-      "de": "I have healthy boundaries."
+      "en": "I have healthy boundaries."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   },
   "HS02": {
     "Description": {
-      "en": "I have a lot of self-care.",
-      "de": "I have a lot of self-care."
+      "en": "I have a lot of self-care."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   },
   "HS03": {
     "Description": {
-      "en": "I have a healthy dose of self-respect, and donât let people take advantage of me.",
-      "de": "I have a healthy dose of self-respect, and donât let people take advantage of me."
+      "en": "I have a healthy dose of self-respect, and donât let people take advantage of me."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   },
   "HS04": {
     "Description": {
-      "en": "I balance my own needs with the needs of others.",
-      "de": "I balance my own needs with the needs of others."
+      "en": "I balance my own needs with the needs of others."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   },
   "HS05": {
     "Description": {
-      "en": "I advocate for my own needs.",
-      "de": "I advocate for my own needs."
+      "en": "I advocate for my own needs."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   },
   "HS06": {
     "Description": {
-      "en": "I have a healthy form of selfishness (e.g., meditation, eating healthy, exercising, etc.) that doesnât hurt others, but brings me greater happiness.",
-      "de": "I have a healthy form of selfishness (e.g., meditation, eating healthy, exercising, etc.) that doesnât hurt others, but brings me greater happiness."
+      "en": "I have a healthy form of selfishness (e.g., meditation, eating healthy, exercising, etc.) that doesnât hurt others, but brings me greater happiness."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   },
   "HS07": {
     "Description": {
-      "en": "Even though I give a lot to others, I know when to recharge.",
-      "de": "Even though I give a lot to others, I know when to recharge."
+      "en": "Even though I give a lot to others, I know when to recharge."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   },
   "HS08": {
     "Description": {
-      "en": "I give myself permission to enjoy myself, even if it doesnât necessarily help others.",
-      "de": "I give myself permission to enjoy myself, even if it doesnât necessarily help others."
+      "en": "I give myself permission to enjoy myself, even if it doesnât necessarily help others."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   },
   "HS09": {
     "Description": {
-      "en": "I take good care of myself.",
-      "de": "I take good care of myself."
+      "en": "I take good care of myself."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   },
   "HS10": {
     "Description": {
-      "en": "I prioritize my own personal projects over the demands of others.",
-      "de": "I prioritize my own personal projects over the demands of others."
+      "en": "I prioritize my own personal projects over the demands of others."
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "Disagree strongly",
-        "de": "Disagree strongly"
+        "en": "Disagree strongly"
       },
       "1": {
-        "en": "Disagree",
-        "de": "Disagree"
+        "en": "Disagree"
       },
       "2": {
-        "en": "Neither agree nor disagree",
-        "de": "Neither agree nor disagree"
+        "en": "Neither agree nor disagree"
       },
       "3": {
-        "en": "Agree",
-        "de": "Agree"
+        "en": "Agree"
       },
       "4": {
-        "en": "Agree strongly",
-        "de": "Agree strongly"
+        "en": "Agree strongly"
       }
     }
   }
