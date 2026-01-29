@@ -4,15 +4,26 @@
 
 {% block styles %}
 <style>
+    /* Scrollable template list */
+    .tpl-scroll-list {
+        max-height: 60vh;
+        overflow-y: auto;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 0.35rem;
+        background: #fdfdfe;
+    }
+
     /* Compact template row */
     .tpl-row {
         background: #fff;
         border: 1px solid #dee2e6;
-        border-radius: 6px;
-        padding: 0.5rem 0.75rem;
-        margin-bottom: 0.35rem;
+        border-radius: 4px;
+        padding: 0.35rem 0.6rem;
+        margin-bottom: 0.2rem;
         transition: border-color 0.15s, box-shadow 0.15s;
     }
+    .tpl-row:last-child { margin-bottom: 0; }
     .tpl-row:hover {
         border-color: #0d6efd;
         box-shadow: 0 1px 4px rgba(0,0,0,0.06);
@@ -185,43 +196,43 @@
 
         <!-- Sections: Survey, Biometrics, Participants, Other -->
         <div id="surveySection" class="d-none mb-3">
-            <div class="d-flex align-items-center mb-2">
+            <div class="d-flex align-items-center mb-1">
                 <h6 class="mb-0"><i class="fas fa-poll-h text-success me-1"></i>Survey Questionnaires <span class="section-count text-muted" id="surveyCount"></span></h6>
                 <div class="ms-auto">
                     <button class="btn btn-sm btn-link text-secondary select-all-section p-0 me-2" data-target="surveyList">Select all</button>
                     <button class="btn btn-sm btn-link text-secondary deselect-all-section p-0" data-target="surveyList">Clear</button>
                 </div>
             </div>
-            <div id="surveyList"></div>
+            <div id="surveyList" class="tpl-scroll-list"></div>
         </div>
 
         <div id="biometricsSection" class="d-none mb-3">
-            <div class="d-flex align-items-center mb-2">
+            <div class="d-flex align-items-center mb-1">
                 <h6 class="mb-0"><i class="fas fa-heartbeat text-danger me-1"></i>Biometrics & Physio <span class="section-count text-muted" id="biometricsCount"></span></h6>
                 <div class="ms-auto">
                     <button class="btn btn-sm btn-link text-secondary select-all-section p-0 me-2" data-target="biometricsList">Select all</button>
                     <button class="btn btn-sm btn-link text-secondary deselect-all-section p-0" data-target="biometricsList">Clear</button>
                 </div>
             </div>
-            <div id="biometricsList"></div>
+            <div id="biometricsList" class="tpl-scroll-list"></div>
         </div>
 
         <div id="participantsSection" class="d-none mb-3">
-            <div class="d-flex align-items-center mb-2">
+            <div class="d-flex align-items-center mb-1">
                 <h6 class="mb-0"><i class="fas fa-users text-primary me-1"></i>Participants <span class="section-count text-muted" id="participantsCount"></span></h6>
             </div>
-            <div id="participantsList"></div>
+            <div id="participantsList" class="tpl-scroll-list"></div>
         </div>
 
         <div id="otherSection" class="d-none mb-3">
-            <div class="d-flex align-items-center mb-2">
+            <div class="d-flex align-items-center mb-1">
                 <h6 class="mb-0"><i class="fas fa-file-alt text-secondary me-1"></i>Other Templates <span class="section-count text-muted" id="otherCount"></span></h6>
                 <div class="ms-auto">
                     <button class="btn btn-sm btn-link text-secondary select-all-section p-0 me-2" data-target="otherList">Select all</button>
                     <button class="btn btn-sm btn-link text-secondary deselect-all-section p-0" data-target="otherList">Clear</button>
                 </div>
             </div>
-            <div id="otherList"></div>
+            <div id="otherList" class="tpl-scroll-list"></div>
         </div>
 
         <div class="d-flex justify-content-end mb-5 gap-2">
@@ -330,9 +341,9 @@ document.addEventListener('DOMContentLoaded', function() {
         ).join(' ');
     }
 
-    function hasBaseLanguage(file) {
-        const langs = file.detected_languages || [];
-        return langs.includes(currentLanguage);
+    function hasAllExportLanguages(fileLangs) {
+        // Template must have ALL selected export languages
+        return selectedExportLanguages.every(lang => fileLangs.includes(lang));
     }
 
     // --- Build a compact template row ---
@@ -340,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const fileId = `tpl-${sectionKey}-${index}`;
         const detailsId = `details-${sectionKey}-${index}`;
         const fileLangs = file.detected_languages || ['en'];
-        const hasLang = fileLangs.includes(currentLanguage);
+        const hasLang = hasAllExportLanguages(fileLangs);
 
         const div = document.createElement('div');
         div.className = `tpl-row ${hasLang ? '' : 'tpl-no-lang'}`;
@@ -384,7 +395,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span class="badge bg-secondary" style="font-size:0.65rem;">${itemCount} items</span>
                         ${fileLangs.map(l => `<span class="lang-badge ${l === currentLanguage ? 'lang-badge-available' : ''}" style="font-size:0.6rem;">${l.toUpperCase()}</span>`).join('')}
                         ${hasPotentialMatrix ? '<span class="badge bg-success" style="font-size:0.6rem;"><i class="fas fa-th me-1"></i>Matrix</span>' : ''}
-                        ${!hasLang ? `<span class="badge bg-danger" style="font-size:0.6rem;">No ${currentLanguage.toUpperCase()}</span>` : ''}
+                        ${!hasLang ? `<span class="badge bg-danger tpl-missing-badge" style="font-size:0.6rem;">Missing: ${selectedExportLanguages.filter(l => !fileLangs.includes(l)).map(l => l.toUpperCase()).join(', ')}</span>` : ''}
                     </div>
                     ${desc ? `<div class="tpl-desc">${escapeHtml(desc)}</div>` : ''}
                 </div>
@@ -477,8 +488,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const files = currentLibraryData[key];
             if (files && files.length > 0) {
                 hasAnyFiles = true;
-                // Count files that have the base language
-                const visibleFiles = files.filter(f => hasBaseLanguage(f));
+                // Count files that have all export languages
+                const visibleFiles = files.filter(f => hasAllExportLanguages(f.detected_languages || ['en']));
                 const totalFiles = files.length;
 
                 container.classList.remove('d-none');
@@ -489,7 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 files.forEach((file, idx) => {
                     const row = createTemplateRow(file, idx, key);
                     listEl.appendChild(row);
-                    if (hasBaseLanguage(file)) hasAnyVisible = true;
+                    if (hasAllExportLanguages(file.detected_languages || ['en'])) hasAnyVisible = true;
                 });
             } else {
                 container.classList.add('d-none');
@@ -560,6 +571,7 @@ document.addEventListener('DOMContentLoaded', function() {
             exportLanguageCheckboxes.appendChild(wrapper);
             wrapper.querySelector('input').addEventListener('change', function() {
                 updateSelectedExportLanguages();
+                updateLanguageFiltering();
                 validateLanguageCoverage();
             });
         });
@@ -574,6 +586,62 @@ document.addEventListener('DOMContentLoaded', function() {
             const baseCb = document.getElementById(`export-lang-${currentLanguage}`);
             if (baseCb) baseCb.checked = true;
         }
+    }
+
+    // Re-apply language filtering to existing rows without full re-render
+    function updateLanguageFiltering() {
+        document.querySelectorAll('.tpl-row').forEach(row => {
+            const fileLangs = (row.dataset.detectedLanguages || 'en').split(',');
+            const hasAll = hasAllExportLanguages(fileLangs);
+            const cb = row.querySelector('.file-checkbox');
+            const missingBadge = row.querySelector('.tpl-missing-badge');
+
+            if (hasAll) {
+                row.classList.remove('tpl-no-lang');
+                if (cb) cb.disabled = false;
+                if (missingBadge) missingBadge.remove();
+            } else {
+                row.classList.add('tpl-no-lang');
+                if (cb) {
+                    // Uncheck and deselect if it was checked
+                    if (cb.checked) {
+                        cb.checked = false;
+                        row.classList.remove('tpl-selected');
+                        const settingsRow = row.querySelector('[id^="settings-"]');
+                        if (settingsRow) settingsRow.classList.add('d-none');
+                    }
+                    cb.disabled = true;
+                }
+                // Update or add missing badge
+                const missingLangs = selectedExportLanguages.filter(l => !fileLangs.includes(l)).map(l => l.toUpperCase()).join(', ');
+                if (missingBadge) {
+                    missingBadge.textContent = `Missing: ${missingLangs}`;
+                } else {
+                    const badgeRow = row.querySelector('.d-flex.align-items-center.flex-wrap');
+                    if (badgeRow) {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge bg-danger tpl-missing-badge';
+                        badge.style.fontSize = '0.6rem';
+                        badge.textContent = `Missing: ${missingLangs}`;
+                        badgeRow.appendChild(badge);
+                    }
+                }
+            }
+        });
+        // Update section counts
+        Object.keys(sectionConfig).forEach(key => {
+            const cfg = sectionConfig[key];
+            const listEl = document.getElementById(cfg.list);
+            const countEl = document.getElementById(cfg.count);
+            if (!listEl || !countEl) return;
+            const allRows = listEl.querySelectorAll('.tpl-row');
+            const visibleRows = listEl.querySelectorAll('.tpl-row:not(.tpl-no-lang)');
+            if (allRows.length === 0) return;
+            countEl.textContent = visibleRows.length < allRows.length
+                ? `(${visibleRows.length}/${allRows.length})`
+                : `(${allRows.length})`;
+        });
+        updateGenerateBtn();
     }
 
     function validateLanguageCoverage() {
