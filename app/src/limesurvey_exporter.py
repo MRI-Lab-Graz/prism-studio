@@ -612,7 +612,8 @@ def _format_single_metadata_html(meta):
     return "\n".join(lines)
 
 
-def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
+def generate_lss(json_files, output_path=None, language="en", languages=None,
+                 base_language=None, ls_version="6"):
     """
     Generate a LimeSurvey Structure (.lss) file from a list of Prism JSON sidecars.
 
@@ -626,12 +627,23 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
               If run > 1, appends "_run-NN" to question codes.
               Example: "PANAS_1" with run=2 becomes "PANAS_1_run-02"
         output_path (str, optional): Path to write the .lss file. If None, returns the XML string.
-        language (str): The language to use for the export.
+        language (str): The language to use for the export (backward compatible).
+        languages (list, optional): List of language codes to include. If None, uses [language].
+        base_language (str, optional): Base language code. If None, uses languages[0] or language.
         ls_version (str): Target LimeSurvey version ("3" or "6").
 
     Returns:
         str: The XML content if output_path is None, else None.
     """
+    # Normalize language parameters
+    if languages is None:
+        languages = [language]
+    if base_language is None:
+        base_language = languages[0] if languages else language
+    # Ensure base_language is first in the list
+    if base_language in languages:
+        languages = [base_language] + [l for l in languages if l != base_language]
+    additional_languages = [l for l in languages if l != base_language]
 
     def get_text(obj, lang, i18n_data=None, path=None):
         """
@@ -670,9 +682,10 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
     ET.SubElement(root, "LimeSurveyDocType").text = "Survey"
     ET.SubElement(root, "DBVersion").text = db_version
 
-    # Languages
-    langs = ET.SubElement(root, "languages")
-    ET.SubElement(langs, "language").text = language
+    # Languages — one <language> per language
+    langs_elem = ET.SubElement(root, "languages")
+    for lang_code in languages:
+        ET.SubElement(langs_elem, "language").text = lang_code
 
     # Sections
     answers_elem = ET.SubElement(root, "answers")
@@ -713,6 +726,7 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
     qid_counter = 100
     group_sort_order = 0
     qaid_counter = 1  # Question attribute ID counter
+    l10n_id_counter = 1  # Localization row ID counter
 
     # --- Process Each JSON as a Group ---
     for item in json_files:
@@ -799,36 +813,63 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
             study_info.get("Description", ""), language, i18n_data, "Study.Description"
         )
 
-        # Add Group
-        group_data = {
-            "gid": gid,
-            "sid": sid,
-            "group_order": str(group_sort_order),
-            "randomization_group": "",
-            "grelevance": "",
-        }
-        if not is_v6:
-            group_data["group_name"] = group_name
-            group_data["description"] = group_desc
-            group_data["language"] = language
-
-        add_row(groups_rows, group_data)
-
+        # Add Group — emit per-language rows for v3, l10ns per language for v6
         if is_v6:
-            add_row(
-                group_l10ns_rows,
-                {
-                    "id": gid,  # In LS6, l10ns often use the main ID as reference
+            group_data = {
+                "gid": gid,
+                "sid": sid,
+                "group_order": str(group_sort_order),
+                "randomization_group": "",
+                "grelevance": "",
+            }
+            add_row(groups_rows, group_data)
+
+            for lang in languages:
+                g_name = get_text(
+                    study_info.get(
+                        "OriginalName",
+                        data.get("TaskName", os.path.splitext(os.path.basename(json_path))[0]),
+                    ),
+                    lang, i18n_data, "Study.OriginalName",
+                )
+                g_desc = get_text(study_info.get("Description", ""), lang, i18n_data, "Study.Description")
+                add_row(
+                    group_l10ns_rows,
+                    {
+                        "id": str(l10n_id_counter),
+                        "gid": gid,
+                        "group_name": g_name,
+                        "description": g_desc,
+                        "language": lang,
+                        "sid": sid,
+                    },
+                )
+                l10n_id_counter += 1
+        else:
+            # v3: one group row per language
+            for lang in languages:
+                g_name = get_text(
+                    study_info.get(
+                        "OriginalName",
+                        data.get("TaskName", os.path.splitext(os.path.basename(json_path))[0]),
+                    ),
+                    lang, i18n_data, "Study.OriginalName",
+                )
+                g_desc = get_text(study_info.get("Description", ""), lang, i18n_data, "Study.Description")
+                group_data = {
                     "gid": gid,
-                    "group_name": group_name,
-                    "description": group_desc,
-                    "language": language,
                     "sid": sid,
-                },
-            )
+                    "group_order": str(group_sort_order),
+                    "randomization_group": "",
+                    "grelevance": "",
+                    "group_name": g_name,
+                    "description": g_desc,
+                    "language": lang,
+                }
+                add_row(groups_rows, group_data)
 
         # --- Add hidden metadata question for this questionnaire ---
-        file_metadata = _extract_single_file_metadata(json_path, language)
+        file_metadata = _extract_single_file_metadata(json_path, base_language)
         if file_metadata:
             meta_qid = str(qid_counter)
             qid_counter += 1
@@ -837,42 +878,63 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
 
             metadata_html = _format_single_metadata_html(file_metadata)
 
-            meta_q_data = {
-                "qid": meta_qid,
-                "parent_qid": "0",
-                "sid": sid,
-                "gid": gid,
-                "type": "X",  # Text Display (Boilerplate)
-                "title": meta_q_code,
-                "preg": "",
-                "other": "N",
-                "mandatory": "N",
-                "encrypted": "N",
-                "question_order": "0",  # First question in group
-                "scale_id": "0",
-                "same_default": "0",
-                "relevance": "0",  # Never shown to participants
-                "question_theme_name": "boilerplate",
-                "modulename": "",
-            }
-            if not is_v6:
-                meta_q_data["question"] = metadata_html
-                meta_q_data["help"] = ""
-                meta_q_data["language"] = language
-
-            add_row(questions_rows, meta_q_data)
-
             if is_v6:
-                add_row(
-                    question_l10ns_rows,
-                    {
-                        "id": meta_qid,
+                meta_q_data = {
+                    "qid": meta_qid,
+                    "parent_qid": "0",
+                    "sid": sid,
+                    "gid": gid,
+                    "type": "X",
+                    "title": meta_q_code,
+                    "preg": "",
+                    "other": "N",
+                    "mandatory": "N",
+                    "encrypted": "N",
+                    "question_order": "0",
+                    "scale_id": "0",
+                    "same_default": "0",
+                    "relevance": "0",
+                    "question_theme_name": "boilerplate",
+                    "modulename": "",
+                }
+                add_row(questions_rows, meta_q_data)
+
+                for lang in languages:
+                    add_row(
+                        question_l10ns_rows,
+                        {
+                            "id": str(l10n_id_counter),
+                            "qid": meta_qid,
+                            "question": metadata_html,
+                            "help": "",
+                            "language": lang,
+                        },
+                    )
+                    l10n_id_counter += 1
+            else:
+                for lang in languages:
+                    meta_q_data = {
                         "qid": meta_qid,
+                        "parent_qid": "0",
+                        "sid": sid,
+                        "gid": gid,
+                        "type": "X",
+                        "title": meta_q_code,
+                        "preg": "",
+                        "other": "N",
+                        "mandatory": "N",
+                        "encrypted": "N",
+                        "question_order": "0",
+                        "scale_id": "0",
+                        "same_default": "0",
+                        "relevance": "0",
+                        "question_theme_name": "boilerplate",
+                        "modulename": "",
                         "question": metadata_html,
                         "help": "",
-                        "language": language,
-                    },
-                )
+                        "language": lang,
+                    }
+                    add_row(questions_rows, meta_q_data)
 
         # Prepare Groups of Questions
         grouped_questions = []
@@ -1000,50 +1062,47 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
 
             if is_matrix:
                 # Matrix Question (Array)
-                # Type 'F' is Array (Flexible Labels)
                 q_type = "F"
 
-                # Matrix Title (with run suffix if applicable)
                 matrix_title = _apply_run_suffix(f"M{first_code}", run_number)
 
-                # Matrix Text - Use a generic prompt
-                matrix_text = "Please answer the following questions:"
-                if language == "de":
-                    matrix_text = "Bitte beantworten Sie die folgenden Fragen:"
-
-                # Add Matrix Parent Question
-                q_data_row = {
-                    "qid": qid,
-                    "parent_qid": "0",
-                    "sid": sid,
-                    "gid": gid,
-                    "type": q_type,
-                    "title": matrix_title,
-                    "other": "N",
-                    "mandatory": "Y",
-                    "question_order": str(q_sort_order),
-                    "scale_id": "0",
-                    "same_default": "0",
-                    "relevance": relevance,
-                }
-                if not is_v6:
-                    q_data_row["question"] = matrix_text
-                    q_data_row["language"] = language
-
-                add_row(questions_rows, q_data_row)
+                _matrix_texts = {"en": "Please answer the following questions:", "de": "Bitte beantworten Sie die folgenden Fragen:"}
 
                 if is_v6:
-                    add_row(
-                        question_l10ns_rows,
-                        {
-                            "id": qid,
-                            "qid": qid,
-                            "question": matrix_text,
-                            "help": "",
-                            "language": language,
-                            "sid": sid,
-                        },
-                    )
+                    q_data_row = {
+                        "qid": qid,
+                        "parent_qid": "0",
+                        "sid": sid,
+                        "gid": gid,
+                        "type": q_type,
+                        "title": matrix_title,
+                        "other": "N",
+                        "mandatory": "Y",
+                        "question_order": str(q_sort_order),
+                        "scale_id": "0",
+                        "same_default": "0",
+                        "relevance": relevance,
+                    }
+                    add_row(questions_rows, q_data_row)
+
+                    for lang in languages:
+                        m_text = _matrix_texts.get(lang, _matrix_texts["en"])
+                        add_row(question_l10ns_rows, {
+                            "id": str(l10n_id_counter), "qid": qid,
+                            "question": m_text, "help": "", "language": lang, "sid": sid,
+                        })
+                        l10n_id_counter += 1
+                else:
+                    for lang in languages:
+                        m_text = _matrix_texts.get(lang, _matrix_texts["en"])
+                        q_data_row = {
+                            "qid": qid, "parent_qid": "0", "sid": sid, "gid": gid,
+                            "type": q_type, "title": matrix_title, "other": "N",
+                            "mandatory": "Y", "question_order": str(q_sort_order),
+                            "scale_id": "0", "same_default": "0", "relevance": relevance,
+                            "question": m_text, "language": lang,
+                        }
+                        add_row(questions_rows, q_data_row)
 
                 # Add Subquestions
                 sub_sort = 0
@@ -1052,112 +1111,75 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     sub_qid = str(qid_counter)
                     qid_counter += 1
 
-                    # Add Subquestion (with run suffix if applicable)
                     sub_q_code = _apply_run_suffix(code, run_number)
-                    sub_q_text = get_text(
-                        data_item.get("Description", code),
-                        language,
-                        i18n_data,
-                        f"{code}.Description",
-                    )
-                    sub_q_row = {
-                        "qid": sub_qid,
-                        "parent_qid": qid,
-                        "sid": sid,
-                        "gid": gid,
-                        "type": "T",
-                        "title": sub_q_code,
-                        "question_order": str(sub_sort),
-                        "scale_id": "0",
-                        "same_default": "0",
-                        "relevance": "1",
-                    }
-                    if not is_v6:
-                        sub_q_row["question"] = sub_q_text
-                        sub_q_row["language"] = language
-
-                    add_row(subquestions_rows, sub_q_row)
 
                     if is_v6:
-                        add_row(
-                            question_l10ns_rows,
-                            {
-                                "id": sub_qid,
-                                "qid": sub_qid,
-                                "question": sub_q_text,
-                                "help": "",
-                                "language": language,
-                                "sid": sid,
-                            },
-                        )
+                        sub_q_row = {
+                            "qid": sub_qid, "parent_qid": qid, "sid": sid, "gid": gid,
+                            "type": "T", "title": sub_q_code,
+                            "question_order": str(sub_sort), "scale_id": "0",
+                            "same_default": "0", "relevance": "1",
+                        }
+                        add_row(subquestions_rows, sub_q_row)
 
-                    # Add Answers (Only once for the matrix parent)
-                    if levels:
-                        sort_ans = 0
-                        used_answer_codes = (
-                            set()
-                        )  # Track used codes to avoid collisions
-                        for code, answer_text in levels.items():
-                            sort_ans += 1
-                            ans_text = get_text(
-                                answer_text,
-                                language,
-                                i18n_data,
-                                f"{first_code}.Levels.{code}",
-                            )
-                            # Sanitize answer code (LimeSurvey has 5-char limit)
-                            sanitized_code = _sanitize_answer_code(
-                                code, used_answer_codes
-                            )
-                            used_answer_codes.add(sanitized_code)
-                            ans_row = {
-                                "qid": qid,
-                                "code": sanitized_code,
-                                "sortorder": str(sort_ans),
-                                "assessment_value": "0",
-                                "scale_id": "0",
+                        for lang in languages:
+                            sq_text = get_text(data_item.get("Description", code), lang, i18n_data, f"{code}.Description")
+                            add_row(question_l10ns_rows, {
+                                "id": str(l10n_id_counter), "qid": sub_qid,
+                                "question": sq_text, "help": "", "language": lang, "sid": sid,
+                            })
+                            l10n_id_counter += 1
+                    else:
+                        for lang in languages:
+                            sq_text = get_text(data_item.get("Description", code), lang, i18n_data, f"{code}.Description")
+                            sub_q_row = {
+                                "qid": sub_qid, "parent_qid": qid, "sid": sid, "gid": gid,
+                                "type": "T", "title": sub_q_code,
+                                "question_order": str(sub_sort), "scale_id": "0",
+                                "same_default": "0", "relevance": "1",
+                                "question": sq_text, "language": lang,
                             }
-                            if not is_v6:
-                                ans_row["answer"] = ans_text
-                                ans_row["language"] = language
+                            add_row(subquestions_rows, sub_q_row)
 
+                # Add Answers (only once per matrix parent)
+                if levels:
+                    sort_ans = 0
+                    used_answer_codes = set()
+                    for code, answer_text in levels.items():
+                        sort_ans += 1
+                        sanitized_code = _sanitize_answer_code(code, used_answer_codes)
+                        used_answer_codes.add(sanitized_code)
+
+                        if is_v6:
+                            ans_row = {
+                                "qid": qid, "code": sanitized_code,
+                                "sortorder": str(sort_ans), "assessment_value": "0", "scale_id": "0",
+                            }
                             add_row(answers_rows, ans_row)
 
-                            if is_v6:
-                                add_row(
-                                    answer_l10ns_rows,
-                                    {
-                                        "id": f"{qid}_{sanitized_code}",
-                                        "qid": qid,
-                                        "code": sanitized_code,
-                                        "answer": ans_text,
-                                        "language": language,
-                                        "sid": sid,
-                                    },
-                                )
+                            for lang in languages:
+                                a_text = get_text(answer_text, lang, i18n_data, f"{first_code}.Levels.{code}")
+                                add_row(answer_l10ns_rows, {
+                                    "id": str(l10n_id_counter), "qid": qid, "code": sanitized_code,
+                                    "answer": a_text, "language": lang, "sid": sid,
+                                })
+                                l10n_id_counter += 1
+                        else:
+                            for lang in languages:
+                                a_text = get_text(answer_text, lang, i18n_data, f"{first_code}.Levels.{code}")
+                                ans_row = {
+                                    "qid": qid, "code": sanitized_code,
+                                    "sortorder": str(sort_ans), "assessment_value": "0", "scale_id": "0",
+                                    "answer": a_text, "language": lang,
+                                }
+                                add_row(answers_rows, ans_row)
 
             else:
                 # Single Question (with run suffix if applicable)
                 q_code = _apply_run_suffix(first_code, run_number)
                 q_data = first_data
-                description = get_text(
-                    q_data.get("Description", first_code),
-                    language,
-                    i18n_data,
-                    f"{first_code}.Description",
-                )
-                # Apply LimeSurvey HTML styling to question text
-                description = _apply_ls_styling(description)
 
-                # Get help text
-                help_text = get_text(
-                    q_data.get("Help", ""),
-                    language,
-                    i18n_data,
-                    f"{first_code}.Help",
-                )
-
-                # Determine Type using new helper function
+                # Determine Type using helper function
                 q_type, extra_attrs = _determine_ls_question_type(q_data, bool(levels))
 
                 # Check for OtherOption
@@ -1165,28 +1187,39 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     "enabled", False
                 )
 
-                # Add Single Question
-                q_data_row = {
-                    "qid": qid,
-                    "parent_qid": "0",
-                    "sid": sid,
-                    "gid": gid,
-                    "type": q_type,
-                    "title": q_code,
-                    "other": "Y" if has_other else "N",
-                    "mandatory": "Y",
-                    "question_order": str(q_sort_order),
-                    "scale_id": "0",
-                    "same_default": "0",
-                    "relevance": relevance,
-                }
+                if is_v6:
+                    q_data_row = {
+                        "qid": qid, "parent_qid": "0", "sid": sid, "gid": gid,
+                        "type": q_type, "title": q_code,
+                        "other": "Y" if has_other else "N", "mandatory": "Y",
+                        "question_order": str(q_sort_order), "scale_id": "0",
+                        "same_default": "0", "relevance": relevance,
+                    }
+                    add_row(questions_rows, q_data_row)
 
-                if not is_v6:
-                    q_data_row["question"] = description
-                    q_data_row["help"] = help_text
-                    q_data_row["language"] = language
-
-                add_row(questions_rows, q_data_row)
+                    for lang in languages:
+                        desc = get_text(q_data.get("Description", first_code), lang, i18n_data, f"{first_code}.Description")
+                        desc = _apply_ls_styling(desc)
+                        h_text = get_text(q_data.get("Help", ""), lang, i18n_data, f"{first_code}.Help")
+                        add_row(question_l10ns_rows, {
+                            "id": str(l10n_id_counter), "qid": qid,
+                            "question": desc, "help": h_text, "language": lang, "sid": sid,
+                        })
+                        l10n_id_counter += 1
+                else:
+                    for lang in languages:
+                        desc = get_text(q_data.get("Description", first_code), lang, i18n_data, f"{first_code}.Description")
+                        desc = _apply_ls_styling(desc)
+                        h_text = get_text(q_data.get("Help", ""), lang, i18n_data, f"{first_code}.Help")
+                        q_data_row = {
+                            "qid": qid, "parent_qid": "0", "sid": sid, "gid": gid,
+                            "type": q_type, "title": q_code,
+                            "other": "Y" if has_other else "N", "mandatory": "Y",
+                            "question_order": str(q_sort_order), "scale_id": "0",
+                            "same_default": "0", "relevance": relevance,
+                            "question": desc, "help": h_text, "language": lang,
+                        }
+                        add_row(questions_rows, q_data_row)
 
                 # Add question attributes (minimum, maximum, hidden, etc.)
                 for attr_key, attr_val in extra_attrs.items():
@@ -1202,59 +1235,40 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                     )
                     qaid_counter += 1
 
-                if is_v6:
-                    add_row(
-                        question_l10ns_rows,
-                        {
-                            "id": qid,
-                            "qid": qid,
-                            "question": description,
-                            "help": help_text,
-                            "language": language,
-                            "sid": sid,
-                        },
-                    )
-
                 # Add Answers (skip "other" if OtherOption is enabled to avoid duplicate)
                 if levels:
                     sort_ans = 0
-                    used_answer_codes = set()  # Track used codes to avoid collisions
+                    used_answer_codes = set()
                     for code, answer_text in levels.items():
-                        # Skip "other" level if OtherOption is enabled (LimeSurvey will add its own)
                         if code.lower() == "other" and has_other:
                             continue
                         sort_ans += 1
-                        ans_text = get_text(
-                            answer_text, language, i18n_data, f"{q_code}.Levels.{code}"
-                        )
-                        # Sanitize answer code (LimeSurvey has 5-char limit)
                         sanitized_code = _sanitize_answer_code(code, used_answer_codes)
                         used_answer_codes.add(sanitized_code)
-                        ans_row = {
-                            "qid": qid,
-                            "code": sanitized_code,
-                            "sortorder": str(sort_ans),
-                            "assessment_value": "0",
-                            "scale_id": "0",
-                        }
-                        if not is_v6:
-                            ans_row["answer"] = ans_text
-                            ans_row["language"] = language
-
-                        add_row(answers_rows, ans_row)
 
                         if is_v6:
-                            add_row(
-                                answer_l10ns_rows,
-                                {
-                                    "id": f"{qid}_{sanitized_code}",
-                                    "qid": qid,
-                                    "code": sanitized_code,
-                                    "answer": ans_text,
-                                    "language": language,
-                                    "sid": sid,
-                                },
-                            )
+                            ans_row = {
+                                "qid": qid, "code": sanitized_code,
+                                "sortorder": str(sort_ans), "assessment_value": "0", "scale_id": "0",
+                            }
+                            add_row(answers_rows, ans_row)
+
+                            for lang in languages:
+                                a_text = get_text(answer_text, lang, i18n_data, f"{first_code}.Levels.{code}")
+                                add_row(answer_l10ns_rows, {
+                                    "id": str(l10n_id_counter), "qid": qid, "code": sanitized_code,
+                                    "answer": a_text, "language": lang, "sid": sid,
+                                })
+                                l10n_id_counter += 1
+                        else:
+                            for lang in languages:
+                                a_text = get_text(answer_text, lang, i18n_data, f"{first_code}.Levels.{code}")
+                                ans_row = {
+                                    "qid": qid, "code": sanitized_code,
+                                    "sortorder": str(sort_ans), "assessment_value": "0", "scale_id": "0",
+                                    "answer": a_text, "language": lang,
+                                }
+                                add_row(answers_rows, ans_row)
 
     # --- Survey Settings ---
     survey_settings = {
@@ -1266,14 +1280,15 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
         "format": "G",  # Group by Group
         "savetimings": "Y",
         "template": "vanilla",
-        "language": language,
+        "language": base_language,
     }
+    if additional_languages:
+        survey_settings["additional_languages"] = " ".join(additional_languages)
     add_row(surveys_rows, survey_settings)
 
     # --- Survey Language Settings ---
-    survey_title = "Combined Survey"
+    survey_title_base = "Combined Survey"
     if len(json_files) == 1:
-        # If only one file, try to use its name
         try:
             f_item = json_files[0]
             f_path = f_item if isinstance(f_item, str) else f_item.get("path")
@@ -1281,29 +1296,42 @@ def generate_lss(json_files, output_path=None, language="en", ls_version="6"):
                 d = json.load(f)
                 s_info = d.get("Study", {})
                 i_data = d.get("I18n", {})
-                survey_title = get_text(
+                survey_title_base = get_text(
                     s_info.get("OriginalName", d.get("TaskName", "Combined Survey")),
-                    language,
-                    i_data,
-                    "Study.OriginalName",
+                    base_language, i_data, "Study.OriginalName",
                 )
         except Exception:
             pass
 
-    # Note: Metadata is stored in hidden questions per group (relevance=0)
-    # so it survives LimeSurvey import/export cycles
+    # One language settings row per language
+    for lang in languages:
+        title_for_lang = survey_title_base
+        if len(json_files) == 1:
+            try:
+                f_item = json_files[0]
+                f_path = f_item if isinstance(f_item, str) else f_item.get("path")
+                with open(f_path, "r", encoding="utf-8") as f:
+                    d = json.load(f)
+                    s_info = d.get("Study", {})
+                    i_data = d.get("I18n", {})
+                    title_for_lang = get_text(
+                        s_info.get("OriginalName", d.get("TaskName", "Combined Survey")),
+                        lang, i_data, "Study.OriginalName",
+                    )
+            except Exception:
+                pass
 
-    add_row(
-        surveys_lang_rows,
-        {
-            "surveyls_survey_id": sid,
-            "surveyls_language": language,
-            "surveyls_title": survey_title,
-            "surveyls_description": "",  # Left empty - metadata is in hidden questions
-            "surveyls_welcometext": "",
-            "surveyls_endtext": "",
-        },
-    )
+        add_row(
+            surveys_lang_rows,
+            {
+                "surveyls_survey_id": sid,
+                "surveyls_language": lang,
+                "surveyls_title": title_for_lang,
+                "surveyls_description": "",
+                "surveyls_welcometext": "",
+                "surveyls_endtext": "",
+            },
+        )
 
     # --- Themes (Required for LS 3+) ---
     themes_elem = ET.SubElement(root, "themes")
@@ -1349,6 +1377,8 @@ def generate_lss_from_customization(
     groups,
     output_path=None,
     language="en",
+    languages=None,
+    base_language=None,
     ls_version="6",
     matrix_mode=True,
     matrix_global=True,
@@ -1361,52 +1391,43 @@ def generate_lss_from_customization(
     users to reorder questions, create custom groups, and set mandatory flags.
 
     Args:
-        groups (list): List of group dicts from CustomizationState:
-            [
-                {
-                    "id": "uuid",
-                    "name": "Group Name",
-                    "order": 0,
-                    "questions": [
-                        {
-                            "id": "uuid",
-                            "questionCode": "Q1",
-                            "description": "...",
-                            "mandatory": True,
-                            "enabled": True,
-                            "runNumber": 1,
-                            "levels": {...},
-                            "originalData": {...}
-                        }
-                    ]
-                }
-            ]
+        groups (list): List of group dicts from CustomizationState.
         output_path (str, optional): Path to write the .lss file.
-        language (str): The language to use for the export.
+        language (str): The language to use for the export (backward compatible).
+        languages (list, optional): List of language codes to include.
+        base_language (str, optional): Base language code.
         ls_version (str): Target LimeSurvey version ("3" or "6").
         matrix_mode (bool): Group questions with identical options into matrices.
         matrix_global (bool): Group all identical options, not just consecutive.
+        survey_title (str, optional): Custom title for the survey.
 
     Returns:
         str: The XML content if output_path is None, else None.
     """
+    # Normalize language parameters
+    if languages is None:
+        languages = [language]
+    if base_language is None:
+        base_language = languages[0] if languages else language
+    if base_language in languages:
+        languages = [base_language] + [l for l in languages if l != base_language]
+    additional_languages = [l for l in languages if l != base_language]
+
     is_v6 = str(ls_version) == "6"
-    # DBVersion must match LimeSurvey's expected schema version
-    # Use conservative versions for maximum compatibility
-    # LS 5.x/6.x: 415 (widely compatible), LS 3.x: 350
     db_version = "415" if is_v6 else "350"
 
     # IDs
-    sid = "123456"  # Dummy Survey ID
+    sid = "123456"
 
     # Root element
     root = ET.Element("document")
     ET.SubElement(root, "LimeSurveyDocType").text = "Survey"
     ET.SubElement(root, "DBVersion").text = db_version
 
-    # Languages
-    langs = ET.SubElement(root, "languages")
-    ET.SubElement(langs, "language").text = language
+    # Languages — one per language
+    langs_elem = ET.SubElement(root, "languages")
+    for lang_code in languages:
+        ET.SubElement(langs_elem, "language").text = lang_code
 
     # Sections
     answers_elem = ET.SubElement(root, "answers")
@@ -1438,7 +1459,6 @@ def generate_lss_from_customization(
     surveys_lang_elem = ET.SubElement(root, "surveys_languagesettings")
     surveys_lang_rows = ET.SubElement(surveys_lang_elem, "rows")
 
-    # Question attributes section (for minimum, maximum, hidden, etc.)
     question_attributes_elem = ET.SubElement(root, "question_attributes")
     question_attributes_rows = ET.SubElement(question_attributes_elem, "rows")
 
@@ -1446,7 +1466,8 @@ def generate_lss_from_customization(
     gid_counter = 10
     qid_counter = 100
     group_sort_order = 0
-    qaid_counter = 1  # Question attribute ID counter
+    qaid_counter = 1
+    l10n_id_counter = 1
 
     def get_text(obj, lang):
         """Get localized text from a multilingual object."""
@@ -1472,86 +1493,73 @@ def generate_lss_from_customization(
         group_name = group.get("name", f"Group {group_sort_order}")
         group_desc = ""
 
-        # Add Group
-        group_data = {
-            "gid": gid,
-            "sid": sid,
-            "group_order": str(group_sort_order),
-            "randomization_group": "",
-            "grelevance": "",
-        }
-        if not is_v6:
-            group_data["group_name"] = group_name
-            group_data["description"] = group_desc
-            group_data["language"] = language
-
-        add_row(groups_rows, group_data)
-
+        # Add Group — per-language rows
         if is_v6:
-            add_row(
-                group_l10ns_rows,
-                {
-                    "id": gid,
-                    "gid": gid,
-                    "group_name": group_name,
-                    "description": group_desc,
-                    "language": language,
-                    "sid": sid,
-                },
-            )
+            group_data = {
+                "gid": gid, "sid": sid,
+                "group_order": str(group_sort_order),
+                "randomization_group": "", "grelevance": "",
+            }
+            add_row(groups_rows, group_data)
+
+            for lang in languages:
+                add_row(group_l10ns_rows, {
+                    "id": str(l10n_id_counter), "gid": gid,
+                    "group_name": group_name, "description": group_desc,
+                    "language": lang, "sid": sid,
+                })
+                l10n_id_counter += 1
+        else:
+            for lang in languages:
+                group_data = {
+                    "gid": gid, "sid": sid,
+                    "group_order": str(group_sort_order),
+                    "randomization_group": "", "grelevance": "",
+                    "group_name": group_name, "description": group_desc,
+                    "language": lang,
+                }
+                add_row(groups_rows, group_data)
 
         # --- Add hidden metadata question for this questionnaire ---
-        # Get source file from first question in group
         source_file = None
         if enabled_questions:
             source_file = enabled_questions[0].get("sourceFile")
 
         if source_file:
-            file_metadata = _extract_single_file_metadata(source_file, language)
+            file_metadata = _extract_single_file_metadata(source_file, base_language)
             if file_metadata:
                 meta_qid = str(qid_counter)
                 qid_counter += 1
-                # Unique code per group: PRISMMETAg1, PRISMMETAg2, etc.
                 meta_q_code = f"PRISMMETAg{group_sort_order}"
-
                 metadata_html = _format_single_metadata_html(file_metadata)
 
-                meta_q_data = {
-                    "qid": meta_qid,
-                    "parent_qid": "0",
-                    "sid": sid,
-                    "gid": gid,
-                    "type": "X",  # Text Display (Boilerplate)
-                    "title": meta_q_code,
-                    "preg": "",
-                    "other": "N",
-                    "mandatory": "N",
-                    "encrypted": "N",
-                    "question_order": "0",  # First question in group
-                    "scale_id": "0",
-                    "same_default": "0",
-                    "relevance": "0",  # Never shown to participants
-                    "question_theme_name": "boilerplate",
-                    "modulename": "",
-                }
-                if not is_v6:
-                    meta_q_data["question"] = metadata_html
-                    meta_q_data["help"] = ""
-                    meta_q_data["language"] = language
-
-                add_row(questions_rows, meta_q_data)
-
                 if is_v6:
-                    add_row(
-                        question_l10ns_rows,
-                        {
-                            "id": meta_qid,
-                            "qid": meta_qid,
-                            "question": metadata_html,
-                            "help": "",
-                            "language": language,
-                        },
-                    )
+                    meta_q_data = {
+                        "qid": meta_qid, "parent_qid": "0", "sid": sid, "gid": gid,
+                        "type": "X", "title": meta_q_code, "preg": "", "other": "N",
+                        "mandatory": "N", "encrypted": "N", "question_order": "0",
+                        "scale_id": "0", "same_default": "0", "relevance": "0",
+                        "question_theme_name": "boilerplate", "modulename": "",
+                    }
+                    add_row(questions_rows, meta_q_data)
+
+                    for lang in languages:
+                        add_row(question_l10ns_rows, {
+                            "id": str(l10n_id_counter), "qid": meta_qid,
+                            "question": metadata_html, "help": "", "language": lang,
+                        })
+                        l10n_id_counter += 1
+                else:
+                    for lang in languages:
+                        meta_q_data = {
+                            "qid": meta_qid, "parent_qid": "0", "sid": sid, "gid": gid,
+                            "type": "X", "title": meta_q_code, "preg": "", "other": "N",
+                            "mandatory": "N", "encrypted": "N", "question_order": "0",
+                            "scale_id": "0", "same_default": "0", "relevance": "0",
+                            "question_theme_name": "boilerplate", "modulename": "",
+                            "question": metadata_html, "help": "", "language": lang,
+                        }
+                        add_row(questions_rows, meta_q_data)
 
         # Sort questions by displayOrder
         sorted_questions = sorted(
@@ -1730,55 +1738,44 @@ def generate_lss_from_customization(
             relevance = _build_relevance_equation(original_data)
 
             if is_matrix:
-                # Matrix Question (Array)
-                q_type = "F"  # Array (Flexible Labels)
+                q_type = "F"
 
-                # Matrix Title
                 first_code = first_q.get("questionCode", "Q")
                 run_number = first_q.get("runNumber")
                 matrix_title = _apply_run_suffix(f"M{first_code}", run_number)
 
-                # Matrix Text
-                matrix_text = "Please answer the following questions:"
-                if language == "de":
-                    matrix_text = "Bitte beantworten Sie die folgenden Fragen:"
-
-                # All questions in matrix mandatory if any is mandatory
+                _matrix_texts = {"en": "Please answer the following questions:", "de": "Bitte beantworten Sie die folgenden Fragen:"}
                 any_mandatory = any(q.get("mandatory", True) for q in q_group)
 
-                # Add Matrix Parent Question
-                q_data_row = {
-                    "qid": qid,
-                    "parent_qid": "0",
-                    "sid": sid,
-                    "gid": gid,
-                    "type": q_type,
-                    "title": matrix_title,
-                    "other": "N",
-                    "mandatory": "Y" if any_mandatory else "N",
-                    "question_order": str(q_sort_order),
-                    "scale_id": "0",
-                    "same_default": "0",
-                    "relevance": relevance,
-                }
-                if not is_v6:
-                    q_data_row["question"] = matrix_text
-                    q_data_row["language"] = language
-
-                add_row(questions_rows, q_data_row)
-
                 if is_v6:
-                    add_row(
-                        question_l10ns_rows,
-                        {
-                            "id": qid,
-                            "qid": qid,
-                            "question": matrix_text,
-                            "help": "",
-                            "language": language,
-                            "sid": sid,
-                        },
-                    )
+                    q_data_row = {
+                        "qid": qid, "parent_qid": "0", "sid": sid, "gid": gid,
+                        "type": q_type, "title": matrix_title, "other": "N",
+                        "mandatory": "Y" if any_mandatory else "N",
+                        "question_order": str(q_sort_order), "scale_id": "0",
+                        "same_default": "0", "relevance": relevance,
+                    }
+                    add_row(questions_rows, q_data_row)
+
+                    for lang in languages:
+                        m_text = _matrix_texts.get(lang, _matrix_texts["en"])
+                        add_row(question_l10ns_rows, {
+                            "id": str(l10n_id_counter), "qid": qid,
+                            "question": m_text, "help": "", "language": lang, "sid": sid,
+                        })
+                        l10n_id_counter += 1
+                else:
+                    for lang in languages:
+                        m_text = _matrix_texts.get(lang, _matrix_texts["en"])
+                        q_data_row = {
+                            "qid": qid, "parent_qid": "0", "sid": sid, "gid": gid,
+                            "type": q_type, "title": matrix_title, "other": "N",
+                            "mandatory": "Y" if any_mandatory else "N",
+                            "question_order": str(q_sort_order), "scale_id": "0",
+                            "same_default": "0", "relevance": relevance,
+                            "question": m_text, "language": lang,
+                        }
+                        add_row(questions_rows, q_data_row)
 
                 # Add Subquestions
                 sub_sort = 0
@@ -1791,78 +1788,72 @@ def generate_lss_from_customization(
                     run_num = q.get("runNumber")
                     sub_q_code = _apply_run_suffix(q_code, run_num)
 
-                    description = q.get("description", "")
-                    if not description:
-                        orig = q.get("originalData", {})
-                        description = get_text(
-                            orig.get("Description", q_code), language
-                        )
-
-                    sub_q_row = {
-                        "qid": sub_qid,
-                        "parent_qid": qid,
-                        "sid": sid,
-                        "gid": gid,
-                        "type": "T",
-                        "title": sub_q_code,
-                        "question_order": str(sub_sort),
-                        "scale_id": "0",
-                        "same_default": "0",
-                        "relevance": "1",
-                    }
-                    if not is_v6:
-                        sub_q_row["question"] = description
-                        sub_q_row["language"] = language
-
-                    add_row(subquestions_rows, sub_q_row)
+                    orig = q.get("originalData", {})
 
                     if is_v6:
-                        add_row(
-                            question_l10ns_rows,
-                            {
-                                "id": sub_qid,
-                                "qid": sub_qid,
-                                "question": description,
-                                "help": "",
-                                "language": language,
-                            },
-                        )
+                        sub_q_row = {
+                            "qid": sub_qid, "parent_qid": qid, "sid": sid, "gid": gid,
+                            "type": "T", "title": sub_q_code,
+                            "question_order": str(sub_sort), "scale_id": "0",
+                            "same_default": "0", "relevance": "1",
+                        }
+                        add_row(subquestions_rows, sub_q_row)
+
+                        for lang in languages:
+                            sq_desc = get_text(orig.get("Description", q_code), lang)
+                            if not sq_desc:
+                                sq_desc = q.get("description", q_code)
+                            add_row(question_l10ns_rows, {
+                                "id": str(l10n_id_counter), "qid": sub_qid,
+                                "question": sq_desc, "help": "", "language": lang,
+                            })
+                            l10n_id_counter += 1
+                    else:
+                        for lang in languages:
+                            sq_desc = get_text(orig.get("Description", q_code), lang)
+                            if not sq_desc:
+                                sq_desc = q.get("description", q_code)
+                            sub_q_row = {
+                                "qid": sub_qid, "parent_qid": qid, "sid": sid, "gid": gid,
+                                "type": "T", "title": sub_q_code,
+                                "question_order": str(sub_sort), "scale_id": "0",
+                                "same_default": "0", "relevance": "1",
+                                "question": sq_desc, "language": lang,
+                            }
+                            add_row(subquestions_rows, sub_q_row)
 
                 # Add Answers for the matrix (only once)
                 if levels:
                     sort_ans = 0
-                    used_answer_codes = set()  # Track used codes to avoid collisions
+                    used_answer_codes = set()
                     for code, answer_text in levels.items():
                         sort_ans += 1
-                        ans_text = get_text(answer_text, language)
-                        # Sanitize answer code (LimeSurvey has 5-char limit)
                         sanitized_code = _sanitize_answer_code(code, used_answer_codes)
                         used_answer_codes.add(sanitized_code)
-                        ans_row = {
-                            "qid": qid,
-                            "code": sanitized_code,
-                            "sortorder": str(sort_ans),
-                            "assessment_value": "0",
-                            "scale_id": "0",
-                        }
-                        if not is_v6:
-                            ans_row["answer"] = ans_text
-                            ans_row["language"] = language
-
-                        add_row(answers_rows, ans_row)
 
                         if is_v6:
-                            add_row(
-                                answer_l10ns_rows,
-                                {
-                                    "id": f"{qid}_{sanitized_code}",
-                                    "qid": qid,
-                                    "code": sanitized_code,
-                                    "answer": ans_text,
-                                    "language": language,
-                                    "sid": sid,
-                                },
-                            )
+                            ans_row = {
+                                "qid": qid, "code": sanitized_code,
+                                "sortorder": str(sort_ans), "assessment_value": "0", "scale_id": "0",
+                            }
+                            add_row(answers_rows, ans_row)
+
+                            for lang in languages:
+                                a_text = get_text(answer_text, lang)
+                                add_row(answer_l10ns_rows, {
+                                    "id": str(l10n_id_counter), "qid": qid, "code": sanitized_code,
+                                    "answer": a_text, "language": lang, "sid": sid,
+                                })
+                                l10n_id_counter += 1
+                        else:
+                            for lang in languages:
+                                a_text = get_text(answer_text, lang)
+                                ans_row = {
+                                    "qid": qid, "code": sanitized_code,
+                                    "sortorder": str(sort_ans), "assessment_value": "0", "scale_id": "0",
+                                    "answer": a_text, "language": lang,
+                                }
+                                add_row(answers_rows, ans_row)
             else:
                 # Single Question
                 q = first_q
@@ -1870,116 +1861,124 @@ def generate_lss_from_customization(
                 run_num = q.get("runNumber")
                 final_code = _apply_run_suffix(q_code, run_num)
 
-                # Use source file data as primary, fall back to originalData
-                # source_q_data is set earlier when we got levels
                 orig = source_q_data if source_q_data else q.get("originalData", {})
-
-                description = q.get("description", "")
-                if not description:
-                    description = get_text(orig.get("Description", q_code), language)
-                # Apply LimeSurvey HTML styling to question text
-                description = _apply_ls_styling(description)
-
-                # Get help text
-                help_text = get_text(orig.get("Help", ""), language)
-
                 is_mandatory = q.get("mandatory", True)
 
-                # Determine Type using new helper function
-                q_type, extra_attrs = _determine_ls_question_type(orig, bool(levels))
+                # Apply toolOverrides if present
+                tool_ov = q.get("toolOverrides", {})
+
+                # Determine Type — use toolOverride first, then auto-detect
+                if tool_ov.get("questionType"):
+                    q_type = tool_ov["questionType"]
+                    extra_attrs = {}
+                else:
+                    q_type, extra_attrs = _determine_ls_question_type(orig, bool(levels))
+
+                # Apply toolOverride attributes
+                if tool_ov.get("inputWidth"):
+                    extra_attrs["text_input_width"] = str(tool_ov["inputWidth"])
+                if tool_ov.get("displayRows"):
+                    extra_attrs["display_rows"] = str(tool_ov["displayRows"])
+                if tool_ov.get("validationMin") is not None:
+                    extra_attrs["min_num_value_n"] = str(tool_ov["validationMin"])
+                if tool_ov.get("validationMax") is not None:
+                    extra_attrs["max_num_value_n"] = str(tool_ov["validationMax"])
+                if tool_ov.get("integerOnly"):
+                    extra_attrs["num_value_int_only"] = "1"
+                if tool_ov.get("hidden"):
+                    extra_attrs["hidden"] = "1"
+                if tool_ov.get("equation"):
+                    extra_attrs["equation"] = tool_ov["equation"]
+
+                # Relevance — toolOverride takes precedence
+                if tool_ov.get("relevance"):
+                    relevance = tool_ov["relevance"]
 
                 # Check for OtherOption
-                has_other = "OtherOption" in orig and orig["OtherOption"].get(
-                    "enabled", False
-                )
-
-                q_data_row = {
-                    "qid": qid,
-                    "parent_qid": "0",
-                    "sid": sid,
-                    "gid": gid,
-                    "type": q_type,
-                    "title": final_code,
-                    "other": "Y" if has_other else "N",
-                    "mandatory": "Y" if is_mandatory else "N",
-                    "question_order": str(q_sort_order),
-                    "scale_id": "0",
-                    "same_default": "0",
-                    "relevance": relevance,
-                }
-
-                if not is_v6:
-                    q_data_row["question"] = description
-                    q_data_row["help"] = help_text
-                    q_data_row["language"] = language
-
-                add_row(questions_rows, q_data_row)
-
-                # Add question attributes (minimum, maximum, hidden, etc.)
-                for attr_key, attr_val in extra_attrs.items():
-                    add_row(
-                        question_attributes_rows,
-                        {
-                            "qaid": str(qaid_counter),
-                            "qid": qid,
-                            "attribute": attr_key,
-                            "value": str(attr_val),
-                            "language": "",
-                        },
-                    )
-                    qaid_counter += 1
+                has_other = "OtherOption" in orig and orig["OtherOption"].get("enabled", False)
 
                 if is_v6:
-                    add_row(
-                        question_l10ns_rows,
-                        {
-                            "id": qid,
-                            "qid": qid,
-                            "question": description,
-                            "help": help_text,
-                            "language": language,
-                            "sid": sid,
-                        },
-                    )
+                    q_data_row = {
+                        "qid": qid, "parent_qid": "0", "sid": sid, "gid": gid,
+                        "type": q_type, "title": final_code,
+                        "other": "Y" if has_other else "N",
+                        "mandatory": "Y" if is_mandatory else "N",
+                        "question_order": str(q_sort_order), "scale_id": "0",
+                        "same_default": "0", "relevance": relevance,
+                    }
+                    add_row(questions_rows, q_data_row)
 
-                # Add Answers (skip "other" if OtherOption is enabled to avoid duplicate)
+                    for lang in languages:
+                        desc = get_text(orig.get("Description", q_code), lang)
+                        if not desc:
+                            desc = q.get("description", q_code)
+                        desc = _apply_ls_styling(desc)
+                        h_text = tool_ov.get("helpText") or get_text(orig.get("Help", ""), lang)
+                        add_row(question_l10ns_rows, {
+                            "id": str(l10n_id_counter), "qid": qid,
+                            "question": desc, "help": h_text, "language": lang, "sid": sid,
+                        })
+                        l10n_id_counter += 1
+                else:
+                    for lang in languages:
+                        desc = get_text(orig.get("Description", q_code), lang)
+                        if not desc:
+                            desc = q.get("description", q_code)
+                        desc = _apply_ls_styling(desc)
+                        h_text = tool_ov.get("helpText") or get_text(orig.get("Help", ""), lang)
+                        q_data_row = {
+                            "qid": qid, "parent_qid": "0", "sid": sid, "gid": gid,
+                            "type": q_type, "title": final_code,
+                            "other": "Y" if has_other else "N",
+                            "mandatory": "Y" if is_mandatory else "N",
+                            "question_order": str(q_sort_order), "scale_id": "0",
+                            "same_default": "0", "relevance": relevance,
+                            "question": desc, "help": h_text, "language": lang,
+                        }
+                        add_row(questions_rows, q_data_row)
+
+                # Add question attributes
+                for attr_key, attr_val in extra_attrs.items():
+                    add_row(question_attributes_rows, {
+                        "qaid": str(qaid_counter), "qid": qid,
+                        "attribute": attr_key, "value": str(attr_val), "language": "",
+                    })
+                    qaid_counter += 1
+
+                # Add Answers
                 if levels:
                     sort_ans = 0
-                    used_answer_codes = set()  # Track used codes to avoid collisions
+                    used_answer_codes = set()
                     for code, answer_text in levels.items():
-                        # Skip "other" level if OtherOption is enabled (LimeSurvey will add its own)
                         if code.lower() == "other" and has_other:
                             continue
                         sort_ans += 1
-                        ans_text = get_text(answer_text, language)
-                        # Sanitize answer code (LimeSurvey has 5-char limit)
                         sanitized_code = _sanitize_answer_code(code, used_answer_codes)
                         used_answer_codes.add(sanitized_code)
-                        ans_row = {
-                            "qid": qid,
-                            "code": sanitized_code,
-                            "sortorder": str(sort_ans),
-                            "assessment_value": "0",
-                            "scale_id": "0",
-                        }
-                        if not is_v6:
-                            ans_row["answer"] = ans_text
-                            ans_row["language"] = language
-
-                        add_row(answers_rows, ans_row)
 
                         if is_v6:
-                            add_row(
-                                answer_l10ns_rows,
-                                {
-                                    "id": f"{qid}_{sanitized_code}",
-                                    "qid": qid,
-                                    "code": sanitized_code,
-                                    "answer": ans_text,
-                                    "language": language,
-                                    "sid": sid,
-                                },
-                            )
+                            ans_row = {
+                                "qid": qid, "code": sanitized_code,
+                                "sortorder": str(sort_ans), "assessment_value": "0", "scale_id": "0",
+                            }
+                            add_row(answers_rows, ans_row)
+
+                            for lang in languages:
+                                a_text = get_text(answer_text, lang)
+                                add_row(answer_l10ns_rows, {
+                                    "id": str(l10n_id_counter), "qid": qid, "code": sanitized_code,
+                                    "answer": a_text, "language": lang, "sid": sid,
+                                })
+                                l10n_id_counter += 1
+                        else:
+                            for lang in languages:
+                                a_text = get_text(answer_text, lang)
+                                ans_row = {
+                                    "qid": qid, "code": sanitized_code,
+                                    "sortorder": str(sort_ans), "assessment_value": "0", "scale_id": "0",
+                                    "answer": a_text, "language": lang,
+                                }
+                                add_row(answers_rows, ans_row)
                 else:
                     logger.warning("No levels for %s", final_code)
 
@@ -1990,34 +1989,33 @@ def generate_lss_from_customization(
         "admin": "Administrator",
         "active": "N",
         "anonymized": "N",
-        "format": "G",  # Group by Group
+        "format": "G",
         "savetimings": "Y",
         "template": "vanilla",
-        "language": language,
+        "language": base_language,
     }
+    if additional_languages:
+        survey_settings["additional_languages"] = " ".join(additional_languages)
     add_row(surveys_rows, survey_settings)
 
     # --- Survey Language Settings ---
-    # Use provided survey_title, or fall back to first group name
     if not survey_title:
         survey_title = "Custom Survey"
         if sorted_groups:
             survey_title = sorted_groups[0].get("name", "Custom Survey")
 
-    # Note: Metadata is stored in hidden questions per group (relevance=0)
-    # so it survives LimeSurvey import/export cycles
-
-    add_row(
-        surveys_lang_rows,
-        {
-            "surveyls_survey_id": sid,
-            "surveyls_language": language,
-            "surveyls_title": survey_title,
-            "surveyls_description": "",  # Left empty - metadata is in hidden questions
-            "surveyls_welcometext": "",
-            "surveyls_endtext": "",
-        },
-    )
+    for lang in languages:
+        add_row(
+            surveys_lang_rows,
+            {
+                "surveyls_survey_id": sid,
+                "surveyls_language": lang,
+                "surveyls_title": survey_title,
+                "surveyls_description": "",
+                "surveyls_welcometext": "",
+                "surveyls_endtext": "",
+            },
+        )
 
     # --- Themes (Required for LS 3+) ---
     themes_elem = ET.SubElement(root, "themes")

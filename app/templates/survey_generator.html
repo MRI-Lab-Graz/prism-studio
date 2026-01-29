@@ -4,283 +4,237 @@
 
 {% block styles %}
 <style>
-    .collapse-row {
-        background-color: #f8f9fa;
+    /* Compact template row */
+    .tpl-row {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.35rem;
+        transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .question-item {
-        padding: 10px;
-        border-bottom: 1px solid #dee2e6;
-        transition: background-color 0.2s;
+    .tpl-row:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
-    .question-item:hover {
-        background-color: rgba(0,0,0,0.02);
+    .tpl-row.tpl-selected {
+        border-color: #198754;
+        background: #f0fff4;
     }
-    .question-item:last-child {
-        border-bottom: none;
+    .tpl-row.tpl-no-lang {
+        opacity: 0.4;
+        pointer-events: none;
     }
-    .question-item .row {
-        min-height: 45px;
+    .tpl-row.tpl-hidden-search {
+        display: none !important;
     }
-    .btn-xs {
+    .tpl-name {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .tpl-meta {
+        font-size: 0.78rem;
+        color: #6c757d;
+    }
+    .tpl-desc {
+        font-size: 0.8rem;
+        color: #6c757d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 400px;
+    }
+    .source-badge-global { background-color: #0dcaf0; color: #000; font-size: 0.68rem; }
+    .source-badge-project { background-color: #198754; color: #fff; font-size: 0.68rem; }
+    .source-badge-both { background-color: #6f42c1; color: #fff; font-size: 0.68rem; }
+    .lang-badge {
+        font-size: 0.65rem;
         padding: 0.1rem 0.3rem;
-        font-size: 0.75rem;
-        line-height: 1.5;
-        border-radius: 0.2rem;
+        border-radius: 3px;
+        font-weight: 600;
     }
-    .border-success {
-        border-color: #198754 !important;
-    }
-    .badge-matrix {
-        background-color: #e8f5e9;
-        color: #2e7d32;
-        border: 1px solid #2e7d32;
-    }
-    /* Make the levels table look more like a fixed column */
-    .levels-table-container {
-        max-height: 150px;
+    .lang-badge-available { background: #d1ecf1; color: #0c5460; }
+    .lang-badge-missing { background: #f8d7da; color: #721c24; }
+
+    /* Collapsed question panel */
+    .tpl-questions-panel {
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        margin: 0.5rem -0.75rem -0.5rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0 0 6px 6px;
+        max-height: 350px;
         overflow-y: auto;
     }
+    .q-item {
+        padding: 0.25rem 0;
+        border-bottom: 1px solid #eee;
+        font-size: 0.82rem;
+    }
+    .q-item:last-child { border-bottom: none; }
+    .q-id { font-family: monospace; font-weight: 600; color: #495057; }
+    .q-desc { color: #6c757d; }
+    .q-levels-inline { color: #999; font-size: 0.75rem; }
+
+    /* Settings row within template */
+    .tpl-settings-row {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        margin-top: 0.35rem;
+        font-size: 0.8rem;
+    }
+    .tpl-settings-row label { margin-bottom: 0; color: #6c757d; }
+
+    /* Search */
+    .search-container { position: relative; }
+    .search-container .fa-search {
+        position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+        color: #adb5bd; pointer-events: none;
+    }
+    .search-container input {
+        padding-left: 2.2rem;
+    }
+
+    /* Section count badge in header */
+    .section-count {
+        font-size: 0.78rem;
+        font-weight: normal;
+    }
+
+    .lang-warning-item { font-size: 0.85rem; }
+
+    /* Levels table in expanded view */
+    .levels-table-container { max-height: 120px; overflow-y: auto; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <div class="row mb-4">
+    <div class="row mb-3">
         <div class="col-12">
             <h2><i class="fas fa-file-export text-info me-2"></i>Survey & Boilerplate</h2>
-            <p class="text-muted">Select questionnaires from the library to export them to LimeSurvey (.lss) or generate a scientific methods boilerplate (.md).</p>
+            <p class="text-muted mb-0">Select questionnaires from the library to export to LimeSurvey (.lss) or generate a methods boilerplate.</p>
         </div>
     </div>
 
-    <!-- Project Context Banner -->
     {% include 'includes/project_banner.html' %}
 
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">1. Load Survey Library</h5>
-        </div>
-        <div class="card-body">
-            <div class="row mb-3">
-                <div class="col-md-8">
-                    <label for="libraryPath" class="form-label">
-                        Library Path
-                        <span id="librarySourceBadge" class="ms-2 badge bg-secondary">Manual</span>
-                    </label>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="libraryPath" placeholder="/path/to/survey_library" value="{{ default_survey_library_path | default('survey_library') }}">
-                        <button class="btn btn-outline-secondary" type="button" id="browseBtn" title="Browse Folder">
-                            <i class="fas fa-folder-open"></i>
-                        </button>
-                        <button class="btn btn-info text-white" type="button" id="loadLibraryBtn">
-                            <i class="fas fa-sync-alt me-2"></i>Load Files
-                        </button>
+    <!-- Source Info + Search Bar -->
+    <div class="card mb-3">
+        <div class="card-body py-2">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <i class="fas fa-book-open text-info me-1"></i>
+                    <span id="sourceInfoText" class="text-muted small">Loading...</span>
+                    <button class="btn btn-sm btn-link text-secondary p-0 ms-2" id="reloadLibraryBtn" title="Reload">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <div class="search-container">
+                        <i class="fas fa-search"></i>
+                        <input type="text" class="form-control form-control-sm" id="templateSearch"
+                               placeholder="Search templates by name, description, or filename...">
                     </div>
-                    <!-- Quick switch buttons -->
-                    <div class="mt-2" id="libraryQuickSwitch">
-                        <small class="text-muted me-2">Quick switch:</small>
-                        <button type="button" class="btn btn-sm btn-outline-info me-1" id="useGlobalLibraryBtn" title="Use global template library" disabled>
-                            <i class="fas fa-globe me-1"></i>Global
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-success me-1" id="useProjectLibraryBtn" title="Use project library" disabled>
-                            <i class="fas fa-folder me-1"></i>Project
-                        </button>
-                    </div>
-                    <div class="form-text">Select the template folder where your PRISM survey templates are stored.</div>
                 </div>
             </div>
-            <div id="libraryError" class="alert alert-danger d-none mt-3"></div>
         </div>
     </div>
 
-    <div id="languageSelectionCard" class="card mb-4 d-none">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">2. Select Export Language</h5>
-        </div>
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-md-4">
-                    <select class="form-select" id="languageSelect">
-                        <!-- Languages will be populated here -->
-                    </select>
+    <div id="libraryError" class="alert alert-danger d-none"></div>
+
+    <!-- Toolbar: Language + Export Settings in one row -->
+    <div id="toolbarCard" class="card mb-3 d-none">
+        <div class="card-body py-2">
+            <div class="row align-items-center g-2">
+                <div class="col-auto">
+                    <label class="form-label mb-0 small fw-bold">Base Language</label>
                 </div>
-                <div class="col-md-8">
-                    <div class="form-text">Choose the language for the exported LimeSurvey file. This will update the preview below.</div>
+                <div class="col-auto">
+                    <select class="form-select form-select-sm" id="baseLanguageSelect" style="width:auto;"></select>
+                </div>
+                <div class="col-auto">
+                    <label class="form-label mb-0 small fw-bold ms-2">Export Languages</label>
+                </div>
+                <div class="col-auto" id="exportLanguageCheckboxes"></div>
+                <div class="col-auto ms-auto">
+                    <label class="form-label mb-0 small fw-bold">LS Version</label>
+                </div>
+                <div class="col-auto">
+                    <select class="form-select form-select-sm" id="lsVersionSelect" style="width:auto;">
+                        <option value="6">5.x / 6.x</option>
+                        <option value="3" selected>3.x / 4.x</option>
+                    </select>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Language Warnings -->
+    <div id="languageWarnings" class="alert alert-warning py-2 d-none">
+        <i class="fas fa-exclamation-triangle me-1"></i><strong>Translation warnings:</strong>
+        <ul id="languageWarningList" class="mb-0 mt-1 small"></ul>
     </div>
 
     <div id="libraryContent" class="d-none">
-        <!-- Export Settings Card -->
-        <div class="card mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0"><i class="fas fa-cog text-secondary me-2"></i>3. Export Settings</h5>
-            </div>
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Target LimeSurvey Version</label>
-                        <select class="form-select" id="lsVersionSelect">
-                            <option value="6">LimeSurvey 5.x / 6.x (v5.0+)</option>
-                            <option value="3" selected>LimeSurvey 3.x / 4.x (v3.0 - v4.x)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-8">
-                        <div class="form-text">
-                            <i class="bi bi-info-circle"></i> <b>Check your version:</b> In LimeSurvey, go to <em>Settings → Overview</em> (version shown at bottom).<br>
-                            <b>5.x/6.x:</b> Uses modern localization format. Recommended for LimeSurvey 5.0 and newer.<br>
-                            <b>3.x/4.x:</b> Uses legacy XML format. Use for LimeSurvey versions 3.x through 4.x.
-                        </div>
-                    </div>
+        <!-- Sections: Survey, Biometrics, Participants, Other -->
+        <div id="surveySection" class="d-none mb-3">
+            <div class="d-flex align-items-center mb-2">
+                <h6 class="mb-0"><i class="fas fa-poll-h text-success me-1"></i>Survey Questionnaires <span class="section-count text-muted" id="surveyCount"></span></h6>
+                <div class="ms-auto">
+                    <button class="btn btn-sm btn-link text-secondary select-all-section p-0 me-2" data-target="surveyList">Select all</button>
+                    <button class="btn btn-sm btn-link text-secondary deselect-all-section p-0" data-target="surveyList">Clear</button>
                 </div>
             </div>
+            <div id="surveyList"></div>
         </div>
 
-        <!-- Participants Section -->
-        <div id="participantsSection" class="d-none mb-4">
-            <div class="card">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-users text-primary me-2"></i>Participants</h5>
-                    <div class="small text-muted">Root level templates</div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 40px;"></th>
-                                    <th style="width: 40px;"></th>
-                                    <th>Filename</th>
-                                    <th>Original Name</th>
-                                    <th class="text-center" style="width: 100px;">Matrix</th>
-                                    <th class="text-center" style="width: 100px;">Global</th>
-                                    <th class="text-center" style="width: 80px;">Run</th>
-                                    <th>Items</th>
-                                    <th>Description</th>
-                                </tr>
-                            </thead>
-                            <tbody id="participantsListBody"></tbody>
-                        </table>
-                    </div>
+        <div id="biometricsSection" class="d-none mb-3">
+            <div class="d-flex align-items-center mb-2">
+                <h6 class="mb-0"><i class="fas fa-heartbeat text-danger me-1"></i>Biometrics & Physio <span class="section-count text-muted" id="biometricsCount"></span></h6>
+                <div class="ms-auto">
+                    <button class="btn btn-sm btn-link text-secondary select-all-section p-0 me-2" data-target="biometricsList">Select all</button>
+                    <button class="btn btn-sm btn-link text-secondary deselect-all-section p-0" data-target="biometricsList">Clear</button>
                 </div>
             </div>
+            <div id="biometricsList"></div>
         </div>
 
-        <!-- Survey Section -->
-        <div id="surveySection" class="d-none mb-4">
-            <div class="card">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-poll-h text-success me-2"></i>Survey Questionnaires</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary select-all-section" data-target="surveyListBody">Select All</button>
-                        <button class="btn btn-sm btn-outline-secondary deselect-all-section" data-target="surveyListBody">Deselect All</button>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 40px;"></th>
-                                    <th style="width: 40px;"></th>
-                                    <th>Filename</th>
-                                    <th>Original Name</th>
-                                    <th class="text-center" style="width: 100px;">Matrix</th>
-                                    <th class="text-center" style="width: 100px;">Global</th>
-                                    <th class="text-center" style="width: 80px;">Run</th>
-                                    <th>Items</th>
-                                    <th>Description</th>
-                                </tr>
-                            </thead>
-                            <tbody id="surveyListBody"></tbody>
-                        </table>
-                    </div>
-                </div>
+        <div id="participantsSection" class="d-none mb-3">
+            <div class="d-flex align-items-center mb-2">
+                <h6 class="mb-0"><i class="fas fa-users text-primary me-1"></i>Participants <span class="section-count text-muted" id="participantsCount"></span></h6>
             </div>
+            <div id="participantsList"></div>
         </div>
 
-        <!-- Biometrics Section -->
-        <div id="biometricsSection" class="d-none mb-4">
-            <div class="card">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-heartbeat text-danger me-2"></i>Biometrics & Physio</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary select-all-section" data-target="biometricsListBody">Select All</button>
-                        <button class="btn btn-sm btn-outline-secondary deselect-all-section" data-target="biometricsListBody">Deselect All</button>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 40px;"></th>
-                                    <th style="width: 40px;"></th>
-                                    <th>Filename</th>
-                                    <th>Original Name</th>
-                                    <th class="text-center" style="width: 100px;">Matrix</th>
-                                    <th class="text-center" style="width: 100px;">Global</th>
-                                    <th class="text-center" style="width: 80px;">Run</th>
-                                    <th>Items</th>
-                                    <th>Description</th>
-                                </tr>
-                            </thead>
-                            <tbody id="biometricsListBody"></tbody>
-                        </table>
-                    </div>
+        <div id="otherSection" class="d-none mb-3">
+            <div class="d-flex align-items-center mb-2">
+                <h6 class="mb-0"><i class="fas fa-file-alt text-secondary me-1"></i>Other Templates <span class="section-count text-muted" id="otherCount"></span></h6>
+                <div class="ms-auto">
+                    <button class="btn btn-sm btn-link text-secondary select-all-section p-0 me-2" data-target="otherList">Select all</button>
+                    <button class="btn btn-sm btn-link text-secondary deselect-all-section p-0" data-target="otherList">Clear</button>
                 </div>
             </div>
-        </div>
-
-        <!-- Other Section (Fallback) -->
-        <div id="otherSection" class="d-none mb-4">
-            <div class="card">
-                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-file-alt text-secondary me-2"></i>Other Templates</h5>
-                    <div>
-                        <button class="btn btn-sm btn-outline-secondary select-all-section" data-target="otherListBody">Select All</button>
-                        <button class="btn btn-sm btn-outline-secondary deselect-all-section" data-target="otherListBody">Deselect All</button>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 40px;"></th>
-                                    <th style="width: 40px;"></th>
-                                    <th>Filename</th>
-                                    <th>Original Name</th>
-                                    <th class="text-center" style="width: 100px;">Matrix</th>
-                                    <th class="text-center" style="width: 100px;">Global</th>
-                                    <th class="text-center" style="width: 80px;">Run</th>
-                                    <th>Items</th>
-                                    <th>Description</th>
-                                </tr>
-                            </thead>
-                            <tbody id="otherListBody"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            <div id="otherList"></div>
         </div>
 
         <div class="d-flex justify-content-end mb-5 gap-2">
-            <button class="btn btn-outline-info btn-lg" id="generateBoilerplateBtn" disabled title="Generate a scientific methods section boilerplate from selected templates">
-                <i class="fas fa-file-alt me-2"></i>Write Boilerplate (.md / .html)
+            <button class="btn btn-outline-info" id="generateBoilerplateBtn" disabled>
+                <i class="fas fa-file-alt me-1"></i>Boilerplate
             </button>
-            <button class="btn btn-outline-secondary btn-lg" id="generateLssBtn" disabled title="Quick export directly to LimeSurvey without customization">
-                <i class="fas fa-file-export me-2"></i>Quick Export (.lss)
+            <button class="btn btn-outline-secondary" id="generateLssBtn" disabled>
+                <i class="fas fa-file-export me-1"></i>Quick Export (.lss)
             </button>
-            <button class="btn btn-info btn-lg text-white" id="customizeExportBtn" disabled title="Open the Survey Customizer to organize questions, create groups, and set mandatory fields before exporting">
-                <i class="fas fa-sliders-h me-2"></i>Customize & Export
+            <button class="btn btn-info text-white" id="customizeExportBtn" disabled>
+                <i class="fas fa-sliders-h me-1"></i>Customize & Export
             </button>
         </div>
     </div>
 
     <div id="libraryEmpty" class="text-center py-5 d-none">
         <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
-        <p class="text-muted">No JSON files found in this directory.</p>
+        <p class="text-muted">No JSON files found in the library.</p>
     </div>
 </div>
 {% endblock %}
@@ -288,415 +242,409 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const libraryPathInput = document.getElementById('libraryPath');
-    const loadLibraryBtn = document.getElementById('loadLibraryBtn');
-    const browseBtn = document.getElementById('browseBtn');
     const libraryContent = document.getElementById('libraryContent');
     const libraryEmpty = document.getElementById('libraryEmpty');
     const libraryError = document.getElementById('libraryError');
     const generateLssBtn = document.getElementById('generateLssBtn');
     const generateBoilerplateBtn = document.getElementById('generateBoilerplateBtn');
     const customizeExportBtn = document.getElementById('customizeExportBtn');
-    const languageSelectionCard = document.getElementById('languageSelectionCard');
-    const languageSelect = document.getElementById('languageSelect');
+    const toolbarCard = document.getElementById('toolbarCard');
+    const baseLanguageSelect = document.getElementById('baseLanguageSelect');
+    const exportLanguageCheckboxes = document.getElementById('exportLanguageCheckboxes');
+    const languageWarnings = document.getElementById('languageWarnings');
+    const languageWarningList = document.getElementById('languageWarningList');
+    const sourceInfoText = document.getElementById('sourceInfoText');
+    const reloadLibraryBtn = document.getElementById('reloadLibraryBtn');
+    const templateSearch = document.getElementById('templateSearch');
 
     let currentLibraryData = null;
     let currentLanguage = 'en';
+    let selectedExportLanguages = ['en'];
+    let allDetectedLanguages = [];
 
-    const sections = {
-        participants: {
-            container: document.getElementById('participantsSection'),
-            body: document.getElementById('participantsListBody')
-        },
-        survey: {
-            container: document.getElementById('surveySection'),
-            body: document.getElementById('surveyListBody')
-        },
-        biometrics: {
-            container: document.getElementById('biometricsSection'),
-            body: document.getElementById('biometricsListBody')
-        },
-        other: {
-            container: document.getElementById('otherSection'),
-            body: document.getElementById('otherListBody')
-        }
+    const sectionConfig = {
+        survey:       { container: 'surveySection',       list: 'surveyList',       count: 'surveyCount' },
+        biometrics:   { container: 'biometricsSection',   list: 'biometricsList',   count: 'biometricsCount' },
+        participants: { container: 'participantsSection',  list: 'participantsList',  count: 'participantsCount' },
+        other:        { container: 'otherSection',         list: 'otherList',         count: 'otherCount' },
     };
 
     function getText(obj, lang) {
-        if (!obj) return '-';
+        if (!obj) return '';
         if (typeof obj === 'string') return obj;
-        if (typeof obj === 'object') {
-            return obj[lang] || obj['en'] || Object.values(obj)[0] || '-';
-        }
-        return '-';
+        if (typeof obj === 'object') return obj[lang] || obj['en'] || Object.values(obj)[0] || '';
+        return '';
     }
 
-    function createFileRow(file, index, sectionKey) {
-        const fileId = `file-${sectionKey}-${index}`;
-        const collapseId = `collapse-${sectionKey}-${index}`;
-        
-        // Analyze for potential matrices
-        const getMatrixGroups = (isGlobal) => {
-            const groups = [];
-            if (isGlobal) {
-                const levelMap = new Map();
-                (file.questions || []).forEach(q => {
-                    if (q.levels && Object.keys(q.levels).length > 0) {
-                        const levelsStr = JSON.stringify(q.levels);
-                        if (!levelMap.has(levelsStr)) levelMap.set(levelsStr, []);
-                        levelMap.get(levelsStr).push(q.id);
-                    }
-                });
-                for (const qids of levelMap.values()) {
-                    if (qids.length > 1) groups.push(qids);
-                }
-            } else {
-                let currentGroup = [];
-                let lastLevels = null;
-                (file.questions || []).forEach(q => {
-                    const levelsStr = q.levels ? JSON.stringify(q.levels) : null;
-                    if (levelsStr && levelsStr === lastLevels) {
-                        if (currentGroup.length === 0) {
-                            const prevQ = file.questions[file.questions.indexOf(q) - 1];
-                            currentGroup.push(prevQ.id);
-                        }
-                        currentGroup.push(q.id);
-                    } else {
-                        if (currentGroup.length > 1) groups.push(currentGroup);
-                        currentGroup = [];
-                    }
-                    lastLevels = levelsStr;
-                });
-                if (currentGroup.length > 1) groups.push(currentGroup);
-            }
-            return groups;
-        };
+    function escapeHtml(s) {
+        if (!s) return '';
+        const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+    }
 
-        const initialGroups = getMatrixGroups(true); // Use global for initial detection
-        const hasPotentialMatrix = initialGroups.length > 0;
+    function sourceBadgeHtml(source) {
+        if (source === 'both') return '<span class="badge source-badge-both">Global + Project</span>';
+        if (source === 'project') return '<span class="badge source-badge-project">Project</span>';
+        return '<span class="badge source-badge-global">Global</span>';
+    }
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>
-                <input class="form-check-input file-checkbox" type="checkbox" value="${file.path}" data-target="${collapseId}">
-            </td>
-            <td>
-                <button class="btn btn-sm btn-link text-decoration-none p-0" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            </td>
-            <td class="fw-bold">
-                ${file.filename}
-                <span class="matrix-badge-container">
-                    ${hasPotentialMatrix ? `<span class="badge bg-success ms-2" title="Detected potential matrix groups"><i class="fas fa-th me-1"></i>Matrix Ready</span>` : ''}
-                </span>
-            </td>
-            <td>${getText(file.original_name, currentLanguage)}</td>
-            <td class="text-center">
-                <div class="form-check form-switch d-flex justify-content-center">
-                    <input class="form-check-input matrix-checkbox" type="checkbox" id="matrix-${sectionKey}-${index}" 
-                           ${hasPotentialMatrix ? 'checked' : ''} 
-                           title="Group questions with identical options into a Matrix">
-                </div>
-            </td>
-            <td class="text-center">
-                <div class="form-check form-switch d-flex justify-content-center">
-                    <input class="form-check-input global-matrix-checkbox" type="checkbox" id="global-${sectionKey}-${index}"
-                           checked
-                           title="If ON, groups all identical questions. If OFF, only groups consecutive ones.">
-                </div>
-            </td>
-            <td class="text-center">
-                <input type="number" class="form-control form-control-sm run-number-input"
-                       id="run-${sectionKey}-${index}"
-                       min="1" max="99" value="1" style="width: 60px; margin: 0 auto;"
-                       title="Run number (1 = no suffix, 2+ = adds _run-NN suffix to variable names)">
-            </td>
-            <td><span class="badge bg-secondary">${file.question_count || 0} items</span></td>
-            <td class="text-muted small">${getText(file.description, currentLanguage)}</td>
-        `;
+    function langBadgesHtml(detectedLangs) {
+        return (detectedLangs || []).map(l =>
+            `<span class="lang-badge ${detectedLangs.includes(currentLanguage) ? 'lang-badge-available' : 'lang-badge-missing'}">${l.toUpperCase()}</span>`
+        ).join(' ');
+    }
 
-        const trDetails = document.createElement('tr');
-        trDetails.className = 'collapse-row';
-        trDetails.innerHTML = `
-            <td colspan="9" class="p-0 border-0">
-                <div class="collapse bg-light p-3" id="${collapseId}">
-                    <!-- Metadata Section -->
-                    <div class="row mb-3">
-                        <div class="col-md-12">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-body py-2 px-3">
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <small class="text-muted d-block">Authors</small>
-                                            <span class="small">${Array.isArray(file.study?.Authors) ? file.study.Authors.join(', ') : (file.study?.Authors || 'N/A')}</span>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <small class="text-muted d-block">License</small>
-                                            <span class="small">
-                                                ${file.study?.LicenseID ? `<span class="badge bg-info text-white">${file.study.LicenseID}</span>` : (file.study?.License || 'N/A')}
-                                                ${file.study?.LicenseURL ? `<a href="${file.study.LicenseURL}" target="_blank" class="ms-1"><i class="fas fa-external-link-alt small"></i></a>` : ''}
-                                            </span>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <small class="text-muted d-block">Citation / DOI</small>
-                                            <span class="small text-truncate d-block" title="${file.study?.Citation || file.study?.DOI || ''}">
-                                                ${file.study?.DOI ? `<a href="https://doi.org/${file.study.DOI}" target="_blank">${file.study.DOI}</a>` : (file.study?.Citation || 'N/A')}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="row mt-2">
-                                        <div class="col-md-3">
-                                            <small class="text-muted d-block">Age Range</small>
-                                            <span class="small">${getText(file.study?.AgeRange, currentLanguage) || 'N/A'}</span>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <small class="text-muted d-block">Admin Time</small>
-                                            <span class="small">${getText(file.study?.AdministrationTime, currentLanguage) || 'N/A'}</span>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <small class="text-muted d-block">Items</small>
-                                            <span class="small">${file.study?.ItemCount || file.question_count || 0}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    function hasBaseLanguage(file) {
+        const langs = file.detected_languages || [];
+        return langs.includes(currentLanguage);
+    }
 
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="d-flex align-items-center">
-                            <small class="text-muted fw-bold me-3">Questions to include:</small>
-                            <small class="matrix-info-text text-success ${hasPotentialMatrix ? '' : 'd-none'}">
-                                <i class="fas fa-info-circle me-1"></i>Highlighted items will be grouped into matrices.
-                            </small>
-                        </div>
-                        <div>
-                            <button class="btn btn-xs btn-outline-secondary select-all-q" data-target="${collapseId}">All</button>
-                            <button class="btn btn-xs btn-outline-secondary deselect-all-q" data-target="${collapseId}">None</button>
-                        </div>
-                    </div>
-                    <div class="list-group question-list">
-                        ${(file.questions || []).map(q => `
-                            <div class="list-group-item question-item" data-qid="${q.id}">
-                                <div class="form-check">
-                                    <input class="form-check-input question-checkbox" type="checkbox" value="${q.id}" id="${fileId}-${q.id}" checked>
-                                    <label class="form-check-label w-100" for="${fileId}-${q.id}">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-7">
-                                                <div class="fw-bold q-id-container">
-                                                    ${q.id}
-                                                    ${q.scale ? `<span class="badge bg-light text-info border border-info ms-2 small" title="Scale">${getText(q.scale, currentLanguage)}</span>` : ''}
-                                                    ${q.units ? `<span class="badge bg-light text-secondary border border-secondary ms-1 small" title="Units">${getText(q.units, currentLanguage)}</span>` : ''}
-                                                    ${(q.min_value !== undefined && q.min_value !== null && q.max_value !== undefined && q.max_value !== null) ? `<span class="badge bg-light text-muted border ms-1 small" title="Range">${q.min_value}-${q.max_value}</span>` : ''}
-                                                </div>
-                                                <div class="text-muted small">${getText(q.description, currentLanguage)}</div>
-                                            </div>
-                                            <div class="col-md-5">
-                                                ${(q.levels && Object.keys(q.levels).length > 0) ? `
-                                                    <div class="border-start ps-3 levels-table-container">
-                                                        <table class="table table-sm table-borderless mb-0 small text-muted">
-                                                            <tbody>
-                                                                ${Object.entries(q.levels).map(([k,v]) => `
-                                                                    <tr>
-                                                                        <td class="p-0 pe-2 fw-bold text-end" style="width: 60px;">${k}:</td>
-                                                                        <td class="p-0">${getText(v, currentLanguage)}</td>
-                                                                    </tr>
-                                                                `).join('')}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                ` : ''}
-                                            </div>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </td>
-        `;
+    // --- Build a compact template row ---
+    function createTemplateRow(file, index, sectionKey) {
+        const fileId = `tpl-${sectionKey}-${index}`;
+        const detailsId = `details-${sectionKey}-${index}`;
+        const fileLangs = file.detected_languages || ['en'];
+        const hasLang = fileLangs.includes(currentLanguage);
 
-        const updateUI = () => {
-            const isMatrix = tr.querySelector('.matrix-checkbox').checked;
-            const isGlobal = tr.querySelector('.global-matrix-checkbox').checked;
-            const groups = isMatrix ? getMatrixGroups(isGlobal) : [];
-            
-            // Update info text
-            const infoText = trDetails.querySelector('.matrix-info-text');
-            if (groups.length > 0) infoText.classList.remove('d-none');
-            else infoText.classList.add('d-none');
+        const div = document.createElement('div');
+        div.className = `tpl-row ${hasLang ? '' : 'tpl-no-lang'}`;
+        div.dataset.filename = (file.filename || '').toLowerCase();
+        div.dataset.originalName = getText(file.original_name, 'en').toLowerCase();
+        div.dataset.description = getText(file.description, 'en').toLowerCase();
+        div.dataset.detectedLanguages = fileLangs.join(',');
+        div.dataset.filePath = file.path;
+        div.dataset.sectionKey = sectionKey;
+        div.dataset.index = index;
 
-            // Update each question item
-            trDetails.querySelectorAll('.question-item').forEach(item => {
-                const qid = item.dataset.qid;
-                const groupIdx = groups.findIndex(g => g.includes(qid));
-                const idContainer = item.querySelector('.q-id-container');
-                
-                // Remove old classes/badges
-                item.classList.remove('border-start', 'border-4', 'border-success');
-                const oldBadge = idContainer.querySelector('.matrix-group-badge');
-                if (oldBadge) oldBadge.remove();
+        const origName = getText(file.original_name, currentLanguage);
+        const desc = getText(file.description, currentLanguage);
+        const itemCount = file.question_count || 0;
 
-                if (groupIdx !== -1) {
-                    item.classList.add('border-start', 'border-4', 'border-success');
-                    const badge = document.createElement('span');
-                    badge.className = 'badge bg-light text-success border border-success ms-2 small matrix-group-badge';
-                    badge.textContent = `Matrix Group ${groupIdx + 1}`;
-                    idContainer.appendChild(badge);
+        // Matrix detection
+        const hasPotentialMatrix = (() => {
+            const levelMap = new Map();
+            (file.questions || []).forEach(q => {
+                if (q.levels && Object.keys(q.levels).length > 0) {
+                    const s = JSON.stringify(q.levels);
+                    if (!levelMap.has(s)) levelMap.set(s, 0);
+                    levelMap.set(s, levelMap.get(s) + 1);
                 }
             });
-        };
+            for (const c of levelMap.values()) { if (c > 1) return true; }
+            return false;
+        })();
 
-        tr.querySelector('.matrix-checkbox').addEventListener('change', updateUI);
-        tr.querySelector('.global-matrix-checkbox').addEventListener('change', updateUI);
-        
-        // Initial UI update
-        setTimeout(updateUI, 0);
+        div.innerHTML = `
+            <div class="d-flex align-items-center">
+                <input class="form-check-input file-checkbox me-2 flex-shrink-0" type="checkbox" value="${escapeHtml(file.path)}"
+                       id="${fileId}" data-details-id="${detailsId}"
+                       data-filename="${escapeHtml(file.filename)}"
+                       data-detected-languages="${fileLangs.join(',')}"
+                       ${hasLang ? '' : 'disabled'}>
+                <div class="flex-grow-1 min-width-0">
+                    <div class="d-flex align-items-center flex-wrap gap-1">
+                        <span class="tpl-name">${escapeHtml(origName || file.filename)}</span>
+                        ${sourceBadgeHtml(file.source)}
+                        <span class="badge bg-secondary" style="font-size:0.65rem;">${itemCount} items</span>
+                        ${fileLangs.map(l => `<span class="lang-badge ${l === currentLanguage ? 'lang-badge-available' : ''}" style="font-size:0.6rem;">${l.toUpperCase()}</span>`).join('')}
+                        ${hasPotentialMatrix ? '<span class="badge bg-success" style="font-size:0.6rem;"><i class="fas fa-th me-1"></i>Matrix</span>' : ''}
+                        ${!hasLang ? `<span class="badge bg-danger" style="font-size:0.6rem;">No ${currentLanguage.toUpperCase()}</span>` : ''}
+                    </div>
+                    ${desc ? `<div class="tpl-desc">${escapeHtml(desc)}</div>` : ''}
+                </div>
+                <button class="btn btn-sm btn-link text-muted p-0 ms-2 flex-shrink-0 tpl-expand-btn" data-target="${detailsId}" title="Show details & questions">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <!-- Settings row (visible when selected) -->
+            <div class="tpl-settings-row d-none" id="settings-${fileId}">
+                <label><input type="checkbox" class="form-check-input matrix-checkbox me-1" ${hasPotentialMatrix ? 'checked' : ''}> Matrix</label>
+                <label><input type="checkbox" class="form-check-input global-matrix-checkbox me-1" checked> Global</label>
+                <label>Run: <input type="number" class="form-control form-control-sm run-number-input d-inline-block ms-1" min="1" max="99" value="1" style="width:50px;"></label>
+            </div>
+            <!-- Expandable details -->
+            <div class="tpl-questions-panel d-none" id="${detailsId}">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted fw-bold">Questions (${itemCount})</small>
+                    <div>
+                        <button class="btn btn-link btn-sm p-0 text-secondary select-all-q me-2" data-target="${detailsId}">All</button>
+                        <button class="btn btn-link btn-sm p-0 text-secondary deselect-all-q" data-target="${detailsId}">None</button>
+                    </div>
+                </div>
+                ${(file.questions || []).map(q => {
+                    const qDesc = getText(q.description, currentLanguage);
+                    const levelsCount = q.levels ? Object.keys(q.levels).length : 0;
+                    return `<div class="q-item d-flex align-items-baseline">
+                        <input class="form-check-input question-checkbox me-2 flex-shrink-0" type="checkbox" value="${escapeHtml(q.id)}" checked>
+                        <span class="q-id me-2">${escapeHtml(q.id)}</span>
+                        <span class="q-desc flex-grow-1">${escapeHtml(qDesc)}</span>
+                        ${levelsCount > 0 ? `<span class="q-levels-inline flex-shrink-0">${levelsCount} levels</span>` : ''}
+                    </div>`;
+                }).join('')}
+                ${file.study ? `
+                <div class="border-top mt-2 pt-2">
+                    <div class="row small text-muted">
+                        <div class="col-auto">${file.study.Authors ? `<b>Authors:</b> ${escapeHtml(Array.isArray(file.study.Authors) ? file.study.Authors.join(', ') : file.study.Authors)}` : ''}</div>
+                        <div class="col-auto">${file.study.DOI ? `<b>DOI:</b> <a href="https://doi.org/${file.study.DOI}" target="_blank">${escapeHtml(file.study.DOI)}</a>` : ''}</div>
+                        <div class="col-auto">${file.study.LicenseID ? `<b>License:</b> ${escapeHtml(file.study.LicenseID)}` : ''}</div>
+                        <div class="col-auto">${file.study.ItemCount ? `<b>Items:</b> ${file.study.ItemCount}` : ''}</div>
+                    </div>
+                </div>` : ''}
+            </div>
+        `;
 
-        return [tr, trDetails];
+        // Toggle expand
+        div.querySelector('.tpl-expand-btn').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const panel = document.getElementById(this.dataset.target);
+            const icon = this.querySelector('i');
+            if (panel.classList.contains('d-none')) {
+                panel.classList.remove('d-none');
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            } else {
+                panel.classList.add('d-none');
+                icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+            }
+        });
+
+        // Toggle checkbox shows settings row
+        const checkbox = div.querySelector('.file-checkbox');
+        const settingsRow = div.querySelector(`#settings-${fileId}`);
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                div.classList.add('tpl-selected');
+                settingsRow.classList.remove('d-none');
+            } else {
+                div.classList.remove('tpl-selected');
+                settingsRow.classList.add('d-none');
+            }
+            updateGenerateBtn();
+            validateLanguageCoverage();
+        });
+
+        return div;
     }
 
+    // --- Render ---
     function renderLibrary() {
         if (!currentLibraryData) return;
 
-        // Clear all sections
-        Object.values(sections).forEach(s => {
-            s.container.classList.add('d-none');
-            s.body.innerHTML = '';
-        });
-
         let hasAnyFiles = false;
-        Object.keys(sections).forEach(key => {
+        let hasAnyVisible = false;
+        Object.keys(sectionConfig).forEach(key => {
+            const cfg = sectionConfig[key];
+            const container = document.getElementById(cfg.container);
+            const listEl = document.getElementById(cfg.list);
+            const countEl = document.getElementById(cfg.count);
+            listEl.innerHTML = '';
+
             const files = currentLibraryData[key];
             if (files && files.length > 0) {
                 hasAnyFiles = true;
-                sections[key].container.classList.remove('d-none');
-                files.forEach((file, index) => {
-                    const rows = createFileRow(file, index, key);
-                    sections[key].body.appendChild(rows[0]);
-                    sections[key].body.appendChild(rows[1]);
+                // Count files that have the base language
+                const visibleFiles = files.filter(f => hasBaseLanguage(f));
+                const totalFiles = files.length;
+
+                container.classList.remove('d-none');
+                countEl.textContent = visibleFiles.length < totalFiles
+                    ? `(${visibleFiles.length}/${totalFiles})`
+                    : `(${totalFiles})`;
+
+                files.forEach((file, idx) => {
+                    const row = createTemplateRow(file, idx, key);
+                    listEl.appendChild(row);
+                    if (hasBaseLanguage(file)) hasAnyVisible = true;
                 });
+            } else {
+                container.classList.add('d-none');
             }
         });
 
         if (hasAnyFiles) {
             libraryContent.classList.remove('d-none');
+            libraryEmpty.classList.add('d-none');
         } else {
+            libraryContent.classList.add('d-none');
             libraryEmpty.classList.remove('d-none');
         }
         updateGenerateBtn();
+        applySearchFilter();
     }
 
-    // Load Library
-    loadLibraryBtn.addEventListener('click', function() {
-        const path = libraryPathInput.value.trim();
-        if (!path) return;
+    // --- Search ---
+    templateSearch.addEventListener('input', applySearchFilter);
 
-        libraryContent.classList.add('d-none');
-        libraryEmpty.classList.add('d-none');
-        libraryError.classList.add('d-none');
-        languageSelectionCard.classList.add('d-none');
-        
-        generateLssBtn.disabled = true;
+    function applySearchFilter() {
+        const query = templateSearch.value.trim().toLowerCase();
+        document.querySelectorAll('.tpl-row').forEach(row => {
+            if (!query) {
+                row.classList.remove('tpl-hidden-search');
+                return;
+            }
+            const fn = row.dataset.filename || '';
+            const on = row.dataset.originalName || '';
+            const desc = row.dataset.description || '';
+            const match = fn.includes(query) || on.includes(query) || desc.includes(query);
+            if (match) row.classList.remove('tpl-hidden-search');
+            else row.classList.add('tpl-hidden-search');
+        });
+    }
 
-        fetch(`/api/list-library-files?path=${encodeURIComponent(path)}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    libraryError.textContent = data.error;
-                    libraryError.classList.remove('d-none');
-                    return;
-                }
+    // --- Language Management ---
+    function buildLanguageUI(detectedLangs) {
+        allDetectedLanguages = detectedLangs;
+        if (detectedLangs.length === 0) {
+            toolbarCard.classList.add('d-none');
+            currentLanguage = 'en';
+            selectedExportLanguages = ['en'];
+            return;
+        }
 
-                currentLibraryData = data;
-                
-                // Extract languages
-                const languages = new Set();
-                Object.values(data).forEach(fileList => {
-                    fileList.forEach(file => {
-                        if (file.i18n && file.i18n.Languages) {
-                            file.i18n.Languages.forEach(l => languages.add(l));
-                        }
-                    });
-                });
+        baseLanguageSelect.innerHTML = '';
+        detectedLangs.forEach(lang => {
+            const opt = document.createElement('option');
+            opt.value = lang;
+            opt.textContent = lang.toUpperCase();
+            if (lang === 'en') opt.selected = true;
+            baseLanguageSelect.appendChild(opt);
+        });
+        currentLanguage = baseLanguageSelect.value || detectedLangs[0];
 
-                if (languages.size > 0) {
-                    languageSelect.innerHTML = '';
-                    Array.from(languages).sort().forEach(lang => {
-                        const option = document.createElement('option');
-                        option.value = lang;
-                        option.textContent = lang.toUpperCase();
-                        if (lang === 'en') option.selected = true;
-                        languageSelect.appendChild(option);
-                    });
-                    currentLanguage = languageSelect.value;
-                    languageSelectionCard.classList.remove('d-none');
-                } else {
-                    currentLanguage = 'en';
-                }
-
-                renderLibrary();
-            })
-            .catch(err => {
-                libraryError.textContent = 'Error loading files: ' + err;
-                libraryError.classList.remove('d-none');
+        exportLanguageCheckboxes.innerHTML = '';
+        selectedExportLanguages = [currentLanguage];
+        detectedLangs.forEach(lang => {
+            const isBase = lang === currentLanguage;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'form-check form-check-inline mb-0';
+            wrapper.innerHTML = `
+                <input class="form-check-input export-lang-cb" type="checkbox" value="${lang}"
+                       id="export-lang-${lang}" ${isBase ? 'checked' : ''}>
+                <label class="form-check-label small" for="export-lang-${lang}">${lang.toUpperCase()}</label>
+            `;
+            exportLanguageCheckboxes.appendChild(wrapper);
+            wrapper.querySelector('input').addEventListener('change', function() {
+                updateSelectedExportLanguages();
+                validateLanguageCoverage();
             });
-    });
+        });
+        toolbarCard.classList.remove('d-none');
+    }
 
-    languageSelect.addEventListener('change', function() {
+    function updateSelectedExportLanguages() {
+        selectedExportLanguages = [];
+        document.querySelectorAll('.export-lang-cb:checked').forEach(cb => selectedExportLanguages.push(cb.value));
+        if (!selectedExportLanguages.includes(currentLanguage)) {
+            selectedExportLanguages.unshift(currentLanguage);
+            const baseCb = document.getElementById(`export-lang-${currentLanguage}`);
+            if (baseCb) baseCb.checked = true;
+        }
+    }
+
+    function validateLanguageCoverage() {
+        const warnings = [];
+        document.querySelectorAll('.file-checkbox:checked').forEach(cb => {
+            const fileLangs = (cb.dataset.detectedLanguages || 'en').split(',');
+            const filename = cb.dataset.filename || 'unknown';
+            selectedExportLanguages.forEach(lang => {
+                if (!fileLangs.includes(lang)) {
+                    warnings.push(`<li class="lang-warning-item"><code>${filename}</code> may not have <strong>${lang.toUpperCase()}</strong> translations</li>`);
+                }
+            });
+        });
+        if (warnings.length > 0) {
+            languageWarningList.innerHTML = warnings.join('');
+            languageWarnings.classList.remove('d-none');
+        } else {
+            languageWarnings.classList.add('d-none');
+        }
+    }
+
+    baseLanguageSelect.addEventListener('change', function() {
         currentLanguage = this.value;
+        const baseCb = document.getElementById(`export-lang-${currentLanguage}`);
+        if (baseCb && !baseCb.checked) baseCb.checked = true;
+        updateSelectedExportLanguages();
+        validateLanguageCoverage();
         renderLibrary();
     });
 
-    // Browse Button
-    browseBtn.addEventListener('click', function() {
-        fetch('/api/browse-folder')
-            .then(r => r.json())
-            .then(data => {
-                if(data.path) {
-                    libraryPathInput.value = data.path;
-                } else if (data.error) {
-                    alert('Folder picker unavailable: ' + data.error);
-                }
-            })
-            .catch(err => {
-                console.error('Browse error:', err);
-                alert('Failed to open folder picker. Please enter path manually.');
+    // --- Load ---
+    async function loadMergedLibrary() {
+        libraryContent.classList.add('d-none');
+        libraryEmpty.classList.add('d-none');
+        libraryError.classList.add('d-none');
+        toolbarCard.classList.add('d-none');
+        sourceInfoText.textContent = 'Loading...';
+
+        try {
+            const response = await fetch('/api/list-library-files-merged');
+            const data = await response.json();
+            if (data.error) {
+                libraryError.textContent = data.error;
+                libraryError.classList.remove('d-none');
+                sourceInfoText.textContent = 'Failed to load.';
+                return;
+            }
+
+            currentLibraryData = data;
+
+            const sources = data.sources || {};
+            const parts = [];
+            if (sources.global_library_path) parts.push(`Global: ${sources.global_library_path}`);
+            if (sources.project_library_path && sources.project_library_exists) parts.push(`Project: ${sources.project_library_path}`);
+            else if (sources.project_library_path) parts.push(`Project: not found`);
+            sourceInfoText.textContent = parts.length > 0 ? parts.join('  |  ') : 'No libraries configured';
+
+            const langSet = new Set();
+            ['participants', 'survey', 'biometrics', 'other'].forEach(key => {
+                (data[key] || []).forEach(file => {
+                    (file.detected_languages || []).forEach(l => langSet.add(l));
+                });
             });
-    });
+            buildLanguageUI(Array.from(langSet).sort());
+            renderLibrary();
+        } catch (err) {
+            libraryError.textContent = 'Error loading: ' + err;
+            libraryError.classList.remove('d-none');
+            sourceInfoText.textContent = 'Failed.';
+        }
+    }
 
-    // Section Select/Deselect
+    reloadLibraryBtn.addEventListener('click', loadMergedLibrary);
+
+    // --- Section Select/Deselect ---
     document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('select-all-section')) {
-            const targetId = e.target.dataset.target;
-            document.getElementById(targetId).querySelectorAll('.file-checkbox').forEach(cb => cb.checked = true);
-            updateGenerateBtn();
-        }
-        if (e.target.classList.contains('deselect-all-section')) {
-            const targetId = e.target.dataset.target;
-            document.getElementById(targetId).querySelectorAll('.file-checkbox').forEach(cb => cb.checked = false);
-            updateGenerateBtn();
-        }
+        const btn = e.target.closest('.select-all-section, .deselect-all-section');
+        if (!btn) return;
+        const targetId = btn.dataset.target;
+        const el = document.getElementById(targetId);
+        if (!el) return;
+        const isSelect = btn.classList.contains('select-all-section');
+        el.querySelectorAll('.file-checkbox:not(:disabled)').forEach(cb => {
+            cb.checked = isSelect;
+            const row = cb.closest('.tpl-row');
+            const settingsRow = row.querySelector('[id^="settings-"]');
+            if (isSelect) { row.classList.add('tpl-selected'); settingsRow?.classList.remove('d-none'); }
+            else { row.classList.remove('tpl-selected'); settingsRow?.classList.add('d-none'); }
+        });
+        updateGenerateBtn();
+        validateLanguageCoverage();
     });
 
-    // Select/Deselect All Questions
+    // Question select/deselect all
     document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('select-all-q')) {
-            const targetId = e.target.dataset.target;
-            document.querySelector(`#${targetId}`).querySelectorAll('.question-checkbox').forEach(cb => cb.checked = true);
-        }
-        if (e.target.classList.contains('deselect-all-q')) {
-            const targetId = e.target.dataset.target;
-            document.querySelector(`#${targetId}`).querySelectorAll('.question-checkbox').forEach(cb => cb.checked = false);
-        }
+        const btn = e.target.closest('.select-all-q, .deselect-all-q');
+        if (!btn) return;
+        const targetId = btn.dataset.target;
+        const panel = document.getElementById(targetId);
+        if (!panel) return;
+        const checked = btn.classList.contains('select-all-q');
+        panel.querySelectorAll('.question-checkbox').forEach(cb => cb.checked = checked);
     });
 
-    // Enable/Disable Generate Button
     document.addEventListener('change', function(e) {
         if (e.target.classList.contains('file-checkbox')) {
             updateGenerateBtn();
+            validateLanguageCoverage();
         }
     });
 
@@ -707,306 +655,127 @@ document.addEventListener('DOMContentLoaded', function() {
         customizeExportBtn.disabled = !anyChecked;
     }
 
-    // Generate Boilerplate
-    generateBoilerplateBtn.addEventListener('click', function() {
+    // --- Helper: collect selected files config ---
+    function collectSelectedFiles(forCustomizer) {
         const selectedFiles = [];
         document.querySelectorAll('.file-checkbox:checked').forEach(cb => {
-            selectedFiles.push(cb.value);
-        });
+            const row = cb.closest('.tpl-row');
+            const detailsId = cb.dataset.detailsId;
+            const panel = document.getElementById(detailsId);
+            const questionCheckboxes = panel ? panel.querySelectorAll('.question-checkbox:checked') : [];
+            const selectedQuestions = Array.from(questionCheckboxes).map(qcb => qcb.value);
 
-        if (selectedFiles.length === 0) {
-            alert("Please select at least one file.");
-            return;
-        }
+            const matrixCb = row.querySelector('.matrix-checkbox');
+            const globalCb = row.querySelector('.global-matrix-checkbox');
+            const runInput = row.querySelector('.run-number-input');
+
+            const isMatrix = matrixCb ? matrixCb.checked : false;
+            const isGlobal = globalCb ? globalCb.checked : false;
+            const runNumber = runInput ? parseInt(runInput.value, 10) || 1 : 1;
+
+            if (selectedQuestions.length > 0) {
+                if (forCustomizer) {
+                    selectedFiles.push({
+                        path: cb.value,
+                        includeQuestions: selectedQuestions,
+                        matrix: isMatrix,
+                        matrix_global: isGlobal,
+                        runNumber: runNumber,
+                    });
+                } else {
+                    const cfg = { path: cb.value, include: selectedQuestions, matrix: isMatrix, matrix_global: isGlobal };
+                    if (runNumber > 1) cfg.run = runNumber;
+                    selectedFiles.push(cfg);
+                }
+            }
+        });
+        return selectedFiles;
+    }
+
+    // --- Boilerplate ---
+    generateBoilerplateBtn.addEventListener('click', function() {
+        const selected = [];
+        document.querySelectorAll('.file-checkbox:checked').forEach(cb => selected.push(cb.value));
+        if (selected.length === 0) return;
 
         generateBoilerplateBtn.disabled = true;
-        generateBoilerplateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
+        generateBoilerplateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>...';
 
         fetch('/api/generate-boilerplate', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-                files: selectedFiles,
-                language: currentLanguage
-            }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ files: selected, language: currentLanguage }),
         })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => { throw new Error(err.error || 'Generation failed'); });
-            }
-            return response.json();
-        })
+        .then(r => r.ok ? r.json() : r.json().then(e => { throw new Error(e.error); }))
         .then(data => {
-            // Download MD
-            if (data.md) {
-                const blob = new Blob([data.md], { type: 'text/markdown' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${data.filename_base}.md`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            }
-            
-            // Download HTML
-            if (data.html) {
-                const blob = new Blob([data.html], { type: 'text/html' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${data.filename_base}.html`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            }
+            if (data.md) { downloadBlob(data.md, 'text/markdown', `${data.filename_base}.md`); }
+            if (data.html) { downloadBlob(data.html, 'text/html', `${data.filename_base}.html`); }
         })
         .catch(err => alert(err.message))
         .finally(() => {
             generateBoilerplateBtn.disabled = false;
-            generateBoilerplateBtn.innerHTML = '<i class="fas fa-file-alt me-2"></i>Write Boilerplate (.md / .html)';
+            generateBoilerplateBtn.innerHTML = '<i class="fas fa-file-alt me-1"></i>Boilerplate';
         });
     });
 
-    // Generate LSS
+    // --- Quick Export ---
     generateLssBtn.addEventListener('click', function() {
-        const selectedFiles = [];
-        const lsVersion = document.getElementById('lsVersionSelect').value;
-
-        document.querySelectorAll('.file-checkbox:checked').forEach(cb => {
-            const collapseId = cb.dataset.target;
-            const collapseDiv = document.getElementById(collapseId);
-            const questionCheckboxes = collapseDiv.querySelectorAll('.question-checkbox:checked');
-            
-            const mainRow = cb.closest('tr');
-            const matrixCheckbox = mainRow.querySelector('.matrix-checkbox');
-            const isMatrix = matrixCheckbox ? matrixCheckbox.checked : false;
-
-            const globalCheckbox = mainRow.querySelector('.global-matrix-checkbox');
-            const isGlobal = globalCheckbox ? globalCheckbox.checked : false;
-
-            const runInput = mainRow.querySelector('.run-number-input');
-            const runNumber = runInput ? parseInt(runInput.value, 10) || 1 : 1;
-
-            const selectedQuestions = Array.from(questionCheckboxes).map(qcb => qcb.value);
-
-            if (selectedQuestions.length > 0) {
-                const fileConfig = {
-                    path: cb.value,
-                    include: selectedQuestions,
-                    matrix: isMatrix,
-                    matrix_global: isGlobal
-                };
-                // Only include run if > 1 (adds _run-NN suffix)
-                if (runNumber > 1) {
-                    fileConfig.run = runNumber;
-                }
-                selectedFiles.push(fileConfig);
-            }
-        });
-
-        if (selectedFiles.length === 0) {
-            alert("Please select at least one file and one question.");
-            return;
-        }
+        const files = collectSelectedFiles(false);
+        if (files.length === 0) { alert("Select at least one file and one question."); return; }
 
         generateLssBtn.disabled = true;
-        generateLssBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Exporting...';
+        generateLssBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>...';
 
         fetch('/api/generate-lss', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-                files: selectedFiles,
-                language: currentLanguage,
-                ls_version: lsVersion
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                files, languages: selectedExportLanguages, base_language: currentLanguage,
+                language: currentLanguage, ls_version: document.getElementById('lsVersionSelect').value,
             }),
         })
-        .then(response => {
-            if (response.ok) return response.blob();
-            throw new Error('Export failed');
-        })
+        .then(r => { if (r.ok) return r.blob(); throw new Error('Export failed'); })
         .then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `survey_export_${currentLanguage}.lss`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
+            const langSuffix = selectedExportLanguages.length > 1 ? selectedExportLanguages.join('_') : currentLanguage;
+            downloadBlobObj(blob, `survey_export_${langSuffix}.lss`);
         })
         .catch(err => alert(err.message))
         .finally(() => {
             generateLssBtn.disabled = false;
-            generateLssBtn.innerHTML = '<i class="fas fa-file-export me-2"></i>Quick Export (.lss)';
+            generateLssBtn.innerHTML = '<i class="fas fa-file-export me-1"></i>Quick Export (.lss)';
         });
     });
 
-    // Customize & Export - Navigate to Survey Customizer
+    // --- Customize & Export ---
     customizeExportBtn.addEventListener('click', function() {
-        const selectedFiles = [];
-        const lsVersion = document.getElementById('lsVersionSelect').value;
+        const files = collectSelectedFiles(true);
+        if (files.length === 0) { alert("Select at least one file and one question."); return; }
 
-        document.querySelectorAll('.file-checkbox:checked').forEach(cb => {
-            const collapseId = cb.dataset.target;
-            const collapseDiv = document.getElementById(collapseId);
-            const questionCheckboxes = collapseDiv.querySelectorAll('.question-checkbox:checked');
-
-            const mainRow = cb.closest('tr');
-            const matrixCheckbox = mainRow.querySelector('.matrix-checkbox');
-            const isMatrix = matrixCheckbox ? matrixCheckbox.checked : false;
-
-            const globalCheckbox = mainRow.querySelector('.global-matrix-checkbox');
-            const isGlobal = globalCheckbox ? globalCheckbox.checked : false;
-
-            const runInput = mainRow.querySelector('.run-number-input');
-            const runNumber = runInput ? parseInt(runInput.value, 10) || 1 : 1;
-
-            const selectedQuestions = Array.from(questionCheckboxes).map(qcb => qcb.value);
-
-            if (selectedQuestions.length > 0) {
-                selectedFiles.push({
-                    path: cb.value,
-                    includeQuestions: selectedQuestions,
-                    matrix: isMatrix,
-                    matrix_global: isGlobal,
-                    runNumber: runNumber
-                });
-            }
-        });
-
-        if (selectedFiles.length === 0) {
-            alert("Please select at least one file and one question.");
-            return;
-        }
-
-        // Store in sessionStorage and navigate to customizer
-        const customizerData = {
-            selectedFiles: selectedFiles,
+        sessionStorage.setItem('surveyCustomizerData', JSON.stringify({
+            selectedFiles: files,
+            languages: selectedExportLanguages,
+            base_language: currentLanguage,
             language: currentLanguage,
-            ls_version: lsVersion
-        };
-
-        sessionStorage.setItem('surveyCustomizerData', JSON.stringify(customizerData));
+            ls_version: document.getElementById('lsVersionSelect').value,
+        }));
         window.location.href = '/survey-customizer';
     });
 
-    // --- Library path management ---
-    const useGlobalLibraryBtn = document.getElementById('useGlobalLibraryBtn');
-    const useProjectLibraryBtn = document.getElementById('useProjectLibraryBtn');
-    const librarySourceBadge = document.getElementById('librarySourceBadge');
-
-    // Store available paths
-    let availablePaths = {
-        global: null,
-        project: null
-    };
-
-    function updateLibraryBadge(source) {
-        if (!librarySourceBadge) return;
-        switch (source) {
-            case 'global':
-                librarySourceBadge.className = 'ms-2 badge bg-info';
-                librarySourceBadge.textContent = 'Global';
-                break;
-            case 'project':
-                librarySourceBadge.className = 'ms-2 badge bg-success';
-                librarySourceBadge.textContent = 'Project';
-                break;
-            default:
-                librarySourceBadge.className = 'ms-2 badge bg-secondary';
-                librarySourceBadge.textContent = 'Manual';
-        }
+    // --- Utility ---
+    function downloadBlob(content, type, filename) {
+        const blob = new Blob([content], { type });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+    }
+    function downloadBlobObj(blob, filename) {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
     }
 
-    function switchToLibrary(path, source) {
-        if (path) {
-            libraryPathInput.value = path;
-            updateLibraryBadge(source);
-            loadLibraryBtn.click();
-        }
-    }
-
-    // Quick switch button handlers
-    if (useGlobalLibraryBtn) {
-        useGlobalLibraryBtn.addEventListener('click', () => {
-            if (availablePaths.global) {
-                switchToLibrary(availablePaths.global, 'global');
-            }
-        });
-    }
-
-    if (useProjectLibraryBtn) {
-        useProjectLibraryBtn.addEventListener('click', () => {
-            if (availablePaths.project) {
-                switchToLibrary(availablePaths.project, 'project');
-            }
-        });
-    }
-
-    // Auto-fill library path from current project or global settings
-    async function initializeLibraryPaths() {
-        try {
-            const response = await fetch('/api/projects/library-path');
-            const data = await response.json();
-
-            // Store available paths
-            availablePaths.global = data.global_library_path || null;
-            availablePaths.project = data.project_library_path || null;
-
-            // Enable/disable quick switch buttons
-            if (useGlobalLibraryBtn) {
-                useGlobalLibraryBtn.disabled = !availablePaths.global;
-                if (availablePaths.global) {
-                    useGlobalLibraryBtn.title = availablePaths.global;
-                }
-            }
-            if (useProjectLibraryBtn) {
-                useProjectLibraryBtn.disabled = !availablePaths.project;
-                if (availablePaths.project) {
-                    useProjectLibraryBtn.title = availablePaths.project;
-                }
-            }
-
-            // Auto-fill with best available path
-            const currentValue = libraryPathInput.value;
-            if (!currentValue || currentValue === 'survey_library') {
-                // Prefer global library, then project library
-                if (availablePaths.global) {
-                    libraryPathInput.value = availablePaths.global;
-                    updateLibraryBadge('global');
-                    loadLibraryBtn.click();
-                    console.log('Library path auto-filled from global settings');
-                } else if (availablePaths.project) {
-                    libraryPathInput.value = availablePaths.project;
-                    updateLibraryBadge('project');
-                    loadLibraryBtn.click();
-                    console.log('Library path auto-filled from project:', data.project_name);
-                }
-            }
-        } catch (err) {
-            console.warn('Could not auto-load library paths:', err);
-        }
-    }
-
-    // Track manual changes to library path
-    libraryPathInput.addEventListener('change', () => {
-        const val = libraryPathInput.value.trim();
-        if (val === availablePaths.global) {
-            updateLibraryBadge('global');
-        } else if (val === availablePaths.project) {
-            updateLibraryBadge('project');
-        } else {
-            updateLibraryBadge('manual');
-        }
-    });
-
-    // Initialize on page load
-    initializeLibraryPaths();
+    // --- Init ---
+    loadMergedLibrary();
 });
 </script>
 {% endblock %}
