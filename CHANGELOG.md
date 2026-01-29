@@ -5,6 +5,16 @@ All notable changes to the PRISM project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Template Editor — Language Overview Bar**: Shows detected languages, primary language badge, and warning indicator when `Technical.Language` mismatches content. "Add Language" and "Remove Language" buttons batch-update all question Descriptions and Levels consistently.
+- **Template Editor — Preview Tab**: New "Preview" tab renders questions as a mock survey form with language switcher. Missing translations highlighted with warning styling. Shows Reversed/Required badges and response options (radio buttons or text input).
+- **Language Consistency Validation**: Backend `_validate_language_consistency()` detects fake translations (identical content across languages), inconsistent language keys across items, `Technical.Language` vs content key mismatches, and complementary/disjoint language sets. All warnings shown during template validation without blocking saves.
+
+### Fixed
+- **Template Editor — Global Template Access**: Fixed `initializeLibraryPath()` incorrectly setting the library path to project directory, which caused `refreshTemplateList()` to use the non-merged API and hide global templates. Now uses merged API when a project is active, showing both `[Global]` and `[Project]` templates.
+
 ## [1.9.1] - 2026-01-21
 
 ### Fixed
