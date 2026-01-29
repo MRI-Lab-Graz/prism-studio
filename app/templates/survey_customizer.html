@@ -132,6 +132,52 @@
         margin-bottom: 0.75rem;
     }
 
+    /* Tool Settings Panel */
+    .tool-settings-panel {
+        background: #fff;
+        border: 1px solid #17a2b8;
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .tool-settings-panel .form-label {
+        font-size: 0.8rem;
+        margin-bottom: 0.15rem;
+    }
+
+    .tool-settings-panel .form-control,
+    .tool-settings-panel .form-select {
+        font-size: 0.85rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .tool-settings-toggle {
+        cursor: pointer;
+        color: #17a2b8;
+        font-size: 0.8rem;
+    }
+
+    .tool-settings-toggle:hover {
+        text-decoration: underline;
+    }
+
+    .lang-tag {
+        display: inline-block;
+        padding: 0.15rem 0.4rem;
+        font-size: 0.75rem;
+        border-radius: 3px;
+        background: #e7f1ff;
+        color: #0d6efd;
+        margin-right: 0.25rem;
+    }
+
+    .lang-tag.base {
+        background: #0d6efd;
+        color: #fff;
+    }
+
     /* Drag Handle */
     .drag-handle {
         cursor: grab;
@@ -281,6 +327,25 @@
                         <small class="text-muted">This name will appear as the survey title in LimeSurvey</small>
                     </div>
                 </div>
+                <div class="col-md-3">
+                    <div class="export-option">
+                        <label class="form-label fw-bold">Target Tool</label>
+                        <select class="form-select" id="targetTool">
+                            <option value="limesurvey" selected>LimeSurvey</option>
+                            <!-- Future: <option value="redcap">REDCap</option> -->
+                            <!-- Future: <option value="qualtrics">Qualtrics</option> -->
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="export-option">
+                        <label class="form-label fw-bold">Languages</label>
+                        <div id="exportLanguageTags" class="mt-1">
+                            <span class="lang-tag base">EN</span>
+                        </div>
+                        <small class="text-muted">Set from Survey Generator</small>
+                    </div>
+                </div>
             </div>
             <div class="row">
                 <div class="col-md-4">
@@ -288,8 +353,6 @@
                         <label class="form-label">Export Format</label>
                         <select class="form-select" id="exportFormat">
                             <option value="limesurvey" selected>LimeSurvey (.lss)</option>
-                            <!-- Future: <option value="redcap">REDCap</option> -->
-                            <!-- Future: <option value="qualtrics">Qualtrics</option> -->
                         </select>
                     </div>
                 </div>
@@ -310,7 +373,7 @@
                 </div>
                 <div class="col-md-4">
                     <div class="export-option">
-                        <label class="form-label">Language</label>
+                        <label class="form-label">Base Language</label>
                         <select class="form-select" id="languageSelect">
                             <option value="en" selected>English</option>
                             <option value="de">German</option>
@@ -405,7 +468,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let customizationState = {
         survey: {
             title: 'Custom Survey',
-            language: 'en'
+            language: 'en',
+            languages: ['en'],
+            base_language: 'en'
         },
         groups: [],
         exportFormat: 'limesurvey',
@@ -419,6 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Original data for reset
     let originalState = null;
     let sortableInstances = [];
+    let activeToolSettingsPanel = null; // Track which question has tool settings open
 
     // DOM Elements
     const loadingOverlay = document.getElementById('loadingOverlay');
@@ -470,11 +536,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Set language and version
             customizationState.survey.language = data.language || 'en';
+            customizationState.survey.languages = data.languages || [data.language || 'en'];
+            customizationState.survey.base_language = data.base_language || data.language || 'en';
             customizationState.exportOptions.ls_version = data.ls_version || '3';
 
             // Update UI
             document.getElementById('languageSelect').value = customizationState.survey.language;
             document.getElementById('lsVersionSelect').value = customizationState.exportOptions.ls_version;
+
+            // Display language tags
+            updateLanguageTags();
 
             // Load file data via API
             loadQuestionsFromFiles(data.selectedFiles);
@@ -622,14 +693,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 qDiv.dataset.groupId = group.id;
                 const mandatoryId = `mandatory-${group.id}-${q.id}`;
                 const enabledId = `enabled-${group.id}-${q.id}`;
+                const hasOverrides = q.toolOverrides && Object.keys(q.toolOverrides).length > 0;
                 qDiv.innerHTML = `
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="flex-grow-1">
                             <i class="fas fa-grip-vertical drag-handle"></i>
                             <span class="question-code">${escapeHtml(q.questionCode)}</span>
                             ${q.runNumber > 1 ? `<span class="badge bg-info ms-1">run-${String(q.runNumber).padStart(2, '0')}</span>` : ''}
+                            ${hasOverrides ? '<span class="badge bg-warning text-dark ms-1" title="Has tool-specific overrides"><i class="fas fa-wrench"></i></span>' : ''}
                         </div>
                         <div class="d-flex align-items-center gap-3">
+                            <span class="tool-settings-toggle" data-gid="${group.id}" data-qid="${q.id}" title="LimeSurvey settings">
+                                <i class="fas fa-cog"></i> LS
+                            </span>
                             <div class="form-check form-switch" title="Required: Participant must answer this question">
                                 <input class="form-check-input question-mandatory" type="checkbox" id="${mandatoryId}"
                                        ${q.mandatory ? 'checked' : ''}>
@@ -643,7 +719,52 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                     <div class="question-desc" title="${escapeHtml(q.description || '')}">${escapeHtml(q.description || 'No description')}</div>
+                    <div class="tool-settings-container" data-gid="${group.id}" data-qid="${q.id}"></div>
                 `;
+
+                // Tool settings toggle
+                qDiv.querySelector('.tool-settings-toggle').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const container = qDiv.querySelector('.tool-settings-container');
+                    const gid = container.dataset.gid;
+                    const qid = container.dataset.qid;
+
+                    if (container.innerHTML.trim()) {
+                        // Save and close
+                        const panel = container.querySelector('.tool-settings-panel');
+                        if (panel) saveToolSettings(gid, qid, panel);
+                        container.innerHTML = '';
+                        activeToolSettingsPanel = null;
+                    } else {
+                        // Close any other open panel first
+                        if (activeToolSettingsPanel) {
+                            const prevPanel = activeToolSettingsPanel.querySelector('.tool-settings-panel');
+                            if (prevPanel) {
+                                saveToolSettings(
+                                    activeToolSettingsPanel.dataset.gid,
+                                    activeToolSettingsPanel.dataset.qid,
+                                    prevPanel
+                                );
+                            }
+                            activeToolSettingsPanel.innerHTML = '';
+                        }
+                        // Open this one
+                        const grp = customizationState.groups.find(g => g.id === gid);
+                        const quest = grp ? grp.questions.find(qq => qq.id === qid) : null;
+                        if (quest) {
+                            container.innerHTML = buildToolSettingsPanel(gid, quest);
+                            activeToolSettingsPanel = container;
+
+                            // Auto-save on change
+                            container.querySelectorAll('input, select').forEach(input => {
+                                input.addEventListener('change', () => {
+                                    const p = container.querySelector('.tool-settings-panel');
+                                    if (p) saveToolSettings(gid, qid, p);
+                                });
+                            });
+                        }
+                    }
+                });
 
                 // Mandatory toggle
                 qDiv.querySelector('.question-mandatory').addEventListener('change', (e) => {
@@ -914,6 +1035,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         surveyNameInput.classList.remove('is-invalid');
 
+        // Close any open tool settings panel and save
+        if (activeToolSettingsPanel) {
+            const prevPanel = activeToolSettingsPanel.querySelector('.tool-settings-panel');
+            if (prevPanel) {
+                saveToolSettings(
+                    activeToolSettingsPanel.dataset.gid,
+                    activeToolSettingsPanel.dataset.qid,
+                    prevPanel
+                );
+            }
+            activeToolSettingsPanel.innerHTML = '';
+            activeToolSettingsPanel = null;
+        }
+
         // Update export options from UI
         customizationState.survey.title = surveyName;
         customizationState.exportFormat = document.getElementById('exportFormat').value;
@@ -973,6 +1108,141 @@ document.addEventListener('DOMContentLoaded', function() {
             exportBtn.innerHTML = '<i class="fas fa-file-export me-2"></i>Export Survey';
         }
     });
+
+    // Display language tags in export settings
+    function updateLanguageTags() {
+        const container = document.getElementById('exportLanguageTags');
+        if (!container) return;
+        const langs = customizationState.survey.languages || ['en'];
+        const baseLang = customizationState.survey.base_language || 'en';
+        container.innerHTML = langs.map(l =>
+            `<span class="lang-tag ${l === baseLang ? 'base' : ''}" title="${l === baseLang ? 'Base language' : 'Additional language'}">${l.toUpperCase()}</span>`
+        ).join('');
+    }
+
+    // Build LimeSurvey tool settings panel HTML for a question
+    function buildToolSettingsPanel(groupId, question) {
+        const ov = question.toolOverrides || {};
+        const panelId = `tool-panel-${groupId}-${question.id}`;
+        return `
+            <div class="tool-settings-panel" id="${panelId}">
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <label class="form-label">Question Type</label>
+                        <select class="form-select ts-questionType" data-gid="${groupId}" data-qid="${question.id}">
+                            <option value="">Auto-detect</option>
+                            <option value="L" ${ov.questionType === 'L' ? 'selected' : ''}>L - List (Radio)</option>
+                            <option value="!" ${ov.questionType === '!' ? 'selected' : ''}>! - List (Dropdown)</option>
+                            <option value="F" ${ov.questionType === 'F' ? 'selected' : ''}>F - Array (Matrix)</option>
+                            <option value="N" ${ov.questionType === 'N' ? 'selected' : ''}>N - Numerical</option>
+                            <option value="S" ${ov.questionType === 'S' ? 'selected' : ''}>S - Short Text</option>
+                            <option value="T" ${ov.questionType === 'T' ? 'selected' : ''}>T - Long Text</option>
+                            <option value="*" ${ov.questionType === '*' ? 'selected' : ''}>* - Equation</option>
+                            <option value="X" ${ov.questionType === 'X' ? 'selected' : ''}>X - Boilerplate</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Input Width (1-12)</label>
+                        <input type="number" class="form-control ts-inputWidth" min="1" max="12"
+                               value="${ov.inputWidth || ''}" data-gid="${groupId}" data-qid="${question.id}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Display Rows</label>
+                        <input type="number" class="form-control ts-displayRows" min="1" max="50"
+                               value="${ov.displayRows || ''}" data-gid="${groupId}" data-qid="${question.id}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Val. Min</label>
+                        <input type="number" class="form-control ts-validationMin"
+                               value="${ov.validationMin != null ? ov.validationMin : ''}" data-gid="${groupId}" data-qid="${question.id}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Val. Max</label>
+                        <input type="number" class="form-control ts-validationMax"
+                               value="${ov.validationMax != null ? ov.validationMax : ''}" data-gid="${groupId}" data-qid="${question.id}">
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <div class="form-check" title="Integer Only">
+                            <input class="form-check-input ts-integerOnly" type="checkbox"
+                                   ${ov.integerOnly ? 'checked' : ''} data-gid="${groupId}" data-qid="${question.id}">
+                            <label class="form-check-label small">Int</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-2 mt-1">
+                    <div class="col-md-4">
+                        <label class="form-label">Relevance (Logic)</label>
+                        <input type="text" class="form-control ts-relevance" placeholder="e.g. Q1 == 'Y'"
+                               value="${escapeHtml(ov.relevance || '')}" data-gid="${groupId}" data-qid="${question.id}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Equation</label>
+                        <input type="text" class="form-control ts-equation" placeholder="Calculated field formula"
+                               value="${escapeHtml(ov.equation || '')}" data-gid="${groupId}" data-qid="${question.id}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Help Text</label>
+                        <input type="text" class="form-control ts-helpText"
+                               value="${escapeHtml(ov.helpText || '')}" data-gid="${groupId}" data-qid="${question.id}">
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <div class="form-check" title="Hidden question">
+                            <input class="form-check-input ts-hidden" type="checkbox"
+                                   ${ov.hidden ? 'checked' : ''} data-gid="${groupId}" data-qid="${question.id}">
+                            <label class="form-check-label small">Hide</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Save tool settings from panel inputs back to question state
+    function saveToolSettings(groupId, questionId, panelEl) {
+        const group = customizationState.groups.find(g => g.id === groupId);
+        if (!group) return;
+        const question = group.questions.find(q => q.id === questionId);
+        if (!question) return;
+
+        const ov = question.toolOverrides || {};
+
+        const qType = panelEl.querySelector('.ts-questionType')?.value;
+        if (qType) ov.questionType = qType;
+        else delete ov.questionType;
+
+        const iw = panelEl.querySelector('.ts-inputWidth')?.value;
+        if (iw) ov.inputWidth = parseInt(iw, 10);
+        else delete ov.inputWidth;
+
+        const dr = panelEl.querySelector('.ts-displayRows')?.value;
+        if (dr) ov.displayRows = parseInt(dr, 10);
+        else delete ov.displayRows;
+
+        const vMin = panelEl.querySelector('.ts-validationMin')?.value;
+        if (vMin !== '') ov.validationMin = parseFloat(vMin);
+        else delete ov.validationMin;
+
+        const vMax = panelEl.querySelector('.ts-validationMax')?.value;
+        if (vMax !== '') ov.validationMax = parseFloat(vMax);
+        else delete ov.validationMax;
+
+        ov.integerOnly = panelEl.querySelector('.ts-integerOnly')?.checked || false;
+        ov.hidden = panelEl.querySelector('.ts-hidden')?.checked || false;
+
+        const rel = panelEl.querySelector('.ts-relevance')?.value;
+        if (rel) ov.relevance = rel;
+        else delete ov.relevance;
+
+        const eq = panelEl.querySelector('.ts-equation')?.value;
+        if (eq) ov.equation = eq;
+        else delete ov.equation;
+
+        const ht = panelEl.querySelector('.ts-helpText')?.value;
+        if (ht) ov.helpText = ht;
+        else delete ov.helpText;
+
+        question.toolOverrides = ov;
+    }
 
     // Utility: escape HTML
     function escapeHtml(str) {

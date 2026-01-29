@@ -246,21 +246,8 @@ def _validate_against_schema(*, instance: object, schema: dict) -> list[dict]:
 
 @tools_bp.route("/survey-generator")
 def survey_generator():
-    """Survey generator page"""
-    project_path = session.get("current_project_path")
-    default_library_path = None
-    if project_path:
-        candidate = (Path(project_path) / "library").expanduser()
-        if candidate.exists() and candidate.is_dir():
-            default_library_path = candidate
-
-    if default_library_path is None:
-        default_library_path = _default_library_root_for_templates(modality="survey")
-
-    return render_template(
-        "survey_generator.html",
-        default_survey_library_path=str(default_library_path or ""),
-    )
+    """Survey generator page – library is auto-loaded via the merged API."""
+    return render_template("survey_generator.html")
 
 
 @tools_bp.route("/survey-customizer")
@@ -379,6 +366,33 @@ def api_survey_customizer_load():
                         iter(description.values()), ""
                     )
 
+                # Extract tool-specific properties
+                ls_props = q_data.get("LimeSurvey", {})
+                tool_overrides = {}
+                if ls_props:
+                    # Pre-fill tool overrides from template LimeSurvey section
+                    if "questionType" in ls_props:
+                        tool_overrides["questionType"] = ls_props["questionType"]
+                    if "inputWidth" in ls_props:
+                        tool_overrides["inputWidth"] = ls_props["inputWidth"]
+                    if "displayRows" in ls_props:
+                        tool_overrides["displayRows"] = ls_props["displayRows"]
+                    if "Relevance" in ls_props:
+                        tool_overrides["relevance"] = ls_props["Relevance"]
+                    if "equation" in ls_props:
+                        tool_overrides["equation"] = ls_props["equation"]
+                    if "hidden" in ls_props:
+                        tool_overrides["hidden"] = ls_props["hidden"]
+                    if "validation" in ls_props:
+                        val = ls_props["validation"]
+                        if isinstance(val, dict):
+                            if "min" in val:
+                                tool_overrides["validationMin"] = val["min"]
+                            if "max" in val:
+                                tool_overrides["validationMax"] = val["max"]
+                            if "integerOnly" in val:
+                                tool_overrides["integerOnly"] = val["integerOnly"]
+
                 questions.append(
                     {
                         "id": str(uuid_module.uuid4()),
@@ -394,6 +408,12 @@ def api_survey_customizer_load():
                         "levels": q_data.get("Levels", {}),
                         "originalData": q_data,
                         "matrixGroupingDisabled": matrix_grouping_disabled,  # From template's Technical section
+                        "toolOverrides": tool_overrides,
+                        "inputType": q_data.get("InputType", ""),
+                        "minValue": q_data.get("MinValue"),
+                        "maxValue": q_data.get("MaxValue"),
+                        "dataType": q_data.get("DataType", ""),
+                        "help": q_data.get("Help", ""),
                     }
                 )
 
@@ -459,6 +479,8 @@ def api_survey_customizer_export():
         return jsonify({"error": "Survey name is required"}), 400
 
     language = survey_info.get("language", "en")
+    languages = survey_info.get("languages") or data.get("languages") or [language]
+    base_language = survey_info.get("base_language") or data.get("base_language") or language
     ls_version = export_options.get("ls_version", "3")
     matrix_mode = export_options.get("matrix", True)
     matrix_global = export_options.get("matrix_global", True)
@@ -471,6 +493,8 @@ def api_survey_customizer_export():
             groups=groups,
             output_path=temp_path,
             language=language,
+            languages=languages,
+            base_language=base_language,
             ls_version=ls_version,
             matrix_mode=matrix_mode,
             matrix_global=matrix_global,
@@ -1527,13 +1551,77 @@ def api_browse_folder():
         )
 
 
-def _extract_template_info(full_path, filename):
-    """Helper to extract metadata and questions from a PRISM JSON template"""
+def _detect_languages_from_template(data):
+    """Detect all languages available in a PRISM template.
+
+    Checks:
+    1. Explicit I18n.Languages list
+    2. Keys of I18n translation blocks (I18n.de, I18n.en, etc.)
+    3. Inline lang-map dicts on question Descriptions and Levels
+    """
+    langs = set()
+
+    # 1. Explicit I18n.Languages
+    i18n = data.get("I18n", {})
+    if isinstance(i18n, dict):
+        explicit = i18n.get("Languages", [])
+        if isinstance(explicit, list):
+            langs.update(explicit)
+        # 2. Keys that look like language codes (2-char or xx-XX)
+        for key in i18n:
+            if key == "Languages":
+                continue
+            if isinstance(key, str) and (len(key) == 2 or (len(key) == 5 and key[2] == "-")):
+                langs.add(key)
+
+    # 3. Inline lang-maps on question fields
+    questions_section = data.get("Questions", {})
+    items = questions_section if isinstance(questions_section, dict) else {}
+    if not items:
+        # Fallback: top-level keys with Description
+        reserved = {
+            "@context", "Technical", "Study", "Metadata", "Categories",
+            "TaskName", "I18n", "Scoring", "Normative", "participant_id",
+            "Name", "BIDSVersion", "Description", "URL", "License",
+            "Authors", "Acknowledgements", "References", "Funding",
+        }
+        items = {k: v for k, v in data.items() if k not in reserved and isinstance(v, dict)}
+
+    for _q_code, q_data in items.items():
+        if not isinstance(q_data, dict):
+            continue
+        # Check Description
+        desc = q_data.get("Description")
+        if isinstance(desc, dict):
+            langs.update(k for k in desc if isinstance(k, str) and len(k) <= 5)
+        # Check Levels values
+        levels = q_data.get("Levels", {})
+        if isinstance(levels, dict):
+            for _lk, lv in levels.items():
+                if isinstance(lv, dict):
+                    langs.update(k for k in lv if isinstance(k, str) and len(k) <= 5)
+
+    # If nothing detected, assume English
+    if not langs:
+        langs.add("en")
+
+    return sorted(langs)
+
+
+def _extract_template_info(full_path, filename, source="global"):
+    """Helper to extract metadata and questions from a PRISM JSON template.
+
+    Args:
+        full_path: Absolute path to the JSON file.
+        filename: Display filename.
+        source: One of "global" or "project".
+    """
     desc = ""
     original_name = ""
     questions = []
     i18n = {}
     study_info = {}
+    detected_languages = ["en"]
     try:
         with open(full_path, "r", encoding="utf-8") as jf:
             data = json.load(jf)
@@ -1561,6 +1649,9 @@ def _extract_template_info(full_path, filename):
 
             if not desc:
                 desc = data.get("TaskName", "")
+
+            # Detect available languages
+            detected_languages = _detect_languages_from_template(data)
 
             def _get_q_info(k, v):
                 if not isinstance(v, dict):
@@ -1621,7 +1712,111 @@ def _extract_template_info(full_path, filename):
         "question_count": len(questions),
         "i18n": i18n,
         "study": study_info,
+        "source": source,
+        "detected_languages": detected_languages,
     }
+
+
+@tools_bp.route("/api/list-library-files-merged")
+def list_library_files_merged():
+    """List JSON files from BOTH global and project libraries, merged with source tags.
+
+    No path parameter needed — auto-resolves global via settings and project via session.
+    Templates from both sources appear as separate rows (both visible, not overriding).
+    """
+    results = {"participants": [], "survey": [], "biometrics": [], "other": []}
+    sources_info = {
+        "global_library_path": None,
+        "project_library_path": None,
+        "project_library_exists": False,
+    }
+
+    def _scan_library(library_path, source_label):
+        """Scan a library root for templates and add them to results."""
+        lib_p = Path(library_path).resolve()
+
+        # Check for participants.json at the library root and parent folders
+        participants_candidates = [lib_p / "participants.json"]
+        participants_candidates.extend(
+            [p / "participants.json" for p in lib_p.parents[:3]]
+        )
+        for p_cand in participants_candidates:
+            if p_cand.exists() and p_cand.is_file():
+                # Avoid duplicates (same file from both sources)
+                existing_paths = {item["path"] for item in results["participants"]}
+                if str(p_cand) not in existing_paths:
+                    results["participants"].append(
+                        _extract_template_info(str(p_cand), "participants.json", source=source_label)
+                    )
+                break
+
+        for folder in ["survey", "biometrics"]:
+            folder_path = lib_p / folder
+            if folder_path.exists() and folder_path.is_dir():
+                for filepath in sorted(folder_path.glob("*.json")):
+                    if filepath.name.startswith("."):
+                        continue
+                    results[folder].append(
+                        _extract_template_info(str(filepath), filepath.name, source=source_label)
+                    )
+
+        # If no survey/biometrics subfolders, check root for JSON files
+        if not (lib_p / "survey").is_dir() and not (lib_p / "biometrics").is_dir():
+            for filepath in sorted(lib_p.glob("*.json")):
+                if filepath.name.startswith(".") or filepath.name == "participants.json":
+                    continue
+                results["other"].append(
+                    _extract_template_info(str(filepath), filepath.name, source=source_label)
+                )
+
+    try:
+        # 1. Global library
+        global_root = _global_survey_library_root()
+        if global_root and global_root.exists():
+            sources_info["global_library_path"] = str(global_root)
+            _scan_library(str(global_root), "global")
+
+        # 2. Project library
+        project_path = session.get("current_project_path")
+        if project_path:
+            project_lib = Path(project_path) / "code" / "library"
+            sources_info["project_library_path"] = str(project_lib)
+            sources_info["project_library_exists"] = project_lib.exists()
+            if project_lib.exists() and project_lib.is_dir():
+                _scan_library(str(project_lib), "project")
+
+        # Merge duplicates: same filename in global+project → single row with source="both"
+        for key in results:
+            by_filename = {}
+            for item in results[key]:
+                fn = item.get("filename", "").lower()
+                if fn in by_filename:
+                    existing = by_filename[fn]
+                    existing["source"] = "both"
+                    # Keep project path as primary (project overrides global)
+                    if item.get("source") == "project":
+                        existing["path"] = item["path"]
+                        existing["global_path"] = existing.get("_original_path") or existing["path"]
+                        existing["project_path"] = item["path"]
+                    else:
+                        existing["global_path"] = item["path"]
+                        existing["project_path"] = existing.get("path")
+                    # Merge detected languages (union)
+                    merged_langs = set(existing.get("detected_languages", []))
+                    merged_langs.update(item.get("detected_languages", []))
+                    existing["detected_languages"] = sorted(merged_langs)
+                else:
+                    item["_original_path"] = item["path"]
+                    by_filename[fn] = item
+            results[key] = sorted(by_filename.values(), key=lambda x: x.get("filename", "").lower())
+            # Clean up internal keys
+            for item in results[key]:
+                item.pop("_original_path", None)
+
+        results["sources"] = sources_info
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @tools_bp.route("/api/list-library-files")
@@ -1728,9 +1923,18 @@ def generate_lss_endpoint():
         os.close(fd)
 
         language = data.get("language", "en")
+        languages = data.get("languages") or [language]
+        base_language = data.get("base_language") or language
         ls_version = data.get("ls_version", "3")
         survey_title = data.get("survey_title", "")
-        generate_lss(valid_files, temp_path, language=language, ls_version=ls_version)
+        generate_lss(
+            valid_files,
+            temp_path,
+            language=language,
+            languages=languages,
+            base_language=base_language,
+            ls_version=ls_version,
+        )
 
         # Generate filename with survey title (if provided) and date
         import re
