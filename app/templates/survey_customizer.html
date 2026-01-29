@@ -192,6 +192,35 @@
         color: #fff;
     }
 
+    .lang-tag.clickable {
+        cursor: pointer;
+        opacity: 0.6;
+        transition: opacity 0.15s ease;
+    }
+
+    .lang-tag.clickable:hover {
+        opacity: 0.8;
+    }
+
+    .lang-tag.clickable.active {
+        opacity: 1;
+        font-weight: 600;
+    }
+
+    #previewLangSwitcher {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        margin-left: 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    #previewLangSwitcher .switcher-label {
+        color: #6c757d;
+        font-size: 0.75rem;
+        margin-right: 0.15rem;
+    }
+
     /* Drag Handle */
     .drag-handle {
         cursor: grab;
@@ -324,6 +353,7 @@
 
             <!-- Questions Panel (Right) -->
             <div class="questions-panel">
+                <div id="previewLangSwitcher" class="mb-2 d-none"></div>
                 <div id="questionsContainer">
                     <!-- Question groups will be rendered here -->
                 </div>
@@ -499,6 +529,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let originalState = null;
     let sortableInstances = [];
     let activeToolSettingsPanel = null; // Track which question has tool settings open
+    let previewLanguage = 'en'; // Language shown in question descriptions (independent of export language)
 
     // DOM Elements
     const loadingOverlay = document.getElementById('loadingOverlay');
@@ -621,6 +652,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Display language tags
             updateLanguageTags();
+
+            // Set preview language to base language
+            previewLanguage = customizationState.survey.base_language || customizationState.survey.language || 'en';
+            updatePreviewLangSwitcher();
 
             // Load file data via API
             loadQuestionsFromFiles(data.selectedFiles);
@@ -793,7 +828,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         </div>
                     </div>
-                    <div class="question-desc" title="${escapeHtml(q.description || '')}">${escapeHtml(q.description || 'No description')}</div>
+                    <div class="question-desc" title="${escapeHtml(getText(q.originalData && q.originalData.Description, previewLanguage) || q.description || 'No description')}">${escapeHtml(getText(q.originalData && q.originalData.Description, previewLanguage) || q.description || 'No description')}</div>
                     <div class="tool-settings-container" data-gid="${group.id}" data-qid="${q.id}"></div>
                 `;
 
@@ -1209,6 +1244,61 @@ document.addEventListener('DOMContentLoaded', function() {
         container.innerHTML = langs.map(l =>
             `<span class="lang-tag ${l === baseLang ? 'base' : ''}" title="${l === baseLang ? 'Base language' : 'Additional language'}">${l.toUpperCase()}</span>`
         ).join('');
+    }
+
+    // Update preview language switcher above question list
+    function updatePreviewLangSwitcher() {
+        const container = document.getElementById('previewLangSwitcher');
+        if (!container) return;
+        const langs = customizationState.survey.languages || ['en'];
+
+        if (langs.length <= 1) {
+            container.classList.add('d-none');
+            container.innerHTML = '';
+            return;
+        }
+
+        // Ensure previewLanguage is valid
+        if (!langs.includes(previewLanguage)) {
+            previewLanguage = langs[0];
+        }
+
+        container.classList.remove('d-none');
+        container.innerHTML = '<span class="switcher-label"><i class="fas fa-eye me-1"></i>Preview:</span>' +
+            langs.map(l =>
+                `<span class="lang-tag clickable${l === previewLanguage ? ' active' : ''}" data-lang="${l}">${l.toUpperCase()}</span>`
+            ).join('');
+
+        // Click handlers
+        container.querySelectorAll('.lang-tag.clickable').forEach(tag => {
+            tag.addEventListener('click', () => {
+                previewLanguage = tag.dataset.lang;
+                container.querySelectorAll('.lang-tag.clickable').forEach(t => t.classList.remove('active'));
+                tag.classList.add('active');
+                updateQuestionDescriptions();
+            });
+        });
+    }
+
+    // Update question description text in-place for current previewLanguage
+    function updateQuestionDescriptions() {
+        document.querySelectorAll('.question-item').forEach(qDiv => {
+            const qid = qDiv.dataset.questionId;
+            const gid = qDiv.dataset.groupId;
+            if (!qid || !gid) return;
+
+            const group = customizationState.groups.find(g => g.id === gid);
+            if (!group) return;
+            const q = group.questions.find(qq => qq.id === qid);
+            if (!q) return;
+
+            const desc = getText(q.originalData && q.originalData.Description, previewLanguage) || q.description || 'No description';
+            const descEl = qDiv.querySelector('.question-desc');
+            if (descEl) {
+                descEl.textContent = desc;
+                descEl.title = desc;
+            }
+        });
     }
 
     // Build LimeSurvey tool settings panel HTML for a question
