@@ -550,6 +550,7 @@ def api_survey_convert_preview():
                 id_map_file=id_map_path,
                 strict_levels=True if strict_levels else None,
                 duplicate_handling=duplicate_handling,
+                project_path=session.get("current_project_path"),
             )
         else:
             return jsonify({"error": "Unsupported file format"}), 400
@@ -600,6 +601,7 @@ def api_survey_convert_preview():
                         id_map_file=id_map_path,
                         strict_levels=True if strict_levels else None,
                         duplicate_handling=duplicate_handling,
+                        project_path=session.get("current_project_path"),
                     )
 
                 v_res = run_validation(
@@ -638,8 +640,12 @@ def api_survey_convert_preview():
         if validation_result is not None:
             response_data["validation"] = validation_result
 
-        # Match identified tasks against the template library
-        if result.tasks_included:
+        # Include template match results in response.
+        # For LSA files, structural matching is done during conversion (more accurate).
+        # For other formats, fall back to post-hoc matching against library templates.
+        if result.template_matches:
+            response_data["template_matches"] = result.template_matches
+        elif result.tasks_included:
             try:
                 from src.converters.template_matcher import match_against_library
                 from src.converters.survey import _load_global_templates
@@ -832,6 +838,7 @@ def api_survey_convert():
                     id_map_file=id_map_path,
                     strict_levels=True if strict_levels else None,
                     duplicate_handling=duplicate_handling,
+                    project_path=session.get("current_project_path"),
                 )
         except MissingIdMappingError as mie:
             return (
@@ -1082,6 +1089,7 @@ def api_survey_convert_validate():
                     alias_file=alias_path,
                     strict_levels=True if strict_levels else None,
                     duplicate_handling=duplicate_handling,
+                    project_path=session.get("current_project_path"),
                 )
             add_log("Conversion completed successfully", "success")
         except MissingIdMappingError as mie:
@@ -1273,16 +1281,18 @@ def api_survey_convert_validate():
         mem.seek(0)
         zip_base64 = base64.b64encode(mem.read()).decode("utf-8")
 
-        return jsonify(
-            sanitize_jsonable(
-                {
-                    "success": True,
-                    "log": log_messages,
-                    "validation": validation_result,
-                    "zip_base64": zip_base64,
-                }
-            )
-        )
+        response_payload = {
+            "success": True,
+            "log": log_messages,
+            "validation": validation_result,
+            "zip_base64": zip_base64,
+        }
+
+        # Include structural template match results if available (LSA files)
+        if convert_result and getattr(convert_result, "template_matches", None):
+            response_payload["template_matches"] = convert_result.template_matches
+
+        return jsonify(sanitize_jsonable(response_payload))
     except Exception as e:
         return jsonify({"error": str(e), "log": log_messages}), 500
     finally:
