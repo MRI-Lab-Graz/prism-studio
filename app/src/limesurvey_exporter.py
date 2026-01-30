@@ -567,10 +567,16 @@ def _extract_single_file_metadata(file_path, language="en"):
     return meta if meta else None
 
 
-def _format_single_metadata_html(meta):
+def _format_single_metadata_html(meta, is_participants=False,
+                                   participant_variables=None):
     """
     Format metadata for a single questionnaire as HTML for the hidden question.
     Uses a structured format that can be parsed when re-importing.
+
+    Args:
+        meta: Metadata dict extracted from the JSON template.
+        is_participants: If True, mark this group as participants data.
+        participant_variables: List of variable codes for participants groups.
     """
     if not meta:
         return ""
@@ -603,6 +609,14 @@ def _format_single_metadata_html(meta):
         lines.append(
             f'<p>License: <span class="meta-license">{meta["License"]}</span></p>'
         )
+
+    if is_participants:
+        lines.append('<p>Type: <span class="meta-type">participants</span></p>')
+        if participant_variables:
+            vars_str = ",".join(sorted(participant_variables))
+            lines.append(
+                f'<p>Variables: <span class="meta-variables">{vars_str}</span></p>'
+            )
 
     lines.append(
         f'<p>Generated: <span class="meta-generated">{datetime.now().strftime("%Y-%m-%d %H:%M")}</span></p>'
@@ -876,7 +890,17 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
             # Unique code per group: PRISMMETAg1, PRISMMETAg2, etc.
             meta_q_code = f"PRISMMETAg{group_sort_order}"
 
-            metadata_html = _format_single_metadata_html(file_metadata)
+            # Detect participants group for authoritative PRISMMETA signal
+            is_participants_file = "participants" in os.path.basename(json_path).lower()
+            participant_var_codes = (
+                list(questions_data.keys()) if is_participants_file else None
+            )
+
+            metadata_html = _format_single_metadata_html(
+                file_metadata,
+                is_participants=is_participants_file,
+                participant_variables=participant_var_codes,
+            )
 
             if is_v6:
                 meta_q_data = {
@@ -1568,7 +1592,26 @@ def generate_lss_from_customization(
                 meta_qid = str(qid_counter)
                 qid_counter += 1
                 meta_q_code = f"PRISMMETAg{group_sort_order}"
-                metadata_html = _format_single_metadata_html(file_metadata)
+
+                # Detect participants group for authoritative PRISMMETA signal
+                is_participants_group = (
+                    source_file and "participants" in source_file.lower()
+                )
+                participant_var_codes = (
+                    [
+                        q.get("questionCode", "")
+                        for q in enabled_questions
+                        if q.get("questionCode")
+                    ]
+                    if is_participants_group
+                    else None
+                )
+
+                metadata_html = _format_single_metadata_html(
+                    file_metadata,
+                    is_participants=is_participants_group,
+                    participant_variables=participant_var_codes,
+                )
 
                 if is_v6:
                     meta_q_data = {
