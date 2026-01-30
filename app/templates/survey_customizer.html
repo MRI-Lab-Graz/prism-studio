@@ -360,6 +360,7 @@
         cursor: grab;
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
         gap: 0.5rem;
         font-size: 0.85rem;
         transition: all 0.15s ease;
@@ -383,6 +384,41 @@
         overflow: hidden;
         text-overflow: ellipsis;
         flex: 1;
+    }
+
+    .matrix-subquestion .sub-ls-toggle {
+        cursor: pointer;
+        color: #17a2b8;
+        font-size: 0.78rem;
+        flex-shrink: 0;
+    }
+
+    .matrix-subquestion .sub-ls-toggle:hover {
+        color: #0d6efd;
+    }
+
+    .sub-settings-container {
+        width: 100%;
+        flex-basis: 100%;
+    }
+
+    .sub-settings-panel {
+        background: #fff;
+        border: 1px solid #17a2b8;
+        border-radius: 4px;
+        padding: 0.5rem;
+        margin-top: 0.35rem;
+        font-size: 0.83rem;
+    }
+
+    .sub-settings-panel .form-label {
+        font-size: 0.78rem;
+        margin-bottom: 0.1rem;
+    }
+
+    .sub-settings-panel .form-control {
+        font-size: 0.83rem;
+        padding: 0.2rem 0.4rem;
     }
 
     .matrix-subquestion.sortable-ghost {
@@ -1154,16 +1190,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const desc = getText(q.originalData && q.originalData.Description, previewLanguage) || q.description || '';
             const enabledSubId = `enabled-sub-${group.id}-${q.id}`;
+            const hasSubOverrides = q.toolOverrides && q.toolOverrides.questionText;
 
             subDiv.innerHTML = `
                 <i class="fas fa-grip-vertical drag-handle" style="color:#adb5bd;cursor:grab;"></i>
                 <span class="question-code">${escapeHtml(q.questionCode)}</span>
+                ${hasSubOverrides ? '<span class="badge bg-warning text-dark" title="Has HTML override" style="font-size:0.65rem;"><i class="fas fa-code"></i></span>' : ''}
                 <span class="sub-desc" title="${escapeHtml(desc)}">${escapeHtml(desc)}</span>
-                <div class="form-check form-switch ms-auto" title="Include this subquestion">
+                <span class="sub-ls-toggle" data-gid="${group.id}" data-qid="${q.id}" title="Edit subquestion HTML text">
+                    <i class="fas fa-code"></i>
+                </span>
+                <div class="form-check form-switch" title="Include this subquestion">
                     <input class="form-check-input question-enabled" type="checkbox" id="${enabledSubId}"
                            ${q.enabled ? 'checked' : ''}>
                 </div>
+                <div class="sub-settings-container" data-gid="${group.id}" data-qid="${q.id}"></div>
             `;
+
+            // Subquestion LS toggle (HTML text only)
+            subDiv.querySelector('.sub-ls-toggle').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const settingsContainer = subDiv.querySelector('.sub-settings-container');
+                if (settingsContainer.innerHTML.trim()) {
+                    // Save and close
+                    saveSubquestionSettings(group.id, q.id, settingsContainer);
+                    settingsContainer.innerHTML = '';
+                } else {
+                    settingsContainer.innerHTML = buildSubquestionSettingsPanel(group.id, q);
+                    // Auto-save on change
+                    settingsContainer.querySelectorAll('input').forEach(input => {
+                        input.addEventListener('change', () => {
+                            saveSubquestionSettings(group.id, q.id, settingsContainer);
+                        });
+                    });
+                }
+            });
 
             subDiv.querySelector('.question-enabled').addEventListener('change', (e) => {
                 toggleEnabled(group.id, q.id, e.target.checked);
@@ -1187,6 +1248,37 @@ document.addEventListener('DOMContentLoaded', function() {
         sortableInstances.push(sortable);
 
         container.appendChild(matrixDiv);
+    }
+
+    // Build a minimal settings panel for a matrix subquestion (HTML text only)
+    function buildSubquestionSettingsPanel(groupId, question) {
+        const ov = question.toolOverrides || {};
+        return `
+            <div class="sub-settings-panel">
+                <label class="form-label">Subquestion Text <span class="html-hint" title="HTML tags are supported"><i class="fas fa-code"></i> HTML</span></label>
+                <input type="text" class="form-control sub-ts-questionText" placeholder="${escapeHtml(question.description || '')}"
+                       value="${escapeHtml(ov.questionText || '')}">
+            </div>
+        `;
+    }
+
+    // Save subquestion settings (HTML text only)
+    function saveSubquestionSettings(groupId, questionId, containerEl) {
+        const group = customizationState.groups.find(g => g.id === groupId);
+        if (!group) return;
+        const question = group.questions.find(q => q.id === questionId);
+        if (!question) return;
+
+        if (!question.toolOverrides) question.toolOverrides = {};
+        const input = containerEl.querySelector('.sub-ts-questionText');
+        if (input) {
+            const val = input.value.trim();
+            if (val) {
+                question.toolOverrides.questionText = val;
+            } else {
+                delete question.toolOverrides.questionText;
+            }
+        }
     }
 
     // Wire tool settings toggle event listener for a container element
