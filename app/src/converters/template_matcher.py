@@ -262,20 +262,47 @@ def _match_by_name(
 
 
 def _match_against_participants(
-    prism_json: dict, group_name: str = ""
+    prism_json: dict, group_name: str = "",
+    prismmeta: dict | None = None,
 ) -> Optional[TemplateMatch]:
     """Check if an imported template matches the global participants template.
 
     The participants template (participants.json) is separate from survey
     templates and uses different item codes (age, sex, gender, etc.).
 
+    If a ``_prismmeta`` dict with ``type == "participants"`` is provided, this
+    is treated as the authoritative signal and an exact-confidence match is
+    returned immediately, bypassing heuristic detection.
+
     Args:
         prism_json: The imported PRISM template dict.
         group_name: Optional group name for heuristic detection.
+        prismmeta: Parsed PRISMMETA metadata dict (from hidden equation).
 
     Returns:
         TemplateMatch if it matches participants, None otherwise.
     """
+    # Authoritative PRISMMETA signal — skip heuristics
+    if prismmeta and prismmeta.get("type") == "participants":
+        meta_vars = prismmeta.get("variables", [])
+        imported_struct = {
+            k for k in _extract_template_structure(prism_json)
+            if not _METADATA_CODE_RE.match(k)
+        }
+        return TemplateMatch(
+            template_key="participants",
+            template_path="participants.json",
+            confidence="exact",
+            overlap_count=len(meta_vars) if meta_vars else len(imported_struct),
+            template_items=len(meta_vars) if meta_vars else len(imported_struct),
+            imported_items=len(imported_struct),
+            levels_match=None,
+            runs_detected=1,
+            only_in_import=[],
+            only_in_library=[],
+            is_participants=True,
+        )
+
     participants_template = _load_global_participants_template()
     if not participants_template:
         return None
@@ -524,7 +551,10 @@ def match_against_library(
 
     # If no survey template matched, check against participants template
     if best_match is None:
-        participants_match = _match_against_participants(prism_json, group_name)
+        prismmeta = prism_json.get("_prismmeta")
+        participants_match = _match_against_participants(
+            prism_json, group_name, prismmeta=prismmeta
+        )
         if participants_match:
             best_match = participants_match
 

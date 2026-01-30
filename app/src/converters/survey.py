@@ -46,6 +46,7 @@ _NON_ITEM_TOPLEVEL_KEYS = {
     "LimeSurvey",
     "_aliases",
     "_reverse_aliases",
+    "_prismmeta",
 }
 
 # Keys that are considered "styling" or metadata, not structural
@@ -1857,13 +1858,20 @@ def _convert_survey_dataframe_to_prism_dataset(
         for group_name, group_info in lsa_analysis["groups"].items():
             match = group_info.get("match")
             if match and match.is_participants:
-                # Participant/sociodemographic data: register all item codes
+                # Participant/sociodemographic data: register item codes
                 # as participant columns so they get written to participants.tsv
                 # instead of being treated as unmapped survey items.
-                # Filter out hidden PRISM metadata codes.
-                for code in group_info["item_codes"]:
-                    if not code.upper().startswith("PRISMMETA"):
-                        participant_columns_lower.add(code.lower())
+                # Prefer the authoritative PRISMMETA variable list when available;
+                # fall back to all item codes from the group.
+                prismmeta = group_info["prism_json"].get("_prismmeta")
+                if prismmeta and prismmeta.get("variables"):
+                    for var_code in prismmeta["variables"]:
+                        if not var_code.upper().startswith("PRISMMETA"):
+                            participant_columns_lower.add(var_code.lower())
+                else:
+                    for code in group_info["item_codes"]:
+                        if not code.upper().startswith("PRISMMETA"):
+                            participant_columns_lower.add(code.lower())
             elif match and match.confidence in ("exact", "high"):
                 # Use the matched library template
                 _add_matched_template(templates, item_to_task, match, group_info)
