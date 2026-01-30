@@ -320,9 +320,14 @@ def _find_matching_global_template(
 _MISSING_TOKEN = "n/a"
 _LANGUAGE_KEY_RE = re.compile(r"^[a-z]{2}(?:-[a-z]{2})?$", re.IGNORECASE)
 
-# Pattern to detect run suffix in column names: _run-01, _run-02, _run01, _run02, etc.
-# Format: {QUESTIONNAIRE}_{ITEM}_run-{NN} or {QUESTIONNAIRE}_{ITEM}_run{NN}
-_RUN_SUFFIX_PATTERN = re.compile(r"^(.+)_run-?(\d+)$", re.IGNORECASE)
+# Patterns to detect run suffix in column names.
+# BIDS format:      {QUESTIONNAIRE}_{ITEM}_run-{NN}  e.g. SWLS01_run-02
+# LimeSurvey format: {CODE}run{NN}                   e.g. SWLS01run02
+# We try the more specific BIDS pattern first, then the LimeSurvey pattern.
+_RUN_SUFFIX_PATTERNS = [
+    re.compile(r"^(.+)_run-?(\d+)$", re.IGNORECASE),   # BIDS: SWLS01_run-02
+    re.compile(r"^(.+?)run(\d{2,})$", re.IGNORECASE),   # LimeSurvey: SWLS01run02
+]
 
 # LimeSurvey system columns - these are platform metadata, not questionnaire responses
 # They should be extracted to a separate tool-limesurvey file
@@ -405,21 +410,25 @@ def _extract_limesurvey_columns(df_columns: list[str]) -> tuple[list[str], list[
 def _parse_run_from_column(column_name: str) -> tuple[str, int | None]:
     """Parse run information from a column name.
 
-    Detects PRISM naming convention: {QUESTIONNAIRE}_{ITEM}_run-{NN}
+    Detects both BIDS and LimeSurvey naming conventions:
+    - BIDS:       {QUESTIONNAIRE}_{ITEM}_run-{NN}  e.g. PANAS_1_run-01
+    - LimeSurvey: {CODE}run{NN}                    e.g. SWLS01run02
 
     Args:
-        column_name: Column name to parse (e.g., 'PANAS_1_run-01', 'PHQ9_3')
+        column_name: Column name to parse.
 
     Returns:
         Tuple of (base_column_name, run_number)
-        - If run detected: ('PANAS_1', 1)
+        - If run detected: ('SWLS01', 2) from 'SWLS01run02'
         - If no run: ('PHQ9_3', None)
     """
-    match = _RUN_SUFFIX_PATTERN.match(column_name.strip())
-    if match:
-        base_name = match.group(1)
-        run_num = int(match.group(2))
-        return base_name, run_num
+    stripped = column_name.strip()
+    for pattern in _RUN_SUFFIX_PATTERNS:
+        m = pattern.match(stripped)
+        if m:
+            base_name = m.group(1)
+            run_num = int(m.group(2))
+            return base_name, run_num
     return column_name, None
 
 
@@ -485,6 +494,7 @@ class SurveyConvertResult:
     )  # task -> max run number (None if single occurrence)
     # Enhanced dry-run information
     dry_run_preview: dict | None = None  # Detailed preview of what will be created
+    template_matches: dict | None = None  # Structural match results per group (LSA only)
 
 
 def _build_bids_survey_filename(
@@ -940,6 +950,210 @@ def convert_survey_xlsx_to_prism_dataset(
     )
 
 
+def _analyze_lsa_structure(
+    input_path: Path,
+    project_path: str | Path | None = None,
+) -> dict | None:
+    """Parse .lss structure from .lsa and match groups against template library.
+
+    Extracts the .lss XML embedded in a LimeSurvey .lsa archive, parses it
+    into per-group PRISM templates, and matches each group against both
+    global and project template libraries.
+
+    Args:
+        input_path: Path to the .lsa archive file.
+        project_path: Optional project root to also check project templates.
+
+    Returns:
+        Dict with:
+          - groups: dict[group_name -> {prism_json, match, item_codes}]
+          - column_to_group: dict[column_name -> group_name]
+        Or None if .lss extraction or parsing fails.
+    """
+    from .limesurvey import parse_lss_xml_by_groups
+    from .template_matcher import match_groups_against_library
+
+    # Extract .lss XML from the .lsa archive
+    try:
+        with zipfile.ZipFile(str(input_path), "r") as z:
+            lss_names = [n for n in z.namelist() if n.endswith(".lss")]
+            if not lss_names:
+                return None
+            xml_lss = z.read(lss_names[0])
+    except Exception:
+        return None
+
+    # Parse .lss into per-group PRISM templates
+    parsed_groups = parse_lss_xml_by_groups(xml_lss, use_standard_format=True)
+    if not parsed_groups:
+        return None
+
+    # Match each group against global + project libraries
+    matches = match_groups_against_library(
+        parsed_groups, project_path=project_path
+    )
+
+    # Build structured result
+    groups: dict[str, dict] = {}
+    column_to_group: dict[str, str] = {}
+
+    for group_name, prism_json in parsed_groups.items():
+        # Collect item codes (keys that are not metadata sections)
+        item_codes = {
+            k for k in prism_json.keys()
+            if k not in _NON_ITEM_TOPLEVEL_KEYS and isinstance(prism_json.get(k), dict)
+        }
+
+        groups[group_name] = {
+            "prism_json": prism_json,
+            "match": matches.get(group_name),
+            "item_codes": item_codes,
+        }
+
+        # Map each item code to the group it belongs to
+        for code in item_codes:
+            column_to_group[code] = group_name
+
+    return {
+        "groups": groups,
+        "column_to_group": column_to_group,
+    }
+
+
+def _add_matched_template(
+    templates: dict[str, dict],
+    item_to_task: dict[str, str],
+    match,
+    group_info: dict,
+) -> None:
+    """Add a library-matched template to the templates and item_to_task dicts.
+
+    When a structural match is found against a library template, we use
+    the library template's data but also register the imported group's
+    item codes in item_to_task so DataFrame columns get mapped correctly.
+
+    Args:
+        templates: The templates dict to update (task_name -> template data).
+        item_to_task: The item_to_task dict to update (item_key -> task_name).
+        match: TemplateMatch result from template_matcher.
+        group_info: Group info dict with prism_json, item_codes, etc.
+    """
+    task_key = match.template_key
+    if task_key in templates:
+        # Already loaded from library_dir — just register item codes
+        for code in group_info["item_codes"]:
+            if code not in item_to_task:
+                item_to_task[code] = task_key
+        return
+
+    # Load the matched template from its source path
+    template_path = None
+    if match.source == "global":
+        global_templates = _load_global_templates()
+        gt = global_templates.get(task_key)
+        if gt:
+            template_path = gt["path"]
+    elif match.source == "project":
+        # template_path is stored as filename only; we'd need project path
+        # But the library-loaded templates should already cover this case.
+        pass
+
+    if template_path and template_path.exists():
+        try:
+            sidecar = _read_json(template_path)
+        except Exception:
+            return
+
+        # Pre-process aliases (same as _load_and_preprocess_templates)
+        if "_aliases" not in sidecar:
+            sidecar["_aliases"] = {}
+        if "_reverse_aliases" not in sidecar:
+            sidecar["_reverse_aliases"] = {}
+
+        for k, v in list(sidecar.items()):
+            if k in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(v, dict):
+                continue
+            if "Aliases" in v and isinstance(v["Aliases"], list):
+                for alias in v["Aliases"]:
+                    sidecar["_aliases"][alias] = k
+                    sidecar["_reverse_aliases"].setdefault(k, []).append(alias)
+            if "AliasOf" in v:
+                target = v["AliasOf"]
+                sidecar["_aliases"][k] = target
+                sidecar["_reverse_aliases"].setdefault(target, []).append(k)
+
+        templates[task_key] = {
+            "path": template_path,
+            "json": sidecar,
+            "task": task_key,
+            "source": match.source,
+            "global_match": task_key if match.source == "global" else None,
+        }
+
+        # Register all item keys from the library template
+        for k, v in sidecar.items():
+            if k in _NON_ITEM_TOPLEVEL_KEYS:
+                continue
+            if k not in item_to_task:
+                item_to_task[k] = task_key
+            # Also register aliases
+            if isinstance(v, dict) and "Aliases" in v and isinstance(v["Aliases"], list):
+                for alias in v["Aliases"]:
+                    if alias not in item_to_task:
+                        item_to_task[alias] = task_key
+
+    # Also register imported item codes that may differ from library keys
+    for code in group_info["item_codes"]:
+        if code not in item_to_task:
+            item_to_task[code] = task_key
+
+
+def _add_generated_template(
+    templates: dict[str, dict],
+    item_to_task: dict[str, str],
+    group_name: str,
+    group_info: dict,
+) -> None:
+    """Add a generated (unmatched) template from .lss parsing.
+
+    When no library match is found, use the PRISM JSON generated from the
+    .lss structure as a new template so the conversion can still proceed.
+
+    Args:
+        templates: The templates dict to update.
+        item_to_task: The item_to_task dict to update.
+        group_name: The LimeSurvey group name.
+        group_info: Group info dict with prism_json, item_codes, etc.
+    """
+    from ..utils.naming import sanitize_task_name
+
+    task_key = sanitize_task_name(group_name).lower()
+    if not task_key:
+        task_key = group_name.lower().replace(" ", "")
+    if task_key in templates:
+        return  # Already exists
+
+    prism_json = group_info["prism_json"]
+
+    # Pre-process aliases
+    if "_aliases" not in prism_json:
+        prism_json["_aliases"] = {}
+    if "_reverse_aliases" not in prism_json:
+        prism_json["_reverse_aliases"] = {}
+
+    templates[task_key] = {
+        "path": None,  # Generated, not from a file
+        "json": prism_json,
+        "task": task_key,
+        "source": "generated",
+        "global_match": None,
+    }
+
+    for code in group_info["item_codes"]:
+        if code not in item_to_task:
+            item_to_task[code] = task_key
+
+
 def convert_survey_lsa_to_prism_dataset(
     *,
     input_path: str | Path,
@@ -960,16 +1174,25 @@ def convert_survey_lsa_to_prism_dataset(
     strict_levels: bool | None = None,
     duplicate_handling: str = "error",
     skip_participants: bool = False,
+    project_path: str | Path | None = None,
 ) -> SurveyConvertResult:
     """Convert a LimeSurvey response archive (.lsa) into a PRISM dataset.
 
     The .lsa file is a zip archive. We extract the embedded *_responses.lsr XML and
     treat it as a wide table where each column is a survey item / variable.
+
+    Args:
+        project_path: Optional project root path. When provided, the .lss
+            structure is analyzed and matched against global + project
+            template libraries for automatic template recognition.
     """
 
     input_path = Path(input_path).resolve()
     if input_path.suffix.lower() not in {".lsa"}:
         raise ValueError("Currently only .lsa input is supported.")
+
+    # Analyze .lss structure for template matching (before reading responses)
+    lsa_analysis = _analyze_lsa_structure(input_path, project_path=project_path)
 
     result = _read_table_as_dataframe(input_path=input_path, kind="lsa")
     # LSA returns (df, questions_map); other formats return just df
@@ -1009,6 +1232,7 @@ def convert_survey_lsa_to_prism_dataset(
         strict_levels=effective_strict_levels,
         duplicate_handling=duplicate_handling,
         lsa_questions_map=lsa_questions_map,
+        lsa_analysis=lsa_analysis,
     )
 
 
@@ -1517,6 +1741,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     duplicate_handling: str = "error",
     lsa_questions_map: dict | None = None,
     skip_participants: bool = False,
+    lsa_analysis: dict | None = None,
 ) -> SurveyConvertResult:
     if unknown not in {"error", "warn", "ignore"}:
         raise ValueError("unknown must be one of: error, warn, ignore")
@@ -1622,6 +1847,40 @@ def _convert_survey_dataframe_to_prism_dataset(
     # Add template comparison warnings to conversion warnings
     if template_warnings:
         conversion_warnings.extend(template_warnings)
+
+    # --- LSA Structural Matching ---
+    # When converting .lsa files without an explicit survey= filter,
+    # use the .lss structure analysis to auto-detect and register templates.
+    if lsa_analysis and not survey:
+        for group_name, group_info in lsa_analysis["groups"].items():
+            match = group_info.get("match")
+            if match and match.is_participants:
+                # Participant/sociodemographic data: register all item codes
+                # as participant columns so they get written to participants.tsv
+                # instead of being treated as unmapped survey items.
+                # Filter out hidden PRISM metadata codes.
+                for code in group_info["item_codes"]:
+                    if not code.upper().startswith("PRISMMETA"):
+                        participant_columns_lower.add(code.lower())
+            elif match and match.confidence in ("exact", "high"):
+                # Use the matched library template
+                _add_matched_template(templates, item_to_task, match, group_info)
+            elif match and match.confidence == "medium":
+                # Medium confidence — still use it, but warn
+                _add_matched_template(templates, item_to_task, match, group_info)
+                conversion_warnings.append(
+                    f"Group '{group_name}' matched template '{match.template_key}' "
+                    f"with medium confidence ({match.overlap_count}/{match.template_items} items). "
+                    f"Review the match to ensure correctness."
+                )
+            else:
+                # No match or low confidence — generate template from .lss
+                _add_generated_template(templates, item_to_task, group_name, group_info)
+                if match:
+                    conversion_warnings.append(
+                        f"Group '{group_name}' had low-confidence match to '{match.template_key}'. "
+                        f"Using generated template instead."
+                    )
 
     # --- Survey Filtering ---
     selected_tasks: set[str] | None = None
@@ -1827,6 +2086,14 @@ def _convert_survey_dataframe_to_prism_dataset(
         tasks_with_data, templates, col_to_task
     )
 
+    # Build template_matches from lsa_analysis for API responses
+    _template_matches: dict | None = None
+    if lsa_analysis:
+        _template_matches = {}
+        for group_name, group_info in lsa_analysis["groups"].items():
+            match = group_info.get("match")
+            _template_matches[group_name] = match.to_dict() if match else None
+
     if dry_run:
         # Generate detailed dry-run preview
         dry_run_preview = _generate_dry_run_preview(
@@ -1858,6 +2125,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             conversion_warnings=conversion_warnings,
             task_runs=task_runs,
             dry_run_preview=dry_run_preview,
+            template_matches=_template_matches,
         )
 
     # --- Write Output ---
@@ -1900,6 +2168,15 @@ def _convert_survey_dataframe_to_prism_dataset(
             localized = _inject_missing_token(localized, token=_MISSING_TOKEN)
             if technical_overrides:
                 localized = _apply_technical_overrides(localized, technical_overrides)
+            # Ensure Metadata section exists (required by PRISM schema)
+            if "Metadata" not in localized:
+                from datetime import datetime
+
+                localized["Metadata"] = {
+                    "SchemaVersion": "1.1.1",
+                    "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
+                    "Creator": "prism-studio",
+                }
             # Remove internal keys before writing to avoid schema validation errors
             cleaned = _strip_internal_keys(localized)
             _write_json(sidecar_path, cleaned)
@@ -1939,7 +2216,9 @@ def _convert_survey_dataframe_to_prism_dataset(
             )
 
         # Process each (task, run) combination separately
-        for (task, run), columns in sorted(task_run_columns.items()):
+        for (task, run), columns in sorted(
+            task_run_columns.items(), key=lambda x: (x[0][0], x[0][1] or 0)
+        ):
             if selected_tasks is not None and task not in selected_tasks:
                 continue
 
@@ -2016,6 +2295,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         missing_value_token=_MISSING_TOKEN,
         conversion_warnings=conversion_warnings,
         task_runs=task_runs,
+        template_matches=_template_matches,
     )
 
 
@@ -2250,7 +2530,16 @@ def _map_survey_columns(
         "attribute_2",
         "attribute_3",
     }
-    filtered_unknown = [c for c in unknown_cols if str(c).lower() not in bookkeeping]
+    # Also filter out LimeSurvey "Other" text columns (other, other_1, other_2, ...),
+    # PRISM metadata questions, and menstrual cycle columns with LS-mangled names
+    _other_pattern = re.compile(r"^other(_\d+)?$", re.IGNORECASE)
+    _prismmeta_pattern = re.compile(r"^prismmeta", re.IGNORECASE)
+    filtered_unknown = [
+        c for c in unknown_cols
+        if str(c).lower() not in bookkeeping
+        and not _other_pattern.match(str(c).strip())
+        and not _prismmeta_pattern.match(str(c).strip())
+    ]
 
     if filtered_unknown:
         if unknown_mode == "error":
