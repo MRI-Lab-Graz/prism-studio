@@ -28,6 +28,40 @@ except (ImportError, ValueError):
 
 from .csv import process_dataframe  # noqa: E402
 
+
+def parse_prismmeta_html(html_content: str) -> dict | None:
+    """Parse PRISMMETA equation HTML to extract structured metadata.
+
+    Extracts type, variables, and other metadata from the hidden
+    ``<div class="prism-metadata">`` block embedded in PRISMMETA equations.
+
+    Returns:
+        Parsed metadata dict, or None if not PRISMMETA HTML.
+    """
+    if not html_content or "prism-metadata" not in html_content:
+        return None
+
+    meta: dict = {}
+    span_map = {
+        "meta-name": "name",
+        "meta-abbrev": "abbrev",
+        "meta-type": "type",
+        "meta-variables": "variables",
+    }
+    for css_class, key in span_map.items():
+        m = re.search(
+            rf'<span class="{css_class}">(.*?)</span>', html_content
+        )
+        if m:
+            meta[key] = m.group(1).strip()
+
+    if "variables" in meta and meta["variables"]:
+        meta["variables"] = [
+            v.strip() for v in meta["variables"].split(",") if v.strip()
+        ]
+
+    return meta if meta else None
+
 # LimeSurvey question type codes mapped to human-readable names
 LIMESURVEY_QUESTION_TYPES = {
     # Single choice
@@ -1353,6 +1387,19 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
             prism_json["Technical"]["Anonymized"] = survey_meta["anonymized"]
 
         prism_json.update(questions_dict)
+
+        # Extract PRISMMETA if present in this group
+        for _qid, q_data in sorted_questions_list:
+            title = q_data.get("title", "")
+            if title.upper().startswith("PRISMMETA") and q_data.get("type") == "*":
+                equation_html = q_data.get("attributes", {}).get("equation", "")
+                if not equation_html:
+                    equation_html = q_data.get("question", "")
+                parsed = parse_prismmeta_html(equation_html)
+                if parsed:
+                    prism_json["_prismmeta"] = parsed
+                    break
+
         result[normalized_name] = prism_json
 
     return result
