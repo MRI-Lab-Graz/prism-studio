@@ -652,9 +652,10 @@ def _load_participants_template(library_dir: Path) -> dict | None:
 
     # Add the official template as a fallback
     try:
-        app_root = Path(__file__).parent.parent.parent.resolve()
-        official_template = app_root / "official" / "participants.json"
-        candidates.append(official_template)
+        app_root = Path(__file__).parent.parent.parent.resolve()  # app/
+        repo_root = app_root.parent.resolve()  # prism-studio/
+        candidates.append(app_root / "official" / "participants.json")
+        candidates.append(repo_root / "official" / "participants.json")
     except Exception:
         pass
 
