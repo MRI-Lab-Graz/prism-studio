@@ -292,6 +292,109 @@
         z-index: 9999;
     }
 
+    /* Matrix Parent (Three-Level Hierarchy) */
+    .matrix-parent {
+        border: 2px solid #0d6efd;
+        border-radius: 8px;
+        background: #f0f6ff;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .matrix-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .matrix-header .matrix-name {
+        font-family: monospace;
+        font-weight: 700;
+        color: #0d6efd;
+        font-size: 0.95rem;
+    }
+
+    .matrix-header .badge {
+        font-size: 0.75rem;
+    }
+
+    .matrix-text-input {
+        width: 100%;
+        border: 1px solid #b6d4fe;
+        border-radius: 4px;
+        padding: 0.35rem 0.5rem;
+        font-size: 0.85rem;
+        background: white;
+        margin-bottom: 0.5rem;
+    }
+
+    .matrix-text-input:focus {
+        outline: none;
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+    }
+
+    .matrix-levels-summary {
+        font-size: 0.78rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+        padding: 0.25rem 0.5rem;
+        background: #e7f1ff;
+        border-radius: 4px;
+    }
+
+    .matrix-subquestions {
+        border-left: 3px solid #0d6efd;
+        margin-left: 0.5rem;
+        padding-left: 0.75rem;
+    }
+
+    .matrix-subquestion {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 0.4rem 0.6rem;
+        margin-bottom: 0.35rem;
+        cursor: grab;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        transition: all 0.15s ease;
+    }
+
+    .matrix-subquestion:hover {
+        border-color: #0d6efd;
+        background: #f8fbff;
+    }
+
+    .matrix-subquestion .question-code {
+        font-family: monospace;
+        font-weight: 600;
+        color: #495057;
+        min-width: 80px;
+    }
+
+    .matrix-subquestion .sub-desc {
+        color: #6c757d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+    }
+
+    .matrix-subquestion.sortable-ghost {
+        opacity: 0.4;
+        background: #e9ecef;
+    }
+
+    .matrix-subquestion.sortable-drag {
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
         .customizer-container {
@@ -620,6 +723,128 @@ document.addEventListener('DOMContentLoaded', function() {
         return hasLevels ? 'L' : 'T';
     }
 
+    /**
+     * Check if a question should NOT be grouped into a matrix.
+     * Mirrors Python _should_not_group() logic (without the removed >= 6 threshold).
+     */
+    function shouldNotGroup(question) {
+        // Template-level MatrixGrouping flag
+        if (question.matrixGroupingDisabled) return true;
+
+        // Participants template should never be grouped
+        const sourceFile = (question.sourceFile || '').toLowerCase();
+        if (sourceFile.includes('participants')) return true;
+
+        const orig = question.originalData || {};
+        const inputType = (orig.InputType || question.inputType || '').toLowerCase();
+
+        // Dropdown, numerical, text, calculated
+        if (inputType === 'dropdown' || inputType === 'numerical' ||
+            inputType === 'text' || inputType === 'calculated') return true;
+
+        // Questions with "Other" option
+        if (orig.OtherOption && orig.OtherOption.enabled) return true;
+
+        return false;
+    }
+
+    /**
+     * Compute matrix groups for a list of questions.
+     * Returns array of { isMatrix, questions, levelsKey, matrixName }.
+     */
+    function computeMatrixGroups(questions, matrixMode, matrixGlobal) {
+        const enabledQuestions = questions.filter(q => q.enabled);
+
+        if (!matrixMode) {
+            // No grouping: each question is standalone
+            return enabledQuestions.map(q => ({
+                isMatrix: false,
+                questions: [q],
+                levelsKey: null,
+                matrixName: null
+            }));
+        }
+
+        // Helper: serialize levels with sorted keys to match Python json.dumps(levels, sort_keys=True)
+        function levelsKey(q) {
+            const levels = q.levels || (q.originalData && q.originalData.Levels) || {};
+            if (!levels || typeof levels !== 'object' || Object.keys(levels).length === 0) return null;
+            const sorted = {};
+            Object.keys(levels).sort().forEach(k => { sorted[k] = levels[k]; });
+            return JSON.stringify(sorted);
+        }
+
+        if (matrixGlobal) {
+            // Global grouping: group all questions with identical levels
+            const groups = [];
+            const keyToIdx = {};
+
+            for (const q of enabledQuestions) {
+                if (shouldNotGroup(q)) {
+                    groups.push({ isMatrix: false, questions: [q], levelsKey: null, matrixName: null });
+                    continue;
+                }
+                const key = levelsKey(q);
+                if (key && key in keyToIdx) {
+                    groups[keyToIdx[key]].questions.push(q);
+                } else if (key) {
+                    keyToIdx[key] = groups.length;
+                    groups.push({ isMatrix: false, questions: [q], levelsKey: key, matrixName: null });
+                } else {
+                    groups.push({ isMatrix: false, questions: [q], levelsKey: null, matrixName: null });
+                }
+            }
+
+            // Mark groups with 2+ questions as matrix
+            for (const g of groups) {
+                if (g.questions.length > 1) {
+                    g.isMatrix = true;
+                    g.matrixName = 'M' + g.questions[0].questionCode;
+                }
+            }
+            return groups;
+        } else {
+            // Consecutive grouping: only group consecutive questions with matching levels
+            const groups = [];
+            let currentGroup = null;
+            let lastKey = null;
+
+            for (const q of enabledQuestions) {
+                if (shouldNotGroup(q)) {
+                    if (currentGroup) {
+                        groups.push(currentGroup);
+                        currentGroup = null;
+                    }
+                    groups.push({ isMatrix: false, questions: [q], levelsKey: null, matrixName: null });
+                    lastKey = null;
+                    continue;
+                }
+
+                const key = levelsKey(q);
+                if (!currentGroup) {
+                    currentGroup = { isMatrix: false, questions: [q], levelsKey: key, matrixName: null };
+                    lastKey = key;
+                } else if (key && key === lastKey) {
+                    currentGroup.questions.push(q);
+                } else {
+                    groups.push(currentGroup);
+                    currentGroup = { isMatrix: false, questions: [q], levelsKey: key, matrixName: null };
+                    lastKey = key;
+                }
+            }
+            if (currentGroup) groups.push(currentGroup);
+
+            // Mark groups with 2+ questions as matrix
+            for (const g of groups) {
+                if (g.questions.length > 1) {
+                    g.isMatrix = true;
+                    g.matrixName = 'M' + g.questions[0].questionCode;
+                }
+            }
+            return groups;
+        }
+    }
+
     // Load data from sessionStorage
     function loadFromSessionStorage() {
         loadingOverlay.classList.remove('d-none');
@@ -789,6 +1014,243 @@ document.addEventListener('DOMContentLoaded', function() {
         initGroupsSortable();
     }
 
+    // Render a single question item (full card with all controls)
+    function renderSingleQuestion(container, group, q) {
+        const qDiv = document.createElement('div');
+        qDiv.className = 'question-item';
+        qDiv.dataset.questionId = q.id;
+        qDiv.dataset.groupId = group.id;
+        const mandatoryId = `mandatory-${group.id}-${q.id}`;
+        const enabledId = `enabled-${group.id}-${q.id}`;
+        const hasOverrides = q.toolOverrides && Object.keys(q.toolOverrides).length > 0;
+        qDiv.innerHTML = `
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <i class="fas fa-grip-vertical drag-handle"></i>
+                    <span class="question-code">${escapeHtml(q.questionCode)}</span>
+                    ${q.runNumber > 1 ? `<span class="badge bg-info ms-1">run-${String(q.runNumber).padStart(2, '0')}</span>` : ''}
+                    ${hasOverrides ? '<span class="badge bg-warning text-dark ms-1" title="Has tool-specific overrides"><i class="fas fa-wrench"></i></span>' : ''}
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="tool-settings-toggle" data-gid="${group.id}" data-qid="${q.id}" title="LimeSurvey settings">
+                        <i class="fas fa-cog"></i> LS
+                    </span>
+                    <div class="form-check form-switch" title="Required: Participant must answer this question">
+                        <input class="form-check-input question-mandatory" type="checkbox" id="${mandatoryId}"
+                               ${q.mandatory ? 'checked' : ''}>
+                        <label class="form-check-label small text-muted" for="${mandatoryId}">Required</label>
+                    </div>
+                    <div class="form-check form-switch" title="Include: Export this question to LimeSurvey">
+                        <input class="form-check-input question-enabled" type="checkbox" id="${enabledId}"
+                               ${q.enabled ? 'checked' : ''}>
+                        <label class="form-check-label small text-muted" for="${enabledId}">Include</label>
+                    </div>
+                </div>
+            </div>
+            <div class="question-desc" title="${escapeHtml(getText(q.originalData && q.originalData.Description, previewLanguage) || q.description || 'No description')}">${escapeHtml(getText(q.originalData && q.originalData.Description, previewLanguage) || q.description || 'No description')}</div>
+            <div class="tool-settings-container" data-gid="${group.id}" data-qid="${q.id}"></div>
+        `;
+
+        // Tool settings toggle
+        wireToolSettingsToggle(qDiv, group.id);
+
+        // Mandatory toggle
+        qDiv.querySelector('.question-mandatory').addEventListener('change', (e) => {
+            toggleMandatory(group.id, q.id, e.target.checked);
+        });
+
+        // Enabled toggle
+        qDiv.querySelector('.question-enabled').addEventListener('change', (e) => {
+            toggleEnabled(group.id, q.id, e.target.checked);
+            renderQuestions(); // Re-render to update matrix grouping
+        });
+
+        container.appendChild(qDiv);
+    }
+
+    // Render a matrix group (parent container with subquestions)
+    function renderMatrixGroup(container, group, matrixGroup) {
+        const firstQ = matrixGroup.questions[0];
+        const matrixDiv = document.createElement('div');
+        matrixDiv.className = 'matrix-parent';
+
+        // Get levels summary
+        const levels = firstQ.levels || (firstQ.originalData && firstQ.originalData.Levels) || {};
+        const levelKeys = Object.keys(levels);
+        let levelsSummary = '';
+        if (levelKeys.length > 0) {
+            const firstLabel = getText(levels[levelKeys[0]], previewLanguage) || levelKeys[0];
+            const lastLabel = getText(levels[levelKeys[levelKeys.length - 1]], previewLanguage) || levelKeys[levelKeys.length - 1];
+            levelsSummary = `${levelKeys.length} options: ${escapeHtml(firstLabel)} ... ${escapeHtml(lastLabel)}`;
+        }
+
+        // Get default matrix text from group instructions
+        const instructions = group.instructions || {};
+        const defaultMatrixText = getText(instructions, previewLanguage)
+            || 'Please answer the following questions:';
+        const currentMatrixText = firstQ.toolOverrides && firstQ.toolOverrides.matrixQuestionText
+            ? firstQ.toolOverrides.matrixQuestionText
+            : defaultMatrixText;
+
+        const enabledCount = matrixGroup.questions.filter(q => q.enabled).length;
+        const anyMandatory = matrixGroup.questions.some(q => q.mandatory);
+        const mandatoryMatrixId = `matrix-mandatory-${group.id}-${firstQ.id}`;
+
+        matrixDiv.innerHTML = `
+            <div class="matrix-header">
+                <i class="fas fa-th text-primary"></i>
+                <span class="matrix-name">${escapeHtml(matrixGroup.matrixName)}</span>
+                <span class="badge bg-primary">${enabledCount} items</span>
+                <span class="badge bg-info">Array/Matrix</span>
+                <div class="ms-auto d-flex align-items-center gap-3">
+                    <span class="tool-settings-toggle" data-gid="${group.id}" data-qid="${firstQ.id}" title="Matrix LS settings">
+                        <i class="fas fa-cog"></i> LS
+                    </span>
+                    <div class="form-check form-switch" title="Required: All subquestions in this matrix">
+                        <input class="form-check-input matrix-mandatory" type="checkbox" id="${mandatoryMatrixId}"
+                               ${anyMandatory ? 'checked' : ''}>
+                        <label class="form-check-label small text-muted" for="${mandatoryMatrixId}">Required</label>
+                    </div>
+                </div>
+            </div>
+            <input type="text" class="matrix-text-input" value="${escapeHtml(currentMatrixText)}"
+                   placeholder="Matrix parent question text" title="Text shown above the matrix in LimeSurvey">
+            ${levelsSummary ? `<div class="matrix-levels-summary"><i class="fas fa-list-ol me-1"></i>${levelsSummary}</div>` : ''}
+            <div class="matrix-subquestions" data-group-id="${group.id}">
+            </div>
+            <div class="tool-settings-container" data-gid="${group.id}" data-qid="${firstQ.id}"></div>
+        `;
+
+        // Wire matrix text input
+        const textInput = matrixDiv.querySelector('.matrix-text-input');
+        textInput.addEventListener('change', () => {
+            const val = textInput.value.trim();
+            if (!firstQ.toolOverrides) firstQ.toolOverrides = {};
+            if (val && val !== defaultMatrixText) {
+                firstQ.toolOverrides.matrixQuestionText = val;
+            } else {
+                delete firstQ.toolOverrides.matrixQuestionText;
+            }
+        });
+
+        // Wire matrix mandatory toggle
+        matrixDiv.querySelector('.matrix-mandatory').addEventListener('change', (e) => {
+            const mandatory = e.target.checked;
+            matrixGroup.questions.forEach(q => {
+                q.mandatory = mandatory;
+            });
+        });
+
+        // Wire tool settings toggle for matrix-level settings
+        wireToolSettingsToggle(matrixDiv, group.id);
+
+        // Render subquestions
+        const subContainer = matrixDiv.querySelector('.matrix-subquestions');
+        matrixGroup.questions.forEach(q => {
+            const subDiv = document.createElement('div');
+            subDiv.className = 'matrix-subquestion';
+            subDiv.dataset.questionId = q.id;
+            subDiv.dataset.groupId = group.id;
+
+            const desc = getText(q.originalData && q.originalData.Description, previewLanguage) || q.description || '';
+            const enabledSubId = `enabled-sub-${group.id}-${q.id}`;
+
+            subDiv.innerHTML = `
+                <i class="fas fa-grip-vertical drag-handle" style="color:#adb5bd;cursor:grab;"></i>
+                <span class="question-code">${escapeHtml(q.questionCode)}</span>
+                <span class="sub-desc" title="${escapeHtml(desc)}">${escapeHtml(desc)}</span>
+                <div class="form-check form-switch ms-auto" title="Include this subquestion">
+                    <input class="form-check-input question-enabled" type="checkbox" id="${enabledSubId}"
+                           ${q.enabled ? 'checked' : ''}>
+                </div>
+            `;
+
+            subDiv.querySelector('.question-enabled').addEventListener('change', (e) => {
+                toggleEnabled(group.id, q.id, e.target.checked);
+                renderQuestions(); // Re-render to update matrix grouping
+            });
+
+            subContainer.appendChild(subDiv);
+        });
+
+        // Initialize sortable for subquestions within this matrix
+        const sortable = new Sortable(subContainer, {
+            group: 'questions',
+            animation: 150,
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onEnd: function(evt) {
+                handleQuestionMove(evt);
+            }
+        });
+        sortableInstances.push(sortable);
+
+        container.appendChild(matrixDiv);
+    }
+
+    // Wire tool settings toggle event listener for a container element
+    function wireToolSettingsToggle(parentEl, groupId) {
+        const toggle = parentEl.querySelector('.tool-settings-toggle');
+        if (!toggle) return;
+
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const container = parentEl.querySelector('.tool-settings-container');
+            const gid = container.dataset.gid;
+            const qid = container.dataset.qid;
+
+            if (container.innerHTML.trim()) {
+                // Save and close
+                const panel = container.querySelector('.tool-settings-panel');
+                if (panel) saveToolSettings(gid, qid, panel);
+                container.innerHTML = '';
+                activeToolSettingsPanel = null;
+            } else {
+                // Close any other open panel first
+                if (activeToolSettingsPanel) {
+                    const prevPanel = activeToolSettingsPanel.querySelector('.tool-settings-panel');
+                    if (prevPanel) {
+                        saveToolSettings(
+                            activeToolSettingsPanel.dataset.gid,
+                            activeToolSettingsPanel.dataset.qid,
+                            prevPanel
+                        );
+                    }
+                    activeToolSettingsPanel.innerHTML = '';
+                }
+                // Open this one
+                const grp = customizationState.groups.find(g => g.id === gid);
+                const quest = grp ? grp.questions.find(qq => qq.id === qid) : null;
+                if (quest) {
+                    container.innerHTML = buildToolSettingsPanel(gid, quest);
+                    activeToolSettingsPanel = container;
+
+                    const panel = container.querySelector('.tool-settings-panel');
+                    if (panel) {
+                        updateTypeSpecificFields(panel);
+
+                        const typeSelect = panel.querySelector('.ts-questionType');
+                        if (typeSelect) {
+                            typeSelect.addEventListener('change', () => {
+                                updateTypeSpecificFields(panel);
+                                saveToolSettings(gid, qid, panel);
+                            });
+                        }
+
+                        panel.querySelectorAll('input, select').forEach(input => {
+                            if (input !== typeSelect) {
+                                input.addEventListener('change', () => {
+                                    saveToolSettings(gid, qid, panel);
+                                });
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+
     // Render questions in right panel
     function renderQuestions() {
         questionsContainer.innerHTML = '';
@@ -796,6 +1258,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Destroy existing sortables
         sortableInstances.forEach(s => s.destroy());
         sortableInstances = [];
+
+        const matrixMode = customizationState.exportOptions.matrix;
+        const matrixGlobal = customizationState.exportOptions.matrix_global;
 
         customizationState.groups.forEach((group, groupIdx) => {
             const groupDiv = document.createElement('div');
@@ -815,124 +1280,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const listDiv = groupDiv.querySelector('.question-group-list');
 
-            group.questions.forEach((q, qIdx) => {
-                const qDiv = document.createElement('div');
-                qDiv.className = 'question-item';
-                qDiv.dataset.questionId = q.id;
-                qDiv.dataset.groupId = group.id;
-                const mandatoryId = `mandatory-${group.id}-${q.id}`;
-                const enabledId = `enabled-${group.id}-${q.id}`;
-                const hasOverrides = q.toolOverrides && Object.keys(q.toolOverrides).length > 0;
-                qDiv.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="flex-grow-1">
-                            <i class="fas fa-grip-vertical drag-handle"></i>
-                            <span class="question-code">${escapeHtml(q.questionCode)}</span>
-                            ${q.runNumber > 1 ? `<span class="badge bg-info ms-1">run-${String(q.runNumber).padStart(2, '0')}</span>` : ''}
-                            ${hasOverrides ? '<span class="badge bg-warning text-dark ms-1" title="Has tool-specific overrides"><i class="fas fa-wrench"></i></span>' : ''}
-                        </div>
-                        <div class="d-flex align-items-center gap-3">
-                            <span class="tool-settings-toggle" data-gid="${group.id}" data-qid="${q.id}" title="LimeSurvey settings">
-                                <i class="fas fa-cog"></i> LS
-                            </span>
-                            <div class="form-check form-switch" title="Required: Participant must answer this question">
-                                <input class="form-check-input question-mandatory" type="checkbox" id="${mandatoryId}"
-                                       ${q.mandatory ? 'checked' : ''}>
-                                <label class="form-check-label small text-muted" for="${mandatoryId}">Required</label>
-                            </div>
-                            <div class="form-check form-switch" title="Include: Export this question to LimeSurvey">
-                                <input class="form-check-input question-enabled" type="checkbox" id="${enabledId}"
-                                       ${q.enabled ? 'checked' : ''}>
-                                <label class="form-check-label small text-muted" for="${enabledId}">Include</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="question-desc" title="${escapeHtml(getText(q.originalData && q.originalData.Description, previewLanguage) || q.description || 'No description')}">${escapeHtml(getText(q.originalData && q.originalData.Description, previewLanguage) || q.description || 'No description')}</div>
-                    <div class="tool-settings-container" data-gid="${group.id}" data-qid="${q.id}"></div>
-                `;
+            if (matrixMode) {
+                // Three-level hierarchy: compute matrix groups from enabled questions
+                const matrixGroups = computeMatrixGroups(group.questions, matrixMode, matrixGlobal);
 
-                // Tool settings toggle
-                qDiv.querySelector('.tool-settings-toggle').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const container = qDiv.querySelector('.tool-settings-container');
-                    const gid = container.dataset.gid;
-                    const qid = container.dataset.qid;
-
-                    if (container.innerHTML.trim()) {
-                        // Save and close
-                        const panel = container.querySelector('.tool-settings-panel');
-                        if (panel) saveToolSettings(gid, qid, panel);
-                        container.innerHTML = '';
-                        activeToolSettingsPanel = null;
+                for (const mg of matrixGroups) {
+                    if (mg.isMatrix) {
+                        renderMatrixGroup(listDiv, group, mg);
                     } else {
-                        // Close any other open panel first
-                        if (activeToolSettingsPanel) {
-                            const prevPanel = activeToolSettingsPanel.querySelector('.tool-settings-panel');
-                            if (prevPanel) {
-                                saveToolSettings(
-                                    activeToolSettingsPanel.dataset.gid,
-                                    activeToolSettingsPanel.dataset.qid,
-                                    prevPanel
-                                );
-                            }
-                            activeToolSettingsPanel.innerHTML = '';
-                        }
-                        // Open this one
-                        const grp = customizationState.groups.find(g => g.id === gid);
-                        const quest = grp ? grp.questions.find(qq => qq.id === qid) : null;
-                        if (quest) {
-                            container.innerHTML = buildToolSettingsPanel(gid, quest);
-                            activeToolSettingsPanel = container;
-
-                            const panel = container.querySelector('.tool-settings-panel');
-                            if (panel) {
-                                // Show correct type-specific fields
-                                updateTypeSpecificFields(panel);
-
-                                // Wire question type change to update visible fields
-                                const typeSelect = panel.querySelector('.ts-questionType');
-                                if (typeSelect) {
-                                    typeSelect.addEventListener('change', () => {
-                                        updateTypeSpecificFields(panel);
-                                        saveToolSettings(gid, qid, panel);
-                                    });
-                                }
-
-                                // Auto-save on change for all inputs
-                                panel.querySelectorAll('input, select').forEach(input => {
-                                    if (input !== typeSelect) {
-                                        input.addEventListener('change', () => {
-                                            saveToolSettings(gid, qid, panel);
-                                        });
-                                    }
-                                });
-                            }
+                        for (const q of mg.questions) {
+                            renderSingleQuestion(listDiv, group, q);
                         }
                     }
-                });
+                }
 
-                // Mandatory toggle
-                qDiv.querySelector('.question-mandatory').addEventListener('change', (e) => {
-                    toggleMandatory(group.id, q.id, e.target.checked);
-                });
-
-                // Enabled toggle
-                qDiv.querySelector('.question-enabled').addEventListener('change', (e) => {
-                    toggleEnabled(group.id, q.id, e.target.checked);
-                });
-
-                listDiv.appendChild(qDiv);
-            });
+                // Render disabled questions as standalone so they can be re-enabled
+                const disabledQuestions = group.questions.filter(q => !q.enabled);
+                for (const q of disabledQuestions) {
+                    renderSingleQuestion(listDiv, group, q);
+                }
+            } else {
+                // Flat mode: render all questions as standalone items
+                for (const q of group.questions) {
+                    renderSingleQuestion(listDiv, group, q);
+                }
+            }
 
             questionsContainer.appendChild(groupDiv);
 
-            // Initialize sortable for questions within this group
+            // Initialize sortable for the group list (for standalone questions)
             const sortable = new Sortable(listDiv, {
                 group: 'questions',
                 animation: 150,
                 handle: '.drag-handle',
                 ghostClass: 'sortable-ghost',
                 dragClass: 'sortable-drag',
+                draggable: '.question-item',
                 onEnd: function(evt) {
                     handleQuestionMove(evt);
                 }
@@ -1040,9 +1423,9 @@ document.addEventListener('DOMContentLoaded', function() {
             fromGroup.questions.forEach((q, i) => q.displayOrder = i);
         }
 
-        // Update both panels
+        // Update both panels — renderQuestions recomputes matrix groups after drag-and-drop
         renderGroups();
-        updateQuestionCounts();
+        renderQuestions();
     }
 
     // Update question count badges in both panels without full re-render
@@ -1300,8 +1683,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Update question description text in-place for current previewLanguage
+    // Update question description text for current previewLanguage
     function updateQuestionDescriptions() {
+        // Update standalone question items
         document.querySelectorAll('.question-item').forEach(qDiv => {
             const qid = qDiv.dataset.questionId;
             const gid = qDiv.dataset.groupId;
@@ -1314,6 +1698,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const desc = getText(q.originalData && q.originalData.Description, previewLanguage) || q.description || 'No description';
             const descEl = qDiv.querySelector('.question-desc');
+            if (descEl) {
+                descEl.textContent = desc;
+                descEl.title = desc;
+            }
+        });
+
+        // Update matrix subquestion descriptions
+        document.querySelectorAll('.matrix-subquestion').forEach(subDiv => {
+            const qid = subDiv.dataset.questionId;
+            const gid = subDiv.dataset.groupId;
+            if (!qid || !gid) return;
+
+            const group = customizationState.groups.find(g => g.id === gid);
+            if (!group) return;
+            const q = group.questions.find(qq => qq.id === qid);
+            if (!q) return;
+
+            const desc = getText(q.originalData && q.originalData.Description, previewLanguage) || q.description || '';
+            const descEl = subDiv.querySelector('.sub-desc');
             if (descEl) {
                 descEl.textContent = desc;
                 descEl.title = desc;
@@ -1596,6 +1999,16 @@ document.addEventListener('DOMContentLoaded', function() {
         div.textContent = str;
         return div.innerHTML;
     }
+
+    // Wire matrix mode toggles to re-render question hierarchy
+    document.getElementById('matrixMode').addEventListener('change', (e) => {
+        customizationState.exportOptions.matrix = e.target.checked;
+        renderQuestions();
+    });
+    document.getElementById('globalMatrix').addEventListener('change', (e) => {
+        customizationState.exportOptions.matrix_global = e.target.checked;
+        renderQuestions();
+    });
 
     // Initialize
     loadFromSessionStorage();
