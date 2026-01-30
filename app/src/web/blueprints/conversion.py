@@ -640,11 +640,25 @@ def api_survey_convert_preview():
         if validation_result is not None:
             response_data["validation"] = validation_result
 
-        # Include template match results in response.
+        # Build conversion summary for the preview
+        conv_summary = {}
+        if result.tasks_included:
+            conv_summary["tasks_included"] = result.tasks_included
+        if result.task_runs:
+            conv_summary["task_runs"] = result.task_runs
+        if result.unknown_columns:
+            conv_summary["unknown_columns"] = result.unknown_columns
+        if getattr(result, "tool_columns", None):
+            conv_summary["tool_columns"] = result.tool_columns
+        if result.conversion_warnings:
+            conv_summary["conversion_warnings"] = result.conversion_warnings
+
+        # Include template match results in response and conversion summary.
         # For LSA files, structural matching is done during conversion (more accurate).
         # For other formats, fall back to post-hoc matching against library templates.
         if result.template_matches:
             response_data["template_matches"] = result.template_matches
+            conv_summary["template_matches"] = result.template_matches
         elif result.tasks_included:
             try:
                 from src.converters.template_matcher import match_against_library
@@ -677,8 +691,12 @@ def api_survey_convert_preview():
                     else:
                         template_matches[task_name] = None
                 response_data["template_matches"] = template_matches
+                conv_summary["template_matches"] = template_matches
             except Exception:
                 pass  # Template matching is non-critical
+
+        if conv_summary:
+            response_data["conversion_summary"] = conv_summary
 
         return jsonify(response_data)
     except Exception as e:
@@ -1288,9 +1306,23 @@ def api_survey_convert_validate():
             "zip_base64": zip_base64,
         }
 
-        # Include structural template match results if available (LSA files)
-        if convert_result and getattr(convert_result, "template_matches", None):
-            response_payload["template_matches"] = convert_result.template_matches
+        # Include conversion summary for LSA files (template matches, tool columns, etc.)
+        if convert_result:
+            summary = {}
+            if getattr(convert_result, "template_matches", None):
+                summary["template_matches"] = convert_result.template_matches
+            if getattr(convert_result, "tasks_included", None):
+                summary["tasks_included"] = convert_result.tasks_included
+            if getattr(convert_result, "task_runs", None):
+                summary["task_runs"] = convert_result.task_runs
+            if getattr(convert_result, "unknown_columns", None):
+                summary["unknown_columns"] = convert_result.unknown_columns
+            if getattr(convert_result, "tool_columns", None):
+                summary["tool_columns"] = convert_result.tool_columns
+            if conversion_warnings:
+                summary["conversion_warnings"] = conversion_warnings
+            if summary:
+                response_payload["conversion_summary"] = summary
 
         return jsonify(sanitize_jsonable(response_payload))
     except Exception as e:
