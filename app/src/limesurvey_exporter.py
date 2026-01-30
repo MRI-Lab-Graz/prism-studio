@@ -1337,6 +1337,7 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
         "savetimings": "Y",
         "template": "vanilla",
         "language": base_language,
+        "assessments": "N",  # Disable assessment mode to avoid {score=N} badges on answers
     }
     if additional_languages:
         survey_settings["additional_languages"] = " ".join(additional_languages)
@@ -2160,6 +2161,7 @@ def generate_lss_from_customization(
         "savetimings": "Y",
         "template": "vanilla",
         "language": base_language,
+        "assessments": "N",  # Disable assessment mode to avoid {score=N} badges on answers
     }
     if additional_languages:
         survey_settings["additional_languages"] = " ".join(additional_languages)
