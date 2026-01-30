@@ -1232,6 +1232,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const downloadWarningSection = document.getElementById('downloadWarningSection');
     const downloadZipBtn = document.getElementById('downloadZipBtn');
     const downloadZipWarningBtn = document.getElementById('downloadZipWarningBtn');
+    const conversionSummaryContainer = document.getElementById('conversionSummaryContainer');
+    const conversionSummaryBody = document.getElementById('conversionSummaryBody');
+    const toggleSummaryBtn = document.getElementById('toggleSummaryBtn');
 
     // Biometrics elements
     const biometricsLogContainer = document.getElementById('biometricsLogContainer');
@@ -1305,6 +1308,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function resetConversionUI() {
         conversionLogContainer.classList.add('d-none');
         validationResultsContainer.classList.add('d-none');
+        if (conversionSummaryContainer) conversionSummaryContainer.classList.add('d-none');
+        if (conversionSummaryBody) conversionSummaryBody.innerHTML = '';
         downloadSection.classList.add('d-none');
         downloadWarningSection.classList.add('d-none');
         conversionLog.innerHTML = '';
@@ -1324,6 +1329,65 @@ document.addEventListener('DOMContentLoaded', function() {
         biometricsValidationDetails.innerHTML = '';
         biometricsDetectedList.innerHTML = '';
         currentBiometricsZipBlob = null;
+    }
+
+    function displayConversionSummary(summary) {
+        if (!conversionSummaryContainer || !conversionSummaryBody || !summary) return;
+
+        let html = '';
+
+        // Matched Templates section
+        const matches = summary.template_matches;
+        if (matches && Object.keys(matches).length > 0) {
+            html += `<h6 class="mb-2"><i class="fas fa-puzzle-piece me-1"></i>Matched Templates</h6>`;
+            html += `<table class="table table-sm table-bordered mb-3"><thead><tr><th>Survey Group</th><th>Template</th><th>Confidence</th></tr></thead><tbody>`;
+            for (const [group, info] of Object.entries(matches)) {
+                const tmpl = info.template || info.matched_template || 'None';
+                const conf = info.confidence || info.match_confidence || 'unknown';
+                let badgeClass = 'bg-secondary';
+                if (conf === 'exact' || conf === 'high') badgeClass = 'bg-success';
+                else if (conf === 'medium') badgeClass = 'bg-warning text-dark';
+                else if (conf === 'low') badgeClass = 'bg-danger';
+                html += `<tr><td>${group}</td><td><code>${tmpl}</code></td><td><span class="badge ${badgeClass}">${conf}</span></td></tr>`;
+            }
+            html += `</tbody></table>`;
+        }
+
+        // Tool-Specific Columns section
+        const toolCols = summary.tool_columns;
+        if (toolCols && toolCols.length > 0) {
+            html += `<h6 class="mb-2"><i class="fas fa-wrench me-1"></i>Tool-Specific Columns <span class="badge bg-secondary">${toolCols.length}</span></h6>`;
+            html += `<div class="mb-3"><details><summary class="text-muted small" style="cursor:pointer;">LimeSurvey system columns (click to expand)</summary>`;
+            html += `<div class="mt-1"><code>${toolCols.join('</code>, <code>')}</code></div></details></div>`;
+        }
+
+        // Unmatched Columns section
+        const unknownCols = summary.unknown_columns;
+        if (unknownCols && unknownCols.length > 0) {
+            html += `<h6 class="mb-2"><i class="fas fa-question-circle me-1 text-warning"></i>Unmatched Columns <span class="badge bg-warning text-dark">${unknownCols.length}</span></h6>`;
+            html += `<div class="mb-1"><code>${unknownCols.join('</code>, <code>')}</code></div>`;
+            html += `<small class="text-muted">These columns were not assigned to any template.</small>`;
+        }
+
+        if (html) {
+            conversionSummaryBody.innerHTML = html;
+            conversionSummaryContainer.classList.remove('d-none');
+
+            // Wire toggle button
+            if (toggleSummaryBtn) {
+                toggleSummaryBtn.onclick = function() {
+                    const body = conversionSummaryBody;
+                    const icon = toggleSummaryBtn.querySelector('i');
+                    if (body.style.display === 'none') {
+                        body.style.display = '';
+                        icon.className = 'fas fa-chevron-down';
+                    } else {
+                        body.style.display = 'none';
+                        icon.className = 'fas fa-chevron-right';
+                    }
+                };
+            }
+        }
     }
 
     function displayValidationResults(validation, prefix = '') {
@@ -2437,11 +2501,17 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             // Logs already processed above for JSON responses
+
+            // Display conversion summary (template matches, tool columns, unmatched) before validation
+            if (data.conversion_summary) {
+                displayConversionSummary(data.conversion_summary);
+            }
+
             if (data.validation) {
                 const v = data.validation;
                 const errorCount = (v.errors || []).length;
                 const warningCount = (v.warnings || []).length;
-                
+
                 if (errorCount === 0 && warningCount === 0) {
                     appendLog('✓ Validation passed - dataset is valid!', 'success');
                 } else if (errorCount === 0) {
@@ -2449,7 +2519,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     appendLog(`✗ Validation failed with ${errorCount} error(s)`, 'error');
                 }
-                
+
                 displayValidationResults(data.validation);
             }
 
@@ -2750,6 +2820,11 @@ document.addEventListener('DOMContentLoaded', function() {
             appendLog(`   Tasks detected: ${preview.summary.tasks.join(', ')}`, 'info');
             appendLog(`   Total files to create: ${preview.summary.total_files}`, 'info');
             appendLog('', 'info');
+
+            // Display conversion summary (template matches, tool columns, unmatched) before validation
+            if (data.conversion_summary) {
+                displayConversionSummary(data.conversion_summary);
+            }
 
             // Show validation results if backend ran validation during preview
             if (data.validation) {

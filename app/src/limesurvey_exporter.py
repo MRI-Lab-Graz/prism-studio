@@ -884,7 +884,7 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
                     "parent_qid": "0",
                     "sid": sid,
                     "gid": gid,
-                    "type": "X",
+                    "type": "*",
                     "title": meta_q_code,
                     "preg": "",
                     "other": "N",
@@ -894,10 +894,20 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
                     "scale_id": "0",
                     "same_default": "0",
                     "relevance": "0",
-                    "question_theme_name": "boilerplate",
+                    "question_theme_name": "equation",
                     "modulename": "",
                 }
                 add_row(questions_rows, meta_q_data)
+
+                # Store metadata HTML as equation value so it persists in response data
+                add_row(question_attributes_rows, {
+                    "qaid": str(qaid_counter),
+                    "qid": meta_qid,
+                    "attribute": "equation",
+                    "value": metadata_html,
+                    "language": "",
+                })
+                qaid_counter += 1
 
                 for lang in languages:
                     add_row(
@@ -918,7 +928,7 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
                         "parent_qid": "0",
                         "sid": sid,
                         "gid": gid,
-                        "type": "X",
+                        "type": "*",
                         "title": meta_q_code,
                         "preg": "",
                         "other": "N",
@@ -928,13 +938,23 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
                         "scale_id": "0",
                         "same_default": "0",
                         "relevance": "0",
-                        "question_theme_name": "boilerplate",
+                        "question_theme_name": "equation",
                         "modulename": "",
                         "question": metadata_html,
                         "help": "",
                         "language": lang,
                     }
                     add_row(questions_rows, meta_q_data)
+
+                # Store metadata HTML as equation value so it persists in response data
+                add_row(question_attributes_rows, {
+                    "qaid": str(qaid_counter),
+                    "qid": meta_qid,
+                    "attribute": "equation",
+                    "value": metadata_html,
+                    "language": "",
+                })
+                qaid_counter += 1
 
         # Prepare Groups of Questions
         grouped_questions = []
@@ -1553,12 +1573,19 @@ def generate_lss_from_customization(
                 if is_v6:
                     meta_q_data = {
                         "qid": meta_qid, "parent_qid": "0", "sid": sid, "gid": gid,
-                        "type": "X", "title": meta_q_code, "preg": "", "other": "N",
+                        "type": "*", "title": meta_q_code, "preg": "", "other": "N",
                         "mandatory": "N", "encrypted": "N", "question_order": "0",
                         "scale_id": "0", "same_default": "0", "relevance": "0",
-                        "question_theme_name": "boilerplate", "modulename": "",
+                        "question_theme_name": "equation", "modulename": "",
                     }
                     add_row(questions_rows, meta_q_data)
+
+                    # Store metadata HTML as equation value so it persists in response data
+                    add_row(question_attributes_rows, {
+                        "qaid": str(qaid_counter), "qid": meta_qid,
+                        "attribute": "equation", "value": metadata_html, "language": "",
+                    })
+                    qaid_counter += 1
 
                     for lang in languages:
                         add_row(question_l10ns_rows, {
@@ -1570,13 +1597,20 @@ def generate_lss_from_customization(
                     for lang in languages:
                         meta_q_data = {
                             "qid": meta_qid, "parent_qid": "0", "sid": sid, "gid": gid,
-                            "type": "X", "title": meta_q_code, "preg": "", "other": "N",
+                            "type": "*", "title": meta_q_code, "preg": "", "other": "N",
                             "mandatory": "N", "encrypted": "N", "question_order": "0",
                             "scale_id": "0", "same_default": "0", "relevance": "0",
-                            "question_theme_name": "boilerplate", "modulename": "",
+                            "question_theme_name": "equation", "modulename": "",
                             "question": metadata_html, "help": "", "language": lang,
                         }
                         add_row(questions_rows, meta_q_data)
+
+                    # Store metadata HTML as equation value so it persists in response data
+                    add_row(question_attributes_rows, {
+                        "qaid": str(qaid_counter), "qid": meta_qid,
+                        "attribute": "equation", "value": metadata_html, "language": "",
+                    })
+                    qaid_counter += 1
 
         # Sort questions by displayOrder
         sorted_questions = sorted(
