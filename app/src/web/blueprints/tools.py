@@ -462,6 +462,7 @@ def api_survey_customizer_load():
                     "runNumber": current_run,
                     "questions": questions,
                     "detected_languages": template_languages,
+                    "instructions": study_info.get("Instructions", {}),
                 }
             )
 
