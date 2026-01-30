@@ -1004,7 +1004,7 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
                     )
 
                     # Don't group: dropdown, numerical, text, calculated, questions with Other option,
-                    # questions with 6+ options (likely demographics), or if template disables grouping
+                    # or if template disables grouping
                     should_not_group = (
                         matrix_grouping_disabled
                         or input_type == "dropdown"
@@ -1012,7 +1012,6 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
                         or input_type == "text"
                         or input_type == "calculated"
                         or has_other
-                        or (levels and len(levels) >= 6)
                     )
 
                     if should_not_group:
@@ -1048,7 +1047,7 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
                     )
 
                     # Don't group: dropdown, numerical, text, calculated, questions with Other option,
-                    # questions with 6+ options (likely demographics), or if template disables grouping
+                    # or if template disables grouping
                     should_not_group = (
                         matrix_grouping_disabled
                         or input_type == "dropdown"
@@ -1056,7 +1055,6 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
                         or input_type == "text"
                         or input_type == "calculated"
                         or has_other
-                        or (levels and len(levels) >= 6)
                     )
 
                     levels_str = (
@@ -1110,7 +1108,21 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
 
                 matrix_title = _apply_run_suffix(f"M{first_code}", run_number)
 
-                _matrix_texts = {"en": "Please answer the following questions:", "de": "Bitte beantworten Sie die folgenden Fragen:"}
+                # Matrix parent question text: prefer Study.Instructions, fall back to generic
+                _fallback_texts = {
+                    "en": "Please answer the following questions:",
+                    "de": "Bitte beantworten Sie die folgenden Fragen:",
+                }
+                study_instructions = data.get("Study", {}).get("Instructions", {})
+
+                def _get_matrix_text(lang):
+                    if isinstance(study_instructions, dict) and study_instructions:
+                        text = get_text(study_instructions, lang, i18n_data, "Study.Instructions")
+                        if text:
+                            return text
+                    elif isinstance(study_instructions, str) and study_instructions:
+                        return study_instructions
+                    return _fallback_texts.get(lang, _fallback_texts["en"])
 
                 if is_v6:
                     q_data_row = {
@@ -1130,7 +1142,7 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
                     add_row(questions_rows, q_data_row)
 
                     for lang in languages:
-                        m_text = _matrix_texts.get(lang, _matrix_texts["en"])
+                        m_text = _get_matrix_text(lang)
                         add_row(question_l10ns_rows, {
                             "id": str(l10n_id_counter), "qid": qid,
                             "question": m_text, "help": "", "language": lang, "sid": sid,
@@ -1138,7 +1150,7 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
                         l10n_id_counter += 1
                 else:
                     for lang in languages:
-                        m_text = _matrix_texts.get(lang, _matrix_texts["en"])
+                        m_text = _get_matrix_text(lang)
                         q_data_row = {
                             "qid": qid, "parent_qid": "0", "sid": sid, "gid": gid,
                             "type": q_type, "title": matrix_title, "other": "N",
@@ -1680,8 +1692,6 @@ def generate_lss_from_customization(
             source_file = q.get("sourceFile", "")
             is_participants = "participants" in source_file.lower()
 
-            num_levels = len(levels) if levels else 0
-
             return (
                 matrix_grouping_disabled  # Template explicitly disables matrix grouping
                 or is_participants  # Participants/demographics should never be grouped
@@ -1690,7 +1700,6 @@ def generate_lss_from_customization(
                 or input_type == "text"
                 or input_type == "calculated"
                 or has_other  # Questions with "Other" option shouldn't be grouped
-                or num_levels >= 6  # 6+ options = likely demographic, not Likert scale
             )
 
         if matrix_mode:
@@ -1848,7 +1857,28 @@ def generate_lss_from_customization(
                 run_number = first_q.get("runNumber")
                 matrix_title = _apply_run_suffix(f"M{first_code}", run_number)
 
-                _matrix_texts = {"en": "Please answer the following questions:", "de": "Bitte beantworten Sie die folgenden Fragen:"}
+                # Matrix parent question text: toolOverrides > Study.Instructions > fallback
+                _fallback_texts = {
+                    "en": "Please answer the following questions:",
+                    "de": "Bitte beantworten Sie die folgenden Fragen:",
+                }
+                source_file = first_q.get("sourceFile")
+                template_data = _source_file_cache.get(source_file) if source_file else None
+                study_instructions = (template_data or {}).get("Study", {}).get("Instructions", {})
+                source_i18n = (template_data or {}).get("I18n", {})
+                custom_matrix_text = first_q.get("toolOverrides", {}).get("matrixQuestionText")
+
+                def _get_matrix_text(lang):
+                    if custom_matrix_text:
+                        return str(custom_matrix_text)
+                    if isinstance(study_instructions, dict) and study_instructions:
+                        text = get_text(study_instructions, lang, source_i18n, "Study.Instructions")
+                        if text:
+                            return text
+                    elif isinstance(study_instructions, str) and study_instructions:
+                        return study_instructions
+                    return _fallback_texts.get(lang, _fallback_texts["en"])
+
                 any_mandatory = any(q.get("mandatory", True) for q in q_group)
 
                 if is_v6:
@@ -1862,7 +1892,7 @@ def generate_lss_from_customization(
                     add_row(questions_rows, q_data_row)
 
                     for lang in languages:
-                        m_text = _matrix_texts.get(lang, _matrix_texts["en"])
+                        m_text = _get_matrix_text(lang)
                         add_row(question_l10ns_rows, {
                             "id": str(l10n_id_counter), "qid": qid,
                             "question": m_text, "help": "", "language": lang, "sid": sid,
@@ -1870,7 +1900,7 @@ def generate_lss_from_customization(
                         l10n_id_counter += 1
                 else:
                     for lang in languages:
-                        m_text = _matrix_texts.get(lang, _matrix_texts["en"])
+                        m_text = _get_matrix_text(lang)
                         q_data_row = {
                             "qid": qid, "parent_qid": "0", "sid": sid, "gid": gid,
                             "type": q_type, "title": matrix_title, "other": "N",
