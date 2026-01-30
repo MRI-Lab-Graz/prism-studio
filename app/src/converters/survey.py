@@ -1882,6 +1882,27 @@ def _convert_survey_dataframe_to_prism_dataset(
                         f"Using generated template instead."
                     )
 
+    # --- LSA Participant Column Renames ---
+    # When converting .lsa files, LimeSurvey mangles question codes (strips
+    # underscores, truncates long names with MD5 hash suffix). Build a reverse
+    # mapping so _write_survey_participants() can match mangled DF columns
+    # back to standard PRISM participant field names.
+    lsa_participant_renames: dict[str, str] = {}
+    if lsa_analysis and not survey:
+        for group_name, group_info in lsa_analysis["groups"].items():
+            match = group_info.get("match")
+            if match and match.is_participants:
+                lsa_participant_renames = _build_participant_col_renames(
+                    item_codes=group_info["item_codes"],
+                    participant_template=participant_template,
+                )
+                if lsa_participant_renames:
+                    print(
+                        f"[INFO] LSA participant column renames: "
+                        f"{len(lsa_participant_renames)} fields will be remapped"
+                    )
+                break
+
     # --- Survey Filtering ---
     selected_tasks: set[str] | None = None
     if survey:
@@ -2156,6 +2177,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             participant_template=participant_template,
             normalize_sub_fn=_normalize_sub_id,
             is_missing_fn=_is_missing_value,
+            lsa_col_renames=lsa_participant_renames,
         )
 
     # Write task sidecars
@@ -2755,6 +2777,70 @@ def _write_survey_description(
     _write_json(ds_desc, dataset_description)
 
 
+def _build_participant_col_renames(
+    item_codes: set[str],
+    participant_template: dict | None,
+) -> dict[str, str]:
+    """Build a rename map from LS-mangled column names to standard PRISM participant field names.
+
+    When LimeSurvey exports data, question codes are sanitized:
+    - Underscores/hyphens stripped: native_language -> nativelanguage
+    - Long codes truncated to 13 chars + 2-char MD5 hash: country_of_residence -> countryofresi54
+
+    This function reverses that process by:
+    1. Taking each standard field name from the participant template
+    2. Applying the same sanitization logic used by _sanitize_question_code()
+    3. Checking if the sanitized name exists in the actual DataFrame columns (item_codes)
+    4. Building a mangled_name -> standard_name mapping
+
+    Returns:
+        dict mapping LS column names (lowercased) to standard PRISM field names
+    """
+    import re
+    import hashlib
+
+    if not participant_template:
+        return {}
+
+    LS_MAX = 15
+    non_column_keys = {
+        "@context",
+        "Technical",
+        "I18n",
+        "Study",
+        "Metadata",
+        "_aliases",
+        "_reverse_aliases",
+        "participant_id",
+    }
+
+    # Build a lowercase lookup of actual item codes
+    codes_lower = {c.lower() for c in item_codes}
+
+    renames: dict[str, str] = {}
+    for field_name in participant_template:
+        if field_name in non_column_keys:
+            continue
+
+        # Apply the same sanitization as _sanitize_question_code()
+        sanitized = re.sub(r"[^a-zA-Z0-9]", "", field_name)
+        if sanitized and not sanitized[0].isalpha():
+            sanitized = "Q" + sanitized
+        if not sanitized:
+            continue
+        if len(sanitized) > LS_MAX:
+            hash_suffix = hashlib.md5(field_name.encode()).hexdigest()[:2]
+            sanitized = sanitized[: LS_MAX - 2] + hash_suffix
+
+        sanitized_lower = sanitized.lower()
+
+        # Only map if the sanitized name differs from the original
+        if sanitized_lower != field_name.lower() and sanitized_lower in codes_lower:
+            renames[sanitized_lower] = field_name
+
+    return renames
+
+
 def _write_survey_participants(
     *,
     df,
@@ -2764,6 +2850,7 @@ def _write_survey_participants(
     participant_template: dict | None,
     normalize_sub_fn,
     is_missing_fn,
+    lsa_col_renames: dict[str, str] | None = None,
 ):
     """Write participants.tsv and participants.json.
 
@@ -2844,10 +2931,23 @@ def _write_survey_participants(
         # MODE 2: No mapping - only include columns defined in the official template
         for col in template_cols:
             if col in lower_to_col:
+                # Direct match: template field name found as-is in DataFrame
                 actual_col = lower_to_col[col]
                 if actual_col not in {id_col, ses_col}:
                     extra_cols.append(actual_col)
                     col_output_names[actual_col] = col
+            elif lsa_col_renames:
+                # Fallback: look up the LS-mangled column name for this field
+                mangled = None
+                for mangled_name, standard_name in lsa_col_renames.items():
+                    if standard_name == col:
+                        mangled = mangled_name
+                        break
+                if mangled and mangled in lower_to_col:
+                    actual_col = lower_to_col[mangled]
+                    if actual_col not in {id_col, ses_col}:
+                        extra_cols.append(actual_col)
+                        col_output_names[actual_col] = col  # Output uses standard name
 
     if extra_cols:
         extra_cols = list(dict.fromkeys(extra_cols))
