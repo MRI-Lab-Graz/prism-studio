@@ -495,6 +495,7 @@ class SurveyConvertResult:
     # Enhanced dry-run information
     dry_run_preview: dict | None = None  # Detailed preview of what will be created
     template_matches: dict | None = None  # Structural match results per group (LSA only)
+    tool_columns: list[str] = field(default_factory=list)  # LimeSurvey system columns
 
 
 def _build_bids_survey_filename(
@@ -2148,6 +2149,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             task_runs=task_runs,
             dry_run_preview=dry_run_preview,
             template_matches=_template_matches,
+            tool_columns=ls_system_cols or [],
         )
 
     # --- Write Output ---
@@ -2200,6 +2202,11 @@ def _convert_survey_dataframe_to_prism_dataset(
                     "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
                     "Creator": "prism-studio",
                 }
+            # Ensure Technical.StimulusType exists (required by PRISM schema)
+            if "Technical" not in localized or not isinstance(localized.get("Technical"), dict):
+                localized["Technical"] = {}
+            if "StimulusType" not in localized["Technical"]:
+                localized["Technical"]["StimulusType"] = "Questionnaire"
             # Remove internal keys before writing to avoid schema validation errors
             cleaned = _strip_internal_keys(localized)
             _write_json(sidecar_path, cleaned)
@@ -2319,6 +2326,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         conversion_warnings=conversion_warnings,
         task_runs=task_runs,
         template_matches=_template_matches,
+        tool_columns=ls_system_cols or [],
     )
 
 
