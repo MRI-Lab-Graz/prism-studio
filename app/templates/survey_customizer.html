@@ -669,6 +669,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let sortableInstances = [];
     let activeToolSettingsPanel = null; // Track which question has tool settings open
     let previewLanguage = 'en'; // Language shown in question descriptions (independent of export language)
+    let detectedLanguages = []; // Languages detected in template content (for preview switcher only)
 
     // DOM Elements
     const loadingOverlay = document.getElementById('loadingOverlay');
@@ -949,24 +950,20 @@ document.addEventListener('DOMContentLoaded', function() {
             customizationState.groups = result.groups;
             originalState = JSON.parse(JSON.stringify(customizationState));
 
-            // Recompute available languages from loaded groups' actual content
+            // Detect languages available in template content (for preview switcher only)
+            // Do NOT overwrite customizationState.survey.languages — those are the user's export selection
             const groupLangs = new Set();
             (result.groups || []).forEach(g => {
                 (g.detected_languages || []).forEach(l => groupLangs.add(l));
             });
             if (groupLangs.size > 0) {
-                customizationState.survey.languages = Array.from(groupLangs).sort();
-                // Ensure base language is valid
-                if (!groupLangs.has(customizationState.survey.base_language)) {
-                    customizationState.survey.base_language = customizationState.survey.languages[0];
-                }
-                if (!groupLangs.has(customizationState.survey.language)) {
-                    customizationState.survey.language = customizationState.survey.languages[0];
-                }
-                previewLanguage = customizationState.survey.base_language || customizationState.survey.languages[0];
-                updateLanguageTags();
-                updatePreviewLangSwitcher();
+                detectedLanguages = Array.from(groupLangs).sort();
+            } else {
+                detectedLanguages = customizationState.survey.languages || ['en'];
             }
+            previewLanguage = customizationState.survey.base_language || customizationState.survey.language || 'en';
+            updateLanguageTags();
+            updatePreviewLangSwitcher();
 
             renderGroups();
             renderQuestions();
@@ -1177,8 +1174,58 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // Wire tool settings toggle for matrix-level settings
-        wireToolSettingsToggle(matrixDiv, group.id);
+        // Wire matrix-level tool settings toggle (uses matrix description, not subquestion text)
+        const matrixToggle = matrixDiv.querySelector('.tool-settings-toggle');
+        if (matrixToggle) {
+            matrixToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const settingsContainer = matrixDiv.querySelector('.tool-settings-container');
+                const gid = settingsContainer.dataset.gid;
+                const qid = settingsContainer.dataset.qid;
+
+                if (settingsContainer.innerHTML.trim()) {
+                    const panel = settingsContainer.querySelector('.tool-settings-panel');
+                    if (panel) saveToolSettings(gid, qid, panel);
+                    settingsContainer.innerHTML = '';
+                    activeToolSettingsPanel = null;
+                } else {
+                    if (activeToolSettingsPanel) {
+                        const prevPanel = activeToolSettingsPanel.querySelector('.tool-settings-panel');
+                        if (prevPanel) {
+                            saveToolSettings(activeToolSettingsPanel.dataset.gid, activeToolSettingsPanel.dataset.qid, prevPanel);
+                        }
+                        activeToolSettingsPanel.innerHTML = '';
+                    }
+                    const grp = customizationState.groups.find(g => g.id === gid);
+                    const quest = grp ? grp.questions.find(qq => qq.id === qid) : null;
+                    if (quest) {
+                        // Build panel with matrix description instead of subquestion text
+                        const matrixQuest = Object.assign({}, quest, {
+                            description: currentMatrixText
+                        });
+                        settingsContainer.innerHTML = buildToolSettingsPanel(gid, matrixQuest);
+                        activeToolSettingsPanel = settingsContainer;
+
+                        const panel = settingsContainer.querySelector('.tool-settings-panel');
+                        if (panel) {
+                            updateTypeSpecificFields(panel);
+                            const typeSelect = panel.querySelector('.ts-questionType');
+                            if (typeSelect) {
+                                typeSelect.addEventListener('change', () => {
+                                    updateTypeSpecificFields(panel);
+                                    saveToolSettings(gid, qid, panel);
+                                });
+                            }
+                            panel.querySelectorAll('input, select').forEach(input => {
+                                if (input !== typeSelect) {
+                                    input.addEventListener('change', () => saveToolSettings(gid, qid, panel));
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+        }
 
         // Render subquestions
         const subContainer = matrixDiv.querySelector('.matrix-subquestions');
@@ -1745,7 +1792,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function updatePreviewLangSwitcher() {
         const container = document.getElementById('previewLangSwitcher');
         if (!container) return;
-        const langs = customizationState.survey.languages || ['en'];
+        // Use detected languages (available content) for preview, not the user's export selection
+        const langs = detectedLanguages.length > 0 ? detectedLanguages : (customizationState.survey.languages || ['en']);
 
         if (langs.length <= 1) {
             container.classList.add('d-none');
