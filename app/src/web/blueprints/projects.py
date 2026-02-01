@@ -8,7 +8,10 @@ Provides routes for:
 - Managing current working project
 """
 
+import json
 import os
+import re
+from datetime import date
 from pathlib import Path
 from flask import Blueprint, render_template, jsonify, request, session
 
@@ -1099,3 +1102,955 @@ def export_project():
 
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+
+# =============================================================================
+# Session & Procedure Tracking Endpoints
+# =============================================================================
+
+
+def _read_project_json(project_path: Path) -> dict:
+    """Read and return project.json content from a project directory."""
+    pj = project_path / "project.json"
+    if not pj.exists():
+        return {}
+    with open(pj, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _write_project_json(project_path: Path, data: dict):
+    """Write project.json to disk, updating LastModified metadata if present."""
+    from src.cross_platform import CrossPlatformFile
+
+    pj = project_path / "project.json"
+    CrossPlatformFile.write_text(
+        str(pj), json.dumps(data, indent=2, ensure_ascii=False)
+    )
+
+
+_NA_VALUES = {"na", "n/a", "nan", "", "none", "null", "missing", "n.a."}
+
+
+def _read_participants_schema(project_path: Path) -> dict:
+    """Read participants.json schema if it exists."""
+    for candidate in [
+        project_path / "rawdata" / "participants.json",
+        project_path / "participants.json",
+    ]:
+        if candidate.exists():
+            try:
+                with open(candidate, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+    return {}
+
+
+def _resolve_level_label(value: str, levels: dict, lang: str = "en") -> str | None:
+    """Map a coded value to its human-readable label using Levels dict.
+
+    Returns None if the value is NA-like.
+    """
+    from src.reporting import get_i18n_text
+
+    if str(value).strip().lower() in _NA_VALUES:
+        return None
+    label_obj = levels.get(str(value))
+    if label_obj is None:
+        return str(value)
+    return get_i18n_text(label_obj, lang) or str(value)
+
+
+def _compute_participant_stats(
+    project_path: Path, lang: str = "en"
+) -> dict | None:
+    """Read participants.tsv and compute demographic summary statistics.
+
+    Uses participants.json schema for proper value labels and filtering.
+
+    Returns a dict with keys: n, age_mean, age_sd, age_min, age_max,
+    sex_counts, additional_columns.  Returns None when the file is
+    missing or unreadable.
+    """
+    tsv_path = project_path / "rawdata" / "participants.tsv"
+    if not tsv_path.exists():
+        return None
+
+    try:
+        import pandas as pd
+
+        df = pd.read_csv(tsv_path, sep="\t")
+        if df.empty:
+            return None
+
+        schema = _read_participants_schema(project_path)
+        stats: dict = {"n": len(df)}
+
+        # --- Age ---
+        age_col = None
+        for candidate in ["age", "Age", "AGE"]:
+            if candidate in df.columns:
+                age_col = candidate
+                break
+        if age_col:
+            ages = pd.to_numeric(df[age_col], errors="coerce").dropna()
+            if len(ages) > 0:
+                stats["age_mean"] = round(float(ages.mean()), 2)
+                stats["age_sd"] = (
+                    round(float(ages.std(ddof=1)), 2) if len(ages) > 1 else None
+                )
+                stats["age_min"] = int(ages.min())
+                stats["age_max"] = int(ages.max())
+
+        # --- Sex / Gender ---
+        sex_col = None
+        for candidate in ["sex", "Sex", "SEX", "gender", "Gender"]:
+            if candidate in df.columns:
+                sex_col = candidate
+                break
+        if sex_col:
+            series = df[sex_col].astype(str)
+            # Filter NA-like values
+            mask = ~series.str.strip().str.lower().isin(_NA_VALUES)
+            series = series[mask]
+            counts = series.value_counts()
+
+            # Use schema Levels if available
+            sex_schema = schema.get(sex_col) or schema.get(sex_col.lower()) or {}
+            sex_levels = sex_schema.get("Levels") or {}
+
+            if sex_levels:
+                from src.reporting import get_i18n_text
+
+                mapped: dict[str, int] = {}
+                for val, cnt in counts.items():
+                    label = _resolve_level_label(val, sex_levels, lang)
+                    if label is None:
+                        continue
+                    mapped[label] = mapped.get(label, 0) + int(cnt)
+            else:
+                # Fallback: common BIDS code mapping
+                label_map = {
+                    "M": "male", "m": "male", "1": "male",
+                    "F": "female", "f": "female", "2": "female",
+                    "O": "other", "o": "other",
+                }
+                mapped = {}
+                for val, cnt in counts.items():
+                    sv = str(val).strip()
+                    if sv.lower() in _NA_VALUES:
+                        continue
+                    label = label_map.get(sv, sv)
+                    mapped[label] = mapped.get(label, 0) + int(cnt)
+
+            stats["sex_counts"] = dict(
+                sorted(mapped.items(), key=lambda x: -x[1])
+            )
+
+        # --- Additional demographic columns ---
+        # Only include columns that have Levels in the schema
+        skip_cols = {
+            "participant_id", "age", "sex", "gender",
+            "session", "session_date", "group",
+        }
+        from src.reporting import get_i18n_text
+
+        additional: list[dict] = []
+        for col in df.columns:
+            if col.lower() in skip_cols:
+                continue
+            col_schema = schema.get(col) or {}
+            col_levels = col_schema.get("Levels") or {}
+            if not col_levels:
+                continue
+            # Get a human-readable column name from schema Description
+            col_desc = col_schema.get("Description")
+            col_label = get_i18n_text(col_desc, lang) if col_desc else col.replace("_", " ")
+
+            series = df[col].astype(str)
+            mask = ~series.str.strip().str.lower().isin(_NA_VALUES)
+            series = series[mask]
+            if series.empty:
+                continue
+            counts = series.value_counts()
+            distribution: dict[str, int] = {}
+            for val, cnt in counts.items():
+                label = _resolve_level_label(val, col_levels, lang)
+                if label is None:
+                    continue
+                distribution[label] = distribution.get(label, 0) + int(cnt)
+            if distribution:
+                additional.append({"name": col_label, "distribution": distribution})
+
+        stats["additional_columns"] = additional[:5]
+        return stats
+    except Exception:
+        return None
+
+
+@projects_bp.route("/api/projects/sessions", methods=["GET"])
+def get_sessions():
+    """Read Sessions + TaskDefinitions from project.json."""
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    project_path = Path(current["path"])
+    data = _read_project_json(project_path)
+    if not data:
+        return jsonify({"success": False, "error": "project.json not found"}), 404
+
+    return jsonify({
+        "success": True,
+        "sessions": data.get("Sessions", []),
+        "task_definitions": data.get("TaskDefinitions", {}),
+    })
+
+
+@projects_bp.route("/api/projects/sessions", methods=["POST"])
+def save_sessions():
+    """Write Sessions + TaskDefinitions to project.json."""
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    req = request.get_json()
+    if not req:
+        return jsonify({"success": False, "error": "No data provided"}), 400
+
+    project_path = Path(current["path"])
+    data = _read_project_json(project_path)
+    if not data:
+        return jsonify({"success": False, "error": "project.json not found"}), 404
+
+    if "sessions" in req:
+        data["Sessions"] = req["sessions"]
+    if "task_definitions" in req:
+        data["TaskDefinitions"] = req["task_definitions"]
+
+    _write_project_json(project_path, data)
+    return jsonify({"success": True, "message": "Sessions saved"})
+
+
+@projects_bp.route("/api/projects/sessions/declared", methods=["GET"])
+def get_sessions_declared():
+    """Lightweight list of [{id, label}] for converter session picker."""
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"sessions": []})
+
+    project_path = Path(current["path"])
+    data = _read_project_json(project_path)
+    sessions = data.get("Sessions", [])
+
+    return jsonify({
+        "sessions": [
+            {"id": s.get("id", ""), "label": s.get("label", s.get("id", ""))}
+            for s in sessions
+        ]
+    })
+
+
+@projects_bp.route("/api/projects/sessions/register", methods=["POST"])
+def register_session():
+    """Register a conversion result into a session in project.json.
+
+    Expected JSON body:
+    {
+        "session_id": "ses-01",
+        "tasks": ["panas", "bfi"],
+        "modality": "survey",
+        "source_file": "survey_baseline.xlsx",
+        "converter": "survey-xlsx"
+    }
+    """
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    req = request.get_json()
+    if not req:
+        return jsonify({"success": False, "error": "No data provided"}), 400
+
+    session_id = (req.get("session_id") or "").strip()
+    tasks = req.get("tasks", [])
+    modality = req.get("modality", "survey")
+    source_file = req.get("source_file", "")
+    converter = req.get("converter", "manual")
+
+    if not session_id:
+        return jsonify({"success": False, "error": "session_id is required"}), 400
+
+    # Normalize session_id to ses-<label> format
+    if not session_id.startswith("ses-"):
+        session_id = f"ses-{session_id}"
+
+    # Validate session ID pattern
+    if not re.match(r"^ses-[a-zA-Z0-9]+$", session_id):
+        return jsonify({
+            "success": False,
+            "error": f"Invalid session ID format: {session_id}",
+        }), 400
+
+    project_path = Path(current["path"])
+    data = _read_project_json(project_path)
+    if not data:
+        return jsonify({"success": False, "error": "project.json not found"}), 404
+
+    # Ensure Sessions and TaskDefinitions exist
+    if "Sessions" not in data:
+        data["Sessions"] = []
+    if "TaskDefinitions" not in data:
+        data["TaskDefinitions"] = {}
+
+    # Find or create session
+    target_session = None
+    for s in data["Sessions"]:
+        if s.get("id") == session_id:
+            target_session = s
+            break
+
+    if target_session is None:
+        target_session = {
+            "id": session_id,
+            "label": session_id,
+            "tasks": [],
+        }
+        data["Sessions"].append(target_session)
+
+    if "tasks" not in target_session:
+        target_session["tasks"] = []
+
+    today_iso = date.today().isoformat()
+    source_obj = {
+        "file": source_file,
+        "converter": converter,
+        "convertedAt": today_iso,
+    }
+
+    registered_tasks = []
+    for task_name in tasks:
+        # Check if task already exists in this session
+        existing = None
+        for t in target_session["tasks"]:
+            if t.get("task") == task_name:
+                existing = t
+                break
+
+        if existing:
+            # Update source provenance
+            existing["source"] = source_obj
+        else:
+            # Add new task entry
+            target_session["tasks"].append({
+                "task": task_name,
+                "source": source_obj,
+            })
+
+        registered_tasks.append(task_name)
+
+        # Ensure TaskDefinition exists
+        if task_name not in data["TaskDefinitions"]:
+            data["TaskDefinitions"][task_name] = {"modality": modality}
+
+    _write_project_json(project_path, data)
+
+    return jsonify({
+        "success": True,
+        "message": f"Registered {len(registered_tasks)} task(s) in {session_id}",
+        "session_id": session_id,
+        "registered_tasks": registered_tasks,
+    })
+
+
+@projects_bp.route("/api/projects/generate-methods", methods=["POST"])
+def generate_methods_section():
+    """Generate a publication-ready methods section from project.json metadata.
+
+    Reads project.json, dataset_description.json, and referenced templates to
+    produce a comprehensive scientific methods section in both Markdown and HTML.
+
+    Expected JSON body:
+    {
+        "language": "en"  // "en" or "de"
+    }
+    """
+    from src.reporting import generate_full_methods, _md_to_html
+    from src.config import (
+        get_effective_template_library_path,
+        load_app_settings,
+    )
+    from flask import current_app
+
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    data = request.get_json() or {}
+    lang = data.get("language", "en")
+    detail_level = data.get("detail_level", "standard")
+    continuous = bool(data.get("continuous", False))
+
+    project_path = Path(current["path"])
+    project_data = _read_project_json(project_path)
+    if not project_data:
+        return jsonify({
+            "success": False,
+            "error": "No project metadata available. Fill in your project.json to generate a methods section.",
+        }), 404
+
+    # Read dataset_description.json
+    dataset_desc = None
+    desc_path = project_path / "rawdata" / "dataset_description.json"
+    if desc_path.exists():
+        try:
+            with open(desc_path, "r", encoding="utf-8") as f:
+                dataset_desc = json.load(f)
+        except Exception:
+            pass
+
+    # Load template data for each TaskDefinition with a template field
+    task_defs = project_data.get("TaskDefinitions") or {}
+    app_root = Path(current_app.root_path)
+    app_settings = load_app_settings(app_root=str(app_root))
+    lib_info = get_effective_template_library_path(
+        str(project_path), app_settings, app_root=str(app_root)
+    )
+
+    # Build search paths for templates: project library first, then global
+    search_dirs: list[Path] = []
+    yoda_lib = project_path / "code" / "library"
+    legacy_lib = project_path / "library"
+    if yoda_lib.exists():
+        search_dirs.append(yoda_lib)
+    elif legacy_lib.exists():
+        search_dirs.append(legacy_lib)
+    ext_path = lib_info.get("effective_external_path")
+    if ext_path:
+        search_dirs.append(Path(ext_path))
+    global_path = lib_info.get("global_library_path")
+    if global_path:
+        search_dirs.append(Path(global_path))
+
+    template_data: dict[str, dict] = {}
+    for task_name, td in task_defs.items():
+        tpl_filename = td.get("template", "")
+        if not tpl_filename:
+            continue
+        for search_dir in search_dirs:
+            # Templates may be in modality subfolders (survey/, biometrics/) or root
+            candidates = [
+                search_dir / tpl_filename,
+                search_dir / "survey" / tpl_filename,
+                search_dir / "biometrics" / tpl_filename,
+            ]
+            for candidate in candidates:
+                if candidate.exists():
+                    try:
+                        with open(candidate, "r", encoding="utf-8") as f:
+                            template_data[task_name] = json.load(f)
+                    except Exception:
+                        pass
+                    break
+            if task_name in template_data:
+                break
+
+    # Compute participant demographics from participants.tsv
+    participant_stats = _compute_participant_stats(project_path, lang=lang)
+
+    try:
+        md_text, sections_used = generate_full_methods(
+            project_data, dataset_desc, template_data,
+            participant_stats=participant_stats, lang=lang,
+            detail_level=detail_level, continuous=continuous,
+        )
+        html_text = _md_to_html(md_text)
+        filename_base = f"methods_section_{lang}"
+
+        return jsonify({
+            "success": True,
+            "md": md_text,
+            "html": html_text,
+            "filename_base": filename_base,
+            "sections_used": sections_used,
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# =============================================================================
+# Study Metadata & Methods Completeness
+# =============================================================================
+
+_EXPERIMENTAL_TYPES = {
+    "randomized-controlled-trial",
+    "quasi-experimental",
+    "case-control",
+}
+
+_EDITABLE_SECTIONS = (
+    "StudyDesign",
+    "Recruitment",
+    "Eligibility",
+    "DataCollection",
+    "Procedure",
+    "Conditions",
+)
+
+
+def _compute_methods_completeness(
+    project_data: dict, dataset_desc: dict | None
+) -> dict:
+    """Compute weighted completeness score across all fields feeding the methods generator.
+
+    Priority weights: critical=3, important=2, optional=1.
+    Returns per-section breakdown with field names, filled status, priority, and hint.
+    """
+    sd = project_data.get("StudyDesign") or {}
+    rec = project_data.get("Recruitment") or {}
+    elig = project_data.get("Eligibility") or {}
+    dc = project_data.get("DataCollection") or {}
+    proc = project_data.get("Procedure") or {}
+    cond = project_data.get("Conditions") or {}
+    sessions = project_data.get("Sessions") or []
+    task_defs = project_data.get("TaskDefinitions") or {}
+    dd = dataset_desc or {}
+
+    is_experimental = sd.get("Type", "") in _EXPERIMENTAL_TYPES
+
+    def _filled(val) -> bool:
+        if val is None:
+            return False
+        if isinstance(val, str):
+            return bool(val.strip())
+        if isinstance(val, (list, dict)):
+            return len(val) > 0
+        if isinstance(val, (int, float)):
+            return True
+        return bool(val)
+
+    def _obj_filled(obj, key):
+        """Check nested object field."""
+        if not isinstance(obj, dict):
+            return False
+        return _filled(obj.get(key))
+
+    # Define all tracked fields: (section_key, field_name, priority, hint, value)
+    fields: list[tuple[str, str, int, str, bool]] = [
+        # StudyDesign
+        ("StudyDesign", "Type", 3, "Select the study design type", _filled(sd.get("Type"))),
+        ("StudyDesign", "TypeDescription", 2, "Describe the design in detail", _filled(sd.get("TypeDescription"))),
+        ("StudyDesign", "Blinding", 1, "Blinding procedure (experimental studies)", _filled(sd.get("Blinding"))),
+        ("StudyDesign", "Randomization", 1, "Randomization method", _filled(sd.get("Randomization"))),
+        # Recruitment
+        ("Recruitment", "Method", 3, "How were participants recruited?", _filled(rec.get("Method"))),
+        ("Recruitment", "Location", 3, "Where were participants recruited?", _filled(rec.get("Location"))),
+        ("Recruitment", "Period.Start", 3, "When did recruitment begin?",
+         _obj_filled(rec.get("Period"), "Start")),
+        ("Recruitment", "Period.End", 2, "When did recruitment end?",
+         _obj_filled(rec.get("Period"), "End")),
+        ("Recruitment", "Compensation", 2, "Participant compensation", _filled(rec.get("Compensation"))),
+        ("Recruitment", "Platform", 1, "Recruitment platform (e.g. Prolific)", _filled(rec.get("Platform"))),
+        # Eligibility
+        ("Eligibility", "InclusionCriteria", 3, "List inclusion criteria", _filled(elig.get("InclusionCriteria"))),
+        ("Eligibility", "ExclusionCriteria", 3, "List exclusion criteria", _filled(elig.get("ExclusionCriteria"))),
+        ("Eligibility", "TargetSampleSize", 1, "Planned sample size", _filled(elig.get("TargetSampleSize"))),
+        ("Eligibility", "PowerAnalysis", 1, "Power analysis description", _filled(elig.get("PowerAnalysis"))),
+        # DataCollection
+        ("DataCollection", "Platform", 3, "Data collection platform", _filled(dc.get("Platform"))),
+        ("DataCollection", "PlatformVersion", 1, "Platform version", _filled(dc.get("PlatformVersion"))),
+        ("DataCollection", "Method", 3, "Collection method (online/in-person/...)", _filled(dc.get("Method"))),
+        ("DataCollection", "SupervisionLevel", 2, "Level of supervision", _filled(dc.get("SupervisionLevel"))),
+        ("DataCollection", "Setting", 2, "Data collection setting", _filled(dc.get("Setting"))),
+        ("DataCollection", "AverageDuration", 2, "Average completion time",
+         _obj_filled(dc.get("AverageDuration"), "Value")),
+        # Procedure
+        ("Procedure", "Overview", 3, "Narrative procedure overview", _filled(proc.get("Overview"))),
+        ("Procedure", "InformedConsent", 2, "Informed consent procedure", _filled(proc.get("InformedConsent"))),
+        ("Procedure", "QualityControl", 2, "Quality control measures", _filled(proc.get("QualityControl"))),
+        ("Procedure", "MissingDataHandling", 1, "Missing data handling", _filled(proc.get("MissingDataHandling"))),
+        ("Procedure", "Debriefing", 1, "Debriefing procedure", _filled(proc.get("Debriefing"))),
+        # Conditions (weight depends on experimental design)
+        ("Conditions", "Type", 2 if is_experimental else 1, "Condition type", _filled(cond.get("Type"))),
+        ("Conditions", "Groups", 2 if is_experimental else 1, "Define experimental groups",
+         _filled(cond.get("Groups"))),
+        # Read-only sections: DatasetDescription
+        ("DatasetDescription", "Name", 3, "Dataset name (dataset_description.json)", _filled(dd.get("Name"))),
+        ("DatasetDescription", "Authors", 3, "Authors (dataset_description.json)", _filled(dd.get("Authors"))),
+        ("DatasetDescription", "Description", 2, "Dataset description text", _filled(dd.get("Description"))),
+        ("DatasetDescription", "EthicsApprovals", 2, "Ethics approvals", _filled(dd.get("EthicsApprovals"))),
+        ("DatasetDescription", "License", 2, "Data license", _filled(dd.get("License"))),
+        ("DatasetDescription", "Keywords", 1, "Keywords for discoverability", _filled(dd.get("Keywords"))),
+        # Read-only: Sessions & Tasks
+        ("SessionsTasks", "Sessions", 3, "Define at least one session", len(sessions) > 0),
+        ("SessionsTasks", "TaskDefinitions", 3, "Define at least one task", len(task_defs) > 0),
+    ]
+
+    # Build per-section summary
+    sections_map: dict[str, dict] = {}
+    total_weight = 0
+    filled_weight = 0
+    total_fields = 0
+    filled_fields = 0
+
+    for section_key, field_name, priority, hint, is_filled in fields:
+        if section_key not in sections_map:
+            sections_map[section_key] = {
+                "fields": [],
+                "filled": 0,
+                "total": 0,
+                "weight_filled": 0,
+                "weight_total": 0,
+                "read_only": section_key in ("DatasetDescription", "SessionsTasks"),
+            }
+        sec = sections_map[section_key]
+        sec["fields"].append({
+            "name": field_name,
+            "filled": is_filled,
+            "priority": priority,
+            "hint": hint,
+        })
+        sec["total"] += 1
+        sec["weight_total"] += priority
+        total_weight += priority
+        total_fields += 1
+        if is_filled:
+            sec["filled"] += 1
+            sec["weight_filled"] += priority
+            filled_weight += priority
+            filled_fields += 1
+
+    score = round(filled_weight / total_weight * 100) if total_weight else 0
+
+    return {
+        "score": score,
+        "filled_fields": filled_fields,
+        "total_fields": total_fields,
+        "sections": sections_map,
+    }
+
+
+def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
+    """Scan project files to auto-detect study metadata from existing data.
+
+    Returns a dict of detected hints keyed by section.field path, e.g.
+    ``{"DataCollection.Platform": {"value": "LimeSurvey", "source": "task sidecar"}}``
+    """
+    hints: dict[str, dict] = {}
+    rawdata = project_path / "rawdata"
+
+    # --- Scan task sidecars for platform / method / language ---
+    platforms: list[str] = []
+    versions: list[str] = []
+    methods: list[str] = []
+    languages: list[str] = []
+
+    if rawdata.is_dir():
+        for sidecar in rawdata.glob("task-*_survey.json"):
+            try:
+                with open(sidecar, "r", encoding="utf-8") as f:
+                    sc = json.load(f)
+                tech = sc.get("Technical") or {}
+                if tech.get("SoftwarePlatform"):
+                    platforms.append(tech["SoftwarePlatform"])
+                if tech.get("SoftwareVersion"):
+                    versions.append(tech["SoftwareVersion"])
+                method = tech.get("CollectionMethod") or tech.get("AdministrationMethod") or ""
+                if method:
+                    methods.append(method)
+                lang = tech.get("Language") or ""
+                if lang:
+                    languages.append(lang)
+            except Exception:
+                pass
+        # Also check tool sidecars (tool-limesurvey_survey.json)
+        for sidecar in rawdata.glob("tool-*_survey.json"):
+            try:
+                with open(sidecar, "r", encoding="utf-8") as f:
+                    sc = json.load(f)
+                tech = sc.get("Technical") or {}
+                if tech.get("SoftwarePlatform"):
+                    platforms.append(tech["SoftwarePlatform"])
+                if tech.get("SoftwareVersion"):
+                    versions.append(tech["SoftwareVersion"])
+            except Exception:
+                pass
+
+    if platforms:
+        # Use most common platform
+        from collections import Counter
+        top_platform = Counter(platforms).most_common(1)[0][0]
+        hints["DataCollection.Platform"] = {
+            "value": top_platform, "source": "task sidecar",
+        }
+    if versions:
+        from collections import Counter
+        top_version = Counter(versions).most_common(1)[0][0]
+        hints["DataCollection.PlatformVersion"] = {
+            "value": top_version, "source": "task sidecar",
+        }
+    if methods:
+        from collections import Counter
+        top_method = Counter(methods).most_common(1)[0][0]
+        hints["DataCollection.Method"] = {
+            "value": top_method, "source": "task sidecar",
+        }
+
+    # Infer method from platform if not directly detected
+    if "DataCollection.Method" not in hints and platforms:
+        online_platforms = {"limesurvey", "qualtrics", "redcap", "surveymonkey",
+                           "prolific", "mturk", "gorilla", "pavlovia", "formr",
+                           "sosci", "soscisurvey", "unipark"}
+        if any(p.lower().replace(" ", "") in online_platforms for p in platforms):
+            hints["DataCollection.Method"] = {
+                "value": "online", "source": "inferred from platform",
+            }
+
+    # --- Infer converter-based platform from provenance ---
+    if "DataCollection.Platform" not in hints:
+        converter_platforms = {
+            "survey-lsa": "LimeSurvey",
+        }
+        sessions = project_data.get("Sessions") or []
+        for s in sessions:
+            for t in s.get("tasks") or []:
+                src = t.get("source") or {}
+                conv = src.get("converter", "")
+                if conv in converter_platforms:
+                    hints["DataCollection.Platform"] = {
+                        "value": converter_platforms[conv],
+                        "source": "conversion provenance",
+                    }
+                    if not hints.get("DataCollection.Method"):
+                        hints["DataCollection.Method"] = {
+                            "value": "online",
+                            "source": "inferred from converter",
+                        }
+                    break
+            if "DataCollection.Platform" in hints:
+                break
+
+    # --- Sample size from sub-* directories ---
+    if rawdata.is_dir():
+        sub_dirs = [d for d in rawdata.iterdir()
+                    if d.is_dir() and d.name.startswith("sub-")]
+        if sub_dirs:
+            hints["Eligibility.ActualSampleSize"] = {
+                "value": len(sub_dirs), "source": "rawdata sub-* folders",
+            }
+
+    # --- Sample size from participants.tsv ---
+    tsv_path = rawdata / "participants.tsv" if rawdata.is_dir() else None
+    if tsv_path and tsv_path.exists():
+        try:
+            import pandas as pd
+            df = pd.read_csv(tsv_path, sep="\t")
+            hints["Eligibility.ActualSampleSize"] = {
+                "value": len(df), "source": "participants.tsv",
+            }
+            # Check for group column → condition hints
+            for col in ["group", "Group", "GROUP"]:
+                if col in df.columns:
+                    groups = df[col].dropna().unique().tolist()
+                    if len(groups) > 1:
+                        hints["Conditions.Groups"] = {
+                            "value": [{"id": str(g).lower().replace(" ", "_"),
+                                       "label": str(g), "description": ""}
+                                      for g in sorted(groups)],
+                            "source": "participants.tsv group column",
+                        }
+                        hints["Conditions.Type"] = {
+                            "value": "between-subjects",
+                            "source": "inferred from group column",
+                        }
+                    break
+        except Exception:
+            pass
+
+    # --- Recruitment period from conversion dates ---
+    earliest_date = None
+    latest_date = None
+    sessions = project_data.get("Sessions") or []
+    for s in sessions:
+        for t in s.get("tasks") or []:
+            src = t.get("source") or {}
+            conv_date = src.get("convertedAt", "")
+            if conv_date:
+                if earliest_date is None or conv_date < earliest_date:
+                    earliest_date = conv_date
+                if latest_date is None or conv_date > latest_date:
+                    latest_date = conv_date
+    if earliest_date:
+        hints["Recruitment.Period.Start"] = {
+            "value": earliest_date[:7],  # YYYY-MM
+            "source": "earliest conversion date",
+        }
+    if latest_date:
+        hints["Recruitment.Period.End"] = {
+            "value": latest_date[:7],
+            "source": "latest conversion date",
+        }
+
+    # --- Study design hints from sessions ---
+    if len(sessions) > 1:
+        hints["StudyDesign.Type"] = {
+            "value": "longitudinal",
+            "source": f"{len(sessions)} sessions detected",
+        }
+    elif len(sessions) == 1:
+        hints["StudyDesign.Type"] = {
+            "value": "cross-sectional",
+            "source": "single session detected",
+        }
+
+    return hints
+
+
+@projects_bp.route("/api/projects/study-metadata", methods=["GET"])
+def get_study_metadata():
+    """Read study-level editable sections from project.json with completeness info."""
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    project_path = Path(current["path"])
+    data = _read_project_json(project_path)
+    if not data:
+        return jsonify({"success": False, "error": "project.json not found"}), 404
+
+    # Extract editable sections
+    study_metadata = {}
+    for key in _EDITABLE_SECTIONS:
+        study_metadata[key] = data.get(key, {})
+
+    # Read dataset_description for completeness calculation
+    dataset_desc = None
+    desc_path = project_path / "rawdata" / "dataset_description.json"
+    if desc_path.exists():
+        try:
+            with open(desc_path, "r", encoding="utf-8") as f:
+                dataset_desc = json.load(f)
+        except Exception:
+            pass
+
+    completeness = _compute_methods_completeness(data, dataset_desc)
+    hints = _auto_detect_study_hints(project_path, data)
+
+    return jsonify({
+        "success": True,
+        "study_metadata": study_metadata,
+        "completeness": completeness,
+        "hints": hints,
+        "has_sessions": len(data.get("Sessions", [])) > 0,
+        "has_tasks": len(data.get("TaskDefinitions", {})) > 0,
+    })
+
+
+@projects_bp.route("/api/projects/study-metadata", methods=["POST"])
+def save_study_metadata():
+    """Save study-level editable sections to project.json, preserving other keys."""
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    req = request.get_json()
+    if not req:
+        return jsonify({"success": False, "error": "No data provided"}), 400
+
+    project_path = Path(current["path"])
+    data = _read_project_json(project_path)
+    if not data:
+        return jsonify({"success": False, "error": "project.json not found"}), 404
+
+    # Merge only editable section keys
+    for key in _EDITABLE_SECTIONS:
+        if key in req:
+            data[key] = req[key]
+
+    # Update LastModified
+    meta = data.get("Metadata")
+    if isinstance(meta, dict):
+        meta["LastModified"] = date.today().isoformat()
+
+    _write_project_json(project_path, data)
+
+    # Recompute completeness
+    dataset_desc = None
+    desc_path = project_path / "rawdata" / "dataset_description.json"
+    if desc_path.exists():
+        try:
+            with open(desc_path, "r", encoding="utf-8") as f:
+                dataset_desc = json.load(f)
+        except Exception:
+            pass
+
+    completeness = _compute_methods_completeness(data, dataset_desc)
+
+    return jsonify({
+        "success": True,
+        "message": "Study metadata saved",
+        "completeness": completeness,
+    })
+
+
+@projects_bp.route("/api/projects/procedure/status", methods=["GET"])
+def get_procedure_status():
+    """Completeness check: declared sessions/tasks vs. data on disk."""
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    project_path = Path(current["path"])
+    data = _read_project_json(project_path)
+    sessions = data.get("Sessions", [])
+    task_defs = data.get("TaskDefinitions", {})
+
+    if not sessions:
+        return jsonify({
+            "success": True,
+            "status": "empty",
+            "message": "No sessions declared in project.json",
+            "declared": [],
+            "on_disk": [],
+            "missing": [],
+            "undeclared": [],
+        })
+
+    # Build declared set
+    declared = set()
+    for s in sessions:
+        sid = s.get("id", "")
+        for t in s.get("tasks", []):
+            declared.add((sid, t.get("task", "")))
+
+    # Build on-disk set by scanning rawdata/
+    rawdata = project_path / "rawdata"
+    on_disk = set()
+    if rawdata.is_dir():
+        for sub_dir in rawdata.iterdir():
+            if not sub_dir.is_dir() or not sub_dir.name.startswith("sub-"):
+                continue
+            for ses_dir in sub_dir.iterdir():
+                if not ses_dir.is_dir() or not ses_dir.name.startswith("ses-"):
+                    continue
+                ses_id = ses_dir.name
+                for mod_dir in ses_dir.iterdir():
+                    if not mod_dir.is_dir():
+                        continue
+                    for f in mod_dir.iterdir():
+                        if f.is_file() and "_task-" in f.name:
+                            m = re.search(r"_task-([a-zA-Z0-9]+)", f.name)
+                            if m:
+                                on_disk.add((ses_id, m.group(1)))
+
+    missing = sorted(declared - on_disk)
+    undeclared = sorted(on_disk - declared)
+
+    return jsonify({
+        "success": True,
+        "status": "ok" if not missing and not undeclared else "mismatch",
+        "declared": sorted(declared),
+        "on_disk": sorted(on_disk),
+        "missing": [{"session": s, "task": t} for s, t in missing],
+        "undeclared": [{"session": s, "task": t} for s, t in undeclared],
+    })

@@ -114,6 +114,28 @@
         font-size: 0.85rem;
         color: #6c757d;
     }
+    /* Study Metadata completeness */
+    .completeness-dots { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .completeness-dot {
+        width: 12px; height: 12px; border-radius: 50%; display: inline-block;
+    }
+    .completeness-dot.full { background-color: #198754; }
+    .completeness-dot.partial { background-color: #ffc107; }
+    .completeness-dot.empty { background-color: #dee2e6; }
+    .section-completeness-row {
+        display: flex; align-items: center; gap: 8px; padding: 4px 0;
+    }
+    .section-completeness-row .section-label {
+        min-width: 140px; font-size: 0.85rem; font-weight: 500;
+    }
+    .section-completeness-row .section-badge {
+        font-size: 0.75rem;
+    }
+    .sm-field-required::after { content: ' *'; color: #dc3545; font-weight: bold; }
+    .condition-group-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .condition-group-row input { flex: 1; }
+    .sm-hint-badge { transition: opacity 0.2s; }
+    .sm-hint-badge:hover { opacity: 0.8; }
 </style>
 {% endblock %}
 
@@ -444,6 +466,394 @@
                 </div>
             </form>
         </div>
+        </div>
+    </div>
+
+    <!-- Study Metadata Card -->
+    <div class="card shadow-sm mt-4" id="studyMetadataCard" style="display: none;">
+        <div class="card-header bg-info bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#studyMetadataSection"
+             role="button" aria-expanded="false" aria-controls="studyMetadataSection">
+            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-flask text-info me-2"></i>Study Metadata</span>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="progress" style="width: 120px; height: 8px;" id="smHeaderProgress">
+                        <div class="progress-bar" role="progressbar" id="smHeaderProgressBar" style="width: 0%"></div>
+                    </div>
+                    <span class="badge bg-secondary" id="smHeaderBadge">0%</span>
+                    <i class="fas fa-chevron-down text-muted" id="studyMetadataChevron"></i>
+                </div>
+            </h5>
+        </div>
+        <div class="collapse" id="studyMetadataSection">
+        <div class="card-body">
+            <!-- Completeness Panel -->
+            <div class="mb-3 p-3 bg-light rounded" id="smCompletenessPanel">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <strong class="small text-uppercase text-muted">Methods Readiness</strong>
+                    <div class="progress flex-grow-1" style="height: 12px;">
+                        <div class="progress-bar" role="progressbar" id="smMainProgressBar" style="width: 0%"></div>
+                    </div>
+                    <span class="fw-bold" id="smMainScore">0%</span>
+                </div>
+                <div id="smSectionDots"></div>
+            </div>
+
+            <div class="alert alert-info border-0 bg-info bg-opacity-10 py-2 mb-3">
+                <i class="fas fa-info-circle me-2"></i>
+                This edits study-level fields in <code>project.json</code>. Dataset description fields are in the card above.
+            </div>
+
+            <form id="studyMetadataForm">
+                <!-- Study Design -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smStudyDesign">
+                        <i class="fas fa-drafting-compass me-1"></i> Study Design
+                        <span class="float-end" id="smStudyDesignBadge"></span>
+                    </button>
+                    <div class="collapse show" id="smStudyDesign">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small sm-field-required">Study Design Type</label>
+                                    <select class="form-select form-select-sm" id="smSDType" onchange="toggleExperimentalFields()">
+                                        <option value="">-- Select --</option>
+                                        <option value="cross-sectional">Cross-sectional</option>
+                                        <option value="longitudinal">Longitudinal</option>
+                                        <option value="randomized-controlled-trial">Randomized Controlled Trial</option>
+                                        <option value="quasi-experimental">Quasi-experimental</option>
+                                        <option value="case-control">Case-control</option>
+                                        <option value="cohort">Cohort</option>
+                                        <option value="single-case">Single-case</option>
+                                        <option value="mixed-methods">Mixed methods</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Type Description</label>
+                                    <input type="text" class="form-control form-control-sm" id="smSDTypeDesc"
+                                           placeholder="e.g. 2x2 factorial design">
+                                </div>
+                                <div class="col-12" id="smExperimentalFields" style="display: none;">
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small">Blinding</label>
+                                            <select class="form-select form-select-sm" id="smSDBlinding">
+                                                <option value="">-- None --</option>
+                                                <option value="none">None</option>
+                                                <option value="single-blind">Single-blind</option>
+                                                <option value="double-blind">Double-blind</option>
+                                                <option value="triple-blind">Triple-blind</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small">Randomization</label>
+                                            <input type="text" class="form-control form-control-sm" id="smSDRandomization"
+                                                   placeholder="Randomization procedure">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small">Control Condition</label>
+                                            <input type="text" class="form-control form-control-sm" id="smSDControl"
+                                                   placeholder="Control condition">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recruitment -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smRecruitment">
+                        <i class="fas fa-users me-1"></i> Recruitment
+                        <span class="float-end" id="smRecruitmentBadge"></span>
+                    </button>
+                    <div class="collapse" id="smRecruitment">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small sm-field-required">Method</label>
+                                    <input type="text" class="form-control form-control-sm" id="smRecMethod"
+                                           placeholder="e.g. Online ads and university mailing lists">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small sm-field-required">Location</label>
+                                    <input type="text" class="form-control form-control-sm" id="smRecLocation"
+                                           placeholder="e.g. Graz, Austria">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small sm-field-required">Period Start</label>
+                                    <input type="text" class="form-control form-control-sm" id="smRecPeriodStart"
+                                           placeholder="YYYY-MM">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small">Period End</label>
+                                    <input type="text" class="form-control form-control-sm" id="smRecPeriodEnd"
+                                           placeholder="YYYY-MM">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small">Compensation</label>
+                                    <input type="text" class="form-control form-control-sm" id="smRecCompensation"
+                                           placeholder="e.g. 15 EUR">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small">Platform</label>
+                                    <input type="text" class="form-control form-control-sm" id="smRecPlatform"
+                                           placeholder="e.g. Prolific">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Eligibility -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smEligibility">
+                        <i class="fas fa-user-check me-1"></i> Eligibility
+                        <span class="float-end" id="smEligibilityBadge"></span>
+                    </button>
+                    <div class="collapse" id="smEligibility">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small sm-field-required">Inclusion Criteria</label>
+                                    <textarea class="form-control form-control-sm" id="smEligInclusion" rows="3"
+                                              placeholder="One criterion per line"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small sm-field-required">Exclusion Criteria</label>
+                                    <textarea class="form-control form-control-sm" id="smEligExclusion" rows="3"
+                                              placeholder="One criterion per line"></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small">Target Sample Size</label>
+                                    <input type="number" class="form-control form-control-sm" id="smEligSampleSize"
+                                           min="1" placeholder="N">
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label fw-bold small">Power Analysis</label>
+                                    <input type="text" class="form-control form-control-sm" id="smEligPower"
+                                           placeholder="e.g. G*Power, medium effect size d=0.5, alpha=.05, power=.80">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Collection -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smDataCollection">
+                        <i class="fas fa-laptop me-1"></i> Data Collection
+                        <span class="float-end" id="smDataCollectionBadge"></span>
+                    </button>
+                    <div class="collapse" id="smDataCollection">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small sm-field-required">Platform</label>
+                                    <input type="text" class="form-control form-control-sm" id="smDCPlatform"
+                                           placeholder="e.g. LimeSurvey">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-bold small">Version</label>
+                                    <input type="text" class="form-control form-control-sm" id="smDCPlatformVersion"
+                                           placeholder="e.g. 6.3">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small sm-field-required">Method</label>
+                                    <select class="form-select form-select-sm" id="smDCMethod">
+                                        <option value="">-- Select --</option>
+                                        <option value="online">Online</option>
+                                        <option value="in-person">In-person</option>
+                                        <option value="phone">Phone</option>
+                                        <option value="mixed">Mixed</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small">Supervision</label>
+                                    <select class="form-select form-select-sm" id="smDCSupervision">
+                                        <option value="">-- Select --</option>
+                                        <option value="unsupervised">Unsupervised</option>
+                                        <option value="remote-supervised">Remote supervised</option>
+                                        <option value="in-person-supervised">In-person supervised</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Setting</label>
+                                    <input type="text" class="form-control form-control-sm" id="smDCSetting"
+                                           placeholder="e.g. University laboratory">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small">Avg. Duration</label>
+                                    <input type="number" class="form-control form-control-sm" id="smDCDurationValue"
+                                           min="0" step="1" placeholder="Value">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small">Unit</label>
+                                    <select class="form-select form-select-sm" id="smDCDurationUnit">
+                                        <option value="minutes">minutes</option>
+                                        <option value="hours">hours</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Procedure -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smProcedure">
+                        <i class="fas fa-list-ol me-1"></i> Procedure
+                        <span class="float-end" id="smProcedureBadge"></span>
+                    </button>
+                    <div class="collapse" id="smProcedure">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small sm-field-required">Overview</label>
+                                    <textarea class="form-control form-control-sm" id="smProcOverview" rows="3"
+                                              placeholder="Narrative overview of the study procedure..."></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#smProcMore">
+                                        <i class="fas fa-chevron-down me-1"></i>More Fields
+                                    </button>
+                                    <div class="collapse mt-2" id="smProcMore">
+                                        <div class="row g-3">
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small">Informed Consent</label>
+                                                <textarea class="form-control form-control-sm" id="smProcConsent" rows="2"
+                                                          placeholder="How was informed consent obtained?"></textarea>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small">Quality Control</label>
+                                                <textarea class="form-control form-control-sm" id="smProcQC" rows="2"
+                                                          placeholder="One measure per line (e.g. Attention checks)"></textarea>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small">Missing Data Handling</label>
+                                                <input type="text" class="form-control form-control-sm" id="smProcMissing"
+                                                       placeholder="How was missing data handled?">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small">Debriefing</label>
+                                                <textarea class="form-control form-control-sm" id="smProcDebriefing" rows="2"
+                                                          placeholder="Debriefing procedure"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conditions -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smConditions">
+                        <i class="fas fa-random me-1"></i> Conditions
+                        <span class="float-end" id="smConditionsBadge"></span>
+                    </button>
+                    <div class="collapse" id="smConditions">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small">Condition Type</label>
+                                    <select class="form-select form-select-sm" id="smCondType">
+                                        <option value="">-- N/A --</option>
+                                        <option value="between-subjects">Between-subjects</option>
+                                        <option value="within-subjects">Within-subjects</option>
+                                        <option value="mixed">Mixed</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label fw-bold small">Groups</label>
+                                    <div id="smCondGroupsContainer"></div>
+                                    <button type="button" class="btn btn-sm btn-outline-info mt-1" onclick="addConditionGroup()">
+                                        <i class="fas fa-plus me-1"></i>Add Group
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-save me-1"></i>Save Study Metadata
+                    </button>
+                </div>
+            </form>
+        </div>
+        </div>
+    </div>
+
+    <!-- Generate Methods Section Card -->
+    <div class="card shadow-sm mt-4" id="methodsSectionCard" style="display: none;">
+        <div class="card-header bg-success bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#methodsSectionBody"
+             role="button" aria-expanded="false" aria-controls="methodsSectionBody">
+            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-file-alt text-success me-2"></i>Generate Methods Section</span>
+                <i class="fas fa-chevron-down text-muted" id="methodsSectionChevron"></i>
+            </h5>
+        </div>
+        <div class="collapse" id="methodsSectionBody">
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    Create a publication-ready methods section from your project metadata.
+                    Uses data from <code>project.json</code>, <code>dataset_description.json</code>, and linked templates.
+                </p>
+                <div class="row align-items-end mb-3 g-2">
+                    <div class="col-auto">
+                        <label for="methodsLanguage" class="form-label fw-bold mb-1">Language</label>
+                        <select class="form-select form-select-sm" id="methodsLanguage" style="width: 140px;">
+                            <option value="en" selected>English</option>
+                            <option value="de">German</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <label for="methodsDetailLevel" class="form-label fw-bold mb-1">Detail Level</label>
+                        <select class="form-select form-select-sm" id="methodsDetailLevel" style="width: 150px;">
+                            <option value="brief">Brief</option>
+                            <option value="standard" selected>Standard</option>
+                            <option value="detailed">Detailed</option>
+                        </select>
+                    </div>
+                    <div class="col-auto d-flex align-items-end">
+                        <div class="form-check mb-1">
+                            <input class="form-check-input" type="checkbox" id="methodsContinuous">
+                            <label class="form-check-label" for="methodsContinuous">Continuous text</label>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-success" id="generateMethodsBtn" onclick="generateMethodsSection()">
+                            <i class="fas fa-magic me-1"></i>Generate
+                        </button>
+                    </div>
+                </div>
+
+                <div id="methodsResult" style="display: none;">
+                    <div id="methodsSectionsBadges" class="mb-2"></div>
+                    <div id="methodsPreview" class="border rounded p-3 bg-white mb-3" style="max-height: 500px; overflow-y: auto;"></div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="downloadMethods('md')">
+                            <i class="fas fa-download me-1"></i>Download .md
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="downloadMethods('html')">
+                            <i class="fas fa-download me-1"></i>Download .html
+                        </button>
+                    </div>
+                </div>
+
+                <div id="methodsError" style="display: none;"></div>
+            </div>
         </div>
     </div>
 
@@ -804,7 +1214,9 @@
         loadGlobalSettings();
         loadLibraryInfo();
         loadProjectMetadata();
+        showStudyMetadataCard();
         showExportCard();
+        showMethodsCard();
         renderRecentProjects();
 
         // Seed recent list with current project if available
@@ -816,6 +1228,8 @@
         const sections = [
             { element: 'openProjectSection', chevron: 'openProjectChevron' },
             { element: 'datasetDescriptionSection', chevron: 'datasetDescriptionChevron' },
+            { element: 'studyMetadataSection', chevron: 'studyMetadataChevron' },
+            { element: 'methodsSectionBody', chevron: 'methodsSectionChevron' },
             { element: 'participantsSection', chevron: 'participantsChevron' },
             { element: 'settingsSection', chevron: 'settingsChevron' }
         ];
@@ -1237,7 +1651,9 @@
                 if (window.updateNavbarProject) {
                     window.updateNavbarProject(currentProjectName, currentProjectPath);
                 }
+                showStudyMetadataCard();
                 showExportCard();
+                showMethodsCard();
             } else {
                 resultDiv.innerHTML = `
                     <div class="alert alert-danger">
@@ -1435,7 +1851,9 @@
             if (window.updateNavbarProject) {
                 window.updateNavbarProject(currentProjectName, currentProjectPath);
             }
+            showStudyMetadataCard();
             showExportCard();
+            showMethodsCard();
 
         } catch (error) {
             document.getElementById('validationResult').innerHTML = `
@@ -1683,6 +2101,482 @@
         } else {
             card.style.display = 'none';
         }
+    }
+
+    // ===== STUDY METADATA =====
+    let _smConditionGroups = [];
+
+    function showStudyMetadataCard() {
+        const card = document.getElementById('studyMetadataCard');
+        if (!card) return;
+        if (currentProjectPath) {
+            card.style.display = 'block';
+            loadStudyMetadata();
+        } else {
+            card.style.display = 'none';
+        }
+    }
+
+    /**
+     * Map of hint key → { elementId, type ('input'|'select'|'textarea'|'special') }
+     * Used to apply auto-detected values and show hint badges.
+     */
+    const _smHintFieldMap = {
+        'DataCollection.Platform':        { el: 'smDCPlatform', type: 'input' },
+        'DataCollection.PlatformVersion': { el: 'smDCPlatformVersion', type: 'input' },
+        'DataCollection.Method':          { el: 'smDCMethod', type: 'select' },
+        'Recruitment.Period.Start':       { el: 'smRecPeriodStart', type: 'input' },
+        'Recruitment.Period.End':         { el: 'smRecPeriodEnd', type: 'input' },
+        'StudyDesign.Type':               { el: 'smSDType', type: 'select' },
+        'Eligibility.ActualSampleSize':   { el: 'smEligSampleSize', type: 'input' },
+        'Conditions.Type':                { el: 'smCondType', type: 'select' },
+        'Conditions.Groups':              { el: null, type: 'special' },
+    };
+
+    function _clearAllHintBadges() {
+        document.querySelectorAll('.sm-hint-badge').forEach(b => b.remove());
+    }
+
+    function _applyHintBadge(elementId, hint, type) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        // Only show hint if the field is currently empty
+        const currentVal = type === 'select' ? el.value : el.value.trim();
+        if (currentVal) return;
+
+        // Remove existing badge for this field
+        const existingBadge = el.parentElement.querySelector('.sm-hint-badge');
+        if (existingBadge) existingBadge.remove();
+
+        const displayVal = typeof hint.value === 'number' ? hint.value : hint.value;
+        const badge = document.createElement('span');
+        badge.className = 'sm-hint-badge badge bg-info bg-opacity-75 ms-1 mt-1';
+        badge.style.cssText = 'cursor:pointer; font-size:0.7rem; display:inline-block;';
+        badge.title = `Detected from ${hint.source} — click to apply`;
+        badge.innerHTML = `<i class="fas fa-magic me-1"></i>${displayVal}`;
+        badge.addEventListener('click', () => {
+            el.value = hint.value;
+            badge.remove();
+            // Trigger change for selects
+            if (type === 'select') el.dispatchEvent(new Event('change'));
+        });
+
+        // Insert after the input element
+        el.parentElement.appendChild(badge);
+    }
+
+    function _applyHints(hints) {
+        _clearAllHintBadges();
+        if (!hints || typeof hints !== 'object') return;
+
+        for (const [key, hint] of Object.entries(hints)) {
+            const mapping = _smHintFieldMap[key];
+            if (!mapping) continue;
+            if (mapping.type === 'special') {
+                // Handle Conditions.Groups separately
+                if (key === 'Conditions.Groups' && _smConditionGroups.length === 0 && Array.isArray(hint.value) && hint.value.length > 0) {
+                    const container = document.getElementById('smCondGroupsContainer');
+                    if (!container) continue;
+                    const badge = document.createElement('span');
+                    badge.className = 'sm-hint-badge badge bg-info bg-opacity-75 ms-1 mt-1';
+                    badge.style.cssText = 'cursor:pointer; font-size:0.7rem; display:inline-block;';
+                    badge.title = `Detected from ${hint.source} — click to apply`;
+                    badge.innerHTML = `<i class="fas fa-magic me-1"></i>${hint.value.length} groups detected`;
+                    badge.addEventListener('click', () => {
+                        _smConditionGroups = hint.value;
+                        renderConditionGroups();
+                        badge.remove();
+                    });
+                    container.parentElement.appendChild(badge);
+                }
+                continue;
+            }
+            _applyHintBadge(mapping.el, hint, mapping.type);
+        }
+    }
+
+    async function loadStudyMetadata() {
+        try {
+            const response = await fetch('/api/projects/study-metadata');
+            const data = await response.json();
+            if (!data.success) return;
+
+            const sm = data.study_metadata;
+
+            // Study Design
+            const sd = sm.StudyDesign || {};
+            document.getElementById('smSDType').value = sd.Type || '';
+            document.getElementById('smSDTypeDesc').value = sd.TypeDescription || '';
+            document.getElementById('smSDBlinding').value = sd.Blinding || '';
+            document.getElementById('smSDRandomization').value = sd.Randomization || '';
+            document.getElementById('smSDControl').value = sd.ControlCondition || '';
+            toggleExperimentalFields();
+
+            // Recruitment
+            const rec = sm.Recruitment || {};
+            document.getElementById('smRecMethod').value = rec.Method || '';
+            document.getElementById('smRecLocation').value = rec.Location || '';
+            const period = rec.Period || {};
+            document.getElementById('smRecPeriodStart').value = period.Start || '';
+            document.getElementById('smRecPeriodEnd').value = period.End || '';
+            document.getElementById('smRecCompensation').value = rec.Compensation || '';
+            document.getElementById('smRecPlatform').value = rec.Platform || '';
+
+            // Eligibility
+            const elig = sm.Eligibility || {};
+            document.getElementById('smEligInclusion').value = Array.isArray(elig.InclusionCriteria) ? elig.InclusionCriteria.join('\n') : '';
+            document.getElementById('smEligExclusion').value = Array.isArray(elig.ExclusionCriteria) ? elig.ExclusionCriteria.join('\n') : '';
+            document.getElementById('smEligSampleSize').value = elig.TargetSampleSize || '';
+            document.getElementById('smEligPower').value = elig.PowerAnalysis || '';
+
+            // Data Collection
+            const dc = sm.DataCollection || {};
+            document.getElementById('smDCPlatform').value = dc.Platform || '';
+            document.getElementById('smDCPlatformVersion').value = dc.PlatformVersion || '';
+            document.getElementById('smDCMethod').value = dc.Method || '';
+            document.getElementById('smDCSupervision').value = dc.SupervisionLevel || '';
+            document.getElementById('smDCSetting').value = dc.Setting || '';
+            const avgDur = dc.AverageDuration || {};
+            document.getElementById('smDCDurationValue').value = avgDur.Value || '';
+            document.getElementById('smDCDurationUnit').value = avgDur.Unit || 'minutes';
+
+            // Procedure
+            const proc = sm.Procedure || {};
+            document.getElementById('smProcOverview').value = proc.Overview || '';
+            document.getElementById('smProcConsent').value = proc.InformedConsent || '';
+            document.getElementById('smProcQC').value = Array.isArray(proc.QualityControl) ? proc.QualityControl.join('\n') : '';
+            document.getElementById('smProcMissing').value = proc.MissingDataHandling || '';
+            document.getElementById('smProcDebriefing').value = proc.Debriefing || '';
+
+            // Conditions
+            const cond = sm.Conditions || {};
+            document.getElementById('smCondType').value = cond.Type || '';
+            _smConditionGroups = Array.isArray(cond.Groups) ? cond.Groups : [];
+            renderConditionGroups();
+
+            // Apply auto-detected hints for empty fields
+            _applyHints(data.hints || {});
+
+            // Completeness
+            if (data.completeness) {
+                updateCompletenessUI(data.completeness);
+            }
+        } catch (error) {
+            console.error('Error loading study metadata:', error);
+        }
+    }
+
+    function toggleExperimentalFields() {
+        const sdType = document.getElementById('smSDType').value;
+        const experimentalTypes = ['randomized-controlled-trial', 'quasi-experimental', 'case-control'];
+        const block = document.getElementById('smExperimentalFields');
+        if (block) {
+            block.style.display = experimentalTypes.includes(sdType) ? 'block' : 'none';
+        }
+    }
+
+    function renderConditionGroups() {
+        const container = document.getElementById('smCondGroupsContainer');
+        if (!container) return;
+        if (_smConditionGroups.length === 0) {
+            container.innerHTML = '<span class="text-muted small">No groups defined</span>';
+            return;
+        }
+        container.innerHTML = _smConditionGroups.map((g, i) => `
+            <div class="condition-group-row">
+                <input type="text" class="form-control form-control-sm" placeholder="ID" value="${g.id || ''}"
+                       onchange="_smConditionGroups[${i}].id = this.value">
+                <input type="text" class="form-control form-control-sm" placeholder="Label" value="${g.label || ''}"
+                       onchange="_smConditionGroups[${i}].label = this.value">
+                <input type="text" class="form-control form-control-sm" placeholder="Description" value="${g.description || ''}"
+                       onchange="_smConditionGroups[${i}].description = this.value">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeConditionGroup(${i})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function addConditionGroup() {
+        _smConditionGroups.push({ id: '', label: '', description: '' });
+        renderConditionGroups();
+    }
+
+    function removeConditionGroup(idx) {
+        _smConditionGroups.splice(idx, 1);
+        renderConditionGroups();
+    }
+
+    function updateCompletenessUI(completeness) {
+        const score = completeness.score || 0;
+
+        // Determine color
+        let colorClass;
+        if (score < 25) colorClass = 'bg-danger';
+        else if (score < 50) colorClass = 'bg-primary';
+        else if (score < 80) colorClass = 'bg-warning';
+        else colorClass = 'bg-success';
+
+        // Header mini progress
+        const headerBar = document.getElementById('smHeaderProgressBar');
+        if (headerBar) {
+            headerBar.style.width = score + '%';
+            headerBar.className = 'progress-bar ' + colorClass;
+        }
+        const headerBadge = document.getElementById('smHeaderBadge');
+        if (headerBadge) {
+            headerBadge.textContent = score + '%';
+            headerBadge.className = 'badge ' + colorClass;
+        }
+
+        // Main progress bar
+        const mainBar = document.getElementById('smMainProgressBar');
+        if (mainBar) {
+            mainBar.style.width = score + '%';
+            mainBar.className = 'progress-bar ' + colorClass;
+        }
+        const mainScore = document.getElementById('smMainScore');
+        if (mainScore) mainScore.textContent = score + '%';
+
+        // Per-section dots
+        const dotsDiv = document.getElementById('smSectionDots');
+        if (!dotsDiv) return;
+
+        const sections = completeness.sections || {};
+        const sectionOrder = [
+            'StudyDesign', 'Recruitment', 'Eligibility', 'DataCollection',
+            'Procedure', 'Conditions', 'DatasetDescription', 'SessionsTasks'
+        ];
+        const sectionLabels = {
+            StudyDesign: 'Study Design',
+            Recruitment: 'Recruitment',
+            Eligibility: 'Eligibility',
+            DataCollection: 'Data Collection',
+            Procedure: 'Procedure',
+            Conditions: 'Conditions',
+            DatasetDescription: 'Dataset Description',
+            SessionsTasks: 'Sessions & Tasks'
+        };
+
+        let html = '';
+        for (const key of sectionOrder) {
+            const sec = sections[key];
+            if (!sec) continue;
+            const pct = sec.total > 0 ? Math.round(sec.filled / sec.total * 100) : 0;
+            let dotClass = 'empty';
+            if (pct === 100) dotClass = 'full';
+            else if (pct > 0) dotClass = 'partial';
+
+            const autoLabel = sec.read_only ? ' <span class="text-muted small">(auto)</span>' : '';
+            html += `<div class="section-completeness-row">
+                <span class="section-label">${sectionLabels[key] || key}${autoLabel}</span>
+                <span class="completeness-dot ${dotClass}" title="${pct}%"></span>
+                <span class="section-badge text-muted">${sec.filled}/${sec.total}</span>
+            </div>`;
+
+            // Update per-section badges in the form
+            const badgeEl = document.getElementById('sm' + key + 'Badge');
+            if (badgeEl) {
+                if (pct === 100) {
+                    badgeEl.innerHTML = '<span class="badge bg-success bg-opacity-75">Complete</span>';
+                } else if (pct > 0) {
+                    badgeEl.innerHTML = `<span class="badge bg-warning bg-opacity-75">${sec.filled}/${sec.total}</span>`;
+                } else {
+                    badgeEl.innerHTML = `<span class="badge bg-secondary bg-opacity-50">${sec.filled}/${sec.total}</span>`;
+                }
+            }
+        }
+        dotsDiv.innerHTML = html;
+    }
+
+    function _textToArray(val) {
+        return val.split('\n').map(s => s.trim()).filter(s => s);
+    }
+
+    // Study Metadata Form Submission
+    document.getElementById('studyMetadataForm')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+
+        try {
+            const payload = {
+                StudyDesign: {
+                    Type: document.getElementById('smSDType').value || undefined,
+                    TypeDescription: document.getElementById('smSDTypeDesc').value || undefined,
+                    Blinding: document.getElementById('smSDBlinding').value || undefined,
+                    Randomization: document.getElementById('smSDRandomization').value || undefined,
+                    ControlCondition: document.getElementById('smSDControl').value || undefined,
+                },
+                Recruitment: {
+                    Method: document.getElementById('smRecMethod').value || undefined,
+                    Location: document.getElementById('smRecLocation').value || undefined,
+                    Period: {
+                        Start: document.getElementById('smRecPeriodStart').value || undefined,
+                        End: document.getElementById('smRecPeriodEnd').value || undefined,
+                    },
+                    Compensation: document.getElementById('smRecCompensation').value || undefined,
+                    Platform: document.getElementById('smRecPlatform').value || undefined,
+                },
+                Eligibility: {
+                    InclusionCriteria: _textToArray(document.getElementById('smEligInclusion').value) || undefined,
+                    ExclusionCriteria: _textToArray(document.getElementById('smEligExclusion').value) || undefined,
+                    TargetSampleSize: parseInt(document.getElementById('smEligSampleSize').value) || undefined,
+                    PowerAnalysis: document.getElementById('smEligPower').value || undefined,
+                },
+                DataCollection: {
+                    Platform: document.getElementById('smDCPlatform').value || undefined,
+                    PlatformVersion: document.getElementById('smDCPlatformVersion').value || undefined,
+                    Method: document.getElementById('smDCMethod').value || undefined,
+                    SupervisionLevel: document.getElementById('smDCSupervision').value || undefined,
+                    Setting: document.getElementById('smDCSetting').value || undefined,
+                    AverageDuration: (function() {
+                        const v = parseFloat(document.getElementById('smDCDurationValue').value);
+                        if (isNaN(v)) return undefined;
+                        return { Value: v, Unit: document.getElementById('smDCDurationUnit').value };
+                    })(),
+                },
+                Procedure: {
+                    Overview: document.getElementById('smProcOverview').value || undefined,
+                    InformedConsent: document.getElementById('smProcConsent').value || undefined,
+                    QualityControl: _textToArray(document.getElementById('smProcQC').value) || undefined,
+                    MissingDataHandling: document.getElementById('smProcMissing').value || undefined,
+                    Debriefing: document.getElementById('smProcDebriefing').value || undefined,
+                },
+                Conditions: {
+                    Type: document.getElementById('smCondType').value || undefined,
+                    Groups: _smConditionGroups.filter(g => g.id || g.label) || undefined,
+                },
+            };
+
+            // Clean undefined values from nested objects
+            function cleanUndefined(obj) {
+                if (Array.isArray(obj)) return obj.length > 0 ? obj : undefined;
+                if (obj && typeof obj === 'object') {
+                    const cleaned = {};
+                    for (const [k, v] of Object.entries(obj)) {
+                        const cv = cleanUndefined(v);
+                        if (cv !== undefined) cleaned[k] = cv;
+                    }
+                    return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+                }
+                return obj;
+            }
+
+            const cleanPayload = {};
+            for (const [k, v] of Object.entries(payload)) {
+                const cv = cleanUndefined(v);
+                cleanPayload[k] = cv || {};
+            }
+
+            const response = await fetch('/api/projects/study-metadata', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cleanPayload)
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showToast('Study metadata saved', 'success');
+                if (result.completeness) {
+                    updateCompletenessUI(result.completeness);
+                }
+            } else {
+                showToast('Failed to save: ' + result.error, 'danger');
+            }
+        } catch (error) {
+            showToast('Error: ' + error.message, 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    });
+
+    // ===== GENERATE METHODS SECTION =====
+    function showMethodsCard() {
+        const card = document.getElementById('methodsSectionCard');
+        if (!card) return;
+        card.style.display = currentProjectPath ? 'block' : 'none';
+    }
+
+    let _methodsMd = '';
+    let _methodsHtml = '';
+    let _methodsFilenameBase = 'methods_section_en';
+
+    async function generateMethodsSection() {
+        const btn = document.getElementById('generateMethodsBtn');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating...';
+
+        const resultDiv = document.getElementById('methodsResult');
+        const errorDiv = document.getElementById('methodsError');
+        resultDiv.style.display = 'none';
+        errorDiv.style.display = 'none';
+
+        const lang = document.getElementById('methodsLanguage').value;
+        const detailLevel = document.getElementById('methodsDetailLevel').value;
+        const continuous = document.getElementById('methodsContinuous').checked;
+
+        try {
+            const response = await fetch('/api/projects/generate-methods', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ language: lang, detail_level: detailLevel, continuous: continuous })
+            });
+            const data = await response.json();
+
+            if (!data.success) {
+                errorDiv.style.display = 'block';
+                errorDiv.innerHTML = `
+                    <div class="alert alert-warning py-2">
+                        <i class="fas fa-info-circle me-2"></i>${data.error}
+                    </div>`;
+                return;
+            }
+
+            _methodsMd = data.md;
+            _methodsHtml = data.html;
+            _methodsFilenameBase = data.filename_base;
+
+            // Show section badges
+            const badgesDiv = document.getElementById('methodsSectionsBadges');
+            badgesDiv.innerHTML = (data.sections_used || []).map(
+                s => `<span class="badge bg-success bg-opacity-75 me-1">${s}</span>`
+            ).join('');
+
+            // Show HTML preview (extract body content from full HTML)
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data.html, 'text/html');
+            document.getElementById('methodsPreview').innerHTML = doc.body.innerHTML;
+            resultDiv.style.display = 'block';
+        } catch (error) {
+            errorDiv.style.display = 'block';
+            errorDiv.innerHTML = `
+                <div class="alert alert-danger py-2">
+                    <i class="fas fa-exclamation-circle me-2"></i>${error.message}
+                </div>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+    function downloadMethods(format) {
+        const content = format === 'md' ? _methodsMd : _methodsHtml;
+        const mimeType = format === 'md' ? 'text/markdown' : 'text/html';
+        const ext = format === 'md' ? '.md' : '.html';
+        const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = _methodsFilenameBase + ext;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
     }
 
     // Handle Export Form Submission
