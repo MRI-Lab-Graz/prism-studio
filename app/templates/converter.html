@@ -1078,8 +1078,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const idColumnHelp = document.getElementById('idColumnHelp');
         if (!idColumnSelect) return;
 
-        // Reset to auto-detect
-        idColumnSelect.innerHTML = '<option value="auto" selected>Auto-detect</option>';
+        // Reset state
+        window._isPrismData = false;
+        idColumnSelect.innerHTML = '<option value="auto" selected>Auto-detect (PRISM surveys only)</option>';
+        idColumnSelect.classList.remove('border-danger');
 
         // For .lss files, no columns to detect (structure only)
         if (filename.endsWith('.lss')) {
@@ -1104,32 +1106,53 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 if (response.ok) {
                     const data = await response.json();
+                    window._isPrismData = !!data.is_prism_data;
+
                     if (data.columns && data.columns.length > 0) {
                         // Add detected columns
                         data.columns.forEach(col => {
                             const opt = document.createElement('option');
                             opt.value = col;
                             opt.textContent = col;
-                            // Pre-select likely ID columns
-                            if (['participant_id', 'id', 'code', 'token', 'subject'].includes(col.toLowerCase())) {
-                                opt.textContent += ' ★';
+                            // Mark only the suggested column with star
+                            if (data.suggested_id_column && col === data.suggested_id_column) {
+                                opt.textContent += ' \u2605';
                             }
                             idColumnSelect.appendChild(opt);
                         });
 
-                        // If suggested column exists, pre-select it
-                        if (data.suggested_id_column) {
+                        if (data.is_prism_data && data.suggested_id_column) {
+                            // PRISM data: auto-select suggested column, show green indicator
                             idColumnSelect.value = data.suggested_id_column;
-                        }
-
-                        // Update status
-                        if (idColumnStatus) {
-                            idColumnStatus.innerHTML = `<span class="text-success"><i class="fas fa-check me-1"></i>${data.columns.length} columns</span>`;
-                        }
-                        if (idColumnHelp) {
-                            idColumnHelp.innerHTML = data.suggested_id_column
-                                ? `<i class="fas fa-lightbulb me-1 text-warning"></i>Suggested: <strong>${data.suggested_id_column}</strong> (★ = likely ID columns)`
-                                : '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>No common ID column found. Please select manually.';
+                            if (idColumnStatus) {
+                                idColumnStatus.innerHTML = `<span class="text-success"><i class="fas fa-check me-1"></i>PRISM data (${data.columns.length} columns)</span>`;
+                            }
+                            if (idColumnHelp) {
+                                idColumnHelp.innerHTML = `<i class="fas fa-check-circle me-1 text-success"></i>PRISM ID column detected: <strong>${data.suggested_id_column}</strong>`;
+                            }
+                        } else if (!data.is_prism_data) {
+                            // Non-PRISM data: require manual selection
+                            idColumnSelect.querySelector('option[value="auto"]').textContent = '-- Select ID column --';
+                            idColumnSelect.value = 'auto';
+                            if (idColumnStatus) {
+                                idColumnStatus.innerHTML = `<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>${data.columns.length} columns</span>`;
+                            }
+                            if (idColumnHelp) {
+                                idColumnHelp.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>No PRISM ID column found. Please select the participant ID column manually.';
+                            }
+                        } else {
+                            // PRISM data but no suggested column (shouldn't normally happen)
+                            if (idColumnStatus) {
+                                idColumnStatus.innerHTML = `<span class="text-success"><i class="fas fa-check me-1"></i>${data.columns.length} columns</span>`;
+                            }
+                            if (idColumnHelp) {
+                                idColumnHelp.innerHTML = data.suggested_id_column
+                                    ? `<i class="fas fa-lightbulb me-1 text-warning"></i>Suggested: <strong>${data.suggested_id_column}</strong>`
+                                    : '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>No common ID column found. Please select manually.';
+                            }
+                            if (data.suggested_id_column) {
+                                idColumnSelect.value = data.suggested_id_column;
+                            }
                         }
                     } else {
                         if (idColumnStatus) idColumnStatus.innerHTML = '<span class="text-warning">No columns found</span>';
@@ -1212,6 +1235,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         updateConvertBtn();
     });
+
+    // Clear error styling when ID column is changed
+    const idColSelect = document.getElementById('convertIdColumn');
+    if (idColSelect) {
+        idColSelect.addEventListener('change', function() {
+            this.classList.remove('border-danger');
+            convertError.classList.add('d-none');
+        });
+    }
 
     // Initialize mode on page load
     handleModeSwitch();
@@ -2523,6 +2555,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        // Validate ID column selection for non-PRISM data
+        const idColumnVal = document.getElementById('convertIdColumn')?.value;
+        if (!window._isPrismData && (!idColumnVal || idColumnVal === 'auto' || idColumnVal === '')) {
+            convertError.classList.remove('d-none');
+            convertError.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Please select a participant ID column before converting.';
+            const idSelect = document.getElementById('convertIdColumn');
+            if (idSelect) {
+                idSelect.classList.add('border-danger');
+                idSelect.focus();
+            }
+            return;
+        }
+
         const formData = new FormData();
         formData.append('excel', file);
         console.log(`[CLIENT DEBUG] Excel file: ${file.name}, size: ${file.size}`);
@@ -2536,7 +2581,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Library path is now resolved automatically (project first, then global)
         formData.append('dataset_name', convertDatasetName.value.trim());
-        
+
         // Show log container
         conversionLogContainer.classList.remove('d-none');
         conversionLogBody.classList.remove('d-none');
@@ -2552,10 +2597,9 @@ document.addEventListener('DOMContentLoaded', function() {
         appendLog('Output will be saved to project rawdata folder', 'step');
 
         // Add ID column if selected
-        const idColumn = document.getElementById('convertIdColumn')?.value;
-        if (idColumn && idColumn !== 'auto') {
-            formData.append('id_column', idColumn);
-            appendLog(`Using ID column: ${idColumn}`, 'step');
+        if (idColumnVal && idColumnVal !== 'auto' && idColumnVal !== '') {
+            formData.append('id_column', idColumnVal);
+            appendLog(`Using ID column: ${idColumnVal}`, 'step');
         }
 
         formData.append('session', sessionVal);
@@ -2585,6 +2629,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 if (!response.ok) {
+                    if (data.error === 'id_column_required') {
+                        const idSelect = document.getElementById('convertIdColumn');
+                        if (idSelect) {
+                            idSelect.classList.add('border-danger');
+                            idSelect.focus();
+                        }
+                        throw new Error('Please select the participant ID column.');
+                    }
                     if (data.error === 'unmatched_groups') {
                         displayUnmatchedGroupsError(data);
                         return null;
@@ -2847,6 +2899,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        // Validate ID column selection for non-PRISM data
+        const previewIdCol = document.getElementById('convertIdColumn')?.value;
+        if (!window._isPrismData && (!previewIdCol || previewIdCol === 'auto' || previewIdCol === '')) {
+            convertError.classList.remove('d-none');
+            convertError.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Please select a participant ID column before previewing.';
+            const idSelect = document.getElementById('convertIdColumn');
+            if (idSelect) {
+                idSelect.classList.add('border-danger');
+                idSelect.focus();
+            }
+            return;
+        }
+
         const formData = new FormData();
         formData.append('excel', file);
 
@@ -2857,9 +2922,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Add ID column if selected
-        const idColumn = document.getElementById('convertIdColumn')?.value;
-        if (idColumn && idColumn !== 'auto') {
-            formData.append('id_column', idColumn);
+        if (previewIdCol && previewIdCol !== 'auto' && previewIdCol !== '') {
+            formData.append('id_column', previewIdCol);
         }
 
         const sessionVal = document.getElementById('convertSession') ? document.getElementById('convertSession').value.trim() : '';
@@ -2907,6 +2971,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
 
             if (!response.ok) {
+                if (data.error === 'id_column_required') {
+                    const idSelect = document.getElementById('convertIdColumn');
+                    if (idSelect) {
+                        idSelect.classList.add('border-danger');
+                        idSelect.focus();
+                    }
+                    throw new Error('Please select the participant ID column.');
+                }
                 if (data.error === 'unmatched_groups') {
                     displayUnmatchedGroupsError(data);
                     return null;

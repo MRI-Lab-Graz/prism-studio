@@ -61,9 +61,26 @@
       "en": "Unique participant identifier (BIDS sub- label)",
       "de": "Eindeutige Teilnehmer-ID (BIDS sub- Label)"
     },
+    "Help": {
+      "en": "Enter the participant identifier assigned by the research team (e.g., sub-01, P001).",
+      "de": "Geben Sie die vom Forschungsteam zugewiesene Teilnehmer-ID ein (z.B. sub-01, P001)."
+    },
+    "DisplayOrder": 0,
     "DataType": "string",
     "VariableType": "Identifier",
-    "_exclude": true,
+    "InputType": "text",
+    "TextConfig": {
+      "multiline": false,
+      "placeholder": {
+        "en": "e.g., sub-01, P001",
+        "de": "z.B. sub-01, P001"
+      }
+    },
+    "LimeSurvey": {
+      "questionType": "S",
+      "mandatory": true,
+      "inputWidth": "1"
+    },
     "Annotations": {
       "IsAbout": "snomed:14421000",
       "Relationship": "instance_of",

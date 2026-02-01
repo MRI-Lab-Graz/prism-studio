@@ -2229,23 +2229,25 @@ def detect_columns():
         else:
             return jsonify({"columns": [], "suggested_id_column": None})
 
-        # Suggest likely ID column
-        id_candidates = [
-            "participant_id",
-            "id",
-            "code",
-            "token",
-            "subject",
-            "sub_id",
-            "participant",
-        ]
-        suggested = None
-        for col in columns:
-            if col.lower() in id_candidates:
-                suggested = col
-                break
+        # Universal ID column detection
+        from src.converters.id_detection import detect_id_column, has_prismmeta_columns
 
-        return jsonify({"columns": columns, "suggested_id_column": suggested})
+        _has_pm = has_prismmeta_columns(columns)
+        is_prism_data = _has_pm or any(
+            c.lower() in ("participant_id", "participantid", "prism_participant_id", "prismparticipantid")
+            for c in columns
+        )
+        source_format = "lsa" if filename.endswith(".lsa") else "xlsx"
+        suggested = detect_id_column(
+            columns, source_format,
+            has_prismmeta=_has_pm,
+        )
+
+        return jsonify({
+            "columns": columns,
+            "suggested_id_column": suggested,
+            "is_prism_data": is_prism_data,
+        })
 
     except Exception as e:
         import traceback
