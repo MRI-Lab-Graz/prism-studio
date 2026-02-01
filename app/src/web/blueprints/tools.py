@@ -502,6 +502,7 @@ def api_survey_customizer_export():
     survey_info = data.get("survey", {})
     groups = data.get("groups", [])
     export_options = data.get("exportOptions", {})
+    save_to_project = data.get("saveToProject", False)
 
     if not groups:
         return jsonify({"error": "No groups to export"}), 400
@@ -517,6 +518,39 @@ def api_survey_customizer_export():
     matrix_mode = export_options.get("matrix", True)
     matrix_global = export_options.get("matrix_global", True)
     ls_settings = data.get("lsSettings") or {}
+
+    # --- Save templates to project library if requested ---
+    templates_saved = 0
+    if save_to_project:
+        project_path = session.get("current_project_path")
+        if project_path:
+            import shutil
+
+            lib_dir = Path(project_path) / "code" / "library" / "survey"
+            try:
+                lib_dir.mkdir(parents=True, exist_ok=True)
+                # Collect unique source files from groups
+                seen: set[str] = set()
+                for grp in groups:
+                    src = grp.get("sourceFile") or ""
+                    if not src or src in seen:
+                        continue
+                    seen.add(src)
+                    src_path = Path(src)
+                    if not src_path.is_file():
+                        continue
+                    dest = lib_dir / src_path.name
+                    # Skip if source is already inside the project library
+                    try:
+                        dest.resolve().relative_to(lib_dir.resolve())
+                        if src_path.resolve() == dest.resolve():
+                            continue
+                    except ValueError:
+                        pass
+                    shutil.copy2(str(src_path), str(dest))
+                    templates_saved += 1
+            except OSError:
+                pass  # Non-fatal: export still proceeds
 
     try:
         fd, temp_path = tempfile.mkstemp(suffix=".lss")
@@ -547,12 +581,16 @@ def api_survey_customizer_export():
         date_str = datetime.now().strftime("%Y-%m-%d")
         download_filename = f"{safe_title}_{date_str}.lss"
 
-        return send_file(
+        response = send_file(
             temp_path,
             as_attachment=True,
             download_name=download_filename,
             mimetype="application/xml",
         )
+        if templates_saved:
+            response.headers["X-Templates-Saved"] = str(templates_saved)
+            response.headers["Access-Control-Expose-Headers"] = "X-Templates-Saved"
+        return response
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
