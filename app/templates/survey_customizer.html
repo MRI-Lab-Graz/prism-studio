@@ -431,6 +431,44 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
+    /* LS Survey Settings Accordion */
+    .ls-settings-section {
+        margin-top: 1rem;
+    }
+
+    .ls-settings-section .accordion-button {
+        font-size: 0.95rem;
+        padding: 0.6rem 1rem;
+    }
+
+    .ls-settings-section .accordion-body {
+        padding: 0.75rem 1rem;
+    }
+
+    .ls-settings-section textarea {
+        min-height: 80px;
+        font-size: 0.85rem;
+    }
+
+    .ls-settings-section .form-label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        margin-bottom: 0.2rem;
+    }
+
+    .ls-settings-section .form-text {
+        font-size: 0.75rem;
+    }
+
+    .ls-settings-section .form-control,
+    .ls-settings-section .form-select {
+        font-size: 0.85rem;
+    }
+
+    .ls-settings-section .row.mb-3:last-child {
+        margin-bottom: 0 !important;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
         .customizer-container {
@@ -584,6 +622,263 @@
             </div>
         </div>
 
+        <!-- LimeSurvey Survey Settings -->
+        <div class="ls-settings-section" id="lsSettingsSection">
+            <div class="accordion" id="lsSettingsAccordion">
+                <!-- Header -->
+                <h5 class="mb-2 mt-3">
+                    <i class="fas fa-cogs text-info me-2"></i>LimeSurvey Survey Settings
+                    <small class="text-muted fw-normal ms-2">(optional)</small>
+                </h5>
+
+                <!-- Section 1: Text & Messages -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="lsTextHeading">
+                        <button class="accordion-button collapsed" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#lsTextCollapse"
+                                aria-expanded="false" aria-controls="lsTextCollapse">
+                            <i class="fas fa-comment-alt me-2 text-muted"></i>Text &amp; Messages
+                        </button>
+                    </h2>
+                    <div id="lsTextCollapse" class="accordion-collapse collapse"
+                         aria-labelledby="lsTextHeading" data-bs-parent="#lsSettingsAccordion">
+                        <div class="accordion-body">
+                            <div class="row mb-3">
+                                <div class="col-md-9">
+                                    <label class="form-label">Welcome Message <span class="html-hint">(HTML)</span></label>
+                                    <textarea class="form-control" id="lsWelcomeText" rows="3"
+                                              placeholder="Shown on the first page before questions begin"></textarea>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Template</label>
+                                    <select class="form-select" id="lsWelcomeTemplate">
+                                        <option value="">Empty</option>
+                                        <option value="standard">Standard Welcome</option>
+                                        <option value="academic">Academic Study</option>
+                                        <option value="brief">Brief Welcome</option>
+                                    </select>
+                                    <div class="form-text">Populates the textarea</div>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-9">
+                                    <label class="form-label">End Message <span class="html-hint">(HTML)</span></label>
+                                    <textarea class="form-control" id="lsEndText" rows="3"
+                                              placeholder="Shown after the last question is submitted"></textarea>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Template</label>
+                                    <select class="form-select" id="lsEndTemplate">
+                                        <option value="">Empty</option>
+                                        <option value="standard">Standard Thank-You</option>
+                                        <option value="academic">Academic Debrief</option>
+                                        <option value="brief">Brief Thank-You</option>
+                                        <option value="redirect">Redirect Notice</option>
+                                    </select>
+                                    <div class="form-text">Populates the textarea</div>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">End URL</label>
+                                    <input type="text" class="form-control" id="lsEndUrl"
+                                           placeholder="https://example.com/thank-you">
+                                    <div class="form-text">Redirect participants after completion</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">End URL Description</label>
+                                    <input type="text" class="form-control" id="lsEndUrlDescription"
+                                           placeholder="Click here to return to the study page">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Data Policy / Ethics -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="lsPolicyHeading">
+                        <button class="accordion-button collapsed" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#lsPolicyCollapse"
+                                aria-expanded="false" aria-controls="lsPolicyCollapse">
+                            <i class="fas fa-shield-alt me-2 text-muted"></i>Data Policy / Ethics
+                        </button>
+                    </h2>
+                    <div id="lsPolicyCollapse" class="accordion-collapse collapse"
+                         aria-labelledby="lsPolicyHeading" data-bs-parent="#lsSettingsAccordion">
+                        <div class="accordion-body">
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Enable Data Policy</label>
+                                    <select class="form-select" id="lsShowDataPolicy">
+                                        <option value="0" selected>Off</option>
+                                        <option value="1">Show with checkbox</option>
+                                        <option value="2">Show inline (no checkbox)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Template</label>
+                                    <select class="form-select" id="lsConsentTemplate">
+                                        <option value="">Empty</option>
+                                        <option value="standard">Standard Ethics Consent</option>
+                                        <option value="gdpr">GDPR Data Protection</option>
+                                        <option value="anonymous">Anonymous Survey</option>
+                                        <option value="longitudinal">Longitudinal Study</option>
+                                        <option value="minimal">Minimal Consent</option>
+                                    </select>
+                                    <div class="form-text">Populates the Policy Notice below</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Policy Checkbox Label</label>
+                                    <input type="text" class="form-control" id="lsPolicyCheckboxLabel"
+                                           placeholder="I have read and agree to the data policy">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label class="form-label">Policy Notice <span class="html-hint">(HTML)</span></label>
+                                    <textarea class="form-control" id="lsPolicyNotice" rows="4"
+                                              placeholder="Your data policy / ethics consent text"></textarea>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label class="form-label">Policy Error Message <span class="html-hint">(HTML)</span></label>
+                                    <textarea class="form-control" id="lsPolicyError" rows="2"
+                                              placeholder="Shown if participant does not agree (leave empty for default)"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Presentation & Navigation -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="lsPresentationHeading">
+                        <button class="accordion-button collapsed" type="button"
+                                data-bs-toggle="collapse" data-bs-target="#lsPresentationCollapse"
+                                aria-expanded="false" aria-controls="lsPresentationCollapse">
+                            <i class="fas fa-tv me-2 text-muted"></i>Presentation &amp; Navigation
+                        </button>
+                    </h2>
+                    <div id="lsPresentationCollapse" class="accordion-collapse collapse"
+                         aria-labelledby="lsPresentationHeading" data-bs-parent="#lsSettingsAccordion">
+                        <div class="accordion-body">
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Show Welcome Screen</label>
+                                    <select class="form-select" id="lsShowWelcome">
+                                        <option value="Y" selected>Yes</option>
+                                        <option value="N">No</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Show Progress Bar</label>
+                                    <select class="form-select" id="lsShowProgress">
+                                        <option value="Y" selected>Yes</option>
+                                        <option value="N">No</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Allow Backward Nav</label>
+                                    <select class="form-select" id="lsAllowPrev">
+                                        <option value="N" selected>No</option>
+                                        <option value="Y">Yes</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Navigation Delay (s)</label>
+                                    <input type="number" class="form-control" id="lsNavigationDelay"
+                                           value="0" min="0" max="60">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Question Index</label>
+                                    <select class="form-select" id="lsQuestionIndex">
+                                        <option value="0" selected>Disabled</option>
+                                        <option value="1">Incremental</option>
+                                        <option value="2">Full</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Show Group Info</label>
+                                    <select class="form-select" id="lsShowGroupInfo">
+                                        <option value="B" selected>Name &amp; Description</option>
+                                        <option value="N">Name only</option>
+                                        <option value="D">Description only</option>
+                                        <option value="X">Hide</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Show Q Number/Code</label>
+                                    <select class="form-select" id="lsShowQnumCode">
+                                        <option value="X" selected>Hide</option>
+                                        <option value="B">Both</option>
+                                        <option value="N">Number</option>
+                                        <option value="C">Code</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Show "No Answer"</label>
+                                    <select class="form-select" id="lsShowNoAnswer">
+                                        <option value="Y" selected>Yes</option>
+                                        <option value="N">No</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Show Question Count</label>
+                                    <select class="form-select" id="lsShowXQuestions">
+                                        <option value="Y" selected>Yes</option>
+                                        <option value="N">No</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">On-Screen Keyboard</label>
+                                    <select class="form-select" id="lsNoKeyboard">
+                                        <option value="N" selected>No</option>
+                                        <option value="Y">Yes</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Print Answers</label>
+                                    <select class="form-select" id="lsPrintAnswers">
+                                        <option value="N" selected>No</option>
+                                        <option value="Y">Yes</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Auto-load End URL</label>
+                                    <select class="form-select" id="lsAutoRedirect">
+                                        <option value="N" selected>No</option>
+                                        <option value="Y">Yes</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label class="form-label">Public Statistics</label>
+                                    <select class="form-select" id="lsPublicStatistics">
+                                        <option value="N" selected>No</option>
+                                        <option value="Y">Yes</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Public Graphs</label>
+                                    <select class="form-select" id="lsPublicGraphs">
+                                        <option value="N" selected>No</option>
+                                        <option value="Y">Yes</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Action Bar -->
         <div class="d-flex justify-content-end gap-2 mt-4 mb-5">
             <button class="btn btn-outline-secondary" id="resetBtn">
@@ -661,6 +956,30 @@ document.addEventListener('DOMContentLoaded', function() {
             ls_version: '3',
             matrix: true,
             matrix_global: true
+        },
+        lsSettings: {
+            welcomeText: '',
+            endText: '',
+            endUrl: '',
+            endUrlDescription: '',
+            showDataPolicy: '0',
+            policyNotice: '',
+            policyError: '',
+            policyCheckboxLabel: '',
+            navigationDelay: '0',
+            questionIndex: '0',
+            showGroupInfo: 'B',
+            showQnumCode: 'X',
+            showNoAnswer: 'Y',
+            showXQuestions: 'Y',
+            showWelcome: 'Y',
+            allowPrev: 'N',
+            noKeyboard: 'N',
+            showProgress: 'Y',
+            printAnswers: 'N',
+            publicStatistics: 'N',
+            publicGraphs: 'N',
+            autoRedirect: 'N'
         }
     };
 
@@ -918,6 +1237,16 @@ document.addEventListener('DOMContentLoaded', function() {
             // Set preview language to base language
             previewLanguage = customizationState.survey.base_language || customizationState.survey.language || 'en';
             updatePreviewLangSwitcher();
+
+            // Restore LimeSurvey survey settings if saved
+            const storedLsSettings = sessionStorage.getItem('surveyCustomizerLsSettings');
+            if (storedLsSettings) {
+                try {
+                    const ls = JSON.parse(storedLsSettings);
+                    customizationState.lsSettings = Object.assign({}, customizationState.lsSettings, ls);
+                    populateLsSettingsForm(customizationState.lsSettings);
+                } catch (e2) { /* ignore parse errors */ }
+            }
 
             // Load file data via API
             loadQuestionsFromFiles(data.selectedFiles);
@@ -1725,6 +2054,35 @@ document.addEventListener('DOMContentLoaded', function() {
         customizationState.exportOptions.matrix = document.getElementById('matrixMode').checked;
         customizationState.exportOptions.matrix_global = document.getElementById('globalMatrix').checked;
 
+        // Read LimeSurvey survey settings from form
+        customizationState.lsSettings = {
+            welcomeText: document.getElementById('lsWelcomeText').value,
+            endText: document.getElementById('lsEndText').value,
+            endUrl: document.getElementById('lsEndUrl').value,
+            endUrlDescription: document.getElementById('lsEndUrlDescription').value,
+            showDataPolicy: document.getElementById('lsShowDataPolicy').value,
+            policyNotice: document.getElementById('lsPolicyNotice').value,
+            policyError: document.getElementById('lsPolicyError').value,
+            policyCheckboxLabel: document.getElementById('lsPolicyCheckboxLabel').value,
+            navigationDelay: document.getElementById('lsNavigationDelay').value,
+            questionIndex: document.getElementById('lsQuestionIndex').value,
+            showGroupInfo: document.getElementById('lsShowGroupInfo').value,
+            showQnumCode: document.getElementById('lsShowQnumCode').value,
+            showNoAnswer: document.getElementById('lsShowNoAnswer').value,
+            showXQuestions: document.getElementById('lsShowXQuestions').value,
+            showWelcome: document.getElementById('lsShowWelcome').value,
+            allowPrev: document.getElementById('lsAllowPrev').value,
+            noKeyboard: document.getElementById('lsNoKeyboard').value,
+            showProgress: document.getElementById('lsShowProgress').value,
+            printAnswers: document.getElementById('lsPrintAnswers').value,
+            publicStatistics: document.getElementById('lsPublicStatistics').value,
+            publicGraphs: document.getElementById('lsPublicGraphs').value,
+            autoRedirect: document.getElementById('lsAutoRedirect').value
+        };
+
+        // Persist LS settings to sessionStorage
+        saveLsSettings();
+
         exportBtn.disabled = true;
         exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Exporting...';
 
@@ -2149,6 +2507,140 @@ document.addEventListener('DOMContentLoaded', function() {
         customizationState.exportOptions.matrix_global = e.target.checked;
         renderQuestions();
     });
+
+    // --- Text templates ---
+
+    // Welcome message templates
+    const welcomeTemplates = {
+        standard: '<h3>Welcome to Our Study</h3>\n<p>Thank you for your interest in participating in this research study.</p>\n<p>On the following pages you will be asked to answer a series of questionnaires.\nPlease read each question carefully and select the response that best applies to you.\nThere are no right or wrong answers.</p>\n<p>The survey will take approximately <strong>[DURATION] minutes</strong> to complete.</p>',
+        academic: '<h3>[STUDY TITLE]</h3>\n<p>Principal Investigator: [PI NAME], [DEPARTMENT], [INSTITUTION]</p>\n<p>Thank you for participating in this research study. Your responses will contribute to\nour understanding of [RESEARCH TOPIC].</p>\n<p>Please complete the following questionnaires in one sitting. The survey takes approximately\n<strong>[DURATION] minutes</strong>. You may skip any question you prefer not to answer.</p>\n<p>If you have any questions, please contact <a href="mailto:[EMAIL]">[EMAIL]</a>.</p>',
+        brief: '<p>Welcome! Please answer the following questions. This takes about <strong>[DURATION] minutes</strong>.</p>'
+    };
+
+    // End message templates
+    const endTemplates = {
+        standard: '<h3>Thank You!</h3>\n<p>Your responses have been recorded successfully.</p>\n<p>We greatly appreciate the time you have taken to complete this survey.\nYour contribution is valuable to our research.</p>\n<p>If you have any questions about this study, please contact us at <a href="mailto:[EMAIL]">[EMAIL]</a>.</p>',
+        academic: '<h3>Study Complete</h3>\n<p>Thank you for completing this survey.</p>\n<p><strong>Purpose of this study:</strong> This research investigates [RESEARCH TOPIC].\nYour responses will help us [RESEARCH GOAL].</p>\n<p><strong>Principal Investigator:</strong> [PI NAME], [DEPARTMENT]<br>\n<strong>Contact:</strong> <a href="mailto:[EMAIL]">[EMAIL]</a></p>\n<p>If you experienced any discomfort during this survey, please contact [SUPPORT RESOURCE].</p>',
+        brief: '<p>Thank you for completing the survey! Your response has been saved.</p>',
+        redirect: '<p>Thank you for completing the survey. You will be redirected shortly.</p>\n<p>If you are not redirected automatically, please click the link below.</p>'
+    };
+
+    // Consent / data policy templates
+    const consentTemplates = {
+        standard: '<p>This study has been approved by [ETHICS COMMITTEE NAME] (approval number: [NUMBER]).</p>\n<p>Your participation is voluntary. You may withdraw at any time without giving a reason.</p>\n<p>Your data will be collected anonymously and used solely for research purposes.\nAll data will be stored securely in accordance with applicable data protection regulations.</p>\n<p>By clicking "Next", you confirm that you have read and understood this information\nand consent to participate.</p>',
+        gdpr: '<p><strong>Data Protection Information (GDPR Art. 13/14)</strong></p>\n<p><strong>Data Controller:</strong> [INSTITUTION NAME], [ADDRESS]</p>\n<p><strong>Purpose:</strong> Your data is processed for scientific research purposes (GDPR Art. 6(1)(a) and Art. 9(2)(a)).</p>\n<p><strong>Data collected:</strong> Survey responses, timestamps, and basic demographic information.\nNo personally identifiable information beyond what you provide is collected.</p>\n<p><strong>Storage &amp; retention:</strong> Data is stored on secure servers within the EU/EEA.\nAnonymized research data will be retained for [DURATION] years in accordance with\ngood scientific practice. Raw data will be deleted after analysis.</p>\n<p><strong>Your rights:</strong> You have the right to access, rectify, or erase your data,\nand to withdraw consent at any time (GDPR Art. 15-21). Contact the Data Protection Officer\nat <a href="mailto:[DPO EMAIL]">[DPO EMAIL]</a>.</p>\n<p>By clicking "Next", you confirm that you consent to the processing of your data as described above.</p>',
+        anonymous: '<p>This is an <strong>anonymous survey</strong>. No identifying information (name, email, IP address)\nis collected or stored. Your responses cannot be linked back to you.</p>\n<p>Your participation is voluntary. You may close the browser at any time to withdraw.\nOnce submitted, responses cannot be deleted as they are not linked to any individual.</p>\n<p>By continuing, you agree to participate.</p>',
+        longitudinal: '<p>This study involves <strong>multiple data collection points</strong>. You will be asked to\ncomplete follow-up surveys at [TIMEPOINTS].</p>\n<p>A participant code will be used to link your responses across sessions.\nThis code does not contain personally identifiable information.</p>\n<p>Your participation is voluntary at each stage. You may withdraw from future sessions\nat any time without affecting your previous responses or any compensation due.</p>\n<p>All data will be stored securely and treated confidentially in accordance with\napplicable data protection regulations.</p>\n<p>By clicking "Next", you consent to participate in this session of the study.</p>',
+        minimal: '<p>Your participation is voluntary and anonymous. You may stop at any time.</p>\n<p>By continuing, you consent to participate in this study.</p>'
+    };
+
+    // Wire up template dropdowns
+    document.getElementById('lsWelcomeTemplate').addEventListener('change', function() {
+        if (this.value && welcomeTemplates[this.value]) {
+            document.getElementById('lsWelcomeText').value = welcomeTemplates[this.value];
+        }
+    });
+
+    document.getElementById('lsEndTemplate').addEventListener('change', function() {
+        if (this.value && endTemplates[this.value]) {
+            document.getElementById('lsEndText').value = endTemplates[this.value];
+        }
+    });
+
+    document.getElementById('lsConsentTemplate').addEventListener('change', function() {
+        const policyTextarea = document.getElementById('lsPolicyNotice');
+        if (this.value && consentTemplates[this.value]) {
+            policyTextarea.value = consentTemplates[this.value];
+        }
+    });
+
+    // Save LS settings to sessionStorage
+    function saveLsSettings() {
+        try {
+            sessionStorage.setItem('surveyCustomizerLsSettings', JSON.stringify(customizationState.lsSettings));
+        } catch (e) { /* ignore quota errors */ }
+    }
+
+    // Auto-save LS settings when any field changes
+    document.getElementById('lsSettingsSection').addEventListener('change', function() {
+        // Read current values into state
+        customizationState.lsSettings = {
+            welcomeText: document.getElementById('lsWelcomeText').value,
+            endText: document.getElementById('lsEndText').value,
+            endUrl: document.getElementById('lsEndUrl').value,
+            endUrlDescription: document.getElementById('lsEndUrlDescription').value,
+            showDataPolicy: document.getElementById('lsShowDataPolicy').value,
+            policyNotice: document.getElementById('lsPolicyNotice').value,
+            policyError: document.getElementById('lsPolicyError').value,
+            policyCheckboxLabel: document.getElementById('lsPolicyCheckboxLabel').value,
+            navigationDelay: document.getElementById('lsNavigationDelay').value,
+            questionIndex: document.getElementById('lsQuestionIndex').value,
+            showGroupInfo: document.getElementById('lsShowGroupInfo').value,
+            showQnumCode: document.getElementById('lsShowQnumCode').value,
+            showNoAnswer: document.getElementById('lsShowNoAnswer').value,
+            showXQuestions: document.getElementById('lsShowXQuestions').value,
+            showWelcome: document.getElementById('lsShowWelcome').value,
+            allowPrev: document.getElementById('lsAllowPrev').value,
+            noKeyboard: document.getElementById('lsNoKeyboard').value,
+            showProgress: document.getElementById('lsShowProgress').value,
+            printAnswers: document.getElementById('lsPrintAnswers').value,
+            publicStatistics: document.getElementById('lsPublicStatistics').value,
+            publicGraphs: document.getElementById('lsPublicGraphs').value,
+            autoRedirect: document.getElementById('lsAutoRedirect').value
+        };
+        saveLsSettings();
+    });
+
+    // Also save on textarea input (change doesn't fire until blur for textareas)
+    document.querySelectorAll('#lsSettingsSection textarea').forEach(el => {
+        el.addEventListener('input', function() {
+            // Debounced save: update state and persist
+            const id = this.id;
+            const keyMap = {
+                lsWelcomeText: 'welcomeText', lsEndText: 'endText',
+                lsPolicyNotice: 'policyNotice', lsPolicyError: 'policyError'
+            };
+            if (keyMap[id]) {
+                customizationState.lsSettings[keyMap[id]] = this.value;
+                saveLsSettings();
+            }
+        });
+    });
+
+    // Populate LS settings form from state (used after sessionStorage load)
+    function populateLsSettingsForm(ls) {
+        if (!ls) return;
+        const fieldMap = {
+            welcomeText: 'lsWelcomeText',
+            endText: 'lsEndText',
+            endUrl: 'lsEndUrl',
+            endUrlDescription: 'lsEndUrlDescription',
+            showDataPolicy: 'lsShowDataPolicy',
+            policyNotice: 'lsPolicyNotice',
+            policyError: 'lsPolicyError',
+            policyCheckboxLabel: 'lsPolicyCheckboxLabel',
+            navigationDelay: 'lsNavigationDelay',
+            questionIndex: 'lsQuestionIndex',
+            showGroupInfo: 'lsShowGroupInfo',
+            showQnumCode: 'lsShowQnumCode',
+            showNoAnswer: 'lsShowNoAnswer',
+            showXQuestions: 'lsShowXQuestions',
+            showWelcome: 'lsShowWelcome',
+            allowPrev: 'lsAllowPrev',
+            noKeyboard: 'lsNoKeyboard',
+            showProgress: 'lsShowProgress',
+            printAnswers: 'lsPrintAnswers',
+            publicStatistics: 'lsPublicStatistics',
+            publicGraphs: 'lsPublicGraphs',
+            autoRedirect: 'lsAutoRedirect'
+        };
+        for (const [key, elId] of Object.entries(fieldMap)) {
+            const el = document.getElementById(elId);
+            if (el && ls[key] !== undefined) {
+                el.value = ls[key];
+            }
+        }
+    }
 
     // Initialize
     loadFromSessionStorage();
