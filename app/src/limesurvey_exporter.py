@@ -780,7 +780,6 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
             "I18n",
             "Scoring",
             "Normative",
-            "participant_id",  # Usually auto-assigned, not filled by participants
         }
 
         if "Questions" in data and isinstance(data["Questions"], dict):

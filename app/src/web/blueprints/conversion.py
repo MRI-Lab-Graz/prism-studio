@@ -42,6 +42,11 @@ except ImportError:
     _NON_ITEM_TOPLEVEL_KEYS = set()
 
 try:
+    from src.converters.id_detection import IdColumnNotDetectedError
+except ImportError:
+    IdColumnNotDetectedError = None
+
+try:
     from src.converters.biometrics import convert_biometrics_table_to_prism_dataset
 except ImportError:
     convert_biometrics_table_to_prism_dataset = None
@@ -731,6 +736,12 @@ def api_survey_convert_preview():
             response_data["conversion_summary"] = conv_summary
 
         return jsonify(response_data)
+    except IdColumnNotDetectedError as e:
+        return jsonify({
+            "error": "id_column_required",
+            "message": str(e),
+            "columns": e.available_columns,
+        }), 409
     except UnmatchedGroupsError as uge:
         return jsonify(_format_unmatched_groups_response(uge)), 409
     except Exception as e:
@@ -892,6 +903,12 @@ def api_survey_convert():
                     duplicate_handling=duplicate_handling,
                     project_path=session.get("current_project_path"),
                 )
+        except IdColumnNotDetectedError as e:
+            return jsonify({
+                "error": "id_column_required",
+                "message": str(e),
+                "columns": e.available_columns,
+            }), 409
         except MissingIdMappingError as mie:
             return (
                 jsonify(
@@ -1146,6 +1163,14 @@ def api_survey_convert_validate():
                     project_path=session.get("current_project_path"),
                 )
             add_log("Conversion completed successfully", "success")
+        except IdColumnNotDetectedError as e:
+            add_log(f"ID column not detected: {str(e)}", "error")
+            return jsonify({
+                "error": "id_column_required",
+                "message": str(e),
+                "columns": e.available_columns,
+                "log": log_messages,
+            }), 409
         except MissingIdMappingError as mie:
             add_log(f"ID mapping incomplete: {str(mie)}", "error")
             return (
@@ -1752,6 +1777,13 @@ def api_biometrics_convert():
 
         return jsonify({"log": log, "zip_base64": zip_base64, "validation": validation})
 
+    except IdColumnNotDetectedError as e:
+        return jsonify({
+            "error": "id_column_required",
+            "message": str(e),
+            "columns": e.available_columns,
+            "log": log,
+        }), 409
     except Exception as e:
         return jsonify({"error": str(e), "log": log}), 500
     finally:
@@ -2366,25 +2398,23 @@ def api_participants_preview():
                     return jsonify({"error": "LimeSurvey support not available"}), 500
 
             # Detect ID column
-            id_column = request.form.get("id_column", "").strip()
-            if not id_column:
-                # Auto-detect
-                candidates = {"participant_id", "participant", "subject", "sub", "id"}
-                df_cols_lower = {str(c).lower(): str(c) for c in df.columns}
-                for cand in candidates:
-                    if cand in df_cols_lower:
-                        id_column = df_cols_lower[cand]
-                        break
+            from src.converters.id_detection import detect_id_column as _detect_id, has_prismmeta_columns as _has_pm_cols
 
-            if not id_column or id_column not in df.columns:
-                return (
-                    jsonify(
-                        {
-                            "error": f"Could not find ID column. Available columns: {', '.join(df.columns)}"
-                        }
-                    ),
-                    400,
-                )
+            id_column = request.form.get("id_column", "").strip() or None
+            source_fmt = "lsa" if suffix == ".lsa" else "xlsx"
+            _has_pm = _has_pm_cols(list(df.columns))
+            id_column = _detect_id(
+                list(df.columns), source_fmt,
+                explicit_id_column=id_column,
+                has_prismmeta=_has_pm,
+            )
+
+            if not id_column:
+                return jsonify({
+                    "error": "id_column_required",
+                    "message": f"Could not auto-detect ID column. Available columns: {', '.join(df.columns)}",
+                    "columns": list(df.columns),
+                }), 409
 
             # Get library path for participants.json
             library_path = _resolve_effective_library_path()

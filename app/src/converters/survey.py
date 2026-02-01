@@ -950,6 +950,7 @@ def convert_survey_xlsx_to_prism_dataset(
         strict_levels=True,
         duplicate_handling=duplicate_handling,
         skip_participants=skip_participants,
+        source_format=kind,
     )
 
 
@@ -1269,6 +1270,7 @@ def convert_survey_lsa_to_prism_dataset(
         duplicate_handling=duplicate_handling,
         lsa_questions_map=lsa_questions_map,
         lsa_analysis=lsa_analysis,
+        source_format="lsa",
     )
 
 
@@ -1787,6 +1789,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     lsa_questions_map: dict | None = None,
     skip_participants: bool = False,
     lsa_analysis: dict | None = None,
+    source_format: str = "xlsx",
 ) -> SurveyConvertResult:
     if unknown not in {"error", "warn", "ignore"}:
         raise ValueError("unknown must be one of: error, warn, ignore")
@@ -2042,8 +2045,14 @@ def _convert_survey_dataframe_to_prism_dataset(
         selected_tasks = selected
 
     # --- Determine Columns ---
+    from .id_detection import has_prismmeta_columns as _has_pm
+
+    _prismmeta = _has_pm(list(df.columns))
     res_id_col, res_ses_col = _resolve_id_and_session_cols(
-        df, id_column, session_column, participants_template=participant_template
+        df, id_column, session_column,
+        participants_template=participant_template,
+        source_format=source_format,
+        has_prismmeta=_prismmeta,
     )
 
     # --- Apply subject ID mapping if provided ---
@@ -2490,14 +2499,30 @@ def _resolve_id_and_session_cols(
     id_column: str | None,
     session_column: str | None,
     participants_template: dict | None = None,
+    source_format: str = "xlsx",
+    has_prismmeta: bool = False,
 ) -> tuple[str, str | None]:
     """Helper to determine participant ID and session columns from dataframe.
 
-    Priority for ID column detection:
+    Delegates ID detection to the central id_detection module.
+
+    Auto-detect priority:
     1. Explicit id_column parameter
-    2. _sourceField from participants.json (if participant_id has _sourceField)
-    3. Common column name patterns (participant_id, subject, id, code, token)
+    2. participant_id / participantid (PRISM primary, handles LS code mangling)
+    3. prism_participant_id / prismparticipantid (PRISM alternative)
+    4. token / id (LSA + PRISMMETA only)
+    5. None found → IdColumnNotDetectedError (manual selection required)
     """
+    from .id_detection import detect_id_column, IdColumnNotDetectedError
+
+    resolved_id = detect_id_column(
+        df_columns=list(df.columns),
+        source_format=source_format,
+        explicit_id_column=id_column,
+        has_prismmeta=has_prismmeta,
+    )
+    if not resolved_id:
+        raise IdColumnNotDetectedError(list(df.columns), source_format)
 
     def _find_col(candidates: set[str]) -> str | None:
         lower_map = {str(c).strip().lower(): str(c).strip() for c in df.columns}
@@ -2505,66 +2530,6 @@ def _resolve_id_and_session_cols(
             if c in lower_map:
                 return lower_map[c]
         return None
-
-    def _find_col_exact_or_lower(col_name: str) -> str | None:
-        """Find column by exact match first, then case-insensitive."""
-        # Exact match
-        if col_name in df.columns:
-            return col_name
-        # Case-insensitive match
-        lower_map = {str(c).strip().lower(): str(c).strip() for c in df.columns}
-        if col_name.lower() in lower_map:
-            return lower_map[col_name.lower()]
-        return None
-
-    resolved_id = id_column
-    if resolved_id:
-        if resolved_id not in df.columns:
-            raise ValueError(
-                f"id_column '{resolved_id}' not found. Columns: {', '.join([str(c) for c in df.columns])}"
-            )
-    else:
-        # Priority 1: Check participants_template for _sourceField
-        source_field = None
-        if participants_template:
-            # Check if participant_id has _sourceField defined
-            pid_def = participants_template.get("participant_id")
-            if isinstance(pid_def, dict) and "_sourceField" in pid_def:
-                source_field = pid_def.get("_sourceField")
-                if source_field:
-                    resolved_id = _find_col_exact_or_lower(source_field)
-                    if not resolved_id:
-                        # _sourceField specified but column not found, try common patterns
-                        source_field = None
-
-        # Priority 2: Common column name patterns
-        if not resolved_id:
-            # LimeSurvey response archives commonly use `token` (sequential numeric ID).
-            # We check in priority order: token before code, since 'code' in LimeSurvey
-            # can be a custom participant-provided field, while 'token' is the system ID.
-            priority_columns = [
-                "participant_id",
-                "token",  # LimeSurvey system ID (priority)
-                "subject",
-                "id",
-                "sub_id",
-                "participant",
-                "code",  # May be participant-provided, check last
-            ]
-            for col_name in priority_columns:
-                resolved_id = _find_col_exact_or_lower(col_name)
-                if resolved_id:
-                    break
-
-            if not resolved_id:
-                if source_field:
-                    raise ValueError(
-                        f"participants.json specifies _sourceField='{source_field}' but column not found. "
-                        f"Columns: {', '.join([str(c) for c in df.columns])}"
-                    )
-                raise ValueError(
-                    "Could not determine participant id column. Provide id_column explicitly (e.g., participant_id, token)."
-                )
 
     resolved_ses: str | None
     if session_column:
