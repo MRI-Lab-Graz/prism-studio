@@ -1,3 +1,4 @@
+<a id="top"></a>
 <p align="center">
   <img src="docs/img/prism_logo.jpg" alt="PRISM Logo" width="600">
 </p>
@@ -742,5 +743,7 @@ For questions or contributions, visit the [GitHub repository](https://github.com
 ## All Thanks to Our Contributors
 
 <a href="https://github.com/MRI-Lab-Graz/prism-studio/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=MRI-Lab-Graz/prism-studio&max=1000" />
+  <img src="https://contrib.rocks/image?repo=MRI-Lab-Graz/prism-studio" />
 </a>
+
+<p align="right"><a href="#top">Back to top</a></p>
