@@ -35,6 +35,16 @@
                             <div class="row g-3 mb-3">
                                 <div class="col-12">
                                     <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa, .lss)</label>
+                                    {% if current_project.path %}
+                                    <div id="sourcedataQuickSelect" class="d-none mb-2">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-light"><i class="fas fa-folder-open text-muted"></i></span>
+                                            <select class="form-select form-select-sm" id="sourcedataFileSelect">
+                                                <option value="">Load from sourcedata/...</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    {% endif %}
                                     <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv,.lss">
                                     <div class="form-text" id="convertFileHint">
                                         <span class="text-info"><i class="fas fa-info-circle me-1"></i>LimeSurvey (.lss/.lsa) or Data Dictionary (.xlsx/.csv/.tsv)</span>
