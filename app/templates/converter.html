@@ -1342,6 +1342,7 @@ document.addEventListener('DOMContentLoaded', function() {
             html += `<h6 class="mb-2"><i class="fas fa-puzzle-piece me-1"></i>Matched Templates</h6>`;
             html += `<table class="table table-sm table-bordered mb-3"><thead><tr><th>Survey Group</th><th>Template</th><th>Confidence</th></tr></thead><tbody>`;
             for (const [group, info] of Object.entries(matches)) {
+                if (!info) continue;
                 const tmpl = info.template || info.matched_template || 'None';
                 const conf = info.confidence || info.match_confidence || 'unknown';
                 let badgeClass = 'bg-secondary';
