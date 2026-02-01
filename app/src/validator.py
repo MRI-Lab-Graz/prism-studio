@@ -81,7 +81,9 @@ def derive_sidecar_path(file_path):
 
 
 def _extract_entity_value(stem, key):
-    match = re.search(rf"_{key}-([a-zA-Z0-9]+)", stem)
+    # Capture the value up to the next underscore (BIDS entity separator) or end
+    # of string.  Values may contain hyphens (e.g., task-bfi-s).
+    match = re.search(rf"_{key}-([^_]+)", stem)
     if match:
         return match.group(1)
     return None
@@ -174,11 +176,6 @@ def _find_root_sidecar(file_path: str, root_dir: str) -> str | None:
     fname = os.path.basename(file_path)
     stem, _ext = split_compound_ext(fname)
 
-    # Extract task name from filename
-    task_value = _extract_entity_value(stem, "task")
-    if not task_value:
-        return None
-
     # Determine suffix (survey, biometrics, etc.)
     suffix = ""
     if "_" in stem:
@@ -187,12 +184,22 @@ def _find_root_sidecar(file_path: str, root_dir: str) -> str | None:
     if not suffix:
         return None
 
-    # Look for root-level sidecar: task-{name}_{suffix}.json
-    root_sidecar_name = f"task-{task_value}_{suffix}.json"
-    root_sidecar_path = safe_path_join(root_dir, root_sidecar_name)
+    # Extract task name from filename
+    task_value = _extract_entity_value(stem, "task")
+    if task_value:
+        # Look for root-level sidecar: task-{name}_{suffix}.json
+        root_sidecar_name = f"task-{task_value}_{suffix}.json"
+        root_sidecar_path = safe_path_join(root_dir, root_sidecar_name)
+        if os.path.exists(root_sidecar_path):
+            return root_sidecar_path
 
-    if os.path.exists(root_sidecar_path):
-        return root_sidecar_path
+    # Also check for tool-{name} entity (e.g., tool-limesurvey)
+    tool_value = _extract_entity_value(stem, "tool")
+    if tool_value:
+        root_sidecar_name = f"tool-{tool_value}_{suffix}.json"
+        root_sidecar_path = safe_path_join(root_dir, root_sidecar_name)
+        if os.path.exists(root_sidecar_path):
+            return root_sidecar_path
 
     return None
 
