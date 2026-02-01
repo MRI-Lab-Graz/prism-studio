@@ -47,7 +47,7 @@ MODALITY_PATTERNS = {
 # BIDS naming patterns
 BIDS_REGEX = re.compile(
     r"^sub-[a-zA-Z0-9]+"  # subject
-    r"(_ses-[a-zA-Z0-9]+)?"  # optional session
+    r"(_ses-[a-zA-Z0-9]{2,})?"  # optional session (min 2 chars, e.g., ses-01 not ses-1)
     r"(_[a-zA-Z0-9]+-[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*)*"  # key-value pairs; values may contain hyphens (e.g., task-bfi-s)
     r"(_[a-zA-Z0-9]+)?$"  # generic suffix (e.g., _dwi, _T1w, _bold, _physio, _events)
 )
