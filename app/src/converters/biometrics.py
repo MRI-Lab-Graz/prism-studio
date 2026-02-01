@@ -232,13 +232,13 @@ def convert_biometrics_table_to_prism_dataset(
         }
 
     # Detect columns
-    col_pid = id_column or _find_col(
-        df, {"participant_id", "participant", "subject", "sub"}
+    from .id_detection import detect_id_column, IdColumnNotDetectedError
+
+    col_pid = detect_id_column(
+        list(df.columns), "biometrics", explicit_id_column=id_column
     )
     if not col_pid:
-        raise ValueError(
-            "Missing participant id column. Provide --id-column or include 'participant_id'."
-        )
+        raise IdColumnNotDetectedError(list(df.columns), "biometrics")
 
     col_ses = session_column or _find_col(df, {"session", "ses", "visit", "timepoint"})
 

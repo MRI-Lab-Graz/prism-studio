@@ -1614,37 +1614,18 @@ def convert_lsa_to_dataset(
     id_map=None,
 ):
     """Convert .lsa responses into a PRISM/BIDS dataset (tsv + json) using survey_library schemas."""
-    base_priority = ["participant_id", "id", "code", "token", "subject"]
-    if id_column:
-        # Fail fast if the requested ID column is missing; do not silently fall back.
-        df_preview, questions_map, groups_map = parse_lsa_responses(lsa_path)
-        match = next(
-            (c for c in df_preview.columns if c.lower() == id_column.lower()), None
-        )
-        if not match:
-            available = ", ".join(df_preview.columns)
-            raise ValueError(
-                f"ID column '{id_column}' not found in LimeSurvey responses. Available columns: {available}"
-            )
-        # Ensure we still process the full dataframe below without re-reading from disk.
-        df = df_preview
-        id_priority = [match] + base_priority
-    else:
-        df, questions_map, groups_map = parse_lsa_responses(lsa_path)
-        id_priority = id_priority or base_priority
+    from .id_detection import detect_id_column, has_prismmeta_columns, IdColumnNotDetectedError
 
-    # Pick participant id column
-    id_col = None
-    for cand in id_priority:
-        for col in df.columns:
-            if col.lower() == cand.lower():
-                id_col = col
-                break
-        if id_col:
-            break
+    df, questions_map, groups_map = parse_lsa_responses(lsa_path)
+
+    has_pm = has_prismmeta_columns(list(df.columns))
+    id_col = detect_id_column(
+        list(df.columns), "lsa",
+        explicit_id_column=id_column,
+        has_prismmeta=has_pm,
+    )
     if not id_col:
-        # Fallback: first column
-        id_col = df.columns[0]
+        raise IdColumnNotDetectedError(list(df.columns), "lsa")
     df = df.rename(columns={id_col: "participant_id"})
 
     # Apply ID mapping if provided
