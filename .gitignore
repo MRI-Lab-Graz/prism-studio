@@ -24,6 +24,7 @@ archive/PK01/
 .vscode/
 .idea/
 .claude/
+CLAUDE.local.md
 *.swp
 *.swo
 *~
