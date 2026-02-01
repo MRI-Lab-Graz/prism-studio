@@ -4,9 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Memory Management
 
-- **CLAUDE.md**: Permanent project guidelines (this file) - committed to git
-- **CLAUDE.local.md**: Session notes, TODOs, work-in-progress - auto-gitignored
-- **CHANGELOG.md**: Document all releases and changes
+Keep each file lean — avoid dumping detailed logs or reference tables into CLAUDE.md or CLAUDE.local.md.
+
+| File | Purpose | Rule |
+|------|---------|------|
+| **CLAUDE.md** | Permanent project guidelines (committed) | Short. Architecture, commands, standards only. No session notes. |
+| **CLAUDE.local.md** | Active context: git workflow, TODOs, testing tips | Keep under ~60 lines. Point to memory.md for details. |
+| **`.claude/memory.md`** | Detailed reference: API tables, LS XML fields, archived features, session log | Append session summaries here. OK to be long. |
+| **CHANGELOG.md** | Public release history | One entry per feature/fix. |
 
 ## Project Overview
 
