@@ -1023,6 +1023,33 @@ def _analyze_lsa_structure(
     }
 
 
+def _add_ls_code_aliases(sidecar: dict, imported_codes: list[str]) -> None:
+    """Register LS-mangled item codes as aliases in a library template.
+
+    LimeSurvey strips non-alphanumeric characters from question codes during
+    export (e.g., BFI-S01 → BFIS01).  This creates a mismatch between the
+    library template's item keys and the DataFrame column names.  Adding the
+    mangled codes as aliases allows _process_survey_row_with_run() to find
+    data values via its alias-candidate lookup, while keeping the original
+    library keys in the sidecar JSON and TSV header.
+    """
+    from src.converters.template_matcher import _ls_normalize_code
+
+    imported_ls_norm = {_ls_normalize_code(c): c for c in imported_codes}
+
+    aliases = sidecar.setdefault("_aliases", {})
+    reverse_aliases = sidecar.setdefault("_reverse_aliases", {})
+
+    for lib_key in list(sidecar.keys()):
+        if lib_key in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(sidecar.get(lib_key), dict):
+            continue
+        ls_norm = _ls_normalize_code(lib_key)
+        imp_code = imported_ls_norm.get(ls_norm)
+        if imp_code and imp_code != lib_key and imp_code not in aliases:
+            aliases[imp_code] = lib_key
+            reverse_aliases.setdefault(lib_key, []).append(imp_code)
+
+
 def _add_matched_template(
     templates: dict[str, dict],
     item_to_task: dict[str, str],
@@ -1043,7 +1070,10 @@ def _add_matched_template(
     """
     task_key = match.template_key
     if task_key in templates:
-        # Already loaded from library_dir — just register item codes
+        # Already loaded from library_dir — register LS-mangled aliases
+        # so _process_survey_row_with_run() can map DataFrame columns
+        # (e.g., BFIS01) back to library item keys (e.g., BFI-S01).
+        _add_ls_code_aliases(templates[task_key]["json"], group_info["item_codes"])
         for code in group_info["item_codes"]:
             if code not in item_to_task:
                 item_to_task[code] = task_key
@@ -1084,6 +1114,9 @@ def _add_matched_template(
                 target = v["AliasOf"]
                 sidecar["_aliases"][k] = target
                 sidecar["_reverse_aliases"].setdefault(target, []).append(k)
+
+        # Add LS-mangled codes as aliases so data lookup works
+        _add_ls_code_aliases(sidecar, group_info["item_codes"])
 
         templates[task_key] = {
             "path": template_path,
