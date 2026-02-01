@@ -1419,6 +1419,15 @@ class MissingIdMappingError(ValueError):
         self.suggestions = suggestions
 
 
+class UnmatchedGroupsError(ValueError):
+    """Raised when LSA groups have no matching library template."""
+
+    def __init__(self, unmatched: list[dict], message: str):
+        super().__init__(message)
+        self.unmatched = unmatched
+        # Each dict: {"group_name": str, "task_key": str, "item_codes": [...], "prism_json": {...}}
+
+
 def _damerau_levenshtein(a: str, b: str, limit: int = 2) -> int | None:
     """Compute Damerau-Levenshtein distance with an optional early-exit limit."""
 
@@ -1892,6 +1901,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     # --- LSA Structural Matching ---
     # When converting .lsa files without an explicit survey= filter,
     # use the .lss structure analysis to auto-detect and register templates.
+    unmatched_groups: list[dict] = []
     if lsa_analysis and not survey:
         for group_name, group_info in lsa_analysis["groups"].items():
             match = group_info.get("match")
@@ -1922,13 +1932,77 @@ def _convert_survey_dataframe_to_prism_dataset(
                     f"Review the match to ensure correctness."
                 )
             else:
-                # No match or low confidence — generate template from .lss
-                _add_generated_template(templates, item_to_task, group_name, group_info)
+                # No match or low confidence — collect as unmatched.
+                # Deduplicate run groups: if "resiliencebrsrun1" and
+                # "resiliencebrsrun2" both fail, collapse them into a
+                # single "resiliencebrs" entry so the user saves ONE
+                # base template that matches all runs.
+                from ..utils.naming import sanitize_task_name
+                from .template_matcher import (
+                    _strip_run_from_group_name,
+                    _normalize_item_codes,
+                )
+
+                task_key = sanitize_task_name(group_name).lower()
+                if not task_key:
+                    task_key = group_name.lower().replace(" ", "")
+
+                # Strip run suffix from task_key to get the base name
+                base_key = _strip_run_from_group_name(task_key)
+                if not base_key:
+                    base_key = task_key
+
+                # Strip run suffixes from item codes in prism_json so
+                # the saved template uses base codes (BRS01 not BRS01run02)
+                raw_codes = group_info["item_codes"]
+                base_codes, _ = _normalize_item_codes(
+                    raw_codes if isinstance(raw_codes, set) else set(raw_codes)
+                )
+                base_prism = {}
+                for k, v in group_info["prism_json"].items():
+                    if k in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(v, dict):
+                        base_prism[k] = v
+                    else:
+                        from .template_matcher import _strip_run_suffix
+
+                        stripped, _ = _strip_run_suffix(k)
+                        if stripped not in base_prism:
+                            base_prism[stripped] = v
+
+                # Check if we already collected a group with this base key
+                existing = next(
+                    (g for g in unmatched_groups if g["task_key"] == base_key),
+                    None,
+                )
+                if existing is None:
+                    unmatched_groups.append(
+                        {
+                            "group_name": group_name,
+                            "task_key": base_key,
+                            "item_codes": base_codes,
+                            "prism_json": base_prism,
+                        }
+                    )
+                else:
+                    # Merge: add any new base codes from this run group
+                    existing["item_codes"] = existing["item_codes"] | base_codes
+
                 if match:
                     conversion_warnings.append(
-                        f"Group '{group_name}' had low-confidence match to '{match.template_key}'. "
-                        f"Using generated template instead."
+                        f"Group '{group_name}' had low-confidence match to "
+                        f"'{match.template_key}'. No suitable template found."
                     )
+
+    if unmatched_groups:
+        names = [g["group_name"] for g in unmatched_groups]
+        raise UnmatchedGroupsError(
+            unmatched=unmatched_groups,
+            message=(
+                f"No library template found for {len(unmatched_groups)} group(s): "
+                f"{', '.join(names)}. Save templates to project library first, "
+                f"then re-run conversion."
+            ),
+        )
 
     # --- LSA Participant Column Renames ---
     # When converting .lsa files, LimeSurvey mangles question codes (strips
