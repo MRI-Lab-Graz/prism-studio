@@ -620,6 +620,19 @@
                     </div>
                 </div>
             </div>
+            <div class="row mt-2" id="saveToProjectRow" style="display:none;">
+                <div class="col-md-12">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="saveToProject">
+                        <label class="form-check-label" for="saveToProject">
+                            Save templates to project library
+                            <small class="text-muted ms-1">
+                                (copies PRISM templates to <code>code/library/survey/</code>)
+                            </small>
+                        </label>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- LimeSurvey Survey Settings -->
@@ -1001,6 +1014,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const addGroupBtn = document.getElementById('addGroupBtn');
     const addGroupModal = new bootstrap.Modal(document.getElementById('addGroupModal'));
     const renameGroupModal = new bootstrap.Modal(document.getElementById('renameGroupModal'));
+
+    // Check if a project is active and show "save to project" option
+    (async function checkProjectForSaveOption() {
+        try {
+            const r = await fetch('/api/projects/current');
+            if (r.ok) {
+                const d = await r.json();
+                if (d.path) {
+                    document.getElementById('saveToProjectRow').style.display = '';
+                }
+            }
+        } catch (_) { /* no project — keep hidden */ }
+    })();
 
     // Generate UUID
     function uuid() {
@@ -2083,6 +2109,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Persist LS settings to sessionStorage
         saveLsSettings();
 
+        // Include "save to project" flag if checked
+        const saveToProject = document.getElementById('saveToProject').checked;
+        const exportPayload = Object.assign({}, customizationState);
+        if (saveToProject) exportPayload.saveToProject = true;
+
         exportBtn.disabled = true;
         exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Exporting...';
 
@@ -2090,7 +2121,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('/api/survey-customizer/export', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(customizationState)
+                body: JSON.stringify(exportPayload)
             });
 
             if (!response.ok) {
@@ -2125,6 +2156,22 @@ document.addEventListener('DOMContentLoaded', function() {
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
+
+            // Show feedback if templates were saved to project
+            const savedCount = response.headers.get('X-Templates-Saved');
+            if (savedCount && parseInt(savedCount, 10) > 0) {
+                const n = parseInt(savedCount, 10);
+                const msg = n === 1
+                    ? '1 template saved to project library.'
+                    : `${n} templates saved to project library.`;
+                const banner = document.createElement('div');
+                banner.className = 'alert alert-success alert-dismissible fade show mt-2';
+                banner.setAttribute('role', 'alert');
+                banner.innerHTML = `<i class="fas fa-check-circle me-2"></i>${msg}` +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+                exportBtn.parentElement.appendChild(banner);
+                setTimeout(() => { if (banner.parentElement) banner.remove(); }, 6000);
+            }
 
         } catch (e) {
             console.error('Export error:', e);
