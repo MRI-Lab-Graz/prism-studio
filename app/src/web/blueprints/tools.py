@@ -2181,38 +2181,21 @@ def detect_columns():
         columns = []
 
         if filename.endswith(".lsa"):
-            # Extract response data from LimeSurvey archive
-            import zipfile as zf_module
-            import io
+            # Extract response columns from LimeSurvey archive (.lsr XML)
+            import tempfile, shutil
 
-            file_bytes = io.BytesIO(file.read())
+            tmp_dir = tempfile.mkdtemp(prefix="prism_detect_cols_")
             try:
-                with zf_module.ZipFile(file_bytes, "r") as zf:
-                    # Look for response data files
-                    response_files = [
-                        f
-                        for f in zf.namelist()
-                        if f.endswith((".txt", ".csv")) and "response" in f.lower()
-                    ]
-                    if not response_files:
-                        # Try any txt/csv file
-                        response_files = [
-                            f for f in zf.namelist() if f.endswith((".txt", ".csv"))
-                        ]
+                tmp_path = Path(tmp_dir) / filename
+                file.save(str(tmp_path))
+                from src.converters.limesurvey import parse_lsa_responses
 
-                    if response_files:
-                        with zf.open(response_files[0]) as f:
-                            # Try to detect delimiter
-                            content = f.read().decode("utf-8", errors="replace")
-                            if "\t" in content.split("\n")[0]:
-                                df = pd.read_csv(
-                                    io.StringIO(content), sep="\t", nrows=1
-                                )
-                            else:
-                                df = pd.read_csv(io.StringIO(content), nrows=1)
-                            columns = list(df.columns)
-            except zf_module.BadZipFile:
-                return jsonify({"error": "Invalid .lsa archive"}), 400
+                df, _, _ = parse_lsa_responses(str(tmp_path))
+                columns = list(df.columns)
+            except Exception as lsa_err:
+                return jsonify({"error": f"Failed to read .lsa: {lsa_err}"}), 400
+            finally:
+                shutil.rmtree(tmp_dir, ignore_errors=True)
 
         elif filename.endswith(".xlsx"):
             df = pd.read_excel(file, nrows=1)
