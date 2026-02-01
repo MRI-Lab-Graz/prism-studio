@@ -103,6 +103,20 @@ def _strip_run_suffix(code: str) -> tuple[str, Optional[int]]:
     return code, None
 
 
+def _ls_normalize_code(code: str) -> str:
+    """Normalize an item code to its LimeSurvey-sanitized form.
+
+    LimeSurvey strips all non-alphanumeric characters from question codes
+    (hyphens, underscores, etc.). When matching imported LS data against
+    library templates, both sides must be compared in this normalized form
+    so that e.g. 'BFI-S01' matches 'BFIS01'.
+
+    Returns:
+        Lowercased alphanumeric-only code.
+    """
+    return re.sub(r"[^a-zA-Z0-9]", "", code).lower()
+
+
 def _normalize_item_codes(codes: set[str]) -> tuple[set[str], int]:
     """Strip run suffixes from item codes and count runs.
 
@@ -439,6 +453,11 @@ def match_against_library(
     # Normalize (strip run suffixes)
     imported_normalized, runs_detected = _normalize_item_codes(imported_struct)
 
+    # Build LS-normalized lookup for imported codes.
+    # LimeSurvey strips non-alphanumeric chars from question codes, so imported
+    # codes like "BFIS01" need to match library codes like "BFI-S01".
+    imported_ls_norm = {_ls_normalize_code(c): c for c in imported_normalized}
+
     # Build a mapping from normalized code -> original code(s) for levels lookup
     norm_to_original: dict[str, str] = {}
     for code in imported_struct:
@@ -475,15 +494,22 @@ def match_against_library(
         real_key = task_key.removeprefix("__project__")
         template_source = tdata.get("source", "global")
 
-        # Compute overlap using normalized imported codes
-        overlap = imported_normalized & lib_struct
-        overlap_count = len(overlap)
+        # Compute overlap using LS-normalized codes so that e.g. "BFI-S01"
+        # (library) matches "BFIS01" (imported from LimeSurvey).
+        # First try direct set intersection (fast path for identical codes),
+        # then fall back to LS-normalized comparison for remaining codes.
+        lib_ls_norm = {_ls_normalize_code(c): c for c in lib_struct}
+        ls_overlap_keys = set(imported_ls_norm.keys()) & set(lib_ls_norm.keys())
+        overlap_count = len(ls_overlap_keys)
 
         if overlap_count == 0:
             continue
 
-        only_in_import = sorted(imported_normalized - lib_struct)
-        only_in_library = sorted(lib_struct - imported_normalized)
+        # Map back to original code names for reporting
+        overlap = {lib_ls_norm[k] for k in ls_overlap_keys}
+        matched_import_keys = {imported_ls_norm[k] for k in ls_overlap_keys}
+        only_in_import = sorted(imported_normalized - matched_import_keys)
+        only_in_library = sorted(lib_struct - overlap)
 
         # Overlap ratio relative to the larger set
         max_size = max(len(imported_normalized), len(lib_struct))
@@ -495,11 +521,14 @@ def match_against_library(
 
         # Verify Levels for overlapping items
         levels_results = []
-        for item_key in overlap:
-            # Use the original (possibly run-suffixed) code to look up in prism_json
-            original_code = norm_to_original.get(item_key, item_key)
-            imp_item = prism_json.get(original_code) or prism_json.get(item_key, {})
-            lib_item = tdata["json"].get(item_key, {})
+        for ls_key in ls_overlap_keys:
+            # Look up both library-side and imported-side original codes
+            lib_code = lib_ls_norm[ls_key]
+            imp_code = imported_ls_norm[ls_key]
+            # Resolve to the original (possibly run-suffixed) imported code
+            original_code = norm_to_original.get(imp_code, imp_code)
+            imp_item = prism_json.get(original_code) or prism_json.get(imp_code, {})
+            lib_item = tdata["json"].get(lib_code, {})
             if isinstance(imp_item, dict) and isinstance(lib_item, dict):
                 lev_match = _compare_levels(imp_item, lib_item)
                 if lev_match is not None:
