@@ -30,12 +30,16 @@ try:
         convert_survey_lsa_to_prism_dataset,
         infer_lsa_metadata,
         MissingIdMappingError,
+        UnmatchedGroupsError,
+        _NON_ITEM_TOPLEVEL_KEYS,
     )
 except ImportError:
     convert_survey_xlsx_to_prism_dataset = None
     convert_survey_lsa_to_prism_dataset = None
     infer_lsa_metadata = None
     MissingIdMappingError = None
+    UnmatchedGroupsError = None
+    _NON_ITEM_TOPLEVEL_KEYS = set()
 
 try:
     from src.converters.biometrics import convert_biometrics_table_to_prism_dataset
@@ -67,6 +71,34 @@ _batch_convert_jobs = {}
 _participant_json_candidates = participant_json_candidates
 _log_file_head = log_file_head
 _resolve_effective_library_path = resolve_effective_library_path
+
+
+def _format_unmatched_groups_response(uge, log_messages=None):
+    """Build the JSON response dict for an UnmatchedGroupsError."""
+    payload = {
+        "error": "unmatched_groups",
+        "message": str(uge),
+        "unmatched": [
+            {
+                "group_name": g["group_name"],
+                "task_key": g["task_key"],
+                "item_count": len(
+                    [
+                        k
+                        for k in g["prism_json"]
+                        if k not in _NON_ITEM_TOPLEVEL_KEYS
+                        and isinstance(g["prism_json"].get(k), dict)
+                    ]
+                ),
+                "item_codes": g["item_codes"][:10],
+                "prism_json": g["prism_json"],
+            }
+            for g in uge.unmatched
+        ],
+    }
+    if log_messages is not None:
+        payload["log"] = log_messages
+    return payload
 
 
 def _generate_neurobagel_schema(df, id_column):
@@ -699,6 +731,8 @@ def api_survey_convert_preview():
             response_data["conversion_summary"] = conv_summary
 
         return jsonify(response_data)
+    except UnmatchedGroupsError as uge:
+        return jsonify(_format_unmatched_groups_response(uge)), 409
     except Exception as e:
         import traceback
 
@@ -870,6 +904,8 @@ def api_survey_convert():
                 ),
                 409,
             )
+        except UnmatchedGroupsError as uge:
+            return jsonify(_format_unmatched_groups_response(uge)), 409
 
         # Save to project if requested
         if save_to_project:
@@ -1124,6 +1160,12 @@ def api_survey_convert_validate():
                 ),
                 409,
             )
+        except UnmatchedGroupsError as uge:
+            add_log(f"Unmatched groups: {str(uge)}", "error")
+            return (
+                jsonify(_format_unmatched_groups_response(uge, log_messages)),
+                409,
+            )
         except Exception as conv_err:
             import traceback
             import sys
@@ -1329,6 +1371,55 @@ def api_survey_convert_validate():
         return jsonify({"error": str(e), "log": log_messages}), 500
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+@conversion_bp.route("/api/save-unmatched-template", methods=["POST"])
+def api_save_unmatched_template():
+    """Save a generated template for an unmatched group to the project library."""
+    project_path = session.get("current_project_path")
+    if not project_path:
+        return jsonify({"error": "No project selected"}), 400
+
+    data = request.get_json()
+    task_key = data.get("task_key")
+    prism_json = data.get("prism_json")
+    if not task_key or not prism_json:
+        return jsonify({"error": "Missing task_key or prism_json"}), 400
+
+    # Clean internal keys and strip run suffixes from item codes so the
+    # saved template uses base codes (e.g. BRS01 not BRS01run02).  This
+    # ensures the template matcher can match it on re-import regardless
+    # of run numbering.
+    from src.converters.template_matcher import _strip_run_suffix
+
+    clean = {}
+    for k, v in prism_json.items():
+        if k.startswith("_"):
+            continue
+        if isinstance(v, dict) and k not in _NON_ITEM_TOPLEVEL_KEYS:
+            base, _ = _strip_run_suffix(k)
+            if base not in clean:
+                clean[base] = v
+        else:
+            clean[k] = v
+
+    library_path = Path(project_path) / "code" / "library" / "survey"
+    library_path.mkdir(parents=True, exist_ok=True)
+
+    filename = f"survey-{task_key}.json"
+    filepath = library_path / filename
+
+    from src.utils.io import write_json
+
+    write_json(filepath, clean)
+
+    return jsonify(
+        {
+            "success": True,
+            "path": str(filepath),
+            "filename": filename,
+        }
+    )
 
 
 @conversion_bp.route("/api/biometrics-check-library", methods=["GET"])
