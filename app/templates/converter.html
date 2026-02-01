@@ -1249,6 +1249,51 @@ document.addEventListener('DOMContentLoaded', function() {
     handleModeSwitch();
     updateConvertBtn();
 
+    // --- Sourcedata quick-select ---
+    const sourcedataQuickSelect = document.getElementById('sourcedataQuickSelect');
+    const sourcedataFileSelect = document.getElementById('sourcedataFileSelect');
+
+    if (sourcedataQuickSelect && sourcedataFileSelect) {
+        // Fetch sourcedata files on page load
+        fetch('/api/projects/sourcedata-files')
+            .then(r => r.json())
+            .then(data => {
+                if (data.sourcedata_exists && data.files && data.files.length > 0) {
+                    sourcedataQuickSelect.classList.remove('d-none');
+                    data.files.forEach(f => {
+                        const opt = document.createElement('option');
+                        opt.value = f.name;
+                        const sizeKB = (f.size / 1024).toFixed(1);
+                        opt.textContent = `${f.name} (${sizeKB} KB)`;
+                        sourcedataFileSelect.appendChild(opt);
+                    });
+                }
+            })
+            .catch(() => {}); // Silently ignore if no project
+
+        // When a sourcedata file is selected, load it into the file input
+        sourcedataFileSelect.addEventListener('change', async function() {
+            const filename = this.value;
+            if (!filename) return;
+
+            try {
+                const resp = await fetch(`/api/projects/sourcedata-file?name=${encodeURIComponent(filename)}`);
+                if (!resp.ok) throw new Error('Failed to load file');
+                const blob = await resp.blob();
+                const file = new File([blob], filename, { type: blob.type });
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                convertExcelFile.files = dt.files;
+                // Trigger the change event so column detection runs
+                convertExcelFile.dispatchEvent(new Event('change', { bubbles: true }));
+            } catch (err) {
+                console.error('Failed to load sourcedata file:', err);
+                convertError.textContent = `Failed to load ${filename} from sourcedata.`;
+                convertError.classList.remove('d-none');
+            }
+        });
+    }
+
     // Terminal log elements
     const conversionLogContainer = document.getElementById('conversionLogContainer');
     const conversionLog = document.getElementById('conversionLog');
@@ -2502,15 +2547,6 @@ document.addEventListener('DOMContentLoaded', function() {
         convertInfo.textContent = '';
         resetConversionUI();
 
-        const sessionVal = document.getElementById('convertSession') ? document.getElementById('convertSession').value.trim() : '';
-
-        if (!sessionVal) {
-            convertError.textContent = 'Please enter a session ID (e.g., 1, 2, 3).';
-            convertError.classList.remove('d-none');
-            document.getElementById('convertSession')?.focus();
-            return;
-        }
-
         // Hide template results and participant metadata section
         if (templateResultsContainer) {
             templateResultsContainer.classList.add('d-none');
@@ -2530,9 +2566,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const isLssFile = filename.endsWith('.lss');
         const isLimeSurveyFile = filename.endsWith('.lss') || filename.endsWith('.lsa');
 
-        // TEMPLATE GENERATION MODE
+        // TEMPLATE GENERATION MODE (no session required)
         if (mode === 'template') {
             handleTemplateGeneration(file);
+            return;
+        }
+
+        // DATA CONVERSION MODE — session is required
+        const sessionVal = document.getElementById('convertSession') ? document.getElementById('convertSession').value.trim() : '';
+
+        if (!sessionVal) {
+            convertError.textContent = 'Please enter a session ID (e.g., 1, 2, 3).';
+            convertError.classList.remove('d-none');
+            document.getElementById('convertSession')?.focus();
             return;
         }
 
