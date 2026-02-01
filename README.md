@@ -1,15 +1,32 @@
-# PRISM - Psychological Research Information Standard for Metadata
+<p align="center">
+  <img src="docs/img/prism_logo.jpg" alt="PRISM Logo" width="600">
+</p>
 
-[![Documentation Status](https://readthedocs.org/projects/prism-studio/badge/?version=latest)](https://prism-studio.readthedocs.io/en/latest/?badge=latest)
+<h1 align="center">PRISM Studio</h1>
 
-## � Documentation
+<p align="center">
+  <strong>Psychological Research Information Standard for Metadata</strong>
+</p>
+
+<p align="center">
+  <a href="https://prism-studio.readthedocs.io/en/latest/?badge=latest"><img src="https://readthedocs.org/projects/prism-studio/badge/?version=latest" alt="Documentation Status"></a>
+  <a href="https://github.com/MRI-Lab-Graz/prism-studio/blob/main/LICENSE"><img src="https://img.shields.io/github/license/MRI-Lab-Graz/prism-studio" alt="License: MIT"></a>
+  <img src="https://img.shields.io/badge/python-3.6%2B-blue" alt="Python 3.6+">
+  <img src="https://img.shields.io/badge/platform-windows%20%7C%20macOS%20%7C%20linux-lightgrey" alt="Platform">
+  <a href="https://github.com/MRI-Lab-Graz/prism-studio/issues"><img src="https://img.shields.io/github/issues/MRI-Lab-Graz/prism-studio" alt="GitHub Issues"></a>
+  <img src="https://img.shields.io/badge/BIDS-compatible-green" alt="BIDS Compatible">
+</p>
+
+---
+
+## Documentation
 
 For a detailed guide on how to use PRISM, see the **[Comprehensive Walkthrough](docs/WALKTHROUGH.md)**.
 
-## �🚀 Quick Start
+## Quick Start
 
 
-**👉 Run the Web Interface (PRISM Studio)**:
+**Run the Web Interface (PRISM Studio)**:
 
 ```bash
 bash setup.sh    # One-time setup (macOS/Linux)
@@ -21,7 +38,7 @@ bash setup.sh    # One-time setup (macOS/Linux)
 
 The web interface will open automatically at `http://localhost:5001`.
 
-**👉 Configure Global Library** (recommended):
+**Configure Global Library** (recommended):
 
 ```bash
 python scripts/setup/configure_global_library.py
@@ -46,17 +63,17 @@ PRISM is an **independent, BIDS-compatible** framework and toolkit designed to e
 - **BIDS Core**: The main architecture remains standard BIDS. Files like `participants.tsv`, `dataset_description.json`, and standard modalities (`anat`, `func`, `eeg`) are preserved and validated according to BIDS standards.
 - **PRISM Extensions**: We add structured support for modalities not yet fully standardized in BIDS, specifically **Survey** and **Biometrics**.
 
-## ✨ Key Features
+## Key Features
 
-### 🧬 BIDS-Compatible Add-ons
+### BIDS-Compatible Add-ons
 - **Survey Modality (`survey/`)**: Full support for complex questionnaires (LimeSurvey integration), treating surveys as rich data with sidecar metadata.
 - **Biometrics Modality (`biometrics/`)**: Structured storage for physiological assessments (VO2max, planks, balance tests) that don't fit into standard `beh` or `physio` categories.
 - **Non-Destructive**: Your standard BIDS files (`participants.tsv`, `dataset_description.json`) remain untouched. We only validate the extensions.
 
-### 🎯 Web Interface
+### Web Interface
 - **Drag & drop dataset upload** - Just drop a folder or ZIP file
 - **Interactive validation** - Real-time results with visual charts
-- **🧠 NeuroBagel Integration** - Annotate participants with standardized ontologies
+- **NeuroBagel Integration** - Annotate participants with standardized ontologies
   - Professional annotation widget for participant metadata
   - Integration with official NeuroBagel dictionary
   - SNOMED-CT shorthand URI support
@@ -68,7 +85,7 @@ PRISM is an **independent, BIDS-compatible** framework and toolkit designed to e
 - **Cross-platform** - Works on Windows, macOS, and Linux
 - **Responsive design** - Works on desktop and mobile browsers
 
-## 🛠️ Survey Data Import Workflow
+## Survey Data Import Workflow
 A complete toolset for converting external survey data (CSV/Excel) into PRISM-compliant datasets:
 0.  **Start with Templates**: Use the provided [Survey Template](docs/examples/survey_import_template.xlsx) or [Biometrics Template](docs/examples/biometrics_import_template.xlsx) (includes a **Help** sheet with column explanations).
 1.  **Excel to Library**: Convert data dictionaries into a "Golden Master" JSON library (via `prism_tools.py survey import-excel`).
@@ -77,7 +94,7 @@ A complete toolset for converting external survey data (CSV/Excel) into PRISM-co
 4.  **Convert survey responses (Excel)**: Convert a wide survey export (`.xlsx`) into a PRISM/BIDS-like dataset (via `prism_tools.py survey convert`). The converter matches your column headers against the item IDs in `library/survey/survey-*.json` (e.g., `ADS01`, `ADS02`, …).
 5.  **Compute Recipes**: Automatically calculate scores, subscales, and intermediate variables (e.g., best of 3 trials) using JSON recipes. Supports complex formulas and reverse-coding (via `./prism_tools.py recipes surveys` or `recipes biometrics`). See [RECIPES.md](docs/RECIPES.md) for details.
 
-## 💓 Biometrics Template Workflow (Codebook → JSON)
+## Biometrics Template Workflow (Codebook to JSON)
 
 For biometrics assessments (e.g., Y-Balance, CMJ, Sit-and-Reach), PRISM supports generating **biometrics JSON templates** from a single-sheet Excel *codebook* (no data required).
 
@@ -106,7 +123,7 @@ If you want a single library root, write templates into subfolders:
 
 This creates `library/biometrics/biometrics-*.json` (and `library/survey/` for surveys when using `--library-root` there too).
 
-## 🧪 Biometrics Smoke Test Dataset
+## Biometrics Smoke Test Dataset
 
 To generate a small PRISM-valid dataset from the biometrics codebook and dummy data (for quick end-to-end testing).
 
@@ -130,7 +147,7 @@ Note: the repo ships a wide dummy CSV at `test_dataset/Biometrics_dummy_data.csv
 
 The generated dataset uses the BIDS inheritance principle for biometrics sidecars: one dataset-level sidecar per task (`task-<task>_biometrics.json` at the dataset root) is used for all subjects/sessions unless you intentionally override it with a subject/session-specific sidecar.
 
-## 🔌 Prism Tools (CLI)
+## Prism Tools (CLI)
 
 For advanced data conversion tasks, use the `prism_tools.py` utility.
 
@@ -211,7 +228,7 @@ Use the `convert physio` command to process the data.
 
 [Read the full guide here](docs/SURVEY_DATA_IMPORT.md).
 
-### ✅ Validation Features
+### Validation Features
 - **Multi-modal validation**: Supports survey, biometrics, physiological, eyetracking data
 - **BIDS-App Compatibility**: Automatically updates `.bidsignore` to ensure custom modalities are ignored by standard BIDS tools (e.g., fMRIPrep), preventing crashes.
 - **BIDS-inspired naming**: Validates filenames follow the pattern `sub-<label>_[ses-<label>_]task-<label>_[run-<index>_]<suffix>`
@@ -241,8 +258,8 @@ dataset/
 ├── participants.tsv            # Standard BIDS participant info
 ├── sub-<label>/               # Subject directories
 │   ├── ses-<label>/          # Optional session directories
-│   │   ├── survey/           # 📋 Extension: Questionnaires
-│   │   ├── biometrics/       # 💓 Extension: Physio assessments
+│   │   ├── survey/           # Extension: Questionnaires
+│   │   ├── biometrics/       # Extension: Physio assessments
 │   │   └── <modality>/       # Standard BIDS (anat, func, etc.)
 │   └── <modality>/           # Or direct modality folders
 ```
@@ -430,14 +447,14 @@ These checks generate **warnings** (not errors) since missing data might be due 
 ## Test Dataset
 
 The included `test_dataset/` demonstrates:
-- ✅ Valid files with proper naming and metadata
-- ❌ Invalid naming conventions
-- ❌ Missing sidecar files
-- ✅ Mixed session/no-session structures
+- Valid files with proper naming and metadata
+- Invalid naming conventions (for testing)
+- Missing sidecar files (for testing)
+- Mixed session/no-session structures
 
-## 📁 Repository Structure
+## Repository Structure
 
-- **`prism-studio.py`** - **✨ MAIN ENTRY POINT** - Web interface with NeuroBagel integration
+- **`prism-studio.py`** - **Main entry point** - Web interface with NeuroBagel integration
 - `schemas/` - JSON schemas for each modality
 - `docs/` - Documentation (web interface guide, examples, NeuroBagel integration)
 - `tests/` - Test dataset and test scripts
@@ -451,7 +468,7 @@ The included `test_dataset/` demonstrates:
 - `scripts/setup/setup.sh` / `scripts/setup/setup-windows.bat` - Installation scripts
 - `requirements.txt` - Python dependencies
 
-## 🔬 NeuroBagel Integration (v1.1.0+)
+## NeuroBagel Integration (v1.1.0+)
 
 The JSON Editor now includes professional **NeuroBagel annotation tools** for standardizing participant metadata:
 
@@ -473,7 +490,7 @@ See [`docs/NEUROBAGEL_INTEGRATION_STRATEGY.md`](docs/NEUROBAGEL_INTEGRATION_STRA
 
 ---
 
-## 📊 LimeSurvey Integration
+## LimeSurvey Integration
 
 PRISM Studio now includes a complete workflow for integrating LimeSurvey questionnaires into the BIDS/PRISM structure.
 
@@ -491,7 +508,7 @@ PRISM Studio now includes a complete workflow for integrating LimeSurvey questio
 3. **Collect**: Run study, export data to TSV.
 4. **Combine**: Use `helpers/surveys/combine_survey_json.py` to merge multiple sidecars for the final dataset.
 
-## 📚 Survey Library (New)
+## Survey Library (New)
 
 A robust management system for questionnaire templates ("Golden Masters") with a **Draft & Publish** workflow.
 
@@ -506,14 +523,14 @@ See [`docs/SURVEY_LIBRARY.md`](docs/SURVEY_LIBRARY.md) for the full guide.
 
 ---
 
-## 📊 LimeSurvey Integration
+## LimeSurvey Integration (continued)
 5. **Redact (optional)**: Run `helpers/utils/redact_sidecar.py` to produce a public-safe copy of the sidecar if the instrument text is licensed.
 
 See [`docs/LIMESURVEY_INTEGRATION.md`](docs/LIMESURVEY_INTEGRATION.md) for the full guide.
 
 ---
 
-## 📚 Additional Resources
+## Additional Resources
 
 - **[Web Interface Documentation](docs/WEB_INTERFACE.md)** - Detailed UI guide
 - **[NeuroBagel Integration](docs/NEUROBAGEL_INTEGRATION_STRATEGY.md)** - Annotation tool usage
@@ -523,14 +540,14 @@ See [`docs/LIMESURVEY_INTEGRATION.md`](docs/LIMESURVEY_INTEGRATION.md) for the f
 
 ---
 
-## 🔮 Future Enhancements
+## Future Enhancements
 
 1. **Cross-file validation**: Validate stimulus-response timing relationships
 2. **BIDS compatibility**: Ensure full compatibility with official BIDS standard
 3. **Batch processing**: Support for validating multiple datasets via web UI
 4. **Export formats**: BIDS package export, DataLad integration
 
-## 📋 Project Configuration (.prismrc.json)
+## Project Configuration (.prismrc.json)
 
 Create a `.prismrc.json` file in your dataset root for per-project settings:
 
@@ -548,7 +565,7 @@ Settings can be overridden via CLI arguments.
 
 ## Installation
 
-### ⚡ Quick Setup (Recommended)
+### Quick Setup (Recommended)
 
 **macOS/Linux:**
 ```bash
@@ -566,7 +583,7 @@ scripts\setup\setup-windows.bat
 python prism-studio.py
 ```
 
-The web interface opens automatically! 🌐
+The web interface opens automatically.
 
 ### Manual Setup
 
@@ -584,9 +601,9 @@ python prism-studio.py
 
 ---
 
-## 📖 Usage Guide
+## Usage Guide
 
-### 🌐 Web Interface (Primary - Recommended for All Users)
+### Web Interface (Primary - Recommended for All Users)
 
 Simply run:
 ```bash
@@ -617,17 +634,17 @@ The interface opens at `http://localhost:5001` with three main sections:
 - Getting started guide
 
 **Features:**
-- ✅ All processing happens locally (no data leaves your machine)
-- ✅ Real-time validation feedback
-- ✅ Support for folder and ZIP uploads
-- ✅ Interactive metadata editing
-- ✅ Professional annotation with NeuroBagel
+- All processing happens locally (no data leaves your machine)
+- Real-time validation feedback
+- Support for folder and ZIP uploads
+- Interactive metadata editing
+- Professional annotation with NeuroBagel
 
 See [`docs/WEB_INTERFACE.md`](docs/WEB_INTERFACE.md) for detailed instructions.
 
 ---
 
-### 📝 Command-Line Interface (Advanced/Automation)
+### Command-Line Interface (Advanced/Automation)
 
 For automation and scripting, use the CLI:
 
@@ -695,7 +712,7 @@ Optional (for dummy file generation):
 
 ---
 
-## 📝 Footnote: Command-Line Tool
+## Footnote: Command-Line Tool
 
 While the **web interface is the primary and recommended method** for using PRISM Studio, a command-line interface is also available for automation and batch processing.
 
@@ -714,8 +731,16 @@ For most users and interactive validation, please use the web interface instead.
 
 ---
 
-## 💡 License & Attribution
+## License & Attribution
 
 See LICENSE file for details.
 
 For questions or contributions, visit the [GitHub repository](https://github.com/MRI-Lab-Graz/prism-studio).
+
+---
+
+## All Thanks to Our Contributors
+
+<a href="https://github.com/MRI-Lab-Graz/prism-studio/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=MRI-Lab-Graz/prism-studio&max=1000" />
+</a>
