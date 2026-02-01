@@ -2243,11 +2243,30 @@ def _convert_survey_dataframe_to_prism_dataset(
                     "CreationDate": datetime.utcnow().strftime("%Y-%m-%d"),
                     "Creator": "prism-studio",
                 }
-            # Ensure Technical.StimulusType exists (required by PRISM schema)
+            # Ensure required Technical fields exist (required by PRISM schema)
             if "Technical" not in localized or not isinstance(localized.get("Technical"), dict):
                 localized["Technical"] = {}
-            if "StimulusType" not in localized["Technical"]:
-                localized["Technical"]["StimulusType"] = "Questionnaire"
+            tech = localized["Technical"]
+            if "StimulusType" not in tech:
+                tech["StimulusType"] = "Questionnaire"
+            if "FileFormat" not in tech:
+                tech["FileFormat"] = "tsv"
+            if "Language" not in tech:
+                tech["Language"] = language or ""
+            if "Respondent" not in tech:
+                tech["Respondent"] = "self"
+            # Ensure required Study fields exist (required by PRISM schema)
+            if "Study" not in localized or not isinstance(localized.get("Study"), dict):
+                localized["Study"] = {}
+            study = localized["Study"]
+            if "TaskName" not in study:
+                study["TaskName"] = task
+            if "OriginalName" not in study:
+                study["OriginalName"] = study.get("TaskName", task)
+            if "LicenseID" not in study:
+                study["LicenseID"] = ""
+            if "License" not in study:
+                study["License"] = ""
             # Remove internal keys before writing to avoid schema validation errors
             cleaned = _strip_internal_keys(localized)
             _write_json(sidecar_path, cleaned)
@@ -2664,86 +2683,61 @@ def _write_limesurvey_sidecar(
 
     sidecar = {
         "Metadata": {
-            "SchemaVersion": "1.0.0",
+            "SchemaVersion": "1.1.1",
             "CreationDate": today,
             "Tool": "LimeSurvey",
         },
-        "SystemFields": {},
+        "Technical": {
+            "StimulusType": "Questionnaire",
+            "FileFormat": "tsv",
+            "Language": "",
+            "Respondent": "self",
+            "SoftwarePlatform": "LimeSurvey",
+        },
+        "Study": {
+            "TaskName": "limesurvey",
+            "OriginalName": "LimeSurvey System Data",
+            "LicenseID": "",
+            "License": "",
+        },
     }
 
     if ls_version:
         sidecar["Metadata"]["ToolVersion"] = ls_version
+        sidecar["Technical"]["SoftwareVersion"] = ls_version
 
-    # Field descriptions for common LimeSurvey columns
+    # Field descriptions for common LimeSurvey system columns.
+    # Each column is a top-level item with Description (conforms to PRISM schema).
     field_descriptions = {
-        "id": {"Description": "LimeSurvey response ID", "DataType": "integer"},
-        "submitdate": {
-            "Description": "Survey completion timestamp",
-            "DataType": "string",
-            "Format": "ISO8601",
-        },
-        "startdate": {
-            "Description": "Survey start timestamp",
-            "DataType": "string",
-            "Format": "ISO8601",
-        },
-        "datestamp": {"Description": "Date stamp of response", "DataType": "string"},
-        "lastpage": {
-            "Description": "Last page number viewed by participant",
-            "DataType": "integer",
-        },
-        "startlanguage": {
-            "Description": "Language code at survey start",
-            "DataType": "string",
-        },
-        "seed": {
-            "Description": "Randomization seed for question/answer order",
-            "DataType": "string",
-        },
-        "token": {"Description": "Participant access token", "DataType": "string"},
-        "ipaddr": {
-            "Description": "IP address of respondent",
-            "DataType": "string",
-            "SensitiveData": True,
-        },
-        "refurl": {"Description": "Referrer URL", "DataType": "string"},
-        "interviewtime": {
-            "Description": "Total time spent on survey",
-            "DataType": "float",
-            "Unit": "seconds",
-        },
-        "optout": {"Description": "Opt-out status", "DataType": "string"},
-        "emailstatus": {"Description": "Email delivery status", "DataType": "string"},
+        "id": {"Description": "LimeSurvey response ID"},
+        "submitdate": {"Description": "Survey completion timestamp"},
+        "startdate": {"Description": "Survey start timestamp"},
+        "datestamp": {"Description": "Date stamp of response"},
+        "lastpage": {"Description": "Last page number viewed by participant"},
+        "startlanguage": {"Description": "Language code at survey start"},
+        "seed": {"Description": "Randomization seed for question/answer order"},
+        "token": {"Description": "Participant access token"},
+        "ipaddr": {"Description": "IP address of respondent"},
+        "refurl": {"Description": "Referrer URL"},
+        "interviewtime": {"Description": "Total time spent on survey (seconds)"},
+        "optout": {"Description": "Opt-out status"},
+        "emailstatus": {"Description": "Email delivery status"},
     }
 
-    # Add descriptions for columns present in data
+    # Add each system column as a top-level item
     for col in ls_columns:
         col_lower = col.lower()
         if col_lower in field_descriptions:
-            sidecar["SystemFields"][col] = field_descriptions[col_lower]
+            sidecar[col] = field_descriptions[col_lower]
         elif col_lower.startswith("grouptime"):
-            # Extract group number if possible
-            sidecar["SystemFields"][col] = {
-                "Description": "Time spent on question group",
-                "DataType": "float",
-                "Unit": "seconds",
-            }
+            sidecar[col] = {"Description": "Time spent on question group (seconds)"}
         elif col_lower.startswith("duration_"):
             group_name = col[9:]  # Remove "Duration_" prefix
-            sidecar["SystemFields"][col] = {
-                "Description": f"Time spent on group: {group_name}",
-                "DataType": "float",
-                "Unit": "seconds",
-            }
+            sidecar[col] = {"Description": f"Time spent on group: {group_name} (seconds)"}
         elif col_lower.startswith("attribute_"):
-            sidecar["SystemFields"][col] = {
-                "Description": "Custom participant attribute",
-                "DataType": "string",
-            }
+            sidecar[col] = {"Description": "Custom participant attribute"}
         else:
-            sidecar["SystemFields"][col] = {
-                "Description": f"LimeSurvey system field: {col}",
-            }
+            sidecar[col] = {"Description": f"LimeSurvey system field: {col}"}
 
     _write_json(sidecar_path, sidecar)
     return sidecar_path
