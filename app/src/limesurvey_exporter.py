@@ -1440,6 +1440,7 @@ def generate_lss_from_customization(
     matrix_mode=True,
     matrix_global=True,
     survey_title=None,
+    ls_settings=None,
 ):
     """
     Generate a LimeSurvey Structure (.lss) file from a CustomizationState.
@@ -1457,6 +1458,7 @@ def generate_lss_from_customization(
         matrix_mode (bool): Group questions with identical options into matrices.
         matrix_global (bool): Group all identical options, not just consecutive.
         survey_title (str, optional): Custom title for the survey.
+        ls_settings (dict, optional): LimeSurvey survey-level settings from the UI.
 
     Returns:
         str: The XML content if output_path is None, else None.
@@ -2165,6 +2167,28 @@ def generate_lss_from_customization(
     }
     if additional_languages:
         survey_settings["additional_languages"] = " ".join(additional_languages)
+
+    # Merge LimeSurvey survey-level settings from the UI
+    if ls_settings:
+        survey_level_fields = {
+            "showsurveypolicynotice": ls_settings.get("showDataPolicy", "0"),
+            "navigationdelay": ls_settings.get("navigationDelay", "0"),
+            "questionindex": ls_settings.get("questionIndex", "0"),
+            "showgroupinfo": ls_settings.get("showGroupInfo", "B"),
+            "showqnumcode": ls_settings.get("showQnumCode", "X"),
+            "shownoanswer": ls_settings.get("showNoAnswer", "Y"),
+            "showxquestions": ls_settings.get("showXQuestions", "Y"),
+            "showwelcome": ls_settings.get("showWelcome", "Y"),
+            "allowprev": ls_settings.get("allowPrev", "N"),
+            "nokeyboard": ls_settings.get("noKeyboard", "N"),
+            "showprogress": ls_settings.get("showProgress", "Y"),
+            "printanswers": ls_settings.get("printAnswers", "N"),
+            "publicstatistics": ls_settings.get("publicStatistics", "N"),
+            "publicgraphs": ls_settings.get("publicGraphs", "N"),
+            "autoredirect": ls_settings.get("autoRedirect", "N"),
+        }
+        survey_settings.update(survey_level_fields)
+
     add_row(surveys_rows, survey_settings)
 
     # --- Survey Language Settings ---
@@ -2174,17 +2198,20 @@ def generate_lss_from_customization(
             survey_title = sorted_groups[0].get("name", "Custom Survey")
 
     for lang in languages:
-        add_row(
-            surveys_lang_rows,
-            {
-                "surveyls_survey_id": sid,
-                "surveyls_language": lang,
-                "surveyls_title": survey_title,
-                "surveyls_description": "",
-                "surveyls_welcometext": "",
-                "surveyls_endtext": "",
-            },
-        )
+        lang_row = {
+            "surveyls_survey_id": sid,
+            "surveyls_language": lang,
+            "surveyls_title": survey_title,
+            "surveyls_description": "",
+            "surveyls_welcometext": ls_settings.get("welcomeText", "") if ls_settings else "",
+            "surveyls_endtext": ls_settings.get("endText", "") if ls_settings else "",
+            "surveyls_url": ls_settings.get("endUrl", "") if ls_settings else "",
+            "surveyls_urldescription": ls_settings.get("endUrlDescription", "") if ls_settings else "",
+            "surveyls_policy_notice": ls_settings.get("policyNotice", "") if ls_settings else "",
+            "surveyls_policy_error": ls_settings.get("policyError", "") if ls_settings else "",
+            "surveyls_policy_notice_label": ls_settings.get("policyCheckboxLabel", "") if ls_settings else "",
+        }
+        add_row(surveys_lang_rows, lang_row)
 
     # --- Themes (Required for LS 3+) ---
     themes_elem = ET.SubElement(root, "themes")

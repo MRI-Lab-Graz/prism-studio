@@ -517,6 +517,7 @@ def api_survey_customizer_export():
     ls_version = export_options.get("ls_version", "3")
     matrix_mode = export_options.get("matrix", True)
     matrix_global = export_options.get("matrix_global", True)
+    ls_settings = data.get("lsSettings") or {}
 
     try:
         fd, temp_path = tempfile.mkstemp(suffix=".lss")
@@ -532,6 +533,7 @@ def api_survey_customizer_export():
             matrix_mode=matrix_mode,
             matrix_global=matrix_global,
             survey_title=survey_title,
+            ls_settings=ls_settings,
         )
 
         # Generate filename from survey title and date

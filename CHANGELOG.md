@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Survey Customizer — LimeSurvey Survey Settings**: New collapsible accordion with three sections for LimeSurvey-specific survey configuration (closes #9):
+  - **Text & Messages**: Welcome message, end message, end URL, and end URL description with template dropdowns (Standard, Academic, Brief for welcome; Standard, Academic, Brief, Redirect for end message).
+  - **Data Policy / Ethics**: Enable data policy toggle, policy notice with 5 consent templates (Standard Ethics, GDPR Data Protection, Anonymous Survey, Longitudinal Study, Minimal), policy error message, and checkbox label.
+  - **Presentation & Navigation**: 14 survey-level settings including progress bar, backward navigation, question index, group info display, question numbering, "no answer" option, on-screen keyboard, print answers, auto-redirect, and public statistics/graphs.
+- **Survey Customizer — Text Templates**: Built-in HTML templates for welcome messages, end messages, and data policy consent text with `[BRACKET]` placeholders for easy customization.
 - **Template Editor — Language Overview Bar**: Shows detected languages, primary language badge, and warning indicator when `Technical.Language` mismatches content. "Add Language" and "Remove Language" buttons batch-update all question Descriptions and Levels consistently.
 - **Template Editor — Preview Tab**: New "Preview" tab renders questions as a mock survey form with language switcher. Missing translations highlighted with warning styling. Shows Reversed/Required badges and response options (radio buttons or text input).
 - **Language Consistency Validation**: Backend `_validate_language_consistency()` detects fake translations (identical content across languages), inconsistent language keys across items, `Technical.Language` vs content key mismatches, and complementary/disjoint language sets. All warnings shown during template validation without blocking saves.
