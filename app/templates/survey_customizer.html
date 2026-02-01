@@ -1792,8 +1792,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function updatePreviewLangSwitcher() {
         const container = document.getElementById('previewLangSwitcher');
         if (!container) return;
-        // Use detected languages (available content) for preview, not the user's export selection
-        const langs = detectedLanguages.length > 0 ? detectedLanguages : (customizationState.survey.languages || ['en']);
+        // Use the user's selected export languages for the preview switcher
+        const langs = customizationState.survey.languages || ['en'];
 
         if (langs.length <= 1) {
             container.classList.add('d-none');
