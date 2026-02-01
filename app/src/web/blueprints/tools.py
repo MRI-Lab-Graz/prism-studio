@@ -338,7 +338,6 @@ def api_survey_customizer_load():
                 "I18n",
                 "Scoring",
                 "Normative",
-                "participant_id",
             ]
             all_questions = {
                 k: v
@@ -1639,7 +1638,7 @@ def _detect_languages_from_template(data):
         # Fallback: top-level keys with Description
         reserved = {
             "@context", "Technical", "Study", "Metadata", "Categories",
-            "TaskName", "I18n", "Scoring", "Normative", "participant_id",
+            "TaskName", "I18n", "Scoring", "Normative",
             "Name", "BIDSVersion", "Description", "URL", "License",
             "Authors", "Acknowledgements", "References", "Funding",
         }
@@ -1808,7 +1807,6 @@ def _extract_template_info(full_path, filename, source="global"):
                     "I18n",
                     "Scoring",
                     "Normative",
-                    "participant_id",
                 ]
                 for k, v in data.items():
                     if (
