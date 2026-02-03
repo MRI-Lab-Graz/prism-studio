@@ -102,6 +102,18 @@ LIMESURVEY_QUESTION_TYPES = {
     "|": "File Upload",
 }
 
+# Implicit levels for question types that don't store answers in the XML <answers> section
+# These are built-in response options in LimeSurvey
+IMPLICIT_LEVELS = {
+    "Y": {"Y": "Yes", "N": "No"},  # Yes/No question
+    "G": {"M": "Male", "F": "Female"},  # Gender question
+    "C": {"Y": "Yes", "U": "Uncertain", "N": "No"},  # Array (Yes/Uncertain/No)
+    "E": {"I": "Increase", "S": "Same", "D": "Decrease"},  # Array (Increase/Same/Decrease)
+    "A": {str(i): str(i) for i in range(1, 6)},  # Array (5 Point Choice): 1-5
+    "B": {str(i): str(i) for i in range(1, 11)},  # Array (10 Point Choice): 1-10
+    "5": {str(i): str(i) for i in range(1, 6)},  # 5 Point Choice (simple): 1-5
+}
+
 
 def _get_question_type_name(type_code):
     """Convert LimeSurvey type code to human-readable name."""
@@ -654,8 +666,10 @@ def _build_standard_prism_questions(questions_map, groups_map, language="en"):
         if q_type in array_types and subquestions:
             # Matrix question: flatten subquestions to individual questions
             # Convert levels to multilingual format once (shared by all subquestions)
+            # Use implicit levels for array types that don't have explicit answers
+            effective_levels = levels if levels else IMPLICIT_LEVELS.get(q_type, {})
             multilingual_levels = {}
-            for code, answer_text in levels.items():
+            for code, answer_text in effective_levels.items():
                 if isinstance(answer_text, dict):
                     multilingual_levels[code] = answer_text
                 else:
@@ -702,9 +716,11 @@ def _build_standard_prism_questions(questions_map, groups_map, language="en"):
             }
 
             # Convert levels to multilingual format if present
-            if levels:
+            # Use implicit levels for question types that don't have explicit answers
+            effective_levels = levels if levels else IMPLICIT_LEVELS.get(q_type, {})
+            if effective_levels:
                 multilingual_levels = {}
-                for code, answer_text in levels.items():
+                for code, answer_text in effective_levels.items():
                     if isinstance(answer_text, dict):
                         multilingual_levels[code] = answer_text
                     else:
@@ -810,8 +826,10 @@ def _build_prism_template_from_parsed(
 
         if q_type in array_types and subquestions:
             # Matrix question: flatten subquestions to individual items
+            # Use implicit levels for array types that don't have explicit answers
+            effective_levels = levels if levels else IMPLICIT_LEVELS.get(q_type, {})
             multilingual_levels = {}
-            for code, answer_text in levels.items():
+            for code, answer_text in effective_levels.items():
                 if isinstance(answer_text, dict):
                     multilingual_levels[code] = answer_text
                 else:
@@ -845,9 +863,11 @@ def _build_prism_template_from_parsed(
                 "LimeSurvey": ls_props,
             }
 
-            if levels:
+            # Use implicit levels for question types that don't have explicit answers
+            effective_levels = levels if levels else IMPLICIT_LEVELS.get(q_type, {})
+            if effective_levels:
                 multilingual_levels = {}
-                for code, answer_text in levels.items():
+                for code, answer_text in effective_levels.items():
                     if isinstance(answer_text, dict):
                         multilingual_levels[code] = answer_text
                     else:
@@ -1039,6 +1059,7 @@ def parse_lss_xml(xml_content, task_name=None, use_standard_format=True):
         for qid, q_data in sorted_questions:
             key = q_data["title"]
             gid = q_data["gid"]
+            q_type = q_data.get("type", "")
 
             # Get group info
             group_info = groups_map.get(
@@ -1056,9 +1077,10 @@ def parse_lss_xml(xml_content, task_name=None, use_standard_format=True):
                 },
             }
 
-            # Add answer levels if present
-            if q_data["levels"]:
-                entry["Levels"] = q_data["levels"]
+            # Add answer levels if present, or use implicit levels
+            effective_levels = q_data["levels"] if q_data["levels"] else IMPLICIT_LEVELS.get(q_type, {})
+            if effective_levels:
+                entry["Levels"] = effective_levels
 
             # Add subquestions/items for array-type questions
             if q_data["subquestions"]:
@@ -1235,8 +1257,10 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
 
                 if q_type in array_types and subquestions:
                     # Convert levels to multilingual format
+                    # Use implicit levels for array types without explicit answers
+                    effective_levels = levels if levels else IMPLICIT_LEVELS.get(q_type, {})
                     multilingual_levels = {}
-                    for code, answer_text in levels.items():
+                    for code, answer_text in effective_levels.items():
                         if isinstance(answer_text, dict):
                             multilingual_levels[code] = answer_text
                         else:
@@ -1266,9 +1290,11 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
                             else {language: ""}
                         )
                     }
-                    if levels:
+                    # Use implicit levels for question types without explicit answers
+                    effective_levels = levels if levels else IMPLICIT_LEVELS.get(q_type, {})
+                    if effective_levels:
                         multilingual_levels = {}
-                        for code, answer_text in levels.items():
+                        for code, answer_text in effective_levels.items():
                             if isinstance(answer_text, dict):
                                 multilingual_levels[code] = answer_text
                             else:
@@ -1282,6 +1308,7 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
             # Legacy format with LimeSurvey-specific fields
             for qid, q_data in sorted_questions_list:
                 key = q_data["title"]
+                q_type = q_data.get("type", "")
                 entry = {
                     "Description": q_data["question"],
                     "QuestionType": q_data["type_name"],
@@ -1293,9 +1320,10 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
                     },
                 }
 
-                # Add answer levels if present
-                if q_data["levels"]:
-                    entry["Levels"] = q_data["levels"]
+                # Add answer levels if present, or use implicit levels
+                effective_levels = q_data["levels"] if q_data["levels"] else IMPLICIT_LEVELS.get(q_type, {})
+                if effective_levels:
+                    entry["Levels"] = effective_levels
 
                 # Add subquestions/items for array-type questions
                 if q_data["subquestions"]:
@@ -1462,12 +1490,15 @@ def parse_lss_xml_by_questions(xml_content):
             },
         }
 
-        # Add answer levels if present
+        # Add answer levels if present, or use implicit levels for question types without explicit answers
+        q_type = q_data.get("type", "")
         if q_data.get("levels"):
             # Filter out empty labels but keep the scale structure
             levels = {k: v for k, v in q_data["levels"].items()}
             if levels:
                 entry["Levels"] = levels
+        elif q_type in IMPLICIT_LEVELS:
+            entry["Levels"] = IMPLICIT_LEVELS[q_type]
 
         # Add subquestions/items for array-type questions
         if q_data.get("subquestions"):
