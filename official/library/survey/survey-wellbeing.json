@@ -5,6 +5,10 @@
     "Language": "en",
     "Respondent": "self"
   },
+  "Metadata": {
+    "SchemaVersion": "1.1.1",
+    "CreationDate": "2026-02-03"
+  },
   "Study": {
     "TaskName": "wellbeing",
     "OriginalName": {
@@ -201,10 +205,5 @@
         "de": "Zu keinem Zeitpunkt"
       }
     }
-  },
-  "Metadata": {
-    "SchemaVersion": "1.1.1",
-    "CreationDate": "2026-01-21",
-    "Creator": "PRISM Workshop"
   }
 }
