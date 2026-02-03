@@ -1,4 +1,14 @@
 {
+  "Technical": {
+    "StimulusType": "Questionnaire",
+    "FileFormat": "tsv",
+    "Language": "",
+    "Respondent": ""
+  },
+  "Metadata": {
+    "SchemaVersion": "1.1.1",
+    "CreationDate": "2026-02-03"
+  },
   "Study": {
     "OriginalName": {
       "en": "The Edinburgh Handedness Inventory (short form)"
