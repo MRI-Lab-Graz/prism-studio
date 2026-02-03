@@ -321,6 +321,204 @@ def _find_matching_global_template(
 _MISSING_TOKEN = "n/a"
 _LANGUAGE_KEY_RE = re.compile(r"^[a-z]{2}(?:-[a-z]{2})?$", re.IGNORECASE)
 
+# LimeSurvey answer code max length (used for reverse lookup)
+_LS_ANSWER_CODE_MAX_LENGTH = 5
+
+
+def _sanitize_answer_code_for_ls(code: str) -> str:
+    """Apply LimeSurvey answer code sanitization (for reverse lookup).
+
+    This mirrors the logic in limesurvey_exporter._sanitize_answer_code()
+    to allow matching truncated codes back to original level keys.
+
+    LimeSurvey truncates answer codes to 5 chars using: first 3 + last 2 chars
+    after removing non-alphanumeric characters.
+    """
+    # Handle n/a specially
+    if code.lower() in ("n/a", "na"):
+        return "na"
+
+    # Remove non-alphanumeric characters
+    sanitized = re.sub(r"[^a-zA-Z0-9]", "", code)
+
+    if len(sanitized) <= _LS_ANSWER_CODE_MAX_LENGTH:
+        return sanitized.lower()
+
+    # For long codes: first 3 chars + last 2 chars
+    prefix_len = _LS_ANSWER_CODE_MAX_LENGTH - 2  # 3
+    suffix_len = 2
+    abbreviated = sanitized[:prefix_len] + sanitized[-suffix_len:]
+    return abbreviated.lower()
+
+
+def _find_matching_level_key(value: str, levels: dict) -> str | None:
+    """Try to find the original level key for a potentially sanitized value.
+
+    Handles:
+    - Direct matches (case-insensitive)
+    - LimeSurvey truncated codes (e.g., 'cohng' -> 'cohabiting')
+    - Common missing value formats (e.g., 'na' -> 'n/a')
+
+    Returns:
+        Original level key if found, None otherwise
+    """
+    v_lower = value.lower().strip()
+
+    # Direct match (case-insensitive)
+    for key in levels:
+        if key.lower() == v_lower:
+            return key
+
+    # Handle common missing value variations
+    if v_lower == "na":
+        if "n/a" in levels:
+            return "n/a"
+        if "N/A" in levels:
+            return "N/A"
+
+    # Try reverse LimeSurvey sanitization lookup
+    # For each level key, compute what LimeSurvey would truncate it to
+    # and see if it matches the input value
+    for key in levels:
+        sanitized = _sanitize_answer_code_for_ls(key)
+        if sanitized == v_lower:
+            return key
+
+    return None
+
+
+def _safe_eval_formula(formula: str) -> float | None:
+    """Safely evaluate a simple arithmetic formula (e.g., BMI calculation).
+
+    Only allows: numbers, basic arithmetic (+, -, *, /), round(), parentheses.
+    Returns None if evaluation fails or formula is unsafe.
+
+    Examples:
+        'round(56 / ((145 / 100) * (145 / 100)), 1)' -> 26.6
+        '123 + 456' -> 579
+    """
+    import ast
+    import operator
+
+    if not isinstance(formula, str):
+        return None
+
+    formula = formula.strip()
+    if not formula:
+        return None
+
+    # Quick check: must contain at least one digit and an operator
+    if not any(c.isdigit() for c in formula):
+        return None
+    if not any(c in formula for c in "+-*/()"):
+        return None
+
+    # Whitelist of safe operations
+    safe_operators = {
+        ast.Add: operator.add,
+        ast.Sub: operator.sub,
+        ast.Mult: operator.mul,
+        ast.Div: operator.truediv,
+        ast.USub: operator.neg,
+        ast.UAdd: operator.pos,
+    }
+
+    def _eval_node(node):
+        if isinstance(node, ast.Constant):
+            if isinstance(node.value, (int, float)):
+                return node.value
+            raise ValueError("Non-numeric constant")
+        elif isinstance(node, ast.Num):  # Python 3.7 compatibility
+            return node.n
+        elif isinstance(node, ast.BinOp):
+            if type(node.op) not in safe_operators:
+                raise ValueError(f"Unsafe operator: {type(node.op)}")
+            left = _eval_node(node.left)
+            right = _eval_node(node.right)
+            return safe_operators[type(node.op)](left, right)
+        elif isinstance(node, ast.UnaryOp):
+            if type(node.op) not in safe_operators:
+                raise ValueError(f"Unsafe unary operator: {type(node.op)}")
+            operand = _eval_node(node.operand)
+            return safe_operators[type(node.op)](operand)
+        elif isinstance(node, ast.Call):
+            # Only allow round() function
+            if isinstance(node.func, ast.Name) and node.func.id == "round":
+                args = [_eval_node(arg) for arg in node.args]
+                return round(*args)
+            raise ValueError(f"Unsafe function call")
+        elif isinstance(node, ast.Expression):
+            return _eval_node(node.body)
+        else:
+            raise ValueError(f"Unsafe node type: {type(node)}")
+
+    try:
+        tree = ast.parse(formula, mode='eval')
+        result = _eval_node(tree)
+        if isinstance(result, (int, float)) and not (result != result):  # not NaN
+            return result
+        return None
+    except Exception:
+        return None
+
+
+def _auto_correct_participant_value(value, col_name: str, template: dict | None) -> str:
+    """Auto-correct a participant data value based on template Levels.
+
+    Handles:
+    - LimeSurvey truncated codes -> original level keys
+    - 'na' -> 'n/a' for missing values
+    - Formula strings -> evaluated numeric values
+
+    Returns the corrected value, or original if no correction needed/possible.
+    """
+    if template is None:
+        return value
+
+    # Get column schema from template
+    col_schema = template.get(col_name)
+    if not isinstance(col_schema, dict):
+        return value
+
+    v_str = str(value).strip() if value is not None else ""
+
+    # Skip empty/missing values
+    if not v_str or v_str.lower() in ("", "nan", "none"):
+        return _MISSING_TOKEN
+
+    # Check for Levels - try to find matching key
+    levels = col_schema.get("Levels")
+    if isinstance(levels, dict) and levels:
+        # Direct match
+        if v_str in levels:
+            return v_str
+
+        # Try reverse lookup
+        matched_key = _find_matching_level_key(v_str, levels)
+        if matched_key is not None:
+            return matched_key
+
+    # Check for numeric DataType - try to evaluate formulas
+    data_type = col_schema.get("DataType", "").lower()
+    if data_type in ("number", "integer", "float"):
+        # If it's already a valid number, return as-is
+        try:
+            float(v_str)
+            return v_str
+        except (ValueError, TypeError):
+            pass
+
+        # Try to evaluate as formula
+        result = _safe_eval_formula(v_str)
+        if result is not None:
+            if data_type == "integer":
+                return str(int(round(result)))
+            else:
+                # Round to reasonable precision
+                return str(round(result, 2))
+
+    return value
+
 # Patterns to detect run suffix in column names.
 # BIDS format:      {QUESTIONNAIRE}_{ITEM}_run-{NN}  e.g. SWLS01_run-02
 # LimeSurvey format: {CODE}run{NN}                   e.g. SWLS01run02
@@ -3077,6 +3275,15 @@ def _write_survey_participants(
         rename_map = {c: col_output_names.get(c, c) for c in extra_cols}
         df_extra = df_extra.rename(columns=rename_map)
 
+        # Auto-correct values: truncated LS codes -> original level keys, formulas -> numbers
+        if template_norm:
+            for col in df_extra.columns:
+                if col == "participant_id":
+                    continue
+                df_extra[col] = df_extra[col].apply(
+                    lambda v, c=col, t=template_norm: _auto_correct_participant_value(v, c, t)
+                )
+
         df_part = df_part.merge(df_extra, on="participant_id", how="left")
 
     df_part = df_part.drop_duplicates(subset=["participant_id"]).reset_index(drop=True)
@@ -3953,6 +4160,12 @@ def _validate_survey_item_value(
         return
 
     if v_str in levels:
+        return
+
+    # Try to find matching level key via reverse LimeSurvey sanitization lookup
+    # This handles truncated codes (e.g., 'cohng' -> 'cohabiting') and 'na' -> 'n/a'
+    matched_key = _find_matching_level_key(v_str, levels)
+    if matched_key is not None:
         return
 
     # Try numeric range tolerance
