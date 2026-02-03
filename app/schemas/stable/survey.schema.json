@@ -130,7 +130,7 @@
           "pattern": "^(?:10\\.\\d{4,9}/\\S+)?$"
         },
         "License": {
-          "type": "string",
+          "type": ["string", "object"],
           "description": "License statement for this instrument as provided by the source registry"
         },
         "LicenseID": {

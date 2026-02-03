@@ -809,7 +809,52 @@
     }
   }
 
-  function createInput(fieldSchema, value, onChange) {
+  function createInput(fieldSchema, value, onChange, fieldName = '') {
+    // Special handling for Language field - dropdown with de-AT and en-UK
+    if (fieldName === 'Language' && !Array.isArray(fieldSchema.enum)) {
+      const sel = document.createElement('select');
+      sel.className = 'form-select';
+      const languages = [
+        { value: 'de-AT', label: 'de-AT (German - Austria)' },
+        { value: 'en-UK', label: 'en-UK (English - United Kingdom)' },
+        { value: 'en', label: 'en (English)' },
+        { value: 'de', label: 'de (German)' },
+        { value: 'fr', label: 'fr (French)' },
+        { value: 'es', label: 'es (Spanish)' },
+        { value: 'it', label: 'it (Italian)' },
+        { value: 'pt', label: 'pt (Portuguese)' },
+        { value: 'pt-BR', label: 'pt-BR (Portuguese - Brazil)' },
+        { value: '', label: '(empty)' }
+      ];
+      
+      for (const lang of languages) {
+        const opt = document.createElement('option');
+        opt.value = lang.value;
+        opt.textContent = lang.label;
+        sel.appendChild(opt);
+      }
+      sel.value = (value === undefined || value === null) ? '' : String(value);
+      sel.addEventListener('change', () => onChange(sel.value));
+      return sel;
+    }
+
+    // Special handling for CreationDate field - date picker
+    if (fieldName === 'CreationDate') {
+      const inp = document.createElement('input');
+      inp.type = 'date';
+      inp.className = 'form-control';
+      // Convert YYYY-MM-DD string to date value if needed
+      if (value && typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        inp.value = value;
+      } else {
+        inp.value = '';
+      }
+      inp.addEventListener('change', () => {
+        onChange(inp.value || null);
+      });
+      return inp;
+    }
+
     // Enums
     if (Array.isArray(fieldSchema.enum)) {
       const sel = document.createElement('select');
@@ -1525,7 +1570,7 @@
 
   // Sub-group definitions for the Technical section
   const TECHNICAL_GROUPS = [
-    { label: null, fields: new Set(['StimulusType', 'FileFormat', 'Language', 'Respondent', 'AdministrationMethod']) },
+    { label: null, fields: new Set(['Language', 'Respondent', 'AdministrationMethod']) },
     { label: 'Data Collection Software', fields: new Set(['SoftwarePlatform', 'SoftwareVersion']) },
     { label: 'Equipment & Location', fields: new Set(['Equipment', 'EquipmentManufacturer', 'EquipmentModel', 'CalibrationDate', 'Supervisor', 'Location']) },
   ];
@@ -1545,7 +1590,7 @@
       btnDownload.disabled = true;
       renderMissingSummary();
       renderJsonDiff();
-    });
+    }, name);
     input.id = `field_${sectionKey}_${name}`;
     input.setAttribute('data-field-path', `${sectionKey}/${name}`);
 
@@ -1612,7 +1657,8 @@
         mountEl.appendChild(row);
       }
       // Render any remaining fields not in any group
-      const remaining = names.filter(n => !usedFields.has(n));
+      // Filter out FileFormat and StimulusType as they should not be edited in the template editor
+      const remaining = names.filter(n => !usedFields.has(n) && !['FileFormat', 'StimulusType'].includes(n));
       if (remaining.length) {
         const row = document.createElement('div');
         row.className = 'row g-3 mt-2';
@@ -1744,7 +1790,7 @@
 
       const input = createInput(fieldSchema, undefined, (v) => {
         bulkValues[name] = v;
-      });
+      }, name);
       input.classList.add('flex-grow-1');
       
       // Initialize bulkValues with the starting value of the input
