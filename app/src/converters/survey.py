@@ -3988,7 +3988,12 @@ def _validate_survey_item_value(
 
 
 def _inject_missing_token(sidecar: dict, *, token: str) -> dict:
-    """Ensure every item Levels includes the missing-value token."""
+    """Ensure every item Levels includes the missing-value token.
+
+    Only adds the token to items that already have Levels defined.
+    Items without Levels (e.g., numeric input, free text) are left unchanged
+    to allow any value during validation.
+    """
     if not isinstance(sidecar, dict):
         return sidecar
 
@@ -4003,8 +4008,8 @@ def _inject_missing_token(sidecar: dict, *, token: str) -> dict:
             if token not in levels:
                 levels[token] = "Missing/Not provided"
                 item["Levels"] = levels
-        else:
-            item["Levels"] = {token: "Missing/Not provided"}
+        # Don't create Levels if they don't exist - some question types
+        # (numeric input, free text) shouldn't have predefined levels
 
     return sidecar
 
