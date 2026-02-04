@@ -57,20 +57,23 @@ def _normalize_sub_id(pid: str) -> str:
     return pid if pid.startswith("sub-") else f"sub-{pid}"
 
 
-def _normalize_ses_id(value: Any, *, default_session: str = "ses-1") -> str:
+def _normalize_ses_id(value: Any, *, default_session: str = "ses-01") -> str:
+    import re
+
     ses = str(value).strip() if value is not None else ""
     if not ses or ses.lower() == "nan":
         return default_session
-    if ses.startswith("ses-"):
-        return ses
 
-    import re
+    # Strip ses- prefix if present, then re-normalize
+    num_part = ses[4:] if ses.startswith("ses-") else ses
 
-    m = re.match(r"^(?:t|visit)?\s*(\d+)\s*$", ses, flags=re.IGNORECASE)
+    # Check for numeric values (including t1/visit1 patterns)
+    m = re.match(r"^(?:t|visit)?\s*(\d+)\s*$", num_part, flags=re.IGNORECASE)
     if m:
         return f"ses-{int(m.group(1)):02d}"
 
-    return f"ses-{ses}"
+    # Non-numeric labels pass through (e.g., "baseline")
+    return f"ses-{num_part}"
 
 
 def _debug_print_file_head(input_path: Path, num_lines: int = 4):

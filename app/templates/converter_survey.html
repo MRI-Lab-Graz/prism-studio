@@ -101,9 +101,15 @@
                                     <div class="form-text">Map source IDs to participant_id (two-column TSV/CSV).</div>
                                 </div>
                                 <div class="col-md-6" id="convertSessionGroup">
-                                    <label for="convertSession" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control border-warning" id="convertSession" placeholder="e.g. 1, 2, 3..." required>
-                                    <div class="form-text text-warning">Creates 'ses-1', 'ses-2', etc.</div>
+                                    <label for="convertSessionSelect" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <select class="form-select" id="convertSessionSelect">
+                                            <option value="">Select session...</option>
+                                        </select>
+                                        <input type="text" class="form-control" id="convertSessionCustom"
+                                               placeholder="or type: 1, baseline..." style="max-width: 35%;">
+                                    </div>
+                                    <div class="form-text text-warning" id="convertSessionHint">Creates 'ses-01', 'ses-02', etc.</div>
                                 </div>
                             </div>
 

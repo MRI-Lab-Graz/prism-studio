@@ -16,6 +16,17 @@ import zipfile
 import defusedxml.ElementTree as ET
 from datetime import date
 
+# Implicit levels for question types that don't store answers in the XML <answers> section
+IMPLICIT_LEVELS = {
+    "Y": {"Y": "Yes", "N": "No"},  # Yes/No question
+    "G": {"M": "Male", "F": "Female"},  # Gender question
+    "C": {"Y": "Yes", "U": "Uncertain", "N": "No"},  # Array (Yes/Uncertain/No)
+    "E": {"I": "Increase", "S": "Same", "D": "Decrease"},  # Array (Increase/Same/Decrease)
+    "A": {str(i): str(i) for i in range(1, 6)},  # Array (5 Point Choice): 1-5
+    "B": {str(i): str(i) for i in range(1, 11)},  # Array (10 Point Choice): 1-10
+    "5": {str(i): str(i) for i in range(1, 6)},  # 5 Point Choice (simple): 1-5
+}
+
 
 def parse_limesurvey_structure(lss_path):
     """
@@ -90,13 +101,17 @@ def parse_limesurvey_structure(lss_path):
     prism_questions = {}
 
     for qid, q_data in q_map.items():
+        q_type = q_data.get("type", "")
+        # Use implicit levels for question types without explicit answers
+        effective_answers = q_data["answers"] if q_data["answers"] else IMPLICIT_LEVELS.get(q_type, {})
+
         # Handle different question types
         # Simple questions
         if "subquestions" not in q_data:
             key = q_data["code"]
             entry = {"Description": q_data["text"]}
-            if q_data["answers"]:
-                entry["Levels"] = q_data["answers"]
+            if effective_answers:
+                entry["Levels"] = effective_answers
 
             prism_questions[key] = entry
 
@@ -108,8 +123,8 @@ def parse_limesurvey_structure(lss_path):
                 # LimeSurvey export usually combines them in the data CSV as Parent_Sub
                 key = f"{parent_code}_{sub['code']}"
                 entry = {"Description": f"{q_data['text']} - {sub['text']}"}
-                if q_data["answers"]:
-                    entry["Levels"] = q_data["answers"]
+                if effective_answers:
+                    entry["Levels"] = effective_answers
 
                 prism_questions[key] = entry
 

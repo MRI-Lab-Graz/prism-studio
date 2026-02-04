@@ -195,6 +195,31 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "message": "Dataset consistency warning",
         "fix_hint": "Check for missing sessions or modalities across subjects",
     },
+    # Procedure/Session errors (7xx)
+    "PRISM701": {
+        "message": "Session on disk not declared in project.json",
+        "fix_hint": "Add this session to the Sessions array in project.json, or use the session picker in the converter",
+    },
+    "PRISM702": {
+        "message": "Declared session has no data on disk",
+        "fix_hint": "Convert data for this session, or remove it from project.json if it was added by mistake",
+    },
+    "PRISM703": {
+        "message": "Task on disk not declared in session",
+        "fix_hint": "Register this task in the session's tasks array in project.json",
+    },
+    "PRISM704": {
+        "message": "Declared non-optional task has no data on disk",
+        "fix_hint": "Convert data for this task, mark it as optional, or remove it from the session",
+    },
+    "PRISM705": {
+        "message": "Task references undefined TaskDefinition",
+        "fix_hint": "Add this task to the TaskDefinitions object in project.json with at least a modality",
+    },
+    "PRISM706": {
+        "message": "Sessions array is empty — no procedure defined yet",
+        "fix_hint": "Define your study procedure in the Sessions array, or convert data with save-to-project to auto-register",
+    },
     # Internal/System (9xx)
     "PRISM901": {
         "message": "Internal validation error",
