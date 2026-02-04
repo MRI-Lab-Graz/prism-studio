@@ -1087,6 +1087,7 @@ def api_recipes_surveys():
     modality = (data.get("modality") or "survey").strip().lower() or "survey"
     out_format = (data.get("format") or "csv").strip().lower() or "csv"
     survey_filter = (data.get("survey") or "").strip() or None
+    sessions = (data.get("sessions") or "").strip() or None
     lang = (data.get("lang") or "en").strip().lower() or "en"
     layout = (data.get("layout") or "long").strip().lower() or "long"
     include_raw = bool(data.get("include_raw", False))
@@ -1189,6 +1190,8 @@ def api_recipes_surveys():
             cmd_parts.append(f'--recipes "{effective_recipe_dir}"')
         if survey_filter:
             cmd_parts.append(f'--survey "{survey_filter}"')
+        if sessions:
+            cmd_parts.append(f'--sessions "{sessions}"')
         if out_format != "flat":
             cmd_parts.append(f"--format {out_format}")
         if layout != "long":
@@ -1208,6 +1211,7 @@ def api_recipes_surveys():
             repo_root=repo_root,
             recipe_dir=effective_recipe_dir,
             survey=survey_filter,
+            sessions=sessions,
             out_format=out_format,
             modality=modality,
             lang=lang,
@@ -1971,6 +1975,27 @@ def list_library_files_merged():
         return jsonify(results)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@tools_bp.route("/api/recipes-sessions", methods=["GET"])
+def api_recipes_sessions():
+    """List available session folders in a PRISM dataset."""
+    dataset_path = (request.args.get("dataset_path") or "").strip()
+    if not dataset_path or not os.path.isdir(dataset_path):
+        return jsonify({"sessions": []}), 200
+
+    roots = [Path(dataset_path)]
+    rawdata_path = Path(dataset_path) / "rawdata"
+    if rawdata_path.is_dir():
+        roots.append(rawdata_path)
+
+    session_ids: set[str] = set()
+    for root in roots:
+        for ses_path in root.glob("sub-*/ses-*"):
+            if ses_path.is_dir():
+                session_ids.add(ses_path.name)
+
+    return jsonify({"sessions": sorted(session_ids)}), 200
 
 
 @tools_bp.route("/api/list-library-files")

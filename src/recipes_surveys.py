@@ -1079,14 +1079,14 @@ def _handle_wide_pivot(
     try:
         # Pivot the score columns
         df_wide = df.pivot(index="participant_id", columns="session", values=out_header)
-        # Flatten multi-index columns: "ses-1_total_score"
+        # Flatten multi-index columns: "total_score_ses-1"
         if isinstance(df_wide.columns, pd.MultiIndex):
             # df.pivot with multiple values returns MultiIndex (value, session)
             # We want (session, value)
-            df_wide.columns = [f"{ses}_{val}" for val, ses in df_wide.columns]
+            df_wide.columns = [f"{val}_{ses}" for val, ses in df_wide.columns]
         else:
             # Only one score column
-            df_wide.columns = [f"{ses}_{out_header[0]}" for ses in df_wide.columns]
+            df_wide.columns = [f"{out_header[0]}_{ses}" for ses in df_wide.columns]
 
         df = df_wide.reset_index().fillna("n/a")
         # Update out_header to reflect new columns for metadata building
@@ -1094,6 +1094,58 @@ def _handle_wide_pivot(
         return df, new_header, None
     except Exception as e:
         return df, out_header, f"Could not create wide layout: {e}"
+
+
+def _normalize_sessions(sessions: str | list[str] | None) -> list[str] | None:
+    """Normalize user-provided sessions to ['ses-<id>', ...] or None for all."""
+    if sessions is None:
+        return None
+    if isinstance(sessions, list):
+        raw = sessions
+    else:
+        raw = [s for s in str(sessions).replace(";", ",").split(",")]
+
+    cleaned: list[str] = []
+    for s in raw:
+        token = str(s).strip()
+        if not token:
+            continue
+        if token.lower() == "all":
+            return None
+        if not token.startswith("ses-"):
+            token = f"ses-{token}"
+        cleaned.append(token)
+
+    if not cleaned:
+        return None
+    return sorted(set(cleaned))
+
+
+def _filter_tsv_files_by_sessions(
+    tsv_files: list[Path], sessions: list[str] | None
+) -> list[Path]:
+    if not sessions:
+        return tsv_files
+    selected = set(sessions)
+    filtered: list[Path] = []
+    for p in tsv_files:
+        _sub_id, ses_id = _infer_sub_ses_from_path(p)
+        if not ses_id:
+            ses_id = "ses-1"
+        if ses_id in selected:
+            filtered.append(p)
+    return filtered
+
+
+def _apply_session_suffix(
+    columns: list[str], *, session: str, ignore: set[str]
+) -> dict[str, str]:
+    """Return rename map to append session suffix to selected columns."""
+    return {
+        c: f"{c}_{session}"
+        for c in columns
+        if c not in ignore and not c.endswith(f"_{session}")
+    }
 
 
 def _export_recipe_aggregated(
@@ -1110,6 +1162,7 @@ def _export_recipe_aggregated(
     participants_meta: dict,
     output_prism_root: Path,
     survey_task: str,
+    selected_sessions: list[str] | None,
 ) -> tuple[int, int, Path | None, str | None, list[str]]:
     """Process all files for one recipe and write a single aggregated output file."""
     import pandas as pd
@@ -1171,6 +1224,7 @@ def _export_recipe_aggregated(
     except Exception:
         pass
 
+    participant_cols: list[str] = []
     # Merge participant variables (age, sex, etc.) if available
     if participants_df is not None:
         participant_cols = [c for c in participants_df.columns if c != "participant_id"]
@@ -1188,6 +1242,19 @@ def _export_recipe_aggregated(
                 + [c for c in final_header if c in df.columns]
             )
             df = df.loc[:, [c for c in ordered_cols if c in df.columns]]
+
+    if (
+        out_format in {"csv", "sav", "save"}
+        and layout == "long"
+        and selected_sessions
+        and len(selected_sessions) == 1
+    ):
+        ignore = {"participant_id", "session"} | set(participant_cols)
+        rename_map = _apply_session_suffix(
+            list(df.columns), session=selected_sessions[0], ignore=ignore
+        )
+        if rename_map:
+            df = df.rename(columns=rename_map)
 
     # Metadata building
     sidecar_meta = _get_sidecar_for_task(output_prism_root, modality, survey_task)
@@ -1412,7 +1479,7 @@ def _finalize_flat_output(
             # Melt and Pivot to handle session-specific columns
             id_vars = ["participant_id", "session", "survey"]
             df_melt = df_flat.melt(id_vars=id_vars, value_vars=score_cols).dropna()
-            df_melt["col_name"] = df_melt["session"] + "_" + df_melt["variable"]
+            df_melt["col_name"] = df_melt["variable"] + "_" + df_melt["session"]
 
             df_wide = df_melt.pivot(
                 index="participant_id", columns="col_name", values="value"
@@ -1454,6 +1521,7 @@ def compute_survey_recipes(
     repo_root: str | Path,
     recipe_dir: str | Path | None = None,
     survey: str | None = None,
+    sessions: str | list[str] | None = None,
     out_format: str = "flat",
     modality: str = "survey",
     lang: str = "en",
@@ -1468,6 +1536,7 @@ def compute_survey_recipes(
             repo_root: Repository root (used to locate recipe JSONs).
             recipe_dir: Optional custom folder containing recipe JSONs.
             survey: Optional comma-separated recipe ids to apply.
+            sessions: Optional comma-separated session ids (e.g., "ses-1,ses-2").
             out_format: "flat" (default), "prism", "csv", "xlsx", "save", "r".
             lang: Language for metadata labels (e.g., "en", "de").
             layout: "long" (default) or "wide" for repeated measures.
@@ -1509,7 +1578,14 @@ def compute_survey_recipes(
 
     # 2. Scan dataset for TSV files based on modality
     tsv_files = _find_tsv_files(prism_root, modality)
+    selected_sessions = _normalize_sessions(sessions)
+    if selected_sessions:
+        tsv_files = _filter_tsv_files_by_sessions(tsv_files, selected_sessions)
     if not tsv_files:
+        if selected_sessions:
+            raise ValueError(
+                f"No {modality} TSV files found for sessions {', '.join(selected_sessions)} under: {prism_root}"
+            )
         raise ValueError(f"No {modality} TSV files found under: {prism_root}")
 
     # 3. Load participants data (for merging demographic data)
@@ -1576,6 +1652,7 @@ def compute_survey_recipes(
                 participants_meta=participants_meta,
                 output_prism_root=output_prism_root,
                 survey_task=survey_task,
+                    selected_sessions=selected_sessions,
             )
             processed_files += p_count
             written_files += w_count
