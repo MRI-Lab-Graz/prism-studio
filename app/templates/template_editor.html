@@ -96,30 +96,27 @@
     <div class="card feature-card mb-4">
       <div class="card-body p-4">
         <div class="row g-4">
-          <!-- Left Column: Library Selection -->
+          <!-- Left Column: Template Selection -->
           <div class="col-md-7 border-end">
+            <!-- Project Templates (Writable) -->
             <div class="mb-4">
-              <label class="form-label fw-bold">Library folder</label>
-              <div class="input-group">
-                <input id="libraryPath" type="text" class="form-control" placeholder="/path/to/survey_library" />
-                <button class="btn btn-outline-secondary" id="btnBrowseLibrary" type="button">
-                  <i class="fas fa-folder-open me-1"></i>Browse
-                </button>
-              </div>
-              <div class="form-text mb-1">
-                <strong>Important:</strong> All saves go to <code>project/code/library/{modality}/</code><br>
-                Global templates remain read-only. Editing a global template creates a project-local copy.
-              </div>
-              <div id="projectLibraryStatus" class="form-text text-muted mt-1">Detecting writable custom library...</div>
+              <label class="form-label fw-bold"><i class="fas fa-folder text-success me-1"></i>Project Templates</label>
+              <select id="projectTemplateSelect" class="form-select">
+                <option value="">(none in project)</option>
+              </select>
+              <div class="form-text text-success" id="projectTemplateInfo"></div>
             </div>
 
-            <div>
-              <label class="form-label fw-bold">Library template</label>
-              <select id="templateSelect" class="form-select">
+            <!-- Global Templates (Read-only) -->
+            <div class="mb-4">
+              <label class="form-label fw-bold"><i class="fas fa-globe text-info me-1"></i>Global Templates</label>
+              <select id="globalTemplateSelect" class="form-select">
                 <option value="">(select one)</option>
               </select>
-              <div class="form-text" id="libraryInfo"></div>
+              <div class="form-text text-info" id="globalTemplateInfo"></div>
             </div>
+
+            <div id="projectLibraryStatus" class="form-text text-muted mt-2">Detecting project library...</div>
           </div>
 
           <!-- Right Column: Configuration & Actions -->
@@ -159,20 +156,12 @@
         <hr class="my-4" />
 
         <div class="row g-3 align-items-end">
-          <div class="col-md-6">
-            <label class="form-label">Output filename</label>
-            <input id="filename" type="text" class="form-control" placeholder="survey-mytemplate.json" />
-            <div class="form-text">
-              Filename for saving to project library or downloading.<br>
-              <strong>Tip:</strong> Keep the same name as a global template to override it in your project.
-            </div>
-          </div>
-          <div class="col-md-6 d-flex gap-2 justify-content-end">
+          <div class="col-md-12 d-flex gap-2 justify-content-end">
             <button class="btn btn-success" id="btnValidate" type="button">
               <i class="fas fa-check me-1"></i>Validate
             </button>
-            <button class="btn btn-primary" id="btnSave" type="button" disabled data-bs-toggle="tooltip" title="Saves to project/code/library/{modality}/">
-              <i class="fas fa-save me-1"></i>Save to Project Library
+            <button class="btn btn-primary" id="btnSave" type="button" disabled data-bs-toggle="tooltip" title="Saves to project/code/library/{modality}/ (overwrites)">
+              <i class="fas fa-save me-1"></i>Save to Project
             </button>
             <button class="btn btn-outline-secondary" id="btnDownload" type="button" disabled>
               <i class="fas fa-download me-1"></i>Download JSON
@@ -340,12 +329,11 @@
 (function() {
   const modalityEl = document.getElementById('modality');
   const schemaEl = document.getElementById('schemaVersion');
-  const templateSelectEl = document.getElementById('templateSelect');
-  const libraryInfoEl = document.getElementById('libraryInfo');
-  const libraryPathEl = document.getElementById('libraryPath');
+  const projectTemplateSelectEl = document.getElementById('projectTemplateSelect');
+  const globalTemplateSelectEl = document.getElementById('globalTemplateSelect');
+  const projectTemplateInfoEl = document.getElementById('projectTemplateInfo');
+  const globalTemplateInfoEl = document.getElementById('globalTemplateInfo');
   const projectLibraryStatusEl = document.getElementById('projectLibraryStatus');
-  const btnBrowseLibrary = document.getElementById('btnBrowseLibrary');
-  const filenameEl = document.getElementById('filename');
   const topLevelFormEl = document.getElementById('topLevelForm');
   const itemFormEl = document.getElementById('itemForm');
   const bulkEditFormEl = document.getElementById('bulkEditForm');
@@ -517,7 +505,7 @@
   }
 
   function renderMissingSummary() {
-    if (!missingSummaryEl) return;
+    if (!missingSummaryEl || !hasUserInteracted) return;
     const missing = recomputeMissingFields();
     if (!missing.length) {
       missingSummaryEl.innerHTML = '';
@@ -810,6 +798,126 @@
   }
 
   function createInput(fieldSchema, value, onChange, fieldName = '') {
+    // Special handling for Description and Instructions - use textarea for better UX
+    if (['Description', 'Instructions'].includes(fieldName)) {
+      const schemaTypes = Array.isArray(fieldSchema.type) ? fieldSchema.type : (fieldSchema.type ? [fieldSchema.type] : []);
+      const allowsObject = schemaTypes.includes('object');
+      const allowsString = schemaTypes.includes('string');
+
+      // If it's a translation object, render translation table
+      if (allowsObject && isTranslationObject(value)) {
+        const container = document.createElement('div');
+        const translationTable = document.createElement('div');
+        const langEntries = Object.entries(value || {});
+
+        for (const [lang, text] of langEntries) {
+          const row = document.createElement('div');
+          row.className = 'row g-2 align-items-start mb-3';
+
+          const langCol = document.createElement('div');
+          langCol.className = 'col-auto';
+          const langLabel = document.createElement('span');
+          langLabel.className = 'form-control-plaintext fw-bold mono';
+          langLabel.textContent = lang;
+          langCol.appendChild(langLabel);
+
+          const textCol = document.createElement('div');
+          textCol.className = 'col';
+          const textArea = document.createElement('textarea');
+          textArea.className = 'form-control';
+          textArea.rows = 4;
+          textArea.value = text || '';
+          textArea.addEventListener('input', () => {
+            value[lang] = textArea.value;
+            onChange(Object.assign({}, value));
+          });
+          textCol.appendChild(textArea);
+          row.appendChild(langCol);
+          row.appendChild(textCol);
+          translationTable.appendChild(row);
+        }
+
+        const addLangBtn = document.createElement('button');
+        addLangBtn.type = 'button';
+        addLangBtn.className = 'btn btn-sm btn-outline-secondary mt-1';
+        addLangBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Add language';
+        addLangBtn.addEventListener('click', () => {
+          const newLang = prompt('Enter language code (e.g., en, de):');
+          if (!newLang || !/^[a-z]{2}(-[A-Z]{2})?$/.test(newLang.trim())) {
+            if (newLang !== null) alert('Invalid language code.');
+            return;
+          }
+          const lang = newLang.trim();
+          if (value[lang] !== undefined) {
+            alert('Language already exists.');
+            return;
+          }
+          value[lang] = '';
+          onChange(Object.assign({}, value));
+          // Re-render
+          const parentCol = container.closest('[data-field-path]');
+          if (parentCol) {
+            const path = parentCol.getAttribute('data-field-path');
+            const parts = path.split('/');
+            if (parts.length === 2) {
+              const sectionKey = parts[0];
+              const mount = parentCol.closest('.row')?.parentElement;
+              if (mount && currentTemplate[sectionKey]) {
+                const sch = getSectionSchema(sectionKey);
+                if (sch) renderSection(sectionKey, currentTemplate[sectionKey], sch, mount);
+                enableTooltips();
+              }
+            }
+          }
+        });
+
+        container.appendChild(translationTable);
+        container.appendChild(addLangBtn);
+        return container;
+      }
+
+      // String|object hybrid - render as textarea with convert button
+      if (allowsObject && allowsString && !isTranslationObject(value)) {
+        const container = document.createElement('div');
+        const ta = document.createElement('textarea');
+        ta.className = 'form-control';
+        ta.rows = 6;
+        ta.value = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
+        ta.placeholder = '— Not set —';
+        ta.addEventListener('input', () => onChange(ta.value));
+        container.appendChild(ta);
+
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
+        toggleBtn.innerHTML = '<i class="fas fa-globe me-1"></i>Convert to multilingual';
+        toggleBtn.addEventListener('click', () => {
+          const currentVal = ta.value || '';
+          const lang = (currentTemplate && currentTemplate.Technical && currentTemplate.Technical.Language) || 'en';
+          const translationObj = {};
+          translationObj[lang] = currentVal;
+          onChange(translationObj);
+          // Replace by re-rendering the parent section
+          const parentCol = container.closest('[data-field-path]');
+          if (parentCol) {
+            const path = parentCol.getAttribute('data-field-path');
+            const parts = path.split('/');
+            if (parts.length === 2) {
+              const sectionKey = parts[0];
+              const mount = parentCol.closest('.row')?.parentElement;
+              if (mount && currentTemplate[sectionKey]) {
+                const sch = getSectionSchema(sectionKey);
+                if (sch) renderSection(sectionKey, currentTemplate[sectionKey], sch, mount);
+                enableTooltips();
+              }
+            }
+          }
+        });
+        container.appendChild(toggleBtn);
+        return container;
+      }
+    }
+
     // Special handling for Language field - dropdown with de-AT and en-UK
     if (fieldName === 'Language' && !Array.isArray(fieldSchema.enum)) {
       const sel = document.createElement('select');
@@ -1577,7 +1685,9 @@
 
   function renderFieldInRow(sectionKey, name, fieldSchema, required, targetObj, row) {
     const col = document.createElement('div');
-    col.className = 'col-md-6';
+    // Make Description and Instructions full-width for better UX
+    const isFullWidth = ['Description', 'Instructions'].includes(name);
+    col.className = isFullWidth ? 'col-12' : 'col-md-6';
 
     const isRequired = required.includes(name);
     col.appendChild(makeLabel(name, fieldSchema, isRequired));
@@ -1597,7 +1707,7 @@
     if (input.classList.contains('form-check-input')) {
       const wrap = document.createElement('div');
       wrap.className = 'form-check';
-      wrap.appendChild(input);
+      wrap.appendChild(wrap);
       col.appendChild(wrap);
     } else {
       col.appendChild(input);
@@ -2687,63 +2797,58 @@
 
   // Store template metadata for source-aware loading
   let templateMetadata = {};
+  let hasUserInteracted = false; // Track if user has interacted (loaded/edited/validated)
 
   async function refreshTemplateList() {
     const modality = modalityEl.value;
-    const library_path = (libraryPathEl.value || '').trim();
     clearAlert();
     btnDownload.disabled = true;
     btnSave.disabled = true;
     templateMetadata = {};
 
-    // Use merged API if no specific library path is provided
-    if (!library_path) {
-      const data = await apiGet(`/api/template-editor/list-merged?modality=${encodeURIComponent(modality)}`);
+    // Always use merged API (shows both project and global templates)
+    const data = await apiGet(`/api/template-editor/list-merged?modality=${encodeURIComponent(modality)}`);
 
-      templateSelectEl.innerHTML = '<option value="">(select one)</option>';
-      for (const t of (data.templates || [])) {
-        const opt = document.createElement('option');
-        opt.value = t.filename;
-        // Add source badge to display text
-        const badge = getSourceBadge(t.source);
-        opt.textContent = `${t.filename} ${badge}`;
-        opt.dataset.source = t.source;
-        opt.dataset.path = t.path;
-        opt.dataset.readonly = t.readonly;
-        templateSelectEl.appendChild(opt);
-        templateMetadata[t.filename] = t;
-      }
+    const projectTemplates = (data.templates || []).filter(t => t.source === 'project');
+    const globalTemplates = (data.templates || []).filter(t => t.source !== 'project');
 
-      projectLibraryRoot = data.sources?.project_library_path || null;
-      projectLibraryExists = Boolean(data.sources?.project_library_exists);
-      const infoLines = [];
-      if (projectLibraryRoot) {
-        infoLines.push(`<small class="d-block text-success">Project (writable): ${projectLibraryRoot}</small>`);
-      }
-      if (data.sources?.global_library_path) {
-        infoLines.push(`<small class="d-block text-info">Global (read-only): ${data.sources.global_library_path}</small>`);
-      }
-      infoLines.push('<small class="d-block text-muted">Saving always targets the project library (custom templates).</small>');
-      libraryInfoEl.innerHTML = infoLines.join('');
-
-    } else {
-      // Use original API when specific library path is provided
-      const qp = new URLSearchParams({ modality });
-      qp.set('library_path', library_path);
-      const data = await apiGet(`/api/template-editor/list?${qp.toString()}`);
-
-      templateSelectEl.innerHTML = '<option value="">(select one)</option>';
-      for (const name of (data.templates || [])) {
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
-        templateSelectEl.appendChild(opt);
-      }
-
-      const baseInfo = data.library_dir ? `<small class="d-block text-muted">Library: ${data.library_dir}</small>` : '';
-      libraryInfoEl.innerHTML = `${baseInfo}<small class="d-block text-muted">Saving always targets the project library (custom templates only).</small>`;
-      projectLibraryExists = false;
+    // Populate project templates dropdown
+    projectTemplateSelectEl.innerHTML = '<option value="">(none in project)</option>';
+    for (const t of projectTemplates) {
+      const opt = document.createElement('option');
+      opt.value = t.filename;
+      opt.textContent = t.filename;
+      opt.dataset.source = t.source;
+      opt.dataset.path = t.path;
+      opt.dataset.readonly = t.readonly;
+      projectTemplateSelectEl.appendChild(opt);
+      templateMetadata[t.filename] = t;
     }
+
+    // Populate global templates dropdown
+    globalTemplateSelectEl.innerHTML = '<option value="">(select one)</option>';
+    for (const t of globalTemplates) {
+      const opt = document.createElement('option');
+      opt.value = t.filename;
+      opt.textContent = t.filename;
+      opt.dataset.source = t.source;
+      opt.dataset.path = t.path;
+      opt.dataset.readonly = t.readonly;
+      globalTemplateSelectEl.appendChild(opt);
+      templateMetadata[t.filename] = t;
+    }
+
+    projectLibraryRoot = data.sources?.project_library_path || null;
+    projectLibraryExists = Boolean(data.sources?.project_library_exists);
+    
+    projectTemplateInfoEl.innerHTML = projectLibraryRoot 
+      ? `<small>${projectLibraryRoot}</small>`
+      : '<small class="text-muted">No project selected</small>';
+    
+    globalTemplateInfoEl.innerHTML = data.sources?.global_library_path
+      ? `<small>${data.sources.global_library_path}</small>`
+      : '<small class="text-muted">No global library</small>';
+
     updateProjectLibraryStatus();
   }
 
@@ -2769,18 +2874,19 @@
     currentTemplate = data.template;
     originalTemplate = null; // no baseline for new templates
     checkedItemIds.clear();
-    filenameEl.value = data.suggested_filename || `${modality}-new.json`;
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     renderAll();
     renderJsonDiff();
-    await validateCurrent();
+    // Don't validate empty template on initial load - only validate after user edits
   }
 
   async function loadSelectedTemplate() {
     const modality = modalityEl.value;
     const schema_version = schemaEl.value;
-    const filename = templateSelectEl.value;
-    let library_path = (libraryPathEl.value || '').trim();
+    
+    // Try to get filename from either project or global dropdown
+    const filename = projectTemplateSelectEl.value || globalTemplateSelectEl.value;
+    
     if (!filename) {
       showAlert('warning', 'Select a template to load.');
       return;
@@ -2794,26 +2900,38 @@
 
     // Check if we have metadata from merged list
     const meta = templateMetadata[filename];
-    if (meta && meta.path) {
-      // Use the directory of the template path
-      const pathParts = meta.path.replace(/\\/g, '/').split('/');
-      pathParts.pop(); // Remove filename
-      pathParts.pop(); // Remove modality folder
-      library_path = pathParts.join('/');
-    }
 
     const qp = new URLSearchParams({
       modality,
       schema_version,
       filename
     });
-    if (library_path) qp.set('library_path', library_path);
+    
+    // Extract library_path from the full path stored in metadata
+    if (meta && meta.path) {
+      // Path format: /path/to/library/{modality}/{filename}
+      // We need to extract: /path/to/library
+      const normalizedPath = meta.path.replace(/\\/g, '/'); // handle Windows paths
+      const pathParts = normalizedPath.split('/');
+      
+      // Find the index of the modality folder
+      const modalityIdx = pathParts.lastIndexOf(modality);
+      if (modalityIdx > 0) {
+        // Library root is two levels up from modality: /...../library/survey/file.json
+        // So we want everything up to and including 'library'
+        const libraryPath = pathParts.slice(0, modalityIdx).join('/');
+        if (libraryPath) {
+          qp.set('library_path', libraryPath);
+        }
+      }
+    }
+    
     const data = await apiGet(`/api/template-editor/load?${qp.toString()}`);
     currentTemplate = data.template;
     originalTemplate = cloneDeep(data.template);
     checkedItemIds.clear();
-    filenameEl.value = data.filename || filename;
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
+    hasUserInteracted = true; // User is now loading a template
     renderAll();
     renderJsonDiff();
     await validateCurrent();
@@ -2839,6 +2957,7 @@
       return;
     }
 
+    hasUserInteracted = true; // User is now validating
     ensureTemplateNormalized();
     const data = await apiPost('/api/template-editor/validate', {
       modality,
@@ -2889,17 +3008,15 @@
       return;
     }
 
-    const filename = (filenameEl.value || '').trim();
-    if (!filename) {
-      showAlert('danger', 'Please enter an output filename');
-      return;
-    }
-
     const modality = modalityEl.value;
     if (!projectLibraryRoot) {
       showAlert('danger', '<strong>No project selected!</strong><br>All template saves go to <code>project/code/library/{modality}/</code><br>Please select or create a project first.');
       return;
     }
+
+    // Generate filename from template TaskName (try Metadata first, then Study)
+    const templateName = (obj.Metadata && obj.Metadata.TaskName) || (obj.Study && obj.Study.TaskName) || 'template';
+    const filename = `survey-${templateName.toLowerCase().replace(/\\s+/g, '-')}.json`;
 
     ensureTemplateNormalized();
     try {
@@ -2908,7 +3025,7 @@
         filename,
         template: obj,
       });
-      showAlert('success', `✅ Saved to project library: <code>${projectLibraryRoot}/${modality}/${filename}</code><br><small>This project version will override any global template with the same name.</small>`);
+      showAlert('success', `✅ Saved to project library: <code>${projectLibraryRoot}/${modality}/${filename}</code><br><small>This overwrites any previous version with the same name.</small>`);
       await refreshTemplateList();
     } catch (e) {
       showAlert('danger', `Save failed: ${e.message}`);
@@ -2923,7 +3040,10 @@
     }
 
     ensureTemplateNormalized();
-    const filename = (filenameEl.value || '').trim() || `${modalityEl.value}-template.json`;
+    
+    // Generate filename from template TaskName (try Metadata first, then Study)
+    const templateName = (obj.Metadata && obj.Metadata.TaskName) || (obj.Study && obj.Study.TaskName) || 'template';
+    const filename = `survey-${templateName.toLowerCase().replace(/\\s+/g, '-')}.json`;
 
     const res = await fetch('/api/template-editor/download', {
       method: 'POST',
@@ -2979,7 +3099,6 @@
       currentTemplate = data.template;
       originalTemplate = null; // no baseline for imports
       checkedItemIds.clear();
-      filenameEl.value = data.suggested_filename || `survey-imported.json`;
       selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
       renderAll();
 
@@ -3008,14 +3127,6 @@
     }
   });
 
-  libraryPathEl.addEventListener('change', async () => {
-    try {
-      await refreshTemplateList();
-    } catch (e) {
-      showAlert('danger', e.message);
-    }
-  });
-
   selectAllItemsEl.addEventListener('change', () => {
     const keys = itemKeysFromTemplate(currentTemplate);
     if (selectAllItemsEl.checked) {
@@ -3024,18 +3135,6 @@
       checkedItemIds.clear();
     }
     renderItemList();
-  });
-
-  btnBrowseLibrary.addEventListener('click', async () => {
-    try {
-      const data = await apiGet('/api/browse-folder');
-      if (data.path) {
-        libraryPathEl.value = data.path;
-        await refreshTemplateList();
-      }
-    } catch (e) {
-      showAlert('danger', e.message);
-    }
   });
 
   schemaEl.addEventListener('change', async () => {
@@ -3053,6 +3152,19 @@
       await loadNewTemplate();
     } catch (e) {
       showAlert('danger', e.message);
+    }
+  });
+
+  // Dropdown synchronization: selecting from one clears the other
+  projectTemplateSelectEl.addEventListener('change', () => {
+    if (projectTemplateSelectEl.value) {
+      globalTemplateSelectEl.value = '';
+    }
+  });
+
+  globalTemplateSelectEl.addEventListener('change', () => {
+    if (globalTemplateSelectEl.value) {
+      projectTemplateSelectEl.value = '';
     }
   });
 
@@ -3134,23 +3246,6 @@
       projectLibraryRoot = data.project_library_path || null;
       projectLibraryExists = Boolean(data.project_library_exists);
       updateProjectLibraryStatus();
-
-      // Don't set path if user has already entered something
-      if (libraryPathEl.value.trim()) {
-        return;
-      }
-
-      // When a project is active, leave path empty so refreshTemplateList()
-      // uses the merged API (shows both global + project templates with
-      // source badges).  Only fall back to the global path when there is
-      // no project at all.
-      if (data.project_library_path) {
-        // path stays empty → merged API will be used
-        libraryInfoEl.innerHTML = `<small class="text-success"><i class="fas fa-folder me-1"></i>Project: ${data.project_name || 'Current project'}</small>`;
-      } else if (data.global_library_path) {
-        libraryPathEl.value = data.global_library_path;
-        libraryInfoEl.innerHTML = `<small class="text-info"><i class="fas fa-globe me-1"></i>Global library</small>`;
-      }
     } catch (e) {
       console.warn('Could not auto-load library path:', e);
     }
