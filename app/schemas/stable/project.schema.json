@@ -226,6 +226,30 @@
                 "condition": {
                   "type": "string",
                   "description": "Condition/group assignment for this task (for between-subjects designs)"
+                },
+                "executionGroup": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Execution order within session. Tasks with same group run simultaneously. Lower groups run first."
+                },
+                "source": {
+                  "type": "object",
+                  "description": "Provenance: which conversion produced this task's data",
+                  "properties": {
+                    "file": {
+                      "type": "string",
+                      "description": "Source filename"
+                    },
+                    "converter": {
+                      "type": "string",
+                      "enum": ["survey-xlsx", "survey-lsa", "biometrics", "physio", "eyetracking", "manual"],
+                      "description": "Which converter produced the data"
+                    },
+                    "convertedAt": {
+                      "type": "string",
+                      "description": "ISO date of conversion"
+                    }
+                  }
                 }
               },
               "required": ["task"]

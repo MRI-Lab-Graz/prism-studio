@@ -25,9 +25,15 @@
                     <input class="form-control" type="file" id="biometricsDataFile" accept=".xlsx,.csv,.tsv">
                 </div>
                 <div class="col-md-6">
-                    <label for="biometricsSession" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control border-warning" id="biometricsSession" placeholder="e.g. 1 (creates ses-1)" required>
-                    <div class="form-text text-warning">Creates 'ses-1', 'ses-2', etc.</div>
+                    <label for="biometricsSessionSelect" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <select class="form-select" id="biometricsSessionSelect">
+                            <option value="">Select session...</option>
+                        </select>
+                        <input type="text" class="form-control" id="biometricsSessionCustom"
+                               placeholder="or type: 1, baseline..." style="max-width: 35%;">
+                    </div>
+                    <div class="form-text text-warning" id="biometricsSessionHint">Creates 'ses-01', 'ses-02', etc.</div>
                 </div>
             </div>
 

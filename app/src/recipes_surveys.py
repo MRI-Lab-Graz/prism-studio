@@ -1307,7 +1307,7 @@ def _export_recipe_aggregated(
         if not sub_id:
             continue
         if not ses_id:
-            ses_id = "ses-1"
+            ses_id = "ses-01"
 
         in_header, in_rows = _read_tsv_rows(in_path)
         if not in_header or not in_rows:
@@ -1613,7 +1613,7 @@ def _export_recipe_legacy(
         if not sub_id:
             continue
         if not ses_id:
-            ses_id = "ses-1"
+            ses_id = "ses-01"
 
         in_header, in_rows = _read_tsv_rows(in_path)
         if not in_header or not in_rows:
@@ -1892,7 +1892,7 @@ def compute_survey_recipes(
                     if not sub_id:
                         continue
                     if not ses_id:
-                        ses_id = "ses-1"
+                        ses_id = "ses-01"
 
                     in_header, in_rows = _read_tsv_rows(in_path)
                     if not in_header or not in_rows:

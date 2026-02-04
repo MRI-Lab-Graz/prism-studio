@@ -1016,6 +1016,98 @@ document.addEventListener('DOMContentLoaded', function() {
     const convertSessionGroup = document.getElementById('convertSessionGroup');
     const templateResultsContainer = document.getElementById('templateResultsContainer');
 
+    // --- Session Picker: populate from declared sessions ---
+    const convertSessionSelect = document.getElementById('convertSessionSelect');
+    const convertSessionCustom = document.getElementById('convertSessionCustom');
+    const biometricsSessionSelect = document.getElementById('biometricsSessionSelect');
+    const biometricsSessionCustom = document.getElementById('biometricsSessionCustom');
+
+    function populateSessionPickers() {
+        fetch('/api/projects/sessions/declared')
+            .then(r => r.json())
+            .then(data => {
+                const sessions = data.sessions || [];
+                [convertSessionSelect, biometricsSessionSelect].forEach(sel => {
+                    if (!sel) return;
+                    // Clear existing options except the first placeholder
+                    while (sel.options.length > 1) sel.remove(1);
+                    sessions.forEach(s => {
+                        const opt = document.createElement('option');
+                        // Strip ses- prefix for display value (converter adds it back)
+                        opt.value = s.id.replace(/^ses-/, '');
+                        opt.textContent = s.label !== s.id ? `${s.id} — ${s.label}` : s.id;
+                        sel.appendChild(opt);
+                    });
+                });
+            })
+            .catch(() => {});
+    }
+
+    // Resolve the effective session value: select wins if set, otherwise custom input
+    function getSessionValue(selectEl, customEl) {
+        const selVal = selectEl ? selectEl.value.trim() : '';
+        const custVal = customEl ? customEl.value.trim() : '';
+        return selVal || custVal;
+    }
+
+    function getSurveySessionValue() {
+        return getSessionValue(convertSessionSelect, convertSessionCustom);
+    }
+
+    function getBiometricsSessionValue() {
+        return getSessionValue(biometricsSessionSelect, biometricsSessionCustom);
+    }
+
+    // Clear custom input when a declared session is selected
+    if (convertSessionSelect) {
+        convertSessionSelect.addEventListener('change', function() {
+            if (this.value && convertSessionCustom) convertSessionCustom.value = '';
+        });
+    }
+    if (convertSessionCustom) {
+        convertSessionCustom.addEventListener('input', function() {
+            if (this.value && convertSessionSelect) convertSessionSelect.value = '';
+        });
+    }
+    if (biometricsSessionSelect) {
+        biometricsSessionSelect.addEventListener('change', function() {
+            if (this.value && biometricsSessionCustom) biometricsSessionCustom.value = '';
+        });
+    }
+    if (biometricsSessionCustom) {
+        biometricsSessionCustom.addEventListener('input', function() {
+            if (this.value && biometricsSessionSelect) biometricsSessionSelect.value = '';
+        });
+    }
+
+    // Register conversion result in project.json
+    function registerSessionInProject(sessionId, tasks, modality, sourceFile, converter) {
+        if (!sessionId || !tasks || !tasks.length) return;
+        fetch('/api/projects/sessions/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                session_id: sessionId,
+                tasks: tasks,
+                modality: modality,
+                source_file: sourceFile || '',
+                converter: converter || 'manual',
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                console.log(`Registered in project.json: ${data.session_id} → ${data.registered_tasks.join(', ')}`);
+                // Refresh session pickers to reflect the new registration
+                populateSessionPickers();
+            }
+        })
+        .catch(() => {});
+    }
+
+    // Populate session pickers on load
+    populateSessionPickers();
+
     // Get current conversion mode
     function getConvertMode() {
         return document.querySelector('input[name="convertMode"]:checked')?.value || 'data';
@@ -1948,10 +2040,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     const diffHtml = diffParts.length
                         ? `<small class="d-block text-muted" style="font-size:0.7rem">${diffParts.join(', ')}</small>`
                         : '';
-                    // Show "Use Library" button for exact/high matches
+                    // Show "Use Library" button for exact/high matches (but not for participants matches)
                     const sourceLabel = m.source === 'project' ? 'project' : 'library';
                     const sourceIcon = m.source === 'project' ? 'fa-folder' : 'fa-globe';
-                    const useLibBtn = (m.suggested_action === 'use_library' || m.suggested_action === 'use_participants')
+                    // Don't show "Use library version" for participants matches - there's no participants template in the library
+                    const useLibBtn = (m.suggested_action === 'use_library' && !m.is_participants)
                         ? `<button class="btn btn-sm btn-outline-primary use-library-btn mt-1" data-name="${name}" data-template-key="${m.template_key}" data-is-participants="${m.is_participants || false}"><i class="fas fa-book me-1"></i>Use ${sourceLabel} version</button>`
                         : '';
                     matchHtml = `
@@ -2573,12 +2666,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // DATA CONVERSION MODE — session is required
-        const sessionVal = document.getElementById('convertSession') ? document.getElementById('convertSession').value.trim() : '';
+        const sessionVal = getSurveySessionValue();
 
         if (!sessionVal) {
             convertError.textContent = 'Please enter a session ID (e.g., 1, 2, 3).';
             convertError.classList.remove('d-none');
-            document.getElementById('convertSession')?.focus();
+            (convertSessionCustom || convertSessionSelect)?.focus();
             return;
         }
 
@@ -2707,6 +2800,16 @@ document.addEventListener('DOMContentLoaded', function() {
             // Display conversion summary (template matches, tool columns, unmatched) before validation
             if (data.conversion_summary) {
                 displayConversionSummary(data.conversion_summary);
+            }
+
+            // Register conversion in project.json Sessions/TaskDefinitions
+            const regSessionVal = getSurveySessionValue();
+            const regTasks = (data.conversion_summary && data.conversion_summary.tasks_included) || [];
+            if (regSessionVal && regTasks.length) {
+                const srcFile = file ? file.name : '';
+                const srcExt = srcFile.toLowerCase().split('.').pop();
+                const convType = (srcExt === 'lsa') ? 'survey-lsa' : 'survey-xlsx';
+                registerSessionInProject(regSessionVal, regTasks, 'survey', srcFile, convType);
             }
 
             if (data.validation) {
@@ -2972,7 +3075,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('id_column', previewIdCol);
         }
 
-        const sessionVal = document.getElementById('convertSession') ? document.getElementById('convertSession').value.trim() : '';
+        const sessionVal = getSurveySessionValue();
         if (sessionVal) {
             formData.append('session', sessionVal);
         }
@@ -3324,11 +3427,11 @@ document.addEventListener('DOMContentLoaded', function() {
             biometricsInfo.textContent = '';
             resetBiometricsUI();
 
-            const sessionVal = document.getElementById('biometricsSession') ? document.getElementById('biometricsSession').value.trim() : '';
+            const sessionVal = getBiometricsSessionValue();
             if (!sessionVal) {
                 biometricsError.textContent = 'Please enter a session ID (e.g., 1, 2, 3).';
                 biometricsError.classList.remove('d-none');
-                document.getElementById('biometricsSession')?.focus();
+                (biometricsSessionCustom || biometricsSessionSelect)?.focus();
                 return;
             }
 
@@ -3426,11 +3529,11 @@ document.addEventListener('DOMContentLoaded', function() {
             biometricsInfo.textContent = '';
             resetBiometricsUI();
 
-            const sessionVal = document.getElementById('biometricsSession') ? document.getElementById('biometricsSession').value.trim() : '';
+            const sessionVal = getBiometricsSessionValue();
             if (!sessionVal) {
                 biometricsError.textContent = 'Please enter a session ID (e.g., 1, 2, 3).';
                 biometricsError.classList.remove('d-none');
-                document.getElementById('biometricsSession')?.focus();
+                (biometricsSessionCustom || biometricsSessionSelect)?.focus();
                 return;
             }
 
@@ -3525,7 +3628,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('data', file);
             // Library path is now resolved automatically (project first, then global)
 
-            const sessionVal = document.getElementById('biometricsSession') ? document.getElementById('biometricsSession').value.trim() : '';
+            const sessionVal = getBiometricsSessionValue();
             formData.append('session', sessionVal);
             appendLog(`Forcing session ID: ${sessionVal}`, 'step', biometricsLog);
 
@@ -3580,8 +3683,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     const byteArray = new Uint8Array(byteNumbers);
                     currentBiometricsZipBlob = new Blob([byteArray], {type: 'application/zip'});
-                    
+
                     appendLog('Conversion complete. Click the download button below.', 'success', biometricsLog);
+                }
+
+                // Register biometrics conversion in project.json
+                const bioSessionVal = getBiometricsSessionValue();
+                if (bioSessionVal && selectedTasks && selectedTasks.length) {
+                    const bioFile = biometricsDataFile.files?.[0]?.name || '';
+                    registerSessionInProject(bioSessionVal, selectedTasks, 'biometrics', bioFile, 'biometrics');
                 }
             })
             .catch(err => {
