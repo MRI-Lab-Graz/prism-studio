@@ -103,6 +103,18 @@
         </div>
 
         <div class="col-md-4">
+          <label class="form-label">Sessions</label>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="derivSessionsAll" checked>
+            <label class="form-check-label" for="derivSessionsAll">
+              All sessions (default)
+            </label>
+          </div>
+          <select class="form-select mt-2" id="derivSessions" multiple size="4" disabled></select>
+          <div class="form-text">Uncheck “All sessions” to pick specific sessions.</div>
+        </div>
+
+        <div class="col-md-4">
           <div class="form-check mb-2">
             <input class="form-check-input" type="checkbox" id="derivIncludeRaw">
             <label class="form-check-label" for="derivIncludeRaw">
@@ -203,6 +215,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const derivBrowseBtn = document.getElementById('derivBrowseBtn');
   const derivFormat = document.getElementById('derivFormat');
   const derivSurvey = document.getElementById('derivSurvey');
+  const derivSessionsAll = document.getElementById('derivSessionsAll');
+  const derivSessions = document.getElementById('derivSessions');
   const derivRunBtn = document.getElementById('derivRunBtn');
   const derivError = document.getElementById('derivError');
   const derivInfo = document.getElementById('derivInfo');
@@ -237,6 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(data => {
         if (data.path) {
           derivDatasetPath.value = data.path;
+          refreshSessions();
         } else if (data.error) {
           alert('Folder picker unavailable: ' + data.error);
         }
@@ -267,6 +282,51 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  function refreshSessions() {
+    const datasetPath = derivDatasetPath.value.trim();
+    if (!datasetPath) {
+      derivSessions.innerHTML = '';
+      return;
+    }
+    fetch(`/api/recipes-sessions?dataset_path=${encodeURIComponent(datasetPath)}`)
+      .then(r => r.json())
+      .then(data => {
+        const sessions = (data && data.sessions) ? data.sessions : [];
+        derivSessions.innerHTML = '';
+        if (sessions.length === 0) {
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = 'No sessions found';
+          derivSessions.appendChild(opt);
+          return;
+        }
+        for (const ses of sessions) {
+          const opt = document.createElement('option');
+          opt.value = ses;
+          opt.textContent = ses;
+          derivSessions.appendChild(opt);
+        }
+      })
+      .catch(() => {
+        derivSessions.innerHTML = '';
+      });
+  }
+
+  derivDatasetPath.addEventListener('change', refreshSessions);
+  derivDatasetPath.addEventListener('blur', refreshSessions);
+
+  derivSessionsAll.addEventListener('change', function() {
+    const all = derivSessionsAll.checked;
+    derivSessions.disabled = all;
+  });
+  function getSessionsFilter() {
+    if (derivSessionsAll.checked) return '';
+    const selected = Array.from(derivSessions.selectedOptions)
+      .map(opt => opt.value)
+      .filter(Boolean);
+    return selected.join(',');
+  }
+
   derivRunBtn.addEventListener('click', function() {
     runRecipeProcessing(false);
   });
@@ -291,6 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
       modality: document.getElementById('derivModality').value,
       format: derivFormat.value,
       survey: derivSurvey.value.trim(),
+        sessions: getSessionsFilter(),
       lang: document.getElementById('derivLang').value,
       layout: document.getElementById('derivLayout').value,
       include_raw: document.getElementById('derivIncludeRaw').checked,
@@ -314,6 +375,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (payload.mask_questions) logToTerminal(`🔒 Masking copyrighted question text`, 'warning');
       }
       if (payload.survey) logToTerminal(`Recipe filter: ${payload.survey}`);
+      if (payload.sessions) logToTerminal(`Sessions filter: ${payload.sessions}`);
     }
     derivInfo.textContent = 'Running processing... this may take a moment.';
     derivInfo.classList.remove('d-none');
