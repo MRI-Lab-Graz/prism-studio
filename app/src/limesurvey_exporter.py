@@ -5,6 +5,8 @@ from datetime import datetime
 import os
 import io
 
+from src.text_sanitizer import sanitize_answer_text
+
 logger = logging.getLogger(__name__)
 
 
@@ -27,6 +29,14 @@ LS_QUESTION_CODE_MAX_LENGTH = 15
 # - Default limit is 5 characters (can be increased in LS settings, but we use 5 for compatibility)
 # - Only alphanumeric characters allowed
 LS_ANSWER_CODE_MAX_LENGTH = 5
+
+# LimeSurvey subquestion code limits:
+# - Default limit is 5 characters (same as answer codes)
+# - Must start with a letter (a-z, A-Z)
+# - Only alphanumeric characters allowed
+# - Must be unique within the parent question
+# See: https://www.limesurvey.org/manual/Adding_answers_or_subquestions
+LS_SUBQUESTION_CODE_MAX_LENGTH = 5
 
 
 def _sanitize_answer_code(
@@ -91,6 +101,113 @@ def _sanitize_answer_code(
             return candidate
 
     return sanitized[:max_length]  # Last resort
+
+
+def _sanitize_subquestion_code(
+    code: str,
+    existing_codes: set,
+    run_number: int | None = None,
+    subquestion_index: int = 1,
+    max_length: int = LS_SUBQUESTION_CODE_MAX_LENGTH
+) -> str:
+    """
+    Sanitize subquestion code for LimeSurvey compatibility.
+
+    LimeSurvey subquestion codes have a 5-character limit (same as answer codes).
+    This function creates short, unique codes that preserve as much meaning as possible.
+
+    Strategy:
+    - For short codes (<=5 chars): use as-is if valid
+    - For longer codes: create abbreviated version with run suffix if needed
+    - Ensure uniqueness within the parent question
+
+    Args:
+        code: Original question code (e.g., "BFAS01", "LOT_R_01")
+        existing_codes: Set of already-used codes within this parent question
+        run_number: Run number for multi-run surveys (None or 1 = no suffix, 2+ = add suffix)
+        subquestion_index: 1-based index of this subquestion (used as fallback)
+        max_length: Maximum allowed length (default: 5)
+
+    Returns:
+        Sanitized unique code (e.g., "BFA01", "SQ01", "B1R2")
+
+    Examples:
+        "BFAS01" -> "BFA01" or "SQ001"
+        "BFAS01" with run=2 -> "B1R02" or "S1R02"
+        "LOT_R_01" -> "LOT01"
+    """
+    import re
+
+    # Remove non-alphanumeric characters
+    sanitized = re.sub(r"[^a-zA-Z0-9]", "", code)
+
+    # Ensure it starts with a letter
+    if sanitized and not sanitized[0].isalpha():
+        sanitized = "S" + sanitized
+
+    if not sanitized:
+        sanitized = "SQ"
+
+    # For multi-run surveys, we need to encode run info in a very short code
+    if run_number and run_number > 1:
+        # Strategy: Use format like "X1R2" where X=first letter, 1=item number, R2=run 2
+        # This gives us meaningful codes that fit in 5 chars
+
+        # Extract any numbers from the original code
+        numbers = re.findall(r"\d+", code)
+        item_num = numbers[0] if numbers else str(subquestion_index)
+
+        # Keep item number short (1-2 digits)
+        item_num = item_num[-2:] if len(item_num) > 2 else item_num
+
+        # Format: FirstLetter + ItemNum + R + RunNum
+        # e.g., "B01R2" for BFAS01 run 2
+        first_letter = sanitized[0].upper()
+        run_suffix = f"R{run_number}"
+
+        # Calculate available space for item number
+        available = max_length - len(first_letter) - len(run_suffix)
+        item_num = item_num[:available] if available > 0 else ""
+
+        candidate = f"{first_letter}{item_num}{run_suffix}"
+
+        if candidate not in existing_codes:
+            return candidate
+
+        # If collision, try with subquestion index
+        candidate = f"S{subquestion_index}R{run_number}"[:max_length]
+        if candidate not in existing_codes:
+            return candidate
+    else:
+        # No run suffix needed - try to preserve meaningful part of code
+        if len(sanitized) <= max_length:
+            if sanitized not in existing_codes:
+                return sanitized
+        else:
+            # Abbreviate: take first 3 chars + last 2 digits (if any)
+            numbers = re.findall(r"\d+", sanitized)
+            if numbers:
+                last_num = numbers[-1][-2:]  # Last 2 digits of last number
+                prefix_len = max_length - len(last_num)
+                candidate = sanitized[:prefix_len] + last_num
+            else:
+                candidate = sanitized[:max_length]
+
+            if candidate not in existing_codes:
+                return candidate
+
+    # Fallback: generate sequential code SQ001, SQ002, etc.
+    for i in range(1, 1000):
+        if run_number and run_number > 1:
+            # Include run number in fallback
+            candidate = f"S{i}R{run_number}"[:max_length]
+        else:
+            candidate = f"SQ{i:03d}"[:max_length]
+
+        if candidate not in existing_codes:
+            return candidate
+
+    return f"SQ{subquestion_index}"[:max_length]
 
 
 def _sanitize_question_code(
@@ -1161,12 +1278,17 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
 
                 # Add Subquestions
                 sub_sort = 0
+                used_subq_codes = set()  # Track codes within this matrix
                 for code, data_item in group:
                     sub_sort += 1
                     sub_qid = str(qid_counter)
                     qid_counter += 1
 
-                    sub_q_code = _apply_run_suffix(code, run_number)
+                    # Sanitize subquestion code to fit 5-char limit
+                    sub_q_code = _sanitize_subquestion_code(
+                        code, used_subq_codes, run_number, sub_sort
+                    )
+                    used_subq_codes.add(sub_q_code)
 
                     if is_v6:
                         sub_q_row = {
@@ -1213,7 +1335,7 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
                             add_row(answers_rows, ans_row)
 
                             for lang in languages:
-                                a_text = get_text(answer_text, lang, i18n_data, f"{first_code}.Levels.{code}")
+                                a_text = sanitize_answer_text(get_text(answer_text, lang, i18n_data, f"{first_code}.Levels.{code}"))
                                 add_row(answer_l10ns_rows, {
                                     "id": str(l10n_id_counter), "qid": qid, "code": sanitized_code,
                                     "answer": a_text, "language": lang, "sid": sid,
@@ -1221,7 +1343,7 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
                                 l10n_id_counter += 1
                         else:
                             for lang in languages:
-                                a_text = get_text(answer_text, lang, i18n_data, f"{first_code}.Levels.{code}")
+                                a_text = sanitize_answer_text(get_text(answer_text, lang, i18n_data, f"{first_code}.Levels.{code}"))
                                 ans_row = {
                                     "qid": qid, "code": sanitized_code,
                                     "sortorder": str(sort_ans), "assessment_value": "0", "scale_id": "0",
@@ -1309,7 +1431,7 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
                             add_row(answers_rows, ans_row)
 
                             for lang in languages:
-                                a_text = get_text(answer_text, lang, i18n_data, f"{first_code}.Levels.{code}")
+                                a_text = sanitize_answer_text(get_text(answer_text, lang, i18n_data, f"{first_code}.Levels.{code}"))
                                 add_row(answer_l10ns_rows, {
                                     "id": str(l10n_id_counter), "qid": qid, "code": sanitized_code,
                                     "answer": a_text, "language": lang, "sid": sid,
@@ -1317,7 +1439,7 @@ def generate_lss(json_files, output_path=None, language="en", languages=None,
                                 l10n_id_counter += 1
                         else:
                             for lang in languages:
-                                a_text = get_text(answer_text, lang, i18n_data, f"{first_code}.Levels.{code}")
+                                a_text = sanitize_answer_text(get_text(answer_text, lang, i18n_data, f"{first_code}.Levels.{code}"))
                                 ans_row = {
                                     "qid": qid, "code": sanitized_code,
                                     "sortorder": str(sort_ans), "assessment_value": "0", "scale_id": "0",
@@ -1915,6 +2037,7 @@ def generate_lss_from_customization(
 
                 # Add Subquestions
                 sub_sort = 0
+                used_subq_codes = set()  # Track codes within this matrix
                 for q in q_group:
                     sub_sort += 1
                     sub_qid = str(qid_counter)
@@ -1922,7 +2045,11 @@ def generate_lss_from_customization(
 
                     q_code = q.get("questionCode", f"SQ{sub_sort}")
                     run_num = q.get("runNumber")
-                    sub_q_code = _apply_run_suffix(q_code, run_num)
+                    # Sanitize subquestion code to fit 5-char limit
+                    sub_q_code = _sanitize_subquestion_code(
+                        q_code, used_subq_codes, run_num, sub_sort
+                    )
+                    used_subq_codes.add(sub_q_code)
 
                     sub_source_data = _get_question_from_source(q)
                     sub_orig = sub_source_data if sub_source_data else q.get("originalData", {})
@@ -1979,7 +2106,7 @@ def generate_lss_from_customization(
                             add_row(answers_rows, ans_row)
 
                             for lang in languages:
-                                a_text = get_text(answer_text, lang, matrix_i18n, f"{first_q_code}.Levels.{code}")
+                                a_text = sanitize_answer_text(get_text(answer_text, lang, matrix_i18n, f"{first_q_code}.Levels.{code}"))
                                 add_row(answer_l10ns_rows, {
                                     "id": str(l10n_id_counter), "qid": qid, "code": sanitized_code,
                                     "answer": a_text, "language": lang, "sid": sid,
@@ -1987,7 +2114,7 @@ def generate_lss_from_customization(
                                 l10n_id_counter += 1
                         else:
                             for lang in languages:
-                                a_text = get_text(answer_text, lang, matrix_i18n, f"{first_q_code}.Levels.{code}")
+                                a_text = sanitize_answer_text(get_text(answer_text, lang, matrix_i18n, f"{first_q_code}.Levels.{code}"))
                                 ans_row = {
                                     "qid": qid, "code": sanitized_code,
                                     "sortorder": str(sort_ans), "assessment_value": "0", "scale_id": "0",
@@ -2133,7 +2260,7 @@ def generate_lss_from_customization(
                             add_row(answers_rows, ans_row)
 
                             for lang in languages:
-                                a_text = get_text(answer_text, lang, i18n_data, f"{q_code}.Levels.{code}")
+                                a_text = sanitize_answer_text(get_text(answer_text, lang, i18n_data, f"{q_code}.Levels.{code}"))
                                 add_row(answer_l10ns_rows, {
                                     "id": str(l10n_id_counter), "qid": qid, "code": sanitized_code,
                                     "answer": a_text, "language": lang, "sid": sid,
@@ -2141,7 +2268,7 @@ def generate_lss_from_customization(
                                 l10n_id_counter += 1
                         else:
                             for lang in languages:
-                                a_text = get_text(answer_text, lang, i18n_data, f"{q_code}.Levels.{code}")
+                                a_text = sanitize_answer_text(get_text(answer_text, lang, i18n_data, f"{q_code}.Levels.{code}"))
                                 ans_row = {
                                     "qid": qid, "code": sanitized_code,
                                     "sortorder": str(sort_ans), "assessment_value": "0", "scale_id": "0",
