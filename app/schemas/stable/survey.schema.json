@@ -337,7 +337,7 @@
           }
         }
       },
-      "required": ["TaskName", "OriginalName", "LicenseID", "License"]
+      "required": ["TaskName", "OriginalName", "LicenseID"]
     },
     "Normative": {
       "type": "object",
