@@ -237,6 +237,25 @@ def validate_dataset(
     consistency_warnings = stats.check_consistency()
     issues.extend(consistency_warnings)
 
+    # Procedure validation: cross-check declared sessions/tasks vs. on-disk data
+    if run_prism:
+        # project.json lives one level above rawdata/ in YODA layout
+        rawdata_parent = os.path.dirname(root_dir)
+        project_json = os.path.join(rawdata_parent, "project.json")
+        if not os.path.exists(project_json):
+            # Also check root_dir itself (non-YODA layout)
+            project_json = os.path.join(root_dir, "project.json")
+            rawdata_parent = root_dir
+
+        if os.path.exists(project_json):
+            from procedure_validator import validate_procedure
+            from pathlib import Path as _Path
+
+            procedure_issues = validate_procedure(
+                _Path(rawdata_parent), _Path(root_dir)
+            )
+            issues.extend(procedure_issues)
+
     # If no subjects were discovered, this usually means the user pointed
     # the validator at the wrong directory (or the dataset is empty).
     # Treat this as an error so users get a non-zero exit status.

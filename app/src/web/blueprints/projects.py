@@ -1381,9 +1381,16 @@ def register_session():
     if not session_id:
         return jsonify({"success": False, "error": "session_id is required"}), 400
 
-    # Normalize session_id to ses-<label> format
+    # Normalize session_id to ses-<label> format with zero-padding for numeric values
     if not session_id.startswith("ses-"):
         session_id = f"ses-{session_id}"
+    # Ensure zero-padding for numeric session IDs
+    num_part = session_id[4:]  # Strip "ses-" prefix
+    try:
+        n = int(num_part)
+        session_id = f"ses-{n:02d}"
+    except ValueError:
+        pass  # Non-numeric labels pass through as-is
 
     # Validate session ID pattern
     if not re.match(r"^ses-[a-zA-Z0-9]+$", session_id):

@@ -720,6 +720,8 @@ Subfolders:
                 "data_access": "",
                 "notes": "",
             },
+            "Sessions": [],
+            "TaskDefinitions": {},
         }
 
     def _create_contributors_template(self, config: Dict[str, Any]) -> Dict[str, Any]:

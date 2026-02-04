@@ -78,6 +78,101 @@ _log_file_head = log_file_head
 _resolve_effective_library_path = resolve_effective_library_path
 
 
+def _extract_tasks_from_output(output_root: Path) -> list:
+    """Extract unique task names from BIDS-style filenames in output directory."""
+    tasks = set()
+    for f in output_root.rglob("*"):
+        if f.is_file() and "_task-" in f.name:
+            m = re.search(r"_task-([a-zA-Z0-9]+)", f.name)
+            if m:
+                tasks.add(m.group(1))
+    return sorted(tasks)
+
+
+def _register_session_in_project(
+    project_path: Path,
+    session_id: str,
+    tasks: list,
+    modality: str,
+    source_file: str,
+    converter: str,
+):
+    """Register conversion output in project.json Sessions/TaskDefinitions.
+
+    This is a backend-side helper called after save-to-project file copy.
+    It mirrors the logic in the /api/projects/sessions/register endpoint
+    so that registrations happen even when the client-side JS call doesn't fire.
+    """
+    if not session_id or not tasks:
+        return
+
+    pj_path = project_path / "project.json"
+    if not pj_path.exists():
+        return
+
+    try:
+        with open(pj_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return
+
+    if "Sessions" not in data:
+        data["Sessions"] = []
+    if "TaskDefinitions" not in data:
+        data["TaskDefinitions"] = {}
+
+    # Normalize session_id with zero-padding for numeric values
+    if not session_id.startswith("ses-"):
+        session_id = f"ses-{session_id}"
+    # Ensure zero-padding for numeric session IDs
+    num_part = session_id[4:]  # Strip "ses-" prefix
+    try:
+        n = int(num_part)
+        session_id = f"ses-{n:02d}"
+    except ValueError:
+        pass  # Non-numeric labels pass through as-is
+
+    # Find or create session
+    target = None
+    for s in data["Sessions"]:
+        if s.get("id") == session_id:
+            target = s
+            break
+    if target is None:
+        target = {"id": session_id, "label": session_id, "tasks": []}
+        data["Sessions"].append(target)
+    if "tasks" not in target:
+        target["tasks"] = []
+
+    from datetime import date
+
+    today = date.today().isoformat()
+    source_obj = {
+        "file": source_file,
+        "converter": converter,
+        "convertedAt": today,
+    }
+
+    for task_name in tasks:
+        existing = next((t for t in target["tasks"] if t.get("task") == task_name), None)
+        if existing:
+            existing["source"] = source_obj
+        else:
+            target["tasks"].append({"task": task_name, "source": source_obj})
+
+        if task_name not in data["TaskDefinitions"]:
+            data["TaskDefinitions"][task_name] = {"modality": modality}
+
+    try:
+        from src.cross_platform import CrossPlatformFile
+
+        CrossPlatformFile.write_text(
+            str(pj_path), json.dumps(data, indent=2, ensure_ascii=False)
+        )
+    except Exception:
+        pass  # Don't fail conversion if registration fails
+
+
 def _format_unmatched_groups_response(uge, log_messages=None):
     """Build the JSON response dict for an UnmatchedGroupsError."""
     payload = {
@@ -949,6 +1044,15 @@ def api_survey_convert():
                         archive_dest = sourcedata_dir / filename
                         shutil.copy2(input_path, archive_dest)
 
+                    # Register session in project.json
+                    if session_override:
+                        conv_type = "survey-lsa" if suffix == ".lsa" else "survey-xlsx"
+                        tasks_out = _extract_tasks_from_output(output_root)
+                        _register_session_in_project(
+                            p_path, session_override, tasks_out,
+                            "survey", filename, conv_type,
+                        )
+
         mem = io.BytesIO()
         with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
             for p in output_root.rglob("*"):
@@ -1350,6 +1454,23 @@ def api_survey_convert_validate():
                         add_log(
                             f"Archived original file to sourcedata/{filename}", "info"
                         )
+
+                    # Register session in project.json
+                    if session_override:
+                        conv_type = "survey-lsa" if suffix == ".lsa" else "survey-xlsx"
+                        tasks_out = (
+                            convert_result.tasks_included
+                            if convert_result and getattr(convert_result, "tasks_included", None)
+                            else _extract_tasks_from_output(output_root)
+                        )
+                        _register_session_in_project(
+                            project_path, session_override, tasks_out,
+                            "survey", filename, conv_type,
+                        )
+                        add_log(
+                            f"Registered in project.json: ses-{session_override} → {', '.join(tasks_out)}",
+                            "info",
+                        )
                 else:
                     add_log(f"Project path not found: {project_path}", "error")
             else:
@@ -1671,6 +1792,17 @@ def api_biometrics_convert():
                             dest.parent.mkdir(parents=True, exist_ok=True)
                             shutil.copy2(item, dest)
                     log_msg("Project updated successfully!", "success")
+
+                    # Register session in project.json
+                    if session_override and result and getattr(result, "tasks_included", None):
+                        _register_session_in_project(
+                            project_path, session_override, result.tasks_included,
+                            "biometrics", filename, "biometrics",
+                        )
+                        log_msg(
+                            f"Registered in project.json: ses-{session_override} → {', '.join(result.tasks_included)}",
+                            "info",
+                        )
                 else:
                     log_msg(f"Project path not found: {project_path}", "error")
             else:

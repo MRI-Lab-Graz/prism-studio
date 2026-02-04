@@ -544,11 +544,11 @@ def process_excel_biometrics(
             session_clean = session_clean.replace("session", "ses-")
             session_clean = session_clean.replace("visit", "ses-")
             if session_clean in {"t1", "wave1", "visit1"}:
-                session_clean = "ses-1"
+                session_clean = "ses-01"
             elif session_clean in {"t2", "wave2", "visit2"}:
-                session_clean = "ses-2"
+                session_clean = "ses-02"
             elif session_clean in {"t3", "wave3", "visit3"}:
-                session_clean = "ses-3"
+                session_clean = "ses-03"
             if not session_clean.startswith("ses-"):
                 session_clean = f"ses-{session_clean}"
             entry["SessionHint"] = session_clean
@@ -556,11 +556,11 @@ def process_excel_biometrics(
             # Heuristic: extract session from variable name prefix
             lowered_var = var_name.lower()
             if lowered_var.startswith("pre_"):
-                entry["SessionHint"] = "ses-1"
+                entry["SessionHint"] = "ses-01"
             elif lowered_var.startswith("mid_"):
-                entry["SessionHint"] = "ses-2"
+                entry["SessionHint"] = "ses-02"
             elif lowered_var.startswith("post_"):
-                entry["SessionHint"] = "ses-3"
+                entry["SessionHint"] = "ses-03"
 
             # Heuristic: extract run from variable name suffix
             m_run = re.search(r"_(\d+)$", var_name)
