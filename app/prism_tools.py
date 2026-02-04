@@ -133,6 +133,9 @@ def cmd_recipes_surveys(args):
     survey_filter = (
         str(args.survey).strip() if getattr(args, "survey", None) else ""
     ) or None
+    sessions_filter = (
+        str(args.sessions).strip() if getattr(args, "sessions", None) else ""
+    ) or None
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
     include_raw = bool(getattr(args, "include_raw", False))
@@ -144,6 +147,7 @@ def cmd_recipes_surveys(args):
             repo_root=repo_root,
             recipe_dir=recipe_dir,
             survey=survey_filter,
+            sessions=sessions_filter,
             out_format=out_format,
             modality="survey",
             lang=lang,
@@ -201,6 +205,9 @@ def cmd_recipes_biometrics(args):
     biometric_filter = (
         str(args.biometric).strip() if getattr(args, "biometric", None) else ""
     ) or None
+    sessions_filter = (
+        str(args.sessions).strip() if getattr(args, "sessions", None) else ""
+    ) or None
     lang = str(getattr(args, "lang", "en") or "en").strip().lower()
     layout = str(getattr(args, "layout", "long") or "long").strip().lower()
 
@@ -210,6 +217,7 @@ def cmd_recipes_biometrics(args):
             repo_root=repo_root,
             recipe_dir=recipe_dir,
             survey=biometric_filter,
+            sessions=sessions_filter,
             out_format=out_format,
             modality="biometrics",
             lang=lang,
@@ -1707,6 +1715,10 @@ def main():
         help="Optional comma-separated recipe selection (e.g., 'ADS'). Default: run all matching recipes.",
     )
     parser_deriv_surveys.add_argument(
+        "--sessions",
+        help="Optional comma-separated session list (e.g., 'ses-1,ses-2' or '1,2'). Default: all sessions.",
+    )
+    parser_deriv_surveys.add_argument(
         "--format",
         default="flat",
         choices=["prism", "flat", "csv", "xlsx", "sav", "r"],
@@ -1766,6 +1778,10 @@ def main():
         "--biometric",
         "--task",
         help="Optional comma-separated recipe selection (e.g., 'y_balance'). Default: run all matching recipes.",
+    )
+    parser_deriv_biometrics.add_argument(
+        "--sessions",
+        help="Optional comma-separated session list (e.g., 'ses-1,ses-2' or '1,2'). Default: all sessions.",
     )
     parser_deriv_biometrics.add_argument(
         "--format",
