@@ -20,6 +20,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Template Editor — Global Template Access**: Fixed `initializeLibraryPath()` incorrectly setting the library path to project directory, which caused `refreshTemplateList()` to use the non-merged API and hide global templates. Now uses merged API when a project is active, showing both `[Global]` and `[Project]` templates.
 
+## [1.9.2] - 2026-02-05
+
+### Security
+- **MD5 Hash Security**: Fixed all MD5 hash usage by adding `usedforsecurity=False` parameter (HIGH severity - Bandit B324). MD5 is only used for generating short identifier suffixes, not for cryptographic purposes.
+- **XML Parsing Vulnerability**: Replaced insecure `xml.etree.ElementTree` with `defusedxml` to protect against XML bomb attacks (MEDIUM severity - Bandit B314, B405, B408, B318).
+- **Code Injection Prevention**: Added explicit `# nosec B307` annotations to sandboxed `eval()` calls that use restricted SAFE_GLOBALS dictionary for formula evaluation in survey recipes.
+
+### Changed
+- **Security Documentation**: Added clarifying comments for temp directory usage patterns to document that they are read-only validation operations.
+
+### Fixed
+- **Import Safety**: Updated XML imports in pavlovia.py, limesurvey_exporter.py, and prism_to_limesurvey.py to use defusedxml with safe fallbacks.
+- **Code Quality**: Applied Black formatting and Ruff linting fixes across codebase.
+
 ## [1.9.1] - 2026-01-21
 
 ### Fixed

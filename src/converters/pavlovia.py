@@ -13,8 +13,8 @@ import json
 import sys
 from pathlib import Path
 from typing import Dict, List, Any
-import xml.etree.ElementTree as ET
-from xml.dom import minidom
+from defusedxml import ElementTree as ET
+from defusedxml import minidom
 import pandas as pd
 
 # PsychoPy experiment template structure

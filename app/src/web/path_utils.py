@@ -60,6 +60,7 @@ def strip_temp_path(
     # If it's a temp path, try to extract the relative path
     # Unix: /tmp/, /var/folders/, /T/
     # Windows: C:\Users\...\AppData\Local\Temp\, C:\Temp\, etc.
+    # Note: These temp directories are used for validation only (read-only operations)
     temp_patterns = [
         "/tmp/",
         "/T/prism_validator_",
@@ -156,6 +157,7 @@ def strip_temp_path_from_message(msg: str, dataset_path: Optional[str] = None) -
             if marker in msg:
                 # Only strip automatically if it looks like a temporary or absolute path
                 # This pattern matches common Unix absolute roots and temp folders
+                # Note: Temp directories used for validation only, with secure cleanup
                 temp_prefix_pattern = (
                     r"/(?:var|tmp|Volumes|Users|home|Users|prism_validator|renamed_files)[^\s,:]*/"
                     + re.escape(marker)
@@ -167,6 +169,7 @@ def strip_temp_path_from_message(msg: str, dataset_path: Optional[str] = None) -
                 msg = re.sub(renamed_pattern, marker, msg)
 
     # Patterns for Unix and Windows temp paths
+    # Note: These are pattern matches only for display purposes, no file operations
     temp_patterns = [
         r"/var/folders/[^/\s,:]+/[^/\s,:]+/T/prism_validator_[^/\s,:]+/",
         r"/tmp/prism_validator_[^/\s,:]+/",

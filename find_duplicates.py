@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from collections import defaultdict
 
-library_path = Path('official/library/survey')
+library_path = Path("official/library/survey")
 
 IGNORE_KEYS = {
     "Technical",
@@ -14,6 +14,7 @@ IGNORE_KEYS = {
     "Scoring",
     "Normative",
 }
+
 
 def iter_template_items(file_path):
     try:
@@ -32,22 +33,22 @@ def iter_template_items(file_path):
     for item_id, item_def in items.items():
         yield item_id, item_def
 
+
 # Check all files
-target_ids = {'2D_l', '2D_r', '4D_r', '4d_l'}
+target_ids = {"2D_l", "2D_r", "4D_r", "4d_l"}
 found_items = {}
 
 for file_path in sorted(library_path.glob("*.json")):
-    if not (file_path.name.startswith("survey-") or file_path.name.startswith("biometrics-")):
+    if not (
+        file_path.name.startswith("survey-") or file_path.name.startswith("biometrics-")
+    ):
         continue
-        
+
     for item_id, item_def in iter_template_items(file_path):
         if item_id in target_ids:
             if item_id not in found_items:
                 found_items[item_id] = []
-            found_items[item_id].append({
-                'file': file_path.name,
-                'def': item_def
-            })
+            found_items[item_id].append({"file": file_path.name, "def": item_def})
 
 if found_items:
     print("Found the following duplicate item IDs:\n")
@@ -59,15 +60,18 @@ if found_items:
             print(f"      Definition: {json.dumps(loc['def'], indent=8)}")
 else:
     print("No matching item IDs found. Let me check what items exist...\n")
-    
+
     # List all item IDs in library
     all_items = defaultdict(list)
     for file_path in sorted(library_path.glob("*.json")):
-        if not (file_path.name.startswith("survey-") or file_path.name.startswith("biometrics-")):
+        if not (
+            file_path.name.startswith("survey-")
+            or file_path.name.startswith("biometrics-")
+        ):
             continue
         for item_id, _ in iter_template_items(file_path):
             all_items[item_id].append(file_path.name)
-    
+
     # Find items that appear in multiple files
     duplicates = {k: v for k, v in all_items.items() if len(v) > 1}
     if duplicates:
