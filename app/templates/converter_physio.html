@@ -12,70 +12,79 @@
                                 </div>
                             </div>
 
-                            <!-- Sub-tabs for single vs batch -->
-                            <ul class="nav nav-tabs nav-sm mb-3" id="physioSubTabs" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link active" id="physio-single-tab" data-bs-toggle="tab" data-bs-target="#physio-single" type="button" role="tab">
-                                        <i class="fas fa-file me-1"></i>Single File
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="physio-batch-tab" data-bs-toggle="tab" data-bs-target="#physio-batch" type="button" role="tab">
-                                        <i class="fas fa-folder-open me-1"></i>Batch (Multiple Files)
-                                    </button>
-                                </li>
-                            </ul>
-
+                            <!-- Sub-tabs removed - only batch conversion now -->
                             <div class="tab-content" id="physioSubTabContent">
-                                <!-- Single File -->
-                                <div class="tab-pane fade show active" id="physio-single" role="tabpanel">
-                                    <div class="row g-3 align-items-end">
-                                        <div class="col-md-4">
-                                            <label for="physioRawFile" class="form-label">Varioport Recording (.raw or .vpd)</label>
-                                            <input class="form-control" type="file" id="physioRawFile" accept=".raw,.vpd">
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label for="physioTask" class="form-label">Task Name</label>
-                                            <input type="text" class="form-control" id="physioTask" value="rest">
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label for="physioSamplingRate" class="form-label">Sampling Rate (optional)</label>
-                                            <input type="number" class="form-control" id="physioSamplingRate" placeholder="e.g. 256" step="any">
-                                        </div>
-                                        <div class="col-md-4">
-                                            <button class="btn btn-warning text-white w-100" type="button" id="physioConvertBtn" disabled>
-                                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div id="physioError" class="alert alert-danger d-none mt-3"></div>
-                                    <div id="physioInfo" class="alert alert-info d-none mt-3"></div>
-                                </div>
-
-                                <!-- Batch -->
-                                <div class="tab-pane fade" id="physio-batch" role="tabpanel">
+                                <div class="tab-pane fade show active" id="physio-batch" role="tabpanel">
                                     <div class="alert alert-light border mb-3">
                                         <i class="fas fa-info-circle me-2 text-info"></i>
                                         <strong>File naming required:</strong> <code>sub-XXX_ses-YYY_task-ZZZ.raw</code> or <code>.vpd</code>
                                         <br><small class="text-muted">Example: <code>sub-003_ses-1_task-rest.raw</code> · Session is optional</small>
                                     </div>
+                                    
+                                    <!-- Device & Settings Info -->
+                                    <div class="alert alert-info border mb-3">
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-bold text-muted mb-2">Device Type</label>
+                                                <select class="form-select form-select-sm" id="physioBatchDeviceType" disabled>
+                                                    <option selected>Varioport (.raw / .vpd)</option>
+                                                </select>
+                                                <small class="d-block mt-2 text-muted"><i class="fas fa-lightbulb me-1"></i> Currently supports Varioport ECG/EDA devices</small>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-bold text-muted mb-2">Base Sampling Rate</label>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" class="form-control" id="physioBatchSamplingRate" placeholder="512" value="512" step="any">
+                                                    <span class="input-group-text">Hz</span>
+                                                </div>
+                                                <small class="d-block mt-2 text-muted"><i class="fas fa-info-circle me-1"></i> Default: 512 Hz (effective: 256 Hz). Change only if your device uses different rate.</small>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-bold text-muted mb-2">Expected Channels</label>
+                                                <div class="small text-muted">
+                                                    <div>✓ EKG (cardiac)</div>
+                                                    <div>✓ EDA (skin conductance)</div>
+                                                    <div>✓ Marker (events)</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
                                     <div class="row g-3 align-items-end">
                                         <div class="col-md-6">
-                                            <label for="physioBatchFiles" class="form-label">Select Physio Files</label>
+                                            <label for="physioBatchFiles" class="form-label fw-bold">Select Physio Files</label>
                                             <input class="form-control" type="file" id="physioBatchFiles" accept=".raw,.vpd" multiple>
-                                            <small class="text-muted">Select all files (Ctrl+A / Cmd+A)</small>
+                                            <small class="text-muted">Select individual files</small>
                                         </div>
-                                        <div class="col-md-3">
-                                            <label for="physioBatchDatasetName" class="form-label">Dataset Name</label>
-                                            <input type="text" class="form-control" id="physioBatchDatasetName" value="Physio Dataset">
+                                        <div class="col-md-6">
+                                            <div>
+                                                <label for="physioBatchFolder" class="form-label fw-bold">Or Select a Folder</label>
+                                                <div class="input-group">
+                                                    <input class="form-control" type="file" id="physioBatchFolder" webkitdirectory directory multiple>
+                                                    <button class="btn btn-outline-primary" type="button" id="autoDetectPhysioBtn" title="Auto-detect sourcedata/physio folder">
+                                                        <i class="fas fa-folder-open me-2"></i>Auto-detect
+                                                    </button>
+                                                </div>
+                                                <small class="text-muted">Select sourcedata/physio/ folder to convert all files at once</small>
+                                                <small class="d-block text-muted mt-1" id="autoDetectHint"></small>
+                                            </div>
                                         </div>
-                                        <div class="col-md-3">
-                                            <label for="physioBatchSamplingRate" class="form-label">Sampling Rate (optional)</label>
-                                            <input type="number" class="form-control" id="physioBatchSamplingRate" placeholder="e.g. 256" step="any">
+                                    </div>
+                                    <!-- Hidden field for auto-detected folder path -->
+                                    <input type="hidden" id="physioBatchFolderPath">
+                                    <div class="row g-3 mt-2 align-items-center">
+                                        <div class="col-md-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="physioBatchDryRun">
+                                                <label class="form-check-label" for="physioBatchDryRun">
+                                                    <i class="fas fa-flask me-2"></i><strong>Dry-run mode</strong>
+                                                </label>
+                                                <small class="d-block text-muted mt-1">Preview what will be converted without creating files</small>
+                                            </div>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-md-6">
                                             <button class="btn btn-warning text-white w-100" type="button" id="physioBatchConvertBtn" disabled>
-                                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert All & Download
+                                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert & Save to Project
                                             </button>
                                         </div>
                                     </div>
