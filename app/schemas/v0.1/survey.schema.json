@@ -22,11 +22,12 @@
         },
         "SoftwarePlatform": {
           "type": "string",
-          "description": "Software platform used for data collection (e.g., LimeSurvey, REDCap, Qualtrics)"
+          "enum": ["LimeSurvey", "PsychoPy", "Pavlovia", "Paper and Pencil", "Other"],
+          "description": "Software platform used for data collection (LimeSurvey, PsychoPy, Pavlovia, Paper and Pencil, etc.)"
         },
         "SoftwareVersion": {
           "type": "string",
-          "description": "Version of the survey software platform"
+          "description": "Version of the survey software platform (not required for Paper and Pencil)"
         },
         "Language": {
           "type": "string",
@@ -44,7 +45,7 @@
           "description": "How the survey was administered"
         }
       },
-      "required": ["StimulusType", "FileFormat", "Language", "Respondent"]
+      "required": ["StimulusType", "FileFormat", "SoftwarePlatform", "Language", "Respondent"]
     },
     "I18n": {
       "type": "object",

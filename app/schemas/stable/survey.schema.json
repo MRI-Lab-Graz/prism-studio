@@ -22,11 +22,12 @@
         },
         "SoftwarePlatform": {
           "type": "string",
-          "description": "Software platform used for data collection (e.g., LimeSurvey, REDCap, Qualtrics)"
+          "enum": ["LimeSurvey", "PsychoPy", "Pavlovia", "Paper and Pencil", "Other", ""],
+          "description": "Software platform used for data collection (LimeSurvey, PsychoPy, Pavlovia, Paper and Pencil, etc.)"
         },
         "SoftwareVersion": {
           "type": "string",
-          "description": "Version of the survey software platform"
+          "description": "Version of the survey software platform (not required for Paper and Pencil)"
         },
         "Language": {
           "type": "string",
@@ -42,36 +43,9 @@
           "type": "string",
           "enum": ["online", "paper", "interview", "phone", "mixed", ""],
           "description": "How the survey was administered"
-        },
-        "Equipment": {
-          "type": ["string", "object"],
-          "description": "Equipment used for measurement (e.g., Stopwatch, Cycle Ergometer, Dynamometer)"
-        },
-        "EquipmentManufacturer": {
-          "type": "string",
-          "description": "Manufacturer of the equipment"
-        },
-        "EquipmentModel": {
-          "type": "string", 
-          "description": "Model name/number of the equipment"
-        },
-        "CalibrationDate": {
-          "type": "string",
-          "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$",
-          "description": "Date of last equipment calibration"
-        },
-        "Supervisor": {
-          "type": "string",
-          "enum": ["investigator", "physician", "trainer", "physiotherapist", "self", ""],
-          "description": "Who supervised the assessment"
-        },
-        "Location": {
-          "type": "string",
-          "enum": ["laboratory", "clinic", "gym", "field", "home", ""],
-          "description": "Where the assessment was conducted"
         }
       },
-      "required": ["StimulusType", "FileFormat", "Language", "Respondent"]
+      "required": ["StimulusType", "FileFormat", "SoftwarePlatform", "Language", "Respondent"]
     },
     "I18n": {
       "type": "object",
