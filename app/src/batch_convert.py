@@ -353,8 +353,14 @@ def convert_physio_file(
                 )
 
                 if log_callback:
-                    log_callback(f"  🔄 Converting Varioport {ext.upper()} → EDF format...", "info")
-                    log_callback(f"  📊 Reading binary data, extracting channels, resampling...", "info")
+                    log_callback(
+                        f"  🔄 Converting Varioport {ext.upper()} → EDF format...",
+                        "info",
+                    )
+                    log_callback(
+                        "  📊 Reading binary data, extracting channels, resampling...",
+                        "info",
+                    )
 
                 convert_varioport(
                     str(source_path),
@@ -368,12 +374,18 @@ def convert_physio_file(
                     output_files.append(out_edf)
                     if log_callback:
                         edf_size = out_edf.stat().st_size / (1024 * 1024)  # MB
-                        log_callback(f"  ✅ Converted to EDF: {out_edf.name} ({edf_size:.2f} MB)", "success")
+                        log_callback(
+                            f"  ✅ Converted to EDF: {out_edf.name} ({edf_size:.2f} MB)",
+                            "success",
+                        )
 
             except ImportError:
                 # Fallback: just copy file and create root sidecar
                 if log_callback:
-                    log_callback(f"  ⚠️ Variport converter not available, copying raw file", "warning")
+                    log_callback(
+                        "  ⚠️ Variport converter not available, copying raw file",
+                        "warning",
+                    )
                 out_data = out_folder / f"{base_name}.{ext}"
                 out_root_json = (
                     output_dir / f"task-{task.replace('task-', '')}_physio.json"

@@ -380,7 +380,11 @@ def prism_logo():
   <text x=\"280\" y=\"95\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"48\" fill=\"#0d6efd\" font-weight=\"700\">PRISM</text>
   <text x=\"280\" y=\"125\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"16\" fill=\"#6c757d\">Studio</text>
 </svg>"""
-    return Response(fallback_svg, mimetype="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
+    return Response(
+        fallback_svg,
+        mimetype="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @app.route("/specifications")
