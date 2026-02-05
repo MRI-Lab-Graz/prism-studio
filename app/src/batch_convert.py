@@ -307,6 +307,7 @@ def convert_physio_file(
     *,
     parsed: dict,
     base_freq: float | None = None,
+    log_callback: Callable[[str, str], None] | None = None,
 ) -> ConvertedFile:
     """Convert a single physio file (Varioport .raw/.vpd) to PRISM format.
 
@@ -351,6 +352,10 @@ def convert_physio_file(
                     output_dir / f"task-{task.replace('task-', '')}_physio.json"
                 )
 
+                if log_callback:
+                    log_callback(f"  🔄 Converting Varioport {ext.upper()} → EDF format...", "info")
+                    log_callback(f"  📊 Reading binary data, extracting channels, resampling...", "info")
+
                 convert_varioport(
                     str(source_path),
                     str(out_edf),
@@ -361,9 +366,14 @@ def convert_physio_file(
 
                 if out_edf.exists():
                     output_files.append(out_edf)
+                    if log_callback:
+                        edf_size = out_edf.stat().st_size / (1024 * 1024)  # MB
+                        log_callback(f"  ✅ Converted to EDF: {out_edf.name} ({edf_size:.2f} MB)", "success")
 
             except ImportError:
                 # Fallback: just copy file and create root sidecar
+                if log_callback:
+                    log_callback(f"  ⚠️ Variport converter not available, copying raw file", "warning")
                 out_data = out_folder / f"{base_name}.{ext}"
                 out_root_json = (
                     output_dir / f"task-{task.replace('task-', '')}_physio.json"
@@ -734,6 +744,7 @@ def batch_convert_folder(
                 output_folder,
                 parsed=parsed,
                 base_freq=physio_sampling_rate,
+                log_callback=log,
             )
         elif target_modality == "eyetracking":
             converted = convert_eyetracking_file(

@@ -10,6 +10,7 @@ import shutil
 import tempfile
 import zipfile
 import base64
+import unicodedata
 from pathlib import Path
 from flask import Blueprint, request, jsonify, send_file, current_app, session
 from werkzeug.utils import secure_filename
@@ -22,6 +23,22 @@ from .conversion_utils import (
     log_file_head,
     resolve_effective_library_path,
 )
+
+
+def _normalize_filename(name: str) -> str:
+    """Normalize filename to ASCII-safe characters (e.g., remove umlauts)."""
+    dash_map = {
+        ord("–"): "-",  # en dash
+        ord("—"): "-",  # em dash
+        ord("‑"): "-",  # non-breaking hyphen
+        ord("−"): "-",  # minus sign
+        ord("‐"): "-",  # hyphen
+    }
+    normalized = name.translate(dash_map)
+    normalized = unicodedata.normalize("NFKD", normalized)
+    normalized = normalized.encode("ascii", "ignore").decode("ascii")
+    normalized = re.sub(r"\s+", "_", normalized)
+    return normalized
 
 # Import conversion logic
 try:
@@ -1957,6 +1974,36 @@ def api_biometrics_convert():
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
+@conversion_bp.route("/api/check-sourcedata-physio", methods=["GET"])
+def check_sourcedata_physio():
+    """Check if sourcedata/physio folder exists in current project."""
+    try:
+        current_project_path = session.get("current_project_path")
+        if not current_project_path:
+            return jsonify({"exists": False, "message": "No project selected"}), 400
+        
+        project_path = Path(current_project_path)
+        sourcedata_physio = project_path / "sourcedata" / "physio"
+        
+        exists = sourcedata_physio.exists() and sourcedata_physio.is_dir()
+        
+        if exists:
+            # Count .raw and .vpd files (case-insensitive)
+            all_files = list(sourcedata_physio.iterdir())
+            physio_files = [f for f in all_files if f.suffix.lower() in ['.raw', '.vpd']]
+            file_count = len(physio_files)
+        else:
+            file_count = 0
+        
+        return jsonify({
+            "exists": exists,
+            "path": str(sourcedata_physio) if exists else None,
+            "message": f"Found sourcedata/physio folder with {file_count} files" if exists else "sourcedata/physio folder not found"
+        }), 200
+    except Exception as e:
+        return jsonify({"exists": False, "error": str(e)}), 500
+
+
 @conversion_bp.route("/api/physio-convert", methods=["POST"])
 def api_physio_convert():
     """Convert an uploaded Varioport file (.raw/.vpd) into EDF+ (.edf) + sidecar (.json) and return as ZIP."""
@@ -2036,8 +2083,10 @@ def api_batch_convert():
     dest_root = (request.form.get("dest_root") or "rawdata").strip().lower()
     if dest_root not in {"rawdata", "sourcedata"}:
         dest_root = "rawdata"
+    flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
     dry_run = (request.form.get("dry_run") or "false").lower() == "true"
+    folder_path = request.form.get("folder_path", "").strip()
 
     try:
         sampling_rate = float(sampling_rate_str) if sampling_rate_str else None
@@ -2045,8 +2094,60 @@ def api_batch_convert():
         return jsonify({"error": "sampling_rate must be a number", "logs": logs}), 400
 
     files = request.files.getlist("files[]") or request.files.getlist("files")
+    
+    # If folder_path is provided, use it directly instead of uploaded files
+    if folder_path:
+        folder_path_obj = Path(folder_path)
+        if not folder_path_obj.exists() or not folder_path_obj.is_dir():
+            return jsonify({"error": f"Folder not found: {folder_path}", "logs": logs}), 400
+        
+        log_callback(f"📂 Using folder: {folder_path}", "info")
+        
+        tmp_dir = tempfile.mkdtemp(prefix="prism_batch_convert_")
+        try:
+            tmp_path = Path(tmp_dir)
+            output_dir = tmp_path / "output"
+            output_dir.mkdir()
+            
+            # Call batch_convert directly with the source folder
+            result = batch_convert_folder(
+                folder_path_obj,
+                output_dir,
+                physio_sampling_rate=sampling_rate,
+                modality_filter=modality_filter,
+                log_callback=log_callback,
+                dry_run=dry_run,
+            )
+            
+            # If not a dry-run, move files to project if save_to_project is true
+            if not dry_run and save_to_project:
+                p_path = session.get("current_project_path")
+                if p_path:
+                    project_root = Path(p_path)
+                    if project_root.exists():
+                        project_root = project_root / dest_root
+                        project_root.mkdir(parents=True, exist_ok=True)
+                        # Copy converted files to project
+                        for file in output_dir.rglob("*"):
+                            if file.is_file():
+                                rel_path = file.relative_to(output_dir)
+                                dest_file = project_root / rel_path
+                                dest_file.parent.mkdir(parents=True, exist_ok=True)
+                                shutil.copy2(file, dest_file)
+            
+            return jsonify({
+                "converted": result.success_count,
+                "errors": result.error_count,
+                "new_files": result.new_files,
+                "existing_files": result.existing_files,
+                "logs": logs,
+                "dry_run": dry_run,
+            })
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+    
     if not files:
-        return jsonify({"error": "No files uploaded", "logs": logs}), 400
+        return jsonify({"error": "No files uploaded and no folder path provided", "logs": logs}), 400
 
     # Accept a wider range of extensions for the batch organizer
     valid_extensions = {
@@ -2165,32 +2266,42 @@ def api_batch_convert():
                     zf.write(file_path, rel_path)
 
                     if project_root:
-                        # Warn if subject folder is being created
-                        bids = (
-                            parse_bids_filename(rel_path.name)
-                            if parse_bids_filename
-                            else None
-                        )
-                        subject_label = None
-                        if bids and bids.get("sub"):
-                            subject_label = bids.get("sub")
+                        # Determine destination path based on flat_structure option
+                        if flat_structure and dest_root == "sourcedata":
+                            # Flat structure: copy files to sourcedata/modality/ without sub-/ses- hierarchy
+                            # Determine modality from filename
+                            file_modality = modality_filter if modality_filter != "all" else "physio"
+                            dest_path = project_root / file_modality / rel_path.name
+                            log_callback(f"Flat copy: {rel_path.name} → {dest_root}/{file_modality}/{rel_path.name}")
                         else:
-                            m = re.search(r"(sub-[A-Za-z0-9]+)", rel_path.name)
-                            if m:
-                                subject_label = m.group(1)
+                            # PRISM structure: preserve sub-XXX/ses-YYY/modality/ hierarchy
+                            # Warn if subject folder is being created
+                            bids = (
+                                parse_bids_filename(rel_path.name)
+                                if parse_bids_filename
+                                else None
+                            )
+                            subject_label = None
+                            if bids and bids.get("sub"):
+                                subject_label = bids.get("sub")
+                            else:
+                                m = re.search(r"(sub-[A-Za-z0-9]+)", rel_path.name)
+                                if m:
+                                    subject_label = m.group(1)
 
-                        if subject_label:
-                            subject_dir = project_root / subject_label
-                            if (
-                                not subject_dir.exists()
-                                and subject_label not in warned_subjects
-                            ):
-                                warnings.append(
-                                    f"Subject folder {subject_label} did not exist and will be created in project."
-                                )
-                                warned_subjects.add(subject_label)
+                            if subject_label:
+                                subject_dir = project_root / subject_label
+                                if (
+                                    not subject_dir.exists()
+                                    and subject_label not in warned_subjects
+                                ):
+                                    warnings.append(
+                                        f"Subject folder {subject_label} did not exist and will be created in project."
+                                    )
+                                    warned_subjects.add(subject_label)
 
-                        dest_path = project_root / rel_path
+                            dest_path = project_root / rel_path
+                        
                         dest_path.parent.mkdir(parents=True, exist_ok=True)
                         shutil.copy2(file_path, dest_path)
                         project_saved = True
@@ -2225,6 +2336,10 @@ def api_physio_rename():
     organize = request.form.get("organize", "false").lower() == "true"
     modality = request.form.get("modality", "physio")
     save_to_project = request.form.get("save_to_project", "false").lower() == "true"
+    dest_root = (request.form.get("dest_root") or "rawdata").strip().lower()
+    if dest_root not in {"rawdata", "sourcedata"}:
+        dest_root = "rawdata"
+    flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
 
     files = request.files.getlist("files[]") or request.files.getlist("files")
 
@@ -2250,7 +2365,9 @@ def api_physio_rename():
         )
         for fname in source_names:
             try:
-                new_name = regex.sub(replacement, fname)
+                raw_name = Path(fname).name
+                new_name = regex.sub(replacement, raw_name)
+                new_name = _normalize_filename(new_name)
 
                 # Determine the path within the ZIP (for preview)
                 zip_path = new_name
@@ -2287,7 +2404,7 @@ def api_physio_rename():
         if p_path:
             project_root = Path(p_path)
             if project_root.exists():
-                project_root = project_root / "rawdata"
+                project_root = project_root / dest_root
                 project_root.mkdir(parents=True, exist_ok=True)
             else:
                 warnings.append(
@@ -2301,10 +2418,11 @@ def api_physio_rename():
             for f in files:
                 if not f or not f.filename:
                     continue
-                old_name = secure_filename(f.filename)
+                old_name = Path(f.filename).name
 
                 try:
                     new_name = regex.sub(replacement, old_name)
+                    new_name = _normalize_filename(new_name)
 
                     # Determine the path within the ZIP
                     zip_path = new_name
@@ -2330,29 +2448,35 @@ def api_physio_rename():
                     zf.writestr(zip_path, f_content)
 
                     if project_root:
-                        dest_path = project_root / Path(zip_path)
+                        # Determine destination path based on flat_structure option
+                        if flat_structure and dest_root == "sourcedata":
+                            # Flat structure: copy files to sourcedata/modality/ without sub-/ses- hierarchy
+                            dest_path = project_root / modality / new_name
+                        else:
+                            # PRISM structure: preserve sub-XXX/ses-YYY/modality/ hierarchy
+                            dest_path = project_root / Path(zip_path)
 
-                        # Warn if subject folder does not yet exist (but still allow creation)
-                        subject_label = None
-                        if parse_bids_filename:
-                            bids_parts = parse_bids_filename(new_name)
-                            if bids_parts:
-                                subject_label = bids_parts.get("sub")
-                        if not subject_label:
-                            m = re.search(r"(sub-[A-Za-z0-9]+)", new_name)
-                            if m:
-                                subject_label = m.group(1)
+                            # Warn if subject folder does not yet exist (but still allow creation)
+                            subject_label = None
+                            if parse_bids_filename:
+                                bids_parts = parse_bids_filename(new_name)
+                                if bids_parts:
+                                    subject_label = bids_parts.get("sub")
+                            if not subject_label:
+                                m = re.search(r"(sub-[A-Za-z0-9]+)", new_name)
+                                if m:
+                                    subject_label = m.group(1)
 
-                        if subject_label:
-                            subject_dir = project_root / subject_label
-                            if (
-                                not subject_dir.exists()
-                                and subject_label not in warned_subjects
-                            ):
-                                warnings.append(
-                                    f"Subject folder {subject_label} did not exist and will be created in project."
-                                )
-                                warned_subjects.add(subject_label)
+                            if subject_label:
+                                subject_dir = project_root / subject_label
+                                if (
+                                    not subject_dir.exists()
+                                    and subject_label not in warned_subjects
+                                ):
+                                    warnings.append(
+                                        f"Subject folder {subject_label} did not exist and will be created in project."
+                                    )
+                                    warned_subjects.add(subject_label)
 
                         dest_path.parent.mkdir(parents=True, exist_ok=True)
                         with open(dest_path, "wb") as out_f:

@@ -816,8 +816,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Physio Convert (Batch) ---
     const physioBatchFiles = document.getElementById('physioBatchFiles');
-    const physioBatchDatasetName = document.getElementById('physioBatchDatasetName');
+    const physioBatchFolder = document.getElementById('physioBatchFolder');
     const physioBatchSamplingRate = document.getElementById('physioBatchSamplingRate');
+    const physioBatchDryRun = document.getElementById('physioBatchDryRun');
     const physioBatchConvertBtn = document.getElementById('physioBatchConvertBtn');
     const physioBatchError = document.getElementById('physioBatchError');
     const physioBatchInfo = document.getElementById('physioBatchInfo');
@@ -825,6 +826,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const physioBatchLogContainer = document.getElementById('physioBatchLogContainer');
     const physioBatchLog = document.getElementById('physioBatchLog');
     const physioBatchLogClearBtn = document.getElementById('physioBatchLogClearBtn');
+    const autoDetectPhysioBtn = document.getElementById('autoDetectPhysioBtn');
+    const autoDetectHint = document.getElementById('autoDetectHint');
 
     // --- Eyetracking Convert (Single) ---
     const eyetrackingSingleFile = document.getElementById('eyetrackingSingleFile');
@@ -3771,14 +3774,96 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Physio Batch Convert ---
+    // Auto-detect sourcedata/physio folder
+    const physioBatchFolderPath = document.getElementById('physioBatchFolderPath');
+    
+    if (autoDetectPhysioBtn) {
+        autoDetectPhysioBtn.addEventListener('click', async function() {
+            try {
+                autoDetectPhysioBtn.disabled = true;
+                autoDetectPhysioBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Detecting...';
+                
+                const response = await fetch('/api/check-sourcedata-physio');
+                const result = await response.json();
+                
+                if (result.exists) {
+                    // Store the folder path in hidden field for direct use
+                    if (physioBatchFolderPath) {
+                        physioBatchFolderPath.value = result.path;
+                        console.log('[Physio] Auto-detected folder path stored:', result.path);
+                    }
+                    
+                    // Show hint message
+                    if (autoDetectHint) {
+                        autoDetectHint.innerHTML = `<i class="fas fa-check text-success me-1"></i>${result.message}`;
+                    }
+                    
+                    // Show success info
+                    if (physioBatchInfo) {
+                        physioBatchInfo.innerHTML = `<i class="fas fa-folder-check me-2 text-success"></i><strong>✅ sourcedata/physio folder auto-selected!</strong> Ready to convert. Click the button below to start.`;
+                        physioBatchInfo.classList.remove('d-none');
+                    }
+                    
+                    // Update button state as if folder was selected
+                    updatePhysioBatchBtn();
+                } else {
+                    if (autoDetectHint) {
+                        autoDetectHint.innerHTML = `<i class="fas fa-times text-danger me-1"></i>${result.message}`;
+                    }
+                    if (physioBatchError) {
+                        physioBatchError.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>${result.message}`;
+                        physioBatchError.classList.remove('d-none');
+                    }
+                }
+            } catch (error) {
+                if (autoDetectHint) {
+                    autoDetectHint.innerHTML = `<i class="fas fa-times text-danger me-1"></i>Error: ${error.message}`;
+                }
+            } finally {
+                autoDetectPhysioBtn.disabled = false;
+                autoDetectPhysioBtn.innerHTML = '<i class="fas fa-folder-open me-2"></i>Auto-detect';
+            }
+        });
+    }
+
     function updatePhysioBatchBtn() {
         const hasFiles = physioBatchFiles && physioBatchFiles.files && physioBatchFiles.files.length > 0;
-        if (physioBatchConvertBtn) physioBatchConvertBtn.disabled = !hasFiles;
+        const hasFolder = physioBatchFolder && physioBatchFolder.files && physioBatchFolder.files.length > 0;
+        const hasAutoPath = physioBatchFolderPath && physioBatchFolderPath.value && physioBatchFolderPath.value.length > 0;
+        const shouldEnable = hasFiles || hasFolder || hasAutoPath;
+        
+        if (physioBatchConvertBtn) {
+            physioBatchConvertBtn.disabled = !shouldEnable;
+            console.log('[Physio] Button update - hasFiles:', hasFiles, 'hasFolder:', hasFolder, 'hasAutoPath:', hasAutoPath, 'disabled:', !shouldEnable);
+        }
+        
+        // Update button text based on dry-run mode
+        if (physioBatchConvertBtn) {
+            const isDryRun = physioBatchDryRun && physioBatchDryRun.checked;
+            if (isDryRun) {
+                physioBatchConvertBtn.innerHTML = '<i class="fas fa-flask me-2"></i>Preview Conversion';
+                physioBatchConvertBtn.classList.remove('btn-warning');
+                physioBatchConvertBtn.classList.add('btn-info');
+            } else {
+                physioBatchConvertBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Convert & Save to Project';
+                physioBatchConvertBtn.classList.remove('btn-info');
+                physioBatchConvertBtn.classList.add('btn-warning');
+            }
+        }
     }
 
     if (physioBatchFiles) {
         physioBatchFiles.addEventListener('change', updatePhysioBatchBtn);
         updatePhysioBatchBtn();
+    }
+
+    if (physioBatchFolder) {
+        physioBatchFolder.addEventListener('change', updatePhysioBatchBtn);
+        updatePhysioBatchBtn();
+    }
+    
+    if (physioBatchDryRun) {
+        physioBatchDryRun.addEventListener('change', updatePhysioBatchBtn);
     }
 
     if (physioBatchLogClearBtn) {
@@ -3789,6 +3874,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (physioBatchConvertBtn) {
         physioBatchConvertBtn.addEventListener('click', async function() {
+            console.log('[Physio] Convert button clicked');
             physioBatchError.classList.add('d-none');
             physioBatchInfo.classList.add('d-none');
             physioBatchProgress.classList.remove('d-none');
@@ -3796,15 +3882,47 @@ document.addEventListener('DOMContentLoaded', function() {
             physioBatchLog.textContent = '';
             physioBatchConvertBtn.disabled = true;
 
-            const files = Array.from(physioBatchFiles.files);
-            const datasetName = physioBatchDatasetName ? physioBatchDatasetName.value.trim() : 'Physio Dataset';
-            const samplingRate = physioBatchSamplingRate ? physioBatchSamplingRate.value : '';
+            const filesFromInput = Array.from(physioBatchFiles.files || []);
+            const filesFromFolder = Array.from(physioBatchFolder.files || []);
+            const autoDetectedPath = physioBatchFolderPath ? physioBatchFolderPath.value : null;
+            
+            console.log('[Physio] Files from input:', filesFromInput.length, 'Files from folder:', filesFromFolder.length, 'Auto-detected path:', autoDetectedPath);
+            
+            const samplingRate = physioBatchSamplingRate ? (physioBatchSamplingRate.value.trim() || '512') : '512';
+            const isDryRun = physioBatchDryRun && physioBatchDryRun.checked;
 
             const formData = new FormData();
-            files.forEach(f => formData.append('files', f));
-            formData.append('dataset_name', datasetName);
+            
+            // If we have an auto-detected folder path, use it
+            if (autoDetectedPath) {
+                console.log('[Physio] Using auto-detected folder path for conversion');
+                formData.append('folder_path', autoDetectedPath);
+            } else {
+                // Use manually selected files
+                let allFiles = [...filesFromInput, ...filesFromFolder];
+                
+                // Filter for .raw and .vpd files only (in case folder contains other files)
+                const files = allFiles.filter(f => f.name.toLowerCase().endsWith('.raw') || f.name.toLowerCase().endsWith('.vpd'));
+                
+                console.log('[Physio] Filtered files:', files.length);
+                if (files.length === 0) {
+                    physioBatchError.textContent = 'No .raw or .vpd files selected. Please select files or a folder.';
+                    physioBatchError.classList.remove('d-none');
+                    physioBatchProgress.classList.add('d-none');
+                    updatePhysioBatchBtn();
+                    return;
+                }
+                
+                // Add files to form data
+                files.forEach(f => formData.append('files', f));
+            }
+            
+            formData.append('dataset_name', 'Physio Dataset');  // Default name (not used when saving to project)
             formData.append('modality', 'physio');
-            if (samplingRate) formData.append('sampling_rate', samplingRate);
+            formData.append('save_to_project', isDryRun ? 'false' : 'true');  // Don't save if dry-run
+            formData.append('dest_root', 'rawdata');     // Save to rawdata
+            formData.append('sampling_rate', samplingRate);
+            formData.append('dry_run', isDryRun ? 'true' : 'false');
 
             try {
                 const response = await fetch('/api/batch-convert', {
@@ -3823,14 +3941,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (result.log) {
                     physioBatchLog.textContent = result.log;
                 }
-
-                // Download the ZIP
-                if (result.zip) {
-                    downloadBase64Zip(result.zip, `${datasetName}_prism.zip`);
+                
+                // Also display logs array if available
+                if (result.logs && Array.isArray(result.logs)) {
+                    const logText = result.logs.map(l => l.message).join('\n');
+                    physioBatchLog.textContent = logText;
                 }
 
-                physioBatchInfo.textContent = `Converted ${result.converted || 0} files. ${result.errors || 0} errors.`;
-                physioBatchInfo.classList.remove('d-none');
+                if (isDryRun && result.dry_run) {
+                    // Dry-run preview mode
+                    let infoMsg = `🧪 DRY-RUN PREVIEW\n\n`;
+                    infoMsg += `Files that would be converted: ${result.converted || 0}\n`;
+                    infoMsg += `Files with errors: ${result.errors || 0}\n`;
+                    infoMsg += `New files would be created: ${result.new_files || 0}\n`;
+                    infoMsg += `Files already exist: ${result.existing_files || 0}\n\n`;
+                    infoMsg += `✅ Preview completed without errors! Ready to convert for real.`;
+                    
+                    physioBatchInfo.textContent = infoMsg;
+                    physioBatchInfo.classList.remove('d-none');
+                    
+                    // Change button to "Convert for Real"
+                    physioBatchConvertBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Convert for Real';
+                    physioBatchConvertBtn.disabled = false;
+                    physioBatchConvertBtn.classList.add('btn-success');
+                    physioBatchConvertBtn.classList.remove('btn-warning');
+                } else {
+                    // Actual conversion mode
+                    const warnings = result.warnings || [];
+                    let infoMsg = `✅ Converted ${result.converted || 0} files to rawdata/. ${result.errors || 0} errors.`;
+                    if (warnings.length) {
+                        infoMsg += '\n\n⚠️ Warnings:\n' + warnings.join('\n');
+                    }
+                    
+                    physioBatchInfo.textContent = infoMsg;
+                    physioBatchInfo.classList.remove('d-none');
+                    
+                    // Reset dry-run checkbox after successful conversion
+                    if (physioBatchDryRun) {
+                        physioBatchDryRun.checked = false;
+                    }
+                }
             } catch (err) {
                 physioBatchError.textContent = err.message;
                 physioBatchError.classList.remove('d-none');

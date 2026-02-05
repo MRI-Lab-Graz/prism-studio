@@ -31,10 +31,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const organizeLog = document.getElementById('organizeLog');
     const organizeLogClearBtn = document.getElementById('organizeLogClearBtn');
     const organizeFolder = document.getElementById('organizeFolder');
+    const organizeFlatStructure = document.getElementById('organizeFlatStructure');
+    const organizeTargetRaw = document.getElementById('organizeTargetRaw');
+    const organizeTargetSource = document.getElementById('organizeTargetSource');
+    const flatStructureHint = document.getElementById('flatStructureHint');
+    
     const organizeTargetRoot = () => {
         const checked = document.querySelector('input[name="organizeTargetRoot"]:checked');
         return checked ? checked.value : 'rawdata';
     };
+
+    // Update flat structure hint and auto-suggest based on destination
+    function updateFlatStructureHint() {
+        const isSourcedata = organizeTargetRoot() === 'sourcedata';
+        if (flatStructureHint) {
+            flatStructureHint.textContent = isSourcedata 
+                ? 'Recommended for sourcedata' 
+                : 'Use PRISM structure for rawdata';
+            flatStructureHint.className = isSourcedata ? 'text-success' : 'text-muted';
+        }
+        // Auto-enable flat for sourcedata (but allow user to override)
+        if (organizeFlatStructure && isSourcedata && !organizeFlatStructure.checked) {
+            organizeFlatStructure.checked = true;
+        }
+    }
+
+    if (organizeTargetRaw) {
+        organizeTargetRaw.addEventListener('change', updateFlatStructureHint);
+    }
+    if (organizeTargetSource) {
+        organizeTargetSource.addEventListener('change', updateFlatStructureHint);
+    }
+    updateFlatStructureHint();
 
     function getOrganizeFiles() {
         const fileList = [];
@@ -85,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const files = getOrganizeFiles();
         const modality = organizeModality ? organizeModality.value : 'anat';
         const destRoot = organizeTargetRoot();
+        const flatStructure = document.getElementById('organizeFlatStructure')?.checked || false;
         const datasetName = 'Organized Dataset';
 
         const formData = new FormData();
@@ -93,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('modality', modality);
         formData.append('save_to_project', saveToProject);
         formData.append('dest_root', destRoot);
+        formData.append('flat_structure', flatStructure);
         formData.append('dry_run', dryRun);
 
         try {
@@ -183,6 +213,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const renamerSubjectValue = document.getElementById('renamerSubjectValue');
     const renamerSessionValue = document.getElementById('renamerSessionValue');
     const renamerMappingPreview = document.getElementById('renamerMappingPreview');
+    const renamerTargetRaw = document.getElementById('renamerTargetRaw');
+    const renamerTargetSource = document.getElementById('renamerTargetSource');
+    const renamerStructureHint = document.getElementById('renamerStructureHint');
+
+    const renamerTargetRoot = () => {
+        const checked = document.querySelector('input[name="renamerTargetRoot"]:checked');
+        return checked ? checked.value : 'rawdata';
+    };
+
+    // Update structure hint based on destination
+    function updateRenamerStructureHint() {
+        const isSourcedata = renamerTargetRoot() === 'sourcedata';
+        if (renamerStructureHint) {
+            if (renamerOrganize && !renamerOrganize.checked) {
+                renamerStructureHint.textContent = isSourcedata 
+                    ? 'Flat structure (recommended for sourcedata)' 
+                    : 'Flat structure';
+                renamerStructureHint.className = isSourcedata ? 'text-success' : 'text-muted';
+            } else {
+                renamerStructureHint.textContent = 'Creates sub-XX/ses-YY/modality/ folders';
+                renamerStructureHint.className = 'text-muted';
+            }
+        }
+    }
 
     let currentExampleFile = null;
 
@@ -207,7 +261,48 @@ document.addEventListener('DOMContentLoaded', () => {
             hint = `sub-001_task-rest_recording-${renamerRecording.value}_physio.edf`;
         }
         if (renamerExampleHint) renamerExampleHint.innerHTML = `Example: <code>${hint}</code>`;
-        if (renamerNewExample) renamerNewExample.placeholder = `e.g. ${hint}`;
+        if (renamerNewExample) {
+            renamerNewExample.placeholder = `e.g. ${hint}`;
+            // Auto-update the filename with correct suffix if user already has input
+            if (renamerNewExample.value.trim()) {
+                autoAppendModalitySuffix();
+            }
+        }
+    }
+
+    function autoAppendModalitySuffix() {
+        if (!renamerNewExample || !renamerModality) return;
+        
+        const currentValue = renamerNewExample.value.trim();
+        if (!currentValue) return;
+
+        const mod = renamerModality.value;
+        const rec = (mod === 'physio' && renamerRecording && renamerRecording.value) ? renamerRecording.value : '';
+        
+        // Build the required suffix
+        let requiredSuffix = '';
+        if (mod === 'physio' && rec) {
+            requiredSuffix = `recording-${rec}_physio`;
+        } else {
+            requiredSuffix = mod;
+        }
+
+        // Extract the extension
+        const lastDot = currentValue.lastIndexOf('.');
+        let baseName = currentValue;
+        let ext = '';
+        if (lastDot > -1) {
+            baseName = currentValue.substring(0, lastDot);
+            ext = currentValue.substring(lastDot);
+        }
+
+        // Remove any existing modality suffix or recording label
+        const suffixPattern = /_(recording-[a-z0-9]+_)?(physio|biometrics|events|survey)$/i;
+        baseName = baseName.replace(suffixPattern, '');
+
+        // Append the new suffix
+        const newValue = `${baseName}_${requiredSuffix}${ext}`;
+        renamerNewExample.value = newValue;
     }
 
     function updateRenamerBtn() {
@@ -487,6 +582,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (renamerOrganize) formData.append('organize', renamerOrganize.checked);
         formData.append('save_to_project', saveToProject);
         if (renamerModality) formData.append('modality', renamerModality.value);
+        formData.append('dest_root', renamerTargetRoot());
+        formData.append('flat_structure', renamerOrganize ? !renamerOrganize.checked : false);
 
         const files = Array.from(renamerFiles.files);
         if (files.length === 0 && !isDryRun) return;
@@ -527,7 +624,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             isValidBids = false;
                             bidsError = 'Missing entities/suffix';
                         } else {
-                            const stem = res.new.split('.')[0];
+                            const lastDot = res.new.lastIndexOf('.');
+                            const stem = lastDot > -1 ? res.new.slice(0, lastDot) : res.new;
                             const suffix = stem.split('_').pop();
                             const expectedSuffixes = {
                                 physio: 'physio',
@@ -638,6 +736,12 @@ document.addEventListener('DOMContentLoaded', () => {
             inferPattern();
             updateRenamerBtn();
         });
+        
+        // Auto-append suffix when user finishes typing (on blur)
+        renamerNewExample.addEventListener('blur', () => {
+            autoAppendModalitySuffix();
+            inferPattern();
+        });
     }
 
     if (renamerUseMapping) {
@@ -657,8 +761,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (renamerModality) {
         renamerModality.addEventListener('change', () => {
-            updateHintFromModality();
             updateRecordingVisibility();
+            updateHintFromModality();
+            autoAppendModalitySuffix();  // Auto-append when modality changes
             inferPattern();
         });
     }
@@ -666,12 +771,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (renamerRecording) {
         renamerRecording.addEventListener('change', () => {
             updateHintFromModality();
+            autoAppendModalitySuffix();  // Auto-append when recording changes
             inferPattern();
         });
     }
 
     if (renamerOrganize) {
-        renamerOrganize.addEventListener('change', () => runRenamer(true));
+        renamerOrganize.addEventListener('change', () => {
+            updateRenamerStructureHint();
+            runRenamer(true);
+        });
+    }
+
+    if (renamerTargetRaw) {
+        renamerTargetRaw.addEventListener('change', updateRenamerStructureHint);
+    }
+    if (renamerTargetSource) {
+        renamerTargetSource.addEventListener('change', updateRenamerStructureHint);
     }
 
     if (renamerFilterAll) {
@@ -699,4 +815,5 @@ document.addEventListener('DOMContentLoaded', () => {
     updateHintFromModality();
     updateMappingVisibility();
     updateRenamerBtn();
+    updateRenamerStructureHint();
 });
