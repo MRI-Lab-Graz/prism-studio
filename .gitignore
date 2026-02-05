@@ -99,7 +99,7 @@ derivatives/
 # Vendor directory - include pre-compiled packages for Windows
 !vendor/
 !vendor/pyedflib/
-!vendor/wheels/
+!vendor/pyedflib/**/*.pyd
 
 # Harvest script
 scripts/harvest_testarchiv.py
