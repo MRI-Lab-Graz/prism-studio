@@ -37,7 +37,7 @@ def check_vendor_structure():
             print(f"✓ Found: __init__.py")
         
         # Check for .pyd files (Windows compiled extensions)
-        pyd_files = list(pyedflib_dir.glob("*.pyd"))
+        pyd_files = list(pyedflib_dir.rglob("*.pyd"))
         if not pyd_files:
             warnings.append("⚠ No .pyd files found")
             warnings.append("  These are needed for Windows support")
@@ -45,7 +45,7 @@ def check_vendor_structure():
         else:
             print(f"✓ Found {len(pyd_files)} .pyd file(s):")
             for pyd in pyd_files:
-                print(f"  - {pyd.name}")
+                print(f"  - {pyd.relative_to(pyedflib_dir)}")
         
         # Check for Python files
         py_files = list(pyedflib_dir.glob("*.py"))
@@ -63,9 +63,11 @@ def check_vendor_structure():
             print(f"  Location: {pyedflib.__file__}")
         except ImportError as e:
             if pyd_files:
-                warnings.append("⚠ Import failed (expected on Mac/Linux)")
-                warnings.append("  This is normal - .pyd files only work on Windows")
-                warnings.append("  Windows users will be able to import it")
+                warnings.append("⚠ Import failed")
+                warnings.append("  This can happen on non-Windows systems or when")
+                warnings.append("  the wheel Python version does not match the runtime")
+                warnings.append("  Windows users with the matching Python version will be able to import it")
+                warnings.append(f"  Import error: {e}")
             else:
                 issues.append(f"❌ Import failed: {e}")
     
