@@ -20,12 +20,20 @@
 
 ---
 
-## Documentation
+## What PRISM Studio does
 
-For a detailed guide on how to use PRISM, see the **[Comprehensive Walkthrough](docs/WALKTHROUGH.md)**.
+PRISM is an **independent, BIDS-compatible** framework and toolkit designed to enrich standard BIDS datasets with psychological and physiological metadata — without breaking existing BIDS apps.
 
-## Quick Start
+## Key highlights
 
+- **BIDS-first and non-destructive**: Standard BIDS files stay untouched; PRISM validates the extensions only.
+- **Survey modality (`survey/`)**: Rich, structured questionnaires with sidecar metadata and LimeSurvey integration.
+- **Biometrics modality (`biometrics/`)**: Organized storage for physiological assessments not covered by BIDS.
+- **Web-based validation**: Drag & drop datasets, see interactive results, and edit metadata safely.
+- **NeuroBagel-ready**: Annotate participants with standardized ontologies and controlled vocabularies.
+- **Local-first**: All processing stays on your machine (no cloud uploads).
+
+## How to use it (fast path)
 
 **Run the Web Interface (PRISM Studio)**:
 
@@ -46,6 +54,10 @@ python scripts/setup/configure_global_library.py
 ```
 
 This sets up the global library paths to point to the `official/` folder, making all 109+ validated surveys and recipes available to all your projects automatically. See [Global Library Configuration](docs/GLOBAL_LIBRARY_CONFIG.md) for details.
+
+## Documentation
+
+For a detailed guide on how to use PRISM, see the **[Comprehensive Walkthrough](docs/WALKTHROUGH.md)**.
 
 ---
 
