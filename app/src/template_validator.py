@@ -711,9 +711,7 @@ class TemplateValidator:
             for i_idx in range(len(lang_list)):
                 for j_idx in range(i_idx + 1, len(lang_list)):
                     la, lb = lang_list[i_idx], lang_list[j_idx]
-                    co_occur = any(
-                        la in s and lb in s for s in per_item_sets
-                    )
+                    co_occur = any(la in s and lb in s for s in per_item_sets)
                     la_only = any(la in s and lb not in s for s in per_item_sets)
                     lb_only = any(lb in s and la not in s for s in per_item_sets)
                     if not co_occur and la_only and lb_only:

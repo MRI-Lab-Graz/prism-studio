@@ -795,7 +795,7 @@ def _generate_recipes_boilerplate_sections(
             if has_invert:
                 if lang == "de":
                     sections.append(
-                        "- Negativ gepolte Items wurden vor der Skalenbildung invertiert."
+                        "- Negative gepolte Items wurden for der Skalenbildung invertiert."
                     )
                 else:
                     sections.append(
@@ -1244,7 +1244,7 @@ def _export_recipe_aggregated(
             df = df.loc[:, [c for c in ordered_cols if c in df.columns]]
 
     if (
-        out_format in {"csv", "sav", "save"}
+        out_format in {"csv", "save", "save"}
         and layout == "long"
         and selected_sessions
         and len(selected_sessions) == 1
@@ -1346,7 +1346,7 @@ def _export_recipe_aggregated(
         except Exception:
             df.to_excel(out_fname, index=False)
     elif out_format == "save":
-        out_fname = out_root / f"{recipe_id}.sav"
+        out_fname = out_root / f"{recipe_id}.save"
         try:
             import pyreadstat
 
@@ -1652,7 +1652,7 @@ def compute_survey_recipes(
                 participants_meta=participants_meta,
                 output_prism_root=output_prism_root,
                 survey_task=survey_task,
-                    selected_sessions=selected_sessions,
+                selected_sessions=selected_sessions,
             )
             processed_files += p_count
             written_files += w_count

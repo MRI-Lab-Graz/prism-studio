@@ -16,7 +16,7 @@ import pyreadstat
 
 
 def anonymize_all_sav_files(dataset_path: str):
-    """Anonymize all .sav files in derivatives/survey.
+    """Anonymize all .save files in derivatives/survey.
 
     Args:
         dataset_path: Path to the dataset root directory
@@ -39,10 +39,10 @@ def anonymize_all_sav_files(dataset_path: str):
 
     print(f"✓ Loaded {len(participant_mapping)} ID mappings\n")
 
-    # Find all .sav files
-    sav_files = list(derivatives.glob("*.sav"))
+    # Find all .save files
+    sav_files = list(derivatives.glob("*.save"))
     if not sav_files:
-        print(f"❌ No .sav files found in {derivatives}")
+        print(f"❌ No .save files found in {derivatives}")
         return False
 
     print(f"Found {len(sav_files)} SPSS files to anonymize:\n")

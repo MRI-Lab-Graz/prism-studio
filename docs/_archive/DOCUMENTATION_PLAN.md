@@ -73,7 +73,7 @@ Complete rewrite with:
 - **Data Sources**
   - Excel (.xlsx, .xls)
   - CSV/TSV
-  - SPSS (.sav)
+  - SPSS (.save)
   - LimeSurvey exports
   
 - **Step-by-step conversion**

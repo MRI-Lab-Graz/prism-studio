@@ -312,9 +312,9 @@ A recipe is a JSON file specifying:
    - Click "Run Recipe"
 
 4. **Configure Export**
-   - **Format:** SPSS (.sav) - *Recommended!*
+   - **Format:** SPSS (.save) - *Recommended!*
    - **Layout:** Long format (one row per session)
-   - **Output:** `Wellbeing_Study_Workshop/derivatives/wellbeing_scores.sav`
+   - **Output:** `Wellbeing_Study_Workshop/derivatives/wellbeing_scores.save`
 
 5. **Generate Export**
    - Click "Export"
@@ -322,7 +322,7 @@ A recipe is a JSON file specifying:
    - Download file
 
 6. **Verify in SPSS/Excel**
-Open `derivatives/wellbeing_scores.sav`:
+Open `derivatives/wellbeing_scores.save`:
 
 **Expected Columns:**
 - `participant_id`, `session`
@@ -364,7 +364,7 @@ Open `derivatives/wellbeing_scores.sav`:
    ↓
 4. Calculate Scores (recipe-wellbeing.json)
    ↓
-5. Analysis (wellbeing_scores.sav in SPSS/R/Python)
+5. Analysis (wellbeing_scores.save in SPSS/R/Python)
 ```
 
 ### Using PRISM with Your Own Data
@@ -397,17 +397,17 @@ PRISM datasets are BIDS-compatible:
 **R:**
 ```r
 library(haven)
-data <- read_sav("wellbeing_scores.sav")
+data <- read_sav("wellbeing_scores.save")
 ```
 
 **Python:**
 ```python
 import pyreadstat
-data, meta = pyreadstat.read_sav("wellbeing_scores.sav")
+data, meta = pyreadstat.read_sav("wellbeing_scores.save")
 ```
 
 **JASP / Jamovi:**
-- Open `.sav` files directly
+- Open `.save` files directly
 - Labels preserved
 
 ### Resources

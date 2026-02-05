@@ -37,43 +37,34 @@ ANNOTATION_PATTERNS = [
     # PsyToolkit scoring annotations: {score=0}, {score=1}, {score=-1}, etc.
     (
         re.compile(r"\{score\s*=\s*-?\d+\}\s*", re.IGNORECASE),
-        "PsyToolkit score annotation"
+        "PsyToolkit score annotation",
     ),
     # PsyToolkit reverse scoring marker: {reverse}
-    (
-        re.compile(r"\{reverse\}\s*", re.IGNORECASE),
-        "PsyToolkit reverse marker"
-    ),
+    (re.compile(r"\{reverse\}\s*", re.IGNORECASE), "PsyToolkit reverse marker"),
     # PsyToolkit optional marker: {optional}
-    (
-        re.compile(r"\{optional\}\s*", re.IGNORECASE),
-        "PsyToolkit optional marker"
-    ),
+    (re.compile(r"\{optional\}\s*", re.IGNORECASE), "PsyToolkit optional marker"),
     # Generic key=value annotations: {key=value}, {key = value}
     # This is a catch-all for future PsyToolkit-style annotations
     # Matches: {anything=anything} but NOT LimeSurvey expressions like {TOKEN:FIRSTNAME}
     (
         re.compile(r"\{[a-z_]+\s*=\s*[^}]+\}\s*", re.IGNORECASE),
-        "Generic key=value annotation"
+        "Generic key=value annotation",
     ),
     # Bracketed annotations: [score:1], [reverse], etc. (some tools use brackets)
     (
         re.compile(r"\[score\s*[=:]\s*-?\d+\]\s*", re.IGNORECASE),
-        "Bracketed score annotation"
+        "Bracketed score annotation",
     ),
     # HTML comments that might have leaked: <!-- scoring info -->
-    (
-        re.compile(r"<!--.*?-->\s*", re.DOTALL),
-        "HTML comment"
-    ),
+    (re.compile(r"<!--.*?-->\s*", re.DOTALL), "HTML comment"),
 ]
 
 # Patterns that should be preserved (not stripped) - for validation
 # These look like annotations but are actually LimeSurvey expression syntax
 PRESERVE_PATTERNS = [
     re.compile(r"\{[A-Z0-9_]+\.NAOK\}", re.IGNORECASE),  # {Q1.NAOK}
-    re.compile(r"\{TOKEN:[A-Z_]+\}", re.IGNORECASE),      # {TOKEN:FIRSTNAME}
-    re.compile(r"\{INSERTANS:[^}]+\}", re.IGNORECASE),   # {INSERTANS:123X456X789}
+    re.compile(r"\{TOKEN:[A-Z_]+\}", re.IGNORECASE),  # {TOKEN:FIRSTNAME}
+    re.compile(r"\{INSERTANS:[^}]+\}", re.IGNORECASE),  # {INSERTANS:123X456X789}
 ]
 
 
@@ -208,6 +199,7 @@ def list_annotations(text: Optional[str]) -> list[tuple[str, str]]:
 # TEMPLATE CLEANING UTILITIES
 # =============================================================================
 
+
 def clean_levels_dict(levels: dict) -> dict:
     """
     Clean all answer texts in a Levels dictionary.
@@ -226,8 +218,7 @@ def clean_levels_dict(levels: dict) -> dict:
         if isinstance(value, dict):
             # Multilingual: {lang: text}
             cleaned[code] = {
-                lang: sanitize_answer_text(text)
-                for lang, text in value.items()
+                lang: sanitize_answer_text(text) for lang, text in value.items()
             }
         else:
             # Simple: text

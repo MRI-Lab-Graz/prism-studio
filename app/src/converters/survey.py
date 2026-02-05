@@ -446,14 +446,14 @@ def _safe_eval_formula(formula: str) -> float | None:
             if isinstance(node.func, ast.Name) and node.func.id == "round":
                 args = [_eval_node(arg) for arg in node.args]
                 return round(*args)
-            raise ValueError(f"Unsafe function call")
+            raise ValueError("Unsafe function call")
         elif isinstance(node, ast.Expression):
             return _eval_node(node.body)
         else:
             raise ValueError(f"Unsafe node type: {type(node)}")
 
     try:
-        tree = ast.parse(formula, mode='eval')
+        tree = ast.parse(formula, mode="eval")
         result = _eval_node(tree)
         if isinstance(result, (int, float)) and not (result != result):  # not NaN
             return result
@@ -519,13 +519,14 @@ def _auto_correct_participant_value(value, col_name: str, template: dict | None)
 
     return value
 
+
 # Patterns to detect run suffix in column names.
 # BIDS format:      {QUESTIONNAIRE}_{ITEM}_run-{NN}  e.g. SWLS01_run-02
 # LimeSurvey format: {CODE}run{NN}                   e.g. SWLS01run02
 # We try the more specific BIDS pattern first, then the LimeSurvey pattern.
 _RUN_SUFFIX_PATTERNS = [
-    re.compile(r"^(.+)_run-?(\d+)$", re.IGNORECASE),   # BIDS: SWLS01_run-02
-    re.compile(r"^(.+?)run(\d{2,})$", re.IGNORECASE),   # LimeSurvey: SWLS01run02
+    re.compile(r"^(.+)_run-?(\d+)$", re.IGNORECASE),  # BIDS: SWLS01_run-02
+    re.compile(r"^(.+?)run(\d{2,})$", re.IGNORECASE),  # LimeSurvey: SWLS01run02
 ]
 
 # LimeSurvey system columns - these are platform metadata, not questionnaire responses
@@ -693,7 +694,9 @@ class SurveyConvertResult:
     )  # task -> max run number (None if single occurrence)
     # Enhanced dry-run information
     dry_run_preview: dict | None = None  # Detailed preview of what will be created
-    template_matches: dict | None = None  # Structural match results per group (LSA only)
+    template_matches: dict | None = (
+        None  # Structural match results per group (LSA only)
+    )
     tool_columns: list[str] = field(default_factory=list)  # LimeSurvey system columns
 
 
@@ -1191,9 +1194,7 @@ def _analyze_lsa_structure(
         return None
 
     # Match each group against global + project libraries
-    matches = match_groups_against_library(
-        parsed_groups, project_path=project_path
-    )
+    matches = match_groups_against_library(parsed_groups, project_path=project_path)
 
     # Build structured result
     groups: dict[str, dict] = {}
@@ -1202,7 +1203,8 @@ def _analyze_lsa_structure(
     for group_name, prism_json in parsed_groups.items():
         # Collect item codes (keys that are not metadata sections)
         item_codes = {
-            k for k in prism_json.keys()
+            k
+            for k in prism_json.keys()
             if k not in _NON_ITEM_TOPLEVEL_KEYS and isinstance(prism_json.get(k), dict)
         }
 
@@ -1240,7 +1242,9 @@ def _add_ls_code_aliases(sidecar: dict, imported_codes: list[str]) -> None:
     reverse_aliases = sidecar.setdefault("_reverse_aliases", {})
 
     for lib_key in list(sidecar.keys()):
-        if lib_key in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(sidecar.get(lib_key), dict):
+        if lib_key in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(
+            sidecar.get(lib_key), dict
+        ):
             continue
         ls_norm = _ls_normalize_code(lib_key)
         imp_code = imported_ls_norm.get(ls_norm)
@@ -1332,7 +1336,11 @@ def _add_matched_template(
             if k not in item_to_task:
                 item_to_task[k] = task_key
             # Also register aliases
-            if isinstance(v, dict) and "Aliases" in v and isinstance(v["Aliases"], list):
+            if (
+                isinstance(v, dict)
+                and "Aliases" in v
+                and isinstance(v["Aliases"], list)
+            ):
                 for alias in v["Aliases"]:
                     if alias not in item_to_task:
                         item_to_task[alias] = task_key
@@ -2247,7 +2255,9 @@ def _convert_survey_dataframe_to_prism_dataset(
 
     _prismmeta = _has_pm(list(df.columns))
     res_id_col, res_ses_col = _resolve_id_and_session_cols(
-        df, id_column, session_column,
+        df,
+        id_column,
+        session_column,
         participants_template=participant_template,
         source_format=source_format,
         has_prismmeta=_prismmeta,
@@ -2530,7 +2540,9 @@ def _convert_survey_dataframe_to_prism_dataset(
                     "Creator": "prism-studio",
                 }
             # Ensure required Technical fields exist (required by PRISM schema)
-            if "Technical" not in localized or not isinstance(localized.get("Technical"), dict):
+            if "Technical" not in localized or not isinstance(
+                localized.get("Technical"), dict
+            ):
                 localized["Technical"] = {}
             tech = localized["Technical"]
             if "StimulusType" not in tech:
@@ -2868,7 +2880,8 @@ def _map_survey_columns(
     _other_pattern = re.compile(r"^other(_\d+)?$", re.IGNORECASE)
     _prismmeta_pattern = re.compile(r"^prismmeta", re.IGNORECASE)
     filtered_unknown = [
-        c for c in unknown_cols
+        c
+        for c in unknown_cols
         if str(c).lower() not in bookkeeping
         and not _other_pattern.match(str(c).strip())
         and not _prismmeta_pattern.match(str(c).strip())
@@ -2975,7 +2988,9 @@ def _write_limesurvey_sidecar(
             sidecar[col] = {"Description": "Time spent on question group (seconds)"}
         elif col_lower.startswith("duration_"):
             group_name = col[9:]  # Remove "Duration_" prefix
-            sidecar[col] = {"Description": f"Time spent on group: {group_name} (seconds)"}
+            sidecar[col] = {
+                "Description": f"Time spent on group: {group_name} (seconds)"
+            }
         elif col_lower.startswith("attribute_"):
             sidecar[col] = {"Description": "Custom participant attribute"}
         else:
@@ -3281,7 +3296,9 @@ def _write_survey_participants(
                 if col == "participant_id":
                     continue
                 df_extra[col] = df_extra[col].apply(
-                    lambda v, c=col, t=template_norm: _auto_correct_participant_value(v, c, t)
+                    lambda v, c=col, t=template_norm: _auto_correct_participant_value(
+                        v, c, t
+                    )
                 )
 
         df_part = df_part.merge(df_extra, on="participant_id", how="left")

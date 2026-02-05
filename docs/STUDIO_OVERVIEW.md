@@ -135,7 +135,7 @@ Toggle **Include BIDS Validation** to also run the standard BIDS validator. This
 | Excel | `.xlsx`, `.xls` | Multiple sheets supported |
 | CSV | `.csv` | Comma-separated |
 | TSV | `.tsv` | Tab-separated |
-| SPSS | `.sav` | With value labels |
+| SPSS | `.save` | With value labels |
 | LimeSurvey | `.csv` | Special handling for LS exports |
 
 ### Conversion Workflow
@@ -188,7 +188,7 @@ See [Participants Mapping](PARTICIPANTS_MAPPING.md) for details.
 1. Select your dataset
 2. Choose recipes (scoring algorithms)
 3. Run to calculate scores
-4. Export as SPSS (.sav) or CSV
+4. Export as SPSS (.save) or CSV
 
 **Recipe Features**:
 - Sum scores, mean scores, reverse coding

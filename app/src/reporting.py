@@ -265,6 +265,7 @@ def _instrument_additional_metadata(study: dict) -> list[str]:
 def _md_inline(text: str) -> str:
     """Convert markdown inline formatting to HTML (bold, italic)."""
     import re
+
     # Bold (**text**)
     text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
     # Italic (*text*)
@@ -392,20 +393,31 @@ def _get_response_format(template: dict) -> str | None:
             continue
         n_levels = len(levels)
         # Get first and last level labels
-        sorted_keys = sorted(levels.keys(), key=lambda x: (int(x) if x.isdigit() else 0, x))
+        sorted_keys = sorted(
+            levels.keys(), key=lambda x: (int(x) if x.isdigit() else 0, x)
+        )
         first_label = ""
         last_label = ""
         if sorted_keys:
             first_val = levels[sorted_keys[0]]
             last_val = levels[sorted_keys[-1]]
-            first_label = get_i18n_text(first_val) if isinstance(first_val, (str, dict)) else str(first_val)
-            last_label = get_i18n_text(last_val) if isinstance(last_val, (str, dict)) else str(last_val)
+            first_label = (
+                get_i18n_text(first_val)
+                if isinstance(first_val, (str, dict))
+                else str(first_val)
+            )
+            last_label = (
+                get_i18n_text(last_val)
+                if isinstance(last_val, (str, dict))
+                else str(last_val)
+            )
             # Strip score prefixes like "{score=0} "
             import re
+
             first_label = re.sub(r"\{score=\d+\}\s*", "", first_label).strip()
             last_label = re.sub(r"\{score=\d+\}\s*", "", last_label).strip()
         if first_label and last_label and n_levels > 1:
-            return f"{n_levels}-point Likert scale (from \"{first_label}\" to \"{last_label}\")"
+            return f'{n_levels}-point Likert scale (from "{first_label}" to "{last_label}")'
         return f"{n_levels}-point scale"
     return None
 
@@ -490,7 +502,9 @@ def generate_full_methods(
                 parts.append(randomization.rstrip(".") + ".")
             control = sd.get("ControlCondition", "")
             if control:
-                parts.append(f"The control condition consisted of {control.rstrip('.')}.")
+                parts.append(
+                    f"The control condition consisted of {control.rstrip('.')}."
+                )
         if parts:
             h = _heading(2, "Study Design")
             if h:
@@ -530,7 +544,9 @@ def generate_full_methods(
                         f"(*M* = {age_mean:.1f}, *SD* = {age_sd:.1f})."
                     )
                 else:
-                    parts.append(f"The mean age was {age_mean:.1f} years (*SD* = {age_sd:.1f}).")
+                    parts.append(
+                        f"The mean age was {age_mean:.1f} years (*SD* = {age_sd:.1f})."
+                    )
             elif age_mean is not None:
                 parts.append(f"The mean age was {age_mean:.1f} years.")
 
@@ -546,7 +562,9 @@ def generate_full_methods(
                         for val, count in col_values.items():
                             pct = (count / col_total * 100) if col_total else 0
                             dist_parts.append(f"{val}: *n* = {count} ({pct:.1f}%)")
-                        parts.append(f"Regarding {col_name.lower()}: {'; '.join(dist_parts)}.")
+                        parts.append(
+                            f"Regarding {col_name.lower()}: {'; '.join(dist_parts)}."
+                        )
             sections_used.append("SampleDescription")
 
         method = recruitment.get("Method", "")
@@ -559,7 +577,9 @@ def generate_full_methods(
         period_start = period.get("Start", "")
         period_end = period.get("End", "")
         if period_start and period_end:
-            parts.append(f"Data collection occurred between {period_start} and {period_end}.")
+            parts.append(
+                f"Data collection occurred between {period_start} and {period_end}."
+            )
         elif period_start:
             parts.append(f"Data collection began in {period_start}.")
         if not is_brief:
@@ -601,14 +621,18 @@ def generate_full_methods(
     groups = conditions.get("Groups") or []
     if cond_type and groups and not is_brief:
         parts: list[str] = []
-        parts.append(f"The study used a {cond_type.replace('-', ' ')} design with {len(groups)} conditions:")
+        parts.append(
+            f"The study used a {cond_type.replace('-', ' ')} design with {len(groups)} conditions:"
+        )
         group_labels = [g.get("label", g.get("id", "?")) for g in groups]
         parts.append(", ".join(group_labels) + ".")
         if is_detailed:
             for g in groups:
                 desc = g.get("description", "")
                 if desc:
-                    parts.append(f"The {g.get('label', g.get('id', '?'))} condition: {desc.rstrip('.')}.")
+                    parts.append(
+                        f"The {g.get('label', g.get('id', '?'))} condition: {desc.rstrip('.')}."
+                    )
         h = _heading(2, "Experimental Conditions")
         if h:
             sections.append("\n" + h)
@@ -634,7 +658,9 @@ def generate_full_methods(
             if n_sessions == 1:
                 parts.append("The study comprised a single measurement time point.")
             else:
-                parts.append(f"The study comprised {n_sessions} measurement time points.")
+                parts.append(
+                    f"The study comprised {n_sessions} measurement time points."
+                )
 
             for i, sess in enumerate(sessions):
                 sess_label = _session_display_label(sess, i)
@@ -663,7 +689,9 @@ def generate_full_methods(
                             tpl_study = template_data[task_name].get("Study", {})
                             abbr = tpl_study.get("Abbreviation", "")
                             orig = get_i18n_text(
-                                tpl_study.get("OriginalName") or tpl_study.get("TaskName"), lang
+                                tpl_study.get("OriginalName")
+                                or tpl_study.get("TaskName"),
+                                lang,
                             )
                             if abbr:
                                 display_name = abbr
@@ -680,12 +708,21 @@ def generate_full_methods(
                         all_task_names.extend(grouped[eg_key])
 
                     if len(all_task_names) == 1:
-                        parts.append(f"{sess_intro} participants completed the {all_task_names[0]}.")
+                        parts.append(
+                            f"{sess_intro} participants completed the {all_task_names[0]}."
+                        )
                     elif len(all_task_names) == 2:
-                        parts.append(f"{sess_intro} participants completed the {all_task_names[0]} and the {all_task_names[1]}.")
+                        parts.append(
+                            f"{sess_intro} participants completed the {all_task_names[0]} and the {all_task_names[1]}."
+                        )
                     else:
-                        joined = ", the ".join(all_task_names[:-1]) + f", and the {all_task_names[-1]}"
-                        parts.append(f"{sess_intro} participants completed the {joined}.")
+                        joined = (
+                            ", the ".join(all_task_names[:-1])
+                            + f", and the {all_task_names[-1]}"
+                        )
+                        parts.append(
+                            f"{sess_intro} participants completed the {joined}."
+                        )
 
         debriefing = procedure.get("Debriefing", "")
         if debriefing and is_detailed:
@@ -728,18 +765,37 @@ def generate_full_methods(
             bio_count = len(modality_groups.get("biometrics", []))
             intro_detail = []
             if survey_count:
-                intro_detail.append(f"{survey_count} psychological questionnaire{'s' if survey_count != 1 else ''}")
+                intro_detail.append(
+                    f"{survey_count} psychological questionnaire{'s' if survey_count != 1 else ''}"
+                )
             if bio_count:
-                intro_detail.append(f"{bio_count} biometric measure{'s' if bio_count != 1 else ''}")
+                intro_detail.append(
+                    f"{bio_count} biometric measure{'s' if bio_count != 1 else ''}"
+                )
             other_count = total - survey_count - bio_count
             if other_count > 0:
-                intro_detail.append(f"{other_count} additional measure{'s' if other_count != 1 else ''}")
+                intro_detail.append(
+                    f"{other_count} additional measure{'s' if other_count != 1 else ''}"
+                )
             if intro_detail:
-                measures_parts.append(f"A total of {total} instruments were administered, including {', '.join(intro_detail)}.")
+                measures_parts.append(
+                    f"A total of {total} instruments were administered, including {', '.join(intro_detail)}."
+                )
             else:
-                measures_parts.append(f"A total of {total} instruments were administered.")
+                measures_parts.append(
+                    f"A total of {total} instruments were administered."
+                )
 
-        for modality in ["survey", "biometrics", "physio", "eeg", "eyetracking", "func", "anat", "other"]:
+        for modality in [
+            "survey",
+            "biometrics",
+            "physio",
+            "eeg",
+            "eyetracking",
+            "func",
+            "anat",
+            "other",
+        ]:
             group = modality_groups.get(modality)
             if not group:
                 continue
@@ -750,14 +806,22 @@ def generate_full_methods(
 
             for task_name, td, tpl in group:
                 study = (tpl or {}).get("Study", {}) if tpl else {}
-                name = get_i18n_text(
-                    study.get("OriginalName") or study.get("TaskName"), lang
-                ) if study else ""
+                name = (
+                    get_i18n_text(
+                        study.get("OriginalName") or study.get("TaskName"), lang
+                    )
+                    if study
+                    else ""
+                )
                 if not name:
                     name = td.get("description", "")
                 if not name:
                     # Use task_name as last resort but make it presentable
-                    name = _re.sub(r"([a-z])([A-Z])", r"\1 \2", task_name).replace("-", " ").replace("_", " ")
+                    name = (
+                        _re.sub(r"([a-z])([A-Z])", r"\1 \2", task_name)
+                        .replace("-", " ")
+                        .replace("_", " ")
+                    )
                 abbr = study.get("Abbreviation", "") if study else ""
 
                 sentences: list[str] = []
@@ -782,23 +846,33 @@ def generate_full_methods(
                 sentences.append(opening)
 
                 if not is_brief:
-                    desc = get_i18n_text(study.get("Description"), lang) if study else ""
+                    desc = (
+                        get_i18n_text(study.get("Description"), lang) if study else ""
+                    )
                     if desc:
                         sentences.append(desc.rstrip(".") + ".")
 
                     if study:
                         trans_cit = _get_translation_citation(study)
                         if trans_cit:
-                            sentences.append(f"The translation used in this study was validated by {trans_cit}.")
+                            sentences.append(
+                                f"The translation used in this study was validated by {trans_cit}."
+                            )
 
                 if is_detailed:
                     subscales = study.get("Subscales") or [] if study else []
                     if subscales:
-                        sentences.append(f"The instrument contains the following subscales: {', '.join(subscales)}.")
-                    reliability = get_i18n_text(study.get("Reliability"), lang) if study else ""
+                        sentences.append(
+                            f"The instrument contains the following subscales: {', '.join(subscales)}."
+                        )
+                    reliability = (
+                        get_i18n_text(study.get("Reliability"), lang) if study else ""
+                    )
                     if reliability:
                         sentences.append(reliability.rstrip(".") + ".")
-                    validity = get_i18n_text(study.get("Validity"), lang) if study else ""
+                    validity = (
+                        get_i18n_text(study.get("Validity"), lang) if study else ""
+                    )
                     if validity:
                         sentences.append(validity.rstrip(".") + ".")
 
@@ -806,7 +880,9 @@ def generate_full_methods(
                 dur_val = duration.get("Value")
                 dur_unit = duration.get("Unit", "minutes")
                 if isinstance(dur_val, (int, float)) and not is_brief:
-                    sentences.append(f"The estimated completion time is {dur_val} {dur_unit}.")
+                    sentences.append(
+                        f"The estimated completion time is {dur_val} {dur_unit}."
+                    )
 
                 measures_parts.append(" ".join(sentences))
 
@@ -844,7 +920,9 @@ def generate_full_methods(
         dur_val = avg_dur.get("Value")
         dur_unit = avg_dur.get("Unit", "minutes")
         if isinstance(dur_val, (int, float)):
-            parts.append(f"The average completion time was approximately {dur_val} {dur_unit}.")
+            parts.append(
+                f"The average completion time was approximately {dur_val} {dur_unit}."
+            )
         if parts:
             h = _heading(2, "Data Collection")
             if h:
@@ -899,8 +977,10 @@ def generate_full_methods(
             parts_eth.append(f"The study was approved by {ethics[0]}.")
         else:
             joined = "; ".join(ethics)
-            parts_eth.append(f"The study was approved by the following bodies: {joined}.")
-        informed = (procedure.get("InformedConsent", "") if procedure else "")
+            parts_eth.append(
+                f"The study was approved by the following bodies: {joined}."
+            )
+        informed = procedure.get("InformedConsent", "") if procedure else ""
         if informed and "Ethics" not in "".join(sections):
             # Only add if not already mentioned in Procedure
             pass
@@ -921,11 +1001,15 @@ def generate_full_methods(
     if (dd_license or dd_doi or dd_desc) and not is_brief:
         parts_da: list[str] = []
         if dd_name and dd_desc:
-            parts_da.append(f'The dataset "{dd_name}" is described as: {dd_desc.rstrip(".")}.')
+            parts_da.append(
+                f'The dataset "{dd_name}" is described as: {dd_desc.rstrip(".")}.'
+            )
         elif dd_desc:
             parts_da.append(dd_desc.rstrip(".") + ".")
         if dd_license:
-            parts_da.append(f"The dataset is made available under the {dd_license} license.")
+            parts_da.append(
+                f"The dataset is made available under the {dd_license} license."
+            )
         if dd_doi:
             parts_da.append(f"The dataset can be accessed via DOI: {dd_doi}.")
         if dd_refs:

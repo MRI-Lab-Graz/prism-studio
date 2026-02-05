@@ -41,6 +41,7 @@ htmlcov/
 # Logs
 *.log
 logs/
+*_report_*.txt
 
 # OS generated files
 .DS_Store
@@ -94,6 +95,12 @@ derivatives/
 !demo/workshop/library/
 !demo/workshop/recipes/
 !official/library/
+
+# Vendor directory - include pre-compiled packages for Windows
+!vendor/
+!vendor/pyedflib/
+!vendor/wheels/
+
 # Harvest script
 scripts/harvest_testarchiv.py
 backup/

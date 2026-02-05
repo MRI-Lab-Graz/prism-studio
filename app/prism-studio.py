@@ -77,6 +77,7 @@ get_filename_from_path = None
 run_validation = None
 
 from src.cross_platform import safe_path_join
+
 try:
     from src.web import (
         # Utils
@@ -354,15 +355,32 @@ def favicon_ico():
 @app.route("/assets/prism-logo")
 def prism_logo():
     """Serve PRISM logo from docs/img with caching"""
-    from flask import send_from_directory
+    from flask import send_file, Response
 
-    logo_dir = safe_path_join(BASE_DIR.parent, "docs", "img")
-    return send_from_directory(
-        logo_dir,
-        "prism_logo.jpg",
-        mimetype="image/jpeg",
-        max_age=86400,  # Cache for 24 hours
-    )
+    candidates = [
+        safe_path_join(BASE_DIR.parent, "docs", "img", "prism_logo.jpg"),
+        safe_path_join(BASE_DIR, "static", "img", "prism_logo.jpg"),
+        safe_path_join(BASE_DIR.parent, "docs", "img", "prism_logo_old.jpg"),
+        safe_path_join(BASE_DIR, "static", "img", "prism_logo_old.jpg"),
+    ]
+
+    for path in candidates:
+        file_path = Path(path)
+        if file_path.exists():
+            return send_file(
+                str(file_path),
+                mimetype="image/jpeg",
+                max_age=86400,  # Cache for 24 hours
+            )
+
+    fallback_svg = """<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"560\" height=\"160\" viewBox=\"0 0 560 160\">
+  <rect width=\"100%\" height=\"100%\" fill=\"#f8f9fa\"/>
+  <rect x=\"12\" y=\"12\" width=\"536\" height=\"136\" rx=\"12\" fill=\"#ffffff\" stroke=\"#dee2e6\"/>
+  <text x=\"280\" y=\"95\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"48\" fill=\"#0d6efd\" font-weight=\"700\">PRISM</text>
+  <text x=\"280\" y=\"125\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"16\" fill=\"#6c757d\">Studio</text>
+</svg>"""
+    return Response(fallback_svg, mimetype="image/svg+xml", headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.route("/specifications")

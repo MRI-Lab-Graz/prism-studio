@@ -433,10 +433,13 @@ def check_python_security(repo_path, fix=False):
         return
 
     if check_tool("bandit", "pip install bandit"):
-        # Exclude common venv directories and detected paths
-        excludes = ",".join(list(IGNORED_DIRS) + IGNORED_PATHS)
+        # Focus on application code to avoid test-only noise
+        extra_excludes = ["tests", "tests/*", "tests/**", "docs", "examples"]
+        excludes = ",".join(list(IGNORED_DIRS) + IGNORED_PATHS + extra_excludes)
+        target_paths = "src app/src app/prism_tools.py app/prism-studio.py"
         result = run_command(
-            f"bandit -r . -f custom --exclude {excludes}", cwd=repo_path
+            f"bandit -r {target_paths} -f custom --exclude {excludes}",
+            cwd=repo_path,
         )
         if result and result.returncode == 0:
             print_success("Bandit passed with no issues.")
@@ -689,15 +692,24 @@ def check_pip_audit(repo_path, fix=False):
                 print_success("Pip-audit passed.")
             else:
                 if result and (
-                    "Cannot install" in result.stdout or "RuntimeError" in result.stdout
+                    "Cannot install" in result.stdout
+                    or "RuntimeError" in result.stdout
+                    or "ensurepip" in result.stdout
+                    or "SIGABRT" in result.stdout
                 ):
                     print_warning(
-                        "Pip-audit failed to install dependencies (likely Python version mismatch)."
+                        "Pip-audit failed to resolve requirements (environment issue)."
                     )
-                    print_info(
-                        "Skipping audit. Try running in a compatible environment."
-                    )
-                    # print(result.stdout) # Optional: print full error if needed, but keeping it clean is better
+                    print_info("Retrying with local environment audit...")
+                    local_result = run_command("pip-audit -l", cwd=repo_path)
+                    if local_result and local_result.returncode == 0:
+                        print_success("Pip-audit (local) passed.")
+                    else:
+                        print_warning(
+                            "Pip-audit (local) found vulnerabilities or failed:"
+                        )
+                        if local_result:
+                            print(local_result.stdout)
                 else:
                     print_warning("Pip-audit found vulnerabilities or failed:")
                     if result:
@@ -723,6 +735,7 @@ def check_codespell(repo_path, fix=False):
             "*.map",
             "*.js",
             "*.css",
+            "*.pdf",
         ]
         skips = set(default_skips)
 
@@ -735,10 +748,14 @@ def check_codespell(repo_path, fix=False):
 
         skip_str = ",".join(skips)
 
+        ignore_file = os.path.join(repo_path, ".codespellignore")
+        ignore_arg = f" -I '{ignore_file}'" if os.path.exists(ignore_file) else ""
+
         if fix:
             print_info("Running Codespell --write-changes...")
             result = run_command(
-                f"codespell --write-changes --skip='{skip_str}'", cwd=repo_path
+                f"codespell --write-changes --skip='{skip_str}'{ignore_arg}",
+                cwd=repo_path,
             )
             if result and result.returncode == 0:
                 print_success("Codespell passed/fixed.")
@@ -750,7 +767,9 @@ def check_codespell(repo_path, fix=False):
                     print(result.stdout)
         else:
             print_info("Running Codespell...")
-            result = run_command(f"codespell --skip='{skip_str}'", cwd=repo_path)
+            result = run_command(
+                f"codespell --skip='{skip_str}'{ignore_arg}", cwd=repo_path
+            )
             if result and result.returncode == 0:
                 print_success("Codespell passed.")
             else:

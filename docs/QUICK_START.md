@@ -119,7 +119,7 @@ For batch processing and scripting:
 python prism.py /path/to/rawdata
 
 # Run all recipes
-python prism_tools.py recipes survey --prism /path/to/project --format sav
+python prism_tools.py recipes survey --prism /path/to/project --format save
 ```
 
 See [CLI Reference](CLI_REFERENCE.md) for all commands.

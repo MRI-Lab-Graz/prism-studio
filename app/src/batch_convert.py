@@ -771,7 +771,7 @@ def batch_convert_folder(
                 files_exist = sum(1 for f in converted.output_files if f.exists())
                 result.existing_files += files_exist
                 result.new_files += len(converted.output_files) - files_exist
-            
+
             if dry_run:
                 # In dry run, show what would be created
                 if converted.output_files:
@@ -802,7 +802,10 @@ def batch_convert_folder(
         log("🧪 DRY RUN SUMMARY:", "info")
         log(f"   ✅ Would organize: {result.success_count} files", "success")
         log(f"   📄 New files: {result.new_files}", "info")
-        log(f"   📋 Existing files (will be overwritten): {result.existing_files}", "warning")
+        log(
+            f"   📋 Existing files (will be overwritten): {result.existing_files}",
+            "warning",
+        )
     else:
         log("📊 Conversion complete:", "info")
         log(f"   ✅ Successful: {result.success_count}", "success")

@@ -60,7 +60,10 @@ class TestSanitizeDisplayText:
 
     def test_optional_annotation(self):
         """Test {optional} marker removal."""
-        assert sanitize_display_text("{optional} Additional comments") == "Additional comments"
+        assert (
+            sanitize_display_text("{optional} Additional comments")
+            == "Additional comments"
+        )
 
     def test_multiple_annotations(self):
         """Test removal of multiple annotations."""
@@ -96,7 +99,10 @@ class TestSanitizeDisplayText:
         """Test generic {key=value} pattern removal."""
         # This catches future PsyToolkit-style annotations
         assert sanitize_display_text("{weight=2} Heavy item") == "Heavy item"
-        assert sanitize_display_text("{category=anxiety} I feel worried") == "I feel worried"
+        assert (
+            sanitize_display_text("{category=anxiety} I feel worried")
+            == "I feel worried"
+        )
 
 
 class TestSanitizeAnswerText:
@@ -206,22 +212,40 @@ class TestRealWorldExamples:
     def test_dass_example(self):
         """Test DASS (Depression Anxiety Stress Scale) answer format."""
         # Common Likert scale with scoring
-        assert sanitize_answer_text("{score=0} Did not apply to me at all") == "Did not apply to me at all"
-        assert sanitize_answer_text("{score=1} Applied to me to some degree") == "Applied to me to some degree"
-        assert sanitize_answer_text("{score=2} Applied to me a considerable degree") == "Applied to me a considerable degree"
-        assert sanitize_answer_text("{score=3} Applied to me very much") == "Applied to me very much"
+        assert (
+            sanitize_answer_text("{score=0} Did not apply to me at all")
+            == "Did not apply to me at all"
+        )
+        assert (
+            sanitize_answer_text("{score=1} Applied to me to some degree")
+            == "Applied to me to some degree"
+        )
+        assert (
+            sanitize_answer_text("{score=2} Applied to me a considerable degree")
+            == "Applied to me a considerable degree"
+        )
+        assert (
+            sanitize_answer_text("{score=3} Applied to me very much")
+            == "Applied to me very much"
+        )
 
 
 # Import subquestion sanitizer for testing
 try:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
-    from src.limesurvey_exporter import _sanitize_subquestion_code, LS_SUBQUESTION_CODE_MAX_LENGTH
+    from src.limesurvey_exporter import (
+        _sanitize_subquestion_code,
+        LS_SUBQUESTION_CODE_MAX_LENGTH,
+    )
+
     SUBQUESTION_TESTS_AVAILABLE = True
 except ImportError:
     SUBQUESTION_TESTS_AVAILABLE = False
 
 
-@pytest.mark.skipif(not SUBQUESTION_TESTS_AVAILABLE, reason="LimeSurvey exporter not available")
+@pytest.mark.skipif(
+    not SUBQUESTION_TESTS_AVAILABLE, reason="LimeSurvey exporter not available"
+)
 class TestSubquestionCodeSanitization:
     """Tests for LimeSurvey subquestion code sanitization."""
 

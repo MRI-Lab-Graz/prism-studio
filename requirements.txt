@@ -25,6 +25,9 @@ sphinx
 sphinx-rtd-theme
 myst-parser
 
-pyedflib
+# Optional: EDF/EDF+ file support (requires C++ compiler on some systems)
+# On Windows, pre-built wheels are usually available
+# If installation fails, the tool will work without EDF metadata extraction
+# pyedflib
 defusedxml
 pyarrow

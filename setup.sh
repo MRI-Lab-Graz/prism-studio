@@ -120,7 +120,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Ensure pyreadstat is available for SPSS SAV export
+# Ensure pyreadstat is available for SPSS SAVE export
 uv pip install pyreadstat
 if [ $? -ne 0 ]; then
     echo_error "Failed to install pyreadstat."
