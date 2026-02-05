@@ -1,0 +1,46 @@
+<?xml version="1.0" ?>
+<PsychoPy2experiment version="2024.1.1" encoding="utf-8">
+  <Settings>
+    <Param name="Data filename" val="''"/>
+    <Param name="Show info dlg" val="True"/>
+    <Param name="Experiment info" val="{'participant': '', 'session': '001'}"/>
+    <Param name="Enable Escape" val="True"/>
+    <Param name="Logging level" val="exp"/>
+    <Param name="Window size (pixels)" val="[1920, 1080]"/>
+    <Param name="Full-screen window" val="True"/>
+    <Param name="Color" val="$[0,0,0]"/>
+    <Param name="Color space" val="rgb"/>
+    <Param name="Units" val="height"/>
+  </Settings>
+  <Routines>
+    <Routine name="welcome">
+      <TextComponent name="welcome_text">
+        <Param name="text" val="Welcome to survey-phq9" valType="str"/>
+        <Param name="pos" val="[0, 0]" valType="str"/>
+        <Param name="height" val="0.05" valType="str"/>
+      </TextComponent>
+      <KeyboardComponent name="welcome_key">
+        <Param name="keys" val="['space']" valType="str"/>
+        <Param name="text" val="Press SPACE to continue" valType="str"/>
+      </KeyboardComponent>
+    </Routine>
+    <Routine name="group_questions">
+      <FormComponent name="form_group_questions">
+        <Param name="items" val="[{'questionText': {'en': 'Little interest or pleasure in doing things'}, 'responseType': 'choice', 'choices': [&quot;0: {'en': '{score=0} not at all'}&quot;, &quot;1: {'en': '{score=1} several days'}&quot;, &quot;2: {'en': '{score=2} more than half the days'}&quot;, &quot;3: {'en': '{score=3} nearly every day'}&quot;]}, {'questionText': {'en': 'Feeling down, depressed, or hopeless'}, 'responseType': 'choice', 'choices': [&quot;0: {'en': '{score=0} not at all'}&quot;, &quot;1: {'en': '{score=1} several days'}&quot;, &quot;2: {'en': '{score=2} more than half the days'}&quot;, &quot;3: {'en': '{score=3} nearly every day'}&quot;]}, {'questionText': {'en': 'Trouble falling or staying asleep, or sleeping too much'}, 'responseType': 'choice', 'choices': [&quot;0: {'en': '{score=0} not at all'}&quot;, &quot;1: {'en': '{score=1} several days'}&quot;, &quot;2: {'en': '{score=2} more than half the days'}&quot;, &quot;3: {'en': '{score=3} nearly every day'}&quot;]}, {'questionText': {'en': 'Feeling tired or having little energy'}, 'responseType': 'choice', 'choices': [&quot;0: {'en': '{score=0} not at all'}&quot;, &quot;1: {'en': '{score=1} several days'}&quot;, &quot;2: {'en': '{score=2} more than half the days'}&quot;, &quot;3: {'en': '{score=3} nearly every day'}&quot;]}, {'questionText': {'en': 'Poor appetite or overeating'}, 'responseType': 'choice', 'choices': [&quot;0: {'en': '{score=0} not at all'}&quot;, &quot;1: {'en': '{score=1} several days'}&quot;, &quot;2: {'en': '{score=2} more than half the days'}&quot;, &quot;3: {'en': '{score=3} nearly every day'}&quot;]}, {'questionText': {'en': 'Feeling bad about yourself - or that you are a failure or have let yourself or your family down'}, 'responseType': 'choice', 'choices': [&quot;0: {'en': '{score=0} not at all'}&quot;, &quot;1: {'en': '{score=1} several days'}&quot;, &quot;2: {'en': '{score=2} more than half the days'}&quot;, &quot;3: {'en': '{score=3} nearly every day'}&quot;]}, {'questionText': {'en': 'Trouble concentrating on things, such as reading the newspaper or watching television'}, 'responseType': 'choice', 'choices': [&quot;0: {'en': '{score=0} not at all'}&quot;, &quot;1: {'en': '{score=1} several days'}&quot;, &quot;2: {'en': '{score=2} more than half the days'}&quot;, &quot;3: {'en': '{score=3} nearly every day'}&quot;]}, {'questionText': {'en': 'Moving or speaking so slowly that other people could have noticed? Or the opposite - being so fidgety or restless that you have been moving around a lot more than usual'}, 'responseType': 'choice', 'choices': [&quot;0: {'en': '{score=0} not at all'}&quot;, &quot;1: {'en': '{score=1} several days'}&quot;, &quot;2: {'en': '{score=2} more than half the days'}&quot;, &quot;3: {'en': '{score=3} nearly every day'}&quot;]}, {'questionText': {'en': 'Thoughts that you would be better off dead or of hurting yourself in some way'}, 'responseType': 'choice', 'choices': [&quot;0: {'en': '{score=0} not at all'}&quot;, &quot;1: {'en': '{score=1} several days'}&quot;, &quot;2: {'en': '{score=2} more than half the days'}&quot;, &quot;3: {'en': '{score=3} nearly every day'}&quot;]}]" valType="str"/>
+        <Param name="randomize" val="False" valType="str"/>
+      </FormComponent>
+    </Routine>
+    <Routine name="thanks">
+      <TextComponent name="thanks_text">
+        <Param name="text" val="Thank you for participating!" valType="str"/>
+        <Param name="pos" val="[0, 0]" valType="str"/>
+        <Param name="duration" val="2.0" valType="str"/>
+      </TextComponent>
+    </Routine>
+  </Routines>
+  <Flow>
+    <Routine name="welcome"/>
+    <Routine name="group_questions"/>
+    <Routine name="thanks"/>
+  </Flow>
+</PsychoPy2experiment>
