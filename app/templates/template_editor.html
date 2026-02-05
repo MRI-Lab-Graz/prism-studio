@@ -79,6 +79,51 @@
   .preview-badge-mandatory {
     background-color: #0d6efd;
   }
+  .completion-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #f8f9fa;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+  }
+  .completion-bar {
+    flex: 1;
+    height: 24px;
+    background: #e9ecef;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    border: 1px solid #adb5bd;
+  }
+  .completion-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ffc107 0%, #ff9800 100%);
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 30px;
+  }
+  .completion-bar-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .section-group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e9ecef;
+  }
+  .section-group-header i {
+    font-size: 1.1em;
+  }
 </style>
 {% endblock %}
 
@@ -195,7 +240,7 @@
         </div>
 
         <div class="mt-4">
-          <div class="d-flex align-items-center justify-content-between mb-2">
+          <div class="d-flex align-items-center justify-content-between mb-3">
             <ul class="nav nav-tabs mb-0" id="editorViewTabs">
               <li class="nav-item">
                 <a class="nav-link active" href="#" data-view="editor" id="tabEditor"><i class="fas fa-edit me-1"></i>Editor</a>
@@ -205,6 +250,18 @@
               </li>
             </ul>
             <span class="text-muted small" id="editorHint">Keys are fixed; edit values only.</span>
+          </div>
+
+          <!-- Completion Progress Bar -->
+          <div class="completion-bar-container" id="completionBarContainer" style="display:none;">
+            <div class="completion-bar">
+              <div class="completion-bar-fill" id="completionBarFill" style="width: 0%;">
+                <span id="completionBarText">0%</span>
+              </div>
+            </div>
+            <div class="completion-bar-label">
+              <span id="completionLabel">General Information</span>
+            </div>
           </div>
 
           <!-- Editor View -->
@@ -505,22 +562,66 @@
   }
 
   function renderMissingSummary() {
-    if (!missingSummaryEl || !hasUserInteracted) return;
-    const missing = recomputeMissingFields();
-    if (!missing.length) {
+    // Removed: Missing fields are already shown in validation errors
+    // No need to duplicate this information
+    if (missingSummaryEl) {
       missingSummaryEl.innerHTML = '';
+    }
+  }
+
+  function calculateCompletion() {
+    if (!currentTemplate || typeof currentTemplate !== 'object') return 0;
+
+    // Count filled fields in general information sections
+    const sections = ['Technical', 'Study', 'Metadata', 'I18n'];
+    let filledCount = 0;
+    let totalCount = 0;
+
+    sections.forEach(s => {
+      const sch = getSectionSchema(s);
+      if (!sch || !sch.properties) return;
+
+      Object.entries(sch.properties).forEach(([key, fieldSchema]) => {
+        totalCount++;
+        const value = currentTemplate[s]?.[key];
+        if (value !== null && value !== undefined && value !== '' && 
+            !(Array.isArray(value) && value.length === 0) &&
+            !(typeof value === 'object' && Object.keys(value).length === 0)) {
+          filledCount++;
+        }
+      });
+    });
+
+    if (totalCount === 0) return 0;
+    return Math.round((filledCount / totalCount) * 100);
+  }
+
+  function renderCompletionBar() {
+    const completionBarContainer = document.getElementById('completionBarContainer');
+    const completionBarFill = document.getElementById('completionBarFill');
+    const completionBarText = document.getElementById('completionBarText');
+
+    // Only show if a template is loaded and it has required sections
+    if (!currentTemplate || typeof currentTemplate !== 'object' || !hasUserInteracted) {
+      if (completionBarContainer) completionBarContainer.style.display = 'none';
       return;
     }
-    const items = missing.map(m => `<li><a href="#" data-path="${m.path}" class="missing-link">${m.section}: ${m.name}</a></li>`).join('');
-    missingSummaryEl.innerHTML = `
-      <div class="alert alert-warning" role="alert">
-        <strong>${missing.length} required field(s) missing</strong>
-        <ul class="mb-0">${items}</ul>
-      </div>
-    `;
-    missingSummaryEl.querySelectorAll('.missing-link').forEach(a => {
-      a.addEventListener('click', (e) => { e.preventDefault(); focusField(a.dataset.path); });
-    });
+
+    const percentage = calculateCompletion();
+    if (completionBarContainer) {
+      completionBarContainer.style.display = 'flex';
+      completionBarFill.style.width = percentage + '%';
+      completionBarText.textContent = percentage + '%';
+      
+      // Change color based on completion
+      if (percentage >= 80) {
+        completionBarFill.style.background = 'linear-gradient(90deg, #28a745 0%, #20c997 100%)';
+      } else if (percentage >= 50) {
+        completionBarFill.style.background = 'linear-gradient(90deg, #17a2b8 0%, #20c997 100%)';
+      } else {
+        completionBarFill.style.background = 'linear-gradient(90deg, #ffc107 0%, #ff9800 100%)';
+      }
+    }
   }
 
   function diffObjects(base, curr, path, out) {
@@ -2391,6 +2492,14 @@
   function renderTopLevel() {
     topLevelFormEl.innerHTML = '';
     const sections = ['Technical', 'Study', 'Metadata', 'I18n'];
+    
+    // Map section names to user-friendly labels and icons
+    const sectionLabels = {
+      'Technical': { label: 'Technical Details', icon: 'fa-gear' },
+      'Study': { label: 'Study Information', icon: 'fa-book' },
+      'Metadata': { label: 'Version & Dates', icon: 'fa-calendar' },
+      'I18n': { label: 'Internationalization', icon: 'fa-globe' }
+    };
 
     const acc = document.createElement('div');
     acc.className = 'accordion';
@@ -2415,7 +2524,9 @@
       btn.setAttribute('data-bs-target', `#tlBody_${s}`);
       btn.setAttribute('aria-expanded', idx === 0 ? 'true' : 'false');
       btn.setAttribute('aria-controls', `tlBody_${s}`);
-      btn.textContent = s;
+      
+      // Create button content with icon and label
+      btn.innerHTML = `<i class="fas ${sectionLabels[s].icon} me-2" style="color: #6c757d;"></i>${sectionLabels[s].label}`;
       h.appendChild(btn);
 
       const bodyWrap = document.createElement('div');
@@ -2792,12 +2903,113 @@
     renderBulkEdit();
     renderJsonDiff();
     renderLanguageBar();
+    renderCompletionBar();
     if (currentView === 'preview') renderPreview();
   }
 
   // Store template metadata for source-aware loading
   let templateMetadata = {};
   let hasUserInteracted = false; // Track if user has interacted (loaded/edited/validated)
+
+  // Store validation status for all templates
+  let templateValidationStatus = {};
+
+  function updateProjectTemplateDropdownBadges() {
+    // Refresh the selected option's display to show updated status badge
+    for (let i = 0; i < projectTemplateSelectEl.options.length; i++) {
+      const opt = projectTemplateSelectEl.options[i];
+      const filename = opt.value;
+      if (!filename) continue;
+      
+      const status = templateValidationStatus[filename];
+      let badge = '';
+      
+      if (!status) {
+        // No validation status recorded - show nothing (template not yet validated)
+        badge = '';
+      } else {
+        switch (status.status) {
+          case 'valid':
+            badge = ' ✅';
+            break;
+          case 'warning':
+            badge = ` ⚠️ (${status.count})`;
+            break;
+          case 'error':
+            badge = ` ❌ (${status.count})`;
+            break;
+        }
+      }
+      
+      // Extract filename without previous badge
+      const baseName = filename.split(' ')[0];
+      opt.textContent = baseName + badge;
+    }
+  }
+
+  async function validateAllProjectTemplates(modality, templates) {
+    templateValidationStatus = {};
+    console.log(`Starting validation of ${templates.length} templates...`);
+    
+    for (const t of templates) {
+      if (t.source !== 'project') continue; // Only validate project templates
+      
+      try {
+        const qp = new URLSearchParams({ modality, schema_version: schemaEl.value, filename: t.filename });
+        if (t.path) {
+          const normalizedPath = t.path.replace(/\\/g, '/');
+          // Remove the filename to get the directory containing the template
+          const pathParts = normalizedPath.split('/');
+          const dirPath = pathParts.slice(0, -1).join('/'); // Remove filename
+          const modalityIdx = pathParts.lastIndexOf(modality);
+          if (modalityIdx > 0) {
+            // Library path is everything up to (not including) the modality folder
+            const libraryPath = pathParts.slice(0, modalityIdx).join('/');
+            if (libraryPath) qp.set('library_path', libraryPath);
+          }
+        }
+        
+        const response = await apiGet(`/api/template-editor/load?${qp.toString()}`);
+        if (!response || !response.template) {
+          console.log(`Failed to load ${t.filename}`);
+          templateValidationStatus[t.filename] = { status: 'error', count: 1 };
+          continue;
+        }
+        
+        const validateResp = await apiPost('/api/template-editor/validate', {
+          modality,
+          schema_version: schemaEl.value,
+          template: response.template
+        });
+        
+        if (!validateResp) {
+          console.log(`Failed to validate ${t.filename}`);
+          templateValidationStatus[t.filename] = { status: 'error', count: 1 };
+          continue;
+        }
+        
+        // Determine status - count ALL errors (schema + custom validation)
+        const totalErrors = (validateResp.errors || []).length;
+        const langWarnings = (validateResp.language_warnings || []).length;
+        
+        if (!validateResp.ok && totalErrors > 0) {
+          // Has validation errors
+          templateValidationStatus[t.filename] = { status: 'error', count: totalErrors };
+        } else if (validateResp.ok && langWarnings > 0) {
+          // Valid schema but has language warnings
+          templateValidationStatus[t.filename] = { status: 'warning', count: langWarnings };
+        } else if (validateResp.ok) {
+          // Completely valid
+          templateValidationStatus[t.filename] = { status: 'valid', count: 0 };
+        }
+        console.log(`${t.filename}: ${templateValidationStatus[t.filename].status} (${totalErrors} errors, ${langWarnings} warnings)`);
+      } catch (e) {
+        console.error(`Error validating ${t.filename}:`, e);
+        templateValidationStatus[t.filename] = { status: 'error', count: 1 };
+      }
+    }
+    console.log('Validation complete. Status:', templateValidationStatus);
+  }
 
   async function refreshTemplateList() {
     const modality = modalityEl.value;
@@ -2812,18 +3024,24 @@
     const projectTemplates = (data.templates || []).filter(t => t.source === 'project');
     const globalTemplates = (data.templates || []).filter(t => t.source !== 'project');
 
+    // Validate all project templates in background
+    await validateAllProjectTemplates(modality, projectTemplates);
+
     // Populate project templates dropdown
     projectTemplateSelectEl.innerHTML = '<option value="">(none in project)</option>';
     for (const t of projectTemplates) {
       const opt = document.createElement('option');
       opt.value = t.filename;
-      opt.textContent = t.filename;
+      opt.textContent = t.filename; // Start without badge
       opt.dataset.source = t.source;
       opt.dataset.path = t.path;
       opt.dataset.readonly = t.readonly;
       projectTemplateSelectEl.appendChild(opt);
       templateMetadata[t.filename] = t;
     }
+    
+    // Update badges after validation completes
+    updateProjectTemplateDropdownBadges();
 
     // Populate global templates dropdown
     globalTemplateSelectEl.innerHTML = '<option value="">(select one)</option>';
@@ -2958,12 +3176,26 @@
     }
 
     hasUserInteracted = true; // User is now validating
-    ensureTemplateNormalized();
     const data = await apiPost('/api/template-editor/validate', {
       modality,
       schema_version,
       template: obj
     });
+
+    // Update the status badge in the dropdown to reflect current validation state
+    const selectedFilename = projectTemplateSelectEl.value;
+    if (selectedFilename) {
+      if (data.ok && (!data.language_warnings || data.language_warnings.length === 0)) {
+        templateValidationStatus[selectedFilename] = { status: 'valid', count: 0 };
+      } else if (data.ok && data.language_warnings && data.language_warnings.length > 0) {
+        templateValidationStatus[selectedFilename] = { status: 'warning', count: data.language_warnings.length };
+      } else {
+        const errorCount = (data.errors || []).length;
+        templateValidationStatus[selectedFilename] = { status: 'error', count: errorCount };
+      }
+      // Refresh the dropdown to show updated badge
+      updateProjectTemplateDropdownBadges();
+    }
 
     // Build language warnings HTML (always shown, regardless of schema validity)
     const langWarnings = data.language_warnings || [];
