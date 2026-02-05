@@ -7,12 +7,12 @@
     <div class="col-lg-8">
         <!-- Welcome Section -->
         <div class="text-center mb-5">
+            <img src="{{ url_for('prism_logo') }}" alt="PRISM Logo" class="img-fluid mb-4" style="max-width: 420px;">
             <h1 class="display-4 mb-3">
-                <i class="fas fa-brain text-primary me-3"></i>
                 PRISM Studio
             </h1>
             <p class="lead text-muted mb-4">
-                Professional toolkit for validating and managing psychological research datasets
+                BIDS-compatible framework for psychological and physiological research metadata
             </p>
             
             <div class="d-inline-flex flex-wrap justify-content-center align-items-center gap-2 mb-3">
@@ -21,66 +21,165 @@
             </div>
         </div>
 
-        <!-- Part 0: Project Manager (first step) -->
-        <div class="card feature-card mb-5 border-primary">
+        <!-- Key Highlights -->
+        <div class="card feature-card mb-5">
             <div class="card-body p-5">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h3 class="card-title mb-3">
-                            <i class="fas fa-folder-open text-primary me-2"></i>
-                            Project Manager
-                        </h3>
-                        <p class="lead text-muted">
-                            Choose or create a project first. All tools use the active project to pick the right paths.
-                        </p>
-                        {% if current_project.path %}
+                <h4 class="card-title mb-4">
+                    <i class="fas fa-star text-warning me-2"></i>
+                    Key Highlights
+                </h4>
+                <div class="row g-4">
+                    <div class="col-md-6">
                         <div class="mb-3">
-                            <span class="badge bg-primary">
-                                <i class="fas fa-check-circle me-1"></i>Current: {{ current_project.name or 'Project' }}
-                            </span>
-                            <div class="text-muted small mt-1"><code>{{ current_project.path }}</code></div>
+                            <h6 class="text-primary mb-2">
+                                <i class="fas fa-puzzle-piece me-2"></i>
+                                BIDS-first and compatible
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                PRISM extends BIDS without breaking existing tools like fMRIPrep and standard validators.
+                            </p>
                         </div>
-                        {% endif %}
-                        <a href="{{ url_for('projects.projects_page') }}" class="btn btn-primary">
-                            <i class="fas fa-arrow-right me-2"></i>Open Project Manager
-                        </a>
                     </div>
-                    <div class="col-md-4 text-center d-none d-md-block">
-                        <i class="fas fa-folder-tree fa-5x text-primary opacity-25"></i>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">
+                                <i class="fas fa-clipboard-list me-2"></i>
+                                Survey modality
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                Structured questionnaires with sidecar metadata, scoring recipes, and LimeSurvey support.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">
+                                <i class="fas fa-heartbeat me-2"></i>
+                                Biometrics modality
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                Capture physiological assessments like VO2max, balance tests, or strength measures.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">
+                                <i class="fas fa-bolt me-2"></i>
+                                Fast, local validation
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                Validate large datasets locally with metadata-only uploads and instant feedback.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">
+                                <i class="fas fa-tags me-2"></i>
+                                NeuroBagel-ready
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                Annotate participants using standardized ontologies and controlled vocabularies.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-2">
+                                <i class="fas fa-lock me-2"></i>
+                                Local-first by design
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                All processing runs on your machine—no cloud uploads required.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Part 1: PRISM Specifications -->
+        <!-- How it works -->
         <div class="card feature-card mb-5 border-primary">
             <div class="card-body p-5">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h3 class="card-title mb-3">
-                            <i class="fas fa-book-open text-primary me-2"></i>
-                            PRISM Specifications
-                        </h3>
-                        <p class="lead text-muted">
-                            Learn about the PRISM structure, naming conventions, and metadata requirements. 
-                            Understand how PRISM extends BIDS for psychological research.
-                        </p>
-                        <a href="{{ url_for('specifications') }}" class="btn btn-primary">
-                            <i class="fas fa-info-circle me-2"></i>Explore Specifications
-                        </a>
+                <h4 class="card-title mb-4">
+                    <i class="fas fa-route text-primary me-2"></i>
+                    How to use PRISM Studio
+                </h4>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="h-100">
+                            <h6 class="text-primary mb-2">
+                                <i class="fas fa-folder-open me-2"></i>
+                                1) Choose or create a project
+                            </h6>
+                            <p class="text-muted small mb-3">
+                                Projects keep your paths organized so all tools work on the same dataset.
+                            </p>
+                            {% if current_project.path %}
+                            <div class="mb-3">
+                                <span class="badge bg-primary">
+                                    <i class="fas fa-check-circle me-1"></i>Current: {{ current_project.name or 'Project' }}
+                                </span>
+                                <div class="text-muted small mt-1"><code>{{ current_project.path }}</code></div>
+                            </div>
+                            {% endif %}
+                            <a href="{{ url_for('projects.projects_page') }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-arrow-right me-2"></i>Open Project Manager
+                            </a>
+                        </div>
                     </div>
-                    <div class="col-md-4 text-center d-none d-md-block">
-                        <i class="fas fa-project-diagram fa-5x text-primary opacity-25"></i>
+                    <div class="col-md-6">
+                        <div class="h-100">
+                            <h6 class="text-primary mb-2">
+                                <i class="fas fa-check-circle me-2"></i>
+                                2) Validate your dataset
+                            </h6>
+                            <p class="text-muted small mb-3">
+                                Check structure, required files, and metadata consistency in one click.
+                            </p>
+                            <a href="{{ url_for('validation.validate_dataset') }}" class="btn btn-success btn-sm">
+                                <i class="fas fa-arrow-right me-2"></i>Open Validator
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="h-100">
+                            <h6 class="text-primary mb-2">
+                                <i class="fas fa-file-excel me-2"></i>
+                                3) Convert and score
+                            </h6>
+                            <p class="text-muted small mb-3">
+                                Convert surveys/biometrics and compute scores using recipes and templates.
+                            </p>
+                            <a href="{{ url_for('tools.converter') }}" class="btn btn-warning btn-sm text-white">
+                                <i class="fas fa-arrow-right me-2"></i>Open Converter
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="h-100">
+                            <h6 class="text-primary mb-2">
+                                <i class="fas fa-book-open me-2"></i>
+                                4) Learn the specification
+                            </h6>
+                            <p class="text-muted small mb-3">
+                                Explore naming rules, metadata requirements, and BIDS compatibility.
+                            </p>
+                            <a href="{{ url_for('specifications') }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-info-circle me-2"></i>Explore Specifications
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Part 2: PRISM Tools -->
+        <!-- Tools (secondary) -->
         <div class="mb-5">
             <h3 class="mb-4 text-center">
                 <i class="fas fa-tools text-secondary me-2"></i>
-                PRISM Tools
+                Tools
             </h3>
             <div class="row g-4">
                 <!-- Validate Card -->
@@ -165,94 +264,10 @@
             </div>
         </div>
 
-        <!-- Features Section -->
-        <div class="card feature-card">
-            <div class="card-body p-5">
-                <h4 class="card-title mb-4">
-                    <i class="fas fa-star text-warning me-2"></i>
-                    Key Highlights
-                </h4>
-                
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-microscope me-2"></i>
-                                Multi-Modal Support
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                Specialized validation for surveys, biometrics, physio, and eyetracking alongside standard BIDS modalities.
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-magic me-2"></i>
-                                Automated Processing
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                Instantly calculate scores, subscales, and handle reverse-coding for standardized psychological questionnaires.
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-sync me-2"></i>
-                                LimeSurvey Ecosystem
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                Generate LimeSurvey templates and convert exported responses back into structured PRISM datasets.
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-database me-2"></i>
-                                FAIR Metadata Standards
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                Enforces rich, structured JSON sidecars to ensure your data is Findable, Accessible, Interoperable, and Reusable.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-bolt me-2"></i>
-                                Efficient Validation
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                DataLad-style metadata-only upload allows you to validate massive datasets without transferring large binary files.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-2">
-                                <i class="fas fa-puzzle-piece me-2"></i>
-                                BIDS Compatibility
-                            </h6>
-                            <p class="text-muted small mb-0">
-                                PRISM datasets remain 100% BIDS-compliant, ensuring they work with fMRIPrep and other standard neuroimaging tools.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Info Section -->
         <div class="alert alert-info mt-5" role="alert">
             <i class="fas fa-info-circle me-2"></i>
-            <strong>Getting Started:</strong> Choose one of the tools above to begin. Start with <strong>Validator</strong> to check your dataset, then use <strong>Data Processing</strong> to generate survey scores.
+            <strong>Getting Started:</strong> Choose a project, validate your dataset, then convert or score as needed.
         </div>
     </div>
 </div>

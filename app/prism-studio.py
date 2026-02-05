@@ -76,6 +76,7 @@ shorten_path = None
 get_filename_from_path = None
 run_validation = None
 
+from src.cross_platform import safe_path_join
 try:
     from src.web import (
         # Utils
@@ -346,6 +347,20 @@ def favicon_ico():
         app.static_folder,
         "prism2026.ico",
         mimetype="image/png",
+        max_age=86400,  # Cache for 24 hours
+    )
+
+
+@app.route("/assets/prism-logo")
+def prism_logo():
+    """Serve PRISM logo from docs/img with caching"""
+    from flask import send_from_directory
+
+    logo_dir = safe_path_join(BASE_DIR.parent, "docs", "img")
+    return send_from_directory(
+        logo_dir,
+        "prism_logo.jpg",
+        mimetype="image/jpeg",
         max_age=86400,  # Cache for 24 hours
     )
 
