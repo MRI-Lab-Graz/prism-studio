@@ -32,8 +32,8 @@ def generate_random_id(
         Random ID like "sub-R7X2K9"
     """
     if seed:
-        # Use hash of seed for reproducibility
-        hash_obj = hashlib.md5(seed.encode())
+        # Use hash of seed for reproducibility (not for security)
+        hash_obj = hashlib.md5(seed.encode(), usedforsecurity=False)
         random.seed(int(hash_obj.hexdigest(), 16))
 
     chars = string.ascii_uppercase + string.digits

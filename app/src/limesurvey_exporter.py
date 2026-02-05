@@ -1,6 +1,9 @@
 import json
 import logging
-import xml.etree.ElementTree as ET
+try:
+    from defusedxml import ElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
 from datetime import datetime
 import os
 import io
@@ -256,7 +259,8 @@ def _sanitize_question_code(
     if len(sanitized) > max_length:
         # Reserve 2 characters for hash suffix to ensure uniqueness
         # Use hash of ORIGINAL code (before sanitization) to distinguish similar codes
-        hash_suffix = hashlib.md5(code.encode()).hexdigest()[:2]
+        # Hash used for generating short suffixes, not for security
+        hash_suffix = hashlib.md5(code.encode(), usedforsecurity=False).hexdigest()[:2]
         prefix_len = max_length - 2
         sanitized = sanitized[:prefix_len] + hash_suffix
 

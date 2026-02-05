@@ -7,11 +7,10 @@ to include in PRISM distributions for systems without C++ compilers.
 
 Usage:
     python scripts/bundle_pyedflib.py
-    
+
 This will download wheels for common Python versions and extract them to vendor/
 """
 
-import os
 import sys
 import urllib.request
 import zipfile
@@ -35,11 +34,11 @@ def download_wheel(url, dest_dir):
     """Download a wheel file."""
     filename = url.split("/")[-1]
     dest_path = dest_dir / filename
-    
+
     if dest_path.exists():
         print(f"  Already exists: {filename}")
         return dest_path
-    
+
     print(f"  Downloading: {filename}")
     try:
         urllib.request.urlretrieve(url, dest_path)
@@ -53,7 +52,7 @@ def extract_wheel(wheel_path, extract_dir):
     """Extract a wheel file (which is a ZIP file)."""
     print(f"  Extracting: {wheel_path.name}")
     try:
-        with zipfile.ZipFile(wheel_path, 'r') as zip_ref:
+        with zipfile.ZipFile(wheel_path, "r") as zip_ref:
             # Extract only the package files, not metadata
             for member in zip_ref.namelist():
                 if member.startswith("pyedflib/") or member.startswith("pyedflib-"):
@@ -71,43 +70,45 @@ def main():
     vendor_dir = repo_root / "vendor"
     wheels_dir = vendor_dir / "wheels"
     wheels_dir.mkdir(parents=True, exist_ok=True)
-    
+
     print("=" * 60)
     print("PRISM - Bundle pyedflib for Windows")
     print("=" * 60)
     print()
-    
+
     # Fetch available releases
     print("Fetching available releases from PyPI...")
     releases = get_pypi_releases()
     if not releases:
         print("ERROR: Could not fetch releases")
         return 1
-    
+
     # Get latest version
     latest_version = max(releases.keys(), key=lambda v: [int(x) for x in v.split(".")])
     print(f"Latest version: {latest_version}")
     print()
-    
+
     # Find Windows wheels for common Python versions
     wheels = []
     for file_info in releases[latest_version]:
         filename = file_info["filename"]
         # Look for Windows wheels (cp38, cp39, cp310, cp311)
-        if (filename.endswith(".whl") and 
-            "win" in filename and 
-            any(f"cp{v}" in filename for v in ["38", "39", "310", "311"])):
+        if (
+            filename.endswith(".whl")
+            and "win" in filename
+            and any(f"cp{v}" in filename for v in ["38", "39", "310", "311"])
+        ):
             wheels.append(file_info)
-    
+
     if not wheels:
         print("ERROR: No Windows wheels found")
         return 1
-    
+
     print(f"Found {len(wheels)} Windows wheels:")
     for w in wheels:
         print(f"  - {w['filename']}")
     print()
-    
+
     # Download wheels
     print("Downloading wheels...")
     downloaded = []
@@ -116,17 +117,17 @@ def main():
         if wheel_path:
             downloaded.append(wheel_path)
     print()
-    
+
     if not downloaded:
         print("ERROR: No wheels downloaded")
         return 1
-    
+
     # Extract wheels
     print("Extracting wheels...")
     for wheel_path in downloaded:
         extract_wheel(wheel_path, vendor_dir)
     print()
-    
+
     # Create usage instructions
     instructions_path = vendor_dir / "USAGE.txt"
     with open(instructions_path, "w") as f:
@@ -166,7 +167,7 @@ pyedflib support for Windows users without C++ compilers.
 
 Files included: {len(downloaded)} wheel(s)
 """)
-    
+
     print("=" * 60)
     print("SUCCESS!")
     print("=" * 60)
@@ -176,7 +177,7 @@ Files included: {len(downloaded)} wheel(s)
     print()
     print("The vendored pyedflib will be automatically used if needed.")
     print()
-    
+
     return 0
 
 

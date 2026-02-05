@@ -3130,7 +3130,8 @@ def _build_participant_col_renames(
         if not sanitized:
             continue
         if len(sanitized) > LS_MAX:
-            hash_suffix = hashlib.md5(field_name.encode()).hexdigest()[:2]
+            # Hash used for generating short suffixes, not for security
+            hash_suffix = hashlib.md5(field_name.encode(), usedforsecurity=False).hexdigest()[:2]
             sanitized = sanitized[: LS_MAX - 2] + hash_suffix
 
         sanitized_lower = sanitized.lower()

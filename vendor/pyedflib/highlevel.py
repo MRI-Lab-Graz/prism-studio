@@ -45,6 +45,7 @@ def tqdm(iterable: Iterable, *args: Any, **kwargs: Any) -> Iterable:
     """
     try:
         from tqdm import tqdm as iterator
+
         return iterator(iterable, *args, **kwargs)
     except Exception:
         return iterable
@@ -66,8 +67,15 @@ def _parse_date(string: str) -> datetime:
 
     """
     # some common formats.
-    formats = ['%Y-%m-%d', '%d-%m-%Y', '%d.%m.%Y', '%Y.%m.%d', '%d %b %Y',
-               '%Y/%m/%d', '%d/%m/%Y']
+    formats = [
+        "%Y-%m-%d",
+        "%d-%m-%Y",
+        "%d.%m.%Y",
+        "%Y.%m.%d",
+        "%d %b %Y",
+        "%Y/%m/%d",
+        "%d/%m/%Y",
+    ]
     for f in formats:
         try:
             return datetime.strptime(string, f)
@@ -75,14 +83,22 @@ def _parse_date(string: str) -> datetime:
             pass
     try:
         import dateparser
+
         return dateparser.parse(string)
     except Exception:
-        print('dateparser is not installed. to convert strings to dates'
-              ' install via `pip install dateparser`.')
-        raise ValueError('birthdate must be datetime object or of format'
-                         ' `%d-%m-%Y`, eg. `24-01-2020`')
+        print(
+            "dateparser is not installed. to convert strings to dates"
+            " install via `pip install dateparser`."
+        )
+        raise ValueError(
+            "birthdate must be datetime object or of format"
+            " `%d-%m-%Y`, eg. `24-01-2020`"
+        )
 
-def dig2phys(signal: Union[np.ndarray, int], dmin: int, dmax: int, pmin: float, pmax: float) -> Union[np.ndarray, float]:
+
+def dig2phys(
+    signal: Union[np.ndarray, int], dmin: int, dmax: int, pmin: float, pmax: float
+) -> Union[np.ndarray, float]:
     """
     converts digital edf values to physical values
 
@@ -105,18 +121,14 @@ def dig2phys(signal: Union[np.ndarray, int], dmin: int, dmax: int, pmin: float, 
         converted physical values
 
     """
-    m = (pmax-pmin) / (dmax-dmin)
+    m = (pmax - pmin) / (dmax - dmin)
     b = pmax / m - dmax
     physical = m * (signal + b)
     return physical
 
 
 def phys2dig(
-    signal: Union[np.ndarray, int],
-    dmin: int,
-    dmax: int,
-    pmin: float,
-    pmax: float
+    signal: Union[np.ndarray, int], dmin: int, dmax: int, pmin: float, pmax: float
 ) -> Union[np.ndarray, int]:
     """
     converts physical values to digital values
@@ -140,25 +152,24 @@ def phys2dig(
         converted digital values
 
     """
-    m = (pmax-pmin) / (dmax-dmin)
+    m = (pmax - pmin) / (dmax - dmin)
     b = pmax / m - dmax
-    digital = signal/m - b
+    digital = signal / m - b
     return digital
 
 
-
 def make_header(
-    technician: str = '',
-    recording_additional: str = '',
-    patientname: str = '',
-    patient_additional: str = '',
-    patientcode: str = '',
-    equipment: str = '',
-    admincode: str = '',
-    sex: str = '',
+    technician: str = "",
+    recording_additional: str = "",
+    patientname: str = "",
+    patient_additional: str = "",
+    patientcode: str = "",
+    equipment: str = "",
+    admincode: str = "",
+    sex: str = "",
     startdate: Optional[datetime] = None,
-    birthdate: Union[str, datetime] = '',
-    gender: Optional[str] = None
+    birthdate: Union[str, datetime] = "",
+    gender: Optional[str] = None,
 ) -> dict:
     """
     A convenience function to create an EDF header (a dictionary) that
@@ -194,23 +205,30 @@ def make_header(
 
     """
 
-    if birthdate != '' and isinstance(birthdate, str):
+    if birthdate != "" and isinstance(birthdate, str):
         birthdate = _parse_date(birthdate)
     if startdate is None:
         now = datetime.now()
-        startdate = datetime(now.year, now.month, now.day,
-                             now.hour, now.minute, now.second)
+        startdate = datetime(
+            now.year, now.month, now.day, now.hour, now.minute, now.second
+        )
         del now
     if isinstance(birthdate, datetime):
-        birthdate = birthdate.strftime('%d %b %Y').lower()
+        birthdate = birthdate.strftime("%d %b %Y").lower()
 
     # backwards compatibility
     if gender is not None:
-        if sex == '':
+        if sex == "":
             sex = gender
-            warnings.warn("Parameter 'gender' is deprecated, use 'sex' instead.", DeprecationWarning, stacklevel=2)
+            warnings.warn(
+                "Parameter 'gender' is deprecated, use 'sex' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
         elif sex != gender:
-            raise ValueError(f"Defined both parameters 'sex' and 'gender', with different values: {sex} != {gender}")
+            raise ValueError(
+                f"Defined both parameters 'sex' and 'gender', with different values: {sex} != {gender}"
+            )
     gender = sex
 
     local = locals()
@@ -226,14 +244,14 @@ def make_header(
 
 def make_signal_header(
     label: str,
-    dimension: str = 'uV',
+    dimension: str = "uV",
     sample_frequency: Optional[Union[int, float]] = 256,
     physical_min: float = -200,
     physical_max: float = 200,
     digital_min: Union[float, int] = -32768,
-    digital_max:  Union[float, int] = 32767,
-    transducer: str = '',
-    prefiler: str = ''
+    digital_max: Union[float, int] = 32767,
+    transducer: str = "",
+    prefiler: str = "",
 ) -> dict:
     """
     A convenience function that creates a signal header for a given signal.
@@ -269,28 +287,30 @@ def make_signal_header(
 
     """
 
-    signal_header = {'label': label,
-               'dimension': dimension,
-               'sample_frequency': sample_frequency,
-               'physical_min': physical_min,
-               'physical_max': physical_max,
-               'digital_min':  digital_min,
-               'digital_max':  digital_max,
-               'transducer': transducer,
-               'prefilter': prefiler}
+    signal_header = {
+        "label": label,
+        "dimension": dimension,
+        "sample_frequency": sample_frequency,
+        "physical_min": physical_min,
+        "physical_max": physical_max,
+        "digital_min": digital_min,
+        "digital_max": digital_max,
+        "transducer": transducer,
+        "prefilter": prefiler,
+    }
     return signal_header
 
 
 def make_signal_headers(
     list_of_labels: List[str],
-    dimension: str = 'uV',
+    dimension: str = "uV",
     sample_frequency: Optional[Union[int, float]] = 256,
     physical_min: float = -200.0,
     physical_max: float = 200.0,
-    digital_min: Union[float,int] = -32768,
+    digital_min: Union[float, int] = -32768,
     digital_max: Union[float, int] = 32767,
-    transducer: str = '',
-    prefiler: str = ''
+    transducer: str = "",
+    prefiler: str = "",
 ) -> List[dict]:
     """
     A function that creates signal headers for a given list of channel labels.
@@ -325,11 +345,17 @@ def make_signal_headers(
     """
     signal_headers = []
     for label in list_of_labels:
-        header = make_signal_header(label, dimension=dimension,
-                                    sample_frequency=sample_frequency,
-                                    physical_min=physical_min, physical_max=physical_max,
-                                    digital_min=digital_min, digital_max=digital_max,
-                                    transducer=transducer, prefiler=prefiler)
+        header = make_signal_header(
+            label,
+            dimension=dimension,
+            sample_frequency=sample_frequency,
+            physical_min=physical_min,
+            physical_max=physical_max,
+            digital_min=digital_min,
+            digital_max=digital_max,
+            transducer=transducer,
+            prefiler=prefiler,
+        )
         signal_headers.append(header)
     return signal_headers
 
@@ -339,7 +365,7 @@ def read_edf(
     ch_nrs: Optional[List[int]] = None,
     ch_names: Optional[List[str]] = None,
     digital: bool = False,
-    verbose: bool = False
+    verbose: bool = False,
 ) -> Tuple[Union[np.ndarray, List[np.ndarray]], List[dict], dict]:
     """
     Convenience function for reading EDF+/BDF data with pyedflib.
@@ -372,8 +398,9 @@ def read_edf(
         the main header of the EDF file containing meta information.
 
     """
-    assert (ch_nrs is  None) or (ch_names is None), \
-           'names xor numbers should be supplied'
+    assert (ch_nrs is None) or (ch_names is None), (
+        "names xor numbers should be supplied"
+    )
     if ch_nrs is not None and not isinstance(ch_nrs, list):
         ch_nrs = [ch_nrs]
     if ch_names is not None and not isinstance(ch_names, list):
@@ -389,19 +416,22 @@ def read_edf(
             ch_nrs = []
             for ch in ch_names:
                 if ch.upper() not in available_chs:
-                    warnings.warn('{} is not in source file (contains {})'\
-                                  .format(ch, available_chs))
-                    print('will be ignored.')
+                    warnings.warn(
+                        "{} is not in source file (contains {})".format(
+                            ch, available_chs
+                        )
+                    )
+                    print("will be ignored.")
                 else:
                     ch_nrs.append(available_chs.index(ch.upper()))
 
         # if there ch_nrs is not given, load all channels
 
-        if ch_nrs is None: # no numbers means we load all
+        if ch_nrs is None:  # no numbers means we load all
             ch_nrs = range(n_chrs)
 
         # convert negative numbers into positives
-        ch_nrs = [n_chrs+ch if ch<0 else ch for ch in ch_nrs]
+        ch_nrs = [n_chrs + ch if ch < 0 else ch for ch in ch_nrs]
 
         # load headers, signal information and
         header = f.getHeader()
@@ -409,26 +439,26 @@ def read_edf(
 
         # add annotations to header
         annotations = f.readAnnotations()
-        annotations = [[s, d, a] for s,d,a in zip(*annotations)]
-        header['annotations'] = annotations
-
+        annotations = [[s, d, a] for s, d, a in zip(*annotations)]
+        header["annotations"] = annotations
 
         signals = []
-        for c in tqdm(ch_nrs, desc='Reading Channels', disable=not verbose):
+        for c in tqdm(ch_nrs, desc="Reading Channels", disable=not verbose):
             signal = f.readSignal(c, digital=digital)
             signals.append(signal)
 
         # we can only return a np.array if all signals have the same samplefreq
-        sfreqs = [shead['sample_frequency'] for shead in signal_headers]
-        all_sfreq_same = sfreqs[1:]==sfreqs[:-1]
+        sfreqs = [shead["sample_frequency"] for shead in signal_headers]
+        all_sfreq_same = sfreqs[1:] == sfreqs[:-1]
         if all_sfreq_same:
             dtype = np.int32 if digital else float
             signals = np.array(signals, dtype=dtype)
 
-    assert len(signals)==len(signal_headers), 'Something went wrong, lengths'\
-                                         ' of headers is not length of signals'
+    assert len(signals) == len(signal_headers), (
+        "Something went wrong, lengths of headers is not length of signals"
+    )
     del f
-    return  signals, signal_headers, header
+    return signals, signal_headers, header
 
 
 def write_edf(
@@ -437,7 +467,7 @@ def write_edf(
     signal_headers: List[dict],
     header: Optional[dict] = None,
     digital: bool = False,
-    file_type: int = -1
+    file_type: int = -1,
 ) -> bool:
     """
     Write signals to an edf_file. Header can be generated on the fly with
@@ -469,27 +499,27 @@ def write_edf(
     bool
          True if successful, False if failed.
     """
-    assert header is None or isinstance(header, dict), \
-        'header must be dictioniary or None'
-    assert isinstance(signal_headers, list), \
-        'signal headers must be list'
-    assert len(signal_headers)==len(signals), \
-        'signals and signal_headers must be same length'
-    assert file_type in [-1, 0, 1, 2, 3], \
-        'file_type must be in range -1, 3'
+    assert header is None or isinstance(header, dict), (
+        "header must be dictioniary or None"
+    )
+    assert isinstance(signal_headers, list), "signal headers must be list"
+    assert len(signal_headers) == len(signals), (
+        "signals and signal_headers must be same length"
+    )
+    assert file_type in [-1, 0, 1, 2, 3], "file_type must be in range -1, 3"
 
     # copy objects to prevent accidental changes to mutable objects
     header = deepcopy(header)
     signal_headers = deepcopy(signal_headers)
 
-    if file_type==-1:
+    if file_type == -1:
         ext = os.path.splitext(edf_file)[-1]
-        if ext.lower() == '.edf':
+        if ext.lower() == ".edf":
             file_type = pyedflib.FILETYPE_EDFPLUS
-        elif ext.lower() == '.bdf':
+        elif ext.lower() == ".bdf":
             file_type = pyedflib.FILETYPE_BDFPLUS
         else:
-            raise ValueError(f'Unknown extension {ext}')
+            raise ValueError(f"Unknown extension {ext}")
 
     n_channels = len(signals)
 
@@ -502,41 +532,57 @@ def write_edf(
 
     # check dmin, dmax and pmin, pmax dont exceed signal min/max
     for sig, shead in zip(signals, signal_headers):
-        if 'sample_rate' in shead:
-            raise FutureWarning('Use of `sample_rate` is deprecated, use `sample_frequency` instead')
+        if "sample_rate" in shead:
+            raise FutureWarning(
+                "Use of `sample_rate` is deprecated, use `sample_frequency` instead"
+            )
 
-        dmin, dmax = shead['digital_min'], shead['digital_max']
-        pmin, pmax = shead['physical_min'], shead['physical_max']
-        label = shead['label']
-        if digital: # exception as it will lead to clipping
-            assert dmin<=sig.min(), \
-            'digital_min is {}, but signal_min is {}' \
-            'for channel {}'.format(dmin, sig.min(), label)
-            assert dmax>=sig.max(), \
-            'digital_min is {}, but signal_min is {}' \
-            'for channel {}'.format(dmax, sig.max(), label)
-            assert pmin != pmax, \
-            f'physical_min {pmin} should be different from physical_max {pmax}'
-        else: # only warning if difference is larger than the rounding error (which is quite large as edf scales data between phys_min and phys_max using -dig_min and +dig_max)
-            edf_accuracy = min([sig.max()/dmax, sig.min()/dmin])
+        dmin, dmax = shead["digital_min"], shead["digital_max"]
+        pmin, pmax = shead["physical_min"], shead["physical_max"]
+        label = shead["label"]
+        if digital:  # exception as it will lead to clipping
+            assert dmin <= sig.min(), (
+                "digital_min is {}, but signal_min is {}for channel {}".format(
+                    dmin, sig.min(), label
+                )
+            )
+            assert dmax >= sig.max(), (
+                "digital_min is {}, but signal_min is {}for channel {}".format(
+                    dmax, sig.max(), label
+                )
+            )
+            assert pmin != pmax, (
+                f"physical_min {pmin} should be different from physical_max {pmax}"
+            )
+        else:  # only warning if difference is larger than the rounding error (which is quite large as edf scales data between phys_min and phys_max using -dig_min and +dig_max)
+            edf_accuracy = min([sig.max() / dmax, sig.min() / dmin])
             if abs(pmin - sig.min()) < edf_accuracy:
-                warnings.warn(f'phys_min is {pmin}, but signal_min is {sig.min()} '
-                f'for channel {label}', category=UserWarning)
-            else: # difference is > edf_accuracy
-                assert pmin<=sig.min(), \
-                'phys_min is {}, but signal_min is {} ' \
-                'for channel {}'.format(pmin, sig.min(), label)
+                warnings.warn(
+                    f"phys_min is {pmin}, but signal_min is {sig.min()} "
+                    f"for channel {label}",
+                    category=UserWarning,
+                )
+            else:  # difference is > edf_accuracy
+                assert pmin <= sig.min(), (
+                    "phys_min is {}, but signal_min is {} for channel {}".format(
+                        pmin, sig.min(), label
+                    )
+                )
             if abs(sig.max() - pmax) < edf_accuracy:
-                warnings.warn(f'phys_max is {pmax}, but signal_max is {sig.max()} '
-                f'for channel {label}', category=UserWarning)
+                warnings.warn(
+                    f"phys_max is {pmax}, but signal_max is {sig.max()} "
+                    f"for channel {label}",
+                    category=UserWarning,
+                )
             else:
-                assert pmax>=sig.max(), \
-                'phys_max is {}, but signal_max is {} ' \
-                'for channel {}'.format(pmax, sig.max(), label)
-
+                assert pmax >= sig.max(), (
+                    "phys_max is {}, but signal_max is {} for channel {}".format(
+                        pmax, sig.max(), label
+                    )
+                )
 
     # get annotations, in format [[timepoint, duration, description], [...]]
-    annotations = header.get('annotations', [])
+    annotations = header.get("annotations", [])
 
     with pyedflib.EdfWriter(edf_file, n_channels=n_channels, file_type=file_type) as f:
         f.setSignalHeaders(signal_headers)
@@ -578,18 +624,16 @@ def write_edf_quick(
 
     """
     signals = np.atleast_2d(signals)
-    header = make_header(technician='pyedflib-quickwrite')
-    labels = [f'CH_{i}' for i in range(len(signals))]
+    header = make_header(technician="pyedflib-quickwrite")
+    labels = [f"CH_{i}" for i in range(len(signals))]
     pmin, pmax = signals.min(), signals.max()
-    signal_headers = make_signal_headers(labels, sample_frequency=sfreq,
-                                         physical_min=pmin, physical_max=pmax)
+    signal_headers = make_signal_headers(
+        labels, sample_frequency=sfreq, physical_min=pmin, physical_max=pmax
+    )
     return write_edf(edf_file, signals, signal_headers, header, digital=digital)
 
 
-def read_edf_header(
-    edf_file: str,
-    read_annotations: bool = True
-) -> dict:
+def read_edf_header(edf_file: str, read_annotations: bool = True) -> dict:
     """
     Reads the header and signal headers of an EDF file and it's annotations
 
@@ -604,17 +648,18 @@ def read_edf_header(
         header of the edf file as dictionary.
 
     """
-    assert os.path.isfile(edf_file), f'file {edf_file} does not exist'
+    assert os.path.isfile(edf_file), f"file {edf_file} does not exist"
     with pyedflib.EdfReader(edf_file) as f:
-
         summary = f.getHeader()
-        summary['Duration'] = f.getFileDuration()
-        summary['SignalHeaders'] = f.getSignalHeaders()
-        summary['channels'] = f.getSignalLabels()
+        summary["Duration"] = f.getFileDuration()
+        summary["SignalHeaders"] = f.getSignalHeaders()
+        summary["channels"] = f.getSignalLabels()
         if read_annotations:
             annotations = f.read_annotation()
-            annotations = [[float(t)/10000000, d or -1, x.decode()] for t,d,x in annotations]
-            summary['annotations'] = annotations
+            annotations = [
+                [float(t) / 10000000, d or -1, x.decode()] for t, d, x in annotations
+            ]
+            summary["annotations"] = annotations
     del f
     return summary
 
@@ -645,27 +690,29 @@ def compare_edf(
     bool
         True if signals are equal, else raises error.
     """
-    signals1, shead1, _ =  read_edf(edf_file1, digital=True, verbose=verbose)
-    signals2, shead2, _ =  read_edf(edf_file2, digital=True, verbose=verbose)
+    signals1, shead1, _ = read_edf(edf_file1, digital=True, verbose=verbose)
+    signals2, shead2, _ = read_edf(edf_file2, digital=True, verbose=verbose)
 
     for i, sigs in enumerate(zip(signals1, signals2)):
         s1, s2 = sigs
         if np.array_equal(s1, s2):
-            continue # early stopping
+            continue  # early stopping
         s1 = np.abs(s1)
         s2 = np.abs(s2)
         if np.array_equal(s1, s2):
-            continue # early stopping
-        close =  np.mean(np.isclose(s1, s2))
-        assert close>0.99, 'Error, digital values of {}'\
-              ' and {} for ch {}: {} are not the same: {:.3f}'.format(
-                edf_file1, edf_file2, shead1[i]['label'],
-                shead2[i]['label'], close)
+            continue  # early stopping
+        close = np.mean(np.isclose(s1, s2))
+        assert close > 0.99, (
+            "Error, digital values of {}"
+            " and {} for ch {}: {} are not the same: {:.3f}".format(
+                edf_file1, edf_file2, shead1[i]["label"], shead2[i]["label"], close
+            )
+        )
 
-    dmin1, dmax1 = shead1[i]['digital_min'], shead1[i]['digital_max']
-    pmin1, pmax1 = shead1[i]['physical_min'], shead1[i]['physical_max']
-    dmin2, dmax2 = shead2[i]['digital_min'], shead2[i]['digital_max']
-    pmin2, pmax2 = shead2[i]['physical_min'], shead2[i]['physical_max']
+    dmin1, dmax1 = shead1[i]["digital_min"], shead1[i]["digital_max"]
+    pmin1, pmax1 = shead1[i]["physical_min"], shead1[i]["physical_max"]
+    dmin2, dmax2 = shead2[i]["digital_min"], shead2[i]["digital_max"]
+    pmin2, pmax2 = shead2[i]["physical_min"], shead2[i]["physical_max"]
 
     for i, sigs in enumerate(zip(signals1, signals2)):
         s1, s2 = sigs
@@ -676,17 +723,19 @@ def compare_edf(
 
         # compare absolutes in case of inverted signals
         if np.array_equal(s1, s2):
-            continue # early stopping
+            continue  # early stopping
         s1 = np.abs(s1)
         s2 = np.abs(s2)
         if np.array_equal(s1, s2):
-            continue # early stopping
+            continue  # early stopping
         min_dist = np.abs(dig2phys(1, dmin1, dmax1, pmin1, pmax1))
-        close =  np.mean(np.isclose(s1, s2, atol=min_dist))
-        assert close>0.99, 'Error, physical values of {}'\
-            ' and {} for ch {}: {} are not the same: {:.3f}'.format(
-                edf_file1, edf_file2, shead1[i]['label'],
-                shead2[i]['label'], close)
+        close = np.mean(np.isclose(s1, s2, atol=min_dist))
+        assert close > 0.99, (
+            "Error, physical values of {}"
+            " and {} for ch {}: {} are not the same: {:.3f}".format(
+                edf_file1, edf_file2, shead1[i]["label"], shead2[i]["label"], close
+            )
+        )
     return True
 
 
@@ -733,48 +782,49 @@ def drop_channels(
         to_drop = [to_drop]
 
     # check all parameters are good
-    assert to_keep is None or to_drop is None,'Supply only to_keep xor to_drop'
+    assert to_keep is None or to_drop is None, "Supply only to_keep xor to_drop"
     if to_keep is not None:
-        assert all(isinstance(ch, (str, int)) for ch in to_keep),\
-            'channels must be int or string'
+        assert all(isinstance(ch, (str, int)) for ch in to_keep), (
+            "channels must be int or string"
+        )
     if to_drop is not None:
-        assert all(isinstance(ch, (str, int)) for ch in to_drop),\
-            'channels must be int or string'
-    assert os.path.exists(edf_source), \
-            f'source file {edf_source} does not exist'
-    assert edf_source!=edf_target, 'For safet, target must not be source file.'
+        assert all(isinstance(ch, (str, int)) for ch in to_drop), (
+            "channels must be int or string"
+        )
+    assert os.path.exists(edf_source), f"source file {edf_source} does not exist"
+    assert edf_source != edf_target, "For safet, target must not be source file."
 
     if edf_target is None:
-        edf_target = os.path.splitext(edf_source)[0] + '_dropped.edf'
+        edf_target = os.path.splitext(edf_source)[0] + "_dropped.edf"
     if os.path.exists(edf_target):
-        warnings.warn('Target file will be overwritten')
+        warnings.warn("Target file will be overwritten")
 
-    ch_names = read_edf_header(edf_source)['channels']
+    ch_names = read_edf_header(edf_source)["channels"]
     # convert to all lowercase for compatibility
     ch_names = [ch.lower() for ch in ch_names]
     ch_nrs = list(range(len(ch_names)))
 
     if to_keep is not None:
-        for i,ch in enumerate(to_keep):
-            if isinstance(ch,str):
+        for i, ch in enumerate(to_keep):
+            if isinstance(ch, str):
                 ch_idx = ch_names.index(ch.lower())
                 to_keep[i] = ch_idx
         load_channels = list(to_keep)
     elif to_drop is not None:
-        for i,ch in enumerate(to_drop):
-            if isinstance(ch,str):
+        for i, ch in enumerate(to_drop):
+            if isinstance(ch, str):
                 ch_idx = ch_names.index(ch.lower())
                 to_drop[i] = ch_idx
-        to_drop = [len(ch_nrs)+ch if ch<0 else ch for ch in to_drop]
+        to_drop = [len(ch_nrs) + ch if ch < 0 else ch for ch in to_drop]
 
         [ch_nrs.remove(ch) for ch in to_drop]
         load_channels = list(ch_nrs)
     else:
         raise ValueError
 
-    signals, signal_headers, header = read_edf(edf_source,
-                                               ch_nrs=load_channels,
-                                               digital=True, verbose=verbose)
+    signals, signal_headers, header = read_edf(
+        edf_source, ch_nrs=load_channels, digital=True, verbose=verbose
+    )
 
     write_edf(edf_target, signals, signal_headers, header, digital=True)
     return edf_target
@@ -783,8 +833,8 @@ def drop_channels(
 def anonymize_edf(
     edf_file: str,
     new_file: Optional[str] = None,
-    to_remove: List[str] = ['patientname', 'birthdate'],
-    new_values: List[str] = ['xxx', ''],
+    to_remove: List[str] = ["patientname", "birthdate"],
+    new_values: List[str] = ["xxx", ""],
     verify: bool = False,
     verbose: bool = False,
 ) -> bool:
@@ -822,14 +872,13 @@ def anonymize_edf(
 
     """
     if not len(to_remove) == len(new_values):
-        raise AssertionError('Each `to_remove` must have one `new_value`')
+        raise AssertionError("Each `to_remove` must have one `new_value`")
 
     if new_file is None:
         file, ext = os.path.splitext(edf_file)
-        new_file = file + '_anonymized' + ext
+        new_file = file + "_anonymized" + ext
 
-    signals, signal_headers, header = read_edf(edf_file, digital=True,
-                                               verbose=verbose)
+    signals, signal_headers, header = read_edf(edf_file, digital=True, verbose=verbose)
 
     for new_val, attr in zip(new_values, to_remove):
         header[attr] = new_val
@@ -848,7 +897,7 @@ def crop_edf(
     stop: Optional[Union[datetime, int, float]] = None,
     start_format: str = "datetime",
     stop_format: str = "datetime",
-    verbose: bool = True
+    verbose: bool = True,
 ) -> None:
     """Crop an EDF file to desired start/stop times.
 
@@ -904,7 +953,7 @@ def crop_edf(
             start = current_start + timedelta(seconds=start)
         else:
             pass
-    assert current_start <= start, 'start must not be before current start of recording'
+    assert current_start <= start, "start must not be before current start of recording"
     start_diff_from_start = (start - current_start).total_seconds()
 
     # Define new stop time
@@ -917,10 +966,16 @@ def crop_edf(
             stop = current_start + timedelta(seconds=stop)
         else:
             pass
-    assert stop <= current_stop, 'new stop value must not be after current end of recording'
+    assert stop <= current_stop, (
+        "new stop value must not be after current end of recording"
+    )
 
-    assert start < current_stop, 'new start value must not be after current end of recording'
-    assert stop > current_start, 'new stop value must not be before current start of recording'
+    assert start < current_stop, (
+        "new start value must not be after current end of recording"
+    )
+    assert stop > current_start, (
+        "new stop value must not be before current start of recording"
+    )
     stop_diff_from_start = (stop - current_start).total_seconds()
 
     # Crop each signal
@@ -955,7 +1010,7 @@ def crop_edf(
     if verbose:
         print(f"Original: {current_start} to {current_stop} ({current_duration})")
         print(f"Truncated: {start} to {stop} ({duration})")
-        print(f"Succesfully written file: {new_file}")
+        print(f"Successfully written file: {new_file}")
 
 
 def rename_channels(
@@ -987,25 +1042,26 @@ def rename_channels(
 
     """
     header = read_edf_header(edf_file)
-    channels = header['channels']
+    channels = header["channels"]
     if new_file is None:
         file, ext = os.path.splitext(edf_file)
-        new_file = file + '_renamed' + ext
+        new_file = file + "_renamed" + ext
 
     signal_headers = []
     signals = []
     for ch_nr in tqdm(range(len(channels)), disable=not verbose):
-        signal, signal_header, _ = read_edf(edf_file, digital=True,
-                                            ch_nrs=ch_nr, verbose=verbose)
-        ch = signal_header[0]['label']
+        signal, signal_header, _ = read_edf(
+            edf_file, digital=True, ch_nrs=ch_nr, verbose=verbose
+        )
+        ch = signal_header[0]["label"]
         if ch in mapping:
             if verbose:
-                print(f'{ch} to {mapping[ch]}')
+                print(f"{ch} to {mapping[ch]}")
             ch = mapping[ch]
-            signal_header[0]['label']=ch
+            signal_header[0]["label"] = ch
         else:
             if verbose:
-                print(f'no mapping for {ch}, leave as it is')
+                print(f"no mapping for {ch}, leave as it is")
         signal_headers.append(signal_header[0])
         signals.append(signal.squeeze())
 
@@ -1043,22 +1099,28 @@ def change_polarity(
     """
 
     if new_file is None:
-        new_file = os.path.splitext(edf_file)[0] + '.edf'
+        new_file = os.path.splitext(edf_file)[0] + ".edf"
 
     if isinstance(channels, str):
-        channels=[channels]
+        channels = [channels]
     channels = [c.lower() for c in channels]
 
-    signals, signal_headers, header = read_edf(edf_file, digital=True,
-                                               verbose=verbose)
-    for i,sig in enumerate(signals):
-        label = signal_headers[i]['label'].lower()
+    signals, signal_headers, header = read_edf(edf_file, digital=True, verbose=verbose)
+    for i, sig in enumerate(signals):
+        label = signal_headers[i]["label"].lower()
         if label in channels:
             if verbose:
-                print(f'inverting {label}')
+                print(f"inverting {label}")
             signals[i] = -sig
-    write_edf(new_file, signals, signal_headers, header,
-              digital=True, correct=False, verbose=verbose)
+    write_edf(
+        new_file,
+        signals,
+        signal_headers,
+        header,
+        digital=True,
+        correct=False,
+        verbose=verbose,
+    )
     if verify:
         compare_edf(edf_file, new_file)
     return True

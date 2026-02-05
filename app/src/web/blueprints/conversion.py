@@ -40,6 +40,7 @@ def _normalize_filename(name: str) -> str:
     normalized = re.sub(r"\s+", "_", normalized)
     return normalized
 
+
 # Import conversion logic
 try:
     from src.converters.survey import (
@@ -1981,25 +1982,36 @@ def check_sourcedata_physio():
         current_project_path = session.get("current_project_path")
         if not current_project_path:
             return jsonify({"exists": False, "message": "No project selected"}), 400
-        
+
         project_path = Path(current_project_path)
         sourcedata_physio = project_path / "sourcedata" / "physio"
-        
+
         exists = sourcedata_physio.exists() and sourcedata_physio.is_dir()
-        
+
         if exists:
             # Count .raw and .vpd files (case-insensitive)
             all_files = list(sourcedata_physio.iterdir())
-            physio_files = [f for f in all_files if f.suffix.lower() in ['.raw', '.vpd']]
+            physio_files = [
+                f for f in all_files if f.suffix.lower() in [".raw", ".vpd"]
+            ]
             file_count = len(physio_files)
         else:
             file_count = 0
-        
-        return jsonify({
-            "exists": exists,
-            "path": str(sourcedata_physio) if exists else None,
-            "message": f"Found sourcedata/physio folder with {file_count} files" if exists else "sourcedata/physio folder not found"
-        }), 200
+
+        return (
+            jsonify(
+                {
+                    "exists": exists,
+                    "path": str(sourcedata_physio) if exists else None,
+                    "message": (
+                        f"Found sourcedata/physio folder with {file_count} files"
+                        if exists
+                        else "sourcedata/physio folder not found"
+                    ),
+                }
+            ),
+            200,
+        )
     except Exception as e:
         return jsonify({"exists": False, "error": str(e)}), 500
 
@@ -2094,21 +2106,24 @@ def api_batch_convert():
         return jsonify({"error": "sampling_rate must be a number", "logs": logs}), 400
 
     files = request.files.getlist("files[]") or request.files.getlist("files")
-    
+
     # If folder_path is provided, use it directly instead of uploaded files
     if folder_path:
         folder_path_obj = Path(folder_path)
         if not folder_path_obj.exists() or not folder_path_obj.is_dir():
-            return jsonify({"error": f"Folder not found: {folder_path}", "logs": logs}), 400
-        
+            return (
+                jsonify({"error": f"Folder not found: {folder_path}", "logs": logs}),
+                400,
+            )
+
         log_callback(f"📂 Using folder: {folder_path}", "info")
-        
+
         tmp_dir = tempfile.mkdtemp(prefix="prism_batch_convert_")
         try:
             tmp_path = Path(tmp_dir)
             output_dir = tmp_path / "output"
             output_dir.mkdir()
-            
+
             # Call batch_convert directly with the source folder
             result = batch_convert_folder(
                 folder_path_obj,
@@ -2118,7 +2133,7 @@ def api_batch_convert():
                 log_callback=log_callback,
                 dry_run=dry_run,
             )
-            
+
             # If not a dry-run, move files to project if save_to_project is true
             if not dry_run and save_to_project:
                 p_path = session.get("current_project_path")
@@ -2134,20 +2149,27 @@ def api_batch_convert():
                                 dest_file = project_root / rel_path
                                 dest_file.parent.mkdir(parents=True, exist_ok=True)
                                 shutil.copy2(file, dest_file)
-            
-            return jsonify({
-                "converted": result.success_count,
-                "errors": result.error_count,
-                "new_files": result.new_files,
-                "existing_files": result.existing_files,
-                "logs": logs,
-                "dry_run": dry_run,
-            })
+
+            return jsonify(
+                {
+                    "converted": result.success_count,
+                    "errors": result.error_count,
+                    "new_files": result.new_files,
+                    "existing_files": result.existing_files,
+                    "logs": logs,
+                    "dry_run": dry_run,
+                }
+            )
         finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
-    
+
     if not files:
-        return jsonify({"error": "No files uploaded and no folder path provided", "logs": logs}), 400
+        return (
+            jsonify(
+                {"error": "No files uploaded and no folder path provided", "logs": logs}
+            ),
+            400,
+        )
 
     # Accept a wider range of extensions for the batch organizer
     valid_extensions = {
@@ -2270,9 +2292,15 @@ def api_batch_convert():
                         if flat_structure and dest_root == "sourcedata":
                             # Flat structure: copy files to sourcedata/modality/ without sub-/ses- hierarchy
                             # Determine modality from filename
-                            file_modality = modality_filter if modality_filter != "all" else "physio"
+                            file_modality = (
+                                modality_filter
+                                if modality_filter != "all"
+                                else "physio"
+                            )
                             dest_path = project_root / file_modality / rel_path.name
-                            log_callback(f"Flat copy: {rel_path.name} → {dest_root}/{file_modality}/{rel_path.name}")
+                            log_callback(
+                                f"Flat copy: {rel_path.name} → {dest_root}/{file_modality}/{rel_path.name}"
+                            )
                         else:
                             # PRISM structure: preserve sub-XXX/ses-YYY/modality/ hierarchy
                             # Warn if subject folder is being created
@@ -2301,7 +2329,7 @@ def api_batch_convert():
                                     warned_subjects.add(subject_label)
 
                             dest_path = project_root / rel_path
-                        
+
                         dest_path.parent.mkdir(parents=True, exist_ok=True)
                         shutil.copy2(file_path, dest_path)
                         project_saved = True

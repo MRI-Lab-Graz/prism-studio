@@ -579,7 +579,7 @@ def _calculate_scores(
                     expr = expr.replace(f"{{{item_id}}}", val_str)
                 try:
                     # Use SAFE_GLOBALS to prevent code injection
-                    result = eval(expr, SAFE_GLOBALS, {})
+                    result = eval(expr, SAFE_GLOBALS, {})  # nosec B307 - sandboxed with SAFE_GLOBALS
                 except Exception:
                     result = None
         elif method == "map":
