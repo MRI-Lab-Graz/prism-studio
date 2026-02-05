@@ -3030,6 +3030,16 @@
     // Populate project templates dropdown
     projectTemplateSelectEl.innerHTML = '<option value="">(none in project)</option>';
     for (const t of projectTemplates) {
+      // Filter: only show templates matching modality prefix (e.g., "survey-" for survey modality)
+      const expectedPrefix = `${modality}-`;
+      if (!t.filename.startsWith(expectedPrefix) && t.filename !== 'participants_mapping.json') {
+        continue; // Skip templates that don't match the modality
+      }
+      // Skip participants_mapping.json for survey modality
+      if (modality === 'survey' && t.filename === 'participants_mapping.json') {
+        continue;
+      }
+      
       const opt = document.createElement('option');
       opt.value = t.filename;
       opt.textContent = t.filename; // Start without badge
@@ -3046,6 +3056,12 @@
     // Populate global templates dropdown
     globalTemplateSelectEl.innerHTML = '<option value="">(select one)</option>';
     for (const t of globalTemplates) {
+      // Filter: only show templates matching modality prefix
+      const expectedPrefix = `${modality}-`;
+      if (!t.filename.startsWith(expectedPrefix)) {
+        continue; // Skip templates that don't match the modality
+      }
+      
       const opt = document.createElement('option');
       opt.value = t.filename;
       opt.textContent = t.filename;
