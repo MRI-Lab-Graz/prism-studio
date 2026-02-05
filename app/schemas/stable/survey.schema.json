@@ -379,89 +379,96 @@
   },
   "required": ["Technical", "Study", "Metadata"],
   "additionalProperties": {
-    "type": "object",
-    "properties": {
-      "Description": {
-        "type": ["string", "object"],
-        "description": "The exact question text presented to the participant"
-      },
-      "AliasOf": {
-        "type": "string",
-        "description": "If this item is just another name for an existing item, specify the canonical item ID here. Use when the same question appears with different IDs in your data (e.g., 'depression_q1' → 'phq9_q1'). Leave empty for canonical items."
-      },
-      "Aliases": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "List of alternative IDs that refer to this same item. Only needed if you're the canonical item and want to document other names used elsewhere (opposite of AliasOf)."
-      },
-      "Levels": {
+    "oneOf": [
+      {
         "type": "object",
-        "description": "Mapping of numeric values to text labels",
-        "patternProperties": {
-          "^.*$": { "type": ["string", "object"] }
-        }
-      },
-      "Unit": {
-        "type": "string",
-        "description": "Unit of measurement (if applicable)"
-      },
-      "TermURL": {
-        "type": "string",
-        "description": "URL to a definition of the term"
-      },
-      "Relevance": {
-        "type": "string",
-        "description": "Logic/Relevance equation for this item (e.g., Q01 == 1)"
-      },
-      "MinValue": {
-        "type": ["number", "null"],
-        "description": "Minimum allowed value for this column"
-      },
-      "MaxValue": {
-        "type": ["number", "null"],
-        "description": "Maximum allowed value for this column"
-      },
-      "WarnMinValue": {
-        "type": ["number", "null"],
-        "description": "Minimum value threshold for warning"
-      },
-      "WarnMaxValue": {
-        "type": ["number", "null"],
-        "description": "Maximum value threshold for warning"
-      },
-      "AllowedValues": {
-        "type": "array",
-        "items": {
-          "type": ["string", "number"]
+        "properties": {
+          "Description": {
+            "type": ["string", "object"],
+            "description": "The exact question text presented to the participant"
+          },
+          "Aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of alternative IDs that refer to this same item. Only needed if you're the canonical item and want to document other names used elsewhere (opposite of AliasOf)."
+          },
+          "Levels": {
+            "type": "object",
+            "description": "Mapping of numeric values to text labels",
+            "patternProperties": {
+              "^.*$": { "type": ["string", "object"] }
+            }
+          },
+          "Unit": {
+            "type": "string",
+            "description": "Unit of measurement (if applicable)"
+          },
+          "TermURL": {
+            "type": "string",
+            "description": "URL to a definition of the term"
+          },
+          "Relevance": {
+            "type": "string",
+            "description": "Logic/Relevance equation for this item (e.g., Q01 == 1)"
+          },
+          "MinValue": {
+            "type": ["number", "null"],
+            "description": "Minimum allowed value for this column"
+          },
+          "MaxValue": {
+            "type": ["number", "null"],
+            "description": "Maximum allowed value for this column"
+          },
+          "WarnMinValue": {
+            "type": ["number", "null"],
+            "description": "Minimum value threshold for warning"
+          },
+          "WarnMaxValue": {
+            "type": ["number", "null"],
+            "description": "Maximum value threshold for warning"
+          },
+          "AllowedValues": {
+            "type": "array",
+            "items": {
+              "type": ["string", "number"]
+            },
+            "description": "List of allowed values for this column"
+          },
+          "DataType": {
+            "type": "string",
+            "enum": ["string", "integer", "float", ""],
+            "description": "Expected data type for this column"
+          },
+          "SessionHint": {
+            "type": "string",
+            "pattern": "^(ses-[a-zA-Z0-9]+)?$",
+            "description": "Optional session hint for repeated assessments (e.g., 'ses-1')"
+          },
+          "RunHint": {
+            "type": "string",
+            "pattern": "^(run-[a-zA-Z0-9]+)?$",
+            "description": "Optional run hint for repeated assessments (e.g., 'run-2')"
+          },
+          "Mandatory": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this question is mandatory (required) in the survey. Defaults to true if not specified."
+          }
         },
-        "description": "List of allowed values for this column"
+        "required": ["Description"]
       },
-      "DataType": {
-        "type": "string",
-        "enum": ["string", "integer", "float", ""],
-        "description": "Expected data type for this column"
-      },
-      "SessionHint": {
-        "type": "string",
-        "pattern": "^(ses-[a-zA-Z0-9]+)?$",
-        "description": "Optional session hint for repeated assessments (e.g., 'ses-1')"
-      },
-      "RunHint": {
-        "type": "string",
-        "pattern": "^(run-[a-zA-Z0-9]+)?$",
-        "description": "Optional run hint for repeated assessments (e.g., 'run-2')"
-      },
-      "Mandatory": {
-        "type": "boolean",
-        "default": true,
-        "description": "Whether this question is mandatory (required) in the survey. Defaults to true if not specified."
+      {
+        "type": "object",
+        "properties": {
+          "AliasOf": {
+            "type": "string",
+            "description": "If this item is just another name for an existing item, specify the canonical item ID here. Use when the same question appears with different IDs in your data (e.g., 'depression_q1' → 'phq9_q1'). Leave empty for canonical items."
+          }
+        },
+        "required": ["AliasOf"]
       }
-    },
-    "anyOf": [
-      { "required": ["Description"] },
-      { "required": ["AliasOf"] }
     ]
   }
 }
