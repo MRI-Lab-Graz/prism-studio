@@ -97,7 +97,7 @@ Recipes define how to calculate scores from raw survey data:
 
 | Format | Extension | Features |
 |--------|-----------|----------|
-| SPSS | `.sav` | Variable labels, value labels |
+| SPSS | `.save` | Variable labels, value labels |
 | CSV | `.csv` | Universal compatibility |
 | TSV | `.tsv` | BIDS-compatible |
 

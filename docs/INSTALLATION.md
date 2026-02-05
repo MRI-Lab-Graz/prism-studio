@@ -159,6 +159,23 @@ On Linux, install tkinter:
 sudo apt-get install python3-tk
 ```
 
+### EDF/EDF+ Support (Optional)
+
+PRISM can extract metadata from EDF files if `pyedflib` is installed. **This is optional** – PRISM works fine without it.
+
+**Most users:** `pyedflib` installs automatically via `setup.sh`/`setup.ps1`
+
+**Windows users without C++ compiler:** Pre-compiled `pyedflib` is bundled in `vendor/`. Test it:
+```cmd
+test_pyedflib.bat
+```
+
+If you see "✓ SUCCESS", EDF support is working. If not, you can:
+- Use the bundled version (no action needed – it's automatic)
+- Or install manually: `pip install pyedflib` (requires Visual C++ compiler)
+
+See `vendor/BUNDLE_GUIDE.md` for details.
+
 ---
 
 ## Next Steps

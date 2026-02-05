@@ -99,7 +99,7 @@ TRANSLATIONS = {
     "How well do you think you have performed this task?": "Wie gut haben Sie diese Aufgabe Ihrer Meinung nach ausgeführt?",
     "very bad": "sehr schlecht",
     "very good": "sehr gut",
-    "pre-intervention": "vor der Intervention",
+    "pre-intervention": "for der Intervention",
     "mid-intervention": "während der Intervention",
     "post-intervention": "nach der Intervention",
     "trial": "Durchgang",

@@ -909,7 +909,7 @@ def _generate_recipes_boilerplate_sections(
             if has_invert:
                 if lang == "de":
                     sections.append(
-                        "- Negativ gepolte Items wurden vor der Skalenbildung invertiert."
+                        "- Negative gepolte Items wurden for der Skalenbildung invertiert."
                     )
                 else:
                     sections.append(
@@ -1380,7 +1380,7 @@ def _export_recipe_aggregated(
             df = df.loc[:, [c for c in ordered_cols if c in df.columns]]
 
     if (
-        out_format in {"csv", "sav"}
+        out_format in {"csv", "save"}
         and layout == "long"
         and selected_sessions
         and len(selected_sessions) == 1
@@ -1474,8 +1474,8 @@ def _export_recipe_aggregated(
                     )
         except Exception:
             df.to_excel(out_fname, index=False)
-    elif out_format == "sav":
-        out_fname = out_root / f"{recipe_id}.sav"
+    elif out_format == "save":
+        out_fname = out_root / f"{recipe_id}.save"
         try:
             import pyreadstat
             import numpy as np
@@ -1777,7 +1777,7 @@ def compute_survey_recipes(
             recipe_dir: Optional custom folder containing recipe JSONs.
             survey: Optional comma-separated recipe ids to apply.
             sessions: Optional comma-separated session ids (e.g., "ses-1,ses-2").
-            out_format: "flat" (default), "prism", "csv", "xlsx", "sav", "r".
+            out_format: "flat" (default), "prism", "csv", "xlsx", "save", "r".
             lang: Language for metadata labels (e.g., "en", "de").
             layout: "long" (default) or "wide" for repeated measures.
             include_raw: If True, include original columns in the output.
@@ -1805,8 +1805,8 @@ def compute_survey_recipes(
     out_format = str(out_format or "prism").strip().lower()
     final_format = out_format
 
-    if out_format not in {"prism", "flat", "csv", "xlsx", "sav", "r"}:
-        raise ValueError("--format must be one of: prism, flat, csv, xlsx, sav, r")
+    if out_format not in {"prism", "flat", "csv", "xlsx", "save", "r"}:
+        raise ValueError("--format must be one of: prism, flat, csv, xlsx, save, r")
 
     layout = str(layout or "long").strip().lower()
     if layout not in {"long", "wide"}:
@@ -1882,7 +1882,7 @@ def compute_survey_recipes(
 
         applied_recipes_list.append(recipe)
 
-        if out_format in ("csv", "xlsx", "sav", "r"):
+        if out_format in ("csv", "xlsx", "save", "r"):
             if merge_all:
                 # Collect data for merging instead of writing
                 import pandas as pd
@@ -2005,7 +2005,7 @@ def compute_survey_recipes(
 
         # Write combined file
         out_stem = f"combined_{modality}"
-        ext_map = {"csv": ".csv", "xlsx": ".xlsx", "sav": ".sav", "r": ".feather"}
+        ext_map = {"csv": ".csv", "xlsx": ".xlsx", "save": ".save", "r": ".feather"}
         ext = ext_map.get(out_format, ".csv")
         out_path = out_root / f"{out_stem}{ext}"
 
@@ -2018,7 +2018,7 @@ def compute_survey_recipes(
             ]
 
         if (
-            out_format in {"csv", "sav"}
+            out_format in {"csv", "save"}
             and layout == "long"
             and selected_sessions
             and len(selected_sessions) == 1
@@ -2036,7 +2036,7 @@ def compute_survey_recipes(
             combined_df.to_csv(out_path, index=False)
         elif out_format == "xlsx":
             combined_df.to_excel(out_path, index=False)
-        elif out_format == "sav":
+        elif out_format == "save":
             try:
                 import pyreadstat
 

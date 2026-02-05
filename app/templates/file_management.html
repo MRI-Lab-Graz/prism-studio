@@ -56,48 +56,70 @@
                                                 <i class="fas fa-magic me-2 text-warning"></i>2. Define Renaming Rule by Example
                                             </div>
                                             <div class="card-body">
-                                                <div class="row align-items-center">
-                                                    <div class="col-md-5">
+                                                <div class="row g-3 mb-3">
+                                                    <div class="col-md-6">
                                                         <label class="form-label small text-muted mb-1">Original Filename</label>
                                                         <div id="renamerOriginalExample" class="form-control bg-light font-monospace"></div>
                                                     </div>
-                                                    <div class="col-md-1 text-center mt-3">
-                                                        <i class="fas fa-arrow-right fa-lg text-muted"></i>
-                                                    </div>
                                                     <div class="col-md-6">
-                                                        <div class="row g-2">
-                                                            <div class="col-md-3">
-                                                                <label for="renamerModality" class="form-label small text-muted mb-1">Modality</label>
-                                                                <select class="form-select form-select-sm" id="renamerModality">
-                                                                    <option value="physio" selected>Physio</option>
-                                                                    <option value="biometrics">Biometrics</option>
-                                                                    <option value="events">Events</option>
-                                                                    <option value="survey">Survey</option>
-                                                                </select>
-                                                            </div>
-                                                            <div class="col-md-3" id="renamerRecordingContainer">
-                                                                <label for="renamerRecording" class="form-label small text-muted mb-1">Recording</label>
-                                                                <select class="form-select form-select-sm" id="renamerRecording">
-                                                                    <option value="">None</option>
-                                                                    <option value="ecg">ecg</option>
-                                                                    <option value="cardiac">cardiac</option>
-                                                                    <option value="puls">puls</option>
-                                                                    <option value="ppg">ppg</option>
-                                                                    <option value="resp">resp</option>
-                                                                    <option value="eda">eda</option>
-                                                                    <option value="emg">emg</option>
-                                                                    <option value="temp">temp</option>
-                                                                    <option value="trigger">trigger</option>
-                                                                </select>
-                                                                <small class="text-muted x-small">Optional</small>
-                                                            </div>
-                                                            <div class="col-md-6">
-                                                                <label for="renamerNewExample" class="form-label small text-muted mb-1">New PRISM Filename</label>
-                                                                <div class="text-muted mb-1" style="font-size: 0.75rem;">
-                                                                    <i class="fas fa-info-circle me-1"></i> <span id="renamerExampleHint">Example: <code>sub-001_task-rest_physio.edf</code></span>
-                                                                </div>
-                                                                <input type="text" class="form-control font-monospace border-primary" id="renamerNewExample" placeholder="e.g. sub-001_task-rest_physio.edf">
-                                                            </div>
+                                                        <label for="renamerNewExample" class="form-label small text-muted mb-1">New PRISM Filename</label>
+                                                        <div class="text-muted mb-1" style="font-size: 0.75rem;">
+                                                            <i class="fas fa-info-circle me-1"></i> <span id="renamerExampleHint">Example: <code>sub-001_task-rest_physio.edf</code></span>
+                                                        </div>
+                                                        <input type="text" class="form-control form-control-lg font-monospace border-primary" id="renamerNewExample" placeholder="e.g. sub-001_task-rest_physio.edf" style="font-size: 0.95rem;">
+                                                    </div>
+                                                </div>
+                                                <div class="row g-2">
+                                                    <div class="col-md-3">
+                                                        <label for="renamerModality" class="form-label small text-muted mb-1">Modality</label>
+                                                        <select class="form-select form-select-sm" id="renamerModality">
+                                                            <option value="physio" selected>Physio</option>
+                                                            <option value="biometrics">Biometrics</option>
+                                                            <option value="events">Events</option>
+                                                            <option value="survey">Survey</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-3" id="renamerRecordingContainer">
+                                                        <label for="renamerRecording" class="form-label small text-muted mb-1">Recording</label>
+                                                        <select class="form-select form-select-sm" id="renamerRecording">
+                                                            <option value="">None</option>
+                                                            <option value="ecg">ecg</option>
+                                                            <option value="cardiac">cardiac</option>
+                                                            <option value="puls">puls</option>
+                                                            <option value="ppg">ppg</option>
+                                                            <option value="resp">resp</option>
+                                                            <option value="eda">eda</option>
+                                                            <option value="emg">emg</option>
+                                                            <option value="temp">temp</option>
+                                                            <option value="trigger">trigger</option>
+                                                        </select>
+                                                        <small class="text-muted x-small">Optional</small>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-3 p-3 border rounded bg-light">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="renamerUseMapping">
+                                                        <label class="form-check-label fw-bold" for="renamerUseMapping">
+                                                            Use subject/session mapping
+                                                        </label>
+                                                    </div>
+                                                    <div id="renamerMappingFields" class="row g-2 mt-2" style="display: none;">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label small text-muted mb-1" for="renamerSubjectValue">Subject string in this example</label>
+                                                            <input type="text" class="form-control font-monospace" id="renamerSubjectValue" placeholder="e.g. DOJÄ22LE">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label small text-muted mb-1" for="renamerSessionValue">Session string in this example (optional)</label>
+                                                            <input type="text" class="form-control font-monospace" id="renamerSessionValue" placeholder="e.g. pre">
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <small class="text-muted">
+                                                                Use <code>{subject}</code> and <code>{session}</code> in the New PRISM Filename. Example:
+                                                                <code>sub-{subject}_ses-{session}_task-rest_physio.vpd</code>. If session is not in the filename, leave it empty and omit <code>{session}</code> from the name.
+                                                            </small>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <div id="renamerMappingPreview" class="form-text text-muted"></div>
                                                         </div>
                                                     </div>
                                                 </div>

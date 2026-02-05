@@ -49,9 +49,7 @@ def parse_prismmeta_html(html_content: str) -> dict | None:
         "meta-variables": "variables",
     }
     for css_class, key in span_map.items():
-        m = re.search(
-            rf'<span class="{css_class}">(.*?)</span>', html_content
-        )
+        m = re.search(rf'<span class="{css_class}">(.*?)</span>', html_content)
         if m:
             meta[key] = m.group(1).strip()
 
@@ -61,6 +59,7 @@ def parse_prismmeta_html(html_content: str) -> dict | None:
         ]
 
     return meta if meta else None
+
 
 # LimeSurvey question type codes mapped to human-readable names
 LIMESURVEY_QUESTION_TYPES = {
@@ -108,7 +107,11 @@ IMPLICIT_LEVELS = {
     "Y": {"Y": "Yes", "N": "No"},  # Yes/No question
     "G": {"M": "Male", "F": "Female"},  # Gender question
     "C": {"Y": "Yes", "U": "Uncertain", "N": "No"},  # Array (Yes/Uncertain/No)
-    "E": {"I": "Increase", "S": "Same", "D": "Decrease"},  # Array (Increase/Same/Decrease)
+    "E": {
+        "I": "Increase",
+        "S": "Same",
+        "D": "Decrease",
+    },  # Array (Increase/Same/Decrease)
     "A": {str(i): str(i) for i in range(1, 6)},  # Array (5 Point Choice): 1-5
     "B": {str(i): str(i) for i in range(1, 11)},  # Array (10 Point Choice): 1-10
     "5": {str(i): str(i) for i in range(1, 6)},  # 5 Point Choice (simple): 1-5
@@ -359,10 +362,14 @@ def _parse_answers_into_questions(root, questions_map, get_text, *, track_scales
 
                 if code not in questions_map[qid]["levels_by_scale"][scale_id]:
                     questions_map[qid]["levels_by_scale"][scale_id][code] = {}
-                if isinstance(questions_map[qid]["levels_by_scale"][scale_id][code], dict):
+                if isinstance(
+                    questions_map[qid]["levels_by_scale"][scale_id][code], dict
+                ):
                     questions_map[qid]["levels_by_scale"][scale_id][code][lang] = answer
                 else:
-                    questions_map[qid]["levels_by_scale"][scale_id][code] = {lang: answer}
+                    questions_map[qid]["levels_by_scale"][scale_id][code] = {
+                        lang: answer
+                    }
             else:
                 questions_map[qid]["levels"][code] = answer
                 questions_map[qid]["levels_by_scale"][scale_id][code] = answer
@@ -844,7 +851,9 @@ def _build_prism_template_from_parsed(
                 full_desc = sq_text if sq_text else question_text
                 entry = {
                     "Description": (
-                        {default_language: full_desc} if full_desc else {default_language: ""}
+                        {default_language: full_desc}
+                        if full_desc
+                        else {default_language: ""}
                     ),
                     "LimeSurvey": dict(ls_props),  # Copy for each subquestion
                 }
@@ -1078,7 +1087,11 @@ def parse_lss_xml(xml_content, task_name=None, use_standard_format=True):
             }
 
             # Add answer levels if present, or use implicit levels
-            effective_levels = q_data["levels"] if q_data["levels"] else IMPLICIT_LEVELS.get(q_type, {})
+            effective_levels = (
+                q_data["levels"]
+                if q_data["levels"]
+                else IMPLICIT_LEVELS.get(q_type, {})
+            )
             if effective_levels:
                 entry["Levels"] = effective_levels
 
@@ -1258,7 +1271,9 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
                 if q_type in array_types and subquestions:
                     # Convert levels to multilingual format
                     # Use implicit levels for array types without explicit answers
-                    effective_levels = levels if levels else IMPLICIT_LEVELS.get(q_type, {})
+                    effective_levels = (
+                        levels if levels else IMPLICIT_LEVELS.get(q_type, {})
+                    )
                     multilingual_levels = {}
                     for code, answer_text in effective_levels.items():
                         if isinstance(answer_text, dict):
@@ -1291,7 +1306,9 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
                         )
                     }
                     # Use implicit levels for question types without explicit answers
-                    effective_levels = levels if levels else IMPLICIT_LEVELS.get(q_type, {})
+                    effective_levels = (
+                        levels if levels else IMPLICIT_LEVELS.get(q_type, {})
+                    )
                     if effective_levels:
                         multilingual_levels = {}
                         for code, answer_text in effective_levels.items():
@@ -1321,7 +1338,11 @@ def parse_lss_xml_by_groups(xml_content, use_standard_format=True):
                 }
 
                 # Add answer levels if present, or use implicit levels
-                effective_levels = q_data["levels"] if q_data["levels"] else IMPLICIT_LEVELS.get(q_type, {})
+                effective_levels = (
+                    q_data["levels"]
+                    if q_data["levels"]
+                    else IMPLICIT_LEVELS.get(q_type, {})
+                )
                 if effective_levels:
                     entry["Levels"] = effective_levels
 
@@ -1645,13 +1666,18 @@ def convert_lsa_to_dataset(
     id_map=None,
 ):
     """Convert .lsa responses into a PRISM/BIDS dataset (tsv + json) using survey_library schemas."""
-    from .id_detection import detect_id_column, has_prismmeta_columns, IdColumnNotDetectedError
+    from .id_detection import (
+        detect_id_column,
+        has_prismmeta_columns,
+        IdColumnNotDetectedError,
+    )
 
     df, questions_map, groups_map = parse_lsa_responses(lsa_path)
 
     has_pm = has_prismmeta_columns(list(df.columns))
     id_col = detect_id_column(
-        list(df.columns), "lsa",
+        list(df.columns),
+        "lsa",
         explicit_id_column=id_column,
         has_prismmeta=has_pm,
     )

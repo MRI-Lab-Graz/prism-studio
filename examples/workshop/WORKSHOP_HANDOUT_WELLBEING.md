@@ -357,7 +357,7 @@ In PRISM Studio:
 #### 4. Configure Export
 
 **Format Options:**
-- **SPSS (.sav)** - Recommended! Includes value labels
+- **SPSS (.save)** - Recommended! Includes value labels
 - **Excel (.xlsx)** - Good for quick viewing
 - **CSV (.csv)** - Plain text, universal
 
@@ -365,12 +365,12 @@ In PRISM Studio:
 - **Long format** - One row per session (sub-DEMO001, baseline)
 - **Wide format** - One row per participant (multiple session columns)
 
-**Select:** SPSS (.sav), Long format
+**Select:** SPSS (.save), Long format
 
 #### 5. Export Results
 
 - Output location: `Wellbeing_Study_Workshop/derivatives/`
-- Filename: `wellbeing_scores.sav`
+- Filename: `wellbeing_scores.save`
 - Click **Export**
 
 #### 6. Verify in SPSS/Excel
@@ -378,7 +378,7 @@ In PRISM Studio:
 Open the exported file:
 ```
 derivatives/
-└── wellbeing_scores.sav
+└── wellbeing_scores.save
 ```
 
 **Expected columns:**
@@ -419,7 +419,7 @@ Wellbeing_Study_Workshop/
 │   └── sub-*/ses-*/survey/       # PRISM-formatted data
 ├── code/                         # Your analysis scripts go here
 ├── derivatives/
-│   └── wellbeing_scores.sav      # Calculated scores
+│   └── wellbeing_scores.save      # Calculated scores
 └── recipes/
     └── survey/
         └── recipe-wellbeing.json

@@ -154,7 +154,9 @@ def _register_session_in_project(
     }
 
     for task_name in tasks:
-        existing = next((t for t in target["tasks"] if t.get("task") == task_name), None)
+        existing = next(
+            (t for t in target["tasks"] if t.get("task") == task_name), None
+        )
         if existing:
             existing["source"] = source_obj
         else:
@@ -807,9 +809,7 @@ def api_survey_convert_preview():
                     if task_template_path.exists():
                         import json as _json
 
-                        with open(
-                            task_template_path, "r", encoding="utf-8"
-                        ) as tf:
+                        with open(task_template_path, "r", encoding="utf-8") as tf:
                             task_json = _json.load(tf)
                         match = match_against_library(
                             task_json,
@@ -817,9 +817,7 @@ def api_survey_convert_preview():
                             group_name=task_name,
                             project_path=project_path,
                         )
-                        template_matches[task_name] = (
-                            match.to_dict() if match else None
-                        )
+                        template_matches[task_name] = match.to_dict() if match else None
                     else:
                         template_matches[task_name] = None
                 response_data["template_matches"] = template_matches
@@ -832,11 +830,16 @@ def api_survey_convert_preview():
 
         return jsonify(response_data)
     except IdColumnNotDetectedError as e:
-        return jsonify({
-            "error": "id_column_required",
-            "message": str(e),
-            "columns": e.available_columns,
-        }), 409
+        return (
+            jsonify(
+                {
+                    "error": "id_column_required",
+                    "message": str(e),
+                    "columns": e.available_columns,
+                }
+            ),
+            409,
+        )
     except UnmatchedGroupsError as uge:
         return jsonify(_format_unmatched_groups_response(uge)), 409
     except Exception as e:
@@ -999,11 +1002,16 @@ def api_survey_convert():
                     project_path=session.get("current_project_path"),
                 )
         except IdColumnNotDetectedError as e:
-            return jsonify({
-                "error": "id_column_required",
-                "message": str(e),
-                "columns": e.available_columns,
-            }), 409
+            return (
+                jsonify(
+                    {
+                        "error": "id_column_required",
+                        "message": str(e),
+                        "columns": e.available_columns,
+                    }
+                ),
+                409,
+            )
         except MissingIdMappingError as mie:
             return (
                 jsonify(
@@ -1049,8 +1057,12 @@ def api_survey_convert():
                         conv_type = "survey-lsa" if suffix == ".lsa" else "survey-xlsx"
                         tasks_out = _extract_tasks_from_output(output_root)
                         _register_session_in_project(
-                            p_path, session_override, tasks_out,
-                            "survey", filename, conv_type,
+                            p_path,
+                            session_override,
+                            tasks_out,
+                            "survey",
+                            filename,
+                            conv_type,
                         )
 
         mem = io.BytesIO()
@@ -1269,12 +1281,17 @@ def api_survey_convert_validate():
             add_log("Conversion completed successfully", "success")
         except IdColumnNotDetectedError as e:
             add_log(f"ID column not detected: {str(e)}", "error")
-            return jsonify({
-                "error": "id_column_required",
-                "message": str(e),
-                "columns": e.available_columns,
-                "log": log_messages,
-            }), 409
+            return (
+                jsonify(
+                    {
+                        "error": "id_column_required",
+                        "message": str(e),
+                        "columns": e.available_columns,
+                        "log": log_messages,
+                    }
+                ),
+                409,
+            )
         except MissingIdMappingError as mie:
             add_log(f"ID mapping incomplete: {str(mie)}", "error")
             return (
@@ -1460,12 +1477,17 @@ def api_survey_convert_validate():
                         conv_type = "survey-lsa" if suffix == ".lsa" else "survey-xlsx"
                         tasks_out = (
                             convert_result.tasks_included
-                            if convert_result and getattr(convert_result, "tasks_included", None)
+                            if convert_result
+                            and getattr(convert_result, "tasks_included", None)
                             else _extract_tasks_from_output(output_root)
                         )
                         _register_session_in_project(
-                            project_path, session_override, tasks_out,
-                            "survey", filename, conv_type,
+                            project_path,
+                            session_override,
+                            tasks_out,
+                            "survey",
+                            filename,
+                            conv_type,
                         )
                         add_log(
                             f"Registered in project.json: ses-{session_override} → {', '.join(tasks_out)}",
@@ -1794,10 +1816,18 @@ def api_biometrics_convert():
                     log_msg("Project updated successfully!", "success")
 
                     # Register session in project.json
-                    if session_override and result and getattr(result, "tasks_included", None):
+                    if (
+                        session_override
+                        and result
+                        and getattr(result, "tasks_included", None)
+                    ):
                         _register_session_in_project(
-                            project_path, session_override, result.tasks_included,
-                            "biometrics", filename, "biometrics",
+                            project_path,
+                            session_override,
+                            result.tasks_included,
+                            "biometrics",
+                            filename,
+                            "biometrics",
                         )
                         log_msg(
                             f"Registered in project.json: ses-{session_override} → {', '.join(result.tasks_included)}",
@@ -1910,12 +1940,17 @@ def api_biometrics_convert():
         return jsonify({"log": log, "zip_base64": zip_base64, "validation": validation})
 
     except IdColumnNotDetectedError as e:
-        return jsonify({
-            "error": "id_column_required",
-            "message": str(e),
-            "columns": e.available_columns,
-            "log": log,
-        }), 409
+        return (
+            jsonify(
+                {
+                    "error": "id_column_required",
+                    "message": str(e),
+                    "columns": e.available_columns,
+                    "log": log,
+                }
+            ),
+            409,
+        )
     except Exception as e:
         return jsonify({"error": str(e), "log": log}), 500
     finally:
@@ -2075,14 +2110,16 @@ def api_batch_convert():
 
         if dry_run:
             # For dry run, just return the logs (no file creation)
-            return jsonify({
-                "converted": result.success_count,
-                "errors": result.error_count,
-                "new_files": result.new_files,
-                "existing_files": result.existing_files,
-                "logs": logs,
-                "dry_run": True,
-            })
+            return jsonify(
+                {
+                    "converted": result.success_count,
+                    "errors": result.error_count,
+                    "new_files": result.new_files,
+                    "existing_files": result.existing_files,
+                    "logs": logs,
+                    "dry_run": True,
+                }
+            )
 
         create_dataset_description(output_dir, name=dataset_name)
 
@@ -2092,11 +2129,16 @@ def api_batch_convert():
                 {"path": str(c.output_path.relative_to(output_dir)), "reason": c.reason}
                 for c in result.conflicts
             ]
-            return jsonify({
-                "error": f"File conflicts detected: {len(result.conflicts)} files already exist with different content. Please use different names or delete existing files.",
-                "conflicts": conflicts_info,
-                "logs": logs,
-            }), 409
+            return (
+                jsonify(
+                    {
+                        "error": f"File conflicts detected: {len(result.conflicts)} files already exist with different content. Please use different names or delete existing files.",
+                        "conflicts": conflicts_info,
+                        "logs": logs,
+                    }
+                ),
+                409,
+            )
 
         project_saved = False
         project_root = None
@@ -2530,23 +2572,32 @@ def api_participants_preview():
                     return jsonify({"error": "LimeSurvey support not available"}), 500
 
             # Detect ID column
-            from src.converters.id_detection import detect_id_column as _detect_id, has_prismmeta_columns as _has_pm_cols
+            from src.converters.id_detection import (
+                detect_id_column as _detect_id,
+                has_prismmeta_columns as _has_pm_cols,
+            )
 
             id_column = request.form.get("id_column", "").strip() or None
             source_fmt = "lsa" if suffix == ".lsa" else "xlsx"
             _has_pm = _has_pm_cols(list(df.columns))
             id_column = _detect_id(
-                list(df.columns), source_fmt,
+                list(df.columns),
+                source_fmt,
                 explicit_id_column=id_column,
                 has_prismmeta=_has_pm,
             )
 
             if not id_column:
-                return jsonify({
-                    "error": "id_column_required",
-                    "message": f"Could not auto-detect ID column. Available columns: {', '.join(df.columns)}",
-                    "columns": list(df.columns),
-                }), 409
+                return (
+                    jsonify(
+                        {
+                            "error": "id_column_required",
+                            "message": f"Could not auto-detect ID column. Available columns: {', '.join(df.columns)}",
+                            "columns": list(df.columns),
+                        }
+                    ),
+                    409,
+                )
 
             # Get library path for participants.json
             library_path = _resolve_effective_library_path()

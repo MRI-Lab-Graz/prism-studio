@@ -133,7 +133,7 @@ Open the complete guide: [WORKSHOP_HANDOUT_WELLBEING.md](https://github.com/MRI-
 1. Go to **Tools → Recipes & Scoring**
 2. Select your dataset
 3. Load `recipe-who5.json`
-4. Run and export as SPSS (.sav)
+4. Run and export as SPSS (.save)
 
 ### Exercise 4: Templates
 

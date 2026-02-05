@@ -4,3 +4,13 @@ matplotlib
 black
 flake8
 ruff
+detect-secrets
+bandit
+mypy
+semgrep
+codespell
+safety
+pip-audit
+types-requests
+types-PyYAML
+types-waitress

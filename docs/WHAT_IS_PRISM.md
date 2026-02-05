@@ -1,6 +1,6 @@
 # What is PRISM?
 
-PRISM (**P**sychological **R**esearch **I**nformation **S**tructure for **M**etadata) is a validation and metadata framework for psychological experiment datasets. It extends the [BIDS standard](https://bids.neuroimaging.io/) to support modalities common in psychological research—like surveys, biometrics, and eyetracking—while ensuring your data remains fully compatible with existing BIDS tools.
+PRISM (**P**sychological **R**esearch **I**nformation **S**structure for **M**etadata) is a validation and metadata framework for psychological experiment datasets. It extends the [BIDS standard](https://bids.neuroimaging.io/) to support modalities common in psychological research—like surveys, biometrics, and eyetracking—while ensuring your data remains fully compatible with existing BIDS tools.
 
 ## PRISM is an Add-On, Not a Replacement
 
@@ -85,7 +85,7 @@ Calculate scores automatically with **recipes**:
 
 ### 4. 📤 SPSS-Ready Export
 
-Export your scored data directly to SPSS (.sav) with:
+Export your scored data directly to SPSS (.save) with:
 - Variable labels
 - Value labels (e.g., 1 = "Male", 2 = "Female")
 - Proper data types

@@ -757,9 +757,22 @@
     currentSchema = data.schema;
   }
 
+  function unwrapSchemaVariants(schema) {
+    if (!schema || typeof schema !== 'object') return schema;
+    const candidates = [];
+    if (Array.isArray(schema.oneOf)) candidates.push(...schema.oneOf);
+    if (Array.isArray(schema.anyOf)) candidates.push(...schema.anyOf);
+    if (Array.isArray(schema.allOf)) candidates.push(...schema.allOf);
+    if (!candidates.length) return schema;
+
+    const withProps = candidates.find(c => c && typeof c === 'object' && c.properties);
+    return withProps || candidates[0];
+  }
+
   function getItemSchema() {
     if (!currentSchema) return null;
-    return currentSchema.additionalProperties || null;
+    const schema = currentSchema.additionalProperties || null;
+    return unwrapSchemaVariants(schema);
   }
 
   function getSectionSchema(sectionKey) {
@@ -1808,7 +1821,7 @@
     if (input.classList.contains('form-check-input')) {
       const wrap = document.createElement('div');
       wrap.className = 'form-check';
-      wrap.appendChild(wrap);
+      wrap.appendChild(input);
       col.appendChild(wrap);
     } else {
       col.appendChild(input);

@@ -241,21 +241,23 @@ def _validate_against_schema(*, instance: object, schema: dict) -> list[dict]:
                 "message": err.message,
             }
         )
-    
+
     # Custom validation: SoftwareVersion is required unless SoftwarePlatform is "Paper and Pencil"
     if isinstance(instance, dict) and "Technical" in instance:
         technical = instance["Technical"]
         if isinstance(technical, dict):
             platform = technical.get("SoftwarePlatform", "").strip()
             version = technical.get("SoftwareVersion", "").strip()
-            
+
             # If platform is not "Paper and Pencil" and version is missing, add error
             if platform and platform != "Paper and Pencil" and not version:
-                errors.append({
-                    "path": "Technical/SoftwareVersion",
-                    "message": f"SoftwareVersion is required when SoftwarePlatform is '{platform}'",
-                })
-    
+                errors.append(
+                    {
+                        "path": "Technical/SoftwareVersion",
+                        "message": f"SoftwareVersion is required when SoftwarePlatform is '{platform}'",
+                    }
+                )
+
     return errors
 
 
@@ -528,7 +530,9 @@ def api_survey_customizer_export():
 
     language = survey_info.get("language", "en")
     languages = survey_info.get("languages") or data.get("languages") or [language]
-    base_language = survey_info.get("base_language") or data.get("base_language") or language
+    base_language = (
+        survey_info.get("base_language") or data.get("base_language") or language
+    )
     ls_version = export_options.get("ls_version", "3")
     matrix_mode = export_options.get("matrix", True)
     matrix_global = export_options.get("matrix_global", True)
@@ -943,11 +947,16 @@ def api_template_editor_validate():
         except Exception:
             pass  # Don't let language checks break schema validation
 
-        return jsonify({
-            "ok": len(errors) == 0,
-            "errors": errors,
-            "language_warnings": lang_warnings,
-        }), 200
+        return (
+            jsonify(
+                {
+                    "ok": len(errors) == 0,
+                    "errors": errors,
+                    "language_warnings": lang_warnings,
+                }
+            ),
+            200,
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -1055,9 +1064,16 @@ def api_template_editor_import_lsq_lsg():
             return jsonify({"error": "Failed to parse XML file"}), 400
 
         # Determine item count and languages
-        from src.converters.limesurvey import LIMESURVEY_QUESTION_TYPES  # noqa: F811
 
-        reserved = {"Technical", "Study", "Metadata", "I18n", "LimeSurvey", "Scoring", "Normative"}
+        reserved = {
+            "Technical",
+            "Study",
+            "Metadata",
+            "I18n",
+            "LimeSurvey",
+            "Scoring",
+            "Normative",
+        }
         item_keys = [k for k in template if k not in reserved]
         item_count = len(item_keys)
 
@@ -1073,13 +1089,18 @@ def api_template_editor_import_lsq_lsg():
         task_name = template.get("Study", {}).get("TaskName", "imported")
         suggested_filename = f"survey-{task_name}.json"
 
-        return jsonify({
-            "template": template,
-            "suggested_filename": suggested_filename,
-            "source_type": source_type,
-            "item_count": item_count,
-            "languages": languages,
-        }), 200
+        return (
+            jsonify(
+                {
+                    "template": template,
+                    "suggested_filename": suggested_filename,
+                    "source_type": source_type,
+                    "item_count": item_count,
+                    "languages": languages,
+                }
+            ),
+            200,
+        )
 
     except Exception as e:
         return jsonify({"error": f"Import failed: {str(e)}"}), 500
@@ -1129,7 +1150,7 @@ def api_recipes_surveys():
     )
     if derivatives_dir.exists() and not force_overwrite:
         existing_files = []
-        for ext in [".csv", ".tsv", ".xlsx", ".sav", ".feather"]:
+        for ext in [".csv", ".tsv", ".xlsx", ".save", ".feather"]:
             existing_files.extend(derivatives_dir.glob(f"*{ext}"))
 
         if existing_files:
@@ -1298,13 +1319,13 @@ def api_recipes_surveys():
                 # Anonymize files based on format
                 anonymized_count = 0
 
-                if out_format in ("save", "sav", "spss"):
-                    # Handle SPSS .sav files
+                if out_format in ("save", "save", "spss"):
+                    # Handle SPSS .save files
                     try:
                         import pyreadstat
                     except ImportError:
                         print(
-                            "[ANONYMIZATION] WARNING: pyreadstat not available, cannot anonymize .sav files"
+                            "[ANONYMIZATION] WARNING: pyreadstat not available, cannot anonymize .save files"
                         )
                         print("[ANONYMIZATION] Install with: pip install pyreadstat")
                         raise ImportError(
@@ -1313,7 +1334,7 @@ def api_recipes_surveys():
 
                     for root, dirs, files in os.walk(output_dir):
                         for file in files:
-                            if file.endswith(".sav"):
+                            if file.endswith(".save"):
                                 sav_path = os.path.join(root, file)
                                 print(f"  Processing: {file}")
 
@@ -1678,7 +1699,9 @@ def _detect_languages_from_template(data):
         for key in i18n:
             if key == "Languages":
                 continue
-            if isinstance(key, str) and (len(key) == 2 or (len(key) == 5 and key[2] == "-")):
+            if isinstance(key, str) and (
+                len(key) == 2 or (len(key) == 5 and key[2] == "-")
+            ):
                 langs.add(key)
 
     # 2b. Technical.Language field
@@ -1694,12 +1717,28 @@ def _detect_languages_from_template(data):
     if not items:
         # Fallback: top-level keys with Description
         reserved = {
-            "@context", "Technical", "Study", "Metadata", "Categories",
-            "TaskName", "I18n", "Scoring", "Normative",
-            "Name", "BIDSVersion", "Description", "URL", "License",
-            "Authors", "Acknowledgements", "References", "Funding",
+            "@context",
+            "Technical",
+            "Study",
+            "Metadata",
+            "Categories",
+            "TaskName",
+            "I18n",
+            "Scoring",
+            "Normative",
+            "Name",
+            "BIDSVersion",
+            "Description",
+            "URL",
+            "License",
+            "Authors",
+            "Acknowledgements",
+            "References",
+            "Funding",
         }
-        items = {k: v for k, v in data.items() if k not in reserved and isinstance(v, dict)}
+        items = {
+            k: v for k, v in data.items() if k not in reserved and isinstance(v, dict)
+        }
 
     for _q_code, q_data in items.items():
         if not isinstance(q_data, dict):
@@ -1736,7 +1775,9 @@ def _detect_languages_from_template(data):
         # 4a. Remove fake translations (all content identical to reference).
         # Prefer Technical.Language as reference, then "en", then first sorted.
         ref_lang = None
-        if tech_lang_code in langs and any(t for t in texts_by_lang.get(tech_lang_code, [])):
+        if tech_lang_code in langs and any(
+            t for t in texts_by_lang.get(tech_lang_code, [])
+        ):
             ref_lang = tech_lang_code
         elif "en" in langs and any(t for t in texts_by_lang.get("en", [])):
             ref_lang = "en"
@@ -1777,7 +1818,11 @@ def _detect_languages_from_template(data):
     if not langs:
         tech = data.get("Technical", {})
         tech_lang = tech.get("Language", "") if isinstance(tech, dict) else ""
-        langs.add(tech_lang[:2].lower() if isinstance(tech_lang, str) and len(tech_lang) >= 2 else "en")
+        langs.add(
+            tech_lang[:2].lower()
+            if isinstance(tech_lang, str) and len(tech_lang) >= 2
+            else "en"
+        )
 
     return sorted(langs)
 
@@ -1919,7 +1964,9 @@ def list_library_files_merged():
                 existing_paths = {item["path"] for item in results["participants"]}
                 if str(p_cand) not in existing_paths:
                     results["participants"].append(
-                        _extract_template_info(str(p_cand), "participants.json", source=source_label)
+                        _extract_template_info(
+                            str(p_cand), "participants.json", source=source_label
+                        )
                     )
                 break
 
@@ -1930,16 +1977,23 @@ def list_library_files_merged():
                     if filepath.name.startswith("."):
                         continue
                     results[folder].append(
-                        _extract_template_info(str(filepath), filepath.name, source=source_label)
+                        _extract_template_info(
+                            str(filepath), filepath.name, source=source_label
+                        )
                     )
 
         # If no survey/biometrics subfolders, check root for JSON files
         if not (lib_p / "survey").is_dir() and not (lib_p / "biometrics").is_dir():
             for filepath in sorted(lib_p.glob("*.json")):
-                if filepath.name.startswith(".") or filepath.name == "participants.json":
+                if (
+                    filepath.name.startswith(".")
+                    or filepath.name == "participants.json"
+                ):
                     continue
                 results["other"].append(
-                    _extract_template_info(str(filepath), filepath.name, source=source_label)
+                    _extract_template_info(
+                        str(filepath), filepath.name, source=source_label
+                    )
                 )
 
     try:
@@ -1969,7 +2023,9 @@ def list_library_files_merged():
                     # Keep project path as primary (project overrides global)
                     if item.get("source") == "project":
                         existing["path"] = item["path"]
-                        existing["global_path"] = existing.get("_original_path") or existing["path"]
+                        existing["global_path"] = (
+                            existing.get("_original_path") or existing["path"]
+                        )
                         existing["project_path"] = item["path"]
                     else:
                         existing["global_path"] = item["path"]
@@ -1981,7 +2037,9 @@ def list_library_files_merged():
                 else:
                     item["_original_path"] = item["path"]
                     by_filename[fn] = item
-            results[key] = sorted(by_filename.values(), key=lambda x: x.get("filename", "").lower())
+            results[key] = sorted(
+                by_filename.values(), key=lambda x: x.get("filename", "").lower()
+            )
             # Clean up internal keys
             for item in results[key]:
                 item.pop("_original_path", None)
@@ -2258,7 +2316,8 @@ def detect_columns():
 
         if filename.endswith(".lsa"):
             # Extract response columns from LimeSurvey archive (.lsr XML)
-            import tempfile, shutil
+            import tempfile
+            import shutil
 
             tmp_dir = tempfile.mkdtemp(prefix="prism_detect_cols_")
             try:
@@ -2293,20 +2352,29 @@ def detect_columns():
 
         _has_pm = has_prismmeta_columns(columns)
         is_prism_data = _has_pm or any(
-            c.lower() in ("participant_id", "participantid", "prism_participant_id", "prismparticipantid")
+            c.lower()
+            in (
+                "participant_id",
+                "participantid",
+                "prism_participant_id",
+                "prismparticipantid",
+            )
             for c in columns
         )
         source_format = "lsa" if filename.endswith(".lsa") else "xlsx"
         suggested = detect_id_column(
-            columns, source_format,
+            columns,
+            source_format,
             has_prismmeta=_has_pm,
         )
 
-        return jsonify({
-            "columns": columns,
-            "suggested_id_column": suggested,
-            "is_prism_data": is_prism_data,
-        })
+        return jsonify(
+            {
+                "columns": columns,
+                "suggested_id_column": suggested,
+                "is_prism_data": is_prism_data,
+            }
+        )
 
     except Exception as e:
         import traceback
@@ -2846,9 +2914,7 @@ def limesurvey_to_prism():
                     group_name=task_name,
                     project_path=session.get("current_project_path"),
                 )
-                combined_result["template_match"] = (
-                    match.to_dict() if match else None
-                )
+                combined_result["template_match"] = match.to_dict() if match else None
             except Exception as e:
                 log(f"Template matching skipped: {e}", "warning")
 
@@ -2882,27 +2948,34 @@ def get_library_template(template_key):
             project_templates = _load_project_templates(project_path)
             if key in project_templates:
                 tdata = project_templates[key]
-                return jsonify({
-                    "success": True,
-                    "template_key": key,
-                    "filename": tdata["path"].name,
-                    "prism_json": tdata["json"],
-                    "source": "project",
-                })
+                return jsonify(
+                    {
+                        "success": True,
+                        "template_key": key,
+                        "filename": tdata["path"].name,
+                        "prism_json": tdata["json"],
+                        "source": "project",
+                    }
+                )
 
         # Fall back to global templates
         templates = _load_global_templates()
         if key not in templates:
-            return jsonify({"error": f"Template '{template_key}' not found in library"}), 404
+            return (
+                jsonify({"error": f"Template '{template_key}' not found in library"}),
+                404,
+            )
 
         tdata = templates[key]
-        return jsonify({
-            "success": True,
-            "template_key": key,
-            "filename": tdata["path"].name,
-            "prism_json": tdata["json"],
-            "source": "global",
-        })
+        return jsonify(
+            {
+                "success": True,
+                "template_key": key,
+                "filename": tdata["path"].name,
+                "prism_json": tdata["json"],
+                "source": "global",
+            }
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

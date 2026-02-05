@@ -144,7 +144,7 @@ When processing this file, systems can:
 1. **Resolve SNOMED codes** to get clinical definitions
 2. **Link to CDE** for data element metadata
 3. **Harmonize with other datasets** using same codes
-4. **Integrate with clinical systems** (EHR, HL7)
+4. **Integrate with clinical systems** (HER, HL7)
 5. **Enable federated search** across studies
 
 ## Example: Sex/Gender Harmonization
