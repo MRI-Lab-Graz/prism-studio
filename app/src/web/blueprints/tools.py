@@ -241,6 +241,21 @@ def _validate_against_schema(*, instance: object, schema: dict) -> list[dict]:
                 "message": err.message,
             }
         )
+    
+    # Custom validation: SoftwareVersion is required unless SoftwarePlatform is "Paper and Pencil"
+    if isinstance(instance, dict) and "Technical" in instance:
+        technical = instance["Technical"]
+        if isinstance(technical, dict):
+            platform = technical.get("SoftwarePlatform", "").strip()
+            version = technical.get("SoftwareVersion", "").strip()
+            
+            # If platform is not "Paper and Pencil" and version is missing, add error
+            if platform and platform != "Paper and Pencil" and not version:
+                errors.append({
+                    "path": "Technical/SoftwareVersion",
+                    "message": f"SoftwareVersion is required when SoftwarePlatform is '{platform}'",
+                })
+    
     return errors
 
 
