@@ -382,7 +382,7 @@ A recipe defines:
 - Or leave empty to run all available recipes
 
 **Output Format:**
-- Select: **`SPSS (.sav - contains Levels/Labels)`**
+- Select: **`SPSS (.save - contains Levels/Labels)`**
 - This is the key format for preserving your metadata!
 
 **Layout:**
@@ -415,7 +415,7 @@ my_prism_dataset/
     └── surveys/
         ├── dataset_description.json
         └── phq9/
-            ├── phq9.sav                    ← SPSS file with data + metadata
+            ├── phq9.save                    ← SPSS file with data + metadata
             ├── phq9_codebook.json          ← Machine-readable metadata
             ├── phq9_codebook.tsv           ← Human-readable codebook
             └── methods_boilerplate.md      ← Auto-generated methods text
@@ -435,8 +435,8 @@ my_prism_dataset/
 
 #### Step 7: Download and Open in SPSS
 1. Click **"Download SPSS File"** or navigate to the file
-2. Download `phq9.sav`
-3. Open in SPSS (or Jamovi, or PSPP - any software that reads `.sav` files)
+2. Download `phq9.save`
+3. Open in SPSS (or Jamovi, or PSPP - any software that reads `.save` files)
 
 **What you'll see in SPSS:**
 - **Variable View:**
@@ -576,7 +576,7 @@ This format is great for:
 - If missing, ask instructor or check the recipe library
 
 ### Issue 4: SPSS file won't open / missing labels
-**Symptom:** `.sav` file opens but labels are missing
+**Symptom:** `.save` file opens but labels are missing
 
 **Solution:**
 - Ensure you filled in the `Levels` field in your JSON metadata

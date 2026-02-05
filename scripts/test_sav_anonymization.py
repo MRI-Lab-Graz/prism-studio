@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script to verify SPSS .sav file anonymization with existing mapping.
+Test script to verify SPSS .save file anonymization with existing mapping.
 
 Usage:
     python test_sav_anonymization.py <dataset_path> [sav_filename]
@@ -16,19 +16,19 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
 import pyreadstat
 
 
-def test_sav_anonymization(dataset_path: str, sav_filename: str = "recipe-maia.sav"):
-    """Test anonymization on a single .sav file.
+def test_sav_anonymization(dataset_path: str, sav_filename: str = "recipe-maia.save"):
+    """Test anonymization on a single .save file.
 
     Args:
         dataset_path: Path to the dataset root directory
-        sav_filename: Name of the .sav file to test (default: recipe-maia.sav)
+        sav_filename: Name of the .save file to test (default: recipe-maia.save)
     """
 
     # Paths
     dataset = Path(dataset_path)
     derivatives = dataset / "derivatives" / "survey"
     mapping_file = derivatives / "participants_mapping.json"
-    sav_file = derivatives / "recipe-maia.sav"
+    sav_file = derivatives / "recipe-maia.save"
 
     if not mapping_file.exists():
         print(f"❌ Mapping file not found: {mapping_file}")
@@ -82,7 +82,7 @@ def test_sav_anonymization(dataset_path: str, sav_filename: str = "recipe-maia.s
         print(f"\n✓ All {len(anonymized_ids)} IDs successfully anonymized!")
 
     # Write back (to a test file, not overwrite original)
-    test_output = derivatives / "test_anonymized.sav"
+    test_output = derivatives / "test_anonymized.save"
     print(f"\nWriting test output to: {test_output.name}")
     pyreadstat.write_sav(
         df, str(test_output), column_labels=meta.column_names_to_labels
@@ -102,12 +102,12 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python test_sav_anonymization.py <dataset_path> [sav_filename]")
         print(
-            "Example: python test_sav_anonymization.py /path/to/Dann_and_Brain recipe-maia.sav"
+            "Example: python test_sav_anonymization.py /path/to/Dann_and_Brain recipe-maia.save"
         )
         sys.exit(1)
 
     dataset_path = sys.argv[1]
-    sav_filename = sys.argv[2] if len(sys.argv) > 2 else "recipe-maia.sav"
+    sav_filename = sys.argv[2] if len(sys.argv) > 2 else "recipe-maia.save"
     print("=" * 70)
     print("SPSS File Anonymization Test")
     print("=" * 70)

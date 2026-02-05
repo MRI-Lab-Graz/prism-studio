@@ -39,6 +39,7 @@ setup(
         "dev": ["pytest", "pytest-cov", "black", "flake8"],
         "full": ["bidsschematools", "nibabel"],
         "demo": ["Pillow", "numpy", "matplotlib"],
+        "edf": ["pyedflib"],  # EDF/EDF+ file support (optional)
     },
     scripts=[
         "prism.py",

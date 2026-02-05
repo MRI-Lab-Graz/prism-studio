@@ -71,7 +71,7 @@ demo/workshop/
 
 ### Exercise 3: Using Recipes
 - Automated scoring for Wellbeing and Fitness
-- Exporting to SPSS (.sav) with full metadata
+- Exporting to SPSS (.save) with full metadata
 - Verifying automated calculations
 
 ### Exercise 4: Making & Editing Templates

@@ -790,12 +790,14 @@ def get_sourcedata_files():
     files = []
     for f in sorted(sourcedata_dir.iterdir()):
         if f.is_file() and f.suffix.lower() in supported_extensions:
-            files.append({
-                "name": f.name,
-                "path": str(f),
-                "size": f.stat().st_size,
-                "extension": f.suffix.lower(),
-            })
+            files.append(
+                {
+                    "name": f.name,
+                    "path": str(f),
+                    "size": f.stat().st_size,
+                    "extension": f.suffix.lower(),
+                }
+            )
 
     return jsonify({"files": files, "sourcedata_exists": True})
 
@@ -1161,9 +1163,7 @@ def _resolve_level_label(value: str, levels: dict, lang: str = "en") -> str | No
     return get_i18n_text(label_obj, lang) or str(value)
 
 
-def _compute_participant_stats(
-    project_path: Path, lang: str = "en"
-) -> dict | None:
+def _compute_participant_stats(project_path: Path, lang: str = "en") -> dict | None:
     """Read participants.tsv and compute demographic summary statistics.
 
     Uses participants.json schema for proper value labels and filtering.
@@ -1231,9 +1231,14 @@ def _compute_participant_stats(
             else:
                 # Fallback: common BIDS code mapping
                 label_map = {
-                    "M": "male", "m": "male", "1": "male",
-                    "F": "female", "f": "female", "2": "female",
-                    "O": "other", "o": "other",
+                    "M": "male",
+                    "m": "male",
+                    "1": "male",
+                    "F": "female",
+                    "f": "female",
+                    "2": "female",
+                    "O": "other",
+                    "o": "other",
                 }
                 mapped = {}
                 for val, cnt in counts.items():
@@ -1243,15 +1248,18 @@ def _compute_participant_stats(
                     label = label_map.get(sv, sv)
                     mapped[label] = mapped.get(label, 0) + int(cnt)
 
-            stats["sex_counts"] = dict(
-                sorted(mapped.items(), key=lambda x: -x[1])
-            )
+            stats["sex_counts"] = dict(sorted(mapped.items(), key=lambda x: -x[1]))
 
         # --- Additional demographic columns ---
         # Only include columns that have Levels in the schema
         skip_cols = {
-            "participant_id", "age", "sex", "gender",
-            "session", "session_date", "group",
+            "participant_id",
+            "age",
+            "sex",
+            "gender",
+            "session",
+            "session_date",
+            "group",
         }
         from src.reporting import get_i18n_text
 
@@ -1265,7 +1273,9 @@ def _compute_participant_stats(
                 continue
             # Get a human-readable column name from schema Description
             col_desc = col_schema.get("Description")
-            col_label = get_i18n_text(col_desc, lang) if col_desc else col.replace("_", " ")
+            col_label = (
+                get_i18n_text(col_desc, lang) if col_desc else col.replace("_", " ")
+            )
 
             series = df[col].astype(str)
             mask = ~series.str.strip().str.lower().isin(_NA_VALUES)
@@ -1300,11 +1310,13 @@ def get_sessions():
     if not data:
         return jsonify({"success": False, "error": "project.json not found"}), 404
 
-    return jsonify({
-        "success": True,
-        "sessions": data.get("Sessions", []),
-        "task_definitions": data.get("TaskDefinitions", {}),
-    })
+    return jsonify(
+        {
+            "success": True,
+            "sessions": data.get("Sessions", []),
+            "task_definitions": data.get("TaskDefinitions", {}),
+        }
+    )
 
 
 @projects_bp.route("/api/projects/sessions", methods=["POST"])
@@ -1343,12 +1355,14 @@ def get_sessions_declared():
     data = _read_project_json(project_path)
     sessions = data.get("Sessions", [])
 
-    return jsonify({
-        "sessions": [
-            {"id": s.get("id", ""), "label": s.get("label", s.get("id", ""))}
-            for s in sessions
-        ]
-    })
+    return jsonify(
+        {
+            "sessions": [
+                {"id": s.get("id", ""), "label": s.get("label", s.get("id", ""))}
+                for s in sessions
+            ]
+        }
+    )
 
 
 @projects_bp.route("/api/projects/sessions/register", methods=["POST"])
@@ -1394,10 +1408,15 @@ def register_session():
 
     # Validate session ID pattern
     if not re.match(r"^ses-[a-zA-Z0-9]+$", session_id):
-        return jsonify({
-            "success": False,
-            "error": f"Invalid session ID format: {session_id}",
-        }), 400
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": f"Invalid session ID format: {session_id}",
+                }
+            ),
+            400,
+        )
 
     project_path = Path(current["path"])
     data = _read_project_json(project_path)
@@ -1449,10 +1468,12 @@ def register_session():
             existing["source"] = source_obj
         else:
             # Add new task entry
-            target_session["tasks"].append({
-                "task": task_name,
-                "source": source_obj,
-            })
+            target_session["tasks"].append(
+                {
+                    "task": task_name,
+                    "source": source_obj,
+                }
+            )
 
         registered_tasks.append(task_name)
 
@@ -1462,12 +1483,14 @@ def register_session():
 
     _write_project_json(project_path, data)
 
-    return jsonify({
-        "success": True,
-        "message": f"Registered {len(registered_tasks)} task(s) in {session_id}",
-        "session_id": session_id,
-        "registered_tasks": registered_tasks,
-    })
+    return jsonify(
+        {
+            "success": True,
+            "message": f"Registered {len(registered_tasks)} task(s) in {session_id}",
+            "session_id": session_id,
+            "registered_tasks": registered_tasks,
+        }
+    )
 
 
 @projects_bp.route("/api/projects/generate-methods", methods=["POST"])
@@ -1501,10 +1524,15 @@ def generate_methods_section():
     project_path = Path(current["path"])
     project_data = _read_project_json(project_path)
     if not project_data:
-        return jsonify({
-            "success": False,
-            "error": "No project metadata available. Fill in your project.json to generate a methods section.",
-        }), 404
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": "No project metadata available. Fill in your project.json to generate a methods section.",
+                }
+            ),
+            404,
+        )
 
     # Read dataset_description.json
     dataset_desc = None
@@ -1567,20 +1595,26 @@ def generate_methods_section():
 
     try:
         md_text, sections_used = generate_full_methods(
-            project_data, dataset_desc, template_data,
-            participant_stats=participant_stats, lang=lang,
-            detail_level=detail_level, continuous=continuous,
+            project_data,
+            dataset_desc,
+            template_data,
+            participant_stats=participant_stats,
+            lang=lang,
+            detail_level=detail_level,
+            continuous=continuous,
         )
         html_text = _md_to_html(md_text)
         filename_base = f"methods_section_{lang}"
 
-        return jsonify({
-            "success": True,
-            "md": md_text,
-            "html": html_text,
-            "filename_base": filename_base,
-            "sections_used": sections_used,
-        })
+        return jsonify(
+            {
+                "success": True,
+                "md": md_text,
+                "html": html_text,
+                "filename_base": filename_base,
+                "sections_used": sections_used,
+            }
+        )
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -1645,52 +1679,258 @@ def _compute_methods_completeness(
     # Define all tracked fields: (section_key, field_name, priority, hint, value)
     fields: list[tuple[str, str, int, str, bool]] = [
         # StudyDesign
-        ("StudyDesign", "Type", 3, "Select the study design type", _filled(sd.get("Type"))),
-        ("StudyDesign", "TypeDescription", 2, "Describe the design in detail", _filled(sd.get("TypeDescription"))),
-        ("StudyDesign", "Blinding", 1, "Blinding procedure (experimental studies)", _filled(sd.get("Blinding"))),
-        ("StudyDesign", "Randomization", 1, "Randomization method", _filled(sd.get("Randomization"))),
+        (
+            "StudyDesign",
+            "Type",
+            3,
+            "Select the study design type",
+            _filled(sd.get("Type")),
+        ),
+        (
+            "StudyDesign",
+            "TypeDescription",
+            2,
+            "Describe the design in detail",
+            _filled(sd.get("TypeDescription")),
+        ),
+        (
+            "StudyDesign",
+            "Blinding",
+            1,
+            "Blinding procedure (experimental studies)",
+            _filled(sd.get("Blinding")),
+        ),
+        (
+            "StudyDesign",
+            "Randomization",
+            1,
+            "Randomization method",
+            _filled(sd.get("Randomization")),
+        ),
         # Recruitment
-        ("Recruitment", "Method", 3, "How were participants recruited?", _filled(rec.get("Method"))),
-        ("Recruitment", "Location", 3, "Where were participants recruited?", _filled(rec.get("Location"))),
-        ("Recruitment", "Period.Start", 3, "When did recruitment begin?",
-         _obj_filled(rec.get("Period"), "Start")),
-        ("Recruitment", "Period.End", 2, "When did recruitment end?",
-         _obj_filled(rec.get("Period"), "End")),
-        ("Recruitment", "Compensation", 2, "Participant compensation", _filled(rec.get("Compensation"))),
-        ("Recruitment", "Platform", 1, "Recruitment platform (e.g. Prolific)", _filled(rec.get("Platform"))),
+        (
+            "Recruitment",
+            "Method",
+            3,
+            "How were participants recruited?",
+            _filled(rec.get("Method")),
+        ),
+        (
+            "Recruitment",
+            "Location",
+            3,
+            "Where were participants recruited?",
+            _filled(rec.get("Location")),
+        ),
+        (
+            "Recruitment",
+            "Period.Start",
+            3,
+            "When did recruitment begin?",
+            _obj_filled(rec.get("Period"), "Start"),
+        ),
+        (
+            "Recruitment",
+            "Period.End",
+            2,
+            "When did recruitment end?",
+            _obj_filled(rec.get("Period"), "End"),
+        ),
+        (
+            "Recruitment",
+            "Compensation",
+            2,
+            "Participant compensation",
+            _filled(rec.get("Compensation")),
+        ),
+        (
+            "Recruitment",
+            "Platform",
+            1,
+            "Recruitment platform (e.g. Prolific)",
+            _filled(rec.get("Platform")),
+        ),
         # Eligibility
-        ("Eligibility", "InclusionCriteria", 3, "List inclusion criteria", _filled(elig.get("InclusionCriteria"))),
-        ("Eligibility", "ExclusionCriteria", 3, "List exclusion criteria", _filled(elig.get("ExclusionCriteria"))),
-        ("Eligibility", "TargetSampleSize", 1, "Planned sample size", _filled(elig.get("TargetSampleSize"))),
-        ("Eligibility", "PowerAnalysis", 1, "Power analysis description", _filled(elig.get("PowerAnalysis"))),
+        (
+            "Eligibility",
+            "InclusionCriteria",
+            3,
+            "List inclusion criteria",
+            _filled(elig.get("InclusionCriteria")),
+        ),
+        (
+            "Eligibility",
+            "ExclusionCriteria",
+            3,
+            "List exclusion criteria",
+            _filled(elig.get("ExclusionCriteria")),
+        ),
+        (
+            "Eligibility",
+            "TargetSampleSize",
+            1,
+            "Planned sample size",
+            _filled(elig.get("TargetSampleSize")),
+        ),
+        (
+            "Eligibility",
+            "PowerAnalysis",
+            1,
+            "Power analysis description",
+            _filled(elig.get("PowerAnalysis")),
+        ),
         # DataCollection
-        ("DataCollection", "Platform", 3, "Data collection platform", _filled(dc.get("Platform"))),
-        ("DataCollection", "PlatformVersion", 1, "Platform version", _filled(dc.get("PlatformVersion"))),
-        ("DataCollection", "Method", 3, "Collection method (online/in-person/...)", _filled(dc.get("Method"))),
-        ("DataCollection", "SupervisionLevel", 2, "Level of supervision", _filled(dc.get("SupervisionLevel"))),
-        ("DataCollection", "Setting", 2, "Data collection setting", _filled(dc.get("Setting"))),
-        ("DataCollection", "AverageDuration", 2, "Average completion time",
-         _obj_filled(dc.get("AverageDuration"), "Value")),
+        (
+            "DataCollection",
+            "Platform",
+            3,
+            "Data collection platform",
+            _filled(dc.get("Platform")),
+        ),
+        (
+            "DataCollection",
+            "PlatformVersion",
+            1,
+            "Platform version",
+            _filled(dc.get("PlatformVersion")),
+        ),
+        (
+            "DataCollection",
+            "Method",
+            3,
+            "Collection method (online/in-person/...)",
+            _filled(dc.get("Method")),
+        ),
+        (
+            "DataCollection",
+            "SupervisionLevel",
+            2,
+            "Level of supervision",
+            _filled(dc.get("SupervisionLevel")),
+        ),
+        (
+            "DataCollection",
+            "Setting",
+            2,
+            "Data collection setting",
+            _filled(dc.get("Setting")),
+        ),
+        (
+            "DataCollection",
+            "AverageDuration",
+            2,
+            "Average completion time",
+            _obj_filled(dc.get("AverageDuration"), "Value"),
+        ),
         # Procedure
-        ("Procedure", "Overview", 3, "Narrative procedure overview", _filled(proc.get("Overview"))),
-        ("Procedure", "InformedConsent", 2, "Informed consent procedure", _filled(proc.get("InformedConsent"))),
-        ("Procedure", "QualityControl", 2, "Quality control measures", _filled(proc.get("QualityControl"))),
-        ("Procedure", "MissingDataHandling", 1, "Missing data handling", _filled(proc.get("MissingDataHandling"))),
-        ("Procedure", "Debriefing", 1, "Debriefing procedure", _filled(proc.get("Debriefing"))),
+        (
+            "Procedure",
+            "Overview",
+            3,
+            "Narrative procedure overview",
+            _filled(proc.get("Overview")),
+        ),
+        (
+            "Procedure",
+            "InformedConsent",
+            2,
+            "Informed consent procedure",
+            _filled(proc.get("InformedConsent")),
+        ),
+        (
+            "Procedure",
+            "QualityControl",
+            2,
+            "Quality control measures",
+            _filled(proc.get("QualityControl")),
+        ),
+        (
+            "Procedure",
+            "MissingDataHandling",
+            1,
+            "Missing data handling",
+            _filled(proc.get("MissingDataHandling")),
+        ),
+        (
+            "Procedure",
+            "Debriefing",
+            1,
+            "Debriefing procedure",
+            _filled(proc.get("Debriefing")),
+        ),
         # Conditions (weight depends on experimental design)
-        ("Conditions", "Type", 2 if is_experimental else 1, "Condition type", _filled(cond.get("Type"))),
-        ("Conditions", "Groups", 2 if is_experimental else 1, "Define experimental groups",
-         _filled(cond.get("Groups"))),
+        (
+            "Conditions",
+            "Type",
+            2 if is_experimental else 1,
+            "Condition type",
+            _filled(cond.get("Type")),
+        ),
+        (
+            "Conditions",
+            "Groups",
+            2 if is_experimental else 1,
+            "Define experimental groups",
+            _filled(cond.get("Groups")),
+        ),
         # Read-only sections: DatasetDescription
-        ("DatasetDescription", "Name", 3, "Dataset name (dataset_description.json)", _filled(dd.get("Name"))),
-        ("DatasetDescription", "Authors", 3, "Authors (dataset_description.json)", _filled(dd.get("Authors"))),
-        ("DatasetDescription", "Description", 2, "Dataset description text", _filled(dd.get("Description"))),
-        ("DatasetDescription", "EthicsApprovals", 2, "Ethics approvals", _filled(dd.get("EthicsApprovals"))),
-        ("DatasetDescription", "License", 2, "Data license", _filled(dd.get("License"))),
-        ("DatasetDescription", "Keywords", 1, "Keywords for discoverability", _filled(dd.get("Keywords"))),
+        (
+            "DatasetDescription",
+            "Name",
+            3,
+            "Dataset name (dataset_description.json)",
+            _filled(dd.get("Name")),
+        ),
+        (
+            "DatasetDescription",
+            "Authors",
+            3,
+            "Authors (dataset_description.json)",
+            _filled(dd.get("Authors")),
+        ),
+        (
+            "DatasetDescription",
+            "Description",
+            2,
+            "Dataset description text",
+            _filled(dd.get("Description")),
+        ),
+        (
+            "DatasetDescription",
+            "EthicsApprovals",
+            2,
+            "Ethics approvals",
+            _filled(dd.get("EthicsApprovals")),
+        ),
+        (
+            "DatasetDescription",
+            "License",
+            2,
+            "Data license",
+            _filled(dd.get("License")),
+        ),
+        (
+            "DatasetDescription",
+            "Keywords",
+            1,
+            "Keywords for discoverability",
+            _filled(dd.get("Keywords")),
+        ),
         # Read-only: Sessions & Tasks
-        ("SessionsTasks", "Sessions", 3, "Define at least one session", len(sessions) > 0),
-        ("SessionsTasks", "TaskDefinitions", 3, "Define at least one task", len(task_defs) > 0),
+        (
+            "SessionsTasks",
+            "Sessions",
+            3,
+            "Define at least one session",
+            len(sessions) > 0,
+        ),
+        (
+            "SessionsTasks",
+            "TaskDefinitions",
+            3,
+            "Define at least one task",
+            len(task_defs) > 0,
+        ),
     ]
 
     # Build per-section summary
@@ -1711,12 +1951,14 @@ def _compute_methods_completeness(
                 "read_only": section_key in ("DatasetDescription", "SessionsTasks"),
             }
         sec = sections_map[section_key]
-        sec["fields"].append({
-            "name": field_name,
-            "filled": is_filled,
-            "priority": priority,
-            "hint": hint,
-        })
+        sec["fields"].append(
+            {
+                "name": field_name,
+                "filled": is_filled,
+                "priority": priority,
+                "hint": hint,
+            }
+        )
         sec["total"] += 1
         sec["weight_total"] += priority
         total_weight += priority
@@ -1762,7 +2004,11 @@ def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
                     platforms.append(tech["SoftwarePlatform"])
                 if tech.get("SoftwareVersion"):
                     versions.append(tech["SoftwareVersion"])
-                method = tech.get("CollectionMethod") or tech.get("AdministrationMethod") or ""
+                method = (
+                    tech.get("CollectionMethod")
+                    or tech.get("AdministrationMethod")
+                    or ""
+                )
                 if method:
                     methods.append(method)
                 lang = tech.get("Language") or ""
@@ -1786,31 +2032,49 @@ def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
     if platforms:
         # Use most common platform
         from collections import Counter
+
         top_platform = Counter(platforms).most_common(1)[0][0]
         hints["DataCollection.Platform"] = {
-            "value": top_platform, "source": "task sidecar",
+            "value": top_platform,
+            "source": "task sidecar",
         }
     if versions:
         from collections import Counter
+
         top_version = Counter(versions).most_common(1)[0][0]
         hints["DataCollection.PlatformVersion"] = {
-            "value": top_version, "source": "task sidecar",
+            "value": top_version,
+            "source": "task sidecar",
         }
     if methods:
         from collections import Counter
+
         top_method = Counter(methods).most_common(1)[0][0]
         hints["DataCollection.Method"] = {
-            "value": top_method, "source": "task sidecar",
+            "value": top_method,
+            "source": "task sidecar",
         }
 
     # Infer method from platform if not directly detected
     if "DataCollection.Method" not in hints and platforms:
-        online_platforms = {"limesurvey", "qualtrics", "redcap", "surveymonkey",
-                           "prolific", "mturk", "gorilla", "pavlovia", "formr",
-                           "sosci", "soscisurvey", "unipark"}
+        online_platforms = {
+            "limesurvey",
+            "qualtrics",
+            "redcap",
+            "surveymonkey",
+            "prolific",
+            "mturk",
+            "gorilla",
+            "pavlovia",
+            "formr",
+            "sosci",
+            "soscisurvey",
+            "unipark",
+        }
         if any(p.lower().replace(" ", "") in online_platforms for p in platforms):
             hints["DataCollection.Method"] = {
-                "value": "online", "source": "inferred from platform",
+                "value": "online",
+                "source": "inferred from platform",
             }
 
     # --- Infer converter-based platform from provenance ---
@@ -1839,11 +2103,13 @@ def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
 
     # --- Sample size from sub-* directories ---
     if rawdata.is_dir():
-        sub_dirs = [d for d in rawdata.iterdir()
-                    if d.is_dir() and d.name.startswith("sub-")]
+        sub_dirs = [
+            d for d in rawdata.iterdir() if d.is_dir() and d.name.startswith("sub-")
+        ]
         if sub_dirs:
             hints["Eligibility.ActualSampleSize"] = {
-                "value": len(sub_dirs), "source": "rawdata sub-* folders",
+                "value": len(sub_dirs),
+                "source": "rawdata sub-* folders",
             }
 
     # --- Sample size from participants.tsv ---
@@ -1851,9 +2117,11 @@ def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
     if tsv_path and tsv_path.exists():
         try:
             import pandas as pd
+
             df = pd.read_csv(tsv_path, sep="\t")
             hints["Eligibility.ActualSampleSize"] = {
-                "value": len(df), "source": "participants.tsv",
+                "value": len(df),
+                "source": "participants.tsv",
             }
             # Check for group column → condition hints
             for col in ["group", "Group", "GROUP"]:
@@ -1861,9 +2129,14 @@ def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
                     groups = df[col].dropna().unique().tolist()
                     if len(groups) > 1:
                         hints["Conditions.Groups"] = {
-                            "value": [{"id": str(g).lower().replace(" ", "_"),
-                                       "label": str(g), "description": ""}
-                                      for g in sorted(groups)],
+                            "value": [
+                                {
+                                    "id": str(g).lower().replace(" ", "_"),
+                                    "label": str(g),
+                                    "description": "",
+                                }
+                                for g in sorted(groups)
+                            ],
                             "source": "participants.tsv group column",
                         }
                         hints["Conditions.Type"] = {
@@ -1943,14 +2216,16 @@ def get_study_metadata():
     completeness = _compute_methods_completeness(data, dataset_desc)
     hints = _auto_detect_study_hints(project_path, data)
 
-    return jsonify({
-        "success": True,
-        "study_metadata": study_metadata,
-        "completeness": completeness,
-        "hints": hints,
-        "has_sessions": len(data.get("Sessions", [])) > 0,
-        "has_tasks": len(data.get("TaskDefinitions", {})) > 0,
-    })
+    return jsonify(
+        {
+            "success": True,
+            "study_metadata": study_metadata,
+            "completeness": completeness,
+            "hints": hints,
+            "has_sessions": len(data.get("Sessions", [])) > 0,
+            "has_tasks": len(data.get("TaskDefinitions", {})) > 0,
+        }
+    )
 
 
 @projects_bp.route("/api/projects/study-metadata", methods=["POST"])
@@ -1993,11 +2268,13 @@ def save_study_metadata():
 
     completeness = _compute_methods_completeness(data, dataset_desc)
 
-    return jsonify({
-        "success": True,
-        "message": "Study metadata saved",
-        "completeness": completeness,
-    })
+    return jsonify(
+        {
+            "success": True,
+            "message": "Study metadata saved",
+            "completeness": completeness,
+        }
+    )
 
 
 @projects_bp.route("/api/projects/procedure/status", methods=["GET"])
@@ -2013,15 +2290,17 @@ def get_procedure_status():
     task_defs = data.get("TaskDefinitions", {})
 
     if not sessions:
-        return jsonify({
-            "success": True,
-            "status": "empty",
-            "message": "No sessions declared in project.json",
-            "declared": [],
-            "on_disk": [],
-            "missing": [],
-            "undeclared": [],
-        })
+        return jsonify(
+            {
+                "success": True,
+                "status": "empty",
+                "message": "No sessions declared in project.json",
+                "declared": [],
+                "on_disk": [],
+                "missing": [],
+                "undeclared": [],
+            }
+        )
 
     # Build declared set
     declared = set()
@@ -2053,11 +2332,13 @@ def get_procedure_status():
     missing = sorted(declared - on_disk)
     undeclared = sorted(on_disk - declared)
 
-    return jsonify({
-        "success": True,
-        "status": "ok" if not missing and not undeclared else "mismatch",
-        "declared": sorted(declared),
-        "on_disk": sorted(on_disk),
-        "missing": [{"session": s, "task": t} for s, t in missing],
-        "undeclared": [{"session": s, "task": t} for s, t in undeclared],
-    })
+    return jsonify(
+        {
+            "success": True,
+            "status": "ok" if not missing and not undeclared else "mismatch",
+            "declared": sorted(declared),
+            "on_disk": sorted(on_disk),
+            "missing": [{"session": s, "task": t} for s, t in missing],
+            "undeclared": [{"session": s, "task": t} for s, t in undeclared],
+        }
+    )

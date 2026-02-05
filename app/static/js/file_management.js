@@ -178,6 +178,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const renamerDryRunBtn = document.getElementById('renamerDryRunBtn');
     const renamerDownloadBtn = document.getElementById('renamerDownloadBtn');
     const renamerCopyBtn = document.getElementById('renamerCopyBtn');
+    const renamerUseMapping = document.getElementById('renamerUseMapping');
+    const renamerMappingFields = document.getElementById('renamerMappingFields');
+    const renamerSubjectValue = document.getElementById('renamerSubjectValue');
+    const renamerSessionValue = document.getElementById('renamerSessionValue');
+    const renamerMappingPreview = document.getElementById('renamerMappingPreview');
 
     let currentExampleFile = null;
 
@@ -212,6 +217,33 @@ document.addEventListener('DOMContentLoaded', () => {
         if (renamerDownloadBtn) renamerDownloadBtn.disabled = disabled;
         if (renamerCopyBtn) renamerCopyBtn.disabled = disabled;
         if (renamerDryRunBtn) renamerDryRunBtn.disabled = disabled;
+    }
+
+    function updateMappingVisibility() {
+        if (!renamerMappingFields || !renamerUseMapping) return;
+        renamerMappingFields.style.display = renamerUseMapping.checked ? '' : 'none';
+        if (renamerMappingPreview && !renamerUseMapping.checked) {
+            renamerMappingPreview.textContent = '';
+            renamerMappingPreview.classList.remove('text-danger');
+            renamerMappingPreview.classList.add('text-muted');
+        }
+    }
+
+    function sanitizeLiteral(value) {
+        if (!value) return '';
+        let cleaned = value.trim();
+        // Remove wrapper brackets/parentheses
+        if ((cleaned.startsWith('{') && cleaned.endsWith('}')) || (cleaned.startsWith('(') && cleaned.endsWith(')'))) {
+            cleaned = cleaned.slice(1, -1).trim();
+        }
+        // Remove zero-width characters, non-breaking spaces, and other invisible Unicode characters
+        cleaned = cleaned
+            .replace(/[\u200B\u200C\u200D\uFEFF]/g, '') // Zero-width characters
+            .replace(/[\u00A0]/g, ' ') // Non-breaking space to regular space
+            .replace(/[\u200E\u200F]/g, '') // Directional marks
+            .replace(/[\u202A-\u202E]/g, '') // Bidirectional formatting
+            .trim();
+        return cleaned;
     }
 
     function pickExampleFile() {
@@ -249,6 +281,159 @@ document.addEventListener('DOMContentLoaded', () => {
         const newName = renamerNewExample.value.trim();
         if (!newName) {
             if (renamerPreview) renamerPreview.classList.add('d-none');
+            return;
+        }
+
+        if (renamerUseMapping && renamerUseMapping.checked) {
+            if (renamerError) renamerError.classList.add('d-none');
+            const subjectValue = sanitizeLiteral(renamerSubjectValue && renamerSubjectValue.value || '');
+            const sessionValue = sanitizeLiteral(renamerSessionValue && renamerSessionValue.value || '');
+
+            if (!subjectValue) {
+                if (renamerError) {
+                    renamerError.textContent = 'Subject string is required when subject/session mapping is enabled.';
+                    renamerError.classList.remove('d-none');
+                }
+                if (renamerMappingPreview) {
+                    renamerMappingPreview.textContent = 'Enter the subject string from the example filename.';
+                    renamerMappingPreview.classList.add('text-danger');
+                    renamerMappingPreview.classList.remove('text-muted');
+                }
+                return;
+            }
+
+            if (!newName.includes('{subject}')) {
+                if (renamerError) {
+                    renamerError.textContent = 'Use {subject} in the New PRISM Filename when subject/session mapping is enabled.';
+                    renamerError.classList.remove('d-none');
+                }
+                if (renamerMappingPreview) {
+                    renamerMappingPreview.textContent = 'Add {subject} to the New PRISM Filename to insert the subject string.';
+                    renamerMappingPreview.classList.add('text-danger');
+                    renamerMappingPreview.classList.remove('text-muted');
+                }
+                return;
+            }
+
+            if (!sessionValue && newName.includes('{session}')) {
+                if (renamerError) {
+                    renamerError.textContent = 'Remove {session} from the New PRISM Filename or provide a session string.';
+                    renamerError.classList.remove('d-none');
+                }
+                if (renamerMappingPreview) {
+                    renamerMappingPreview.textContent = 'Either enter a session string or remove {session} from the new filename.';
+                    renamerMappingPreview.classList.add('text-danger');
+                    renamerMappingPreview.classList.remove('text-muted');
+                }
+                return;
+            }
+
+            const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const subjectIdx = oldName.indexOf(subjectValue);
+            const sessionIdx = sessionValue ? oldName.indexOf(sessionValue) : -1;
+
+            if (subjectIdx < 0) {
+                // Try to be helpful - maybe there's a copy-paste issue
+                const debugMsg = `"${subjectValue}" (${[...subjectValue].map(c => c.charCodeAt(0)).join(',')}) not in "${oldName}"`;
+                if (renamerError) {
+                    renamerError.textContent = `Subject string not found. Try manually selecting it from the filename, or clear and retype it.`;
+                    renamerError.classList.remove('d-none');
+                    renamerError.title = debugMsg; // Hover shows debug info
+                }
+                if (renamerMappingPreview) {
+                    renamerMappingPreview.textContent = `Subject string not found in the example filename.`;
+                    renamerMappingPreview.classList.add('text-danger');
+                    renamerMappingPreview.classList.remove('text-muted');
+                    renamerMappingPreview.title = debugMsg;
+                }
+                return;
+            }
+
+            if (sessionValue && sessionIdx < 0) {
+                if (renamerError) {
+                    renamerError.textContent = 'Session string was not found in the example filename.';
+                    renamerError.classList.remove('d-none');
+                }
+                if (renamerMappingPreview) {
+                    renamerMappingPreview.textContent = 'Session string not found in the example filename.';
+                    renamerMappingPreview.classList.add('text-danger');
+                    renamerMappingPreview.classList.remove('text-muted');
+                }
+                return;
+            }
+
+            if (sessionValue && sessionIdx === subjectIdx) {
+                if (renamerError) {
+                    renamerError.textContent = 'Subject and session strings overlap in the example filename.';
+                    renamerError.classList.remove('d-none');
+                }
+                if (renamerMappingPreview) {
+                    renamerMappingPreview.textContent = 'Subject and session strings overlap in the example filename.';
+                    renamerMappingPreview.classList.add('text-danger');
+                    renamerMappingPreview.classList.remove('text-muted');
+                }
+                return;
+            }
+
+            // Build markers with positions
+            const markers = [];
+            if (sessionValue) markers.push({ key: 'session', value: sessionValue, index: sessionIdx });
+            markers.push({ key: 'subject', value: subjectValue, index: subjectIdx });
+            markers.sort((a, b) => a.index - b.index);
+
+            // Create pattern by replacing each marker with capture groups
+            // Use lookahead to constrain non-greedy matches when followed by another known marker
+            let pattern = '^';
+            let cursor = 0;
+            markers.forEach((marker, idx) => {
+                // Add literal text before this marker
+                pattern += escapeRegex(oldName.slice(cursor, marker.index));
+                
+                // For the capture group: if there's another marker after this one,
+                // use lookahead to stop before it. Otherwise use greedy match.
+                if (idx < markers.length - 1) {
+                    const nextMarker = markers[idx + 1];
+                    const nextMarkerEscaped = escapeRegex(nextMarker.value);
+                    // Match anything up to (but not including) the next marker
+                    pattern += `(.+?)(?=${nextMarkerEscaped})`;
+                } else {
+                    // Last marker - match to end of meaningful content
+                    pattern += '(.+)';
+                }
+                cursor = marker.index + marker.value.length;
+            });
+            // Add literal text after last marker (usually file extension)
+            const remaining = oldName.slice(cursor);
+            if (remaining) {
+                pattern += escapeRegex(remaining);
+            }
+            pattern += '$';
+
+            // Map marker keys to their capture group indices (1-based)
+            const subjectGroupIndex = markers.findIndex(m => m.key === 'subject') + 1;
+            const sessionGroupIndex = sessionValue ? markers.findIndex(m => m.key === 'session') + 1 : 0;
+
+            let replacement = newName.replace(/\{subject\}/g, `\\${subjectGroupIndex}`);
+            if (sessionValue) {
+                replacement = replacement.replace(/\{session\}/g, `\\${sessionGroupIndex}`);
+            }
+
+            if (renamerPattern) renamerPattern.value = pattern;
+            if (renamerReplacement) renamerReplacement.value = replacement;
+            if (renamerMappingPreview) {
+                try {
+                    const re = new RegExp(pattern);
+                    const previewName = oldName.replace(re, replacement);
+                    renamerMappingPreview.textContent = `Preview: ${oldName} → ${previewName}`;
+                    renamerMappingPreview.classList.remove('text-danger');
+                    renamerMappingPreview.classList.add('text-muted');
+                } catch {
+                    renamerMappingPreview.textContent = 'Mapping pattern could not be created for this example.';
+                    renamerMappingPreview.classList.add('text-danger');
+                    renamerMappingPreview.classList.remove('text-muted');
+                }
+            }
+            runRenamer(true);
             return;
         }
 
@@ -455,6 +640,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (renamerUseMapping) {
+        renamerUseMapping.addEventListener('change', () => {
+            updateMappingVisibility();
+            inferPattern();
+        });
+    }
+
+    if (renamerSubjectValue) {
+        renamerSubjectValue.addEventListener('input', inferPattern);
+    }
+
+    if (renamerSessionValue) {
+        renamerSessionValue.addEventListener('input', inferPattern);
+    }
+
     if (renamerModality) {
         renamerModality.addEventListener('change', () => {
             updateHintFromModality();
@@ -497,5 +697,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial state
     updateRecordingVisibility();
     updateHintFromModality();
+    updateMappingVisibility();
     updateRenamerBtn();
 });

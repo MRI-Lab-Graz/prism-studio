@@ -13,7 +13,7 @@ This page is under construction. For now, see [Studio Overview](STUDIO_OVERVIEW.
 | **Excel** | `.xlsx`, `.xls` | Multiple sheets supported |
 | **CSV** | `.csv` | Comma-separated values |
 | **TSV** | `.tsv` | Tab-separated values |
-| **SPSS** | `.sav` | With value labels preserved |
+| **SPSS** | `.save` | With value labels preserved |
 | **LimeSurvey** | `.csv` | Special handling for LS exports |
 
 ## Conversion Workflow

@@ -215,17 +215,17 @@ Features:
 ```
 src/converters/
 ├── pavlovia.py          # Main converter (created ✅)
-├── pavlovia_utils.py    # Helper functions (TODO)
-└── pavlovia_templates/  # XML templates (TODO)
-    ├── slider.xml
-    ├── form.xml
-    └── textbox.xml
+├── pavlovia_utils.py    # Helper functions (planned)
+└── pavlovia_templates/  # XML templates (planned)
+  ├── slider.xml
+  ├── form.xml
+  └── textbox.xml
 
 docs/
 └── PAVLOVIA_EXPORT.md   # User documentation (created ✅)
 
 tests/
-└── test_pavlovia.py     # Unit tests (TODO)
+└── test_pavlovia.py     # Unit tests (planned)
 ```
 
 ## Technical Considerations

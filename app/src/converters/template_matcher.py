@@ -37,8 +37,8 @@ _METADATA_CODE_RE = re.compile(r"^PRISMMETA", re.IGNORECASE)
 #   BRS01_run-02, BRS01_run-03  (underscore + dash)
 # We need to handle both.
 _RUN_SUFFIX_PATTERNS = [
-    re.compile(r"^(.+?)run(\d+)$", re.IGNORECASE),          # BRS01run02, BRS01run2
-    re.compile(r"^(.+?)_run-?(\d+)$", re.IGNORECASE),       # BRS01_run-02
+    re.compile(r"^(.+?)run(\d+)$", re.IGNORECASE),  # BRS01run02, BRS01run2
+    re.compile(r"^(.+?)_run-?(\d+)$", re.IGNORECASE),  # BRS01_run-02
 ]
 
 
@@ -139,9 +139,7 @@ def _normalize_item_codes(codes: set[str]) -> tuple[set[str], int]:
     return normalized, runs
 
 
-def _compare_levels(
-    imported_item: dict, template_item: dict
-) -> Optional[bool]:
+def _compare_levels(imported_item: dict, template_item: dict) -> Optional[bool]:
     """Compare Levels keys between imported and library items.
 
     Only compares the keys (codes), not the label text, since labels
@@ -214,16 +212,12 @@ def _load_project_templates(project_path: str | Path) -> dict[str, dict]:
         }
 
     if templates:
-        logger.debug(
-            "Loaded %d project templates from %s", len(templates), survey_dir
-        )
+        logger.debug("Loaded %d project templates from %s", len(templates), survey_dir)
 
     return templates
 
 
-def _match_by_name(
-    group_name: str, templates: dict[str, dict]
-) -> list[str]:
+def _match_by_name(group_name: str, templates: dict[str, dict]) -> list[str]:
     """Find candidate templates by name matching.
 
     Compares the group name (and its run-stripped version) against
@@ -276,7 +270,8 @@ def _match_by_name(
 
 
 def _match_against_participants(
-    prism_json: dict, group_name: str = "",
+    prism_json: dict,
+    group_name: str = "",
     prismmeta: dict | None = None,
 ) -> Optional[TemplateMatch]:
     """Check if an imported template matches the global participants template.
@@ -300,7 +295,8 @@ def _match_against_participants(
     if prismmeta and prismmeta.get("type") == "participants":
         meta_vars = prismmeta.get("variables", [])
         imported_struct = {
-            k for k in _extract_template_structure(prism_json)
+            k
+            for k in _extract_template_structure(prism_json)
             if not _METADATA_CODE_RE.match(k)
         }
         return TemplateMatch(
@@ -323,7 +319,8 @@ def _match_against_participants(
 
     # Extract participant field keys (excluding metadata)
     participant_keys = {
-        k for k in participants_template.keys()
+        k
+        for k in participants_template.keys()
         if k not in _NON_ITEM_TOPLEVEL_KEYS
         and isinstance(participants_template.get(k), dict)
     }
@@ -336,7 +333,8 @@ def _match_against_participants(
         return None
 
     imported_struct = {
-        k for k in _extract_template_structure(prism_json)
+        k
+        for k in _extract_template_structure(prism_json)
         if not _METADATA_CODE_RE.match(k)
     }
     if not imported_struct:
@@ -351,8 +349,12 @@ def _match_against_participants(
         # Also check group name heuristics
         name_lower = group_name.lower()
         participant_hints = {
-            "participant", "demographics", "sociodemographic",
-            "demographic", "socio", "prismsocio",
+            "participant",
+            "demographics",
+            "sociodemographic",
+            "demographic",
+            "socio",
+            "prismsocio",
         }
         if not any(hint in name_lower for hint in participant_hints):
             return None
@@ -444,7 +446,8 @@ def match_against_library(
 
     # Extract imported item codes, excluding hidden metadata questions
     imported_struct = {
-        k for k in _extract_template_structure(prism_json)
+        k
+        for k in _extract_template_structure(prism_json)
         if not _METADATA_CODE_RE.match(k)
     }
     if not imported_struct:
@@ -485,7 +488,7 @@ def match_against_library(
     best_match: Optional[TemplateMatch] = None
     best_overlap_ratio = 0.0
 
-    for task_key, tdata in (all_templates.items() if all_templates else []):
+    for task_key, tdata in all_templates.items() if all_templates else []:
         lib_struct = tdata["structure"]
         if not lib_struct:
             continue
@@ -538,7 +541,9 @@ def match_against_library(
             original_code = norm_to_original.get(imp_code, imp_code)
             lib_orig_code = lib_norm_to_original.get(lib_code_norm, lib_code_norm)
             imp_item = prism_json.get(original_code) or prism_json.get(imp_code, {})
-            lib_item = tdata["json"].get(lib_orig_code) or tdata["json"].get(lib_code_norm, {})
+            lib_item = tdata["json"].get(lib_orig_code) or tdata["json"].get(
+                lib_code_norm, {}
+            )
             if isinstance(imp_item, dict) and isinstance(lib_item, dict):
                 lev_match = _compare_levels(imp_item, lib_item)
                 if lev_match is not None:
@@ -553,9 +558,7 @@ def match_against_library(
             levels_match = None
 
         # Determine confidence
-        full_item_overlap = (
-            len(only_in_import) == 0 and len(only_in_library) == 0
-        )
+        full_item_overlap = len(only_in_import) == 0 and len(only_in_library) == 0
         if full_item_overlap and (levels_match is True or levels_match is None):
             confidence = "exact"
         elif full_item_overlap:
@@ -633,7 +636,9 @@ def match_groups_against_library(
     results = {}
     for group_name, prism_json in groups.items():
         results[group_name] = match_against_library(
-            prism_json, global_templates, group_name=group_name,
+            prism_json,
+            global_templates,
+            group_name=group_name,
             project_path=project_path,
         )
     return results

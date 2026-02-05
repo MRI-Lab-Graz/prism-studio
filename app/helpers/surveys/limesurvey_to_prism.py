@@ -21,7 +21,11 @@ IMPLICIT_LEVELS = {
     "Y": {"Y": "Yes", "N": "No"},  # Yes/No question
     "G": {"M": "Male", "F": "Female"},  # Gender question
     "C": {"Y": "Yes", "U": "Uncertain", "N": "No"},  # Array (Yes/Uncertain/No)
-    "E": {"I": "Increase", "S": "Same", "D": "Decrease"},  # Array (Increase/Same/Decrease)
+    "E": {
+        "I": "Increase",
+        "S": "Same",
+        "D": "Decrease",
+    },  # Array (Increase/Same/Decrease)
     "A": {str(i): str(i) for i in range(1, 6)},  # Array (5 Point Choice): 1-5
     "B": {str(i): str(i) for i in range(1, 11)},  # Array (10 Point Choice): 1-10
     "5": {str(i): str(i) for i in range(1, 6)},  # 5 Point Choice (simple): 1-5
@@ -103,7 +107,9 @@ def parse_limesurvey_structure(lss_path):
     for qid, q_data in q_map.items():
         q_type = q_data.get("type", "")
         # Use implicit levels for question types without explicit answers
-        effective_answers = q_data["answers"] if q_data["answers"] else IMPLICIT_LEVELS.get(q_type, {})
+        effective_answers = (
+            q_data["answers"] if q_data["answers"] else IMPLICIT_LEVELS.get(q_type, {})
+        )
 
         # Handle different question types
         # Simple questions

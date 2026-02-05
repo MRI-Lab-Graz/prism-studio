@@ -92,7 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Workshop Materials**: New PRISM workshop exercises and materials for data conversion, metadata creation, and SPSS export.
 - **Alias Support**: Implemented `AliasOf` and `Aliases` resolution in sidecar data and schemas for better handling of redundant definitions.
-- **UI Enchancements**: Added server shutdown functionality and quit button in the Web UI.
+- **UI Enhancements**: Added server shutdown functionality and quit button in the Web UI.
 - **Project Management**: Enhanced project selection enforcement and project management workflows.
 
 ### Changed

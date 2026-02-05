@@ -134,7 +134,7 @@ Researchers in psychology and neuroscience who:
    - Confirm the workshop supply at `demo/workshop/recipes/surveys/phq9.json` is available so the recipe can be copied into your dataset-level `recipes/surveys/` folder
 
 3. **Configure Output**
-   - **Format:** "SPSS (.sav - contains Levels/Labels)"
+   - **Format:** "SPSS (.save - contains Levels/Labels)"
    - **Layout:** "Long (one row per session)" or "Wide (one row per participant)"
    - **Language:** "English" (for value labels)
    - **Options:**
@@ -147,18 +147,18 @@ Researchers in psychology and neuroscience who:
      - Reads raw survey responses
      - Applies reverse coding (if specified in recipe)
      - Calculates total score and subscales
-     - Creates output file: `recipes/surveys/phq9/phq9.sav`
+     - Creates output file: `recipes/surveys/phq9/phq9.save`
 
 5. **Review Outputs**
    - Preview results in the GUI (table view)
-   - Download `.sav` file
+   - Download `.save` file
    - Inspect codebook files:
      - `phq9_codebook.json` - machine-readable metadata
      - `phq9_codebook.tsv` - human-readable variable documentation
      - `methods_boilerplate.md` - auto-generated methods section text
 
 6. **Open in SPSS/Jamovi**
-   - Demonstrate opening the `.sav` file
+   - Demonstrate opening the `.save` file
    - Show that variable labels and value labels are preserved
    - Data is ready for immediate analysis
 

@@ -10,7 +10,7 @@
 By the end of this exercise, you will:
 - ✓ Understand the recipe system for automated scoring
 - ✓ Apply recipes to calculate total scores and subscales
-- ✓ Export data to SPSS (.sav) with full metadata
+- ✓ Export data to SPSS (.save) with full metadata
 - ✓ Generate codebooks and methods text automatically
 - ✓ Open and verify the results in SPSS/Jamovi
 
@@ -76,7 +76,7 @@ The recipes are located at `demo/workshop/recipes/surveys/wellbeing.json` and `d
 #### For Wellbeing Survey:
 - **Modality:** Select `Survey`
 - **Recipe:** Select `wellbeing`
-- **Output Format:** Select `SPSS (.sav)` or `Excel (.xlsx)`
+- **Output Format:** Select `SPSS (.save)` or `Excel (.xlsx)`
 - Click **"Run Scoring & Export"**
 
 #### For Fitness Data (Bonus):
@@ -89,7 +89,7 @@ The recipes are located at `demo/workshop/recipes/surveys/wellbeing.json` and `d
 ### Step 5: Verify Results
 
 Check your output folder (usually the same as the dataset or a `derivatives/` subfolder):
-- You should see `wellbeing_scores.sav` (or `.xlsx`)
+- You should see `wellbeing_scores.save` (or `.xlsx`)
 - Open it and check the new columns (e.g., `wellbeing_total`)
 - Notice that the variable labels and value labels are preserved!
 

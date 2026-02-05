@@ -97,7 +97,7 @@ These files contain:
 ### Exercise 3: Apply Recipes & Export
 - Copy recipe from official library: `recipe-who5.json`
 - Run recipe to calculate total wellbeing scores
-- Export results to SPSS (.sav) format with proper value labels
+- Export results to SPSS (.save) format with proper value labels
 - Verify in Excel/SPSS that scores are correct
 
 **Files:** `examples/workshop/exercise_3_using_recipes/INSTRUCTIONS.md`
