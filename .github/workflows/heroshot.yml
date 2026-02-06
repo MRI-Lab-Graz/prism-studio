@@ -58,6 +58,20 @@ jobs:
       run: |
         mkdir -p docs/_static/screenshots
 
+    - name: Debug: dump config and environment
+      run: |
+        echo "--- Config file ---"
+        sed -n '1,200p' docs/.heroshot/config.json || true
+        echo "--- Node info ---"
+        node -v || true
+        npm -v || true
+        echo "--- ENV vars ---"
+        env | grep HEROSHOT || true
+
+    - name: Heroshot dry run (list)
+      run: |
+        npx heroshot list --config docs/.heroshot/config.json -v || true
+
     - name: Run Heroshot (verbose)
       run: |
         npx heroshot --config docs/.heroshot/config.json -v --clean || true
