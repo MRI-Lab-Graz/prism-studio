@@ -1,8 +1,0 @@
-question_code,question_text,question_type,level_0,level_1,level_2,level_3
-GAD701,"{'en': 'Feeling nervous, anxious or on edge'}",,{'en': '{score=0} not at all'},{'en': '{score=1} several days'},{'en': '{score=2} more than half the days'},{'en': '{score=3} nearly every day'}
-GAD702,{'en': 'Not being able to stop or control worrying'},,{'en': '{score=0} not at all'},{'en': '{score=1} several days'},{'en': '{score=2} more than half the days'},{'en': '{score=3} nearly every day'}
-GAD703,{'en': 'Worrying too much about different things'},,{'en': '{score=0} not at all'},{'en': '{score=1} several days'},{'en': '{score=2} more than half the days'},{'en': '{score=3} nearly every day'}
-GAD704,{'en': 'Trouble relaxing'},,{'en': '{score=0} not at all'},{'en': '{score=1} several days'},{'en': '{score=2} more than half the days'},{'en': '{score=3} nearly every day'}
-GAD705,{'en': 'Being so restless that it is hard to sit still'},,{'en': '{score=0} not at all'},{'en': '{score=1} several days'},{'en': '{score=2} more than half the days'},{'en': '{score=3} nearly every day'}
-GAD706,{'en': 'Becoming easily annoyed or irritable'},,{'en': '{score=0} not at all'},{'en': '{score=1} several days'},{'en': '{score=2} more than half the days'},{'en': '{score=3} nearly every day'}
-GAD707,{'en': 'Feeling afraid as if something awful might happen'},,{'en': '{score=0} not at all'},{'en': '{score=1} several days'},{'en': '{score=2} more than half the days'},{'en': '{score=3} nearly every day'}
