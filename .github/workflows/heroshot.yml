@@ -76,6 +76,11 @@ jobs:
       working-directory: docs
       run: |
         npx heroshot --config .heroshot/config.json --clean
+      env:
+        HOME: /home/runner
+        XDG_CONFIG_HOME: /home/runner/.config
+        XDG_CACHE_HOME: /home/runner/.cache
+        XDG_DATA_HOME: /home/runner/.local/share
 
     - name: Commit screenshots if changed
       run: |
