@@ -54,9 +54,16 @@ jobs:
         python -m http.server 8000 --directory docs/_build/html &
         sleep 2
 
-    - name: Run Heroshot
+    - name: Prepare screenshots directory
       run: |
-        npx heroshot --config docs/.heroshot/config.json
+        mkdir -p docs/_static/screenshots
+
+    - name: Run Heroshot (verbose)
+      run: |
+        npx heroshot --config docs/.heroshot/config.json -v --clean || true
+      env:
+        # If session key is needed later, use HEROSHOT_SESSION_KEY secret
+        HEROSHOT_SESSION_KEY: ${{ secrets.HEROSHOT_SESSION_KEY }}
 
     - name: Commit screenshots if changed
       run: |
