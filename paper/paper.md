@@ -56,6 +56,18 @@ PRISM provides:
 
 Documentation is available at https://prism-studio.readthedocs.io/en/latest/.
 
+# Availability and reproducibility
+
+The PRISM source code is available at https://github.com/MRI-Lab-Graz/prism-studio and is released under the GNU Affero General Public License v3.0 (AGPL-3.0). For the purposes of this manuscript we will create and cite a permanent archival snapshot (a GitHub release tagged for this submission and archived on Zenodo or a similar repository) that contains the exact source used for evaluation; the paper will reference that DOI and the commit SHA to enable exact reproducibility.
+
+Official binary distributions (including a Windows executable) will be published as GitHub Release artifacts. Windows executables are signed via SignPath (free for approved open-source projects) as part of the repository's GitHub Actions workflow; CI verifies the Authenticode signature after signing. Build instructions, CI configuration, and signature verification steps are documented in `docs/WINDOWS_BUILD.md` and `docs/GITHUB_SIGNING.md`.
+
+All tests and sample datasets required to reproduce the experiments in this paper are present in the `tests/` and `examples/` directories and can be executed using the project's test runner (see `run_tests.sh`). We encourage readers and reviewers to use the archived release artifact (DOI + release tag) for reproducible evaluation, even as the main repository continues to evolve under active development.
+
+# Documentation practices
+
+User and developer documentation is hosted at Read the Docs (link above). To keep documentation screenshots and UI examples in sync with the codebase we use automated capture tools integrated into CI; tools such as Heroshot (https://heroshot.sh/) work well with Sphinx/Read the Docs and can be integrated into GitHub Actions to update screenshots automatically when the UI changes. This helps ensure that documentation reflects the current behavior of the application and reduces manual maintenance overhead.
+
 # Acknowledgements
 
 TODO: Acknowledge contributors, labs, funding, and community feedback.
