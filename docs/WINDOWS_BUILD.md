@@ -116,6 +116,8 @@ Get-AuthenticodeSignature "dist\PrismValidator\PrismValidator.exe"
 # SignerCertificate: [Your certificate]
 ```
 
+**CI verification:** The GitHub Actions build now runs a `Verify Windows Signature` step after SignPath signing that uses `Get-AuthenticodeSignature` to ensure the signature is valid. If the signature is invalid the Windows build will fail and you can inspect the job logs for the verification output.
+
 In Windows Explorer:
 1. Right-click the `.exe` file
 2. Properties → Digital Signatures tab
