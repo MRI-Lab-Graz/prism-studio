@@ -72,12 +72,29 @@ jobs:
       run: |
         npx heroshot list --config docs/.heroshot/config.json -v || true
 
-    - name: Run Heroshot (verbose)
+    - name: Generate dynamic Heroshot config
       run: |
-        npx heroshot --config docs/.heroshot/config.json -v --clean || true
+        cat > /tmp/heroshot.config.json <<'EOF'
+        {
+          "outputDirectory": "${{ github.workspace }}/docs/_static/screenshots",
+          "outputFormat": "png",
+          "screenshots": [
+            {
+              "id": "prism-docs-home",
+              "url": "http://127.0.0.1:8000/index.html",
+              "selector": "div.document",
+              "viewports": ["desktop"]
+            }
+          ]
+        }
+        EOF
+        cat /tmp/heroshot.config.json
+
+    - name: Run Heroshot
+      run: |
+        npx heroshot --config /tmp/heroshot.config.json --clean
       env:
-        # If session key is needed later, use HEROSHOT_SESSION_KEY secret
-        HEROSHOT_SESSION_KEY: ${{ secrets.HEROSHOT_SESSION_KEY }}
+        HOME: /home/runner
 
     - name: Commit screenshots if changed
       run: |
