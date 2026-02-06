@@ -3,7 +3,7 @@ message: "If you use PRISM, please cite it."
 title: "PRISM"
 abstract: "A BIDS-compatible validator and metadata framework for psychological experiment datasets."
 type: software
-license: "MIT"
+license: "AGPL-3.0"
 version: "1.9.1"
 date-released: "2026-01-23"
 repository-code: "https://github.com/MRI-Lab-Graz/prism-studio"

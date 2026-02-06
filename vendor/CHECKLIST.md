@@ -103,8 +103,8 @@ Documentation:
 - `docs/INSTALLATION.md` – User-facing docs
 
 Scripts:
-- `test_pyedflib.bat` – Windows test script
-- `test_pyedflib.sh` – Mac/Linux test script
+- `scripts/test_pyedflib.bat` – Windows test script
+- `scripts/test_pyedflib.sh` – Mac/Linux test script
 - `vendor/verify_structure.py` – Verify bundle
 
 System:

@@ -167,7 +167,7 @@ PRISM can extract metadata from EDF files if `pyedflib` is installed. **This is 
 
 **Windows users without C++ compiler:** Pre-compiled `pyedflib` is bundled in `vendor/`. Test it:
 ```cmd
-test_pyedflib.bat
+scripts\test_pyedflib.bat
 ```
 
 If you see "✓ SUCCESS", EDF support is working. If not, you can:

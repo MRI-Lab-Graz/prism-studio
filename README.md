@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://prism-studio.readthedocs.io/en/latest/?badge=latest"><img src="https://readthedocs.org/projects/prism-studio/badge/?version=latest" alt="Documentation Status"></a>
-  <a href="https://github.com/MRI-Lab-Graz/prism-studio/blob/main/LICENSE"><img src="https://img.shields.io/github/license/MRI-Lab-Graz/prism-studio" alt="License: MIT"></a>
+  <a href="https://github.com/MRI-Lab-Graz/prism-studio/blob/main/LICENSE"><img src="https://img.shields.io/github/license/MRI-Lab-Graz/prism-studio" alt="License: AGPL-3.0"></a>
   <img src="https://img.shields.io/badge/python-3.6%2B-blue" alt="Python 3.6+">
   <img src="https://img.shields.io/badge/platform-windows%20%7C%20macOS%20%7C%20linux-lightgrey" alt="Platform">
   <a href="https://github.com/MRI-Lab-Graz/prism-studio/issues"><img src="https://img.shields.io/github/issues/MRI-Lab-Graz/prism-studio" alt="GitHub Issues"></a>
@@ -746,7 +746,7 @@ For most users and interactive validation, please use the web interface instead.
 
 ## License & Attribution
 
-See LICENSE file for details.
+PRISM Studio is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0). See LICENSE for details.
 
 For questions or contributions, visit the [GitHub repository](https://github.com/MRI-Lab-Graz/prism-studio).
 

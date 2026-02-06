@@ -122,7 +122,7 @@ DEMO002          M
 
 ### Testing
 
-**Test Script:** `test_participants_mapping.py`
+**Test Script:** `tests/test_participants_mapping.py`
 
 Verifies:
 - ✓ Mapping file loading

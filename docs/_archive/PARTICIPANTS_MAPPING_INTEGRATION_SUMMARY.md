@@ -196,12 +196,12 @@ DEMO003          22    F     3                 R
 
 ## 🧪 Testing
 
-**Test Script:** `test_participants_mapping.py`
+**Test Script:** `tests/test_participants_mapping.py`
 
 Run:
 ```bash
 source .venv/bin/activate
-python test_participants_mapping.py
+python tests/test_participants_mapping.py
 ```
 
 **Verifies:**
@@ -321,5 +321,5 @@ For issues, see:
 - **Troubleshooting:** `docs/PARTICIPANTS_MAPPING.md#troubleshooting`
 - **Examples:** `examples/workshop/exercise_2_participant_mapping/`
 - **Solution:** `solution_participants_mapping.json` in same folder
-- **Testing:** `test_participants_mapping.py`
+- **Testing:** `tests/test_participants_mapping.py`
 
