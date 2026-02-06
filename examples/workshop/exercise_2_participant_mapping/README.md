@@ -67,5 +67,5 @@ If you get stuck:
 1. Check **INSTRUCTIONS.md** for troubleshooting section
 2. Compare with **solution_participants_mapping.json**
 3. See **docs/PARTICIPANTS_MAPPING.md** for detailed reference
-4. Run test: `python test_participants_mapping.py`
+4. Run test: `python tests/test_participants_mapping.py`
 
