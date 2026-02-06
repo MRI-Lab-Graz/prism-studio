@@ -68,6 +68,8 @@ From [.github/workflows/build.yml](.github/workflows/build.yml):
 
 **Note:** The CI workflow now verifies the Authenticode signature after signing. If the signature is not valid the Windows build job will fail — check the `Verify Windows Signature` step in Actions for `Get-AuthenticodeSignature` output.
 
+**Automated documentation screenshots:** We generate and keep documentation screenshots in `docs/_static/screenshots` using Heroshot. A GitHub Action (`.github/workflows/heroshot.yml`) builds the docs, runs Heroshot against the built site, and commits updated screenshots back to `main` (commits are skipped if the last commit was a screenshot update to avoid loops). If you prefer screenshots updated in a separate branch or on a schedule, I can modify the workflow accordingly.
+
 ## Setup Instructions
 
 ### Step 1: Apply for SignPath.io (FREE for Open Source)
