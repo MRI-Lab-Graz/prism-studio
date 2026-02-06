@@ -78,7 +78,7 @@ From [.github/workflows/build.yml](.github/workflows/build.yml):
    - Project Name: PRISM Validator
    - GitHub Repository: `https://github.com/[your-username]/prism-validator`
    - Description: "PRISM is a BIDS-inspired dataset validator for psychological experiments"
-   - License: MIT (or your license)
+-   - License: AGPL 3.0 (or your license)
 
 3. **Wait for Approval**:
    - Usually takes 1-2 business days

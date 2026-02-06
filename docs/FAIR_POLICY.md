@@ -28,7 +28,7 @@ This document outlines how the prism project implements the FAIR (Findable, Acce
 ### A - ACCESSIBLE
 
 #### Implemented
-- Open Source: MIT license for maximum accessibility
+- Open Source: GNU Affero General Public License v3.0 (AGPL-3.0)
 - Standard Formats: JSON, TSV, CSV for broad tool compatibility
 - Clear Documentation: Comprehensive README and schema documentation
 - Multiple Export Formats: Support for various output formats
