@@ -74,7 +74,7 @@ jobs:
 
     - name: Generate dynamic Heroshot config
       run: |
-        cat > /tmp/heroshot.config.json <<'EOF'
+        cat > /tmp/heroshot.config.json <<EOF
         {
           "outputDirectory": "${{ github.workspace }}/docs/_static/screenshots",
           "outputFormat": "png",
@@ -88,6 +88,7 @@ jobs:
           ]
         }
         EOF
+        echo "Generated config:"
         cat /tmp/heroshot.config.json
 
     - name: Run Heroshot
@@ -95,6 +96,7 @@ jobs:
         npx heroshot --config /tmp/heroshot.config.json --clean
       env:
         HOME: /home/runner
+        HEROSHOT_OUTPUT_DIR: ${{ github.workspace }}/docs/_static/screenshots
 
     - name: Commit screenshots if changed
       run: |
