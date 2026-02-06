@@ -66,6 +66,8 @@ From [.github/workflows/build.yml](.github/workflows/build.yml):
     wait-for-completion: true
 ```
 
+**Note:** The CI workflow now verifies the Authenticode signature after signing. If the signature is not valid the Windows build job will fail — check the `Verify Windows Signature` step in Actions for `Get-AuthenticodeSignature` output.
+
 ## Setup Instructions
 
 ### Step 1: Apply for SignPath.io (FREE for Open Source)
