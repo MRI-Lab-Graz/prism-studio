@@ -33,7 +33,7 @@ jobs:
         node-version: '18'
 
     - name: Install Heroshot
-      run: npm install -g heroshot@latest
+      run: npm install -g heroshot@0.13.1
 
     - name: Set up Python and build docs
       uses: actions/setup-python@v5
@@ -58,7 +58,7 @@ jobs:
       run: |
         mkdir -p docs/_static/screenshots
 
-    - name: Debug: dump config and environment
+    - name: "Debug: dump config and environment"
       run: |
         echo "--- Config file ---"
         sed -n '1,200p' docs/.heroshot/config.json || true
