@@ -4073,6 +4073,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Handle dry-run checkbox state change for eyetracking
+    const eyetrackingBatchDryRunCheckbox = document.getElementById('eyetrackingBatchDryRun');
+    if (eyetrackingBatchDryRunCheckbox) {
+        eyetrackingBatchDryRunCheckbox.addEventListener('change', function() {
+            if (eyetrackingBatchConvertBtn) {
+                if (this.checked) {
+                    eyetrackingBatchConvertBtn.innerHTML = '<i class="fas fa-flask me-2"></i>Preview (Dry-Run)';
+                } else {
+                    eyetrackingBatchConvertBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Convert All & Download';
+                }
+            }
+        });
+    }
+
     if (eyetrackingBatchConvertBtn) {
         eyetrackingBatchConvertBtn.addEventListener('click', async function() {
             eyetrackingBatchError.classList.add('d-none');
@@ -4083,12 +4097,14 @@ document.addEventListener('DOMContentLoaded', function() {
             eyetrackingBatchConvertBtn.disabled = true;
 
             const files = Array.from(eyetrackingBatchFiles.files);
-            const datasetName = eyetrackingBatchDatasetName ? eyetrackingBatchDatasetName.value.trim() : 'Eyetracking Dataset';
+            const isDryRun = document.getElementById('eyetrackingBatchDryRun')?.checked || false;
 
             const formData = new FormData();
             files.forEach(f => formData.append('files', f));
-            formData.append('dataset_name', datasetName);
             formData.append('modality', 'eyetracking');
+            formData.append('dry_run', isDryRun ? 'true' : 'false');
+            formData.append('save_to_project', 'true');
+            formData.append('dest_root', 'rawdata');
 
             try {
                 const response = await fetch('/api/batch-convert', {
@@ -4103,17 +4119,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const result = await response.json();
                 
-                // Show log
-                if (result.log) {
+                // Show log - handle both logs array and log string
+                if (result.logs && Array.isArray(result.logs)) {
+                    eyetrackingBatchLog.textContent = result.logs.map(log => `[${log.level.toUpperCase()}] ${log.message}`).join('\n');
+                } else if (result.log) {
                     eyetrackingBatchLog.textContent = result.log;
                 }
 
-                // Download the ZIP
-                if (result.zip) {
-                    downloadBase64Zip(result.zip, `${datasetName}_prism.zip`);
+                if (isDryRun && result.dry_run) {
+                    // Dry-run preview mode
+                    let infoMsg = `🧪 DRY-RUN PREVIEW\n\n`;
+                    infoMsg += `✓ Would convert: ${result.converted || 0} files\n`;
+                    if (result.errors) infoMsg += `✗ Errors: ${result.errors}\n`;
+                    if (result.new_files) infoMsg += `📁 New files: ${result.new_files}\n`;
+                    if (result.existing_files) infoMsg += `⚠️  Existing files: ${result.existing_files}\n`;
+                    eyetrackingBatchInfo.textContent = infoMsg;
+                } else {
+                    // Download the ZIP
+                    if (result.zip) {
+                        downloadBase64Zip(result.zip, `Eyetracking_prism.zip`);
+                    }
+                    let statusMsg = `✓ Converted ${result.converted || 0} files. ${result.errors || 0} errors.`;
+                    if (result.project_saved) {
+                        statusMsg += `\n📁 Files also saved to project.`;
+                    }
+                    if (result.warnings && result.warnings.length > 0) {
+                        statusMsg += `\n⚠️  Warnings:\n${result.warnings.join('\n')}`;
+                    }
+                    eyetrackingBatchInfo.textContent = statusMsg;
                 }
-
-                eyetrackingBatchInfo.textContent = `Converted ${result.converted || 0} files. ${result.errors || 0} errors.`;
                 eyetrackingBatchInfo.classList.remove('d-none');
             } catch (err) {
                 eyetrackingBatchError.textContent = err.message;
