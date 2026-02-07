@@ -8,75 +8,49 @@
                                 </div>
                                 <div>
                                     <h5 class="mb-1">Eyetracking Data Conversion</h5>
-                                    <p class="text-muted mb-0">Convert SR Research EyeLink recordings (.edf) to PRISM format</p>
+                                    <p class="text-muted mb-0">Convert SR Research EyeLink recordings (.edf, .tsv, .tsv.gz) to PRISM format</p>
                                 </div>
                             </div>
 
-                            <!-- Sub-tabs for single vs batch -->
-                            <ul class="nav nav-tabs nav-sm mb-3" id="eyetrackingSubTabs" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link active" id="eyetracking-single-tab" data-bs-toggle="tab" data-bs-target="#eyetracking-single" type="button" role="tab">
-                                        <i class="fas fa-file me-1"></i>Single File
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="eyetracking-batch-tab" data-bs-toggle="tab" data-bs-target="#eyetracking-batch" type="button" role="tab">
-                                        <i class="fas fa-folder-open me-1"></i>Batch (Multiple Files)
-                                    </button>
-                                </li>
-                            </ul>
+                            <div class="alert alert-info border-0 mb-3" style="background-color: rgba(13, 110, 253, 0.05);">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <strong>Currently supports:</strong> SR Research EyeLink (binary .edf, ASCII .asc, and exported TSV files)
+                                <br><small class="text-muted d-block mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    TSV files are assumed to be pre-processed trial summaries (e.g., from EyeLink Data Viewer).
+                                    Raw sample streams should be provided as .edf files.
+                                </small>
+                            </div>
 
                             <div class="tab-content" id="eyetrackingSubTabContent">
-                                <!-- Single File -->
-                                <div class="tab-pane fade show active" id="eyetracking-single" role="tabpanel">
-                                    <div class="row g-3 align-items-end">
-                                        <div class="col-md-4">
-                                            <label for="eyetrackingSingleFile" class="form-label">EyeLink Recording (.edf)</label>
-                                            <input class="form-control" type="file" id="eyetrackingSingleFile" accept=".edf">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label for="eyetrackingSubject" class="form-label">Subject ID</label>
-                                            <input type="text" class="form-control" id="eyetrackingSubject" placeholder="e.g. 001">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label for="eyetrackingSession" class="form-label">Session (optional)</label>
-                                            <input type="text" class="form-control" id="eyetrackingSession" placeholder="e.g. 1">
-                                        </div>
-                                        <div class="col-md-4">
-                                            <label for="eyetrackingTask" class="form-label">Task Name</label>
-                                            <input type="text" class="form-control" id="eyetrackingTask" value="gaze" placeholder="e.g. antisaccade">
-                                        </div>
-                                        <div class="col-md-4">
-                                            <button class="btn btn-warning w-100" type="button" id="eyetrackingSingleConvertBtn" disabled>
-                                                <i class="fas fa-wand-magic-sparkles me-2"></i>Convert
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div id="eyetrackingSingleError" class="alert alert-danger d-none mt-3"></div>
-                                    <div id="eyetrackingSingleInfo" class="alert alert-info d-none mt-3"></div>
-                                </div>
-
-                                <!-- Batch -->
-                                <div class="tab-pane fade" id="eyetracking-batch" role="tabpanel">
+                                <!-- Batch only -->
+                                <div class="tab-pane fade show active" id="eyetracking-batch" role="tabpanel">
                                     <div class="alert alert-light border mb-3">
                                         <i class="fas fa-info-circle me-2 text-info"></i>
-                                        <strong>File naming required:</strong> <code>sub-XXX_ses-YYY_task-ZZZ.edf</code>
-                                        <br><small class="text-muted">Example: <code>sub-003_ses-1_task-antisaccade.edf</code> · Session is optional</small>
+                                        <strong>File naming required:</strong> <code>sub-XXX_ses-YYY_task-ZZZ_eyetracking.[edf|tsv|tsv.gz]</code>
+                                        <br><small class="text-muted">Examples: <code>sub-003_ses-1_task-reading_eyetracking.edf</code>, <code>sub-001_task-gaze_eyetracking.tsv</code> · Session is optional</small>
                                     </div>
                                     <div class="row g-3 align-items-end">
-                                        <div class="col-md-6">
-                                            <label for="eyetrackingBatchFiles" class="form-label">Select EDF Files</label>
-                                            <input class="form-control" type="file" id="eyetrackingBatchFiles" accept=".edf" multiple>
+                                        <div class="col-md-9">
+                                            <label for="eyetrackingBatchFiles" class="form-label">Select Eyetracking Files</label>
+                                            <input class="form-control" type="file" id="eyetrackingBatchFiles" accept=".edf,.tsv,.tsv.gz" multiple>
                                             <small class="text-muted">Select all files (Ctrl+A / Cmd+A)</small>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label for="eyetrackingBatchDatasetName" class="form-label">Dataset Name</label>
-                                            <input type="text" class="form-control" id="eyetrackingBatchDatasetName" value="Eyetracking Dataset">
                                         </div>
                                         <div class="col-md-3">
                                             <button class="btn btn-warning w-100" type="button" id="eyetrackingBatchConvertBtn" disabled>
                                                 <i class="fas fa-wand-magic-sparkles me-2"></i>Convert All & Download
                                             </button>
+                                        </div>
+                                    </div>
+                                    <div class="row g-3 mt-2 align-items-center">
+                                        <div class="col-md-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="eyetrackingBatchDryRun">
+                                                <label class="form-check-label" for="eyetrackingBatchDryRun">
+                                                    <i class="fas fa-flask me-2"></i><strong>Dry-run mode</strong>
+                                                </label>
+                                                <small class="d-block text-muted mt-1">Preview what will be converted without creating files</small>
+                                            </div>
                                         </div>
                                     </div>
                                     <div id="eyetrackingBatchError" class="alert alert-danger d-none mt-3"></div>

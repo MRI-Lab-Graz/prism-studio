@@ -3,10 +3,52 @@
   "outputFormat": "png",
   "screenshots": [
     {
-      "id": "prism-docs-home",
-      "name": "PRISM Documentation Home",
-      "url": "http://127.0.0.1:8000/index.html",
-      "selector": "div.document",
+      "id": "prism-studio-home",
+      "name": "PRISM Studio - Home",
+      "url": "http://127.0.0.1:5001/",
+      "selector": "body",
+      "viewports": ["desktop"]
+    },
+    {
+      "id": "prism-studio-projects",
+      "name": "PRISM Studio - Projects",
+      "url": "http://127.0.0.1:5001/projects",
+      "selector": "body",
+      "viewports": ["desktop"]
+    },
+    {
+      "id": "prism-studio-recipes",
+      "name": "PRISM Studio - Recipes",
+      "url": "http://127.0.0.1:5001/recipes",
+      "selector": "body",
+      "viewports": ["desktop"]
+    },
+    {
+      "id": "prism-studio-library",
+      "name": "PRISM Studio - Survey Library",
+      "url": "http://127.0.0.1:5001/library",
+      "selector": "body",
+      "viewports": ["desktop"]
+    },
+    {
+      "id": "prism-studio-specifications",
+      "name": "PRISM Studio - Specifications",
+      "url": "http://127.0.0.1:5001/specifications",
+      "selector": "body",
+      "viewports": ["desktop"]
+    },
+    {
+      "id": "prism-studio-converter",
+      "name": "PRISM Studio - Converter",
+      "url": "http://127.0.0.1:5001/converter",
+      "selector": "body",
+      "viewports": ["desktop"]
+    },
+    {
+      "id": "prism-studio-file-management",
+      "name": "PRISM Studio - File Management",
+      "url": "http://127.0.0.1:5001/file_management",
+      "selector": "body",
       "viewports": ["desktop"]
     }
   ]
