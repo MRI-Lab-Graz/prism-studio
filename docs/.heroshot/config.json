@@ -4,6 +4,7 @@
   "screenshots": [
     {
       "id": "prism-docs-home",
+      "name": "PRISM Documentation Home",
       "url": "http://127.0.0.1:8000/index.html",
       "selector": "div.document",
       "viewports": ["desktop"]
