@@ -4119,9 +4119,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const result = await response.json();
                 
-                // Show log - handle both logs array and log string
+                // Show log with colors based on level, not ANSI codes
                 if (result.logs && Array.isArray(result.logs)) {
-                    eyetrackingBatchLog.textContent = result.logs.map(log => `[${log.level.toUpperCase()}] ${log.message}`).join('\n');
+                    const logLines = result.logs.map(log => {
+                        // Determine color class from level
+                        let colorClass = 'ansi-reset';
+                        if (log.level === 'error') colorClass = 'ansi-red';
+                        else if (log.level === 'warning') colorClass = 'ansi-yellow';
+                        else if (log.level === 'success') colorClass = 'ansi-green';
+                        else if (log.level === 'info') colorClass = 'ansi-blue';
+                        else if (log.level === 'preview') colorClass = 'ansi-cyan';
+                        
+                        // Escape HTML and wrap with color
+                        const escaped = log.message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        return `<span class="${colorClass}">${escaped}</span>`;
+                    });
+                    eyetrackingBatchLog.innerHTML = logLines.join('<br>');
+                    eyetrackingBatchLog.scrollTop = eyetrackingBatchLog.scrollHeight;
                 } else if (result.log) {
                     eyetrackingBatchLog.textContent = result.log;
                 }
