@@ -2087,6 +2087,8 @@ def api_batch_convert():
     logs = []
 
     def log_callback(message: str, level: str = "info"):
+        # Just store the plain message + level
+        # Colors will be applied on the frontend based on the level
         logs.append({"message": message, "level": level})
 
     dataset_name = (request.form.get("dataset_name") or "Converted Dataset").strip()

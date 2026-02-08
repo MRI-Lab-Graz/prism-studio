@@ -23,6 +23,31 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
+# ANSI color codes for terminal output
+class Colors:
+    """ANSI color codes for terminal output."""
+    RESET = '\033[0m'
+    RED = '\033[91m'        # Error (bright red)
+    YELLOW = '\033[93m'      # Warning (bright yellow)
+    GREEN = '\033[92m'       # Success (bright green)
+    BLUE = '\033[94m'        # Info (bright blue)
+    CYAN = '\033[96m'        # Data preview (bright cyan)
+    
+    @staticmethod
+    def colorize(message: str, level: str) -> str:
+        """Add color codes to a message based on log level."""
+        if level == "error":
+            return f"{Colors.RED}{message}{Colors.RESET}"
+        elif level == "warning":
+            return f"{Colors.YELLOW}{message}{Colors.RESET}"
+        elif level == "success":
+            return f"{Colors.GREEN}{message}{Colors.RESET}"
+        elif level == "info":
+            return f"{Colors.BLUE}{message}{Colors.RESET}"
+        elif level == "preview":
+            return f"{Colors.CYAN}{message}{Colors.RESET}"
+        return message
+
 # Pattern for BIDS-like filenames: sub-XXX_ses-YYY_task-ZZZ[_extra].<ext>
 BIDS_FILENAME_PATTERN = re.compile(
     r"^(?P<sub>sub-[a-zA-Z0-9]+)"
@@ -39,7 +64,7 @@ EYETRACKING_FILENAME_PATTERN = re.compile(
     r"(?:_(?P<ses>ses-[a-zA-Z0-9]+))?"
     r"_(?P<task>task-[a-zA-Z0-9]+)"
     r"(?P<extra>(?:_[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)?)*)"
-    r"_(?P<suffix>eyetrack|events)"
+    r"_(?P<suffix>eyetrack|eyetracking|events)"
     r"\.(?P<ext>[a-zA-Z0-9]+(?:\.gz)?)$",
     re.IGNORECASE,
 )
@@ -371,26 +396,84 @@ def _extract_eyetracking_metadata_from_tsv(tsv_path: Path) -> dict:
     return metadata
 
 
+def _get_tsv_preview(file_path: Path, max_rows: int = 8) -> str:
+    """Get first N rows of a TSV file as formatted string."""
+    import csv
+    
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f, delimiter='\t')
+            rows = []
+            for i, row in enumerate(reader):
+                if i >= max_rows:
+                    break
+                rows.append(row)
+            
+            if not rows:
+                return "(empty file)"
+            
+            # Format as aligned columns
+            if len(rows) == 1:
+                return ' | '.join(rows[0][:5]) + ('...' if len(rows[0]) > 5 else '')
+            
+            # Calculate column widths
+            col_widths = []
+            for col_idx in range(len(rows[0])):
+                max_width = max(len(str(rows[row_idx][col_idx] if col_idx < len(rows[row_idx]) else ''))
+                               for row_idx in range(len(rows)))
+                col_widths.append(min(max_width, 15))  # Cap width at 15 chars
+            
+            # Format header
+            header = ' | '.join(rows[0][col_idx].ljust(col_widths[col_idx])
+                              for col_idx in range(min(len(rows[0]), 5)))
+            if len(rows[0]) > 5:
+                header += ' | ...'
+            
+            # Format data rows
+            data_lines = []
+            for row_idx in range(1, len(rows)):
+                line = ' | '.join(str(rows[row_idx][col_idx] if col_idx < len(rows[row_idx]) else '')[:col_widths[col_idx]].ljust(col_widths[col_idx])
+                                 for col_idx in range(min(len(rows[row_idx]), 5)))
+                if len(rows[row_idx]) > 5:
+                    line += ' | ...'
+                data_lines.append(line)
+            
+            return header + '\n' + '\n'.join(data_lines)
+    except Exception as e:
+        return f"(could not read preview: {str(e)[:50]})"
+
+
 def _process_eyetracking_tsv(source_path: Path, output_path: Path) -> dict:
-    """Process eyetracking TSV file: rename BIDS columns, keep all data.
+    """Process eyetracking TSV file: normalize to PRISM format.
     
-    Renames 4 key columns to BIDS-standard names:
-    - AVERAGE_GAZE_X → x
-    - AVERAGE_GAZE_Y → y
-    - AVERAGE_PUPIL_SIZE → pupil_size
-    - TIMESTAMP → timestamp
+    Operations:
+    1. Drops RECORDING_SESSION_LABEL (redundant in filename)
+    2. Converts dots (.) to empty strings (BIDS standard for missing values)
+    3. Renames EyeLink columns to BEP020-standard names:
+       - AVERAGE_GAZE_X → x_coordinate
+       - AVERAGE_GAZE_Y → y_coordinate
+       - AVERAGE_PUPIL_SIZE → pupil_size
+       - TIMESTAMP → timestamp
+    4. Orders core columns first: timestamp, x_coordinate, y_coordinate, pupil_size, then others
+    5. Preserves all other columns
     
-    All other columns are preserved. Returns info about the processing.
+    Returns info about the processing including dropped columns and row count.
     """
     import csv
     
-    # Column mapping: EyeLink name → BIDS name
+    # Columns to drop (redundant with PRISM structure)
+    columns_to_drop = {'RECORDING_SESSION_LABEL'}
+    
+    # Column mapping: EyeLink name → BEP020 standard name
     column_mapping = {
-        'AVERAGE_GAZE_X': 'x',
-        'AVERAGE_GAZE_Y': 'y',
+        'AVERAGE_GAZE_X': 'x_coordinate',
+        'AVERAGE_GAZE_Y': 'y_coordinate',
         'AVERAGE_PUPIL_SIZE': 'pupil_size',
         'TIMESTAMP': 'timestamp',
     }
+    
+    # Core columns that should appear first in this order
+    core_columns_order = ['timestamp', 'x_coordinate', 'y_coordinate', 'pupil_size']
     
     try:
         # Detect if gzipped
@@ -410,16 +493,31 @@ def _process_eyetracking_tsv(source_path: Path, output_path: Path) -> dict:
         if not rows:
             return {'status': 'error', 'message': 'No data rows found'}
         
-        # Get original columns
-        original_columns = rows[0].keys()
+        # Get original columns and clean BOM if present
+        original_columns = [col.lstrip('\ufeff') for col in rows[0].keys()]
         
-        # Build new column names (rename BIDS columns, keep others)
-        new_columns = []
+        # Build new column names:
+        # 1. Filter out columns to drop
+        # 2. Rename mapped columns
+        # 3. Arrange core columns first, then others
+        renamed_columns = []
         for col in original_columns:
-            if col in column_mapping:
-                new_columns.append(column_mapping[col])
+            if col in columns_to_drop:
+                continue  # Skip this column
+            elif col in column_mapping:
+                renamed_columns.append(column_mapping[col])
             else:
-                new_columns.append(col)
+                renamed_columns.append(col)
+        
+        # Sort columns: core columns first (in order), then others
+        new_columns = []
+        for core_col in core_columns_order:
+            if core_col in renamed_columns:
+                new_columns.append(core_col)
+                renamed_columns.remove(core_col)
+        
+        # Add remaining columns
+        new_columns.extend(renamed_columns)
         
         # Open output file
         if output_path.suffix.lower() == '.gz':
@@ -432,20 +530,39 @@ def _process_eyetracking_tsv(source_path: Path, output_path: Path) -> dict:
             writer = csv.DictWriter(out, fieldnames=new_columns, delimiter='\t')
             writer.writeheader()
             
-            # Write rows with renamed columns
+            # Write rows with renamed columns and normalized missing values
             for row in rows:
                 new_row = {}
-                for old_col, value in row.items():
+                for old_col_raw, value in row.items():
+                    # Clean BOM from column name if present
+                    old_col = old_col_raw.lstrip('\ufeff')
+                    
+                    # Skip dropped columns
+                    if old_col in columns_to_drop:
+                        continue
+                    
+                    # Get new column name
                     new_col = column_mapping.get(old_col, old_col)
-                    new_row[new_col] = value
+                    
+                    # Convert dots to empty strings (BIDS standard for missing values)
+                    # Keep empty strings as-is
+                    normalized_value = '' if value == '.' else value
+                    
+                    new_row[new_col] = normalized_value
                 writer.writerow(new_row)
+        
+        # Calculate which columns were actually dropped from original
+        dropped_cols = [col for col in original_columns if col in columns_to_drop]
         
         return {
             'status': 'success',
             'original_columns': list(original_columns),
             'new_columns': new_columns,
             'row_count': len(rows),
-            'renamed_columns': {v: k for k, v in column_mapping.items() if k in original_columns}
+            'renamed_columns': {v: k for k, v in column_mapping.items() if k in original_columns},
+            'dropped_columns': dropped_cols,
+            'normalized_missing_values': True,
+            'missing_value_indicator': 'dots (.) converted to empty strings'
         }
     
     except Exception as e:
@@ -1046,7 +1163,7 @@ def convert_eyetracking_file(
             else:
                 # Samples file: x, y, pupil_size, timestamp columns
                 if log_callback:
-                    log_callback(f"     Processing Samples TSV: renaming BIDS columns (x, y, pupil_size, timestamp)...", "info")
+                    log_callback(f"     Processing Samples TSV: renaming BIDS columns (x_coordinate, y_coordinate, pupil_size, timestamp)...", "info")
                 
                 process_result = _process_eyetracking_tsv(source_path, out_data)
             
@@ -1057,7 +1174,14 @@ def convert_eyetracking_file(
             
             renamed = process_result.get('renamed_columns', {})
             if renamed and log_callback:
-                log_callback(f"     ✓ Renamed columns: {', '.join([f'{v}→{k}' for k, v in renamed.items()])}", "info")
+                log_callback(f"     ✓ Renamed columns: {', '.join([f'{v}→{k}' for k, v in renamed.items()])}", "success")
+            
+            # Show first 8 rows of output as preview
+            if log_callback and suffix in ("eyetrack", "eyetracking"):
+                preview = _get_tsv_preview(out_data, max_rows=8)
+                log_callback(f"     📋 Output preview (first 8 rows):", "preview")
+                for line in preview.split('\n'):
+                    log_callback(f"        {line}", "preview")
         else:
             # For EDF/ASC, just copy
             shutil.copy2(source_path, out_data)
@@ -1079,7 +1203,7 @@ def convert_eyetracking_file(
             if log_callback:
                 log_callback(f"     Reading EDF header...", "info")
             extra_meta = _extract_edf_metadata(source_path)
-        elif ext in ("tsv", "tsv.gz") and suffix == "eyetrack":
+        elif ext in ("tsv", "tsv.gz") and suffix in ("eyetrack", "eyetracking"):
             if log_callback:
                 log_callback(f"     Parsing TSV structure and columns...", "info")
             extra_meta = _extract_eyetracking_metadata_from_tsv(source_path)

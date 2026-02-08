@@ -138,10 +138,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const result = await response.json();
 
-            // Display logs
+            // Display logs with colors based on level
             if (result.logs && organizeLog) {
-                const logText = result.logs.map(l => l.message).join('\n');
-                organizeLog.textContent = logText;
+                const logLines = result.logs.map(l => {
+                    // Determine color class from level
+                    let colorClass = 'ansi-reset';
+                    if (l.level === 'error') colorClass = 'ansi-red';
+                    else if (l.level === 'warning') colorClass = 'ansi-yellow';
+                    else if (l.level === 'success') colorClass = 'ansi-green';
+                    else if (l.level === 'info') colorClass = 'ansi-blue';
+                    else if (l.level === 'preview') colorClass = 'ansi-cyan';
+                    
+                    // Escape HTML and wrap with color
+                    const escaped = l.message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                    return `<span class="${colorClass}">${escaped}</span>`;
+                });
+                organizeLog.innerHTML = logLines.join('<br>');
+                // Auto-scroll to bottom
+                organizeLog.scrollTop = organizeLog.scrollHeight;
             }
 
             if (result.dry_run) {
