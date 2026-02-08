@@ -66,9 +66,21 @@
                                                 <i class="fas fa-trash-alt me-1"></i>Clear
                                             </button>
                                         </div>
-                                        <div id="eyetrackingBatchLog" class="bg-dark text-light p-3 rounded font-monospace" 
-                                             style="height: 200px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap;"></div>
+                                        <div id="eyetrackingBatchLog" class="bg-dark text-light p-3 rounded font-monospace ansi-output" 
+                                             style="height: 400px; overflow-y: auto; font-size: 0.85rem; white-space: pre-wrap; line-height: 1.4;"></div>
                                     </div>
+                                    <style>
+                                        .ansi-output {
+                                            background-color: #1e1e1e;
+                                        }
+                                        /* ANSI color codes - standard terminal colors */
+                                        .ansi-red { color: #ff5555; }
+                                        .ansi-yellow { color: #ffff55; }
+                                        .ansi-green { color: #55ff55; }
+                                        .ansi-blue { color: #ffffff; }
+                                        .ansi-cyan { color: #ffffff; }
+                                        .ansi-reset { color: #ffffff; }
+                                    </style>
                                 </div>
                             </div>
                         </div>
