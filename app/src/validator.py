@@ -648,7 +648,7 @@ class DatasetValidator:
                 issues.append(
                     (
                         "ERROR",
-                        f"Filename doesn't match expected pattern for {modality}: {filename}",
+                        f"Filename doesn't match expected pattern for modality '{modality}': {filename}",
                     )
                 )
         elif modality in PRISM_MODALITIES:
@@ -656,7 +656,7 @@ class DatasetValidator:
                 issues.append(
                     (
                         "WARNING",
-                        f"Filename doesn't match expected pattern for {modality}: {filename}",
+                        f"Filename doesn't match expected pattern for modality '{modality}': {filename}",
                     )
                 )
 

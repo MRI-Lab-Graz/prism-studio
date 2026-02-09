@@ -124,7 +124,7 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
     },
     "PRISM102": {
         "message": "Filename doesn't match expected pattern for modality",
-        "fix_hint": "Check modality-specific naming requirements (e.g., _survey.tsv)",
+        "fix_hint": "Ensure the filename follows the correct suffix for this modality. Use '_survey', '_physio', '_eyetrack', '_biometrics', or '_events' as appropriate.",
     },
     "PRISM103": {
         "message": "Subject ID mismatch",
@@ -306,6 +306,21 @@ def get_fix_hint(code: str, message: str = "") -> str:
 
     # Handle specific cases with regex if message is provided
     if message:
+        # Modality-specific filename pattern errors (PRISM102)
+        if code == "PRISM102":
+            modality_match = re.search(r"modality '([^']+)'", message)
+            if modality_match:
+                modality = modality_match.group(1)
+                modality_hints = {
+                    "survey": "Ensure the filename ends with '_survey.tsv' or '_survey.json' (e.g., sub-001_task-panas_survey.tsv)",
+                    "biometrics": "Ensure the filename ends with '_biometrics.tsv' or '_biometrics.json' (e.g., sub-001_task-rest_biometrics.tsv)",
+                    "physio": "Ensure the filename ends with '_physio.<ext>' where <ext> is tsv, tsv.gz, json, or edf (e.g., sub-001_task-rest_recording-ecg_physio.tsv)",
+                    "physiological": "Ensure the filename ends with '_physio.<ext>' where <ext> is tsv, tsv.gz, json, or edf (e.g., sub-001_task-rest_recording-ecg_physio.tsv)",
+                    "eyetracking": "Ensure the filename ends with '_eyetrack.<ext>' or '_eye.<ext>' or '_gaze.<ext>' where <ext> is tsv, tsv.gz, json, edf, or asc (e.g., sub-001_task-rest_trackedEye-left_eyetrack.tsv)",
+                    "events": "Ensure the filename ends with '_events.tsv' (e.g., sub-001_task-rest_events.tsv)",
+                }
+                return modality_hints.get(modality, f"Ensure the filename ends with '_{modality}.<ext>' appropriate for this modality")
+        
         # Schema validation errors (PRISM301)
         if code == "PRISM301":
             if "licenseid" in message.lower() or "license" in message.lower():

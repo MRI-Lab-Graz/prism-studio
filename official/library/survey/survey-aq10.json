@@ -43,36 +43,36 @@
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} Definitely agree"
+        "en": "Definitely agree"
       },
       "1": {
-        "en": "{score=1} Slightly agree"
+        "en": "Slightly agree"
       },
       "2": {
-        "en": "{score=0} Slightly disagree"
+        "en": "Slightly disagree"
       },
       "3": {
-        "en": "{score=0} Definitely disagree"
+        "en": "Definitely disagree"
       }
     }
   },
   "AQ1002": {
     "Description": {
-      "en": "When Iâm reading a story I find it difficult to work out the charactersâ intentions"
+      "en": "When I am reading a story I find it difficult to work out the characters intentions"
     },
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} Definitely agree"
+        "en": "Definitely agree"
       },
       "1": {
-        "en": "{score=1} Slightly agree"
+        "en": "Slightly agree"
       },
       "2": {
-        "en": "{score=0} Slightly disagree"
+        "en": "Slightly disagree"
       },
       "3": {
-        "en": "{score=0} Definitely disagree"
+        "en": "Definitely disagree"
       }
     }
   },
@@ -83,16 +83,16 @@
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} Definitely agree"
+        "en": "Definitely agree"
       },
       "1": {
-        "en": "{score=1} Slightly agree"
+        "en": "Slightly agree"
       },
       "2": {
-        "en": "{score=0} Slightly disagree"
+        "en": "lightly disagree"
       },
       "3": {
-        "en": "{score=0} Definitely disagree"
+        "en": "Definitely disagree"
       }
     }
   },
@@ -103,16 +103,16 @@
     "Reversed": false,
     "Levels": {
       "0": {
-        "en": "{score=1} Definitely agree"
+        "en": "Definitely agree"
       },
       "1": {
-        "en": "{score=1} Slightly agree"
+        "en": "Slightly agree"
       },
       "2": {
-        "en": "{score=0} Slightly disagree"
+        "en": "Slightly disagree"
       },
       "3": {
-        "en": "{score=0} Definitely disagree"
+        "en": "Definitely disagree"
       }
     }
   }
