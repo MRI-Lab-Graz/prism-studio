@@ -3937,15 +3937,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const result = await response.json();
                 
-                // Show log
-                if (result.log) {
-                    physioBatchLog.textContent = result.log;
-                }
-                
-                // Also display logs array if available
+                // Show log with colors based on level, not ANSI codes
                 if (result.logs && Array.isArray(result.logs)) {
-                    const logText = result.logs.map(l => l.message).join('\n');
-                    physioBatchLog.textContent = logText;
+                    const logLines = result.logs.map(log => {
+                        // Determine color class from level
+                        let colorClass = 'ansi-reset';
+                        if (log.level === 'error') colorClass = 'ansi-red';
+                        else if (log.level === 'warning') colorClass = 'ansi-yellow';
+                        else if (log.level === 'success') colorClass = 'ansi-green';
+                        else if (log.level === 'info') colorClass = 'ansi-blue';
+                        else if (log.level === 'preview') colorClass = 'ansi-cyan';
+                        
+                        // Escape HTML and wrap with color
+                        const escaped = log.message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        return `<span class="${colorClass}">${escaped}</span>`;
+                    });
+                    physioBatchLog.innerHTML = logLines.join('<br>');
+                    physioBatchLog.scrollTop = physioBatchLog.scrollHeight;
+                } else if (result.log) {
+                    physioBatchLog.textContent = result.log;
                 }
 
                 if (isDryRun && result.dry_run) {
@@ -4221,8 +4231,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const result = await response.json();
                 
-                // Show log
-                if (result.log) {
+                // Show log with colors based on level
+                if (result.logs && Array.isArray(result.logs)) {
+                    const logLines = result.logs.map(log => {
+                        let colorClass = 'ansi-reset';
+                        if (log.level === 'error') colorClass = 'ansi-red';
+                        else if (log.level === 'warning') colorClass = 'ansi-yellow';
+                        else if (log.level === 'success') colorClass = 'ansi-green';
+                        else if (log.level === 'info') colorClass = 'ansi-blue';
+                        else if (log.level === 'preview') colorClass = 'ansi-cyan';
+                        
+                        const escaped = log.message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        return `<span class="${colorClass}">${escaped}</span>`;
+                    });
+                    organizeLog.innerHTML = logLines.join('<br>');
+                    organizeLog.scrollTop = organizeLog.scrollHeight;
+                } else if (result.log) {
                     organizeLog.textContent = result.log;
                 }
 
