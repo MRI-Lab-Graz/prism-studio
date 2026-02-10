@@ -955,27 +955,33 @@ def convert_physio_file(
         out_folder = output_dir / sub / "physio"
     out_folder.mkdir(parents=True, exist_ok=True)
 
-    # Recording label based on source format
-    rec_label = "vpd" if ext == "vpd" else "raw"
-
-    # Build BIDS filename
-    parts = [sub]
-    if ses:
-        parts.append(ses)
-    parts.append(task)
-    parts.append(f"recording-{rec_label}")
-    parts.append("physio")
-    base_name = "_".join(parts)
-
     output_files = []
 
     try:
         # Try to use the Varioport converter for .raw/.vpd
-        if ext in (".raw", ".vpd"):
+        # Note: ext doesn't include the dot (e.g., "raw" not ".raw")
+        if ext in ("raw", "vpd"):
+            conversion_failed = False
+            conversion_error_msg = None
+            
+            if log_callback:
+                log_callback(
+                    f"  🔬 Attempting RAW → EDF conversion...",
+                    "info",
+                )
+            
             try:
                 from helpers.physio.convert_varioport import convert_varioport
 
-                out_edf = out_folder / f"{base_name}.edf"
+                # Build EDF output filename (no recording label needed for converted files)
+                parts_edf = [sub]
+                if ses:
+                    parts_edf.append(ses)
+                parts_edf.append(task)
+                parts_edf.append("physio")
+                base_name_edf = "_".join(parts_edf)
+                
+                out_edf = out_folder / f"{base_name_edf}.edf"
                 # Write sidecar to root for BIDS inheritance
                 out_root_json = (
                     output_dir / f"task-{task.replace('task-', '')}_physio.json"
@@ -1007,15 +1013,44 @@ def convert_physio_file(
                             f"  ✅ Converted to EDF: {out_edf.name} ({edf_size:.2f} MB)",
                             "success",
                         )
+                else:
+                    conversion_failed = True
+                    conversion_error_msg = "EDF file was not created after conversion"
 
-            except ImportError:
-                # Fallback: just copy file and create root sidecar
+            except ImportError as e:
+                conversion_failed = True
+                conversion_error_msg = f"Varioport converter not available: {e}"
+            except Exception as e:
+                conversion_failed = True
+                conversion_error_msg = f"Conversion failed: {e}"
+            
+            # Fallback if conversion failed for any reason
+            if conversion_failed:
                 if log_callback:
                     log_callback(
-                        "  ⚠️ Variport converter not available, copying raw file",
+                        f"  ⚠️  CONVERSION FAILED: {conversion_error_msg}",
+                        "error",
+                    )
+                    log_callback(
+                        f"  ⚠️  Fallback: Copying {ext.upper()} file without conversion",
+                        "error",
+                    )
+                    log_callback(
+                        "  💡 Note: RAW files should be converted to EDF format. Please check logs.",
                         "warning",
                     )
-                out_data = out_folder / f"{base_name}.{ext}"
+                
+                # Use 'unconverted' label to make it clear this wasn't processed
+                rec_label = "unconverted"
+                parts_fallback = [sub]
+                if ses:
+                    parts_fallback.append(ses)
+                parts_fallback.append(task)
+                parts_fallback.append(f"recording-{rec_label}")
+                parts_fallback.append("physio")
+                base_name_fallback = "_".join(parts_fallback)
+                
+                out_data = out_folder / f"{base_name_fallback}.{ext}"
                 out_root_json = (
                     output_dir / f"task-{task.replace('task-', '')}_physio.json"
                 )
@@ -1028,12 +1063,21 @@ def convert_physio_file(
                         out_root_json,
                         task_name=task,
                         sampling_rate=base_freq,
+                        recording_label="unconverted",
                     )
 
                 output_files.extend([out_data])
         else:
             # For .edf or other formats already in physio-compatible format
-            out_data = out_folder / f"{base_name}.{ext}"
+            # Build filename without recording label
+            parts_clean = [sub]
+            if ses:
+                parts_clean.append(ses)
+            parts_clean.append(task)
+            parts_clean.append("physio")
+            base_name_clean = "_".join(parts_clean)
+            
+            out_data = out_folder / f"{base_name_clean}.{ext}"
             out_root_json = output_dir / f"task-{task.replace('task-', '')}_physio.json"
 
             shutil.copy2(source_path, out_data)
@@ -1609,7 +1653,7 @@ def batch_convert_folder(
                     )
             else:
                 log(
-                    f"✅ [{idx}/{len(files_to_process)}] Success: {file_path.name} → {converted.modality}/",
+                    f"✅ [{idx}/{len(files_to_process)}] Success: {file_path.name} → {converted.modality}/ [{', '.join([f.name for f in converted.output_files])}]",
                     "success",
                 )
         else:
@@ -1618,6 +1662,12 @@ def batch_convert_folder(
                 "error",
             )
 
+    # Check if any files have 'unconverted' in their name (fallback was triggered)
+    unconverted_count = sum(
+        1 for conv in result.converted 
+        if conv.success and any('unconverted' in str(f) for f in conv.output_files)
+    )
+    
     # Summary
     log("", "info")
     if dry_run:
@@ -1637,6 +1687,14 @@ def batch_convert_folder(
         log(f"   ⏭️  Skipped: {len(result.skipped)}", "warning")
     if result.conflicts:
         log(f"   ⚠️  Conflicts: {len(result.conflicts)}", "warning")
+    
+    # Alert user if any conversions failed and files were copied as fallback
+    if unconverted_count > 0:
+        log("", "info")
+        log(f"⚠️  WARNING: {unconverted_count} file(s) were copied without conversion!", "error")
+        log("   RAW/VPD files should be converted to EDF format.", "warning")
+        log("   Files are labeled 'recording-unconverted' - check logs above for details.", "warning")
+    
     if dry_run:
         log("💡 Run 'Copy to Project' when you're ready to execute.", "info")
 
