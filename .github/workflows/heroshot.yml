@@ -2,11 +2,9 @@ name: Update Docs Screenshots (Heroshot)
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - 'docs/**'
-      - '.heroshot/**'
-  workflow_dispatch: {}
+    tags:
+      - 'v*'  # Only run on version tags
+  workflow_dispatch: {}  # Allow manual trigger
 
 jobs:
   heroshot:
@@ -54,6 +52,25 @@ jobs:
         python -m http.server 8000 --directory docs/_build/html &
         sleep 2
 
+    - name: Install PRISM Studio dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Start PRISM Studio
+      run: |
+        python prism-studio.py &
+        PRISM_PID=$!
+        echo "PRISM_PID=$PRISM_PID" >> $GITHUB_ENV
+        echo "Waiting for PRISM Studio to start..."
+        for i in {1..30}; do
+          if curl -s http://127.0.0.1:5001/ > /dev/null; then
+            echo "PRISM Studio is ready!"
+            break
+          fi
+          echo "Attempt $i/30: Not ready yet..."
+          sleep 2
+        done
+
     - name: Prepare screenshots directory
       run: |
         mkdir -p docs/_static/screenshots
@@ -82,6 +99,13 @@ jobs:
         XDG_CACHE_HOME: /home/runner/.cache
         XDG_DATA_HOME: /home/runner/.local/share
 
+    - name: Stop PRISM Studio
+      if: always()
+      run: |
+        if [ -n "$PRISM_PID" ]; then
+          kill $PRISM_PID || true
+        fi
+
     - name: Commit screenshots if changed
       run: |
         git config user.name "github-actions[bot]"
@@ -91,5 +115,5 @@ jobs:
           echo "No screenshot changes to commit.";
         else
           git commit -m "chore(docs): update screenshots [skip ci]" || true
-          git push origin HEAD:main || true
+          git push origin HEAD:${{ github.ref_name }} || true
         fi
