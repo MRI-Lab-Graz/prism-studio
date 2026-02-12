@@ -38,8 +38,7 @@ def _ensure_participants(
     df, id_col, output_root, library_path, candidates=None, participant_schema=None
 ):
     """Create participants.tsv/json. Prefer explicit participant schema or library participants.json; otherwise infer."""
-    rawdata_dir = output_root
-    os.makedirs(rawdata_dir, exist_ok=True)
+    os.makedirs(output_root, exist_ok=True)
 
     # Resolve participants.json path, checking parent folders as well
     lib_path_obj = Path(library_path).resolve()
@@ -108,13 +107,13 @@ def _ensure_participants(
                         lambda v: v if pd.isna(v) or str(v) in allowed else "n/a"
                     )
 
-            part_tsv_path = os.path.join(rawdata_dir, "participants.tsv")
+            part_tsv_path = os.path.join(output_root, "participants.tsv")
             df_part.to_csv(part_tsv_path, sep="\t", index=False)
             print(
                 f"  - Created participants.tsv with {len(df_part)} subjects and {len(found_part_vars)} columns."
             )
 
-            with open(os.path.join(rawdata_dir, "participants.json"), "w") as f:
+            with open(os.path.join(output_root, "participants.json"), "w") as f:
                 json.dump(part_schema, f, indent=2)
         else:
             if inferred:
@@ -141,11 +140,10 @@ def process_dataframe(
     df, schemas, output_root, library_path, session_override=None, run_override=None
 ):
     """Convert in-memory dataframe to BIDS TSV files based on JSON schemas."""
-    rawdata_dir = output_root
-    os.makedirs(rawdata_dir, exist_ok=True)
+    os.makedirs(output_root, exist_ok=True)
 
     # Ensure dataset_description.json exists
-    desc_path = os.path.join(rawdata_dir, "dataset_description.json")
+    desc_path = os.path.join(output_root, "dataset_description.json")
     if not os.path.exists(desc_path):
         dataset_description = {
             "Name": "PRISM Dataset",
@@ -308,7 +306,7 @@ def process_dataframe(
                 buckets.setdefault((ses, run), []).append(var)
 
             for (ses_id, run_id), vars_in_bucket in buckets.items():
-                out_dir = os.path.join(rawdata_dir, sub_id, ses_id, "survey")
+                out_dir = os.path.join(output_root, sub_id, ses_id, "survey")
                 os.makedirs(out_dir, exist_ok=True)
 
                 row_data = row[vars_in_bucket].to_dict()
@@ -362,9 +360,9 @@ def process_dataframe(
         # We previously generated task-<task>_beh.json for BIDS compatibility,
         # but this is now disabled per user requirement to avoid root clutter.
         legacy_name = f"survey-{task_name}.json"
-        legacy_path = os.path.join(rawdata_dir, legacy_name)
+        legacy_path = os.path.join(output_root, legacy_name)
         # bids_name = f"task-{task_name}_beh.json"
-        # bids_path = os.path.join(rawdata_dir, bids_name)
+        # bids_path = os.path.join(output_root, bids_name)
 
         for path in [legacy_path]:  # , bids_path):
             if not os.path.exists(path):
