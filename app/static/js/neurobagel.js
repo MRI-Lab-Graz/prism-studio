@@ -1,5 +1,5 @@
 // NeuroBagel helper for participants suggestions
-async function fetchNeurobagelParticipants() {
+window.fetchNeurobagelParticipants = async function fetchNeurobagelParticipants() {
   try {
     const resp = await fetch('/api/neurobagel/participants');
     if (!resp.ok) throw new Error('Network response not ok');
@@ -52,11 +52,11 @@ async function fetchNeurobagelParticipants() {
       }
     };
   }
-}
+};
 
 // Populate a suggestions dropdown for participants (attaches to window)
 window.populateParticipantsSuggestions = async function populateParticipantsSuggestions(selectEl) {
-  const data = await fetchNeurobagelParticipants();
+  const data = await window.fetchNeurobagelParticipants();
   if (!data) {
     // Fallback: add a placeholder
     selectEl.innerHTML = '<option>No suggestions available</option>';
@@ -94,7 +94,7 @@ window.applyNeurobagelSuggestion = async function applyNeurobagelSuggestion(fiel
   }
   let data = window.__neurobagel_participants;
   if (!data) {
-    data = await fetchNeurobagelParticipants();
+    data = await window.fetchNeurobagelParticipants();
     if (!data) {
       console.warn('No NeuroBagel data available to apply suggestion');
       return;

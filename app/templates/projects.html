@@ -975,14 +975,117 @@
                             </div>
                         </div>
 
-                        <!-- Export Button -->
+                        <!-- ANC Export Section -->
                         <div class="col-12 mt-4">
-                            <button type="submit" class="btn btn-warning btn-lg">
-                                <i class="fas fa-download me-2"></i>Export & Download Project
+                            <hr>
+                            <h6 class="mb-3">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>ANC (Austrian NeuroCloud) Export
+                                <span class="badge bg-info ms-2">New</span>
+                            </h6>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="alert alert-info border-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>ANC Export:</strong> Converts your PRISM dataset to ANC-compatible format with required files 
+                                (README, CITATION.cff, .bids-validator-config.json) for submission to Austrian NeuroCloud.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="ancEnableExport">
+                                <label class="form-check-label fw-bold" for="ancEnableExport">
+                                    Enable ANC Export
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Prepare dataset for ANC submission with all required metadata files.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6" id="ancOptionsGroup" style="display: none;">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="ancConvertGitLfs">
+                                <label class="form-check-label" for="ancConvertGitLfs">
+                                    Convert to Git LFS
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Create .gitattributes for Git LFS (if required by ANC). Default: DataLad-compatible.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6" id="ancOptionsGroup2" style="display: none;">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="ancIncludeCiExamples">
+                                <label class="form-check-label" for="ancIncludeCiExamples">
+                                    Include CI/CD Examples
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Add example GitLab CI and GitHub Actions workflows for dataset validation.
+                            </div>
+                        </div>
+
+                        <div class="col-12" id="ancMetadataSection" style="display: none;">
+                            <button type="button" class="btn btn-sm btn-outline-info mb-3" data-bs-toggle="collapse" 
+                                    data-bs-target="#ancMetadataForm" aria-expanded="false">
+                                <i class="fas fa-edit me-1"></i>Edit ANC Metadata (Optional)
+                            </button>
+                            <div class="collapse" id="ancMetadataForm">
+                                <div class="card border-info">
+                                    <div class="card-body">
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold">Dataset Title</label>
+                                                <input type="text" class="form-control form-control-sm" id="ancDatasetTitle" 
+                                                       placeholder="Filled from dataset_description.json">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold">Contact Email</label>
+                                                <input type="email" class="form-control form-control-sm" id="ancContactEmail" 
+                                                       placeholder="contact@university.edu">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold">Author First Name</label>
+                                                <input type="text" class="form-control form-control-sm" id="ancAuthorGiven" 
+                                                       placeholder="John">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold">Author Last Name</label>
+                                                <input type="text" class="form-control form-control-sm" id="ancAuthorFamily" 
+                                                       placeholder="Doe">
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold">Dataset Description</label>
+                                                <textarea class="form-control form-control-sm" id="ancDatasetDescription" 
+                                                          rows="2" placeholder="Brief description of your dataset..."></textarea>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="form-text small">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Leave fields empty to use values from dataset_description.json. 
+                                                    Full metadata can be edited after export.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Export Buttons -->
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-warning btn-lg me-2">
+                                <i class="fas fa-download me-2"></i>Standard Export & Download
+                            </button>
+                            <button type="button" class="btn btn-info btn-lg" id="ancExportButton" style="display: none;">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>Export for ANC
                             </button>
                             <div class="form-text mt-2">
                                 <i class="fas fa-info-circle me-1"></i>
-                                This will create a ZIP file with your selected options. Large datasets may take a few minutes.
+                                Standard export creates a shareable ZIP. ANC export creates a submission-ready dataset folder.
                             </div>
                         </div>
                     </div>
@@ -2664,6 +2767,144 @@
             resultDiv.innerHTML = `
                 <div class="alert alert-danger">
                     <h5><i class="fas fa-exclamation-circle me-2"></i>Export Failed</h5>
+                    <p class="mb-0">${error.message}</p>
+                </div>
+            `;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    });
+
+    // ===== ANC EXPORT =====
+    document.getElementById('ancEnableExport')?.addEventListener('change', function() {
+        const isEnabled = this.checked;
+        document.getElementById('ancOptionsGroup').style.display = isEnabled ? 'block' : 'none';
+        document.getElementById('ancOptionsGroup2').style.display = isEnabled ? 'block' : 'none';
+        document.getElementById('ancMetadataSection').style.display = isEnabled ? 'block' : 'none';
+        document.getElementById('ancExportButton').style.display = isEnabled ? 'inline-block' : 'none';
+    });
+
+    document.getElementById('ancExportButton')?.addEventListener('click', async function(e) {
+        e.preventDefault();
+
+        if (!currentProjectPath) {
+            alert('No project is currently loaded');
+            return;
+        }
+
+        const btn = this;
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Exporting for ANC...';
+
+        const progressDiv = document.getElementById('exportProgress');
+        const resultDiv = document.getElementById('exportResult');
+        const statusText = document.getElementById('exportStatusText');
+        progressDiv.style.display = 'block';
+        resultDiv.style.display = 'none';
+        statusText.textContent = 'Preparing ANC export...';
+
+        // Gather ANC-specific metadata
+        const metadata = {};
+        const title = document.getElementById('ancDatasetTitle').value.trim();
+        const email = document.getElementById('ancContactEmail').value.trim();
+        const givenName = document.getElementById('ancAuthorGiven').value.trim();
+        const familyName = document.getElementById('ancAuthorFamily').value.trim();
+        const description = document.getElementById('ancDatasetDescription').value.trim();
+
+        if (title) metadata.DATASET_NAME = title;
+        if (email) metadata.CONTACT_EMAIL = email;
+        if (givenName) metadata.AUTHOR_GIVEN_NAME = givenName;
+        if (familyName) metadata.AUTHOR_FAMILY_NAME = familyName;
+        if (description) metadata.DATASET_ABSTRACT = description;
+
+        const data = {
+            project_path: currentProjectPath,
+            convert_to_git_lfs: document.getElementById('ancConvertGitLfs').checked,
+            include_ci_examples: document.getElementById('ancIncludeCiExamples').checked,
+            metadata: metadata
+        };
+
+        try {
+            const response = await fetch('/api/projects/anc-export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            progressDiv.style.display = 'none';
+            resultDiv.style.display = 'block';
+
+            if (result.success) {
+                let infoHtml = '';
+                if (data.convert_to_git_lfs) {
+                    infoHtml += `
+                        <div class="alert alert-info py-2 mt-2 mb-2">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Git LFS configuration added. See <code>GIT_LFS_SETUP.md</code> in the export folder for setup instructions.
+                        </div>
+                    `;
+                } else {
+                    infoHtml += `
+                        <div class="alert alert-info py-2 mt-2 mb-2">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Export is DataLad-compatible. See <code>DATALAD_NOTE.md</code> for more information.
+                        </div>
+                    `;
+                }
+
+                if (data.include_ci_examples) {
+                    infoHtml += `
+                        <div class="alert alert-info py-2 mt-2 mb-2">
+                            <i class="fas fa-info-circle me-2"></i>
+                            CI/CD example files included. See <code>CI_SETUP.md</code> for instructions.
+                        </div>
+                    `;
+                }
+
+                const filesList = result.generated_files ? 
+                    Object.entries(result.generated_files).map(([key, path]) => 
+                        `<li><code>${path.split('/').pop()}</code></li>`
+                    ).join('') : '';
+
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-check-circle me-2"></i>ANC Export Successful!</h5>
+                        <p class="mb-2">Dataset exported to: <strong><code>${result.output_path}</code></strong></p>
+                        ${filesList ? `
+                            <div class="mt-2">
+                                <strong>Generated files:</strong>
+                                <ul class="mb-0 mt-1">${filesList}</ul>
+                            </div>
+                        ` : ''}
+                        ${infoHtml}
+                        <div class="mt-3">
+                            <strong>Next steps:</strong>
+                            <ol class="mb-0 mt-1">
+                                <li>Review and edit <code>README.md</code> and <code>CITATION.cff</code> in the export folder</li>
+                                <li>Run BIDS validator to verify compliance</li>
+                                <li>Submit to ANC</li>
+                            </ol>
+                        </div>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-circle me-2"></i>ANC Export Failed</h5>
+                        <p class="mb-0">${result.error || 'Unknown error occurred'}</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            progressDiv.style.display = 'none';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>ANC Export Failed</h5>
                     <p class="mb-0">${error.message}</p>
                 </div>
             `;
