@@ -474,7 +474,7 @@ window.autoDetectDataType = function(colName, uniqueValues) {
 
 window.renderNeurobagelWidget = async function() {
   console.log('🧠 renderNeurobagelWidget called');
-  const data = await fetchNeurobagelParticipants();
+  const data = await window.fetchNeurobagelParticipants();
   console.log('🧠 Fetched data:', data);
   if (!data || !data.properties) {
     console.warn('❌ No NeuroBagel data for widget');

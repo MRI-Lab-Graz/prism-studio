@@ -1106,6 +1106,78 @@ def export_project():
         return jsonify({"error": str(e)}), 500
 
 
+@projects_bp.route("/api/projects/anc-export", methods=["POST"])
+def anc_export_project():
+    """
+    Export the current project to ANC (Austrian NeuroCloud) compatible format.
+
+    Expected JSON body:
+    {
+        "project_path": "/path/to/project",
+        "convert_to_git_lfs": false,
+        "include_ci_examples": false,
+        "metadata": {
+            "DATASET_NAME": "My Study",
+            "CONTACT_EMAIL": "contact@example.com",
+            "AUTHOR_GIVEN_NAME": "John",
+            "AUTHOR_FAMILY_NAME": "Doe",
+            "DATASET_ABSTRACT": "Description of the dataset"
+        }
+    }
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "No data provided"}), 400
+
+        project_path = data.get("project_path")
+        if not project_path or not os.path.exists(project_path):
+            return jsonify({"success": False, "error": "Invalid project path"}), 400
+
+        project_path = Path(project_path)
+
+        # Import ANC exporter
+        from src.converters.anc_export import ANCExporter
+
+        # Get export options
+        convert_to_git_lfs = bool(data.get("convert_to_git_lfs", False))
+        include_ci_examples = bool(data.get("include_ci_examples", False))
+        metadata = data.get("metadata", {})
+
+        # Determine output path
+        output_path = project_path.parent / f"{project_path.name}_anc_export"
+
+        # Create exporter
+        exporter = ANCExporter(project_path, output_path)
+
+        # Perform export
+        result_path = exporter.export(
+            metadata=metadata,
+            convert_to_git_lfs=convert_to_git_lfs,
+            include_ci_examples=include_ci_examples,
+            copy_data=True
+        )
+
+        return jsonify({
+            "success": True,
+            "output_path": str(result_path),
+            "message": "ANC export completed successfully",
+            "generated_files": {
+                "readme": str(result_path / "README.md"),
+                "citation": str(result_path / "CITATION.cff"),
+                "validator_config": str(result_path / ".bids-validator-config.json")
+            }
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
 # =============================================================================
 # Session & Procedure Tracking Endpoints
 # =============================================================================
