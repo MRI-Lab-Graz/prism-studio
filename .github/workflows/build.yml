@@ -84,6 +84,12 @@ jobs:
       run: |
         powershell Compress-Archive -Path dist\PrismValidator -DestinationPath ${{ matrix.asset_name }}
 
+    - name: Assemble portable Windows ZIP
+      if: runner.os == 'Windows'
+      run: |
+        pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\ci\assemble_portable_windows.ps1 -OutputZip prism-windows-portable.zip
+      shell: pwsh
+
     # macOS Zip
     - name: Zip macOS App
       if: runner.os == 'macOS'
@@ -103,6 +109,13 @@ jobs:
       with:
         name: ${{ matrix.artifact_name }}
         path: ${{ matrix.asset_name }}
+
+    - name: Upload Windows portable artifact
+      if: runner.os == 'Windows'
+      uses: actions/upload-artifact@v4
+      with:
+        name: prism-studio-Windows-Portable
+        path: prism-windows-portable.zip
 
   release:
     name: Create Release
@@ -127,6 +140,11 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: prism-studio-Linux
+
+    - name: Download Windows Portable Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: prism-studio-Windows-Portable
         
     - name: Create Release
       uses: softprops/action-gh-release@v1
@@ -138,3 +156,4 @@ jobs:
           prism-studio-Windows.zip
           prism-studio-macOS.zip
           prism-studio-Linux.zip
+            prism-windows-portable.zip
