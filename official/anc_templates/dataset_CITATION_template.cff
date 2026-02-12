@@ -1,0 +1,39 @@
+# This CITATION.cff file was generated with PRISM Studio
+# Based on the ANC (Austrian NeuroCloud) dataset citation standard
+# Visit https://bit.ly/cffinit to update or customize this file
+
+cff-version: 1.2.0
+title: {DATASET_TITLE}
+message: >-
+  If you use this dataset, please cite both the article from
+  preferred-citation (if available) and the dataset itself.
+type: dataset
+authors:
+  - given-names: {AUTHOR_GIVEN_NAME}
+    family-names: {AUTHOR_FAMILY_NAME}
+    email: {AUTHOR_EMAIL}
+    affiliation: {AUTHOR_AFFILIATION}
+    orcid: '{AUTHOR_ORCID}'
+keywords: 
+  - cognitive science
+  - BIDS
+  - PRISM
+  - {ADDITIONAL_KEYWORDS}
+abstract: >-
+  {DATASET_ABSTRACT}
+license: {LICENSE}
+license-url: {LICENSE_URL}
+url: "{DATASET_URL}"
+repository-code: {REPOSITORY_URL}
+doi: {DATASET_DOI}
+version: {DATASET_VERSION}
+date-released: {RELEASE_DATE}
+# Optional: Reference to related publication
+# preferred-citation:
+#   authors:
+#     - family-names: {PAPER_AUTHOR_FAMILY}
+#       given-names: {PAPER_AUTHOR_GIVEN}
+#   title: {PAPER_TITLE}
+#   type: article
+#   year: {PAPER_YEAR}
+#   doi: {PAPER_DOI}
