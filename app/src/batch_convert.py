@@ -1698,6 +1698,25 @@ def batch_convert_folder(
     if dry_run:
         log("💡 Run 'Copy to Project' when you're ready to execute.", "info")
 
+    # Update participants.tsv with all participant IDs found in converted files
+    if not dry_run and result.success_count > 0:
+        participant_ids = {
+            conv.subject 
+            for conv in result.converted 
+            if conv.success and conv.subject
+        }
+        
+        if participant_ids:
+            try:
+                from .utils.io import update_participants_tsv
+                update_participants_tsv(
+                    output_folder, 
+                    participant_ids,
+                    log_fn=lambda msg: log(msg, "info")
+                )
+            except Exception as e:
+                log(f"⚠️  Could not update participants.tsv: {e}", "warning")
+
     return result
 
 
