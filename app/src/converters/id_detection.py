@@ -20,10 +20,24 @@ class IdColumnNotDetectedError(ValueError):
     def __init__(self, available_columns: list[str], source_format: str):
         self.available_columns = available_columns
         self.source_format = source_format
+        
+        # Create helpful error message with context
+        format_names = {
+            "lsa": "LimeSurvey Archive (.lsa)",
+            "xlsx": "Excel file (.xlsx)",
+            "csv": "CSV file",
+            "tsv": "TSV file"
+        }
+        format_name = format_names.get(source_format, source_format)
+        
         super().__init__(
-            f"Cannot auto-detect participant ID column for {source_format} data. "
-            f"Please select the ID column manually. "
-            f"Available columns: {', '.join(available_columns[:20])}"
+            f"❌ Participant ID column not found in {format_name}.\n\n"
+            f"PRISM looks for columns named: 'participant_id', 'prism_participant_id', 'participantid'\n"
+            f"{'For LimeSurvey: also accepts \'token\' or \'id\' if PRISMMETA columns are present.\n\n' if source_format == 'lsa' else '\n'}"
+            f"📋 Available columns in your file ({len(available_columns)} total):\n"
+            f"   {', '.join(available_columns[:30])}"
+            f"{'...' if len(available_columns) > 30 else ''}\n\n"
+            f"💡 Solution: Add a 'participant_id' column to your data, or select the ID column manually in the interface."
         )
 
 
