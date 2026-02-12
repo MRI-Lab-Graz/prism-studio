@@ -3057,3 +3057,133 @@ def limesurvey_save_to_project():
             "errors": errors if errors else None,
         }
     )
+
+
+@tools_bp.route("/api/fix-participants-bids", methods=["POST"])
+def fix_participants_bids():
+    """
+    Fix common BIDS compliance issues in participants.tsv:
+    - Convert age/numeric columns from strings to numbers
+    - Convert sex column from numeric codes (1,2,3) to BIDS values (M,F,O)
+    """
+    import pandas as pd
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "error": "No data provided"}), 400
+    
+    file_path = data.get("file_path")
+    sex_mapping = data.get("sex_mapping", {1: "M", 2: "F", 3: "O", "1": "M", "2": "F", "3": "O"})
+    dry_run = data.get("dry_run", False)
+    
+    if not file_path:
+        return jsonify({"success": False, "error": "No file path provided"}), 400
+    
+    file_path = Path(file_path).expanduser().resolve()
+    if not file_path.exists():
+        return jsonify({"success": False, "error": f"File not found: {file_path}"}), 404
+    
+    try:
+        # Read TSV
+        df = pd.read_csv(file_path, sep="\t", dtype=str)
+        original_df = df.copy()
+        changes = []
+        
+        # Fix 1: Convert age and other numeric columns
+        numeric_columns = ["age", "height", "weight", "years_of_education"]
+        for col in df.columns:
+            col_lower = col.lower()
+            if col_lower in numeric_columns:
+                try:
+                    numeric_values = pd.to_numeric(df[col], errors="coerce")
+                    numeric_count = numeric_values.notna().sum()
+                    
+                    if numeric_count > 0:
+                        original_sample = df[col].dropna().head(3).tolist()
+                        df[col] = numeric_values
+                        new_sample = df[col].dropna().head(3).tolist()
+                        
+                        if str(original_sample) != str(new_sample):
+                            changes.append({
+                                "column": col,
+                                "type": "numeric_conversion",
+                                "before": original_sample,
+                                "after": new_sample,
+                                "count": int(numeric_count)
+                            })
+                except Exception:
+                    pass
+        
+        # Fix 2: Convert sex column from numeric codes to M/F/O
+        sex_col = None
+        for col in df.columns:
+            if col.lower() in ["sex", "gender"]:
+                sex_col = col
+                break
+        
+        if sex_col:
+            unique_values = df[sex_col].dropna().unique()
+            is_numeric_coded = all(
+                str(v).strip() in ["1", "2", "3", "0"] or pd.isna(v)
+                for v in df[sex_col]
+            )
+            
+            if is_numeric_coded:
+                original_values = df[sex_col].copy()
+                # Convert values using both string and int key lookup for robustness
+                def convert_sex_code(x):
+                    if pd.isna(x):
+                        return x
+                    # Try both string and int lookup
+                    str_key = str(x).strip()
+                    if str_key in sex_mapping:
+                        return sex_mapping[str_key]
+                    try:
+                        int_key = int(x)
+                        if int_key in sex_mapping:
+                            return sex_mapping[int_key]
+                    except (ValueError, TypeError):
+                        pass
+                    return x  # Return original if no mapping found
+                
+                df[sex_col] = df[sex_col].map(convert_sex_code)
+                
+                before_counts = original_values.value_counts().to_dict()
+                after_counts = df[sex_col].value_counts().to_dict()
+                
+                changes.append({
+                    "column": sex_col,
+                    "type": "sex_code_conversion",
+                    "mapping": sex_mapping,
+                    "before": before_counts,
+                    "after": after_counts
+                })
+        
+        if not changes:
+            return jsonify({
+                "success": True,
+                "message": "No changes needed - file is already BIDS compliant",
+                "changes": []
+            })
+        
+        if dry_run:
+            return jsonify({
+                "success": True,
+                "message": f"Would fix {len(changes)} issues",
+                "changes": changes,
+                "dry_run": True
+            })
+        
+        # Write fixed TSV with no quoting to ensure numeric values stay unquoted
+        import csv
+        df.to_csv(file_path, sep="\t", index=False, na_rep="n/a", quoting=csv.QUOTE_NONE, escapechar='\\')
+        
+        return jsonify({
+            "success": True,
+            "message": f"Fixed {len(changes)} issues in {file_path.name}",
+            "changes": changes,
+            "file_path": str(file_path)
+        })
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
