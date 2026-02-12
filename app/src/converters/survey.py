@@ -993,7 +993,7 @@ def _copy_templates_to_project(
     Args:
         templates: Dict of loaded templates (task -> {path, json})
         tasks_with_data: Set of tasks that were actually used
-        dataset_root: Root of the dataset (parent of rawdata/)
+        dataset_root: Root of the dataset (where sub-XX folders and code/ are)
         language: Language used for localization
         technical_overrides: Any technical field overrides applied
     """
