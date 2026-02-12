@@ -6,7 +6,7 @@
 <h1 align="center">PRISM Studio</h1>
 
 <p align="center">
-  <strong>Psychological Research Information Standard for Metadata</strong>
+  <strong>Psychological Research Information System &amp; Management</strong>
 </p>
 
 <p align="center">

@@ -3,7 +3,7 @@
 PRISM Documentation
 =============================
 
-**PRISM** (Psychological Research Information Structure for Metadata) is a validation and metadata framework for psychological experiment datasets. It extends the BIDS standard to support modalities common in psychological research—like surveys, biometrics, and eyetracking—while ensuring your data remains **fully compatible with existing BIDS tools**.
+**PRISM** (Psychological Research Information System & Management) is a validation and metadata framework for psychological experiment datasets. It extends the BIDS standard to support modalities common in psychological research—like surveys, biometrics, and eyetracking—while ensuring your data remains **fully compatible with existing BIDS tools**.
 
 .. important::
    PRISM is an **add-on to BIDS**, not a replacement. Your PRISM-validated datasets will still work with fMRIPrep, MRIQC, and all other BIDS apps.
