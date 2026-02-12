@@ -37,6 +37,34 @@ def set_current_project(path: str, name: str = None):
     session["current_project_name"] = name or Path(path).name
 
 
+def get_bids_file_path(project_path: Path, filename: str) -> Path:
+    """Get path to a BIDS metadata file, checking both root and rawdata/ folder.
+    
+    BIDS standard says participants.tsv, participants.json, and dataset_description.json
+    belong in the dataset ROOT. However, some DataLad-style projects use rawdata/ subfolder.
+    This function checks both locations and returns the correct path.
+    
+    Args:
+        project_path: Path to the project root
+        filename: Name of the file (e.g., 'participants.json', 'dataset_description.json')
+    
+    Returns:
+        Path to the file (in root if exists, otherwise rawdata/, even if neither exists)
+    """
+    # Check root first (standard BIDS)
+    root_path = project_path / filename
+    if root_path.exists():
+        return root_path
+    
+    # Check rawdata/ folder (DataLad-style)
+    rawdata_path = project_path / "rawdata" / filename
+    if rawdata_path.exists():
+        return rawdata_path
+    
+    # If neither exists, prefer root (standard BIDS for new files)
+    return root_path
+
+
 @projects_bp.route("/projects")
 def projects_page():
     """Render the Projects management page."""
@@ -511,8 +539,8 @@ def get_library_path():
                     if yoda_library.exists()
                     else (legacy_library / "biometrics").exists()
                 ),
-                "has_participants": (
-                    project_path / "rawdata" / "participants.json"
+                "has_participants": get_bids_file_path(
+                    project_path, "participants.json"
                 ).exists(),
                 "has_external_library": library_info.get("effective_external_path")
                 is not None,
@@ -534,7 +562,7 @@ def get_participants_schema():
         return jsonify({"success": False, "error": "No project selected"}), 400
 
     project_path = Path(current["path"])
-    participants_path = project_path / "rawdata" / "participants.json"
+    participants_path = get_bids_file_path(project_path, "participants.json")
 
     if not participants_path.exists():
         return jsonify(
@@ -610,7 +638,7 @@ def save_participants_schema():
         }
 
     project_path = Path(current["path"])
-    participants_path = project_path / "rawdata" / "participants.json"
+    participants_path = get_bids_file_path(project_path, "participants.json")
 
     try:
         with open(participants_path, "w", encoding="utf-8") as f:
@@ -646,7 +674,7 @@ def get_dataset_description():
         return jsonify({"success": False, "error": "No project selected"}), 400
 
     project_path = Path(current["path"])
-    desc_path = project_path / "rawdata" / "dataset_description.json"
+    desc_path = get_bids_file_path(project_path, "dataset_description.json")
 
     if not desc_path.exists():
         return (
@@ -689,7 +717,7 @@ def save_dataset_description():
 
     description = data["description"]
     project_path = Path(current["path"])
-    desc_path = project_path / "rawdata" / "dataset_description.json"
+    desc_path = get_bids_file_path(project_path, "dataset_description.json")
 
     try:
         # Ensure name remains standard BIDS 'Name' (case sensitivity)
@@ -745,7 +773,7 @@ def get_participants_columns():
         return jsonify({"error": "No project selected"}), 400
 
     project_path = Path(current["path"])
-    tsv_path = project_path / "rawdata" / "participants.tsv"
+    tsv_path = get_bids_file_path(project_path, "participants.tsv")
 
     if not tsv_path.exists():
         return jsonify({"columns": {}})
@@ -1244,7 +1272,7 @@ def _compute_participant_stats(project_path: Path, lang: str = "en") -> dict | N
     sex_counts, additional_columns.  Returns None when the file is
     missing or unreadable.
     """
-    tsv_path = project_path / "rawdata" / "participants.tsv"
+    tsv_path = get_bids_file_path(project_path, "participants.tsv")
     if not tsv_path.exists():
         return None
 
@@ -1608,7 +1636,7 @@ def generate_methods_section():
 
     # Read dataset_description.json
     dataset_desc = None
-    desc_path = project_path / "rawdata" / "dataset_description.json"
+    desc_path = get_bids_file_path(project_path, "dataset_description.json")
     if desc_path.exists():
         try:
             with open(desc_path, "r", encoding="utf-8") as f:
@@ -2185,8 +2213,8 @@ def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
             }
 
     # --- Sample size from participants.tsv ---
-    tsv_path = rawdata / "participants.tsv" if rawdata.is_dir() else None
-    if tsv_path and tsv_path.exists():
+    tsv_path = get_bids_file_path(project_path, "participants.tsv")
+    if tsv_path.exists():
         try:
             import pandas as pd
 
@@ -2277,7 +2305,7 @@ def get_study_metadata():
 
     # Read dataset_description for completeness calculation
     dataset_desc = None
-    desc_path = project_path / "rawdata" / "dataset_description.json"
+    desc_path = get_bids_file_path(project_path, "dataset_description.json")
     if desc_path.exists():
         try:
             with open(desc_path, "r", encoding="utf-8") as f:
@@ -2330,7 +2358,7 @@ def save_study_metadata():
 
     # Recompute completeness
     dataset_desc = None
-    desc_path = project_path / "rawdata" / "dataset_description.json"
+    desc_path = get_bids_file_path(project_path, "dataset_description.json")
     if desc_path.exists():
         try:
             with open(desc_path, "r", encoding="utf-8") as f:
