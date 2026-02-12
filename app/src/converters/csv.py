@@ -38,7 +38,7 @@ def _ensure_participants(
     df, id_col, output_root, library_path, candidates=None, participant_schema=None
 ):
     """Create participants.tsv/json. Prefer explicit participant schema or library participants.json; otherwise infer."""
-    rawdata_dir = os.path.join(output_root, "rawdata")
+    rawdata_dir = output_root
     os.makedirs(rawdata_dir, exist_ok=True)
 
     # Resolve participants.json path, checking parent folders as well
@@ -141,7 +141,7 @@ def process_dataframe(
     df, schemas, output_root, library_path, session_override=None, run_override=None
 ):
     """Convert in-memory dataframe to BIDS TSV files based on JSON schemas."""
-    rawdata_dir = os.path.join(output_root, "rawdata")
+    rawdata_dir = output_root
     os.makedirs(rawdata_dir, exist_ok=True)
 
     # Ensure dataset_description.json exists

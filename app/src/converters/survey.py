@@ -752,17 +752,14 @@ def _load_participants_mapping(output_root: Path, log_fn=None) -> dict | None:
     participants.tsv and how they map to standard variable names.
 
     Args:
-        output_root: Path to the output root (rawdata/ or dataset root)
+        output_root: Path to the dataset root (where participants.tsv will be created)
         log_fn: Optional logging function (callable taking message string)
 
     Returns:
         Mapping dict if found, None otherwise
     """
-    # Determine project root from output_root
-    if output_root.name == "rawdata":
-        project_root = output_root.parent
-    else:
-        project_root = output_root
+    # output_root is the dataset root
+    project_root = output_root
 
     # Search locations for participants_mapping.json
     candidates = [
@@ -1000,17 +997,8 @@ def _copy_templates_to_project(
         language: Language used for localization
         technical_overrides: Any technical field overrides applied
     """
-    # Determine project root (parent of rawdata/)
-    if dataset_root.name == "rawdata":
-        project_root = dataset_root.parent
-    else:
-        # Dataset root might be the project root itself
-        rawdata_path = dataset_root / "rawdata"
-        if rawdata_path.exists() and rawdata_path.is_dir():
-            project_root = dataset_root
-        else:
-            # Can't determine project root, skip copying
-            return
+    # dataset_root is the project root (where sub-XX folders are)
+    project_root = dataset_root
 
     # Create code/library/survey/ folder (YODA-compliant)
     library_dir = project_root / "code" / "library" / "survey"
