@@ -98,24 +98,19 @@ class ProjectManager:
             # Create project root
             project_path.mkdir(parents=True, exist_ok=True)
 
-            # Create BIDS root (rawdata/)
-            rawdata_path = project_path / "rawdata"
-            rawdata_path.mkdir(exist_ok=True)
-            created_files.append("rawdata/")
-
-            # 1. Create dataset_description.json in rawdata/
-            desc_path = rawdata_path / "dataset_description.json"
+            # 1. Create dataset_description.json in root (BIDS standard)
+            desc_path = project_path / "dataset_description.json"
             desc_content = self._create_dataset_description(name, config)
             CrossPlatformFile.write_text(
                 str(desc_path), json.dumps(desc_content, indent=2)
             )
-            created_files.append("rawdata/dataset_description.json")
+            created_files.append("dataset_description.json")
 
-            # 2. Create .bidsignore in rawdata/
-            bidsignore_path = rawdata_path / ".bidsignore"
+            # 2. Create .bidsignore in root
+            bidsignore_path = project_path / ".bidsignore"
             bidsignore_content = self._create_bidsignore(modalities)
             CrossPlatformFile.write_text(str(bidsignore_path), bidsignore_content)
-            created_files.append("rawdata/.bidsignore")
+            created_files.append(".bidsignore")
 
             # 3. Create .prismrc.json in root (controls project-wide validation)
             prismrc_path = project_path / ".prismrc.json"
@@ -153,11 +148,11 @@ class ProjectManager:
             CrossPlatformFile.write_text(str(citation_path), citation_content)
             created_files.append("CITATION.cff")
 
-            # 6. Create CHANGES file in rawdata/
-            changes_path = rawdata_path / "CHANGES"
+            # 6. Create CHANGES file in root (BIDS standard)
+            changes_path = project_path / "CHANGES"
             changes_content = f"1.0.0 {date.today().isoformat()}\n  - Initial dataset structure created and validated via PRISM.\n"
             CrossPlatformFile.write_text(str(changes_path), changes_content)
-            created_files.append("rawdata/CHANGES")
+            created_files.append("CHANGES")
 
             # 7. Create essential folders only (sourcedata, derivatives)
             # sourcedata/
