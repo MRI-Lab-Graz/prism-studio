@@ -171,8 +171,8 @@ def main() -> int:
     )
     parser.add_argument(
         "--entry",
-        default="prism-studio.py",
-        help="Entry script to package (default: prism-studio.py)",
+        default="app/prism-studio.py",
+        help="Entry script to package (default: app/prism-studio.py)",
     )
     parser.add_argument(
         "--name",
