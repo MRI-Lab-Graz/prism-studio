@@ -1,6 +1,6 @@
 # PRISM Walkthrough: A Comprehensive Guide for New Users
 
-Welcome to PRISM (Psychological Research Information Standard for Metadata). This guide will walk you through everything from installation to generating your first validated dataset and manuscript boilerplate.
+Welcome to PRISM (Psychological Research Information System & Management). This guide will walk you through everything from installation to generating your first validated dataset and manuscript boilerplate.
 
 This document is intentionally a **hands-on walkthrough**. For complete option-by-option documentation, see:
 
