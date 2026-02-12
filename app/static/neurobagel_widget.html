@@ -472,6 +472,24 @@ window.autoDetectDataType = function(colName, uniqueValues) {
   return 'text';
 };
 
+// Fetch NeuroBagel participants dictionary from API
+window.fetchNeurobagelParticipants = async function() {
+  console.log('📡 Fetching NeuroBagel participants data...');
+  try {
+    const response = await fetch('/api/neurobagel/participants');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    const data = await response.json();
+    console.log('✅ Successfully fetched NeuroBagel data');
+    return data;
+  } catch (error) {
+    console.error('❌ Failed to fetch NeuroBagel data:', error);
+    // Return empty structure to allow widget to continue
+    return { properties: {} };
+  }
+};
+
 window.renderNeurobagelWidget = async function() {
   console.log('🧠 renderNeurobagelWidget called');
   const data = await window.fetchNeurobagelParticipants();
