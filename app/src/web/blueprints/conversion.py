@@ -17,6 +17,11 @@ from werkzeug.utils import secure_filename
 from src.web.utils import list_survey_template_languages, sanitize_jsonable
 from src.web import run_validation
 
+try:
+    import defusedxml.ElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
+
 # Import shared utilities
 from .conversion_utils import (
     participant_json_candidates,
@@ -195,6 +200,11 @@ def _register_session_in_project(
 
 def _format_unmatched_groups_response(uge, log_messages=None):
     """Build the JSON response dict for an UnmatchedGroupsError."""
+    def _safe_prism_json(value):
+        if isinstance(value, dict):
+            return value
+        return {}
+
     payload = {
         "error": "unmatched_groups",
         "message": str(uge),
@@ -205,13 +215,16 @@ def _format_unmatched_groups_response(uge, log_messages=None):
                 "item_count": len(
                     [
                         k
-                        for k in g["prism_json"]
+                        for k in _safe_prism_json(g.get("prism_json"))
                         if k not in _NON_ITEM_TOPLEVEL_KEYS
-                        and isinstance(g["prism_json"].get(k), dict)
+                        and isinstance(
+                            _safe_prism_json(g.get("prism_json")).get(k), dict
+                        )
                     ]
                 ),
-                "item_codes": g["item_codes"][:10],
-                "prism_json": g["prism_json"],
+                # item_codes is a set, convert to sorted list for display
+                "item_codes": sorted(g.get("item_codes", []))[:10],
+                "prism_json": _safe_prism_json(g.get("prism_json")),
             }
             for g in uge.unmatched
         ],
@@ -860,10 +873,39 @@ def api_survey_convert_preview():
         )
     except UnmatchedGroupsError as uge:
         return jsonify(_format_unmatched_groups_response(uge)), 409
+    except zipfile.BadZipFile as e:
+        return jsonify({
+            "error": "❌ Invalid or corrupted archive file.\n\n"
+                     "The .lsa file appears to be damaged or not a valid LimeSurvey Archive.\n\n"
+                     "💡 Solutions:\n"
+                     "   • Re-export the survey from LimeSurvey\n"
+                     "   • Ensure the file was completely downloaded\n"
+                     "   • Try uploading from a different location"
+        }), 400
+    except ET.ParseError as e:
+        return jsonify({
+            "error": f"❌ XML parsing error in LimeSurvey archive.\n\n"
+                     f"The survey structure file (.lss) inside the archive is malformed.\n\n"
+                     f"Technical details: {str(e)}\n\n"
+                     f"💡 Solutions:\n"
+                     f"   • Re-export the survey from LimeSurvey\n"
+                     f"   • Check for special characters in question text that might cause XML issues"
+        }), 400
     except Exception as e:
         import traceback
-
-        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+        
+        # Provide more context for common errors
+        error_msg = str(e)
+        if "No module named" in error_msg:
+            error_msg = f"❌ Missing Python package: {error_msg}\n\n💡 Run the setup script to install dependencies."
+        elif "Permission denied" in error_msg:
+            error_msg = f"❌ File access denied: {error_msg}\n\n💡 Check file permissions and try again."
+        elif "not found" in error_msg.lower() and "column" not in error_msg.lower():
+            error_msg = f"❌ File or resource not found: {error_msg}\n\n💡 Ensure all files are uploaded and paths are correct."
+        elif not error_msg or error_msg == "":
+            error_msg = "❌ An unknown error occurred during conversion.\n\nCheck the traceback for details."
+        
+        return jsonify({"error": error_msg, "traceback": traceback.format_exc()}), 500
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -1106,8 +1148,38 @@ def api_survey_convert():
             resp.headers["X-Prism-Detected-SoftwareVersion"] = str(detected_version)
 
         return resp
+    except zipfile.BadZipFile:
+        return jsonify({
+            "error": "❌ Invalid or corrupted archive file.\n\n"
+                     "The .lsa file appears to be damaged or not a valid LimeSurvey Archive.\n\n"
+                     "💡 Solutions:\n"
+                     "   • Re-export the survey from LimeSurvey\n"
+                     "   • Ensure the file was completely downloaded\n"
+                     "   • Try uploading from a different location"
+        }), 400
+    except ET.ParseError as e:
+        return jsonify({
+            "error": f"❌ XML parsing error in LimeSurvey archive.\n\n"
+                     f"The survey structure file (.lss) inside the archive is malformed.\n\n"
+                     f"Technical details: {str(e)}\n\n"
+                     f"💡 Solutions:\n"
+                     f"   • Re-export the survey from LimeSurvey\n"
+                     f"   • Check for special characters in question text that might cause XML issues"
+        }), 400
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        
+        error_msg = str(e)
+        if "No module named" in error_msg:
+            error_msg = f"❌ Missing Python package: {error_msg}\n\n💡 Run the setup script to install dependencies."
+        elif "Permission denied" in error_msg:
+            error_msg = f"❌ File access denied: {error_msg}\n\n💡 Check file permissions and try again."
+        elif "not found" in error_msg.lower() and "column" not in error_msg.lower():
+            error_msg = f"❌ File or resource not found: {error_msg}"
+        elif not error_msg:
+            error_msg = "❌ An unknown error occurred during conversion. Check the traceback for details."
+        
+        return jsonify({"error": error_msg, "traceback": traceback.format_exc()}), 500
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
@@ -1688,8 +1760,12 @@ def api_biometrics_detect():
         )
 
         return jsonify({"tasks": detected_tasks})
+    except zipfile.BadZipFile:
+        return jsonify({"error": "❌ Invalid archive file. The file may be corrupted."}), 400
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        error_msg = str(e) or "Unknown error occurred"
+        return jsonify({"error": error_msg, "traceback": traceback.format_exc()}), 500
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
 
