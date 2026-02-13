@@ -45,24 +45,6 @@
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
     }
-    .modality-checkbox {
-        padding: 10px 15px;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        margin-bottom: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    .modality-checkbox:hover {
-        background-color: #f8f9fa;
-    }
-    .modality-checkbox input:checked + label {
-        font-weight: 600;
-    }
-    .modality-checkbox input:checked ~ .modality-checkbox {
-        border-color: #0d6efd;
-        background-color: #e7f1ff;
-    }
     .validation-result {
         padding: 20px;
         border-radius: 8px;
@@ -132,8 +114,6 @@
         font-size: 0.75rem;
     }
     .sm-field-required::after { content: ' *'; color: #dc3545; font-weight: bold; }
-    .condition-group-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-    .condition-group-row input { flex: 1; }
     .sm-hint-badge { transition: opacity 0.2s; }
     .sm-hint-badge:hover { opacity: 0.8; }
 </style>
@@ -244,7 +224,7 @@
                                         </ul>
                                         <strong class="small">Recruitment:</strong>
                                         <ul class="mb-1 small">
-                                            <li>Method, Location, Period Start</li>
+                                            <li>Method, Location(s), Period Start, Period End, Financial Compensation</li>
                                         </ul>
                                     </div>
                                     <div class="col-md-6">
@@ -252,11 +232,6 @@
                                         <ul class="mb-1 small">
                                             <li>Inclusion Criteria</li>
                                             <li>Exclusion Criteria</li>
-                                        </ul>
-                                        <strong class="small">Data Collection:</strong>
-                                        <ul class="mb-1 small">
-                                            <li>Platform</li>
-                                            <li>Method</li>
                                         </ul>
                                         <strong class="small">Procedure:</strong>
                                         <ul class="mb-0 small">
@@ -384,9 +359,12 @@
                                     <input type="text" class="form-control form-control-sm" id="metadataName" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Authors (comma separated) <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control form-control-sm" id="metadataAuthors" placeholder="Author 1, Author 2" required>
-                                    <small class="text-muted">At least one author required.</small>
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Authors <span class="text-danger">*</span></label>
+                                    <div id="metadataAuthorsList" class="d-flex flex-column gap-2"></div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addAuthorRow">
+                                        <i class="fas fa-user-plus me-1"></i>Add Author
+                                    </button>
+                                    <small class="text-muted d-block">Enter first and last name for each author.</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">License <span class="text-danger">*</span></label>
@@ -516,7 +494,7 @@
                     <div class="collapse show" id="smStudyDesign">
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <label class="form-label fw-bold small sm-field-required">Study Design Type</label>
                                     <select class="form-select form-select-sm" id="smSDType" onchange="toggleExperimentalFields()">
                                         <option value="">-- Select --</option>
@@ -531,7 +509,16 @@
                                         <option value="other">Other</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small">Condition Type</label>
+                                    <select class="form-select form-select-sm" id="smSDConditionType">
+                                        <option value="">-- N/A --</option>
+                                        <option value="between-subjects">Between-subjects</option>
+                                        <option value="within-subjects">Within-subjects</option>
+                                        <option value="mixed">Mixed</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
                                     <label class="form-label fw-bold small">Type Description</label>
                                     <input type="text" class="form-control form-control-sm" id="smSDTypeDesc"
                                            placeholder="e.g. 2x2 factorial design">
@@ -577,33 +564,50 @@
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small sm-field-required">Method</label>
-                                    <input type="text" class="form-control form-control-sm" id="smRecMethod"
-                                           placeholder="e.g. Online ads and university mailing lists">
+                                    <select class="form-select form-select-sm" id="smRecMethod" multiple>
+                                        <option value="">-- Select --</option>
+                                        <option value="online-ads">Online ads</option>
+                                        <option value="email-lists">University mailing lists</option>
+                                        <option value="participant-pool">Participant pool</option>
+                                        <option value="clinical-referral">Clinical referral</option>
+                                        <option value="community-outreach">Community outreach</option>
+                                        <option value="school-recruitment">School recruitment</option>
+                                        <option value="social-media">Social media</option>
+                                        <option value="flyers-posters">Flyers/posters</option>
+                                        <option value="snowball">Snowball sampling</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    <small class="text-muted">Hold Cmd/Ctrl to select multiple.</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small sm-field-required">Location</label>
-                                    <input type="text" class="form-control form-control-sm" id="smRecLocation"
-                                           placeholder="e.g. Graz, Austria">
+                                    <div id="smRecLocationList" class="d-flex flex-column gap-2"></div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addRecLocationRow">
+                                        <i class="fas fa-plus me-1"></i>Add Location
+                                    </button>
+                                    <small class="text-muted d-block">Add one or more locations.</small>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold small sm-field-required">Period Start</label>
-                                    <input type="text" class="form-control form-control-sm" id="smRecPeriodStart"
-                                           placeholder="YYYY-MM">
+                                    <div class="d-flex gap-2">
+                                        <select class="form-select form-select-sm" id="smRecPeriodStartYear" required></select>
+                                        <select class="form-select form-select-sm" id="smRecPeriodStartMonth" required></select>
+                                    </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label fw-bold small">Period End</label>
-                                    <input type="text" class="form-control form-control-sm" id="smRecPeriodEnd"
-                                           placeholder="YYYY-MM">
+                                    <label class="form-label fw-bold small sm-field-required">Period End</label>
+                                    <div class="d-flex gap-2">
+                                        <select class="form-select form-select-sm" id="smRecPeriodEndYear" required></select>
+                                        <select class="form-select form-select-sm" id="smRecPeriodEndMonth" required></select>
+                                    </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label fw-bold small">Compensation</label>
-                                    <input type="text" class="form-control form-control-sm" id="smRecCompensation"
-                                           placeholder="e.g. 15 EUR">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold small">Platform</label>
-                                    <input type="text" class="form-control form-control-sm" id="smRecPlatform"
-                                           placeholder="e.g. Prolific">
+                                    <label class="form-label fw-bold small sm-field-required">Financial Compensation</label>
+                                    <select class="form-select form-select-sm" id="smRecCompensation" required>
+                                        <option value="">-- Select --</option>
+                                        <option value="Financial compensation">Yes</option>
+                                        <option value="No financial compensation">No</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -639,67 +643,6 @@
                                     <label class="form-label fw-bold small">Power Analysis</label>
                                     <input type="text" class="form-control form-control-sm" id="smEligPower"
                                            placeholder="e.g. G*Power, medium effect size d=0.5, alpha=.05, power=.80">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Data Collection -->
-                <div class="mb-3">
-                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#smDataCollection">
-                        <i class="fas fa-laptop me-1"></i> Data Collection
-                        <span class="float-end" id="smDataCollectionBadge"></span>
-                    </button>
-                    <div class="collapse" id="smDataCollection">
-                        <div class="card card-body border-0 bg-light mt-1">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold small sm-field-required">Platform</label>
-                                    <input type="text" class="form-control form-control-sm" id="smDCPlatform"
-                                           placeholder="e.g. LimeSurvey">
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label fw-bold small">Version</label>
-                                    <input type="text" class="form-control form-control-sm" id="smDCPlatformVersion"
-                                           placeholder="e.g. 6.3">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold small sm-field-required">Method</label>
-                                    <select class="form-select form-select-sm" id="smDCMethod">
-                                        <option value="">-- Select --</option>
-                                        <option value="online">Online</option>
-                                        <option value="in-person">In-person</option>
-                                        <option value="phone">Phone</option>
-                                        <option value="mixed">Mixed</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold small">Supervision</label>
-                                    <select class="form-select form-select-sm" id="smDCSupervision">
-                                        <option value="">-- Select --</option>
-                                        <option value="unsupervised">Unsupervised</option>
-                                        <option value="remote-supervised">Remote supervised</option>
-                                        <option value="in-person-supervised">In-person supervised</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small">Setting</label>
-                                    <input type="text" class="form-control form-control-sm" id="smDCSetting"
-                                           placeholder="e.g. University laboratory">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold small">Avg. Duration</label>
-                                    <input type="number" class="form-control form-control-sm" id="smDCDurationValue"
-                                           min="0" step="1" placeholder="Value">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold small">Unit</label>
-                                    <select class="form-select form-select-sm" id="smDCDurationUnit">
-                                        <option value="minutes">minutes</option>
-                                        <option value="hours">hours</option>
-                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -814,37 +757,6 @@
                                     <textarea class="form-control form-control-sm" id="smReferences" rows="4"
                                               placeholder="One reference per line or formatted citations..."></textarea>
                                     <small class="text-muted">References used within the README</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Conditions -->
-                <div class="mb-3">
-                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#smConditions">
-                        <i class="fas fa-random me-1"></i> Conditions
-                        <span class="float-end" id="smConditionsBadge"></span>
-                    </button>
-                    <div class="collapse" id="smConditions">
-                        <div class="card card-body border-0 bg-light mt-1">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold small">Condition Type</label>
-                                    <select class="form-select form-select-sm" id="smCondType">
-                                        <option value="">-- N/A --</option>
-                                        <option value="between-subjects">Between-subjects</option>
-                                        <option value="within-subjects">Within-subjects</option>
-                                        <option value="mixed">Mixed</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-8">
-                                    <label class="form-label fw-bold small">Groups</label>
-                                    <div id="smCondGroupsContainer"></div>
-                                    <button type="button" class="btn btn-sm btn-outline-info mt-1" onclick="addConditionGroup()">
-                                        <i class="fas fa-plus me-1"></i>Add Group
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1456,6 +1368,59 @@
         }
     }
 
+    // ===== HELPER FUNCTIONS =====
+    
+    /**
+     * Manage button loading state
+     * @param {HTMLElement} btn - Button element
+     * @param {boolean} isLoading - True to show loading, false to restore
+     * @param {string} loadingText - Text to show when loading
+     * @param {string} originalText - Text to restore (pass when isLoading=false)
+     * @returns {string} Current innerHTML (for saving before setting loading)
+     */
+    function setButtonLoading(btn, isLoading, loadingText = 'Loading...', originalText = null) {
+        if (isLoading) {
+            const current = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${loadingText}`;
+            btn.disabled = true;
+            return current;
+        } else {
+            btn.innerHTML = originalText || btn.innerHTML.replace(/<i[^>]*spinner[^>]*>.*?<\/i>\s*/, '');
+            btn.disabled = false;
+            return null;
+        }
+    }
+
+    /**
+     * Show an alert message in a container
+     * @param {string} containerId - ID of container element
+     * @param {string} type - Alert type: 'success', 'danger', 'warning', 'info'
+     * @param {string} title - Alert title (can include HTML)
+     * @param {string} message - Alert message (can include HTML)
+     */
+    function showAlert(containerId, type, title, message) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        const iconMap = {
+            'success': 'check-circle',
+            'danger': 'exclamation-circle',
+            'warning': 'exclamation-triangle',
+            'info': 'info-circle'
+        };
+        
+        const icon = iconMap[type] || 'info-circle';
+        const titleHtml = title ? `<h5><i class="fas fa-${icon} me-2"></i>${title}</h5>` : '';
+        
+        container.innerHTML = `
+            <div class="alert alert-${type}">
+                ${titleHtml}
+                ${message ? `<p class="mb-0">${message}</p>` : ''}
+            </div>
+        `;
+        container.style.display = 'block';
+    }
+
     // Load library info (both global and project)
     async function loadLibraryInfo() {
         try {
@@ -1537,9 +1502,7 @@
         e.preventDefault();
 
         const btn = this.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
-        btn.disabled = true;
+        const originalText = setButtonLoading(btn, true, 'Saving...');
 
         const libraryPath = document.getElementById('globalLibraryPath').value.trim();
         const recipesPath = document.getElementById('globalRecipesPath').value.trim();
@@ -1592,8 +1555,7 @@
                 </div>
             `;
         } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            setButtonLoading(btn, false, null, originalText);
         }
     });
 
@@ -1667,6 +1629,9 @@
             section.classList.remove('active');
         });
         document.getElementById('section-' + type).classList.add('active');
+
+        // Keep Study Metadata visible for create flow
+        showStudyMetadataCard();
     }
 
     // Browse button for project location
@@ -1734,6 +1699,227 @@
         }
     });
 
+    // ===== AUTHORS =====
+
+    function _formatAuthor(firstName, lastName) {
+        const first = (firstName || '').trim();
+        const last = (lastName || '').trim();
+        if (first && last) return `${last}, ${first}`;
+        return last || first || '';
+    }
+
+    function _parseAuthor(author) {
+        if (!author) return { first: '', last: '' };
+        if (author.includes(',')) {
+            const parts = author.split(',');
+            return { last: parts[0].trim(), first: (parts[1] || '').trim() };
+        }
+        const tokens = author.trim().split(/\s+/).filter(Boolean);
+        if (tokens.length <= 1) return { first: tokens[0] || '', last: '' };
+        return { first: tokens[0], last: tokens.slice(1).join(' ') };
+    }
+
+    function addAuthorRow(firstName = '', lastName = '') {
+        const list = document.getElementById('metadataAuthorsList');
+        if (!list) return;
+
+        const row = document.createElement('div');
+        row.className = 'd-flex gap-2 align-items-center author-row';
+        row.innerHTML = `
+            <input type="text" class="form-control form-control-sm author-first" placeholder="First" value="${firstName}">
+            <input type="text" class="form-control form-control-sm author-last" placeholder="Last" value="${lastName}">
+            <button type="button" class="btn btn-outline-danger btn-sm remove-author">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+
+        row.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => {
+                updateCreateProjectButton();
+            });
+        });
+
+        row.querySelector('.remove-author').addEventListener('click', () => {
+            row.remove();
+            if (!document.querySelector('#metadataAuthorsList .author-row')) {
+                addAuthorRow();
+            }
+            updateCreateProjectButton();
+        });
+
+        list.appendChild(row);
+    }
+
+    function getAuthorsList() {
+        const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+        const authors = [];
+        rows.forEach(row => {
+            const first = row.querySelector('.author-first')?.value || '';
+            const last = row.querySelector('.author-last')?.value || '';
+            const formatted = _formatAuthor(first, last);
+            if (formatted) authors.push(formatted);
+        });
+        return authors;
+    }
+
+    function hasAtLeastOneAuthor() {
+        return getAuthorsList().length > 0;
+    }
+
+    function setAuthorsList(authors) {
+        const list = document.getElementById('metadataAuthorsList');
+        if (!list) return;
+        list.innerHTML = '';
+        if (!Array.isArray(authors) || authors.length === 0) {
+            addAuthorRow();
+            return;
+        }
+        authors.forEach(author => {
+            const parsed = _parseAuthor(author);
+            addAuthorRow(parsed.first, parsed.last);
+        });
+    }
+
+    // ===== RECRUITMENT LOCATIONS =====
+
+    function addRecLocationRow(value = '') {
+        const list = document.getElementById('smRecLocationList');
+        if (!list) return;
+
+        const row = document.createElement('div');
+        row.className = 'd-flex gap-2 align-items-center rec-location-row';
+        row.innerHTML = `
+            <input type="text" class="form-control form-control-sm rec-location" placeholder="e.g. Graz, Austria" value="${value}">
+            <button type="button" class="btn btn-outline-danger btn-sm remove-location">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+
+        row.querySelector('.rec-location').addEventListener('input', () => {
+            updateCreateProjectButton();
+        });
+
+        row.querySelector('.remove-location').addEventListener('click', () => {
+            row.remove();
+            if (!document.querySelector('#smRecLocationList .rec-location-row')) {
+                addRecLocationRow();
+            }
+            updateCreateProjectButton();
+        });
+
+        list.appendChild(row);
+    }
+
+    function getRecLocationList() {
+        const rows = document.querySelectorAll('#smRecLocationList .rec-location-row');
+        const locations = [];
+        rows.forEach(row => {
+            const value = row.querySelector('.rec-location')?.value || '';
+            const trimmed = value.trim();
+            if (trimmed) locations.push(trimmed);
+        });
+        return locations;
+    }
+
+    function hasAtLeastOneRecLocation() {
+        return getRecLocationList().length > 0;
+    }
+
+    function setRecLocationList(locations) {
+        const list = document.getElementById('smRecLocationList');
+        if (!list) return;
+        list.innerHTML = '';
+        if (!Array.isArray(locations) || locations.length === 0) {
+            addRecLocationRow();
+            return;
+        }
+        locations.forEach(loc => addRecLocationRow(loc));
+    }
+
+    function getRecMethodList() {
+        const select = document.getElementById('smRecMethod');
+        if (!select) return [];
+        return Array.from(select.selectedOptions)
+            .map(opt => opt.value)
+            .filter(v => v && v.trim());
+    }
+
+    function hasAtLeastOneRecMethod() {
+        return getRecMethodList().length > 0;
+    }
+
+    function setRecMethodList(methods) {
+        const select = document.getElementById('smRecMethod');
+        if (!select) return;
+        const values = Array.isArray(methods) ? methods : [];
+        Array.from(select.options).forEach(opt => {
+            opt.selected = values.includes(opt.value);
+        });
+    }
+
+    function initYearMonthSelect(yearSelectId, monthSelectId) {
+        const yearSelect = document.getElementById(yearSelectId);
+        const monthSelect = document.getElementById(monthSelectId);
+        if (!yearSelect || !monthSelect) return;
+
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const startYear = currentYear - 20;
+        const endYear = currentYear;
+
+        yearSelect.innerHTML = '<option value="">Year</option>';
+        for (let y = endYear; y >= startYear; y -= 1) {
+            const opt = document.createElement('option');
+            opt.value = String(y);
+            opt.textContent = String(y);
+            yearSelect.appendChild(opt);
+        }
+
+        monthSelect.innerHTML = '<option value="">Month</option>';
+        const currentMonth = now.getMonth() + 1;
+        const orderedMonths = [];
+        for (let m = currentMonth; m <= 12; m += 1) orderedMonths.push(m);
+        for (let m = 1; m < currentMonth; m += 1) orderedMonths.push(m);
+        orderedMonths.forEach(m => {
+            const value = String(m).padStart(2, '0');
+            const opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = value;
+            monthSelect.appendChild(opt);
+        });
+    }
+
+    function getYearMonthValue(yearSelectId, monthSelectId) {
+        const year = document.getElementById(yearSelectId)?.value || '';
+        const month = document.getElementById(monthSelectId)?.value || '';
+        if (!year || !month) return '';
+        return `${year}-${month}`;
+    }
+
+    function setYearMonthValue(yearSelectId, monthSelectId, value) {
+        const yearSelect = document.getElementById(yearSelectId);
+        const monthSelect = document.getElementById(monthSelectId);
+        if (!value) {
+            if (yearSelect) yearSelect.value = '';
+            if (monthSelect) monthSelect.value = '';
+            return;
+        }
+        const parts = value.split('-');
+        if (parts.length < 2) return;
+        const year = parts[0];
+        const month = parts[1];
+        if (yearSelect) yearSelect.value = year;
+        if (monthSelect) monthSelect.value = month;
+    }
+
+    function hasRecPeriodStart() {
+        return Boolean(getYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth'));
+    }
+
+    function hasRecPeriodEnd() {
+        return Boolean(getYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth'));
+    }
+
     // ===== MANDATORY METADATA VALIDATION =====
     
     // Function to check if all mandatory fields across all tabs are filled
@@ -1741,22 +1927,21 @@
         const mandatoryFields = [
             // Basics (BIDS)
             { id: 'metadataName', name: 'Dataset Name' },
-            { id: 'metadataAuthors', name: 'Authors' },
+            { id: 'metadataAuthors', name: 'Authors', customCheck: hasAtLeastOneAuthor },
             { id: 'metadataLicense', name: 'License' },
             // Overview
             { id: 'smOverviewMain', name: 'Dataset Overview' },
             // Study Design
             { id: 'smSDType', name: 'Study Design Type' },
             // Recruitment
-            { id: 'smRecMethod', name: 'Recruitment Method' },
-            { id: 'smRecLocation', name: 'Recruitment Location' },
-            { id: 'smRecPeriodStart', name: 'Recruitment Period Start' },
+            { id: 'smRecMethod', name: 'Recruitment Method', customCheck: hasAtLeastOneRecMethod },
+            { id: 'smRecLocation', name: 'Recruitment Location', customCheck: hasAtLeastOneRecLocation },
+            { id: 'smRecPeriodStart', name: 'Recruitment Period Start', customCheck: hasRecPeriodStart },
+            { id: 'smRecPeriodEnd', name: 'Recruitment Period End', customCheck: hasRecPeriodEnd },
+            { id: 'smRecCompensation', name: 'Financial Compensation' },
             // Eligibility
             { id: 'smEligInclusion', name: 'Inclusion Criteria' },
             { id: 'smEligExclusion', name: 'Exclusion Criteria' },
-            // Data Collection
-            { id: 'smDCPlatform', name: 'Data Collection Platform' },
-            { id: 'smDCMethod', name: 'Data Collection Method' },
             // Procedure
             { id: 'smProcOverview', name: 'Procedure Overview' }
         ];
@@ -1764,10 +1949,12 @@
         const emptyFields = [];
         
         for (const field of mandatoryFields) {
-            const element = document.getElementById(field.id);
-            if (element && element.value.trim() === '') {
-                emptyFields.push(field.name);
+            if (field.customCheck) {
+                if (!field.customCheck()) emptyFields.push(field.name);
+                continue;
             }
+            const element = document.getElementById(field.id);
+            if (element && element.value.trim() === '') emptyFields.push(field.name);
         }
         
         return {
@@ -1797,10 +1984,13 @@
     
     // Add event listeners to all mandatory fields
     const mandatoryFieldIds = [
-        'metadataName', 'metadataAuthors', 'metadataLicense',
-        'smOverviewMain', 'smSDType', 'smRecMethod', 'smRecLocation', 
-        'smRecPeriodStart', 'smEligInclusion', 'smEligExclusion',
-        'smDCPlatform', 'smDCMethod', 'smProcOverview'
+        'metadataName', 'metadataLicense',
+        'smOverviewMain', 'smSDType', 'smRecMethod',
+        'smRecPeriodStartYear', 'smRecPeriodStartMonth',
+        'smRecPeriodEndYear', 'smRecPeriodEndMonth',
+        'smRecCompensation',
+        'smEligInclusion', 'smEligExclusion',
+        'smProcOverview'
     ];
     
     mandatoryFieldIds.forEach(fieldId => {
@@ -1813,6 +2003,12 @@
         }
     });
     
+    // Authors row add button
+    document.getElementById('addAuthorRow').addEventListener('click', () => addAuthorRow());
+
+    // Recruitment location add button
+    document.getElementById('addRecLocationRow').addEventListener('click', () => addRecLocationRow());
+
     // Special handler for Dataset Name with auto-population
     document.getElementById('metadataName').addEventListener('input', function() {
         updateCreateProjectButton();
@@ -1838,6 +2034,14 @@
     
     // Initialize button state on page load
     document.addEventListener('DOMContentLoaded', function() {
+        if (!document.querySelector('#metadataAuthorsList .author-row')) {
+            addAuthorRow();
+        }
+        if (!document.querySelector('#smRecLocationList .rec-location-row')) {
+            addRecLocationRow();
+        }
+        initYearMonthSelect('smRecPeriodStartYear', 'smRecPeriodStartMonth');
+        initYearMonthSelect('smRecPeriodEndYear', 'smRecPeriodEndMonth');
         updateCreateProjectButton();
     });
     
@@ -1865,9 +2069,7 @@
         }
 
         const btn = this.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
-        btn.disabled = true;
+        const originalText = setButtonLoading(btn, true, 'Creating...');
 
         // Combine path and project name
         const separator = projectPath.includes('/') ? '/' : '\\';
@@ -1877,7 +2079,7 @@
             path: fullPath,
             name: projectName,
             // Modern BIDS metadata from Basics tab
-            authors: document.getElementById('metadataAuthors').value.split(',').map(s => s.trim()).filter(s => s),
+            authors: getAuthorsList(),
             license: document.getElementById('metadataLicense').value,
             doi: document.getElementById('metadataDOI').value.trim(),
             keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
@@ -1957,8 +2159,7 @@
             `;
             document.getElementById('createResult').style.display = 'block';
         } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            setButtonLoading(btn, false, null, originalText);
         }
     });
 
@@ -1967,9 +2168,7 @@
         e.preventDefault();
 
         const btn = this.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating...';
-        btn.disabled = true;
+        const originalText = setButtonLoading(btn, true, 'Validating...');
 
         const path = document.getElementById('existingPath').value;
 
@@ -1983,8 +2182,7 @@
                     <p class="mb-0">You must select the <strong>project.json</strong> file. Folder selection is no longer supported for project loading.</p>
                 </div>
             `;
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            setButtonLoading(btn, false, null, originalText);
             return;
         }
 
@@ -2149,8 +2347,7 @@
             `;
             document.getElementById('validationResult').style.display = 'block';
         } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            setButtonLoading(btn, false, null, originalText);
         }
     });
 
@@ -2225,7 +2422,7 @@
 
                 // Fill form fields
                 document.getElementById('metadataName').value = desc.Name || '';
-                document.getElementById('metadataAuthors').value = Array.isArray(desc.Authors) ? desc.Authors.join(', ') : (desc.Authors || '');
+                setAuthorsList(Array.isArray(desc.Authors) ? desc.Authors : (desc.Authors ? [desc.Authors] : []));
                 document.getElementById('metadataLicense').value = desc.License || 'CC0';
                 document.getElementById('metadataAcknowledgements').value = desc.Acknowledgements || '';
                 document.getElementById('metadataDescription').value = desc.Description || '';
@@ -2288,7 +2485,7 @@
             // Reconstruct the JSON object
             const description = {
                 Name: document.getElementById('metadataName').value,
-                Authors: document.getElementById('metadataAuthors').value.split(',').map(s => s.trim()).filter(s => s),
+                Authors: getAuthorsList(),
                 License: document.getElementById('metadataLicense').value,
                 Acknowledgements: document.getElementById('metadataAcknowledgements').value,
                 Description: document.getElementById('metadataDescription').value,
@@ -2369,17 +2566,58 @@
     }
 
     // ===== STUDY METADATA =====
-    let _smConditionGroups = [];
 
     function showStudyMetadataCard() {
         const card = document.getElementById('studyMetadataCard');
         if (!card) return;
-        if (currentProjectPath) {
+        const createSection = document.getElementById('section-create');
+        const createActive = createSection && createSection.classList.contains('active');
+        if (currentProjectPath || createActive) {
             card.style.display = 'block';
-            loadStudyMetadata();
-        } else {
-            card.style.display = 'none';
+            if (currentProjectPath) {
+                loadStudyMetadata();
+            } else {
+                resetStudyMetadataForm();
+            }
+            return;
         }
+        card.style.display = 'none';
+    }
+
+    function resetStudyMetadataForm() {
+        const form = document.getElementById('studyMetadataForm');
+        if (!form) return;
+
+        form.querySelectorAll('input, textarea, select').forEach(el => {
+            if (el.tagName === 'SELECT') {
+                el.value = '';
+            } else {
+                el.value = '';
+            }
+        });
+
+        setAuthorsList([]);
+        setRecLocationList([]);
+        setRecMethodList([]);
+        setYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth', '');
+        setYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth', '');
+        const condType = document.getElementById('smSDConditionType');
+        if (condType) condType.value = '';
+        _clearAllHintBadges();
+        displayMetadataIssues([]);
+
+        const badgeIds = [
+            'smBasicsBadge', 'smOverviewBadge', 'smStudyDesignBadge',
+            'smRecruitmentBadge', 'smEligibilityBadge',
+            'smProcedureBadge', 'smMissingDataBadge', 'smReferencesBadge'
+        ];
+        badgeIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = '';
+        });
+
+        updateCompletenessUI({ score: 0, sections: {} });
+        updateCreateProjectButton();
     }
 
     /**
@@ -2387,15 +2625,11 @@
      * Used to apply auto-detected values and show hint badges.
      */
     const _smHintFieldMap = {
-        'DataCollection.Platform':        { el: 'smDCPlatform', type: 'input' },
-        'DataCollection.PlatformVersion': { el: 'smDCPlatformVersion', type: 'input' },
-        'DataCollection.Method':          { el: 'smDCMethod', type: 'select' },
-        'Recruitment.Period.Start':       { el: 'smRecPeriodStart', type: 'input' },
-        'Recruitment.Period.End':         { el: 'smRecPeriodEnd', type: 'input' },
+        'Recruitment.Period.Start':       { el: null, type: 'period-start' },
+        'Recruitment.Period.End':         { el: null, type: 'period-end' },
         'StudyDesign.Type':               { el: 'smSDType', type: 'select' },
+        'Conditions.Type':                { el: 'smSDConditionType', type: 'select' },
         'Eligibility.ActualSampleSize':   { el: 'smEligSampleSize', type: 'input' },
-        'Conditions.Type':                { el: 'smCondType', type: 'select' },
-        'Conditions.Groups':              { el: null, type: 'special' },
     };
 
     function _clearAllHintBadges() {
@@ -2437,31 +2671,22 @@
         for (const [key, hint] of Object.entries(hints)) {
             const mapping = _smHintFieldMap[key];
             if (!mapping) continue;
-            if (mapping.type === 'special') {
-                // Handle Conditions.Groups separately
-                if (key === 'Conditions.Groups' && _smConditionGroups.length === 0 && Array.isArray(hint.value) && hint.value.length > 0) {
-                    const container = document.getElementById('smCondGroupsContainer');
-                    if (!container) continue;
-                    const badge = document.createElement('span');
-                    badge.className = 'sm-hint-badge badge bg-info bg-opacity-75 ms-1 mt-1';
-                    badge.style.cssText = 'cursor:pointer; font-size:0.7rem; display:inline-block;';
-                    badge.title = `Detected from ${hint.source} — click to apply`;
-                    badge.innerHTML = `<i class="fas fa-magic me-1"></i>${hint.value.length} groups detected`;
-                    badge.addEventListener('click', () => {
-                        _smConditionGroups = hint.value;
-                        renderConditionGroups();
-                        badge.remove();
-                    });
-                    container.parentElement.appendChild(badge);
-                }
+            if (mapping.type === 'period-start') {
+                setYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth', hint.value);
                 continue;
             }
+            if (mapping.type === 'period-end') {
+                setYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth', hint.value);
+                continue;
+            }
+            if (mapping.type === 'special') continue;
             _applyHintBadge(mapping.el, hint, mapping.type);
         }
     }
 
     async function loadStudyMetadata() {
         try {
+            if (!currentProjectPath) return;
             // Load dataset description fields (Basics section)
             await loadDatasetDescriptionFields();
             
@@ -2482,6 +2707,7 @@
             // Study Design
             const sd = sm.StudyDesign || {};
             document.getElementById('smSDType').value = sd.Type || '';
+            document.getElementById('smSDConditionType').value = sm.Conditions?.Type || '';
             document.getElementById('smSDTypeDesc').value = sd.TypeDescription || '';
             document.getElementById('smSDBlinding').value = sd.Blinding || '';
             document.getElementById('smSDRandomization').value = sd.Randomization || '';
@@ -2490,13 +2716,35 @@
 
             // Recruitment
             const rec = sm.Recruitment || {};
-            document.getElementById('smRecMethod').value = rec.Method || '';
-            document.getElementById('smRecLocation').value = rec.Location || '';
+            if (Array.isArray(rec.Method)) {
+                setRecMethodList(rec.Method);
+            } else if (typeof rec.Method === 'string') {
+                setRecMethodList(rec.Method.split(';').map(s => s.trim()).filter(s => s));
+            } else {
+                setRecMethodList([]);
+            }
+            if (Array.isArray(rec.Location)) {
+                setRecLocationList(rec.Location);
+            } else if (typeof rec.Location === 'string') {
+                setRecLocationList(rec.Location.split(';').map(s => s.trim()).filter(s => s));
+            } else {
+                setRecLocationList([]);
+            }
             const period = rec.Period || {};
-            document.getElementById('smRecPeriodStart').value = period.Start || '';
-            document.getElementById('smRecPeriodEnd').value = period.End || '';
-            document.getElementById('smRecCompensation').value = rec.Compensation || '';
-            document.getElementById('smRecPlatform').value = rec.Platform || '';
+            setYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth', period.Start || '');
+            setYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth', period.End || '');
+            if (rec.Compensation) {
+                const comp = String(rec.Compensation).toLowerCase();
+                if (comp.includes('no')) {
+                    document.getElementById('smRecCompensation').value = 'No financial compensation';
+                } else if (comp.includes('financial')) {
+                    document.getElementById('smRecCompensation').value = 'Financial compensation';
+                } else {
+                    document.getElementById('smRecCompensation').value = rec.Compensation;
+                }
+            } else {
+                document.getElementById('smRecCompensation').value = '';
+            }
 
             // Eligibility
             const elig = sm.Eligibility || {};
@@ -2505,17 +2753,6 @@
             document.getElementById('smEligSampleSize').value = elig.TargetSampleSize || '';
             document.getElementById('smEligPower').value = elig.PowerAnalysis || '';
 
-            // Data Collection
-            const dc = sm.DataCollection || {};
-            document.getElementById('smDCPlatform').value = dc.Platform || '';
-            document.getElementById('smDCPlatformVersion').value = dc.PlatformVersion || '';
-            document.getElementById('smDCMethod').value = dc.Method || '';
-            document.getElementById('smDCSupervision').value = dc.SupervisionLevel || '';
-            document.getElementById('smDCSetting').value = dc.Setting || '';
-            const avgDur = dc.AverageDuration || {};
-            document.getElementById('smDCDurationValue').value = avgDur.Value || '';
-            document.getElementById('smDCDurationUnit').value = avgDur.Unit || 'minutes';
-
             // Procedure
             const proc = sm.Procedure || {};
             document.getElementById('smProcOverview').value = proc.Overview || '';
@@ -2523,12 +2760,6 @@
             document.getElementById('smProcQC').value = Array.isArray(proc.QualityControl) ? proc.QualityControl.join('\n') : '';
             document.getElementById('smProcMissing').value = proc.MissingDataHandling || '';
             document.getElementById('smProcDebriefing').value = proc.Debriefing || '';
-
-            // Conditions
-            const cond = sm.Conditions || {};
-            document.getElementById('smCondType').value = cond.Type || '';
-            _smConditionGroups = Array.isArray(cond.Groups) ? cond.Groups : [];
-            renderConditionGroups();
 
             // Apply auto-detected hints for empty fields
             _applyHints(data.hints || {});
@@ -2554,37 +2785,6 @@
         }
     }
 
-    function renderConditionGroups() {
-        const container = document.getElementById('smCondGroupsContainer');
-        if (!container) return;
-        if (_smConditionGroups.length === 0) {
-            container.innerHTML = '<span class="text-muted small">No groups defined</span>';
-            return;
-        }
-        container.innerHTML = _smConditionGroups.map((g, i) => `
-            <div class="condition-group-row">
-                <input type="text" class="form-control form-control-sm" placeholder="ID" value="${g.id || ''}"
-                       onchange="_smConditionGroups[${i}].id = this.value">
-                <input type="text" class="form-control form-control-sm" placeholder="Label" value="${g.label || ''}"
-                       onchange="_smConditionGroups[${i}].label = this.value">
-                <input type="text" class="form-control form-control-sm" placeholder="Description" value="${g.description || ''}"
-                       onchange="_smConditionGroups[${i}].description = this.value">
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeConditionGroup(${i})">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `).join('');
-    }
-
-    function addConditionGroup() {
-        _smConditionGroups.push({ id: '', label: '', description: '' });
-        renderConditionGroups();
-    }
-
-    function removeConditionGroup(idx) {
-        _smConditionGroups.splice(idx, 1);
-        renderConditionGroups();
-    }
 
     function updateCompletenessUI(completeness) {
         const score = completeness.score || 0;
@@ -2623,17 +2823,15 @@
 
         const sections = completeness.sections || {};
         const sectionOrder = [
-            'Basics', 'StudyDesign', 'Recruitment', 'Eligibility', 'DataCollection',
-            'Procedure', 'Conditions', 'SessionsTasks'
+            'Basics', 'StudyDesign', 'Recruitment', 'Eligibility',
+            'Procedure', 'SessionsTasks'
         ];
         const sectionLabels = {
             Basics: 'Basics (BIDS)',
             StudyDesign: 'Study Design',
             Recruitment: 'Recruitment',
             Eligibility: 'Eligibility',
-            DataCollection: 'Data Collection',
             Procedure: 'Procedure',
-            Conditions: 'Conditions',
             SessionsTasks: 'Sessions & Tasks'
         };
 
@@ -2676,9 +2874,7 @@
     document.getElementById('studyMetadataForm')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const btn = this.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+        const originalText = setButtonLoading(btn, true, 'Saving...');
 
         try {
             const payload = {
@@ -2696,33 +2892,31 @@
                     Randomization: document.getElementById('smSDRandomization').value || undefined,
                     ControlCondition: document.getElementById('smSDControl').value || undefined,
                 },
+                Conditions: {
+                    Type: document.getElementById('smSDConditionType').value || undefined,
+                },
                 Recruitment: {
-                    Method: document.getElementById('smRecMethod').value || undefined,
-                    Location: document.getElementById('smRecLocation').value || undefined,
+                    Method: (function() {
+                        const list = getRecMethodList();
+                        if (!list.length) return undefined;
+                        return list.join('; ');
+                    })(),
+                    Location: (function() {
+                        const list = getRecLocationList();
+                        if (!list.length) return undefined;
+                        return list.join('; ');
+                    })(),
                     Period: {
-                        Start: document.getElementById('smRecPeriodStart').value || undefined,
-                        End: document.getElementById('smRecPeriodEnd').value || undefined,
+                        Start: getYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth') || undefined,
+                        End: getYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth') || undefined,
                     },
                     Compensation: document.getElementById('smRecCompensation').value || undefined,
-                    Platform: document.getElementById('smRecPlatform').value || undefined,
                 },
                 Eligibility: {
                     InclusionCriteria: _textToArray(document.getElementById('smEligInclusion').value) || undefined,
                     ExclusionCriteria: _textToArray(document.getElementById('smEligExclusion').value) || undefined,
                     TargetSampleSize: parseInt(document.getElementById('smEligSampleSize').value) || undefined,
                     PowerAnalysis: document.getElementById('smEligPower').value || undefined,
-                },
-                DataCollection: {
-                    Platform: document.getElementById('smDCPlatform').value || undefined,
-                    PlatformVersion: document.getElementById('smDCPlatformVersion').value || undefined,
-                    Method: document.getElementById('smDCMethod').value || undefined,
-                    SupervisionLevel: document.getElementById('smDCSupervision').value || undefined,
-                    Setting: document.getElementById('smDCSetting').value || undefined,
-                    AverageDuration: (function() {
-                        const v = parseFloat(document.getElementById('smDCDurationValue').value);
-                        if (isNaN(v)) return undefined;
-                        return { Value: v, Unit: document.getElementById('smDCDurationUnit').value };
-                    })(),
                 },
                 Procedure: {
                     Overview: document.getElementById('smProcOverview').value || undefined,
@@ -2739,10 +2933,6 @@
                     KnownIssues: document.getElementById('smKnownIssues').value || undefined,
                 },
                 References: document.getElementById('smReferences').value || undefined,
-                Conditions: {
-                    Type: document.getElementById('smCondType').value || undefined,
-                    Groups: _smConditionGroups.filter(g => g.id || g.label) || undefined,
-                },
             };
 
             // Clean undefined values from nested objects
@@ -2788,8 +2978,7 @@
         } catch (error) {
             showToast('Error: ' + error.message, 'danger');
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
+            setButtonLoading(btn, false, null, originalText);
         }
     });
 
@@ -2806,9 +2995,7 @@
 
     async function generateMethodsSection() {
         const btn = document.getElementById('generateMethodsBtn');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating...';
+        const originalText = setButtonLoading(btn, true, 'Generating...');
 
         const resultDiv = document.getElementById('methodsResult');
         const errorDiv = document.getElementById('methodsError');
@@ -2858,8 +3045,7 @@
                     <i class="fas fa-exclamation-circle me-2"></i>${error.message}
                 </div>`;
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
+            setButtonLoading(btn, false, null, originalText);
         }
     }
 
@@ -2888,9 +3074,7 @@
         }
 
         const btn = this.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Preparing Export...';
+        const originalText = setButtonLoading(btn, true, 'Preparing Export...');
 
         // Show progress UI
         const progressDiv = document.getElementById('exportProgress');
@@ -2967,8 +3151,7 @@
                 </div>
             `;
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
+            setButtonLoading(btn, false, null, originalText);
         }
     });
 
@@ -3001,55 +3184,6 @@
         }
     }
 
-    async function generateReadmePreview() {
-        if (!currentProjectPath) {
-            showToast('No project selected', 'warning');
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/projects/preview-readme');
-            const data = await response.json();
-            
-            if (data.success) {
-                // Show modal with preview
-                const modal = new bootstrap.Modal(document.getElementById('readmePreviewModal') || createReadmePreviewModal());
-                document.getElementById('readmePreviewContent').textContent = data.content;
-                modal.show();
-            } else {
-                showToast(`Failed to preview README: ${data.error}`, 'danger');
-            }
-        } catch (error) {
-            showToast(`Error: ${error.message}`, 'danger');
-        }
-    }
-
-    function createReadmePreviewModal() {
-        const modalHTML = `
-            <div class="modal fade" id="readmePreviewModal" tabindex="-1">
-                <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">README.md Preview</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <pre id="readmePreviewContent" style="white-space: pre-wrap; font-family: monospace; font-size: 0.9em;"></pre>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="button" class="btn btn-primary" onclick="generateReadme(); bootstrap.Modal.getInstance(document.getElementById('readmePreviewModal')).hide();">
-                                <i class="fas fa-save me-1"></i>Generate & Save
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        return document.getElementById('readmePreviewModal');
-    }
-
     // ===== ANC EXPORT =====
     document.getElementById('ancEnableExport')?.addEventListener('change', function() {
         const isEnabled = this.checked;
@@ -3068,9 +3202,7 @@
         }
 
         const btn = this;
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Exporting for ANC...';
+        const originalText = setButtonLoading(btn, true, 'Exporting for ANC...');
 
         const progressDiv = document.getElementById('exportProgress');
         const resultDiv = document.getElementById('exportResult');
@@ -3183,8 +3315,7 @@
                 </div>
             `;
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
+            setButtonLoading(btn, false, null, originalText);
         }
     });
 </script>
