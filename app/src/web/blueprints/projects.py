@@ -16,6 +16,7 @@ from pathlib import Path
 from flask import Blueprint, render_template, jsonify, request, session
 
 from src.project_manager import ProjectManager, get_available_modalities
+from src.readme_generator import ReadmeGenerator
 
 projects_bp = Blueprint("projects", __name__)
 
@@ -2442,3 +2443,56 @@ def get_procedure_status():
             "undeclared": [{"session": s, "task": t} for s, t in undeclared],
         }
     )
+
+
+@projects_bp.route("/api/projects/generate-readme", methods=["POST"])
+def generate_readme():
+    """Generate README.md from project.json study metadata."""
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    project_path = Path(current["path"])
+    
+    # Check if project.json exists
+    if not (project_path / "project.json").exists():
+        return jsonify({"success": False, "error": "project.json not found"}), 404
+    
+    try:
+        # Generate README
+        generator = ReadmeGenerator(project_path)
+        output_path = generator.save()
+        
+        return jsonify({
+            "success": True,
+            "message": "README.md generated successfully",
+            "path": str(output_path),
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@projects_bp.route("/api/projects/preview-readme", methods=["GET"])
+def preview_readme():
+    """Preview README.md content without saving."""
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    project_path = Path(current["path"])
+    
+    # Check if project.json exists
+    if not (project_path / "project.json").exists():
+        return jsonify({"success": False, "error": "project.json not found"}), 404
+    
+    try:
+        # Generate README content
+        generator = ReadmeGenerator(project_path)
+        content = generator.generate()
+        
+        return jsonify({
+            "success": True,
+            "content": content,
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
