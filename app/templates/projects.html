@@ -222,76 +222,46 @@
                             </div>
                         </div>
 
-                        <!-- Modern BIDS Metadata Section -->
                         <div class="col-12 mt-3">
-                            <button class="btn btn-sm btn-outline-secondary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#advancedMetadata" aria-expanded="false" aria-controls="advancedMetadata">
-                                <i class="fas fa-plus-circle me-1"></i> Add BIDS Dataset Metadata (Authors, License, DOI...)
-                            </button>
-                            
-                            <div class="collapse" id="advancedMetadata">
-                                <div class="card card-body bg-light border-0">
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label for="projectAuthors" class="form-label fw-bold">Authors</label>
-                                            <textarea class="form-control" id="projectAuthors" rows="2" placeholder="e.g. Paul Broca, Carl Wernicke"></textarea>
-                                            <small class="text-muted">Comma-separated list. At least one author required.</small>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectLicense" class="form-label fw-bold">License</label>
-                                            <select class="form-select" id="projectLicense">
-                                                <option value="CC0">CC0 (Public Domain)</option>
-                                                <option value="CC BY 4.0">CC BY 4.0</option>
-                                                <option value="CC BY-SA 4.0">CC BY-SA 4.0</option>
-                                                <option value="ODbL 1.0">Open Database License (ODbL)</option>
-                                                <option value="PDDL 1.0">Public Domain Dedication and License (PDDL)</option>
-                                                <option value="other">Other/Proprietary</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectDOI" class="form-label fw-bold">Dataset DOI</label>
-                                            <input type="text" class="form-control" id="projectDOI" placeholder="e.g. doi:10.18112/openneuro.ds000114.v1.0.1">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectKeywords" class="form-label fw-bold">Keywords</label>
-                                            <input type="text" class="form-control" id="projectKeywords" placeholder="e.g. psychology, dance, prism">
-                                            <small class="text-muted">Comma-separated. At least 3 keywords required for FAIR compliance.</small>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectAcknowledgements" class="form-label fw-bold">Acknowledgements</label>
-                                            <textarea class="form-control" id="projectAcknowledgements" rows="2" placeholder="Who helped with this dataset?"></textarea>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectEthics" class="form-label fw-bold">Ethics Approvals</label>
-                                            <input type="text" class="form-control" id="projectEthics" placeholder="Ethics committee/protocol identifiers">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectFunding" class="form-label fw-bold">Funding</label>
-                                            <input type="text" class="form-control" id="projectFunding" placeholder="Grant numbers, agencies...">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectType" class="form-label fw-bold">Dataset Type</label>
-                                            <select class="form-select" id="projectType">
-                                                <option value="raw" selected>raw</option>
-                                                <option value="derivative">derivative</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectHED" class="form-label fw-bold">HED Version</label>
-                                            <input type="text" class="form-control" id="projectHED" placeholder="8.2.0">
-                                        </div>
-                                        <div class="col-md-12">
-                                            <label for="projectDescription" class="form-label fw-bold">Dataset Description</label>
-                                            <textarea class="form-control" id="projectDescription" rows="2" placeholder="Scientific description..."></textarea>
-                                            <small class="text-muted">Saved to <code>rawdata/dataset_description.json</code> (BIDS). Minimum 50 characters requested for FAIR compliance.</small>
-                                        </div>
-                                        <div class="col-md-12">
-                                            <label for="projectHowToAcknowledge" class="form-label fw-bold">How to Acknowledge</label>
-                                            <textarea class="form-control" id="projectHowToAcknowledge" rows="2" placeholder="Instructions on how to acknowledge this dataset..."></textarea>
-                                        </div>
-                                        <div class="col-md-12">
-                                            <label for="projectReferences" class="form-label fw-bold">References and Links</label>
-                                            <textarea class="form-control" id="projectReferences" rows="2" placeholder="URLs or DOIs related to the dataset..."></textarea>
-                                        </div>
+                            <div class="alert alert-warning border-0 bg-warning bg-opacity-10 mb-0">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Before Creating:</strong> Fill in all mandatory fields (<span class="text-danger">*</span>) in the <strong>Study Metadata</strong> section below:
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <strong class="small">Basics (BIDS):</strong>
+                                        <ul class="mb-1 small">
+                                            <li>Dataset Name</li>
+                                            <li>Authors</li>
+                                            <li>License</li>
+                                        </ul>
+                                        <strong class="small">Overview:</strong>
+                                        <ul class="mb-1 small">
+                                            <li>Dataset Overview</li>
+                                        </ul>
+                                        <strong class="small">Study Design:</strong>
+                                        <ul class="mb-1 small">
+                                            <li>Study Design Type</li>
+                                        </ul>
+                                        <strong class="small">Recruitment:</strong>
+                                        <ul class="mb-1 small">
+                                            <li>Method, Location, Period Start</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong class="small">Eligibility:</strong>
+                                        <ul class="mb-1 small">
+                                            <li>Inclusion Criteria</li>
+                                            <li>Exclusion Criteria</li>
+                                        </ul>
+                                        <strong class="small">Data Collection:</strong>
+                                        <ul class="mb-1 small">
+                                            <li>Platform</li>
+                                            <li>Method</li>
+                                        </ul>
+                                        <strong class="small">Procedure:</strong>
+                                        <ul class="mb-0 small">
+                                            <li>Overview</li>
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
@@ -357,118 +327,6 @@
         </div>
     </div>
 
-    <!-- Dataset Description Card -->
-    <div class="card shadow-sm mt-4" id="projectMetadataCard" style="display: none;">
-        <div class="card-header bg-primary bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#datasetDescriptionSection"
-             role="button" aria-expanded="false" aria-controls="datasetDescriptionSection">
-            <h5 class="mb-0 d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-tags text-primary me-2"></i>Dataset Description</span>
-                <div>
-                    <span class="badge bg-primary me-2">v1.10.1</span>
-                    <i class="fas fa-chevron-down text-muted" id="datasetDescriptionChevron"></i>
-                </div>
-            </h5>
-        </div>
-        <div class="collapse" id="datasetDescriptionSection">
-        <div class="card-body">
-            <!-- Metadata Validation Feedback -->
-            <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
-            <div class="alert alert-info border-0 bg-info bg-opacity-10">
-                <i class="fas fa-info-circle me-2"></i>
-                This section edits <code>rawdata/dataset_description.json</code> and must remain BIDS-valid.
-                Project-level governance metadata is stored at the root (<code>project.json</code>, <code>contributors.json</code>, <code>CITATION.cff</code>).
-            </div>
-            
-            <form id="projectMetadataForm">
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Name</label>
-                        <input type="text" class="form-control" id="metadataName" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Authors (comma separated)</label>
-                        <input type="text" class="form-control" id="metadataAuthors" placeholder="Author 1, Author 2">
-                        <small class="text-muted">At least one author required.</small>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">License</label>
-                        <select class="form-select" id="metadataLicense">
-                            <option value="">Select a license...</option>
-                            <option value="CC0">CC0 (Public Domain)</option>
-                            <option value="CC BY 4.0">CC BY 4.0</option>
-                            <option value="CC BY-SA 4.0">CC BY-SA 4.0</option>
-                            <option value="CC BY-NC 4.0">CC BY-NC 4.0</option>
-                            <option value="CC BY-NC-SA 4.0">CC BY-NC-SA 4.0</option>
-                            <option value="ODbL 1.0">Open Database License (ODbL)</option>
-                            <option value="PDDL 1.0">Public Domain Dedication and License (PDDL)</option>
-                            <option value="Other">Other/Proprietary</option>
-                        </select>
-                    </div>
-                    <div class="col-md-12">
-                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Acknowledgements</label>
-                        <textarea class="form-control" id="metadataAcknowledgements" rows="2" placeholder="Funding, grants, people to thank..."></textarea>
-                    </div>
-                    <div class="col-md-12">
-                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Description</label>
-                        <textarea class="form-control" id="metadataDescription" rows="3" placeholder="Detailed scientific description of the study..."></textarea>
-                        <small class="text-muted">Minimum 50 characters required for FAIR compliance.</small>
-                    </div>
-                    <div class="col-md-12">
-                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-bs-toggle="collapse" data-bs-target="#metadataAdvanced">
-                            <i class="fas fa-chevron-down me-1"></i>More Fields (DOI, Ethics, Keywords...)
-                        </button>
-                        <div class="collapse mt-2" id="metadataAdvanced">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset DOI</label>
-                                    <input type="text" class="form-control" id="metadataDOI" placeholder="10.5281/zenodo.1234567">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Type</label>
-                                    <select class="form-select" id="metadataType">
-                                        <option value="raw">raw</option>
-                                        <option value="derivative">derivative</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Ethics Approvals (comma separated)</label>
-                                    <input type="text" class="form-control" id="metadataEthics" placeholder="Ethics Committee A, Ref 123">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">HED Version</label>
-                                    <input type="text" class="form-control" id="metadataHED" placeholder="8.2.0">
-                                </div>
-                                <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Keywords (comma separated)</label>
-                                    <input type="text" class="form-control" id="metadataKeywords" placeholder="psychology, experiment, PRISM">
-                                    <small class="text-muted">At least 3 keywords required for FAIR compliance.</small>
-                                </div>
-                                <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Funding (comma separated)</label>
-                                    <input type="text" class="form-control" id="metadataFunding" placeholder="Grant agency 1, Grant number 2">
-                                </div>
-                                <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">How to Acknowledge</label>
-                                    <textarea class="form-control" id="metadataHowToAcknowledge" rows="2" placeholder="Please cite the following paper..."></textarea>
-                                </div>
-                                <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">References and Links (comma separated)</label>
-                                    <textarea class="form-control" id="metadataReferences" rows="2" placeholder="https://doi.org/..., https://example.com/..."></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-3 text-end">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i>Save Changes
-                    </button>
-                </div>
-            </form>
-        </div>
-        </div>
-    </div>
-
     <!-- Study Metadata Card -->
     <div class="card shadow-sm mt-4" id="studyMetadataCard" style="display: none;">
         <div class="card-header bg-info bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#studyMetadataSection"
@@ -500,11 +358,109 @@
 
             <div class="alert alert-info border-0 bg-info bg-opacity-10 py-2 mb-3">
                 <i class="fas fa-info-circle me-2"></i>
-                This edits study methodology in <code>project.json</code>. Use the "Generate README" button to create an ANC-compliant README from this metadata.
-                <br><small class="text-muted">Fill out as many fields as possible. Dataset description fields (Authors, Funding, Ethics) are in the card above.</small>
+                This edits study methodology in <code>project.json</code> and dataset description in <code>rawdata/dataset_description.json</code>. 
+                Saving this form auto-generates an ANC-compliant README from this metadata.
             </div>
 
             <form id="studyMetadataForm">
+                <!-- Basics (BIDS) Section -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smBasics">
+                        <i class="fas fa-tags me-1"></i> Basics (BIDS)
+                        <span class="float-end" id="smBasicsBadge"></span>
+                    </button>
+                    <div class="collapse show" id="smBasics">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <!-- Metadata Validation Feedback -->
+                            <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
+                            <div class="alert alert-info border-0 bg-info bg-opacity-10">
+                                <i class="fas fa-info-circle me-2"></i>
+                                This section edits <code>rawdata/dataset_description.json</code> and must remain BIDS-valid.
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control form-control-sm" id="metadataName" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Authors (comma separated) <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control form-control-sm" id="metadataAuthors" placeholder="Author 1, Author 2" required>
+                                    <small class="text-muted">At least one author required.</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">License <span class="text-danger">*</span></label>
+                                    <select class="form-select form-select-sm" id="metadataLicense" required>
+                                        <option value="">Select a license...</option>
+                                        <option value="CC0">CC0 (Public Domain)</option>
+                                        <option value="CC BY 4.0">CC BY 4.0</option>
+                                        <option value="CC BY-SA 4.0">CC BY-SA 4.0</option>
+                                        <option value="CC BY-NC 4.0">CC BY-NC 4.0</option>
+                                        <option value="CC BY-NC-SA 4.0">CC BY-NC-SA 4.0</option>
+                                        <option value="ODbL 1.0">Open Database License (ODbL)</option>
+                                        <option value="PDDL 1.0">Public Domain Dedication and License (PDDL)</option>
+                                        <option value="Other">Other/Proprietary</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Acknowledgements</label>
+                                    <textarea class="form-control form-control-sm" id="metadataAcknowledgements" rows="2" placeholder="Funding, grants, people to thank..."></textarea>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Description</label>
+                                    <textarea class="form-control form-control-sm" id="metadataDescription" rows="3" placeholder="Detailed scientific description of the study..."></textarea>
+                                    <small class="text-muted">Optional. Recommended: minimum 50 characters for FAIR compliance.</small>
+                                </div>
+                                <div class="col-md-12">
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-bs-toggle="collapse" data-bs-target="#metadataAdvanced">
+                                        <i class="fas fa-chevron-down me-1"></i>More Fields (DOI, Ethics, Keywords...)
+                                    </button>
+                                    <div class="collapse mt-2" id="metadataAdvanced">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset DOI</label>
+                                                <input type="text" class="form-control form-control-sm" id="metadataDOI" placeholder="10.5281/zenodo.1234567">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Type</label>
+                                                <select class="form-select form-select-sm" id="metadataType">
+                                                    <option value="raw">raw</option>
+                                                    <option value="derivative">derivative</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">Ethics Approvals (comma separated)</label>
+                                                <input type="text" class="form-control form-control-sm" id="metadataEthics" placeholder="Ethics Committee A, Ref 123">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">HED Version</label>
+                                                <input type="text" class="form-control form-control-sm" id="metadataHED" placeholder="8.2.0">
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">Keywords (comma separated)</label>
+                                                <input type="text" class="form-control form-control-sm" id="metadataKeywords" placeholder="psychology, experiment, PRISM">
+                                                <small class="text-muted">At least 3 keywords required for FAIR compliance.</small>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">Funding (comma separated)</label>
+                                                <input type="text" class="form-control form-control-sm" id="metadataFunding" placeholder="Grant agency 1, Grant number 2">
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">How to Acknowledge</label>
+                                                <textarea class="form-control form-control-sm" id="metadataHowToAcknowledge" rows="2" placeholder="Please cite the following paper..."></textarea>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">References and Links (comma separated)</label>
+                                                <textarea class="form-control form-control-sm" id="metadataReferences" rows="2" placeholder="https://doi.org/..., https://example.com/..."></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Overview Section -->
                 <div class="mb-3">
                     <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
@@ -895,16 +851,13 @@
                     </div>
                 </div>
 
-                <div class="text-end d-flex gap-2 justify-content-end">
-                    <button type="button" class="btn btn-outline-secondary" onclick="generateReadmePreview()">
-                        <i class="fas fa-file-alt me-1"></i>Preview README
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="generateReadme()">
-                        <i class="fas fa-file-invoice me-1"></i>Generate README
-                    </button>
+                <div class="text-end">
                     <button type="submit" class="btn btn-info">
                         <i class="fas fa-save me-1"></i>Save Study Metadata
                     </button>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-info-circle me-1"></i>Saving will auto-generate README.md
+                    </small>
                 </div>
             </form>
         </div>
@@ -1432,7 +1385,6 @@
         
         loadGlobalSettings();
         loadLibraryInfo();
-        loadProjectMetadata();
         showStudyMetadataCard();
         showExportCard();
         showMethodsCard();
@@ -1446,7 +1398,6 @@
         // Update chevron icons on collapse toggle
         const sections = [
             { element: 'openProjectSection', chevron: 'openProjectChevron' },
-            { element: 'datasetDescriptionSection', chevron: 'datasetDescriptionChevron' },
             { element: 'studyMetadataSection', chevron: 'studyMetadataChevron' },
             { element: 'methodsSectionBody', chevron: 'methodsSectionChevron' },
             { element: 'participantsSection', chevron: 'participantsChevron' },
@@ -1783,12 +1734,129 @@
         }
     });
 
+    // ===== MANDATORY METADATA VALIDATION =====
+    
+    // Function to check if all mandatory fields across all tabs are filled
+    function validateAllMandatoryFields() {
+        const mandatoryFields = [
+            // Basics (BIDS)
+            { id: 'metadataName', name: 'Dataset Name' },
+            { id: 'metadataAuthors', name: 'Authors' },
+            { id: 'metadataLicense', name: 'License' },
+            // Overview
+            { id: 'smOverviewMain', name: 'Dataset Overview' },
+            // Study Design
+            { id: 'smSDType', name: 'Study Design Type' },
+            // Recruitment
+            { id: 'smRecMethod', name: 'Recruitment Method' },
+            { id: 'smRecLocation', name: 'Recruitment Location' },
+            { id: 'smRecPeriodStart', name: 'Recruitment Period Start' },
+            // Eligibility
+            { id: 'smEligInclusion', name: 'Inclusion Criteria' },
+            { id: 'smEligExclusion', name: 'Exclusion Criteria' },
+            // Data Collection
+            { id: 'smDCPlatform', name: 'Data Collection Platform' },
+            { id: 'smDCMethod', name: 'Data Collection Method' },
+            // Procedure
+            { id: 'smProcOverview', name: 'Procedure Overview' }
+        ];
+        
+        const emptyFields = [];
+        
+        for (const field of mandatoryFields) {
+            const element = document.getElementById(field.id);
+            if (element && element.value.trim() === '') {
+                emptyFields.push(field.name);
+            }
+        }
+        
+        return {
+            isValid: emptyFields.length === 0,
+            emptyFields: emptyFields
+        };
+    }
+    
+    // Function to update Create Project button state
+    function updateCreateProjectButton() {
+        const createBtn = document.querySelector('#createProjectForm button[type="submit"]');
+        const validation = validateAllMandatoryFields();
+        
+        if (validation.isValid) {
+            createBtn.disabled = false;
+            createBtn.classList.remove('btn-secondary');
+            createBtn.classList.add('btn-success');
+            createBtn.innerHTML = '<i class="fas fa-folder-plus me-2"></i>Create Project';
+        } else {
+            createBtn.disabled = true;
+            createBtn.classList.remove('btn-success');
+            createBtn.classList.add('btn-secondary');
+            const count = validation.emptyFields.length;
+            createBtn.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Complete Study Metadata (${count} field${count > 1 ? 's' : ''} missing)`;
+        }
+    }
+    
+    // Add event listeners to all mandatory fields
+    const mandatoryFieldIds = [
+        'metadataName', 'metadataAuthors', 'metadataLicense',
+        'smOverviewMain', 'smSDType', 'smRecMethod', 'smRecLocation', 
+        'smRecPeriodStart', 'smEligInclusion', 'smEligExclusion',
+        'smDCPlatform', 'smDCMethod', 'smProcOverview'
+    ];
+    
+    mandatoryFieldIds.forEach(fieldId => {
+        const element = document.getElementById(fieldId);
+        if (element) {
+            const eventType = element.tagName === 'SELECT' ? 'change' : 'input';
+            element.addEventListener(eventType, function() {
+                updateCreateProjectButton();
+            });
+        }
+    });
+    
+    // Special handler for Dataset Name with auto-population
+    document.getElementById('metadataName').addEventListener('input', function() {
+        updateCreateProjectButton();
+        
+        // Auto-populate project name from dataset name (sanitized)
+        const datasetName = this.value.trim();
+        const projectNameField = document.getElementById('projectName');
+        
+        // Only auto-populate if the project name field is empty
+        if (projectNameField.value === '') {
+            // Convert dataset name to valid project name: lowercase, replace spaces/special chars with underscores
+            const sanitizedName = datasetName
+                .toLowerCase()
+                .replace(/[^a-z0-9_-]/g, '_')  // Replace invalid chars with underscore
+                .replace(/_+/g, '_')  // Replace multiple underscores with single
+                .replace(/^_|_$/g, '');  // Remove leading/trailing underscores
+            
+            if (sanitizedName) {
+                projectNameField.value = sanitizedName;
+            }
+        }
+    });
+    
+    // Initialize button state on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCreateProjectButton();
+    });
+    
+    // ===== END MANDATORY METADATA VALIDATION =====
+
     // Create Project Form
     document.getElementById('createProjectForm').addEventListener('submit', async function(e) {
         e.preventDefault();
 
         const projectName = document.getElementById('projectName').value.trim();
         const projectPath = document.getElementById('projectPath').value.trim();
+
+        // Validate all mandatory metadata fields
+        const validation = validateAllMandatoryFields();
+        if (!validation.isValid) {
+            const fieldList = validation.emptyFields.map(f => `- ${f}`).join('\\n');
+            alert(`Please complete all mandatory fields in Study Metadata:\\n\\n${fieldList}`);
+            return;
+        }
 
         // Validate project name
         if (!/^[a-zA-Z0-9_-]+$/.test(projectName)) {
@@ -1808,19 +1876,19 @@
         const data = {
             path: fullPath,
             name: projectName,
-            // Modern BIDS metadata
-            authors: document.getElementById('projectAuthors').value.split(',').map(s => s.trim()).filter(s => s),
-            license: document.getElementById('projectLicense').value,
-            doi: document.getElementById('projectDOI').value.trim(),
-            keywords: document.getElementById('projectKeywords').value.split(',').map(s => s.trim()).filter(s => s),
-            acknowledgements: document.getElementById('projectAcknowledgements').value.trim(),
-            ethics_approvals: document.getElementById('projectEthics').value.split(',').map(s => s.trim()).filter(s => s),
-            how_to_acknowledge: document.getElementById('projectHowToAcknowledge').value.trim(),
-            funding: document.getElementById('projectFunding').value.split(',').map(s => s.trim()).filter(s => s),
-            references_and_links: document.getElementById('projectReferences').value.split(',').map(s => s.trim()).filter(s => s),
-            hed_version: document.getElementById('projectHED').value.trim(),
-            dataset_type: document.getElementById('projectType').value,
-            description: document.getElementById('projectDescription').value.trim()
+            // Modern BIDS metadata from Basics tab
+            authors: document.getElementById('metadataAuthors').value.split(',').map(s => s.trim()).filter(s => s),
+            license: document.getElementById('metadataLicense').value,
+            doi: document.getElementById('metadataDOI').value.trim(),
+            keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
+            acknowledgements: document.getElementById('metadataAcknowledgements').value.trim(),
+            ethics_approvals: document.getElementById('metadataEthics').value.split(',').map(s => s.trim()).filter(s => s),
+            how_to_acknowledge: document.getElementById('metadataHowToAcknowledge').value.trim(),
+            funding: document.getElementById('metadataFunding').value.split(',').map(s => s.trim()).filter(s => s),
+            references_and_links: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
+            hed_version: document.getElementById('metadataHED').value.trim(),
+            dataset_type: document.getElementById('metadataType').value,
+            description: document.getElementById('metadataDescription').value.trim()
         };
 
         try {
@@ -1866,7 +1934,6 @@
                 window.currentProjectPath = currentProjectPath;
                 window.currentProjectName = currentProjectName;
                 addRecentProject(currentProjectName, currentProjectPath);
-                await loadProjectMetadata();
                 if (window.updateNavbarProject) {
                     window.updateNavbarProject(currentProjectName, currentProjectPath);
                 }
@@ -2066,7 +2133,6 @@
             window.currentProjectPath = currentProjectPath;
             window.currentProjectName = currentProjectName;
             addRecentProject(currentProjectName, currentProjectPath);
-            await loadProjectMetadata();
             if (window.updateNavbarProject) {
                 window.updateNavbarProject(currentProjectName, currentProjectPath);
             }
@@ -2147,21 +2213,14 @@
 
     // ===== DATASET DESCRIPTION / METADATA =====
 
-    async function loadProjectMetadata() {
-        const card = document.getElementById('projectMetadataCard');
-        if (!card) return;
-
-        if (!currentProjectPath) {
-            card.style.display = 'none';
-            return;
-        }
+    async function loadDatasetDescriptionFields() {
+        if (!currentProjectPath) return;
 
         try {
             const response = await fetch('/api/projects/description');
             const data = await response.json();
 
             if (data.success && data.description) {
-                card.style.display = 'block';
                 const desc = data.description;
 
                 // Fill form fields
@@ -2181,12 +2240,9 @@
                 
                 // Show issues if any
                 displayMetadataIssues(data.issues || []);
-            } else {
-                card.style.display = 'none';
             }
         } catch (error) {
-            console.error('Error loading project metadata:', error);
-            card.style.display = 'none';
+            console.error('Error loading dataset description:', error);
         }
     }
 
@@ -2226,14 +2282,8 @@
         feedbackDiv.innerHTML = html;
     }
 
-    // Handle Metadata Form Submission
-    document.getElementById('projectMetadataForm')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const btn = this.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
-
+    // Save dataset_description fields
+    async function saveDatasetDescription() {
         try {
             // Reconstruct the JSON object
             const description = {
@@ -2274,8 +2324,6 @@
 
             const result = await response.json();
             if (result.success) {
-                showToast('Metadata saved successfully', 'success');
-                
                 // Show any remaining validation issues
                 displayMetadataIssues(result.issues || []);
 
@@ -2287,15 +2335,13 @@
                     }
                 }
             } else {
-                alert('Failed to save metadata: ' + result.error);
+                throw new Error(result.error || 'Failed to save metadata');
             }
         } catch (error) {
-            alert('Error saving project metadata: ' + error.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
+            console.error('Error saving dataset description:', error);
+            throw error;
         }
-    });
+    }
 
     // Toast helper if not defined elsewhere
     function showToast(message, type = 'success') {
@@ -2416,6 +2462,9 @@
 
     async function loadStudyMetadata() {
         try {
+            // Load dataset description fields (Basics section)
+            await loadDatasetDescriptionFields();
+            
             const response = await fetch('/api/projects/study-metadata');
             const data = await response.json();
             if (!data.success) return;
@@ -2488,6 +2537,9 @@
             if (data.completeness) {
                 updateCompletenessUI(data.completeness);
             }
+            
+            // Update Create Project button state after loading metadata
+            updateCreateProjectButton();
         } catch (error) {
             console.error('Error loading study metadata:', error);
         }
@@ -2571,17 +2623,17 @@
 
         const sections = completeness.sections || {};
         const sectionOrder = [
-            'StudyDesign', 'Recruitment', 'Eligibility', 'DataCollection',
-            'Procedure', 'Conditions', 'DatasetDescription', 'SessionsTasks'
+            'Basics', 'StudyDesign', 'Recruitment', 'Eligibility', 'DataCollection',
+            'Procedure', 'Conditions', 'SessionsTasks'
         ];
         const sectionLabels = {
+            Basics: 'Basics (BIDS)',
             StudyDesign: 'Study Design',
             Recruitment: 'Recruitment',
             Eligibility: 'Eligibility',
             DataCollection: 'Data Collection',
             Procedure: 'Procedure',
             Conditions: 'Conditions',
-            DatasetDescription: 'Dataset Description',
             SessionsTasks: 'Sessions & Tasks'
         };
 
@@ -2725,6 +2777,11 @@
                 if (result.completeness) {
                     updateCompletenessUI(result.completeness);
                 }
+                // Save dataset_description
+                await saveDatasetDescription();
+                showToast('Dataset description saved', 'success');
+                // Auto-generate README
+                await generateReadme();
             } else {
                 showToast('Failed to save: ' + result.error, 'danger');
             }
