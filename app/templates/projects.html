@@ -500,7 +500,8 @@
 
             <div class="alert alert-info border-0 bg-info bg-opacity-10 py-2 mb-3">
                 <i class="fas fa-info-circle me-2"></i>
-                This edits study-level fields in <code>project.json</code>. Dataset description fields are in the card above.
+                This edits study methodology in <code>project.json</code>. Use the "Generate README" button to create a structured README from this metadata.
+                <br><small class="text-muted">Dataset description fields (Authors, Funding, Ethics) are in the card above and will also be included in the README.</small>
             </div>
 
             <form id="studyMetadataForm">
@@ -785,7 +786,13 @@
                     </div>
                 </div>
 
-                <div class="text-end">
+                <div class="text-end d-flex gap-2 justify-content-end">
+                    <button type="button" class="btn btn-outline-secondary" onclick="generateReadmePreview()">
+                        <i class="fas fa-file-alt me-1"></i>Preview README
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="generateReadme()">
+                        <i class="fas fa-file-invoice me-1"></i>Generate README
+                    </button>
                     <button type="submit" class="btn btn-info">
                         <i class="fas fa-save me-1"></i>Save Study Metadata
                     </button>
@@ -2775,6 +2782,84 @@
             btn.innerHTML = originalText;
         }
     });
+
+    // ===== README GENERATION =====
+    async function generateReadme() {
+        if (!currentProjectPath) {
+            showToast('No project selected', 'warning');
+            return;
+        }
+
+        if (!confirm('Generate README.md from study metadata?\n\nThis will overwrite any existing README.md file.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/projects/generate-readme', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast('README.md generated successfully! Check your project folder.', 'success');
+            } else {
+                showToast(`Failed to generate README: ${data.error}`, 'danger');
+            }
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'danger');
+        }
+    }
+
+    async function generateReadmePreview() {
+        if (!currentProjectPath) {
+            showToast('No project selected', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/projects/preview-readme');
+            const data = await response.json();
+            
+            if (data.success) {
+                // Show modal with preview
+                const modal = new bootstrap.Modal(document.getElementById('readmePreviewModal') || createReadmePreviewModal());
+                document.getElementById('readmePreviewContent').textContent = data.content;
+                modal.show();
+            } else {
+                showToast(`Failed to preview README: ${data.error}`, 'danger');
+            }
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'danger');
+        }
+    }
+
+    function createReadmePreviewModal() {
+        const modalHTML = `
+            <div class="modal fade" id="readmePreviewModal" tabindex="-1">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">README.md Preview</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <pre id="readmePreviewContent" style="white-space: pre-wrap; font-family: monospace; font-size: 0.9em;"></pre>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary" onclick="generateReadme(); bootstrap.Modal.getInstance(document.getElementById('readmePreviewModal')).hide();">
+                                <i class="fas fa-save me-1"></i>Generate & Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        return document.getElementById('readmePreviewModal');
+    }
 
     // ===== ANC EXPORT =====
     document.getElementById('ancEnableExport')?.addEventListener('change', function() {

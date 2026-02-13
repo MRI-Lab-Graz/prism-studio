@@ -34,6 +34,7 @@ from src.fixer import DatasetFixer
 from src.cross_platform import CrossPlatformFile
 from src.issues import get_fix_hint
 from src.schema_manager import load_schema
+from src.readme_generator import ReadmeGenerator
 from jsonschema import Draft7Validator
 
 # Available PRISM modalities
@@ -122,9 +123,17 @@ class ProjectManager:
 
             # 4. Create README.md in root
             readme_path = project_path / "README.md"
-            readme_content = self._create_readme(name, sessions, modalities)
-            CrossPlatformFile.write_text(str(readme_path), readme_content)
-            created_files.append("README.md")
+            # Use the new generator to create a proper structured README
+            try:
+                generator = ReadmeGenerator(project_path)
+                readme_content = generator.generate()
+                CrossPlatformFile.write_text(str(readme_path), readme_content)
+                created_files.append("README.md")
+            except Exception as e:
+                # Fallback to basic README if generator fails
+                readme_content = self._create_readme(name, sessions, modalities)
+                CrossPlatformFile.write_text(str(readme_path), readme_content)
+                created_files.append("README.md")
 
             # 5. Create project governance files in root
             project_metadata_path = project_path / "project.json"

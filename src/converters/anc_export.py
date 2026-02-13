@@ -19,6 +19,17 @@ import shutil
 import logging
 from typing import Dict, Optional, Any
 from datetime import datetime
+import sys
+
+# Add parent directory to path for imports
+if __name__ == "__main__":
+    sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+try:
+    from app.src.readme_generator import ReadmeGenerator
+    HAS_README_GENERATOR = True
+except ImportError:
+    HAS_README_GENERATOR = False
 
 logger = logging.getLogger(__name__)
 
@@ -72,16 +83,21 @@ class ANCExporter:
         else:
             logger.info("Skipping data copy (metadata only)")
         
-        # Step 2: Extract existing metadata
-        existing_metadata = self._extract_metadata()
+        # Step 2: Generate README from project.json (if available)
+        if HAS_README_GENERATOR:
+            self._generate_readme_from_project()
+        else:
+            # Fallback to legacy method
+            existing_metadata = self._extract_metadata()
+            if metadata:
+                existing_metadata.update(metadata)
+            self._generate_readme(existing_metadata)
         
-        # Merge with provided metadata
+        # Step 3: Generate other ANC-required files
+        existing_metadata = self._extract_metadata()
         if metadata:
             existing_metadata.update(metadata)
-        
-        # Step 3: Generate ANC-required files
         self._generate_bids_validator_config()
-        self._generate_readme(existing_metadata)
         self._generate_citation(existing_metadata)
         
         # Step 4: Handle Git LFS conversion if requested
@@ -180,6 +196,29 @@ class ANCExporter:
             metadata["DATASET_CONTENTS"] = f"{len(df)} participants"
         
         return metadata
+    
+    def _generate_readme_from_project(self):
+        """Generate README using the new project.json-based generator."""
+        try:
+            # Check if project.json exists in source dataset
+            project_json = self.dataset_path / "project.json"
+            if not project_json.exists():
+                logger.warning("No project.json found, falling back to basic README")
+                return
+            
+            # Use ReadmeGenerator for source dataset
+            generator = ReadmeGenerator(self.dataset_path)
+            readme_content = generator.generate()
+            
+            # Write to output path
+            output_readme = self.output_path / "README.md"
+            with open(output_readme, "w", encoding="utf-8") as f:
+                f.write(readme_content)
+            
+            logger.info(f"✓ Generated README.md from project metadata")
+        except Exception as e:
+            logger.warning(f"Failed to generate README from project.json: {e}")
+            logger.info("Falling back to legacy README generation")
     
     def _generate_bids_validator_config(self):
         """Generate ANC-compatible .bids-validator-config.json."""
