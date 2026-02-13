@@ -232,19 +232,6 @@
         color: #6c757d;
     }
 
-    /* Empty State */
-    .empty-state {
-        text-align: center;
-        padding: 3rem;
-        color: #6c757d;
-    }
-
-    .empty-state i {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
-
     /* Group Header */
     .group-header {
         display: flex;
@@ -1920,20 +1907,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update both panels — renderQuestions recomputes matrix groups after drag-and-drop
         renderGroups();
         renderQuestions();
-    }
-
-    // Update question count badges in both panels without full re-render
-    function updateQuestionCounts() {
-        customizationState.groups.forEach(group => {
-            // Update right panel header badge
-            const groupDiv = questionsContainer.querySelector(`[data-group-id="${group.id}"]`);
-            if (groupDiv) {
-                const badge = groupDiv.querySelector('.group-header .badge');
-                if (badge) {
-                    badge.textContent = group.questions.length;
-                }
-            }
-        });
     }
 
     // Toggle mandatory

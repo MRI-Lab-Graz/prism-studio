@@ -747,48 +747,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const convertError = document.getElementById('convertError');
     const convertInfo = document.getElementById('convertInfo');
 
-    // Validate ID map immediately on selection (basic sanity: 2 columns, some rows)
-    // Use FileReader instead of file.text() to avoid consuming the file stream
-    async function validateIdMapFile(file) {
-        if (!file) return true;
-        try {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const text = e.target.result;
-                        const first = (text || '').split(/\r?\n/).filter(Boolean).slice(0, 5);
-                        if (!first.length) throw new Error('File is empty');
-                        const detectSep = (line) => (line.includes('\t') ? '\t' : (line.includes(',') ? ',' : null));
-                        let sep = detectSep(first[0]);
-                        if (!sep && first[1]) sep = detectSep(first[1]);
-                        if (!sep) throw new Error('Could not detect delimiter (expected tab or comma)');
-                        const cols = first[0].split(sep);
-                        if (cols.length < 2) throw new Error('Need at least two columns (source, participant_id)');
-                        if (first.length < 2) throw new Error('File has header only; add mapping rows');
-                        convertError.classList.add('d-none');
-                        convertError.textContent = '';
-                        resolve(true);
-                    } catch (err) {
-                        convertError.classList.remove('d-none');
-                        convertError.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>ID map error: ${err.message}`;
-                        resolve(false);
-                    }
-                };
-                reader.onerror = () => {
-                    convertError.classList.remove('d-none');
-                    convertError.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Could not read ID map file`;
-                    resolve(false);
-                };
-                reader.readAsText(file);
-            });
-        } catch (e) {
-            convertError.classList.remove('d-none');
-            convertError.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>ID map error: ${e.message}`;
-            return false;
-        }
-    }
-
     if (convertIdMapFile) {
         convertIdMapFile.addEventListener('change', () => {
             const f = convertIdMapFile.files && convertIdMapFile.files[0];
@@ -3391,11 +3349,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasFile = biometricsDataFile && biometricsDataFile.files && biometricsDataFile.files.length === 1;
         if (biometricsPreviewBtn) biometricsPreviewBtn.disabled = !hasFile;
         if (biometricsConvertBtn) biometricsConvertBtn.disabled = !hasFile;
-    }
-
-    function checkBiometricsLibraryStructure() {
-        // Library path is auto-resolved on backend (project first, then global)
-        // No client-side check needed
     }
 
     if (biometricsDataFile) {
