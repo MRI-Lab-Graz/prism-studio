@@ -113,17 +113,6 @@
     font-weight: 600;
     white-space: nowrap;
   }
-  .section-group-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid #e9ecef;
-  }
-  .section-group-header i {
-    font-size: 1.1em;
-  }
 </style>
 {% endblock %}
 
@@ -3097,15 +3086,6 @@
       : '<small class="text-muted">No global library</small>';
 
     updateProjectLibraryStatus();
-  }
-
-  function getSourceBadge(source) {
-    switch (source) {
-      case 'global': return '[Global]';
-      case 'project': return '[Project]';
-      case 'project-external': return '[External]';
-      default: return '';
-    }
   }
 
   async function loadNewTemplate() {
