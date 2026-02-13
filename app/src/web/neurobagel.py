@@ -10,7 +10,7 @@ from typing import Any, Dict
 
 def get_fallback_neurobagel_schema() -> Dict[str, Any]:
     """Return minimal NeuroBagel schema when external fetch fails.
-    
+
     Returns a basic structure with common participant fields that will be
     augmented by augment_neurobagel_data() with full controlled vocabularies.
     """
@@ -32,7 +32,7 @@ def get_fallback_neurobagel_schema() -> Dict[str, Any]:
 @lru_cache(maxsize=8)
 def fetch_neurobagel_participants() -> Any:
     """Fetch NeuroBagel participants dictionary and cache it.
-    
+
     Falls back to built-in schema if external URL is unavailable.
     All controlled vocabularies are defined in augment_neurobagel_data().
     """

@@ -1,6 +1,6 @@
-# ANC Export Guide
+# AND Export Guide
 
-Export PRISM datasets to ANC (Austrian NeuroCloud) compatible format.
+Export PRISM datasets to AND (Austrian NeuroCloud) compatible format.
 
 ## Quick Start
 
@@ -17,14 +17,14 @@ Export PRISM datasets to ANC (Austrian NeuroCloud) compatible format.
 
 4. Scroll to **Data Export / Share** section
 
-5. Enable **ANC Export** checkbox
+5. Enable **AND Export** checkbox
 
 6. (Optional) Configure options:
-   - **Convert to Git LFS**: Only if ANC requires it
+   - **Convert to Git LFS**: Only if AND requires it
    - **Include CI/CD Examples**: Add validation workflows
    - **Edit Metadata**: Click to customize README/CITATION details
 
-7. Click **Export for ANC** button
+7. Click **Export for AND** button
 
 8. Find exported dataset in folder ending with `_anc_export`
 
@@ -34,7 +34,7 @@ Export PRISM datasets to ANC (Austrian NeuroCloud) compatible format.
 # Basic export (keeps DataLad compatible)
 python -m src.converters.anc_export /path/to/my_dataset
 
-# Export with Git LFS conversion (for ANC submission)
+# Export with Git LFS conversion (for AND submission)
 python -m src.converters.anc_export /path/to/my_dataset --git-lfs
 
 # Custom output location
@@ -86,7 +86,7 @@ Create a `metadata.json` file with dataset information:
 
 ## What Gets Generated
 
-The ANC export creates:
+The AND export creates:
 
 ### Required Files
 - ✅ `README.md` - ANC-structured dataset documentation
@@ -131,15 +131,15 @@ python -m src.converters.anc_export /path/to/my_dataset
 - No `.gitattributes` for Git LFS
 - Adds `DATALAD_NOTE.md` with instructions
 
-### Git LFS Export (For ANC)
+### Git LFS Export (For AND)
 ```bash
 python -m src.converters.anc_export /path/to/my_dataset --git-lfs
 ```
 - Creates `.gitattributes` for Git LFS
 - Adds `GIT_LFS_SETUP.md` with instructions
-- Required if ANC mandates Git LFS
+- Required if AND mandates Git LFS
 
-**Ask ANC first!** They may accept DataLad datasets.
+**Ask AND first!** They may accept DataLad datasets.
 
 ## Workflow
 
@@ -156,7 +156,7 @@ Create `metadata.json` with your dataset information (see example above).
 ```bash
 python -m src.converters.anc_export /path/to/my_dataset \
   --metadata metadata.json \
-  --git-lfs  # Only if ANC requires Git LFS
+  --git-lfs  # Only if AND requires Git LFS
 ```
 
 ### 4. Review Generated Files
@@ -180,27 +180,27 @@ Run BIDS validator:
 bids-validator . --config .bids-validator-config.json
 ```
 
-### 7. Submit to ANC
-Follow ANC submission guidelines with your prepared dataset.
+### 7. Submit to AND
+Follow AND submission guidelines with your prepared dataset.
 
 ## Integration with PRISM Studio (Web UI)
 
-The ANC export is integrated into the PRISM Studio web interface:
+The AND export is integrated into the PRISM Studio web interface:
 
 1. **Projects** → **Data Export / Share** section
-2. Enable **ANC Export** checkbox to show options
+2. Enable **AND Export** checkbox to show options
 3. Configure export settings:
    - Git LFS conversion (if required)
    - CI/CD example files
    - Dataset metadata (optional)
-4. Click **Export for ANC** to create submission-ready dataset
+4. Click **Export for AND** to create submission-ready dataset
 5. Review generated files in `<project>_anc_export/` folder
 
 ### Features
 
 - ✅ **Form-based metadata editing** - No JSON required
 - ✅ **Visual progress tracking** - See export status
-- ✅ **One-click export** - Complete ANC package in seconds
+- ✅ **One-click export** - Complete AND package in seconds
 - ✅ **Integrated validation** - Checks requirements before export
 
 See [Web Interface Documentation](WEB_INTERFACE.md) for more details.
@@ -255,12 +255,12 @@ Check `ANC_EXPORT_REPORT.json` for details on missing files or validation issues
 
 - [PRISM Specifications](../docs/SPECIFICATIONS.md)
 - [BIDS Standard](https://bids-specification.readthedocs.io/)
-- [ANC Handbook](https://handbook.anc.plus.ac.at/)
+- [AND Handbook](https://handbook.and.plus.ac.at/)
 - [DataLad Documentation](https://docs.datalad.org/)
 - [Git LFS Documentation](https://git-lfs.github.com/)
 
 ## Support
 
-For questions about ANC export:
+For questions about AND export:
 - PRISM Issues: https://github.com/MRI-Lab-Graz/prism-studio/issues
-- ANC Support: Contact ANC directly for submission requirements
+- AND Support: Contact AND directly for submission requirements

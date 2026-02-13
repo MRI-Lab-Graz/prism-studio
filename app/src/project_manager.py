@@ -129,7 +129,7 @@ class ProjectManager:
                 readme_content = generator.generate()
                 CrossPlatformFile.write_text(str(readme_path), readme_content)
                 created_files.append("README.md")
-            except Exception as e:
+            except Exception:
                 # Fallback to basic README if generator fails
                 readme_content = self._create_readme(name, sessions, modalities)
                 CrossPlatformFile.write_text(str(readme_path), readme_content)

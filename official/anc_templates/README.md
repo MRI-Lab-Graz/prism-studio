@@ -1,6 +1,6 @@
-# ANC Export Templates
+# AND Export Templates
 
-This folder contains templates used by the PRISM ANC exporter.
+This folder contains templates used by the PRISM AND exporter.
 
 ## Files
 
@@ -14,7 +14,7 @@ This folder contains templates used by the PRISM ANC exporter.
 
 ## Usage
 
-These templates are automatically used by the ANC export converter:
+These templates are automatically used by the AND export converter:
 
 ```bash
 python -m src.converters.anc_export /path/to/dataset
@@ -35,5 +35,5 @@ cp official/anc_templates/example-github-actions.yml /path/to/dataset/.github/wo
 
 ## See Also
 
-- [ANC Export Documentation](../../docs/ANC_EXPORT.md)
-- [ANC Handbook](https://handbook.anc.plus.ac.at/)
+- [AND Export Documentation](../../docs/ANC_EXPORT.md)
+- [AND Handbook](https://handbook.and.plus.ac.at/)

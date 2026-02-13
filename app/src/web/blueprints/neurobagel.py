@@ -15,7 +15,7 @@ neurobagel_bp = Blueprint("neurobagel", __name__)
 @neurobagel_bp.route("/api/neurobagel/participants")
 def get_neurobagel_participants():
     """Fetch and return augmented NeuroBagel participants dictionary.
-    
+
     Uses external URL if available, otherwise falls back to built-in schema.
     All controlled vocabularies are hardcoded in augment_neurobagel_data().
     """
@@ -27,14 +27,14 @@ def get_neurobagel_participants():
 @neurobagel_bp.route("/api/neurobagel/local-participants")
 def get_local_participants():
     """Extract unique values from local participants.tsv for categorical mapping.
-    
+
     Supports two modes:
     1. Upload mode: ?session_id=xxx (from JSON editor uploads)
     2. Project mode: ?project_path=xxx (from current project in converter)
     """
     session_id = request.args.get("session_id")
     project_path = request.args.get("project_path")
-    
+
     if not session_id and not project_path:
         return jsonify({"error": "No session ID or project path"}), 400
 

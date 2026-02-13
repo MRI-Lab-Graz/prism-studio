@@ -15,6 +15,7 @@ import json
 import argparse
 import zipfile
 import io
+
 try:
     from defusedxml import ElementTree as ET
 except ImportError:

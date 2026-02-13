@@ -3119,7 +3119,9 @@ def _build_participant_col_renames(
             continue
         if len(sanitized) > LS_MAX:
             # Hash used for generating short suffixes, not for security
-            hash_suffix = hashlib.md5(field_name.encode(), usedforsecurity=False).hexdigest()[:2]
+            hash_suffix = hashlib.md5(
+                field_name.encode(), usedforsecurity=False
+            ).hexdigest()[:2]
             sanitized = sanitized[: LS_MAX - 2] + hash_suffix
 
         sanitized_lower = sanitized.lower()
@@ -3293,7 +3295,7 @@ def _write_survey_participants(
         df_part = df_part.merge(df_extra, on="participant_id", how="left")
 
     df_part = df_part.drop_duplicates(subset=["participant_id"]).reset_index(drop=True)
-    
+
     # Merge with existing participants.tsv if it exists
     participants_tsv_path = output_root / "participants.tsv"
     if participants_tsv_path.exists():
@@ -3303,13 +3305,13 @@ def _write_survey_participants(
                 # Merge new data with existing, preferring new values for overlapping participants
                 # but keeping all existing participants and columns
                 df_part = pd.merge(
-                    existing_df, 
-                    df_part, 
-                    on="participant_id", 
+                    existing_df,
+                    df_part,
+                    on="participant_id",
                     how="outer",
-                    suffixes=("_old", "_new")
+                    suffixes=("_old", "_new"),
                 )
-                
+
                 # For each column that exists in both, prefer new value if not n/a
                 for col in df_part.columns:
                     if col.endswith("_new"):
@@ -3319,23 +3321,31 @@ def _write_survey_participants(
                             # Prefer new value, fall back to old if new is n/a
                             df_part[base_col] = df_part.apply(
                                 lambda row: (
-                                    row[col] if pd.notna(row[col]) and str(row[col]) not in ("n/a", "nan", "") 
-                                    else (row[old_col] if pd.notna(row[old_col]) else "n/a")
+                                    row[col]
+                                    if pd.notna(row[col])
+                                    and str(row[col]) not in ("n/a", "nan", "")
+                                    else (
+                                        row[old_col]
+                                        if pd.notna(row[old_col])
+                                        else "n/a"
+                                    )
                                 ),
-                                axis=1
+                                axis=1,
                             )
                             # Drop the _old and _new columns
                             df_part = df_part.drop(columns=[old_col, col])
                         else:
                             # No old column, just rename new column
                             df_part = df_part.rename(columns={col: base_col})
-                
+
                 # Sort by participant_id
                 df_part = df_part.sort_values("participant_id").reset_index(drop=True)
-                print(f"[INFO] Merged with existing participants.tsv ({len(existing_df)} existing → {len(df_part)} total)")
+                print(
+                    f"[INFO] Merged with existing participants.tsv ({len(existing_df)} existing → {len(df_part)} total)"
+                )
         except Exception as e:
             print(f"[WARNING] Could not merge with existing participants.tsv: {e}")
-    
+
     df_part.to_csv(participants_tsv_path, sep="\t", index=False)
 
     # participants.json - all columns must be documented

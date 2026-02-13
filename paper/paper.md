@@ -140,7 +140,7 @@ flowchart TD
     
     I --> K[Scored Derivatives<br/>derivatives/prism/sub-01_scores.tsv]
     I --> L[Method Section Text<br/>English/German]
-    I --> M[SPSS Export<br/>.sav files]
+    I --> M[SPSS Export<br/>.save files]
     
     K --> N[Statistical Analysis]
     L --> O[Manuscript Preparation]

@@ -20,18 +20,22 @@ class IdColumnNotDetectedError(ValueError):
     def __init__(self, available_columns: list[str], source_format: str):
         self.available_columns = available_columns
         self.source_format = source_format
-        
+
         # Create helpful error message with context
         format_names = {
             "lsa": "LimeSurvey Archive (.lsa)",
             "xlsx": "Excel file (.xlsx)",
             "csv": "CSV file",
-            "tsv": "TSV file"
+            "tsv": "TSV file",
         }
         format_name = format_names.get(source_format, source_format)
-        
-        limesurvey_note = "For LimeSurvey: also accepts \"token\" or \"id\" if PRISMMETA columns are present.\n\n" if source_format == 'lsa' else "\n"
-        
+
+        limesurvey_note = (
+            'For LimeSurvey: also accepts "token" or "id" if PRISMMETA columns are present.\n\n'
+            if source_format == "lsa"
+            else "\n"
+        )
+
         super().__init__(
             f"❌ Participant ID column not found in {format_name}.\n\n"
             f"PRISM looks for columns named: 'participant_id', 'prism_participant_id', 'participantid'\n"
