@@ -30,10 +30,12 @@ class IdColumnNotDetectedError(ValueError):
         }
         format_name = format_names.get(source_format, source_format)
         
+        limesurvey_note = "For LimeSurvey: also accepts \"token\" or \"id\" if PRISMMETA columns are present.\n\n" if source_format == 'lsa' else "\n"
+        
         super().__init__(
             f"❌ Participant ID column not found in {format_name}.\n\n"
             f"PRISM looks for columns named: 'participant_id', 'prism_participant_id', 'participantid'\n"
-            f"{'For LimeSurvey: also accepts \'token\' or \'id\' if PRISMMETA columns are present.\n\n' if source_format == 'lsa' else '\n'}"
+            f"{limesurvey_note}"
             f"📋 Available columns in your file ({len(available_columns)} total):\n"
             f"   {', '.join(available_columns[:30])}"
             f"{'...' if len(available_columns) > 30 else ''}\n\n"
