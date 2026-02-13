@@ -1731,6 +1731,7 @@ _EXPERIMENTAL_TYPES = {
 }
 
 _EDITABLE_SECTIONS = (
+    "Basics",
     "Overview",
     "StudyDesign",
     "Recruitment",
@@ -1977,44 +1978,44 @@ def _compute_methods_completeness(
             "Define experimental groups",
             _filled(cond.get("Groups")),
         ),
-        # Read-only sections: DatasetDescription
+        # Basics (BIDS dataset_description.json fields)
         (
-            "DatasetDescription",
+            "Basics",
             "Name",
             3,
             "Dataset name (dataset_description.json)",
             _filled(dd.get("Name")),
         ),
         (
-            "DatasetDescription",
+            "Basics",
             "Authors",
             3,
             "Authors (dataset_description.json)",
             _filled(dd.get("Authors")),
         ),
         (
-            "DatasetDescription",
+            "Basics",
             "Description",
             2,
             "Dataset description text",
             _filled(dd.get("Description")),
         ),
         (
-            "DatasetDescription",
+            "Basics",
             "EthicsApprovals",
             2,
             "Ethics approvals",
             _filled(dd.get("EthicsApprovals")),
         ),
         (
-            "DatasetDescription",
+            "Basics",
             "License",
             2,
             "Data license",
             _filled(dd.get("License")),
         ),
         (
-            "DatasetDescription",
+            "Basics",
             "Keywords",
             1,
             "Keywords for discoverability",
@@ -2052,7 +2053,7 @@ def _compute_methods_completeness(
                 "total": 0,
                 "weight_filled": 0,
                 "weight_total": 0,
-                "read_only": section_key in ("DatasetDescription", "SessionsTasks"),
+                "read_only": section_key in ("SessionsTasks",),
             }
         sec = sections_map[section_key]
         sec["fields"].append(

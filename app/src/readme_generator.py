@@ -87,8 +87,8 @@ class ReadmeGenerator:
         # --- Overview section from project.json ---
         overview = project_data.get("Overview", {})
         overview_main = overview.get("Main", "")
-        if overview_main:
-            metadata["DATASET_DESCRIPTION"] = overview_main  # Override with detailed overview
+        if not metadata["DATASET_DESCRIPTION"] and overview_main:
+            metadata["DATASET_DESCRIPTION"] = overview_main
         
         # --- Dataset contents ---
         participant_count = self._count_participants()
