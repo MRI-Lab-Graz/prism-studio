@@ -137,17 +137,17 @@ Use this for:
 - Complex nested structures
 - Debugging
 
-## ANC Export
+## AND Export
 
-Export PRISM datasets to ANC (Austrian NeuroCloud) compatible format.
+Export PRISM datasets to AND (Austrian NeuroCloud) compatible format.
 
 ### What It Does
 
-Converts your PRISM dataset into a submission-ready package for ANC with:
-- **README.md** in ANC structure (overview, methods, missing data)
+Converts your PRISM dataset into a submission-ready package for AND with:
+- **README.md** in AND structure (overview, methods, missing data)
 - **CITATION.cff** with proper dataset citation metadata
 - **.bids-validator-config.json** for PRISM-specific validation rules
-- **Git LFS setup** (optional) if required by ANC
+- **Git LFS setup** (optional) if required by AND
 
 ### CLI Usage
 
@@ -155,7 +155,7 @@ Converts your PRISM dataset into a submission-ready package for ANC with:
 # Basic export (DataLad-friendly)
 python -m src.converters.anc_export /path/to/dataset
 
-# With Git LFS conversion (if ANC requires it)
+# With Git LFS conversion (if AND requires it)
 python -m src.converters.anc_export /path/to/dataset --git-lfs
 
 # With metadata
@@ -172,11 +172,11 @@ python -m src.converters.anc_export /path/to/dataset --metadata info.json
 ### DataLad vs Git LFS
 
 **Default**: Stays DataLad-compatible  
-**With `--git-lfs`**: Converts to Git LFS format for ANC submission
+**With `--git-lfs`**: Converts to Git LFS format for AND submission
 
-**Important**: Check with ANC whether they accept DataLad datasets before converting to Git LFS!
+**Important**: Check with AND whether they accept DataLad datasets before converting to Git LFS!
 
-→ See [ANC Export Guide](ANC_EXPORT.md) for detailed documentation.
+→ See [AND Export Guide](ANC_EXPORT.md) for detailed documentation.
 
 ---
 
@@ -192,4 +192,4 @@ python -m src.converters.anc_export /path/to/dataset --metadata info.json
 | **Recipes** | Calculate scores | After data collection |
 | **Template Ed** | Create metadata | Documenting data |
 | **JSON Editor** | Raw editing | Advanced users |
-| **ANC Export** | Prepare for ANC submission | Before sharing data |
+| **AND Export** | Prepare for AND submission | Before sharing data |

@@ -309,14 +309,15 @@ def convert_biometrics_table_to_prism_dataset(
             .drop_duplicates()
             .tolist()
         )
-        
+
         # Use the update utility to add/preserve participants
         try:
             from ..utils.io import update_participants_tsv
+
             update_participants_tsv(
                 output_root,
                 participant_ids,
-                log_fn=None  # Could pass a logger here if available
+                log_fn=None,  # Could pass a logger here if available
             )
         except Exception:
             # Fallback to old behavior if update fails

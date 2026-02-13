@@ -40,15 +40,15 @@ def set_current_project(path: str, name: str = None):
 
 def get_bids_file_path(project_path: Path, filename: str) -> Path:
     """Get path to a BIDS metadata file, checking both root and rawdata/ folder.
-    
+
     BIDS standard says participants.tsv, participants.json, and dataset_description.json
     belong in the dataset ROOT. However, some DataLad-style projects use rawdata/ subfolder.
     This function checks both locations and returns the correct path.
-    
+
     Args:
         project_path: Path to the project root
         filename: Name of the file (e.g., 'participants.json', 'dataset_description.json')
-    
+
     Returns:
         Path to the file (in root if exists, otherwise rawdata/, even if neither exists)
     """
@@ -56,12 +56,12 @@ def get_bids_file_path(project_path: Path, filename: str) -> Path:
     root_path = project_path / filename
     if root_path.exists():
         return root_path
-    
+
     # Check rawdata/ folder (DataLad-style)
     rawdata_path = project_path / "rawdata" / filename
     if rawdata_path.exists():
         return rawdata_path
-    
+
     # If neither exists, prefer root (standard BIDS for new files)
     return root_path
 
@@ -1138,7 +1138,7 @@ def export_project():
 @projects_bp.route("/api/projects/anc-export", methods=["POST"])
 def anc_export_project():
     """
-    Export the current project to ANC (Austrian NeuroCloud) compatible format.
+    Export the current project to AND (Austrian NeuroCloud) compatible format.
 
     Expected JSON body:
     {
@@ -1165,7 +1165,7 @@ def anc_export_project():
 
         project_path = Path(project_path)
 
-        # Import ANC exporter
+        # Import AND exporter
         from src.converters.anc_export import ANCExporter
 
         # Get export options
@@ -1184,27 +1184,29 @@ def anc_export_project():
             metadata=metadata,
             convert_to_git_lfs=convert_to_git_lfs,
             include_ci_examples=include_ci_examples,
-            copy_data=True
+            copy_data=True,
         )
 
-        return jsonify({
-            "success": True,
-            "output_path": str(result_path),
-            "message": "ANC export completed successfully",
-            "generated_files": {
-                "readme": str(result_path / "README.md"),
-                "citation": str(result_path / "CITATION.cff"),
-                "validator_config": str(result_path / ".bids-validator-config.json")
+        return jsonify(
+            {
+                "success": True,
+                "output_path": str(result_path),
+                "message": "AND export completed successfully",
+                "generated_files": {
+                    "readme": str(result_path / "README.md"),
+                    "citation": str(result_path / "CITATION.cff"),
+                    "validator_config": str(
+                        result_path / ".bids-validator-config.json"
+                    ),
+                },
             }
-        })
+        )
 
     except Exception as e:
         import traceback
+
         traceback.print_exc()
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # =============================================================================
@@ -2457,21 +2459,23 @@ def generate_readme():
         return jsonify({"success": False, "error": "No project selected"}), 400
 
     project_path = Path(current["path"])
-    
+
     # Check if project.json exists
     if not (project_path / "project.json").exists():
         return jsonify({"success": False, "error": "project.json not found"}), 404
-    
+
     try:
         # Generate README
         generator = ReadmeGenerator(project_path)
         output_path = generator.save()
-        
-        return jsonify({
-            "success": True,
-            "message": "README.md generated successfully",
-            "path": str(output_path),
-        })
+
+        return jsonify(
+            {
+                "success": True,
+                "message": "README.md generated successfully",
+                "path": str(output_path),
+            }
+        )
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -2484,19 +2488,21 @@ def preview_readme():
         return jsonify({"success": False, "error": "No project selected"}), 400
 
     project_path = Path(current["path"])
-    
+
     # Check if project.json exists
     if not (project_path / "project.json").exists():
         return jsonify({"success": False, "error": "project.json not found"}), 404
-    
+
     try:
         # Generate README content
         generator = ReadmeGenerator(project_path)
         content = generator.generate()
-        
-        return jsonify({
-            "success": True,
-            "content": content,
-        })
+
+        return jsonify(
+            {
+                "success": True,
+                "content": content,
+            }
+        )
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500

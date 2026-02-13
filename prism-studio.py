@@ -8,11 +8,11 @@ def find_project_root():
     """Find the project root directory (contains app/ and .venv/)."""
     # Start from script location
     current = Path(__file__).resolve().parent
-    
+
     # If we're in .venv/bin/, go up two levels
     if current.name == "bin" and current.parent.name == ".venv":
         return current.parent.parent
-    
+
     # Otherwise, current directory should be the project root
     return current
 
