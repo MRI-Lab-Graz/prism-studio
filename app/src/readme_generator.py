@@ -84,28 +84,23 @@ class ReadmeGenerator:
         metadata["BIDS_VERSION"] = dataset_desc.get("BIDSVersion", "1.9.0")
         metadata["LICENSE"] = dataset_desc.get("License", "CC-BY-4.0")
         
+        # --- Overview section from project.json ---
+        overview = project_data.get("Overview", {})
+        overview_main = overview.get("Main", "")
+        if overview_main:
+            metadata["DATASET_DESCRIPTION"] = overview_main  # Override with detailed overview
+        
         # --- Dataset contents ---
         participant_count = self._count_participants()
         modalities = self._detect_modalities()
         modality_str = ", ".join(modalities) if modalities else "behavioral data"
         metadata["DATASET_CONTENTS"] = f"{participant_count} participants; {modality_str}"
         
-        # --- Study Design (from project.json) ---
-        study_design = project_data.get("StudyDesign", {})
-        design_type = study_design.get("Type", "Not specified")
-        design_desc = study_design.get("TypeDescription", "")
-        
-        if design_type != "Not specified":
-            iv_text = f"**Study Design**: {design_type}"
-            if design_desc:
-                iv_text += f"\n\n{design_desc}"
-            metadata["INDEPENDENT_VARIABLES"] = iv_text
-        else:
-            metadata["INDEPENDENT_VARIABLES"] = "Not specified"
-        
-        metadata["DEPENDENT_VARIABLES"] = "Not specified"  # Could extract from task definitions
-        metadata["CONTROL_VARIABLES"] = "Not specified"
-        metadata["QUALITY_ASSESSMENT"] = "Dataset validated with PRISM Studio"
+        # --- Independent/Dependent/Control Variables ---
+        metadata["INDEPENDENT_VARIABLES"] = overview.get("IndependentVariables", "Not specified")
+        metadata["DEPENDENT_VARIABLES"] = overview.get("DependentVariables", "Not specified")
+        metadata["CONTROL_VARIABLES"] = overview.get("ControlVariables", "Not specified")
+        metadata["QUALITY_ASSESSMENT"] = overview.get("QualityAssessment", "Dataset validated with PRISM Studio")
         
         # --- Participants / Recruitment ---
         recruitment = project_data.get("Recruitment", {})
@@ -200,6 +195,14 @@ class ReadmeGenerator:
         setup = procedure.get("InitialSetup", "")
         metadata["INITIAL_SETUP"] = setup if setup else "Not specified"
         
+        # --- Procedure ---
+        procedure = project_data.get("Procedure", {})
+        setup = procedure.get("InitialSetup", "")
+        metadata["INITIAL_SETUP"] = setup if setup else "Not specified"
+        
+        additional_data = procedure.get("AdditionalData", "")
+        metadata["ADDITIONAL_DATA"] = additional_data if additional_data else "Not specified"
+        
         # Task organization from Sessions
         sessions = project_data.get("Sessions", [])
         if sessions:
@@ -223,15 +226,34 @@ class ReadmeGenerator:
                 desc = task_info.get("description", "")
                 task_detail_parts.append(f"**{name}**: {desc if desc else 'No description'}")
             metadata["TASK_DETAILS"] = "\n\n".join(task_detail_parts)
+        # --- Missing data / Known issues from project.json ---
+        missing_data = project_data.get("MissingData", {})
+        miss_desc = missing_data.get("Description", "")
+        metadata["MISSING_DATA_DESCRIPTION"] = miss_desc if miss_desc else "No known missing data"
+        
+        # Format missing files table
+        miss_files = missing_data.get("MissingFiles", "")
+        if miss_files:
+            table_rows = []
+            for line in miss_files.strip().split('\n'):
+                if '|' in line:
+                    parts = line.split('|', 1)
+                    table_rows.append(f"{parts[0].strip()} | {parts[1].strip()}")
+            metadata["MISSING_FILES_TABLE"] = '\n'.join(table_rows) if table_rows else "| | |"
         else:
-            metadata["TASK_DETAILS"] = "Not specified"
+            metadata["MISSING_FILES_TABLE"] = "| | |"
         
-        metadata["ADDITIONAL_DATA"] = "Not specified"
-        
-        # --- Missing data / Known issues ---
-        metadata["MISSING_DATA_DESCRIPTION"] = "No known missing data"
-        metadata["MISSING_FILES_TABLE"] = "| | |"
-        metadata["KNOWN_ISSUES_TABLE"] = "| | |"
+        # Format known issues table
+        known_issues = missing_data.get("KnownIssues", "")
+        if known_issues:
+            table_rows = []
+            for line in known_issues.strip().split('\n'):
+                if '|' in line:
+                    parts = line.split('|', 1)
+                    table_rows.append(f"{parts[0].strip()} | {parts[1].strip()}")
+            metadata["KNOWN_ISSUES_TABLE"] = '\n'.join(table_rows) if table_rows else "| | |"
+        else:
+            metadata["KNOWN_ISSUES_TABLE"] = "| | |"
         
         notes = procedure.get("Notes", "")
         metadata["ADDITIONAL_NOTES"] = notes if notes else "This dataset was created using PRISM Studio."
@@ -297,12 +319,22 @@ class ReadmeGenerator:
             gov_ethics = governance.get("ethics_approvals", [])
             metadata["ETHICS_APPROVALS"] = "; ".join(str(e) for e in gov_ethics) if gov_ethics else "Not specified"
         
-        # --- References ---
-        refs = dataset_desc.get("ReferencesAndLinks", [])
-        if refs:
-            metadata["REFERENCES"] = "\n".join(f"- {r}" for r in refs)
+        # --- References from project.json ---
+        refs_str = project_data.get("References", "")
+        if refs_str:
+            # Convert to list format if it's a multi-line string
+            ref_lines = [line.strip() for line in refs_str.strip().split('\n') if line.strip()]
+            if ref_lines:
+                metadata["REFERENCES"] = "\n".join(f"- {r}" if not r.startswith('-') else r for r in ref_lines)
+            else:
+                metadata["REFERENCES"] = "Not specified"
         else:
-            metadata["REFERENCES"] = "Not specified"
+            # Fallback to dataset_description
+            refs = dataset_desc.get("ReferencesAndLinks", [])
+            if refs:
+                metadata["REFERENCES"] = "\n".join(f"- {r}" for r in refs)
+            else:
+                metadata["REFERENCES"] = "Not specified"
         
         # --- Version info ---
         metadata["PRISM_VERSION"] = "1.9.1"

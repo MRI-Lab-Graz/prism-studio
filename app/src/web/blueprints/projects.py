@@ -1731,11 +1731,14 @@ _EXPERIMENTAL_TYPES = {
 }
 
 _EDITABLE_SECTIONS = (
+    "Overview",
     "StudyDesign",
     "Recruitment",
     "Eligibility",
     "DataCollection",
     "Procedure",
+    "MissingData",
+    "References",
     "Conditions",
 )
 

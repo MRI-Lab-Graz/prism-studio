@@ -500,11 +500,56 @@
 
             <div class="alert alert-info border-0 bg-info bg-opacity-10 py-2 mb-3">
                 <i class="fas fa-info-circle me-2"></i>
-                This edits study methodology in <code>project.json</code>. Use the "Generate README" button to create a structured README from this metadata.
-                <br><small class="text-muted">Dataset description fields (Authors, Funding, Ethics) are in the card above and will also be included in the README.</small>
+                This edits study methodology in <code>project.json</code>. Use the "Generate README" button to create an ANC-compliant README from this metadata.
+                <br><small class="text-muted">Fill out as many fields as possible. Dataset description fields (Authors, Funding, Ethics) are in the card above.</small>
             </div>
 
             <form id="studyMetadataForm">
+                <!-- Overview Section -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smOverview">
+                        <i class="fas fa-file-alt me-1"></i> Overview
+                        <span class="float-end" id="smOverviewBadge"></span>
+                    </button>
+                    <div class="collapse show" id="smOverview">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small sm-field-required">Dataset Overview</label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewMain" rows="4"
+                                              placeholder="A brief paragraph describing the goals, purpose, and unique value of this dataset..."></textarea>
+                                    <small class="text-muted">Include: Why was this dataset created? What makes it unique and valuable?</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Independent Variables</label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewIV" rows="3"
+                                              placeholder="One per line (e.g., pleasant vs. unpleasant images)"></textarea>
+                                    <small class="text-muted">Condition variables that were manipulated</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Dependent Variables</label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewDV" rows="3"
+                                              placeholder="One per line (e.g., reaction times, BOLD signal)"></textarea>
+                                    <small class="text-muted">Response variables that were measured</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Control Variables</label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewCV" rows="3"
+                                              placeholder="One per line (e.g., age, sex, reading performance)"></textarea>
+                                    <small class="text-muted">Aspects that were explicitly controlled</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Quality Assessment</label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewQA" rows="3"
+                                              placeholder="Link to quality report or brief quality notes"></textarea>
+                                    <small class="text-muted">Reference to quality control measures</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Study Design -->
                 <div class="mb-3">
                     <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
@@ -747,8 +792,72 @@
                                                 <textarea class="form-control form-control-sm" id="smProcDebriefing" rows="2"
                                                           placeholder="Debriefing procedure"></textarea>
                                             </div>
+                                            <div class="col-12">
+                                                <label class="form-label fw-bold small">Additional Data Acquired</label>
+                                                <textarea class="form-control form-control-sm" id="smProcAdditionalData" rows="2"
+                                                          placeholder="Other data collected (questionnaires, swabs, clinical info, etc.)"></textarea>
+                                                <small class="text-muted">Especially relevant if not included in dataset</small>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label fw-bold small">Notes</label>
+                                                <textarea class="form-control form-control-sm" id="smProcNotes" rows="2"
+                                                          placeholder="Additional information about the procedure..."></textarea>
+                                            </div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Missing Data & Issues -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smMissingData">
+                        <i class="fas fa-exclamation-triangle me-1"></i> Missing Data & Known Issues
+                        <span class="float-end" id="smMissingDataBadge"></span>
+                    </button>
+                    <div class="collapse" id="smMissingData">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">Missing Data Description</label>
+                                    <textarea class="form-control form-control-sm" id="smMissingDesc" rows="3"
+                                              placeholder="General description of missing or problematic data..."></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">Missing Files (Table)</label>
+                                    <textarea class="form-control form-control-sm" id="smMissingFiles" rows="3"
+                                              placeholder="Format: sub-001 | T1w, task-rest&#10;sub-002 | ses-2 functional scans"></textarea>
+                                    <small class="text-muted">One entry per line: SubjectID | What's missing</small>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">Known Issues (Table)</label>
+                                    <textarea class="form-control form-control-sm" id="smKnownIssues" rows="3"
+                                              placeholder="Format: sub-001_task-nback_bold.nii | Shorter scan&#10;sub-002_T1w.nii | Resolution differs"></textarea>
+                                    <small class="text-muted">One entry per line: Filename | Issue description</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- References -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smReferences">
+                        <i class="fas fa-book me-1"></i> References
+                        <span class="float-end" id="smReferencesBadge"></span>
+                    </button>
+                    <div class="collapse" id="smReferences">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">References</label>
+                                    <textarea class="form-control form-control-sm" id="smReferences" rows="4"
+                                              placeholder="One reference per line or formatted citations..."></textarea>
+                                    <small class="text-muted">References used within the README</small>
                                 </div>
                             </div>
                         </div>
@@ -2313,6 +2422,14 @@
 
             const sm = data.study_metadata;
 
+            // Overview
+            const overview = sm.Overview || {};
+            document.getElementById('smOverviewMain').value = overview.Main || '';
+            document.getElementById('smOverviewIV').value = overview.IndependentVariables || '';
+            document.getElementById('smOverviewDV').value = overview.DependentVariables || '';
+            document.getElementById('smOverviewCV').value = overview.ControlVariables || '';
+            document.getElementById('smOverviewQA').value = overview.QualityAssessment || '';
+
             // Study Design
             const sd = sm.StudyDesign || {};
             document.getElementById('smSDType').value = sd.Type || '';
@@ -2513,6 +2630,13 @@
 
         try {
             const payload = {
+               Overview: {
+                    Main: document.getElementById('smOverviewMain').value || undefined,
+                    IndependentVariables: document.getElementById('smOverviewIV').value || undefined,
+                    DependentVariables: document.getElementById('smOverviewDV').value || undefined,
+                    ControlVariables: document.getElementById('smOverviewCV').value || undefined,
+                    QualityAssessment: document.getElementById('smOverviewQA').value || undefined,
+                },
                 StudyDesign: {
                     Type: document.getElementById('smSDType').value || undefined,
                     TypeDescription: document.getElementById('smSDTypeDesc').value || undefined,
@@ -2554,7 +2678,15 @@
                     QualityControl: _textToArray(document.getElementById('smProcQC').value) || undefined,
                     MissingDataHandling: document.getElementById('smProcMissing').value || undefined,
                     Debriefing: document.getElementById('smProcDebriefing').value || undefined,
+                    AdditionalData: document.getElementById('smProcAdditionalData').value || undefined,
+                    Notes: document.getElementById('smProcNotes').value || undefined,
                 },
+                MissingData: {
+                    Description: document.getElementById('smMissingDesc').value || undefined,
+                    MissingFiles: document.getElementById('smMissingFiles').value || undefined,
+                    KnownIssues: document.getElementById('smKnownIssues').value || undefined,
+                },
+                References: document.getElementById('smReferences').value || undefined,
                 Conditions: {
                     Type: document.getElementById('smCondType').value || undefined,
                     Groups: _smConditionGroups.filter(g => g.id || g.label) || undefined,
