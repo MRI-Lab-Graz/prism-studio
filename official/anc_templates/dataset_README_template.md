@@ -1,6 +1,6 @@
 # {DATASET_NAME}
 
-> This README follows the ANC (Austrian NeuroCloud) and BIDS dataset documentation standard.
+> This README follows the AND (Austrian NeuroCloud) and BIDS dataset documentation standard.
 
 {DATASET_DESCRIPTION}
 
@@ -115,4 +115,4 @@ List of the control variables - aspects that were explicitly controlled in this 
 
 ---
 
-*Generated with [PRISM Studio](https://github.com/MRI-Lab-Graz/prism-studio) using the ANC dataset template.*
+*Generated with [PRISM Studio](https://github.com/MRI-Lab-Graz/prism-studio) using the AND dataset template.*

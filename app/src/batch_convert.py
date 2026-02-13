@@ -23,16 +23,18 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
+
 # ANSI color codes for terminal output
 class Colors:
     """ANSI color codes for terminal output."""
-    RESET = '\033[0m'
-    RED = '\033[91m'        # Error (bright red)
-    YELLOW = '\033[93m'      # Warning (bright yellow)
-    GREEN = '\033[92m'       # Success (bright green)
-    BLUE = '\033[94m'        # Info (bright blue)
-    CYAN = '\033[96m'        # Data preview (bright cyan)
-    
+
+    RESET = "\033[0m"
+    RED = "\033[91m"  # Error (bright red)
+    YELLOW = "\033[93m"  # Warning (bright yellow)
+    GREEN = "\033[92m"  # Success (bright green)
+    BLUE = "\033[94m"  # Info (bright blue)
+    CYAN = "\033[96m"  # Data preview (bright cyan)
+
     @staticmethod
     def colorize(message: str, level: str) -> str:
         """Add color codes to a message based on log level."""
@@ -47,6 +49,7 @@ class Colors:
         elif level == "preview":
             return f"{Colors.CYAN}{message}{Colors.RESET}"
         return message
+
 
 # Pattern for BIDS-like filenames: sub-XXX_ses-YYY_task-ZZZ[_extra].<ext>
 BIDS_FILENAME_PATTERN = re.compile(
@@ -275,177 +278,198 @@ def _create_physio_sidecar(
 
 def _parse_tsv_columns(source_path: Path) -> dict:
     """Parse TSV file to extract column information.
-    
+
     Returns a dict with:
         - 'columns': list of column names
         - 'column_count': number of columns
         - 'row_count': number of data rows (excluding header)
     """
     try:
-        with open(source_path, 'r', encoding='utf-8', errors='ignore') as f:
+        with open(source_path, "r", encoding="utf-8", errors="ignore") as f:
             header_line = f.readline().strip()
-            columns = header_line.split('\t')
-            
+            columns = header_line.split("\t")
+
             # Count rows
             row_count = sum(1 for _ in f)
-        
+
         return {
-            'columns': columns,
-            'column_count': len(columns),
-            'row_count': row_count,
+            "columns": columns,
+            "column_count": len(columns),
+            "row_count": row_count,
         }
     except Exception:
-        return {'columns': [], 'column_count': 0, 'row_count': 0}
+        return {"columns": [], "column_count": 0, "row_count": 0}
 
 
 def _extract_eyetracking_metadata_from_tsv(tsv_path: Path) -> dict:
     """Extract metadata from TSV file, particularly from SAMPLE_MESSAGE column.
-    
+
     For SR Research EyeLink exports, metadata is embedded in the SAMPLE_MESSAGE column.
     Example: 'RECCFG CR 1000 2 1 2 1 R;ELCLCFG BTABLER;GAZE_COORDS 0.00 0.00 1919.00 1079.00...'
     """
     metadata = {}
-    
+
     try:
-        with open(tsv_path, 'r', encoding='utf-8', errors='ignore') as f:
+        with open(tsv_path, "r", encoding="utf-8", errors="ignore") as f:
             header_line = f.readline().strip()
-            columns = header_line.split('\t')
-            
+            columns = header_line.split("\t")
+
             # Try to find SAMPLE_MESSAGE column
-            if 'SAMPLE_MESSAGE' not in columns:
+            if "SAMPLE_MESSAGE" not in columns:
                 return metadata
-            
-            msg_idx = columns.index('SAMPLE_MESSAGE')
-            
+
+            msg_idx = columns.index("SAMPLE_MESSAGE")
+
             # Read first few lines to extract config
             for line_num, line in enumerate(f):
                 if line_num > 10:  # Check first few lines only
                     break
-                
-                parts = line.strip().split('\t')
+
+                parts = line.strip().split("\t")
                 if msg_idx < len(parts):
                     msg = parts[msg_idx]
-                    
+
                     # Skip empty messages
-                    if not msg or msg == '.':
+                    if not msg or msg == ".":
                         continue
-                    
+
                     # Extract sampling rate: "RECCFG CR 1000 2..." → 1000 Hz
-                    if 'RECCFG CR' in msg and 'SamplingFrequency' not in metadata:
+                    if "RECCFG CR" in msg and "SamplingFrequency" not in metadata:
                         try:
-                            match = re.search(r'RECCFG CR (\d+)', msg)
+                            match = re.search(r"RECCFG CR (\d+)", msg)
                             if match:
-                                metadata['SamplingFrequency'] = int(match.group(1))
+                                metadata["SamplingFrequency"] = int(match.group(1))
                         except Exception:
                             pass
-                    
+
                     # Extract screen coords: "GAZE_COORDS 0.00 0.00 1919.00 1079.00" → [1920, 1080]
-                    if 'GAZE_COORDS' in msg and 'ScreenResolution' not in metadata:
+                    if "GAZE_COORDS" in msg and "ScreenResolution" not in metadata:
                         try:
-                            match = re.search(r'GAZE_COORDS [\d.]+ [\d.]+ ([\d.]+) ([\d.]+)', msg)
+                            match = re.search(
+                                r"GAZE_COORDS [\d.]+ [\d.]+ ([\d.]+) ([\d.]+)", msg
+                            )
                             if match:
                                 width = int(float(match.group(1)) + 1)
                                 height = int(float(match.group(2)) + 1)
-                                metadata['ScreenResolution'] = [width, height]
+                                metadata["ScreenResolution"] = [width, height]
                         except Exception:
                             pass
-                    
+
                     # Extract camera lens focal length
-                    if 'CAMERA_LENS_FOCAL_LENGTH' in msg and 'CameraLensFocalLength' not in metadata:
+                    if (
+                        "CAMERA_LENS_FOCAL_LENGTH" in msg
+                        and "CameraLensFocalLength" not in metadata
+                    ):
                         try:
-                            match = re.search(r'CAMERA_LENS_FOCAL_LENGTH ([\d.]+)', msg)
+                            match = re.search(r"CAMERA_LENS_FOCAL_LENGTH ([\d.]+)", msg)
                             if match:
-                                metadata['CameraLensFocalLength'] = float(match.group(1))
+                                metadata["CameraLensFocalLength"] = float(
+                                    match.group(1)
+                                )
                         except Exception:
                             pass
-                    
+
                     # Extract pupil fit method: "ELCL_PROC CENTROID" → "centroid"
-                    if 'ELCL_PROC' in msg and 'PupilFitMethod' not in metadata:
+                    if "ELCL_PROC" in msg and "PupilFitMethod" not in metadata:
                         try:
-                            match = re.search(r'ELCL_PROC (\w+)', msg)
+                            match = re.search(r"ELCL_PROC (\w+)", msg)
                             if match:
                                 method = match.group(1).lower()
-                                if method == 'centroid':
-                                    metadata['PupilFitMethod'] = 'centroid'
-                                elif method == 'ellipse':
-                                    metadata['PupilFitMethod'] = 'ellipse'
+                                if method == "centroid":
+                                    metadata["PupilFitMethod"] = "centroid"
+                                elif method == "ellipse":
+                                    metadata["PupilFitMethod"] = "ellipse"
                         except Exception:
                             pass
-                    
+
                     # Extract pupil data type: "PUPIL_DATA_TYPE RAW_AUTOSLIP"
-                    if 'PUPIL_DATA_TYPE' in msg and 'PupilDataType' not in metadata:
+                    if "PUPIL_DATA_TYPE" in msg and "PupilDataType" not in metadata:
                         try:
-                            match = re.search(r'PUPIL_DATA_TYPE (\S+)', msg)
+                            match = re.search(r"PUPIL_DATA_TYPE (\S+)", msg)
                             if match:
-                                metadata['PupilDataType'] = match.group(1)
+                                metadata["PupilDataType"] = match.group(1)
                         except Exception:
                             pass
-                    
+
                     # Extract tracking mode: "RECCFG CR" → "pupil-cr"
-                    if 'RECCFG' in msg and 'TrackingMode' not in metadata:
+                    if "RECCFG" in msg and "TrackingMode" not in metadata:
                         try:
-                            if 'RECCFG CR' in msg:
-                                metadata['TrackingMode'] = 'pupil-cr'
-                            elif 'RECCFG PL' in msg:
-                                metadata['TrackingMode'] = 'pupil-only'
+                            if "RECCFG CR" in msg:
+                                metadata["TrackingMode"] = "pupil-cr"
+                            elif "RECCFG PL" in msg:
+                                metadata["TrackingMode"] = "pupil-only"
                         except Exception:
                             pass
     except Exception:
         pass
-    
+
     return metadata
 
 
 def _get_tsv_preview(file_path: Path, max_rows: int = 8) -> str:
     """Get first N rows of a TSV file as formatted string."""
     import csv
-    
+
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            reader = csv.reader(f, delimiter='\t')
+        with open(file_path, "r", encoding="utf-8") as f:
+            reader = csv.reader(f, delimiter="\t")
             rows = []
             for i, row in enumerate(reader):
                 if i >= max_rows:
                     break
                 rows.append(row)
-            
+
             if not rows:
                 return "(empty file)"
-            
+
             # Format as aligned columns
             if len(rows) == 1:
-                return ' | '.join(rows[0][:5]) + ('...' if len(rows[0]) > 5 else '')
-            
+                return " | ".join(rows[0][:5]) + ("..." if len(rows[0]) > 5 else "")
+
             # Calculate column widths
             col_widths = []
             for col_idx in range(len(rows[0])):
-                max_width = max(len(str(rows[row_idx][col_idx] if col_idx < len(rows[row_idx]) else ''))
-                               for row_idx in range(len(rows)))
+                max_width = max(
+                    len(
+                        str(
+                            rows[row_idx][col_idx]
+                            if col_idx < len(rows[row_idx])
+                            else ""
+                        )
+                    )
+                    for row_idx in range(len(rows))
+                )
                 col_widths.append(min(max_width, 15))  # Cap width at 15 chars
-            
+
             # Format header
-            header = ' | '.join(rows[0][col_idx].ljust(col_widths[col_idx])
-                              for col_idx in range(min(len(rows[0]), 5)))
+            header = " | ".join(
+                rows[0][col_idx].ljust(col_widths[col_idx])
+                for col_idx in range(min(len(rows[0]), 5))
+            )
             if len(rows[0]) > 5:
-                header += ' | ...'
-            
+                header += " | ..."
+
             # Format data rows
             data_lines = []
             for row_idx in range(1, len(rows)):
-                line = ' | '.join(str(rows[row_idx][col_idx] if col_idx < len(rows[row_idx]) else '')[:col_widths[col_idx]].ljust(col_widths[col_idx])
-                                 for col_idx in range(min(len(rows[row_idx]), 5)))
+                line = " | ".join(
+                    str(rows[row_idx][col_idx] if col_idx < len(rows[row_idx]) else "")[
+                        : col_widths[col_idx]
+                    ].ljust(col_widths[col_idx])
+                    for col_idx in range(min(len(rows[row_idx]), 5))
+                )
                 if len(rows[row_idx]) > 5:
-                    line += ' | ...'
+                    line += " | ..."
                 data_lines.append(line)
-            
-            return header + '\n' + '\n'.join(data_lines)
+
+            return header + "\n" + "\n".join(data_lines)
     except Exception as e:
         return f"(could not read preview: {str(e)[:50]})"
 
 
 def _process_eyetracking_tsv(source_path: Path, output_path: Path) -> dict:
     """Process eyetracking TSV file: normalize to PRISM format.
-    
+
     Operations:
     1. Drops RECORDING_SESSION_LABEL (redundant in filename)
     2. Converts dots (.) to empty strings (BIDS standard for missing values)
@@ -456,46 +480,47 @@ def _process_eyetracking_tsv(source_path: Path, output_path: Path) -> dict:
        - TIMESTAMP → timestamp
     4. Orders core columns first: timestamp, x_coordinate, y_coordinate, pupil_size, then others
     5. Preserves all other columns
-    
+
     Returns info about the processing including dropped columns and row count.
     """
     import csv
-    
+
     # Columns to drop (redundant with PRISM structure)
-    columns_to_drop = {'RECORDING_SESSION_LABEL'}
-    
+    columns_to_drop = {"RECORDING_SESSION_LABEL"}
+
     # Column mapping: EyeLink name → BEP020 standard name
     column_mapping = {
-        'AVERAGE_GAZE_X': 'x_coordinate',
-        'AVERAGE_GAZE_Y': 'y_coordinate',
-        'AVERAGE_PUPIL_SIZE': 'pupil_size',
-        'TIMESTAMP': 'timestamp',
+        "AVERAGE_GAZE_X": "x_coordinate",
+        "AVERAGE_GAZE_Y": "y_coordinate",
+        "AVERAGE_PUPIL_SIZE": "pupil_size",
+        "TIMESTAMP": "timestamp",
     }
-    
+
     # Core columns that should appear first in this order
-    core_columns_order = ['timestamp', 'x_coordinate', 'y_coordinate', 'pupil_size']
-    
+    core_columns_order = ["timestamp", "x_coordinate", "y_coordinate", "pupil_size"]
+
     try:
         # Detect if gzipped
-        if source_path.suffix.lower() == '.gz':
+        if source_path.suffix.lower() == ".gz":
             import gzip
+
             open_func = gzip.open
-            mode = 'rt'
+            mode = "rt"
         else:
             open_func = open
-            mode = 'r'
-        
+            mode = "r"
+
         # Read input
-        with open_func(source_path, mode, encoding='utf-8', errors='ignore') as infile:
-            reader = csv.DictReader(infile, delimiter='\t')
+        with open_func(source_path, mode, encoding="utf-8", errors="ignore") as infile:
+            reader = csv.DictReader(infile, delimiter="\t")
             rows = list(reader)
-        
+
         if not rows:
-            return {'status': 'error', 'message': 'No data rows found'}
-        
+            return {"status": "error", "message": "No data rows found"}
+
         # Get original columns and clean BOM if present
-        original_columns = [col.lstrip('\ufeff') for col in rows[0].keys()]
-        
+        original_columns = [col.lstrip("\ufeff") for col in rows[0].keys()]
+
         # Build new column names:
         # 1. Filter out columns to drop
         # 2. Rename mapped columns
@@ -508,130 +533,135 @@ def _process_eyetracking_tsv(source_path: Path, output_path: Path) -> dict:
                 renamed_columns.append(column_mapping[col])
             else:
                 renamed_columns.append(col)
-        
+
         # Sort columns: core columns first (in order), then others
         new_columns = []
         for core_col in core_columns_order:
             if core_col in renamed_columns:
                 new_columns.append(core_col)
                 renamed_columns.remove(core_col)
-        
+
         # Add remaining columns
         new_columns.extend(renamed_columns)
-        
+
         # Open output file
-        if output_path.suffix.lower() == '.gz':
+        if output_path.suffix.lower() == ".gz":
             import gzip
-            outfile = gzip.open(output_path, 'wt', encoding='utf-8')
+
+            outfile = gzip.open(output_path, "wt", encoding="utf-8")
         else:
-            outfile = open(output_path, 'w', encoding='utf-8', newline='')
-        
+            outfile = open(output_path, "w", encoding="utf-8", newline="")
+
         with outfile as out:
-            writer = csv.DictWriter(out, fieldnames=new_columns, delimiter='\t')
+            writer = csv.DictWriter(out, fieldnames=new_columns, delimiter="\t")
             writer.writeheader()
-            
+
             # Write rows with renamed columns and normalized missing values
             for row in rows:
                 new_row = {}
                 for old_col_raw, value in row.items():
                     # Clean BOM from column name if present
-                    old_col = old_col_raw.lstrip('\ufeff')
-                    
+                    old_col = old_col_raw.lstrip("\ufeff")
+
                     # Skip dropped columns
                     if old_col in columns_to_drop:
                         continue
-                    
+
                     # Get new column name
                     new_col = column_mapping.get(old_col, old_col)
-                    
+
                     # Convert dots to empty strings (BIDS standard for missing values)
                     # Keep empty strings as-is
-                    normalized_value = '' if value == '.' else value
-                    
+                    normalized_value = "" if value == "." else value
+
                     new_row[new_col] = normalized_value
                 writer.writerow(new_row)
-        
+
         # Calculate which columns were actually dropped from original
         dropped_cols = [col for col in original_columns if col in columns_to_drop]
-        
+
         return {
-            'status': 'success',
-            'original_columns': list(original_columns),
-            'new_columns': new_columns,
-            'row_count': len(rows),
-            'renamed_columns': {v: k for k, v in column_mapping.items() if k in original_columns},
-            'dropped_columns': dropped_cols,
-            'normalized_missing_values': True,
-            'missing_value_indicator': 'dots (.) converted to empty strings'
+            "status": "success",
+            "original_columns": list(original_columns),
+            "new_columns": new_columns,
+            "row_count": len(rows),
+            "renamed_columns": {
+                v: k for k, v in column_mapping.items() if k in original_columns
+            },
+            "dropped_columns": dropped_cols,
+            "normalized_missing_values": True,
+            "missing_value_indicator": "dots (.) converted to empty strings",
         }
-    
+
     except Exception as e:
-        return {'status': 'error', 'message': str(e)}
+        return {"status": "error", "message": str(e)}
 
 
 def _process_eyetracking_events_tsv(source_path: Path, output_path: Path) -> dict:
     """Process eyetracking events TSV file (fixations/saccades).
-    
+
     Renames key columns to BIDS-standard names:
     - First column (timestamp) → onset
     - Second column (duration) → duration
     - Third column (event type) → trial_type
     - Other columns preserved
-    
+
     Returns info about the processing.
     """
     import csv
-    
+
     try:
         # Detect if gzipped
-        if source_path.suffix.lower() == '.gz':
+        if source_path.suffix.lower() == ".gz":
             import gzip
+
             open_func = gzip.open
-            mode = 'rt'
+            mode = "rt"
         else:
             open_func = open
-            mode = 'r'
-        
+            mode = "r"
+
         # Read input
-        with open_func(source_path, mode, encoding='utf-8', errors='ignore') as infile:
-            reader = csv.DictReader(infile, delimiter='\t')
+        with open_func(source_path, mode, encoding="utf-8", errors="ignore") as infile:
+            reader = csv.DictReader(infile, delimiter="\t")
             rows = list(reader)
-        
+
         if not rows:
-            return {'status': 'error', 'message': 'No data rows found'}
-        
+            return {"status": "error", "message": "No data rows found"}
+
         # Get original columns
         original_columns = list(rows[0].keys())
-        
+
         # Map first 3 columns to BIDS standard (onset, duration, trial_type)
         # Rest stay as-is
         new_columns = []
         column_mapping = {}
-        
+
         for i, col in enumerate(original_columns):
             if i == 0:  # First column → onset
-                new_columns.append('onset')
-                column_mapping[col] = 'onset'
+                new_columns.append("onset")
+                column_mapping[col] = "onset"
             elif i == 1:  # Second column → duration
-                new_columns.append('duration')
-                column_mapping[col] = 'duration'
+                new_columns.append("duration")
+                column_mapping[col] = "duration"
             elif i == 2:  # Third column → trial_type
-                new_columns.append('trial_type')
-                column_mapping[col] = 'trial_type'
+                new_columns.append("trial_type")
+                column_mapping[col] = "trial_type"
             else:
                 new_columns.append(col)
-        
+
         # Open output file
-        if output_path.suffix.lower() == '.gz':
+        if output_path.suffix.lower() == ".gz":
             import gzip
-            outfile = gzip.open(output_path, 'wt', encoding='utf-8')
+
+            outfile = gzip.open(output_path, "wt", encoding="utf-8")
         else:
-            outfile = open(output_path, 'w', encoding='utf-8', newline='')
-        
+            outfile = open(output_path, "w", encoding="utf-8", newline="")
+
         with outfile as out:
-            writer = csv.DictWriter(out, fieldnames=new_columns, delimiter='\t')
+            writer = csv.DictWriter(out, fieldnames=new_columns, delimiter="\t")
             writer.writeheader()
-            
+
             # Write rows with renamed columns
             for row in rows:
                 new_row = {}
@@ -639,17 +669,17 @@ def _process_eyetracking_events_tsv(source_path: Path, output_path: Path) -> dic
                     new_col = column_mapping.get(old_col, old_col)
                     new_row[new_col] = value
                 writer.writerow(new_row)
-        
+
         return {
-            'status': 'success',
-            'original_columns': original_columns,
-            'new_columns': new_columns,
-            'row_count': len(rows),
-            'renamed_columns': column_mapping
+            "status": "success",
+            "original_columns": original_columns,
+            "new_columns": new_columns,
+            "row_count": len(rows),
+            "renamed_columns": column_mapping,
         }
-    
+
     except Exception as e:
-        return {'status': 'error', 'message': str(e)}
+        return {"status": "error", "message": str(e)}
 
 
 def _create_events_sidecar(
@@ -659,14 +689,14 @@ def _create_events_sidecar(
     extra_meta: dict | None = None,
 ) -> None:
     """Create a BIDS-style JSON sidecar for eyetracking events.
-    
+
     Events files contain fixations, saccades, and messages detected from the raw data.
     Following BIDS BEP020 specification.
     """
     from datetime import datetime
-    
+
     extra_meta = extra_meta or {}
-    
+
     # Build events-specific sidecar
     sidecar = {
         "Columns": ["onset", "duration", "trial_type", "blink", "message"],
@@ -676,49 +706,46 @@ def _create_events_sidecar(
         "SchemaVersion": "1.1.0",
         "CreationDate": datetime.now().strftime("%Y-%m-%d"),
     }
-    
+
     # Column descriptions
     sidecar["onset"] = {
         "Description": "Event onset time",
         "Units": "ms",
-        "Origin": "Device timestamp"
+        "Origin": "Device timestamp",
     }
-    
-    sidecar["duration"] = {
-        "Description": "Event duration",
-        "Units": "ms"
-    }
-    
+
+    sidecar["duration"] = {"Description": "Event duration", "Units": "ms"}
+
     sidecar["trial_type"] = {
         "Description": "Type of event detected",
         "Levels": {
             "fixation": "Indicates a fixation event",
             "saccade": "Indicates a saccadic movement",
             "blink": "Indicates an eye blink",
-            "message": "System message or marker"
-        }
+            "message": "System message or marker",
+        },
     }
-    
+
     sidecar["blink"] = {
         "Description": "Blink status of the eye",
         "Levels": {
             "0": "Eye open",
             "1": "Eye closed/blinking",
-            "n/a": "Not applicable"
-        }
+            "n/a": "Not applicable",
+        },
     }
-    
+
     sidecar["message"] = {
         "Description": "Message text logged by the eye-tracker or system"
     }
-    
+
     # Add device info if available
     if "Manufacturer" in extra_meta:
         sidecar["Manufacturer"] = extra_meta["Manufacturer"]
-    
+
     if "SamplingFrequency" in extra_meta:
         sidecar["SamplingFrequency"] = extra_meta["SamplingFrequency"]
-    
+
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(sidecar, f, indent=2, ensure_ascii=False)
 
@@ -731,21 +758,21 @@ def _create_eyetracking_sidecar(
     extra_meta: dict | None = None,
 ) -> None:
     """Create a BIDS-style JSON sidecar for eyetracking data.
-    
+
     Uses flat, top-level key structure following BIDS BEP020 specification.
     Supports both EDF and TSV formats. For TSV files, extracts metadata
     from the file itself (e.g., SAMPLE_MESSAGE column).
     """
     from datetime import datetime
-    
+
     extra_meta = extra_meta or {}
     file_ext = source_path.suffix.lower()
-    
+
     # For TSV files, extract metadata
     if file_ext in (".tsv", ".tsv.gz"):
         tsv_meta = _extract_eyetracking_metadata_from_tsv(source_path)
         extra_meta.update(tsv_meta)
-    
+
     # Build BIDS-style flat sidecar
     sidecar = {
         # Required fields
@@ -758,14 +785,14 @@ def _create_eyetracking_sidecar(
         "SchemaVersion": "1.1.0",
         "CreationDate": datetime.now().strftime("%Y-%m-%d"),
     }
-    
+
     # Add optional manufacturer/model fields if available
     if "ManufacturerModelName" in extra_meta:
         sidecar["ManufacturersModelName"] = extra_meta["ManufacturerModelName"]
-    
+
     if "SoftwareVersion" in extra_meta:
         sidecar["SoftwareVersion"] = extra_meta["SoftwareVersion"]
-    
+
     # Eye tracking method (P-CR, P-only, CR-only)
     if "TrackingMode" in extra_meta:
         tracking = extra_meta["TrackingMode"]
@@ -773,27 +800,27 @@ def _create_eyetracking_sidecar(
             sidecar["EyeTrackingMethod"] = "P-CR"
         elif tracking == "pupil-only":
             sidecar["EyeTrackingMethod"] = "P-only"
-    
+
     # Pupil fitting method
     if "PupilFitMethod" in extra_meta:
         sidecar["PupilFitMethod"] = extra_meta["PupilFitMethod"]
-    
+
     # Screen parameters
     if "ScreenSize" in extra_meta:
         sidecar["ScreenSize"] = extra_meta["ScreenSize"]
-    
+
     if "ScreenRefreshRate" in extra_meta:
         sidecar["ScreenRefreshRate"] = extra_meta["ScreenRefreshRate"]
-    
+
     sidecar["SampleCoordinateSystem"] = "gaze-on-screen"
-    
+
     # Calibration information
     if "CalibrationPositions" in extra_meta:
         sidecar["CalibrationCount"] = extra_meta["CalibrationPositions"]
-    
+
     if "CalibrationAccuracy" in extra_meta:
         sidecar["AverageCalibrationError"] = extra_meta["CalibrationAccuracy"]
-    
+
     # File format
     if file_ext == ".edf":
         sidecar["FileFormat"] = "edf"
@@ -801,90 +828,84 @@ def _create_eyetracking_sidecar(
         sidecar["FileFormat"] = file_ext
     elif file_ext == ".asc":
         sidecar["FileFormat"] = "asc"
-    
+
     # Processing level
     if file_ext in (".tsv", ".tsv.gz"):
         sidecar["ProcessingLevel"] = "parsed"
     else:
         sidecar["ProcessingLevel"] = "raw"
-    
+
     # Column definitions for TSV files
     if file_ext in (".tsv", ".tsv.gz"):
         tsv_info = _parse_tsv_columns(source_path)
-        
+
         # Mapping of EyeLink column names to BIDS-style descriptions
         column_descriptions = {
             "RECORDING_SESSION_LABEL": {
                 "Description": "Session label for this recording",
-                "Units": "string"
+                "Units": "string",
             },
-            "TRIAL_INDEX": {
-                "Description": "Trial number",
-                "Units": "index"
-            },
+            "TRIAL_INDEX": {"Description": "Trial number", "Units": "index"},
             "AVERAGE_GAZE_X": {
                 "Description": "Average gaze X position",
-                "Units": "pixels"
+                "Units": "pixels",
             },
             "AVERAGE_GAZE_Y": {
                 "Description": "Average gaze Y position",
-                "Units": "pixels"
+                "Units": "pixels",
             },
             "AVERAGE_PUPIL_SIZE": {
                 "Description": "Average pupil diameter",
-                "Units": "arbitrary"
+                "Units": "arbitrary",
             },
             "AVERAGE_VELOCITY_X": {
                 "Description": "Average gaze velocity X",
-                "Units": "pixels/s"
+                "Units": "pixels/s",
             },
             "AVERAGE_VELOCITY_Y": {
                 "Description": "Average gaze velocity Y",
-                "Units": "pixels/s"
+                "Units": "pixels/s",
             },
             "AVERAGE_ACCELERATION_X": {
                 "Description": "Average gaze acceleration X",
-                "Units": "pixels/s²"
+                "Units": "pixels/s²",
             },
             "AVERAGE_ACCELERATION_Y": {
                 "Description": "Average gaze acceleration Y",
-                "Units": "pixels/s²"
+                "Units": "pixels/s²",
             },
             "AVERAGE_IN_BLINK": {
                 "Description": "Proportion of trial time during blink",
-                "Units": "0-1"
+                "Units": "0-1",
             },
             "AVERAGE_IN_SACCADE": {
                 "Description": "Proportion of trial time during saccade",
-                "Units": "0-1"
+                "Units": "0-1",
             },
             "IP_START_TIME": {
                 "Description": "Interval start timestamp",
-                "Units": "arbitrary"
+                "Units": "arbitrary",
             },
-            "TIMESTAMP": {
-                "Description": "Sample timestamp",
-                "Units": "milliseconds"
-            },
+            "TIMESTAMP": {"Description": "Sample timestamp", "Units": "milliseconds"},
             "SAMPLE_MESSAGE": {
                 "Description": "EyeLink recorder messages and metadata",
-                "Units": "string"
+                "Units": "string",
             },
         }
-        
+
         columns = {}
-        for col_name in tsv_info.get('columns', []):
+        for col_name in tsv_info.get("columns", []):
             if col_name in column_descriptions:
                 columns[col_name] = column_descriptions[col_name]
             else:
                 # For unknown columns, create a generic description
                 columns[col_name] = {
                     "Description": f"{col_name.replace('_', ' ').lower()}",
-                    "Units": "unknown"
+                    "Units": "unknown",
                 }
-        
+
         sidecar["Columns"] = columns
-    
+
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(sidecar, f, indent=2, ensure_ascii=False)
 
@@ -963,13 +984,13 @@ def convert_physio_file(
         if ext in ("raw", "vpd"):
             conversion_failed = False
             conversion_error_msg = None
-            
+
             if log_callback:
                 log_callback(
-                    f"  🔬 Attempting RAW → EDF conversion...",
+                    "  🔬 Attempting RAW → EDF conversion...",
                     "info",
                 )
-            
+
             try:
                 from helpers.physio.convert_varioport import convert_varioport
 
@@ -980,7 +1001,7 @@ def convert_physio_file(
                 parts_edf.append(task)
                 parts_edf.append("physio")
                 base_name_edf = "_".join(parts_edf)
-                
+
                 out_edf = out_folder / f"{base_name_edf}.edf"
                 # Write sidecar to root for BIDS inheritance
                 out_root_json = (
@@ -1023,7 +1044,7 @@ def convert_physio_file(
             except Exception as e:
                 conversion_failed = True
                 conversion_error_msg = f"Conversion failed: {e}"
-            
+
             # Fallback if conversion failed for any reason
             if conversion_failed:
                 if log_callback:
@@ -1039,7 +1060,7 @@ def convert_physio_file(
                         "  💡 Note: RAW files should be converted to EDF format. Please check logs.",
                         "warning",
                     )
-                
+
                 # Use 'unconverted' label to make it clear this wasn't processed
                 rec_label = "unconverted"
                 parts_fallback = [sub]
@@ -1049,7 +1070,7 @@ def convert_physio_file(
                 parts_fallback.append(f"recording-{rec_label}")
                 parts_fallback.append("physio")
                 base_name_fallback = "_".join(parts_fallback)
-                
+
                 out_data = out_folder / f"{base_name_fallback}.{ext}"
                 out_root_json = (
                     output_dir / f"task-{task.replace('task-', '')}_physio.json"
@@ -1076,7 +1097,7 @@ def convert_physio_file(
             parts_clean.append(task)
             parts_clean.append("physio")
             base_name_clean = "_".join(parts_clean)
-            
+
             out_data = out_folder / f"{base_name_clean}.{ext}"
             out_root_json = output_dir / f"task-{task.replace('task-', '')}_physio.json"
 
@@ -1129,12 +1150,12 @@ def convert_eyetracking_file(
     log_callback: Callable[[str, str], None] | None = None,
 ) -> ConvertedFile:
     """Convert a single eyetracking file to PRISM format.
-    
+
     Supports multiple formats:
     - EDF (EyeLink binary format)
     - TSV / TSV.GZ (Tab-separated values, e.g., EyeLink Data Viewer export)
     - ASC (EyeLink ASCII format)
-    
+
     Files are copied to output and a JSON sidecar with metadata is created.
     """
     sub = parsed["sub"]
@@ -1142,7 +1163,7 @@ def convert_eyetracking_file(
     task = parsed["task"]
     suffix = parsed.get("suffix", "eyetrack").lower()  # "eyetrack" or "events"
     ext = parsed["ext"].lower()
-    
+
     # Normalize extension
     if ext.startswith("."):
         ext = ext[1:]
@@ -1157,7 +1178,10 @@ def convert_eyetracking_file(
     # Log file details
     if log_callback:
         log_callback(f"📍 File: {source_path.name}", "info")
-        log_callback(f"   Subject: {sub}, Task: {task.replace('task-', '')}, Format: .{ext.upper()}", "info")
+        log_callback(
+            f"   Subject: {sub}, Task: {task.replace('task-', '')}, Format: .{ext.upper()}",
+            "info",
+        )
 
     # Build output path: output_dir/sub-XXX/[ses-YYY/]eyetracking/
     if ses:
@@ -1194,69 +1218,88 @@ def convert_eyetracking_file(
     try:
         # Copy the data file
         if log_callback:
-            log_callback(f"  🔄 Copying data file to {out_folder.relative_to(output_dir.parent)}...", "info")
-        
+            log_callback(
+                f"  🔄 Copying data file to {out_folder.relative_to(output_dir.parent)}...",
+                "info",
+            )
+
         # Handle TSV processing differently - rename BIDS columns
         if ext in ("tsv", "tsv.gz"):
             if suffix == "events":
                 # Events file: onset, duration, trial_type columns
                 if log_callback:
-                    log_callback(f"     Processing Events TSV: renaming to BIDS format (onset, duration, trial_type)...", "info")
-                
+                    log_callback(
+                        "     Processing Events TSV: renaming to BIDS format (onset, duration, trial_type)...",
+                        "info",
+                    )
+
                 process_result = _process_eyetracking_events_tsv(source_path, out_data)
             else:
                 # Samples file: x, y, pupil_size, timestamp columns
                 if log_callback:
-                    log_callback(f"     Processing Samples TSV: renaming BIDS columns (x_coordinate, y_coordinate, pupil_size, timestamp)...", "info")
-                
+                    log_callback(
+                        "     Processing Samples TSV: renaming BIDS columns (x_coordinate, y_coordinate, pupil_size, timestamp)...",
+                        "info",
+                    )
+
                 process_result = _process_eyetracking_tsv(source_path, out_data)
-            
-            if process_result['status'] == 'error':
+
+            if process_result["status"] == "error":
                 if log_callback:
-                    log_callback(f"     ❌ TSV processing error: {process_result['message']}", "error")
+                    log_callback(
+                        f"     ❌ TSV processing error: {process_result['message']}",
+                        "error",
+                    )
                 raise Exception(f"TSV processing failed: {process_result['message']}")
-            
-            renamed = process_result.get('renamed_columns', {})
+
+            renamed = process_result.get("renamed_columns", {})
             if renamed and log_callback:
-                log_callback(f"     ✓ Renamed columns: {', '.join([f'{v}→{k}' for k, v in renamed.items()])}", "success")
-            
+                log_callback(
+                    f"     ✓ Renamed columns: {', '.join([f'{v}→{k}' for k, v in renamed.items()])}",
+                    "success",
+                )
+
             # Show first 8 rows of output as preview
             if log_callback and suffix in ("eyetrack", "eyetracking"):
                 preview = _get_tsv_preview(out_data, max_rows=8)
-                log_callback(f"     📋 Output preview (first 8 rows):", "preview")
-                for line in preview.split('\n'):
+                log_callback("     📋 Output preview (first 8 rows):", "preview")
+                for line in preview.split("\n"):
                     log_callback(f"        {line}", "preview")
         else:
             # For EDF/ASC, just copy
             shutil.copy2(source_path, out_data)
-        
+
         output_files.append(out_data)
-        
+
         if log_callback:
             file_size = out_data.stat().st_size
-            size_str = f"{file_size / (1024 * 1024):.2f} MB" if file_size > 1024 * 1024 else f"{file_size / 1024:.2f} KB"
+            size_str = (
+                f"{file_size / (1024 * 1024):.2f} MB"
+                if file_size > 1024 * 1024
+                else f"{file_size / 1024:.2f} KB"
+            )
             log_callback(f"  ✅ Copied: {out_data.name} ({size_str})", "success")
 
         # Extract metadata based on file type
         if log_callback:
-            log_callback(f"  🔄 Extracting metadata and creating JSON sidecar...", "info")
-        
+            log_callback(
+                "  🔄 Extracting metadata and creating JSON sidecar...", "info"
+            )
+
         extra_meta = {}
-        
+
         if ext == "edf":
             if log_callback:
-                log_callback(f"     Reading EDF header...", "info")
+                log_callback("     Reading EDF header...", "info")
             extra_meta = _extract_edf_metadata(source_path)
         elif ext in ("tsv", "tsv.gz") and suffix in ("eyetrack", "eyetracking"):
             if log_callback:
-                log_callback(f"     Parsing TSV structure and columns...", "info")
+                log_callback("     Parsing TSV structure and columns...", "info")
             extra_meta = _extract_eyetracking_metadata_from_tsv(source_path)
-        
+
         # Create appropriate sidecar based on file type
         if suffix == "events":
-            _create_events_sidecar(
-                out_json, task_name=task, extra_meta=extra_meta
-            )
+            _create_events_sidecar(out_json, task_name=task, extra_meta=extra_meta)
         else:
             # Create full subject-level sidecar for samples/EDF
             _create_eyetracking_sidecar(
@@ -1288,50 +1331,65 @@ def convert_eyetracking_file(
                         json.dump(sidecar, jf, indent=2)
             except (ImportError, Exception):
                 pass
-        
+
         # Load subject sidecar to check if root-level one is needed
         with open(out_json, "r", encoding="utf-8") as jf:
             subject_sidecar = json.load(jf)
-        
+
         # Create/update root-level JSON with shared fields only
         # (if it doesn't exist or if we need to update it)
         root_sidecar = {}
         if out_root_json.exists():
             with open(out_root_json, "r", encoding="utf-8") as jf:
                 root_sidecar = json.load(jf)
-        
+
         # Build root sidecar with only shared/common fields
         root_sidecar_new = {
             "Manufacturer": subject_sidecar.get("Manufacturer", "SR Research"),
             "TaskName": subject_sidecar.get("TaskName"),
-            "FileFormat": subject_sidecar.get("FileFormat", "tsv" if ext in ("tsv", "tsv.gz") else ext),
+            "FileFormat": subject_sidecar.get(
+                "FileFormat", "tsv" if ext in ("tsv", "tsv.gz") else ext
+            ),
             "SchemaVersion": subject_sidecar.get("SchemaVersion", "1.1.0"),
         }
-        
+
         # Write root sidecar if different or doesn't exist
         if root_sidecar != root_sidecar_new:
             with open(out_root_json, "w", encoding="utf-8") as jf:
                 json.dump(root_sidecar_new, jf, indent=2)
             if log_callback and not out_root_json.exists():
-                log_callback(f"  ✅ Root sidecar created: {out_root_json.name}", "success")
-        
+                log_callback(
+                    f"  ✅ Root sidecar created: {out_root_json.name}", "success"
+                )
+
         # Check if subject sidecar differs from root - keep it if different
         subject_differs = any(
             subject_sidecar.get(k) != root_sidecar_new.get(k)
-            for k in ["SamplingFrequency", "ScreenResolution", "ScreenDistance", 
-                      "RecordedEye", "EyeTrackingMethod", "PupilFitMethod"]
+            for k in [
+                "SamplingFrequency",
+                "ScreenResolution",
+                "ScreenDistance",
+                "RecordedEye",
+                "EyeTrackingMethod",
+                "PupilFitMethod",
+            ]
         )
-        
+
         if subject_differs:
             output_files.append(out_json)
             if log_callback:
-                log_callback(f"  ✅ Subject sidecar created: {out_json.name} (subject-specific)", "success")
+                log_callback(
+                    f"  ✅ Subject sidecar created: {out_json.name} (subject-specific)",
+                    "success",
+                )
         else:
             # Subject sidecar is identical to root, remove it
             if out_json.exists():
                 out_json.unlink()
             if log_callback:
-                log_callback(f"  ℹ️  Using root sidecar (identical across subjects)", "info")
+                log_callback(
+                    "  ℹ️  Using root sidecar (identical across subjects)", "info"
+                )
 
         return ConvertedFile(
             source_path=source_path,
@@ -1346,7 +1404,7 @@ def convert_eyetracking_file(
     except Exception as e:
         if log_callback:
             log_callback(f"  ❌ Error: {str(e)}", "error")
-        
+
         return ConvertedFile(
             source_path=source_path,
             output_files=[],
@@ -1664,10 +1722,11 @@ def batch_convert_folder(
 
     # Check if any files have 'unconverted' in their name (fallback was triggered)
     unconverted_count = sum(
-        1 for conv in result.converted 
-        if conv.success and any('unconverted' in str(f) for f in conv.output_files)
+        1
+        for conv in result.converted
+        if conv.success and any("unconverted" in str(f) for f in conv.output_files)
     )
-    
+
     # Summary
     log("", "info")
     if dry_run:
@@ -1687,32 +1746,35 @@ def batch_convert_folder(
         log(f"   ⏭️  Skipped: {len(result.skipped)}", "warning")
     if result.conflicts:
         log(f"   ⚠️  Conflicts: {len(result.conflicts)}", "warning")
-    
+
     # Alert user if any conversions failed and files were copied as fallback
     if unconverted_count > 0:
         log("", "info")
-        log(f"⚠️  WARNING: {unconverted_count} file(s) were copied without conversion!", "error")
+        log(
+            f"⚠️  WARNING: {unconverted_count} file(s) were copied without conversion!",
+            "error",
+        )
         log("   RAW/VPD files should be converted to EDF format.", "warning")
-        log("   Files are labeled 'recording-unconverted' - check logs above for details.", "warning")
-    
+        log(
+            "   Files are labeled 'recording-unconverted' - check logs above for details.",
+            "warning",
+        )
+
     if dry_run:
         log("💡 Run 'Copy to Project' when you're ready to execute.", "info")
 
     # Update participants.tsv with all participant IDs found in converted files
     if not dry_run and result.success_count > 0:
         participant_ids = {
-            conv.subject 
-            for conv in result.converted 
-            if conv.success and conv.subject
+            conv.subject for conv in result.converted if conv.success and conv.subject
         }
-        
+
         if participant_ids:
             try:
                 from .utils.io import update_participants_tsv
+
                 update_participants_tsv(
-                    output_folder, 
-                    participant_ids,
-                    log_fn=lambda msg: log(msg, "info")
+                    output_folder, participant_ids, log_fn=lambda msg: log(msg, "info")
                 )
             except Exception as e:
                 log(f"⚠️  Could not update participants.tsv: {e}", "warning")

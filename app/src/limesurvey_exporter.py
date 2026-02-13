@@ -1,5 +1,6 @@
 import json
 import logging
+
 try:
     from defusedxml import ElementTree as ET
 except ImportError:

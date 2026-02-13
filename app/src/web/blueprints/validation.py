@@ -86,7 +86,7 @@ def validate_dataset():
 
 def _cleanup_old_validation_reports():
     """Delete old validation reports from Downloads folder to prevent confusion.
-    
+
     Removes validation_report_*.json files older than 1 hour from the user's
     Downloads folder. This prevents users from accidentally opening stale
     validation reports after making fixes and re-validating.
@@ -112,7 +112,7 @@ def upload_dataset():
     """Handle dataset upload and validation"""
     # Clean up old validation reports from Downloads to avoid confusion
     _cleanup_old_validation_reports()
-    
+
     validation_results = current_app.config.get("VALIDATION_RESULTS", {})
 
     if "dataset" not in request.files:
@@ -220,7 +220,7 @@ def validate_folder():
     """Handle local folder validation"""
     # Clean up old validation reports from Downloads to avoid confusion
     _cleanup_old_validation_reports()
-    
+
     validation_results = current_app.config.get("VALIDATION_RESULTS", {})
     folder_path = request.form.get("folder_path", "").strip()
     if not folder_path:
@@ -398,7 +398,7 @@ def revalidate(result_id):
 
     data = validation_results[result_id]
     dataset_path = data.get("dataset_path")
-    
+
     if not dataset_path or not os.path.exists(dataset_path):
         flash("Dataset path no longer exists", "error")
         return redirect(url_for("validation.validate_dataset"))
@@ -408,7 +408,7 @@ def revalidate(result_id):
         original_results = data["results"]
         schema_version = original_results.get("schema_version", "stable")
         library_path = None  # Could store this in original results if needed
-        
+
         # Run validation again
         issues, dataset_stats = run_validation(
             dataset_path,
@@ -421,7 +421,9 @@ def revalidate(result_id):
         results["timestamp"] = datetime.now().isoformat()
         results["schema_version"] = schema_version
         results["revalidation"] = True
-        results["previous_errors"] = original_results.get("summary", {}).get("total_errors", 0)
+        results["previous_errors"] = original_results.get("summary", {}).get(
+            "total_errors", 0
+        )
 
         # Create new result entry
         new_result_id = f"result_{len(validation_results)}"
@@ -437,7 +439,10 @@ def revalidate(result_id):
         new_errors = results.get("summary", {}).get("total_errors", 0)
         prev_errors = results.get("previous_errors", 0)
         if new_errors < prev_errors:
-            flash(f"✓ Progress! Errors reduced from {prev_errors} to {new_errors}", "success")
+            flash(
+                f"✓ Progress! Errors reduced from {prev_errors} to {new_errors}",
+                "success",
+            )
         elif new_errors == 0:
             flash("🎉 Perfect! No errors found!", "success")
         elif new_errors > prev_errors:
