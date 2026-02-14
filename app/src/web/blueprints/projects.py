@@ -66,6 +66,109 @@ def get_bids_file_path(project_path: Path, filename: str) -> Path:
     return root_path
 
 
+_DEFAULT_CITATION_MESSAGE = "If you use this dataset, please cite it."
+
+
+def _parse_cff_value(raw: str) -> str:
+    value = raw.strip()
+    if not value:
+        return ""
+    if (value.startswith("\"") and value.endswith("\"")) or (
+        value.startswith("'") and value.endswith("'")
+    ):
+        try:
+            return json.loads(value)
+        except Exception:
+            return value.strip("\"'")
+    return value
+
+
+def _read_citation_cff_fields(citation_path: Path) -> dict:
+    if not citation_path.exists():
+        return {}
+
+    authors = []
+    references = []
+    fields = {}
+    current_author = None
+    in_authors = False
+    in_references = False
+
+    try:
+        with open(citation_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+    except Exception:
+        return {}
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
+        if stripped.startswith("authors:"):
+            in_authors = True
+            in_references = False
+            continue
+
+        if stripped.startswith("references:"):
+            in_references = True
+            in_authors = False
+            continue
+
+        if stripped.startswith("title:"):
+            fields["Title"] = _parse_cff_value(stripped.split(":", 1)[1])
+            continue
+
+        if stripped.startswith("doi:"):
+            fields["DatasetDOI"] = _parse_cff_value(stripped.split(":", 1)[1])
+            continue
+
+        if stripped.startswith("license:"):
+            fields["License"] = _parse_cff_value(stripped.split(":", 1)[1])
+            continue
+
+        if stripped.startswith("message:"):
+            fields["HowToAcknowledge"] = _parse_cff_value(stripped.split(":", 1)[1])
+            continue
+
+        if in_authors:
+            if stripped.startswith("- family-names:"):
+                if current_author:
+                    authors.append(current_author)
+                current_author = {"family": _parse_cff_value(stripped.split(":", 1)[1]), "given": ""}
+                continue
+            if stripped.startswith("given-names:") and current_author is not None:
+                current_author["given"] = _parse_cff_value(stripped.split(":", 1)[1])
+                continue
+
+        if in_references and stripped.startswith("-"):
+            references.append(_parse_cff_value(stripped[1:].strip()))
+
+    if current_author:
+        authors.append(current_author)
+
+    if authors:
+        formatted = []
+        for author in authors:
+            given = author.get("given", "").strip()
+            family = author.get("family", "").strip()
+            if given and family:
+                formatted.append(f"{given} {family}")
+            elif family:
+                formatted.append(family)
+            elif given:
+                formatted.append(given)
+        fields["Authors"] = formatted
+
+    if references:
+        fields["ReferencesAndLinks"] = references
+
+    if fields.get("HowToAcknowledge") == _DEFAULT_CITATION_MESSAGE:
+        fields.pop("HowToAcknowledge", None)
+
+    return fields
+
+
 @projects_bp.route("/projects")
 def projects_page():
     """Render the Projects management page."""
@@ -690,6 +793,18 @@ def get_dataset_description():
         # Validate on load
         issues = _project_manager.validate_dataset_description(description)
 
+        # Merge CITATION.cff fields for UI display (if dataset_description omits them)
+        citation_fields = _read_citation_cff_fields(project_path / "CITATION.cff")
+        if citation_fields:
+            if not description.get("Authors") and citation_fields.get("Authors"):
+                description["Authors"] = citation_fields["Authors"]
+            if not description.get("License") and citation_fields.get("License"):
+                description["License"] = citation_fields["License"]
+            if not description.get("HowToAcknowledge") and citation_fields.get("HowToAcknowledge"):
+                description["HowToAcknowledge"] = citation_fields["HowToAcknowledge"]
+            if not description.get("ReferencesAndLinks") and citation_fields.get("ReferencesAndLinks"):
+                description["ReferencesAndLinks"] = citation_fields["ReferencesAndLinks"]
+
         return jsonify({"success": True, "description": description, "issues": issues})
     except Exception as e:
         return (
@@ -725,7 +840,7 @@ def save_dataset_description():
         if "Name" not in description and "name" in description:
             description["Name"] = description.pop("name")
 
-        # Basic BIDS validation - ensure Name and BIDSVersion exist
+        # Basic BIDS validation - ensure Name and BIDSVersion exist (REQUIRED per BIDS spec)
         if "Name" not in description:
             return (
                 jsonify({"success": False, "error": "Dataset 'Name' is required"}),
@@ -734,11 +849,46 @@ def save_dataset_description():
         if "BIDSVersion" not in description:
             description["BIDSVersion"] = "1.10.1"
 
+        # BIDS compliance: If CITATION.cff exists, certain fields MUST be omitted
+        # Per BIDS spec: Authors, HowToAcknowledge, License, ReferencesAndLinks should be in CITATION.cff only
+        citation_cff_path = project_path / "CITATION.cff"
+        citation_fields = {
+            "Authors": description.get("Authors"),
+            "HowToAcknowledge": description.get("HowToAcknowledge"),
+            "License": description.get("License"),
+            "ReferencesAndLinks": description.get("ReferencesAndLinks"),
+        }
+        if citation_cff_path.exists():
+            # These fields belong in CITATION.cff, not dataset_description.json
+            fields_to_remove_if_citation = ["Authors", "HowToAcknowledge", "License", "ReferencesAndLinks"]
+            for field in fields_to_remove_if_citation:
+                if field in description:
+                    description.pop(field)
+        else:
+            # If no CITATION.cff, ensure RECOMMENDED fields have values
+            if "License" not in description:
+                description["License"] = "CC0"
+
+        # Set RECOMMENDED fields
+        if "DatasetType" not in description:
+            description["DatasetType"] = "raw"
+        if "HEDVersion" not in description:
+            description.pop("HEDVersion", None)  # Remove if empty
+
         # Validate before saving
         issues = _project_manager.validate_dataset_description(description)
 
         with open(desc_path, "w", encoding="utf-8") as f:
             json.dump(description, f, indent=2, ensure_ascii=False)
+
+        try:
+            citation_payload = dict(description)
+            for key, value in citation_fields.items():
+                if value not in (None, "", [], {}):
+                    citation_payload[key] = value
+            _project_manager.update_citation_cff(project_path, citation_payload)
+        except Exception as e:
+            print(f"Warning: could not update CITATION.cff: {e}")
 
         # If name changed, also update session name for UI consistency
         if "Name" in description:
@@ -1795,24 +1945,17 @@ def _compute_methods_completeness(
         ),
         (
             "StudyDesign",
+            "ConditionType",
+            2,
+            "Condition type",
+            _filled(cond.get("Type")),
+        ),
+        (
+            "StudyDesign",
             "TypeDescription",
             2,
             "Describe the design in detail",
             _filled(sd.get("TypeDescription")),
-        ),
-        (
-            "StudyDesign",
-            "Blinding",
-            1,
-            "Blinding procedure (experimental studies)",
-            _filled(sd.get("Blinding")),
-        ),
-        (
-            "StudyDesign",
-            "Randomization",
-            1,
-            "Randomization method",
-            _filled(sd.get("Randomization")),
         ),
         # Recruitment
         (
@@ -1850,13 +1993,6 @@ def _compute_methods_completeness(
             "Participant compensation",
             _filled(rec.get("Compensation")),
         ),
-        (
-            "Recruitment",
-            "Platform",
-            1,
-            "Recruitment platform (e.g. Prolific)",
-            _filled(rec.get("Platform")),
-        ),
         # Eligibility
         (
             "Eligibility",
@@ -1885,49 +2021,6 @@ def _compute_methods_completeness(
             1,
             "Power analysis description",
             _filled(elig.get("PowerAnalysis")),
-        ),
-        # DataCollection
-        (
-            "DataCollection",
-            "Platform",
-            3,
-            "Data collection platform",
-            _filled(dc.get("Platform")),
-        ),
-        (
-            "DataCollection",
-            "PlatformVersion",
-            1,
-            "Platform version",
-            _filled(dc.get("PlatformVersion")),
-        ),
-        (
-            "DataCollection",
-            "Method",
-            3,
-            "Collection method (online/in-person/...)",
-            _filled(dc.get("Method")),
-        ),
-        (
-            "DataCollection",
-            "SupervisionLevel",
-            2,
-            "Level of supervision",
-            _filled(dc.get("SupervisionLevel")),
-        ),
-        (
-            "DataCollection",
-            "Setting",
-            2,
-            "Data collection setting",
-            _filled(dc.get("Setting")),
-        ),
-        (
-            "DataCollection",
-            "AverageDuration",
-            2,
-            "Average completion time",
-            _obj_filled(dc.get("AverageDuration"), "Value"),
         ),
         # Procedure
         (
@@ -1965,21 +2058,6 @@ def _compute_methods_completeness(
             "Debriefing procedure",
             _filled(proc.get("Debriefing")),
         ),
-        # Conditions (weight depends on experimental design)
-        (
-            "Conditions",
-            "Type",
-            2 if is_experimental else 1,
-            "Condition type",
-            _filled(cond.get("Type")),
-        ),
-        (
-            "Conditions",
-            "Groups",
-            2 if is_experimental else 1,
-            "Define experimental groups",
-            _filled(cond.get("Groups")),
-        ),
         # Basics (BIDS dataset_description.json fields)
         (
             "Basics",
@@ -1999,8 +2077,8 @@ def _compute_methods_completeness(
             "Basics",
             "Description",
             2,
-            "Dataset description text",
-            _filled(dd.get("Description")),
+            "Dataset overview text",
+            _filled((project_data.get("Overview") or {}).get("Main") or dd.get("Description")),
         ),
         (
             "Basics",
@@ -2023,6 +2101,91 @@ def _compute_methods_completeness(
             "Keywords for discoverability",
             _filled(dd.get("Keywords")),
         ),
+        (
+            "Basics",
+            "Acknowledgements",
+            1,
+            "Acknowledgements",
+            _filled(dd.get("Acknowledgements")),
+        ),
+        (
+            "Basics",
+            "DatasetDOI",
+            1,
+            "Dataset DOI",
+            _filled(dd.get("DatasetDOI")),
+        ),
+        (
+            "Basics",
+            "DatasetType",
+            1,
+            "Dataset type",
+            _filled(dd.get("DatasetType")),
+        ),
+        (
+            "Basics",
+            "HEDVersion",
+            1,
+            "HED version",
+            _filled(dd.get("HEDVersion")),
+        ),
+        (
+            "Basics",
+            "Funding",
+            1,
+            "Funding",
+            _filled(dd.get("Funding")),
+        ),
+        (
+            "Basics",
+            "HowToAcknowledge",
+            1,
+            "How to acknowledge",
+            _filled(dd.get("HowToAcknowledge")),
+        ),
+        (
+            "Basics",
+            "ReferencesAndLinks",
+            1,
+            "References and links",
+            _filled(dd.get("ReferencesAndLinks")),
+        ),
+        # Overview
+        (
+            "Overview",
+            "Main",
+            3,
+            "Dataset overview",
+            _filled((project_data.get("Overview") or {}).get("Main")),
+        ),
+        (
+            "Overview",
+            "IndependentVariables",
+            1,
+            "Independent variables",
+            _filled((project_data.get("Overview") or {}).get("IndependentVariables")),
+        ),
+        (
+            "Overview",
+            "DependentVariables",
+            1,
+            "Dependent variables",
+            _filled((project_data.get("Overview") or {}).get("DependentVariables")),
+        ),
+        (
+            "Overview",
+            "ControlVariables",
+            1,
+            "Control variables",
+            _filled((project_data.get("Overview") or {}).get("ControlVariables")),
+        ),
+        (
+            "Overview",
+            "QualityAssessment",
+            1,
+            "Quality assessment",
+            _filled((project_data.get("Overview") or {}).get("QualityAssessment")),
+        ),
         # Read-only: Sessions & Tasks
         (
             "SessionsTasks",
@@ -2040,6 +2203,42 @@ def _compute_methods_completeness(
         ),
     ]
 
+    if is_experimental:
+        fields.extend(
+            [
+                (
+                    "StudyDesign",
+                    "Blinding",
+                    1,
+                    "Blinding procedure (experimental studies)",
+                    _filled(sd.get("Blinding")),
+                ),
+                (
+                    "StudyDesign",
+                    "Randomization",
+                    1,
+                    "Randomization method",
+                    _filled(sd.get("Randomization")),
+                ),
+                (
+                    "StudyDesign",
+                    "ControlCondition",
+                    1,
+                    "Control condition",
+                    _filled(sd.get("ControlCondition")),
+                ),
+            ]
+        )
+
+    required_fields = {
+        "Basics": {"Name"},
+        "Overview": {"Main"},
+        "StudyDesign": {"Type"},
+        "Recruitment": {"Method", "Location", "Period.Start", "Period.End", "Compensation"},
+        "Eligibility": {"InclusionCriteria", "ExclusionCriteria"},
+        "Procedure": {"Overview"},
+    }
+
     # Build per-section summary
     sections_map: dict[str, dict] = {}
     total_weight = 0
@@ -2048,6 +2247,7 @@ def _compute_methods_completeness(
     filled_fields = 0
 
     for section_key, field_name, priority, hint, is_filled in fields:
+        is_required = field_name in required_fields.get(section_key, set())
         if section_key not in sections_map:
             sections_map[section_key] = {
                 "fields": [],
@@ -2055,6 +2255,10 @@ def _compute_methods_completeness(
                 "total": 0,
                 "weight_filled": 0,
                 "weight_total": 0,
+                "required_filled": 0,
+                "required_total": 0,
+                "optional_filled": 0,
+                "optional_total": 0,
                 "read_only": section_key in ("SessionsTasks",),
             }
         sec = sections_map[section_key]
@@ -2064,15 +2268,24 @@ def _compute_methods_completeness(
                 "filled": is_filled,
                 "priority": priority,
                 "hint": hint,
+                "required": is_required,
             }
         )
         sec["total"] += 1
         sec["weight_total"] += priority
+        if is_required:
+            sec["required_total"] += 1
+        else:
+            sec["optional_total"] += 1
         total_weight += priority
         total_fields += 1
         if is_filled:
             sec["filled"] += 1
             sec["weight_filled"] += priority
+            if is_required:
+                sec["required_filled"] += 1
+            else:
+                sec["optional_filled"] += 1
             filled_weight += priority
             filled_fields += 1
 
@@ -2320,6 +2533,13 @@ def get_study_metadata():
         except Exception:
             pass
 
+    if dataset_desc:
+        citation_fields = _read_citation_cff_fields(project_path / "CITATION.cff")
+        if citation_fields:
+            for key in ("Authors", "License", "HowToAcknowledge", "ReferencesAndLinks"):
+                if not dataset_desc.get(key) and citation_fields.get(key):
+                    dataset_desc[key] = citation_fields[key]
+
     completeness = _compute_methods_completeness(data, dataset_desc)
     hints = _auto_detect_study_hints(project_path, data)
 
@@ -2372,6 +2592,13 @@ def save_study_metadata():
                 dataset_desc = json.load(f)
         except Exception:
             pass
+
+    if dataset_desc:
+        citation_fields = _read_citation_cff_fields(project_path / "CITATION.cff")
+        if citation_fields:
+            for key in ("Authors", "License", "HowToAcknowledge", "ReferencesAndLinks"):
+                if not dataset_desc.get(key) and citation_fields.get(key):
+                    dataset_desc[key] = citation_fields[key]
 
     completeness = _compute_methods_completeness(data, dataset_desc)
 
