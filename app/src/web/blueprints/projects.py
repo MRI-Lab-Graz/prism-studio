@@ -169,6 +169,17 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
     return fields
 
 
+def _merge_citation_fields(target: dict, citation_fields: dict) -> dict:
+    if not citation_fields:
+        return dict(target)
+
+    merged = dict(target)
+    for key in ("Authors", "License", "HowToAcknowledge", "ReferencesAndLinks"):
+        if not merged.get(key) and citation_fields.get(key):
+            merged[key] = citation_fields[key]
+    return merged
+
+
 @projects_bp.route("/projects")
 def projects_page():
     """Render the Projects management page."""
@@ -790,9 +801,6 @@ def get_dataset_description():
         with open(desc_path, "r", encoding="utf-8") as f:
             description = json.load(f)
 
-        # Validate on load
-        issues = _project_manager.validate_dataset_description(description)
-
         # Merge CITATION.cff fields for UI display (if dataset_description omits them)
         citation_fields = _read_citation_cff_fields(project_path / "CITATION.cff")
         if citation_fields:
@@ -804,6 +812,10 @@ def get_dataset_description():
                 description["HowToAcknowledge"] = citation_fields["HowToAcknowledge"]
             if not description.get("ReferencesAndLinks") and citation_fields.get("ReferencesAndLinks"):
                 description["ReferencesAndLinks"] = citation_fields["ReferencesAndLinks"]
+
+        # Validate on load using merged view (supports CITATION.cff-only fields)
+        validation_description = _merge_citation_fields(description, citation_fields)
+        issues = _project_manager.validate_dataset_description(validation_description)
 
         return jsonify({"success": True, "description": description, "issues": issues})
     except Exception as e:
@@ -852,12 +864,17 @@ def save_dataset_description():
         # BIDS compliance: If CITATION.cff exists, certain fields MUST be omitted
         # Per BIDS spec: Authors, HowToAcknowledge, License, ReferencesAndLinks should be in CITATION.cff only
         citation_cff_path = project_path / "CITATION.cff"
-        citation_fields = {
+        existing_citation_fields = _read_citation_cff_fields(citation_cff_path)
+        submitted_citation_fields = {
             "Authors": description.get("Authors"),
             "HowToAcknowledge": description.get("HowToAcknowledge"),
             "License": description.get("License"),
             "ReferencesAndLinks": description.get("ReferencesAndLinks"),
         }
+        citation_fields = dict(existing_citation_fields)
+        for key, value in submitted_citation_fields.items():
+            if value not in (None, "", [], {}):
+                citation_fields[key] = value
         if citation_cff_path.exists():
             # These fields belong in CITATION.cff, not dataset_description.json
             fields_to_remove_if_citation = ["Authors", "HowToAcknowledge", "License", "ReferencesAndLinks"]
@@ -875,8 +892,9 @@ def save_dataset_description():
         if "HEDVersion" not in description:
             description.pop("HEDVersion", None)  # Remove if empty
 
-        # Validate before saving
-        issues = _project_manager.validate_dataset_description(description)
+        # Validate before saving using merged view (supports CITATION.cff-only fields)
+        validation_description = _merge_citation_fields(description, citation_fields)
+        issues = _project_manager.validate_dataset_description(validation_description)
 
         with open(desc_path, "w", encoding="utf-8") as f:
             json.dump(description, f, indent=2, ensure_ascii=False)
