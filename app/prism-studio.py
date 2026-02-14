@@ -263,7 +263,7 @@ def ensure_project_selected_first():
         return None
     if path == "/projects" or path.startswith("/api/projects/"):
         return None
-    if path == "/assets/prism-logo":
+    if path == "/assets/prism-logo" or path == "/assets/prism-logo.png":
         return None
 
     # Allow utility endpoints needed before a project is selected (used on /projects).
@@ -352,22 +352,23 @@ def favicon_ico():
 
 @app.route("/assets/prism-logo")
 def prism_logo():
-    """Serve PRISM logo from docs/img with caching"""
+    """Serve PRISM logo from docs/img with caching (transparent PNG)"""
     from flask import send_file, Response
 
     candidates = [
+        safe_path_join(BASE_DIR.parent, "docs", "img", "prism_logo.png"),
+        safe_path_join(BASE_DIR, "static", "img", "prism_logo.png"),
         safe_path_join(BASE_DIR.parent, "docs", "img", "prism_logo.jpg"),
         safe_path_join(BASE_DIR, "static", "img", "prism_logo.jpg"),
-        safe_path_join(BASE_DIR.parent, "docs", "img", "prism_logo_old.jpg"),
-        safe_path_join(BASE_DIR, "static", "img", "prism_logo_old.jpg"),
     ]
 
     for path in candidates:
         file_path = Path(path)
         if file_path.exists():
+            mimetype = "image/png" if str(path).endswith(".png") else "image/jpeg"
             return send_file(
                 str(file_path),
-                mimetype="image/jpeg",
+                mimetype=mimetype,
                 max_age=86400,  # Cache for 24 hours
             )
 
