@@ -113,7 +113,6 @@
     .section-completeness-row .section-badge {
         font-size: 0.75rem;
     }
-    .sm-field-required::after { content: ' *'; color: #dc3545; font-weight: bold; }
     .sm-hint-badge { transition: opacity 0.2s; }
     .sm-hint-badge:hover { opacity: 0.8; }
 </style>
@@ -203,42 +202,32 @@
                         </div>
 
                         <div class="col-12 mt-3">
-                            <div class="alert alert-warning border-0 bg-warning bg-opacity-10 mb-0">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>Before Creating:</strong> Fill in all mandatory fields (<span class="text-danger">*</span>) in the <strong>Study Metadata</strong> section below:
+                            <div class="alert alert-info border-0 bg-info bg-opacity-10 mb-0">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <strong>Recommended Before Creating:</strong> Fill in the fields below (marked <span class="badge bg-danger">REQUIRED</span> or <span class="badge bg-warning text-dark">RECOMMENDED</span>) to ensure your dataset is BIDS-compliant and well-documented. <strong>You can create without them</strong>, but your dataset will be incomplete.
                                 <div class="row mt-2">
                                     <div class="col-md-6">
-                                        <strong class="small">Basics (BIDS):</strong>
+                                        <strong class="small">BIDS Basics:</strong>
                                         <ul class="mb-1 small">
-                                            <li>Dataset Name</li>
-                                            <li>Authors</li>
-                                            <li>License</li>
-                                        </ul>
-                                        <strong class="small">Overview:</strong>
-                                        <ul class="mb-1 small">
-                                            <li>Dataset Overview</li>
+                                            <li><span class="badge bg-danger">REQUIRED</span> Dataset Name</li>
+                                            <li><span class="badge bg-secondary">OPTIONAL</span> Authors</li>
+                                            <li><span class="badge bg-warning text-dark">RECOMMENDED</span> License</li>
                                         </ul>
                                         <strong class="small">Study Design:</strong>
                                         <ul class="mb-1 small">
                                             <li>Study Design Type</li>
                                         </ul>
-                                        <strong class="small">Recruitment:</strong>
-                                        <ul class="mb-1 small">
-                                            <li>Method, Location(s), Period Start, Period End, Financial Compensation</li>
-                                        </ul>
                                     </div>
                                     <div class="col-md-6">
-                                        <strong class="small">Eligibility:</strong>
+                                        <strong class="small">Methods Context:</strong>
                                         <ul class="mb-1 small">
-                                            <li>Inclusion Criteria</li>
-                                            <li>Exclusion Criteria</li>
-                                        </ul>
-                                        <strong class="small">Procedure:</strong>
-                                        <ul class="mb-0 small">
-                                            <li>Overview</li>
+                                            <li>Dataset Overview</li>
+                                            <li>Recruitment Method & Locations</li>
+                                            <li>Inclusion/Exclusion Criteria</li>
                                         </ul>
                                     </div>
                                 </div>
+                                <small class="text-muted mt-2 d-block"><i class="fas fa-info-circle me-1"></i>See badges in each field for details. Only <span class="badge bg-danger">REQUIRED</span> fields must be filled for BIDS compliance.</small>
                             </div>
                         </div>
 
@@ -351,24 +340,35 @@
                             <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
                             <div class="alert alert-info border-0 bg-info bg-opacity-10">
                                 <i class="fas fa-info-circle me-2"></i>
-                                This section edits <code>rawdata/dataset_description.json</code> and must remain BIDS-valid.
+                                <strong>BIDS Compliance:</strong> This edits <code>dataset_description.json</code> (BIDS standard).
+                                Syncs to <code>CITATION.cff</code>. Legend:
+                                <span class="badge bg-danger">REQUIRED</span>
+                                <span class="badge bg-warning text-dark">RECOMMENDED</span>
+                                <span class="badge bg-secondary">OPTIONAL</span>
                             </div>
                             <div class="row g-3">
                                 <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Name <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-danger">REQUIRED</span> Dataset Name
+                                    </label>
                                     <input type="text" class="form-control form-control-sm" id="metadataName" required>
+                                    <small class="text-muted">BIDS: Name field. Also used in CITATION.cff.</small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Authors <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-secondary">OPTIONAL</span> Authors
+                                    </label>
                                     <div id="metadataAuthorsList" class="d-flex flex-column gap-2"></div>
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addAuthorRow">
                                         <i class="fas fa-user-plus me-1"></i>Add Author
                                     </button>
-                                    <small class="text-muted d-block">Enter first and last name for each author.</small>
+                                    <small class="text-muted d-block">If CITATION.cff exists, omitted per BIDS spec (use CITATION.cff authors instead).</small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">License <span class="text-danger">*</span></label>
-                                    <select class="form-select form-select-sm" id="metadataLicense" required>
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-warning text-dark">RECOMMENDED</span> License
+                                    </label>
+                                    <select class="form-select form-select-sm" id="metadataLicense">
                                         <option value="">Select a license...</option>
                                         <option value="CC0">CC0 (Public Domain)</option>
                                         <option value="CC BY 4.0">CC BY 4.0</option>
@@ -379,27 +379,38 @@
                                         <option value="PDDL 1.0">Public Domain Dedication and License (PDDL)</option>
                                         <option value="Other">Other/Proprietary</option>
                                     </select>
+                                    <small class="text-muted">If CITATION.cff exists, omitted from dataset_description.json.</small>
                                 </div>
                                 <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Acknowledgements</label>
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-secondary">OPTIONAL</span> Acknowledgements
+                                    </label>
                                     <textarea class="form-control form-control-sm" id="metadataAcknowledgements" rows="2" placeholder="Funding, grants, people to thank..."></textarea>
                                 </div>
                                 <div class="col-md-12">
                                     <div class="mt-3 pt-3 border-top">
                                         <div class="row g-3">
                                             <div class="col-md-6">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset DOI</label>
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> Dataset DOI
+                                                </label>
                                                 <input type="text" class="form-control form-control-sm" id="metadataDOI" placeholder="10.5281/zenodo.1234567">
+                                                <small class="text-muted">Syncs to CITATION.cff. Use valid URI format.</small>
                                             </div>
                                             <div class="col-md-6">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Type</label>
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-warning text-dark">RECOMMENDED</span> Dataset Type
+                                                </label>
                                                 <select class="form-select form-select-sm" id="metadataType">
                                                     <option value="raw" selected>raw</option>
                                                     <option value="derivative">derivative</option>
+                                                    <option value="study">study</option>
                                                 </select>
                                             </div>
                                             <div class="col-md-12">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">Ethics Approvals</label>
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> Ethics Approvals
+                                                </label>
                                                 <div class="mb-2">
                                                     <input type="hidden" id="metadataEthicsApproved" value="no">
                                                     <div class="btn-group btn-group-sm" role="group" aria-label="Ethics approvals">
@@ -417,27 +428,42 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <small class="text-muted">Format: Committee name, Reference number</small>
                                             </div>
                                             <div class="col-md-6">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">HED Version</label>
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-warning text-dark">RECOMMENDED</span> HED Version
+                                                </label>
                                                 <input type="text" class="form-control form-control-sm" id="metadataHED" placeholder="8.2.0">
+                                                <small class="text-muted">If HED tags are used in your data.</small>
                                             </div>
                                             <div class="col-md-12">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">Keywords (comma separated)</label>
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-warning text-dark">RECOMMENDED</span> Keywords (comma-separated)
+                                                </label>
                                                 <input type="text" class="form-control form-control-sm" id="metadataKeywords" placeholder="psychology, experiment, PRISM">
-                                                <small class="text-muted">At least 3 keywords required for FAIR compliance.</small>
+                                                <small class="text-muted">PRISM recommends at least 3 keywords for FAIR compliance and discoverability.</small>
                                             </div>
                                             <div class="col-md-12">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">Funding (comma separated)</label>
-                                                <input type="text" class="form-control form-control-sm" id="metadataFunding" placeholder="Grant agency 1, Grant number 2">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> Funding
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm" id="metadataFunding" placeholder="National Science Foundation (NSF) Grant #1234567, Other funding sources">
+                                                <small class="text-muted">Grant agency and numbers separated by commas.</small>
                                             </div>
                                             <div class="col-md-12">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">How to Acknowledge</label>
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> How to Acknowledge
+                                                </label>
                                                 <textarea class="form-control form-control-sm" id="metadataHowToAcknowledge" rows="2" placeholder="Please cite the following paper..."></textarea>
+                                                <small class="text-muted">Stored in CITATION.cff. Omitted from dataset_description.json if CITATION.cff exists (per BIDS spec).</small>
                                             </div>
                                             <div class="col-md-12">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">References and Links (comma separated)</label>
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> References &amp; Links
+                                                </label>
                                                 <textarea class="form-control form-control-sm" id="metadataReferences" rows="2" placeholder="https://doi.org/..., https://example.com/..."></textarea>
+                                                <small class="text-muted">URLs or citations separated by commas. Stored in CITATION.cff. Omitted from dataset_description.json if CITATION.cff exists (per BIDS spec).</small>
                                             </div>
                                         </div>
                                     </div>
@@ -458,7 +484,9 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <label class="form-label fw-bold small sm-field-required">Dataset Overview</label>
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Dataset Overview
+                                    </label>
                                     <textarea class="form-control form-control-sm" id="smOverviewMain" rows="4"
                                               placeholder="A brief paragraph describing the goals, purpose, and unique value of this dataset..."></textarea>
                                     <small class="text-muted">Include: Why was this dataset created? What makes it unique and valuable?</small>
@@ -503,7 +531,9 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label fw-bold small sm-field-required">Study Design Type</label>
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Study Design Type
+                                    </label>
                                     <select class="form-select form-select-sm" id="smSDType" onchange="toggleExperimentalFields()">
                                         <option value="">-- Select --</option>
                                         <option value="cross-sectional">Cross-sectional</option>
@@ -571,7 +601,9 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small sm-field-required">Method</label>
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Method
+                                    </label>
                                     <select class="form-select form-select-sm" id="smRecMethod" multiple>
                                         <option value="">-- Select --</option>
                                         <option value="online-ads">Online ads</option>
@@ -588,7 +620,9 @@
                                     <small class="text-muted">Hold Cmd/Ctrl to select multiple.</small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small sm-field-required">Location</label>
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Location
+                                    </label>
                                     <div id="smRecLocationList" class="d-flex flex-column gap-2"></div>
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addRecLocationRow">
                                         <i class="fas fa-plus me-1"></i>Add Location
@@ -596,21 +630,27 @@
                                     <small class="text-muted d-block">Add one or more locations.</small>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label fw-bold small sm-field-required">Period Start</label>
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Period Start
+                                    </label>
                                     <div class="d-flex gap-2">
                                         <select class="form-select form-select-sm" id="smRecPeriodStartYear" required></select>
                                         <select class="form-select form-select-sm" id="smRecPeriodStartMonth" required></select>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label fw-bold small sm-field-required">Period End</label>
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Period End
+                                    </label>
                                     <div class="d-flex gap-2">
                                         <select class="form-select form-select-sm" id="smRecPeriodEndYear" required></select>
                                         <select class="form-select form-select-sm" id="smRecPeriodEndMonth" required></select>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label fw-bold small sm-field-required">Financial Compensation</label>
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Financial Compensation
+                                    </label>
                                     <select class="form-select form-select-sm" id="smRecCompensation" required>
                                         <option value="">-- Select --</option>
                                         <option value="Financial compensation">Yes</option>
@@ -633,12 +673,16 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small sm-field-required">Inclusion Criteria</label>
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Inclusion Criteria
+                                    </label>
                                     <textarea class="form-control form-control-sm" id="smEligInclusion" rows="3"
                                               placeholder="One criterion per line"></textarea>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small sm-field-required">Exclusion Criteria</label>
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Exclusion Criteria
+                                    </label>
                                     <textarea class="form-control form-control-sm" id="smEligExclusion" rows="3"
                                               placeholder="One criterion per line"></textarea>
                                 </div>
@@ -668,7 +712,9 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <label class="form-label fw-bold small sm-field-required">Overview</label>
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Overview
+                                    </label>
                                     <textarea class="form-control form-control-sm" id="smProcOverview" rows="3"
                                               placeholder="Narrative overview of the study procedure..."></textarea>
                                 </div>
@@ -728,6 +774,12 @@
                     <div class="collapse" id="smMissingData">
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="alert alert-info py-2 mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Fill this section after data acquisition. Leave empty when starting a study.
+                                    </div>
+                                </div>
                                 <div class="col-12">
                                     <label class="form-label fw-bold small">Missing Data Description</label>
                                     <textarea class="form-control form-control-sm" id="smMissingDesc" rows="3"
@@ -2497,9 +2549,18 @@
     // Save dataset_description fields
     async function saveDatasetDescription() {
         try {
+            // BIDS Validation: Check REQUIRED fields
+            const nameField = document.getElementById('metadataName');
+            if (!nameField || !nameField.value.trim()) {
+                throw new Error('❌ REQUIRED FIELD: Dataset Name is mandatory per BIDS specification');
+            }
+
+            const overviewMain = document.getElementById('smOverviewMain');
+            const overviewText = overviewMain ? overviewMain.value.trim() : '';
+
             // Reconstruct the JSON object
             const description = {
-                Name: document.getElementById('metadataName').value,
+                Name: nameField.value.trim(),
                 Authors: getAuthorsList(),
                 License: document.getElementById('metadataLicense').value,
                 Acknowledgements: document.getElementById('metadataAcknowledgements').value,
@@ -2507,11 +2568,12 @@
                 EthicsApprovals: getEthicsApprovals(),
                 Keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
                 BIDSVersion: "1.10.1",
-                DatasetType: document.getElementById('metadataType').value,
+                DatasetType: document.getElementById('metadataType').value || 'raw',
                 HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
                 Funding: document.getElementById('metadataFunding').value.split(',').map(s => s.trim()).filter(s => s),
                 ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
-                HEDVersion: document.getElementById('metadataHED').value.trim()
+                HEDVersion: document.getElementById('metadataHED').value.trim(),
+                Description: overviewText || undefined
             };
 
             // Keep existing fields not in form (like GeneratedBy, SourceDatasets)
@@ -2896,7 +2958,121 @@
     }
 
 
+    let lastCompleteness = null;
+
+    function computeLocalCompleteness() {
+        const experimentalTypes = ['randomized-controlled-trial', 'quasi-experimental', 'case-control'];
+        const sdType = document.getElementById('smSDType')?.value || '';
+        const isExperimental = experimentalTypes.includes(sdType);
+
+        const sections = {};
+        let filledFields = 0;
+        let totalFields = 0;
+
+        const requiredFields = {
+            Basics: new Set(['Name']),
+            Overview: new Set(['Main']),
+            StudyDesign: new Set(['Type']),
+            Recruitment: new Set(['Method', 'Location', 'Period.Start', 'Period.End', 'Compensation']),
+            Eligibility: new Set(['InclusionCriteria', 'ExclusionCriteria']),
+            Procedure: new Set(['Overview'])
+        };
+
+        const addField = (section, name, isFilled) => {
+            const isRequired = requiredFields[section]?.has(name) || false;
+            if (!sections[section]) {
+                sections[section] = {
+                    fields: [],
+                    filled: 0,
+                    total: 0,
+                    weight_filled: 0,
+                    weight_total: 0,
+                    required_filled: 0,
+                    required_total: 0,
+                    optional_filled: 0,
+                    optional_total: 0,
+                    read_only: section === 'SessionsTasks'
+                };
+            }
+            sections[section].fields.push({ name, filled: isFilled, priority: 1, hint: '', required: isRequired });
+            sections[section].total += 1;
+            sections[section].weight_total += 1;
+            if (isRequired) {
+                sections[section].required_total += 1;
+            } else {
+                sections[section].optional_total += 1;
+            }
+            totalFields += 1;
+            if (isFilled) {
+                sections[section].filled += 1;
+                sections[section].weight_filled += 1;
+                if (isRequired) {
+                    sections[section].required_filled += 1;
+                } else {
+                    sections[section].optional_filled += 1;
+                }
+                filledFields += 1;
+            }
+        };
+
+        const textFilled = (value) => Boolean((value || '').trim());
+
+        const keywordList = document.getElementById('metadataKeywords')?.value
+            .split(',').map(s => s.trim()).filter(s => s) || [];
+
+        addField('Basics', 'Name', textFilled(document.getElementById('metadataName')?.value));
+        addField('Basics', 'Authors', getAuthorsList().length > 0);
+        addField('Basics', 'Description', textFilled(document.getElementById('smOverviewMain')?.value));
+        addField('Basics', 'EthicsApprovals', getEthicsApprovals().length > 0);
+        addField('Basics', 'License', textFilled(document.getElementById('metadataLicense')?.value));
+        addField('Basics', 'Keywords', keywordList.length > 0);
+        addField('Basics', 'Acknowledgements', textFilled(document.getElementById('metadataAcknowledgements')?.value));
+        addField('Basics', 'DatasetDOI', textFilled(document.getElementById('metadataDOI')?.value));
+        addField('Basics', 'DatasetType', textFilled(document.getElementById('metadataType')?.value));
+        addField('Basics', 'HEDVersion', textFilled(document.getElementById('metadataHED')?.value));
+        addField('Basics', 'Funding', textFilled(document.getElementById('metadataFunding')?.value));
+        addField('Basics', 'HowToAcknowledge', textFilled(document.getElementById('metadataHowToAcknowledge')?.value));
+        addField('Basics', 'ReferencesAndLinks', textFilled(document.getElementById('metadataReferences')?.value));
+
+        addField('Overview', 'Main', textFilled(document.getElementById('smOverviewMain')?.value));
+        addField('Overview', 'IndependentVariables', textFilled(document.getElementById('smOverviewIV')?.value));
+        addField('Overview', 'DependentVariables', textFilled(document.getElementById('smOverviewDV')?.value));
+        addField('Overview', 'ControlVariables', textFilled(document.getElementById('smOverviewCV')?.value));
+        addField('Overview', 'QualityAssessment', textFilled(document.getElementById('smOverviewQA')?.value));
+
+        addField('StudyDesign', 'Type', textFilled(sdType));
+        addField('StudyDesign', 'ConditionType', textFilled(document.getElementById('smSDConditionType')?.value));
+        addField('StudyDesign', 'TypeDescription', textFilled(document.getElementById('smSDTypeDesc')?.value));
+        if (isExperimental) {
+            addField('StudyDesign', 'Blinding', textFilled(document.getElementById('smSDBlinding')?.value));
+            addField('StudyDesign', 'Randomization', textFilled(document.getElementById('smSDRandomization')?.value));
+            addField('StudyDesign', 'ControlCondition', textFilled(document.getElementById('smSDControl')?.value));
+        }
+
+        addField('Recruitment', 'Method', hasAtLeastOneRecMethod());
+        addField('Recruitment', 'Location', hasAtLeastOneRecLocation());
+        addField('Recruitment', 'Period.Start', hasRecPeriodStart());
+        addField('Recruitment', 'Period.End', hasRecPeriodEnd());
+        addField('Recruitment', 'Compensation', textFilled(document.getElementById('smRecCompensation')?.value));
+
+        addField('Eligibility', 'InclusionCriteria', textFilled(document.getElementById('smEligInclusion')?.value));
+        addField('Eligibility', 'ExclusionCriteria', textFilled(document.getElementById('smEligExclusion')?.value));
+
+        addField('Procedure', 'Overview', textFilled(document.getElementById('smProcOverview')?.value));
+
+        const score = totalFields > 0 ? Math.round((filledFields / totalFields) * 100) : 0;
+
+        return {
+            score,
+            filled_fields: filledFields,
+            total_fields: totalFields,
+            sections
+        };
+    }
+
     function updateCompletenessUI(completeness) {
+        if (!completeness) return;
+        lastCompleteness = completeness;
         const score = completeness.score || 0;
 
         // Determine color
@@ -2933,11 +3109,12 @@
 
         const sections = completeness.sections || {};
         const sectionOrder = [
-            'Basics', 'StudyDesign', 'Recruitment', 'Eligibility',
+            'Basics', 'Overview', 'StudyDesign', 'Recruitment', 'Eligibility',
             'Procedure', 'SessionsTasks'
         ];
         const sectionLabels = {
             Basics: 'Basics (BIDS)',
+            Overview: 'Overview',
             StudyDesign: 'Study Design',
             Recruitment: 'Recruitment',
             Eligibility: 'Eligibility',
@@ -2949,7 +3126,13 @@
         for (const key of sectionOrder) {
             const sec = sections[key];
             if (!sec) continue;
-            const pct = sec.total > 0 ? Math.round(sec.filled / sec.total * 100) : 0;
+            const reqTotal = sec.required_total || 0;
+            const reqFilled = sec.required_filled || 0;
+            const optTotal = sec.optional_total || 0;
+            const optFilled = sec.optional_filled || 0;
+            const baseTotal = reqTotal > 0 ? reqTotal : sec.total;
+            const baseFilled = reqTotal > 0 ? reqFilled : sec.filled;
+            const pct = baseTotal > 0 ? Math.round(baseFilled / baseTotal * 100) : 0;
             let dotClass = 'empty';
             if (pct === 100) dotClass = 'full';
             else if (pct > 0) dotClass = 'partial';
@@ -2958,19 +3141,20 @@
             html += `<div class="section-completeness-row">
                 <span class="section-label">${sectionLabels[key] || key}${autoLabel}</span>
                 <span class="completeness-dot ${dotClass}" title="${pct}%"></span>
-                <span class="section-badge text-muted">${sec.filled}/${sec.total}</span>
+                <span class="section-badge text-muted">Required ${reqFilled}/${reqTotal} • FAIR ${optFilled}/${optTotal}</span>
             </div>`;
 
             // Update per-section badges in the form
             const badgeEl = document.getElementById('sm' + key + 'Badge');
             if (badgeEl) {
-                if (pct === 100) {
-                    badgeEl.innerHTML = '<span class="badge bg-success bg-opacity-75">Complete</span>';
-                } else if (pct > 0) {
-                    badgeEl.innerHTML = `<span class="badge bg-warning bg-opacity-75">${sec.filled}/${sec.total}</span>`;
-                } else {
-                    badgeEl.innerHTML = `<span class="badge bg-secondary bg-opacity-50">${sec.filled}/${sec.total}</span>`;
-                }
+                const reqDone = reqTotal > 0 && reqFilled === reqTotal;
+                const optDone = optTotal > 0 && optFilled === optTotal;
+                const reqClass = reqDone ? 'bg-success' : 'bg-danger';
+                const optClass = optDone ? 'bg-primary' : 'bg-secondary';
+                badgeEl.innerHTML = `
+                    <span class="badge ${reqClass} bg-opacity-75">Required ${reqFilled}/${reqTotal}</span>
+                    <span class="badge ${optClass} bg-opacity-50">FAIR ${optFilled}/${optTotal}</span>
+                `;
             }
         }
         dotsDiv.innerHTML = html;
@@ -2981,7 +3165,14 @@
     }
 
     // Study Metadata Form Submission
-    document.getElementById('studyMetadataForm')?.addEventListener('submit', async function(e) {
+    const studyMetadataForm = document.getElementById('studyMetadataForm');
+    if (studyMetadataForm) {
+        const refreshCompleteness = () => updateCompletenessUI(computeLocalCompleteness());
+        studyMetadataForm.addEventListener('input', refreshCompleteness);
+        studyMetadataForm.addEventListener('change', refreshCompleteness);
+    }
+
+    studyMetadataForm?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const btn = this.querySelector('button[type="submit"]');
         const originalText = setButtonLoading(btn, true, 'Saving...');
