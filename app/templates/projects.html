@@ -385,15 +385,7 @@
                                     <textarea class="form-control form-control-sm" id="metadataAcknowledgements" rows="2" placeholder="Funding, grants, people to thank..."></textarea>
                                 </div>
                                 <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Description</label>
-                                    <textarea class="form-control form-control-sm" id="metadataDescription" rows="3" placeholder="Detailed scientific description of the study..."></textarea>
-                                    <small class="text-muted">Optional. Recommended: minimum 50 characters for FAIR compliance.</small>
-                                </div>
-                                <div class="col-md-12">
-                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-bs-toggle="collapse" data-bs-target="#metadataAdvanced">
-                                        <i class="fas fa-chevron-down me-1"></i>More Fields (DOI, Ethics, Keywords...)
-                                    </button>
-                                    <div class="collapse mt-2" id="metadataAdvanced">
+                                    <div class="mt-3 pt-3 border-top">
                                         <div class="row g-3">
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset DOI</label>
@@ -402,13 +394,29 @@
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Type</label>
                                                 <select class="form-select form-select-sm" id="metadataType">
-                                                    <option value="raw">raw</option>
+                                                    <option value="raw" selected>raw</option>
                                                     <option value="derivative">derivative</option>
                                                 </select>
                                             </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">Ethics Approvals (comma separated)</label>
-                                                <input type="text" class="form-control form-control-sm" id="metadataEthics" placeholder="Ethics Committee A, Ref 123">
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">Ethics Approvals</label>
+                                                <div class="mb-2">
+                                                    <input type="hidden" id="metadataEthicsApproved" value="no">
+                                                    <div class="btn-group btn-group-sm" role="group" aria-label="Ethics approvals">
+                                                        <button type="button" class="btn btn-outline-primary" id="metadataEthicsYes" onclick="setEthicsChoice('yes')">Yes</button>
+                                                        <button type="button" class="btn btn-primary" id="metadataEthicsNo" onclick="setEthicsChoice('no')">No</button>
+                                                    </div>
+                                                </div>
+                                                <div id="ethicsDetailsSection" style="display: none; margin-top: 12px;">
+                                                    <div class="row g-2">
+                                                        <div class="col-md-6">
+                                                            <input type="text" class="form-control form-control-sm" id="metadataEthicsCommittee" placeholder="Ethics Committee Name" required>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <input type="text" class="form-control form-control-sm" id="metadataEthicsVotum" placeholder="Votum Number/Reference" required>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">HED Version</label>
@@ -2043,6 +2051,15 @@
         initYearMonthSelect('smRecPeriodStartYear', 'smRecPeriodStartMonth');
         initYearMonthSelect('smRecPeriodEndYear', 'smRecPeriodEndMonth');
         updateCreateProjectButton();
+        
+        // Set Dataset Type to raw by default
+        const datasetTypeSelect = document.getElementById('metadataType');
+        if (datasetTypeSelect) {
+            datasetTypeSelect.value = 'raw';
+        }
+        
+        // Initialize ethics fields visibility
+        setEthicsChoice(document.getElementById('metadataEthicsApproved')?.value || 'no');
     });
     
     // ===== END MANDATORY METADATA VALIDATION =====
@@ -2084,13 +2101,12 @@
             doi: document.getElementById('metadataDOI').value.trim(),
             keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
             acknowledgements: document.getElementById('metadataAcknowledgements').value.trim(),
-            ethics_approvals: document.getElementById('metadataEthics').value.split(',').map(s => s.trim()).filter(s => s),
+            ethics_approvals: getEthicsApprovals(),
             how_to_acknowledge: document.getElementById('metadataHowToAcknowledge').value.trim(),
             funding: document.getElementById('metadataFunding').value.split(',').map(s => s.trim()).filter(s => s),
             references_and_links: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
             hed_version: document.getElementById('metadataHED').value.trim(),
-            dataset_type: document.getElementById('metadataType').value,
-            description: document.getElementById('metadataDescription').value.trim()
+            dataset_type: document.getElementById('metadataType').value
         };
 
         try {
@@ -2425,9 +2441,8 @@
                 setAuthorsList(Array.isArray(desc.Authors) ? desc.Authors : (desc.Authors ? [desc.Authors] : []));
                 document.getElementById('metadataLicense').value = desc.License || 'CC0';
                 document.getElementById('metadataAcknowledgements').value = desc.Acknowledgements || '';
-                document.getElementById('metadataDescription').value = desc.Description || '';
                 document.getElementById('metadataDOI').value = desc.DatasetDOI || '';
-                document.getElementById('metadataEthics').value = Array.isArray(desc.EthicsApprovals) ? desc.EthicsApprovals.join(', ') : (desc.EthicsApprovals || '');
+                setEthicsApprovals(desc.EthicsApprovals);
                 document.getElementById('metadataKeywords').value = Array.isArray(desc.Keywords) ? desc.Keywords.join(', ') : (desc.Keywords || '');
                 document.getElementById('metadataType').value = desc.DatasetType || 'raw';
                 document.getElementById('metadataHED').value = Array.isArray(desc.HEDVersion) ? desc.HEDVersion.join(', ') : (desc.HEDVersion || '');
@@ -2488,9 +2503,8 @@
                 Authors: getAuthorsList(),
                 License: document.getElementById('metadataLicense').value,
                 Acknowledgements: document.getElementById('metadataAcknowledgements').value,
-                Description: document.getElementById('metadataDescription').value,
                 DatasetDOI: document.getElementById('metadataDOI').value,
-                EthicsApprovals: document.getElementById('metadataEthics').value.split(',').map(s => s.trim()).filter(s => s),
+                EthicsApprovals: getEthicsApprovals(),
                 Keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
                 BIDSVersion: "1.10.1",
                 DatasetType: document.getElementById('metadataType').value,
@@ -2590,7 +2604,11 @@
 
         form.querySelectorAll('input, textarea, select').forEach(el => {
             if (el.tagName === 'SELECT') {
-                el.value = '';
+                if (el.id === 'metadataType') {
+                    el.value = 'raw';
+                } else {
+                    el.value = '';
+                }
             } else {
                 el.value = '';
             }
@@ -2783,6 +2801,98 @@
         if (block) {
             block.style.display = experimentalTypes.includes(sdType) ? 'block' : 'none';
         }
+    }
+
+    function toggleEthicsFields() {
+        const approvedInput = document.getElementById('metadataEthicsApproved');
+        const detailsSection = document.getElementById('ethicsDetailsSection');
+        
+        if (!detailsSection) {
+            console.error('ethicsDetailsSection not found');
+            return;
+        }
+        
+        if (!approvedInput) {
+            console.warn('Ethics approval input not found, hiding details');
+            detailsSection.style.display = 'none';
+            detailsSection.classList.add('d-none');
+            return;
+        }
+
+        const approved = approvedInput.value === 'yes';
+        console.log('Ethics approved state:', approved ? 'yes' : 'no');
+        
+        detailsSection.hidden = !approved;
+        detailsSection.style.display = approved ? 'block' : 'none';
+        detailsSection.classList.toggle('d-none', !approved);
+    }
+
+    function setEthicsChoice(choice) {
+        const yesBtn = document.getElementById('metadataEthicsYes');
+        const noBtn = document.getElementById('metadataEthicsNo');
+        const approvedInput = document.getElementById('metadataEthicsApproved');
+        if (!yesBtn || !noBtn || !approvedInput) {
+            console.warn('Ethics approval inputs not found');
+            return;
+        }
+
+        const isYes = choice === 'yes';
+        approvedInput.value = isYes ? 'yes' : 'no';
+        yesBtn.classList.toggle('btn-primary', isYes);
+        yesBtn.classList.toggle('btn-outline-primary', !isYes);
+        noBtn.classList.toggle('btn-primary', !isYes);
+        noBtn.classList.toggle('btn-outline-primary', isYes);
+
+        toggleEthicsFields();
+    }
+
+    function getEthicsApprovals() {
+        const approvedInput = document.getElementById('metadataEthicsApproved');
+        if (!approvedInput) {
+            console.warn('Ethics approval input not found, defaulting to "no"');
+            return [];
+        }
+        if (approvedInput.value === 'no') {
+            return [];
+        }
+        const committee = document.getElementById('metadataEthicsCommittee');
+        const votum = document.getElementById('metadataEthicsVotum');
+        if (!committee || !votum) {
+            console.warn('Ethics committee or votum fields not found');
+            return [];
+        }
+        const committeeValue = committee.value.trim();
+        const votumValue = votum.value.trim();
+        const approval = [];
+        if (committeeValue) {
+            approval.push(committeeValue + (votumValue ? ', ' + votumValue : ''));
+        }
+        return approval;
+    }
+
+    function setEthicsApprovals(ethicsArray) {
+        const committeeField = document.getElementById('metadataEthicsCommittee');
+        const votumField = document.getElementById('metadataEthicsVotum');
+        
+        if (!committeeField || !votumField) {
+            console.warn('Ethics approval form elements not found');
+            return;
+        }
+        
+        if (!ethicsArray || ethicsArray.length === 0) {
+            committeeField.value = '';
+            votumField.value = '';
+            setEthicsChoice('no');
+            return;
+        }
+
+        // Parse the first ethics approval entry
+        const ethicsStr = Array.isArray(ethicsArray) ? ethicsArray[0] : ethicsArray;
+        const parts = ethicsStr.split(',').map(s => s.trim());
+        
+        committeeField.value = parts[0] || '';
+        votumField.value = parts[1] || '';
+        setEthicsChoice('yes');
     }
 
 
