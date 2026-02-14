@@ -748,25 +748,86 @@ Subfolders:
             "roles_reference": "https://credit.niso.org/",
         }
 
+    @staticmethod
+    def _yaml_quote(value: str) -> str:
+        return json.dumps(value or "")
+
+    @staticmethod
+    def _split_author_name(author: str) -> tuple[str, str]:
+        parts = author.strip().split()
+        if not parts:
+            return "", ""
+        if len(parts) == 1:
+            return "", parts[0]
+        return " ".join(parts[:-1]), parts[-1]
+
     def _create_citation_cff(self, name: str, config: Dict[str, Any]) -> str:
         """Create a minimal CITATION.cff file."""
         authors = config.get("authors", []) or []
-        author_lines = "\n".join(
-            [f"  - family-names: {author}\n    given-names: " for author in authors]
-        )
+        if isinstance(authors, str):
+            authors = [authors]
+
+        author_lines = []
+        for author in authors:
+            given, family = self._split_author_name(str(author))
+            author_lines.append(f"  - family-names: {self._yaml_quote(family)}")
+            author_lines.append(f"    given-names: {self._yaml_quote(given)}")
         if not author_lines:
-            author_lines = "  - family-names: \n    given-names: "
+            author_lines = [
+                "  - family-names: \"\"",
+                "    given-names: \"\"",
+            ]
+
         title = config.get("name", name)
         doi = config.get("doi", "")
-        return (
-            "cff-version: 1.2.0\n"
-            f"title: {title}\n"
-            "message: If you use this dataset, please cite it.\n"
-            f"date-released: {date.today().isoformat()}\n"
-            f"doi: {doi}\n"
-            "authors:\n"
-            f"{author_lines}\n"
-        )
+        license_value = config.get("license", "")
+        message = config.get("how_to_acknowledge") or "If you use this dataset, please cite it."
+        references = config.get("references", []) or []
+        if isinstance(references, str):
+            references = [references]
+
+        lines = [
+            "cff-version: 1.2.0",
+            f"title: {self._yaml_quote(title)}",
+            f"message: {self._yaml_quote(message)}",
+            f"date-released: {date.today().isoformat()}",
+            f"doi: {self._yaml_quote(doi)}",
+        ]
+        if license_value:
+            lines.append(f"license: {self._yaml_quote(license_value)}")
+
+        lines.append("authors:")
+        lines.extend(author_lines)
+
+        if references:
+            lines.append("references:")
+            for ref in references:
+                lines.append(f"  - {self._yaml_quote(str(ref))}")
+
+        return "\n".join(lines) + "\n"
+
+    def update_citation_cff(self, project_path: Path, description: Dict[str, Any]) -> None:
+        """Update CITATION.cff based on dataset_description.json metadata."""
+        name = description.get("Name", "Untitled Dataset")
+        authors = description.get("Authors", []) or []
+        doi = description.get("DatasetDOI", "")
+        how_to_acknowledge = description.get("HowToAcknowledge", "")
+        license_value = description.get("License", "")
+        references = description.get("ReferencesAndLinks", []) or []
+        if isinstance(references, str):
+            references = [ref.strip() for ref in references.split(",") if ref.strip()]
+
+        config = {
+            "name": name,
+            "authors": authors,
+            "doi": doi,
+            "license": license_value,
+            "how_to_acknowledge": how_to_acknowledge,
+            "references": references,
+        }
+        content = self._create_citation_cff(name, config)
+        citation_path = Path(project_path) / "CITATION.cff"
+        CrossPlatformFile.write_text(str(citation_path), content)
 
     def _create_data_dictionary(self) -> str:
         """Create a minimal data dictionary template for sourcedata."""
