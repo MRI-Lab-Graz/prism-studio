@@ -1,6 +1,6 @@
 <a id="top"></a>
 <p align="center">
-  <img src="docs/img/prism_logo.jpg" alt="PRISM Logo" width="600">
+  <img src="docs/img/prism_logo.png" alt="PRISM Logo" width="600">
 </p>
 
 <h1 align="center">PRISM Studio</h1>
