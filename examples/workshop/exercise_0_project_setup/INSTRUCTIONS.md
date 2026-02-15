@@ -1,107 +1,211 @@
-# Exercise 0: Setting Up Your PRISM Project with YODA Principles
+# Exercise 0: Set Up Your PRISM Project (YODA Principles)
 
-**Time:** 15 minutes  
-**Goal:** Initialize your workspace following YODA (Yet anOther Data Analysis) principles and create your first PRISM project.
+**⏱ Time:** 15 minutes  
+**🎯 Goal:** Create a professional, reproducible project structure and activate it in PRISM Studio
 
----
-
-## What You'll Learn
-
-By the end of this exercise, you will:
-- ✓ Understand YODA principles for project organization
-- ✓ Launch the PRISM Studio application
-- ✓ Create a PRISM project with proper folder structure
-- ✓ Set up your active workspace
+**📚 Concepts:** YODA principles, project organization, workspace setup
 
 ---
 
-## Background: YODA Principles
+## What is YODA?
 
-**YODA** (Yet anOther Data Analysis) is a project organization framework that helps you:
-- **Separate concerns**: Keep raw data, analysis code, and results in separate folders
-- **Version control**: Make your project git-friendly
-- **Reproducibility**: Anyone can understand and rerun your analysis
-- **Collaboration**: Clear structure makes teamwork easier
+YODA (Yet anOther Data Analysis) is a framework for organizing research projects in a way that:
+- ✅ **Separates concerns** - raw data, analysis, and results are isolated
+- ✅ **Enables reproducibility** - anyone can follow and understand your workflow
+- ✅ **Supports collaboration** - team members can work clearly on different parts
+- ✅ **Manages version control** - git-friendly structure for tracking changes
+- ✅ **Preserves data integrity** - original files never get accidentally modified
 
-**Key YODA folders:**
-- `sourcedata/` - Original, unmodified raw data (never edit these!)
-- `rawdata/` - BIDS/PRISM formatted data ready for analysis
-- `code/` - Analysis scripts and notebooks
-- `derivatives/` - Processed outputs (scores, statistics, figures)
-
-PRISM Studio can automatically create this structure for you!
+**Many labs and funding agencies (NIH, NSF, EU) now require YODA-compliant structures!**
 
 ---
 
-## Launching PRISM
+## YODA Folder Structure
 
-### Windows Users
-1. Locate the **`Prism.exe`** file in your workshop folder.
-2. Double-click to launch it.
-3. A terminal window will open—keep this open! It runs the backend server.
-4. Your default web browser should open automatically to **http://localhost:5001**.
+A YODA project has these core folders:
 
-### Manual Launch (if browser doesn't open)
-1. Open your web browser (Chrome or Edge recommended).
+| Folder | Purpose | What Goes Here |
+|--------|---------|-----------------|
+| `sourcedata/` | Original, raw files | Excel spreadsheets, CSV exports from your instruments |
+| `rawdata/` | Standardized PRISM/BIDS format | Converted survey data with proper names and metadata |
+| `code/` | Analysis scripts | Python, R, MATLAB notebooks and scripts |
+| `derivatives/` | Processed outputs | Scored data, statistics, figures, SPSS exports |
+
+**Key principle:** `sourcedata/` is READ-ONLY. You never modify files there. If something goes wrong, you always have the original data to return to!
+
+---
+
+## Getting Started: Launch PRISM Studio
+
+### Step 1: Activate Your Python Environment
+
+First, make sure PRISM is running with the correct Python environment.
+
+**macOS/Linux:**
+```bash
+cd /path/to/prism-studio
+source .venv/bin/activate
+python prism-studio.py
+```
+
+**Windows (PowerShell):**
+```powershell
+cd C:\path\to\prism-studio
+.venv\Scripts\Activate.ps1
+python prism-studio.py
+```
+
+You should see terminal output starting the Flask server:
+```
+ * Running on http://127.0.0.1:5001
+```
+
+### Step 2: Open PRISM Studio in Your Browser
+
+1. Open your web browser (Chrome, Firefox, Safari, or Edge)
 2. Go to: **http://localhost:5001**
+3. You should see the PRISM Studio home page
 
 ---
 
-## Your Task: Create a YODA-Compliant Project
+## Your Task: Create a New Project
 
-Before we can convert or validate data, we need a "Project" with proper folder structure.
+### **Step 1: Navigate to Projects**
 
-### Step 1: Go to Projects
-1. In the sidebar or top navigation, click on **"Projects"**.
-2. Alternatively, go directly to: **http://localhost:5001/projects**
+In the PRISM Studio interface:
+1. Look for the navigation menu (usually on the left sidebar)
+2. Click on **"Projects"** or **"Project Management"**
+3. You can also go directly to: **http://localhost:5001/projects**
 
-### Step 2: Create a New Project
-1. Look for the **"Create New Project"** section.
-2. **Project Name:** Enter `Wellbeing_Study_Workshop`.
-3. **Location:** Choose a folder on your computer where you want to store your data (e.g., your Desktop or a dedicated `workshop_results` folder).
-4. **Template:** Select **"YODA Structure"** (if available) to automatically create proper folders.
-5. Click **"Create & Activate"**.
+### **Step 2: Create a New Project**
 
-### Step 3: Explore Your Project Structure
-Your new project should have this structure:
+You should see a **"New Project"** button or section. Click it.
+
+Fill in these details:
+
+| Field | Value | Notes |
+|-------|-------|-------|
+| **Project Name** | `Wellbeing_Study_Workshop` | Use underscores, avoid spaces & special chars |
+| **Description** | (Optional) | e.g., "WHO-5 workshop analysis" |
+| **Location** | Choose a folder | Desktop, Documents, or a dedicated `workshop` folder |
+| **Project Template** | YODA | Select "YODA Structure" if available |
+
+### **Step 3: Click "Create & Activate"**
+
+PRISM will:
+1. Create the folder at your chosen location
+2. Build the YODA folder structure automatically
+3. Set it as your **Active Project** (shown at the top of the screen)
+
+### **Step 4: Verify the Structure**
+
+After creation, your project folder should look like this (you can browse to it on your computer):
+
 ```
 Wellbeing_Study_Workshop/
-├── sourcedata/          # Original raw files (Excel, CSV) go here
-├── rawdata/             # PRISM-formatted data will be created here
+│
+├── sourcedata/
+│   └── (where original Excel files will go)
+│
+├── rawdata/
 │   ├── dataset_description.json
-│   └── participants.tsv
-├── code/                # Your analysis scripts (Python, R, etc.)
-├── derivatives/         # Processed outputs (SPSS files, scores, reports)
-└── README.md            # Project documentation
+│   ├── participants.tsv
+│   └── (where converted PRISM data will live)
+│
+├── code/
+│   └── (your analysis scripts will go here)
+│
+├── derivatives/
+│   └── (scores, exported SPSS files, reports)
+│
+└── README.md
+    └── (project documentation)
 ```
 
-**Why this structure matters:**
-- `sourcedata/` preserves your original data files - you can always go back to the start
-- `rawdata/` contains BIDS/PRISM formatted data that tools and apps can understand
-- `code/` keeps your analysis separate from data
-- `derivatives/` stores computed results without mixing them with raw data
-
-### Step 4: Verify Your Workspace
-1. Notice the **"Active Project"** label at the top of the screen. It should now show `Wellbeing_Study_Workshop`.
-2. PRISM now knows where to save all your conversions and exports!
-3. If you browse to your chosen location, you'll see the folder structure was created.
+**Confirmation:**
+- Look at the top of PRISM Studio
+- It should say: **"Active Project: Wellbeing_Study_Workshop"**
+- This means PRISM knows where to save everything!
 
 ---
 
-## Understanding the Workflow
+## Why This Matters
 
-Throughout this workshop, you'll follow this path:
+Throughout this workshop, your workflow will look like this:
 
-1. **Start:** Excel file with wellbeing survey responses
-2. **Step 1 (Next):** Convert to PRISM format → saves to `rawdata/`
-3. **Step 2:** Validate and add metadata → improves `rawdata/`
-4. **Step 3:** Apply recipes and export → saves results to `derivatives/`
+```
+Step 1: sourcedata/wellbeing.xlsx
+        (original data - never touch!)
+            ↓
+Step 2: Convert to PRISM format
+            ↓
+        rawdata/task-wellbeing_survey.tsv
+        rawdata/task-wellbeing_survey.json
+            ↓
+Step 3: Validate & add metadata
+            ↓
+Step 4: Apply scoring recipes
+            ↓
+        derivatives/wellbeing_scores.csv
+        derivatives/wellbeing_analysis.sav (SPSS)
+```
 
-This separation keeps your workflow clean and reproducible!
+**Result:** Everyone can see exactly what happened and reproduce your analysis!
 
 ---
 
-**Next Steps:**
-Now that your project is ready with YODA structure, let's bring in some data!
+## Bonus: Understanding Project Metadata
 
-**Ready for Exercise 1?** → Go to `../exercise_1_raw_data/`
+PRISM automatically creates a `dataset_description.json` file. Let's look at it:
+
+1. In PRISM Studio, go to **"File Management"** or similar
+2. Navigate to your `rawdata/` folder
+3. Open `dataset_description.json` in a text editor (or PRISM's JSON viewer)
+4. You'll see metadata like:
+   - Dataset name
+   - Authors
+   - License information
+   - BIDS version compatibility
+
+This metadata makes your dataset discoverable and reusable!
+
+---
+
+## Checklist: Ready to Move On?
+
+Before starting Exercise 1, confirm:
+
+- [ ] PRISM Studio is running (http://localhost:5001 works)
+- [ ] You created a project named `Wellbeing_Study_Workshop`
+- [ ] The project appears as **"Active Project"** at the top of the screen
+- [ ] You can see the folder structure on your computer
+- [ ] You understand why separating sourcedata/rawdata/derivatives matters
+
+---
+
+## Next Steps
+
+**Excellent!** Your project is now set up professionally. 
+
+In **Exercise 1**, you'll:
+- Take a raw Excel file with survey responses
+- Convert it to PRISM/BIDS format using the GUI
+- Save the structured data to your `rawdata/` folder
+
+Ready? → Go to **`../exercise_1_raw_data/INSTRUCTIONS.md`**
+
+---
+
+## 💡 Tips & Troubleshooting
+
+**Q: Can I change the project location later?**  
+A: Currently, you'd need to move the folder manually or create a new project. It's best to choose carefully from the start.
+
+**Q: What if I accidentally create the wrong project?**  
+A: Just delete the folder from your computer. No problem! Create a new one.
+
+**Q: Do I need to use these exact folder names?**  
+A: YODA is flexible, but stick to lowercase with underscores. It's best for cross-platform compatibility and following community standards.
+
+**Q: Why "YODA" and not just "BIDS"?**  
+A: YODA is the broader organizational framework. BIDS (Brain Imaging Data Structure) is a specific data format standard. YODA uses BIDS in the `rawdata/` folder but adds the broader project structure.

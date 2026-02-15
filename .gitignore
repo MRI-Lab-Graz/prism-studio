@@ -12,6 +12,10 @@ survey_library/*
 .venv/
 .DS_Store
 *.egg-info/
+.mypy_cache/
+theme_tempalte/
+.flake8
+.codespellignore
 
 # Demo datasets
 demo/prism_demo/
