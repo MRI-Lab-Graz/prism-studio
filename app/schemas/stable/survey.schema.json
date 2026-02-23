@@ -89,6 +89,11 @@
           "type": ["string", "object"],
           "description": "Version of the instrument (e.g., II, 5.0, 21-item)"
         },
+        "Versions": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "List of available versions/forms of this instrument (e.g., ['short', 'long', 'screening']). Use when the same instrument has multiple validated forms with different item counts."
+        },
         "Authors": {
           "type": "array",
           "items": {"type": "string"},
@@ -429,6 +434,15 @@
             "type": "boolean",
             "default": true,
             "description": "Whether this question is mandatory (required) in the survey. Defaults to true if not specified."
+          },
+          "ItemVersion": {
+            "type": "string",
+            "description": "Optional version identifier for this specific item (e.g., '1.0', '2023-rev', 'original'). Useful when tracking revisions of individual questions across studies or when importing updated instruments."
+          },
+          "ApplicableVersions": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "List of instrument versions that include this item (e.g., ['short', 'long']). Used when Study.Versions is defined. If omitted, item applies to all versions."
           }
         },
         "required": ["Description"]
