@@ -14,6 +14,21 @@ project_root = Path(__file__).resolve().parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
+# Import item registry for collision detection
+try:
+    from .item_registry import ItemRegistry, ItemCollisionError
+    from .version_merger import (
+        merge_survey_versions,
+        save_merged_template,
+        detect_version_name_from_import,
+    )
+except ImportError:
+    ItemRegistry = None
+    ItemCollisionError = None
+    merge_survey_versions = None
+    save_merged_template = None
+    detect_version_name_from_import = None
+
 try:
     from .survey_base import load_survey_library as load_schemas
     from ..utils.naming import sanitize_task_name
@@ -435,8 +450,16 @@ def _parse_lss_structure(root, get_text):
     return questions_map, groups_map
 
 
-def parse_lss_xml(xml_content, task_name=None):
-    """Parse a LimeSurvey .lss XML blob into a Prism sidecar dict."""
+def parse_lss_xml(xml_content, task_name=None, check_collisions=True, local_library=None, official_library=None):
+    """Parse a LimeSurvey .lss XML blob into a Prism sidecar dict.
+    
+    Args:
+        xml_content: XML content as bytes or string
+        task_name: Optional task name override
+        check_collisions: Whether to check for item ID collisions (default: True)
+        local_library: Optional path to local survey library
+        official_library: Optional path to official survey library
+    """
     try:
         root = ET.fromstring(xml_content)
     except ET.ParseError as e:
@@ -453,6 +476,30 @@ def parse_lss_xml(xml_content, task_name=None):
     survey_meta = _parse_survey_metadata(root, get_text)
 
     questions_map, groups_map = _parse_lss_structure(root, get_text)
+    
+    # Initialize item registry for collision detection
+    item_registry = None
+    if check_collisions and ItemRegistry is not None:
+        # Auto-detect official library if not provided
+        if official_library is None:
+            script_dir = Path(__file__).parent.parent.resolve()
+            for candidate in [
+                script_dir / "official" / "library" / "survey",
+                script_dir.parent / "official" / "library" / "survey",
+            ]:
+                if candidate.exists():
+                    official_library = candidate
+                    break
+        
+        try:
+            item_registry = ItemRegistry.from_libraries(
+                local_library=Path(local_library) if local_library else None,
+                official_library=Path(official_library) if official_library else None
+            )
+            print(f"[PRISM] Item collision checking enabled ({item_registry.get_item_count()} existing items)")
+        except Exception as e:
+            print(f"[PRISM] Warning: Could not initialize item registry: {e}")
+            item_registry = None
 
     # 2. Parse Answers
     # Map qid -> {code: answer, ...}
@@ -468,8 +515,13 @@ def parse_lss_xml(xml_content, task_name=None):
                 if qid in questions_map:
                     questions_map[qid]["levels"][code] = answer
 
+    # Determine task name early for registry
+    survey_title = survey_meta.get("title") or task_name or "survey"
+    normalized_task = sanitize_task_name(survey_title)
+
     # 3. Construct Prism JSON
     prism_json = {}
+    version_collisions = []  # Track version candidate collisions
 
     # Sort questions by group order, then question order for proper sequencing
     sorted_questions = sorted(
@@ -544,11 +596,97 @@ def parse_lss_xml(xml_content, task_name=None):
             if attrs:
                 entry["Attributes"] = attrs
 
+        # Check for item ID collisions before assignment
+        if item_registry is not None:
+            desc_text = entry.get("Description", "")
+            try:
+                item_registry.register_item(
+                    item_id=key,
+                    template_name=f"survey-{normalized_task}",
+                    description=str(desc_text)[:100],
+                    item_data=entry
+                )
+            except ItemCollisionError as e:
+                if e.collision_type == "version_candidate":
+                    print(f"[PRISM] Detected version candidate: {key}")
+                    version_collisions.append((key, entry, e))
+                    # Don't add yet - will handle after loop
+                    continue
+                else:
+                    print(f"\n[PRISM ERROR] {e}\n")
+                    raise RuntimeError(f"Item collision detected: {key}") from e
+
         prism_json[key] = entry
 
-    # Use survey title if available, otherwise use task_name
-    survey_title = survey_meta.get("title") or task_name or "survey"
-    normalized_task = sanitize_task_name(survey_title)
+    # Handle version candidate collisions
+    if version_collisions and merge_survey_versions is not None:
+        print(f"\n[PRISM] Processing {len(version_collisions)} version candidate collision(s)...")
+        
+        # Group by existing template
+        collisions_by_template = {}
+        for key, entry, error in version_collisions:
+            existing_template = error.existing_meta.get('source_template')
+            if existing_template not in collisions_by_template:
+                collisions_by_template[existing_template] = {'items': {}, 'error': error}
+            collisions_by_template[existing_template]['items'][key] = entry
+        
+        for existing_template_name, collision_info in collisions_by_template.items():
+            new_items = collision_info['items']
+            
+            # Find existing template file
+            existing_template_path = None
+            if local_library:
+                lib_path = Path(local_library) if isinstance(local_library, str) else local_library
+                if lib_path.exists():
+                    candidate = lib_path / f"{existing_template_name}.json"
+                    if candidate.exists():
+                        existing_template_path = candidate
+            
+            if official_library and not existing_template_path:
+                lib_path = Path(official_library) if isinstance(official_library, str) else official_library
+                if lib_path.exists():
+                    candidate = lib_path / f"{existing_template_name}.json"
+                    if candidate.exists():
+                        existing_template_path = candidate
+            
+            if not existing_template_path:
+                print(f"[PRISM WARNING] Could not find existing template {existing_template_name}, skipping merge")
+                # Add items normally
+                for item_id, item_data in new_items.items():
+                    prism_json[item_id] = item_data
+                continue
+            
+            # Prompt for version name
+            print(f"\n{'='*60}")
+            print(f"Survey '{normalized_task}' appears to be a version of '{existing_template_name}'")
+            print(f"  Existing template: {existing_template_path.name}")
+            print(f"  Colliding items: {len(new_items)}")
+            
+            suggested_new, suggested_existing = detect_version_name_from_import(
+                new_items, existing_template_path
+            )
+            print(f"  Suggested new version name: '{suggested_new}'")
+            version_name = input(f"Enter version name for this import (or press Enter for '{suggested_new}'): ").strip()
+            if not version_name:
+                version_name = suggested_new
+            
+            print(f"[PRISM] Merging as version: '{version_name}'")
+            
+            # Perform merge
+            merged_template = merge_survey_versions(
+                existing_template_path=existing_template_path,
+                new_items=new_items,
+                new_version_name=version_name
+            )
+            
+            # Save merged template
+            save_merged_template(merged_template, existing_template_path)
+            
+            # Add new items to prism_json
+            for item_id, item_data in new_items.items():
+                prism_json[item_id] = item_data
+            
+            print(f"[PRISM] ✓ Version merge complete\n")
 
     # Build description from survey metadata
     description = (
