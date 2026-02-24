@@ -965,13 +965,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Conversion Mode Elements ---
-    const convertModeData = document.getElementById('convertModeData');
-    const convertModeTemplate = document.getElementById('convertModeTemplate');
+    // --- Conversion Elements ---
     const convertIdColumnGroup = document.getElementById('convertIdColumnGroup');
     const convertIdColumn = document.getElementById('convertIdColumn');
     const convertTemplateExportGroup = document.getElementById('convertTemplateExportGroup');
-    const convertTemplateExport = document.getElementById('convertTemplateExport');
     const convertLanguageGroup = document.getElementById('convertLanguageGroup');
     const convertAliasGroup = document.getElementById('convertAliasGroup');
     const convertSessionGroup = document.getElementById('convertSessionGroup');
@@ -1069,58 +1066,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // Populate session pickers on load
     populateSessionPickers();
 
-    // Get current conversion mode
+    // Converter is now data-conversion only
     function getConvertMode() {
-        return document.querySelector('input[name="convertMode"]:checked')?.value || 'data';
+        return 'data';
     }
 
-    // Handle mode switching
+    // Keep conversion UI in data mode
     function handleModeSwitch() {
-        const mode = getConvertMode();
-        const filename = convertExcelFile.files?.[0]?.name?.toLowerCase() || '';
-        const isLimeSurvey = filename.endsWith('.lss') || filename.endsWith('.lsa');
+        convertIdColumnGroup?.classList.remove('d-none');
+        convertTemplateExportGroup?.classList.add('d-none');
+        convertLanguageGroup?.classList.remove('d-none');
+        convertAliasGroup?.classList.remove('d-none');
+        convertSessionGroup?.classList.remove('d-none');
 
-        if (mode === 'template') {
-            // Template generation mode
-            convertIdColumnGroup?.classList.add('d-none');
-            convertTemplateExportGroup?.classList.remove('d-none');
-            convertLanguageGroup?.classList.add('d-none');
-            
-            // Hide conversion-specific settings (not needed for templates)
-            convertAliasGroup?.classList.add('d-none');
-            convertSessionGroup?.classList.add('d-none');
-
-            // Hide library path requirement for template mode (not needed for structure)
-            const libPathLabel = convertLibraryPathInput?.closest('.col-12')?.querySelector('.form-label');
-            if (libPathLabel) {
-                libPathLabel.innerHTML = 'Template Library Root <span class="text-muted">(optional)</span>';
-            }
-        } else {
-            // Data conversion mode
-            convertIdColumnGroup?.classList.remove('d-none');
-            convertTemplateExportGroup?.classList.add('d-none');
-            convertLanguageGroup?.classList.remove('d-none');
-            
-            // Show conversion-specific settings
-            convertAliasGroup?.classList.remove('d-none');
-            convertSessionGroup?.classList.remove('d-none');
-
-            // Show library path as required
-            const libPathLabel = convertLibraryPathInput?.closest('.col-12')?.querySelector('.form-label');
-            if (libPathLabel) {
-                libPathLabel.innerHTML = 'Template Library Root <span class="text-danger">*</span>';
-            }
+        const libPathLabel = convertLibraryPathInput?.closest('.col-12')?.querySelector('.form-label');
+        if (libPathLabel) {
+            libPathLabel.innerHTML = 'Template Library Root <span class="text-danger">*</span>';
         }
 
         updateConvertBtn();
-    }
-
-    // Mode switch listeners
-    if (convertModeData) {
-        convertModeData.addEventListener('change', handleModeSwitch);
-    }
-    if (convertModeTemplate) {
-        convertModeTemplate.addEventListener('change', handleModeSwitch);
     }
 
     // Detect columns from file for ID column selector
@@ -1229,39 +1193,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateConvertBtn() {
         const hasFile = convertExcelFile.files && convertExcelFile.files.length === 1;
-        const mode = getConvertMode();
 
-        // Both modes only need a file now (library path is resolved automatically)
         convertBtn.disabled = !hasFile;
         
-        // Preview button is only available in data conversion mode
         if (previewBtn) {
-            if (mode === 'template') {
-                previewBtn.disabled = true;
-                previewBtn.style.display = 'none';
-                // Make convert button full width in template mode
-                convertBtn.parentElement.classList.remove('col-md-6');
-                convertBtn.parentElement.classList.add('col-12');
-            } else {
-                previewBtn.disabled = !hasFile;
-                previewBtn.style.display = '';
-                // Restore split layout in data conversion mode
-                convertBtn.parentElement.classList.remove('col-12');
-                convertBtn.parentElement.classList.add('col-md-6');
-            }
+            previewBtn.disabled = !hasFile;
+            previewBtn.style.display = '';
+            convertBtn.parentElement.classList.remove('col-12');
+            convertBtn.parentElement.classList.add('col-md-6');
         }
 
-        // Update button text based on mode
         if (convertBtn) {
-            if (mode === 'template') {
-                convertBtn.innerHTML = '<i class="fas fa-file-code me-2"></i>Generate Template';
-                convertBtn.classList.remove('btn-warning');
-                convertBtn.classList.add('btn-success');
-            } else {
-                convertBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Convert';
-                convertBtn.classList.remove('btn-success');
-                convertBtn.classList.add('btn-warning');
-            }
+            convertBtn.innerHTML = '<i class="fas fa-wand-magic-sparkles me-2"></i>Convert';
+            convertBtn.classList.remove('btn-success');
+            convertBtn.classList.add('btn-warning');
         }
     }
 
@@ -1270,14 +1215,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (file) {
             const filename = file.name.toLowerCase();
 
-            // Auto-switch to template mode for .lss files (structure only, no data)
             if (filename.endsWith('.lss')) {
-                if (convertModeTemplate) {
-                    convertModeTemplate.checked = true;
-                    handleModeSwitch();
-                }
-                // Show info message
-                convertInfo.innerHTML = '<i class="fas fa-info-circle me-1"></i>.lss files contain structure only (no response data). Using Template Generation mode.';
+                convertInfo.innerHTML = '<i class="fas fa-info-circle me-1"></i>.lss files contain structure only (no response data). Use <a href="/template-editor" class="alert-link">Template Editor</a> to generate templates.';
                 convertInfo.classList.remove('d-none');
             } else {
                 convertInfo.classList.add('d-none');
@@ -2615,16 +2554,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const mode = getConvertMode();
         const filename = file.name.toLowerCase();
         const isLssFile = filename.endsWith('.lss');
         const isLimeSurveyFile = filename.endsWith('.lss') || filename.endsWith('.lsa');
-
-        // TEMPLATE GENERATION MODE (no session required)
-        if (mode === 'template') {
-            handleTemplateGeneration(file);
-            return;
-        }
 
         // DATA CONVERSION MODE — session is required
         const sessionVal = getSurveySessionValue();
@@ -2640,7 +2572,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Prevent .lss files in data mode (they don't contain response data)
         if (isLssFile) {
-            convertError.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i><strong>.lss files contain structure only</strong> (no response data). Please use <strong>Template Generation</strong> mode, or upload a <strong>.lsa</strong> file (archive with responses).';
+            convertError.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i><strong>.lss files contain structure only</strong> (no response data). Use <a href="/template-editor" class="alert-link">Template Editor</a> for template generation, or upload a <strong>.lsa</strong> file (archive with responses).';
             convertError.classList.remove('d-none');
             return;
         }
