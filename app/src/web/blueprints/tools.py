@@ -31,6 +31,15 @@ def _default_library_root_for_templates(*, modality: str) -> Path:
 def _global_survey_library_root() -> Path | None:
     """Get the global survey library path from configuration."""
     base_dir = Path(current_app.root_path)
+
+    official_candidates = [
+        (base_dir / "official" / "library").resolve(),
+        (base_dir.parent / "official" / "library").resolve(),
+    ]
+    for candidate in official_candidates:
+        if candidate.exists() and candidate.is_dir():
+            return candidate
+
     from src.config import get_effective_library_paths
 
     lib_paths = get_effective_library_paths(app_root=str(base_dir))
