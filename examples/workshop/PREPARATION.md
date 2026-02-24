@@ -121,7 +121,13 @@ Before running the workshop, test the complete flow:
 
 1. **Start fresh:**
    ```powershell
+   .\.venv\Scripts\Activate.ps1
    python prism-studio.py
+   ```
+
+   ```bash
+   source .venv/bin/activate
+   ./prism-studio.py
    ```
 
 2. **Exercise 0:** Create new project via Projects page

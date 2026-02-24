@@ -36,9 +36,12 @@ Convert both the Wellbeing and Fitness data into a proper BIDS/PRISM dataset wit
 ## Step-by-Step Instructions
 
 ### Step 1: Launch PRISM Studio
-1. Open your web browser
-2. Go to: **http://localhost:5001**
-3. You should see the PRISM Studio home page
+1. Start PRISM Studio if it is not already running:
+   - macOS/Linux: `source .venv/bin/activate` then `./prism-studio.py`
+   - Windows (PowerShell): `.\.venv\Scripts\Activate.ps1` then `python prism-studio.py`
+2. Open your web browser
+3. Go to: **http://localhost:5001**
+4. You should see the PRISM Studio home page
 
 ### Step 2: Open the Converter Tool
 1. Click on **"Converter"** in the navigation menu (top or sidebar)
@@ -46,7 +49,7 @@ Convert both the Wellbeing and Fitness data into a proper BIDS/PRISM dataset wit
 
 ### Step 3: Load Your Data (Wellbeing Survey)
 1. Click **"Browse"** or **"Choose File"**
-2. Navigate to: `demo/workshop/exercise_1_raw_data/raw_data/wellbeing.tsv`
+2. Navigate to: `examples/workshop/exercise_1_raw_data/raw_data/wellbeing.tsv`
 3. Click **"Upload"** or **"Load File"**
 4. Preview your data - you should see columns like `participant_id`, `session`, `age`, `WB01`, etc.
 
@@ -72,7 +75,7 @@ The converter needs to know which column represents what:
 ### Step 5: Configure Output
 1. **Output Directory:**
    - Click **"Set Output Folder"**
-   - Navigate to: `demo/workshop/exercise_1_raw_data/`
+   - Navigate to: `examples/workshop/exercise_1_raw_data/`
    - Create a new folder called: **`my_dataset`**
    - Select this folder
 
