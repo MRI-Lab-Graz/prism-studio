@@ -3102,8 +3102,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 appendLog('', 'info');
             }
 
-            // Display participants.tsv preview
-            if (preview.participants_tsv) {
+            // Display participants.tsv preview (only if participants are being created)
+            if (preview.participants_tsv && Object.keys(preview.participants_tsv).length > 0) {
                 const tsv = preview.participants_tsv;
                 
                 // Store preview data globally for the mapping button
