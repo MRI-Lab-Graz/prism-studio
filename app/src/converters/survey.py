@@ -2078,7 +2078,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         )
         conversion_warnings.extend(part_warnings)
 
-    templates, item_to_task, duplicates, template_warnings = (
+    templates, item_to_task, duplicates, template_warnings_by_task = (
         _load_and_preprocess_templates(
             library_dir, canonical_aliases, compare_with_global=True
         )
@@ -2090,10 +2090,6 @@ def _convert_survey_dataframe_to_prism_dataset(
         for it_id, tsks in sorted(duplicates.items()):
             msg_lines.append(f"- {it_id}: {', '.join(sorted(tsks))}")
         raise ValueError("\n".join(msg_lines))
-
-    # Add template comparison warnings to conversion warnings
-    if template_warnings:
-        conversion_warnings.extend(template_warnings)
 
     # --- LSA Structural Matching ---
     # When converting .lsa files without an explicit survey= filter,
@@ -2416,11 +2412,11 @@ def _convert_survey_dataframe_to_prism_dataset(
     if selected_tasks is not None:
         tasks_with_data = tasks_with_data.intersection(selected_tasks)
     if not tasks_with_data:
-        raise ValueError(
-            "No survey item columns matched the selected templates. "
-            "Check that you loaded the correct survey file, selected matching templates "
-            "(e.g., WB01-WB05 for wellbeing), and that the file is tab-delimited TSV."
-        )
+        raise ValueError("No survey item columns matched the selected templates.")
+
+    # Add template warnings only for templates that are used in this conversion
+    for task_name in sorted(tasks_with_data):
+        conversion_warnings.extend(template_warnings_by_task.get(task_name, []))
 
     # Build col_to_task for backward compatibility with existing functions
     col_to_task = {col: m.task for col, m in col_to_mapping.items()}
@@ -2541,8 +2537,6 @@ def _convert_survey_dataframe_to_prism_dataset(
                 tech["StimulusType"] = "Questionnaire"
             if "FileFormat" not in tech:
                 tech["FileFormat"] = "tsv"
-            if "SoftwarePlatform" not in tech:
-                tech["SoftwarePlatform"] = "Other"
             if "Language" not in tech:
                 tech["Language"] = language or ""
             if "Respondent" not in tech:
@@ -3368,7 +3362,12 @@ def _load_and_preprocess_templates(
     library_dir: Path,
     canonical_aliases: dict[str, list[str]] | None,
     compare_with_global: bool = True,
-) -> tuple[dict[str, dict], dict[str, str], dict[str, set[str]], list[str]]:
+) -> tuple[
+    dict[str, dict],
+    dict[str, str],
+    dict[str, set[str]],
+    dict[str, list[str]],
+]:
     """Load and prepare survey templates from library.
 
     Also compares project templates against global library templates to detect
@@ -3380,16 +3379,16 @@ def _load_and_preprocess_templates(
         compare_with_global: Whether to compare with global library
 
     Returns:
-        Tuple of (templates, item_to_task, duplicates, template_warnings)
+        Tuple of (templates, item_to_task, duplicates, template_warnings_by_task)
         - templates: Dict mapping task_name -> template data
         - item_to_task: Dict mapping item_key -> task_name
         - duplicates: Dict of duplicate item keys across templates
-        - template_warnings: List of warnings about template differences
+        - template_warnings_by_task: Dict mapping task_name -> warning strings
     """
     templates: dict[str, dict] = {}
     item_to_task: dict[str, str] = {}
     duplicates: dict[str, set[str]] = {}
-    template_warnings: list[str] = []
+    template_warnings_by_task: dict[str, list[str]] = {}
 
     # Load global templates for comparison
     global_templates: dict[str, dict] = {}
@@ -3405,42 +3404,6 @@ def _load_and_preprocess_templates(
                 global_templates = _load_global_templates()
         except Exception:
             pass
-
-    def _register_template(
-        *,
-        json_path: Path,
-        sidecar: dict,
-        task_norm: str,
-        template_source: str,
-        global_match_task: str | None,
-    ) -> None:
-        templates[task_norm] = {
-            "path": json_path,
-            "json": sidecar,
-            "task": task_norm,
-            "source": template_source,
-            "global_match": global_match_task,
-        }
-
-        for k, v in sidecar.items():
-            if k in _NON_ITEM_TOPLEVEL_KEYS:
-                continue
-            if k in item_to_task and item_to_task[k] != task_norm:
-                duplicates.setdefault(k, set()).update({item_to_task[k], task_norm})
-            else:
-                item_to_task[k] = task_norm
-            if (
-                isinstance(v, dict)
-                and "Aliases" in v
-                and isinstance(v["Aliases"], list)
-            ):
-                for alias in v["Aliases"]:
-                    if alias in item_to_task and item_to_task[alias] != task_norm:
-                        duplicates.setdefault(alias, set()).update(
-                            {item_to_task[alias], task_norm}
-                        )
-                    else:
-                        item_to_task[alias] = task_norm
 
     for json_path in sorted(library_dir.glob("survey-*.json")):
         if _is_participant_template(json_path):
@@ -3484,7 +3447,7 @@ def _load_and_preprocess_templates(
             has_levels = isinstance(v.get("Levels"), dict)
             has_range = "MinValue" in v or "MaxValue" in v
             if has_levels and has_range:
-                template_warnings.append(
+                template_warnings_by_task.setdefault(task_norm, []).append(
                     f"Template '{task_norm}' item '{k}' defines both Levels and Min/Max; numeric range takes precedence and Levels will be treated as labels only."
                 )
 
@@ -3517,66 +3480,40 @@ def _load_and_preprocess_templates(
                         )
                         if len(only_global) > 5:
                             diff_parts[-1] += f" (+{len(only_global) - 5} more)"
-                    template_warnings.append(
+                    template_warnings_by_task.setdefault(task_norm, []).append(
                         f"Template '{task_norm}' differs from global '{matched_task}': {'; '.join(diff_parts)}"
                     )
 
-        _register_template(
-            json_path=json_path,
-            sidecar=sidecar,
-            task_norm=task_norm,
-            template_source=template_source,
-            global_match_task=global_match_task,
-        )
+        templates[task_norm] = {
+            "path": json_path,
+            "json": sidecar,
+            "task": task_norm,
+            "source": template_source,
+            "global_match": global_match_task,
+        }
 
-    # Fallback: include global templates that are missing from the project library.
-    # This keeps project-local templates as priority while ensuring official templates
-    # remain available when not copied into the project yet.
-    if global_templates and not is_using_global_library:
-        for task_norm, global_data in global_templates.items():
-            if task_norm in templates:
+        for k, v in sidecar.items():
+            if k in _NON_ITEM_TOPLEVEL_KEYS:
                 continue
-
-            try:
-                global_sidecar = _read_json(global_data["path"])
-            except Exception:
-                continue
-
-            if canonical_aliases:
-                global_sidecar = _canonicalize_template_items(
-                    sidecar=global_sidecar, canonical_aliases=canonical_aliases
-                )
-
-            if "_aliases" not in global_sidecar:
-                global_sidecar["_aliases"] = {}
-            if "_reverse_aliases" not in global_sidecar:
-                global_sidecar["_reverse_aliases"] = {}
-
-            for k, v in list(global_sidecar.items()):
-                if k in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(v, dict):
-                    continue
-                if "Aliases" in v and isinstance(v["Aliases"], list):
-                    for alias in v["Aliases"]:
-                        global_sidecar["_aliases"][alias] = k
-                        global_sidecar["_reverse_aliases"].setdefault(k, []).append(
-                            alias
+            if k in item_to_task and item_to_task[k] != task_norm:
+                duplicates.setdefault(k, set()).update({item_to_task[k], task_norm})
+            else:
+                item_to_task[k] = task_norm
+            # Aliases also mapped to task
+            if (
+                isinstance(v, dict)
+                and "Aliases" in v
+                and isinstance(v["Aliases"], list)
+            ):
+                for alias in v["Aliases"]:
+                    if alias in item_to_task and item_to_task[alias] != task_norm:
+                        duplicates.setdefault(alias, set()).update(
+                            {item_to_task[alias], task_norm}
                         )
-                if "AliasOf" in v:
-                    target = v["AliasOf"]
-                    global_sidecar["_aliases"][k] = target
-                    global_sidecar["_reverse_aliases"].setdefault(target, []).append(
-                        k
-                    )
+                    else:
+                        item_to_task[alias] = task_norm
 
-            _register_template(
-                json_path=global_data["path"],
-                sidecar=global_sidecar,
-                task_norm=task_norm,
-                template_source="global",
-                global_match_task=task_norm,
-            )
-
-    return templates, item_to_task, duplicates, template_warnings
+    return templates, item_to_task, duplicates, template_warnings_by_task
 
 
 def _compute_missing_items_report(
