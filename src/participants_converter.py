@@ -69,6 +69,27 @@ class ParticipantsConverter:
         logger.log(getattr(logging, level), message)
         self.log_callback(level, message)
 
+    @staticmethod
+    def _normalize_participant_id(value: Any) -> str | None:
+        """Normalize participant IDs to BIDS format (sub-<label>)."""
+        if value is None:
+            return None
+
+        text = str(value).strip()
+        if not text or text.lower() == "nan":
+            return None
+
+        if text.startswith("sub-"):
+            label = text[4:].strip()
+        else:
+            label = text
+
+        label = label.replace(" ", "")
+        if not label:
+            return None
+
+        return f"sub-{label}"
+
     def load_mapping(self) -> Optional[Dict[str, Any]]:
         """
         Load the participants mapping specification from default location.
@@ -256,6 +277,15 @@ class ParticipantsConverter:
                         messages.append(
                             f"⚠ '{standard_variable}': {unmapped} values didn't match mapping (kept original)"
                         )
+
+                if standard_variable == "participant_id":
+                    column_data = column_data.map(self._normalize_participant_id)
+                    normalized_non_null = int(column_data.notna().sum())
+                    self._log(
+                        "INFO",
+                        f"Normalized participant IDs to BIDS format for {normalized_non_null} rows",
+                    )
+                    messages.append("✓ Normalized participant_id values to BIDS format (sub-<label>)")
 
                 output_df[standard_variable] = column_data
                 self._log("INFO", f"Mapped '{source_column}' → '{standard_variable}'")

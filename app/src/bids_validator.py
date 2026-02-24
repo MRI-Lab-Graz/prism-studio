@@ -9,6 +9,9 @@ import subprocess
 from typing import List, Tuple, Set, Optional
 
 
+DENO_BIDS_VALIDATOR_SPEC = "jsr:@bids/validator@2.4.1"
+
+
 def run_bids_validator(
     root_dir: str,
     verbose: bool = False,
@@ -87,6 +90,25 @@ def run_bids_validator(
             f"   ℹ️  Found {len(placeholders)} placeholder files. Will suppress content errors for these."
         )
 
+    deno_failure_message = None
+
+    participants_tsv = os.path.join(root_dir, "participants.tsv")
+    if os.path.exists(participants_tsv):
+        try:
+            with open(participants_tsv, "r", encoding="utf-8") as f:
+                has_non_empty_line = any(line.strip() for line in f)
+            if not has_non_empty_line:
+                issues.append(
+                    (
+                        "ERROR",
+                        "[BIDS] participants.tsv is empty. Remove the file or add at least a 'participant_id' header.",
+                        participants_tsv,
+                    )
+                )
+                return issues
+        except Exception:
+            pass
+
     # 1. Try Deno-based validator (modern)
     try:
         # Check if deno is installed
@@ -96,11 +118,11 @@ def run_bids_validator(
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        print("   Using Deno-based validator (jsr:@bids/validator)")
+        print(f"   Using Deno-based validator ({DENO_BIDS_VALIDATOR_SPEC})")
 
         # Run Deno validator
         process = subprocess.run(
-            ["deno", "run", "-ERWN", "jsr:@bids/validator", root_dir, "--json"],
+            ["deno", "run", "-ERWN", DENO_BIDS_VALIDATOR_SPEC, root_dir, "--json"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -182,27 +204,28 @@ def run_bids_validator(
                 return issues
 
             except json.JSONDecodeError:
-                print("   ❌ Error: Could not parse Deno BIDS validator JSON output.")
-                issues.append(
-                    (
-                        "ERROR",
-                        "BIDS Validator (Deno) ran but output could not be parsed.",
-                    )
+                deno_failure_message = (
+                    "Deno validator output could not be parsed as JSON"
                 )
-                return issues
         else:
-            print(
-                f"   ❌ Error: Deno validator produced no output. Stderr: {process.stderr}"
-            )
-            issues.append(("ERROR", f"BIDS Validator (Deno) failed: {process.stderr}"))
-            return issues
+            stderr_msg = (process.stderr or "").strip()
+            if stderr_msg:
+                deno_failure_message = (
+                    f"Deno validator produced no output. Stderr: {stderr_msg}"
+                )
+            else:
+                deno_failure_message = (
+                    f"Deno validator produced no output (exit code {process.returncode})"
+                )
 
     except (subprocess.CalledProcessError, FileNotFoundError):
         # Deno not found, fall back to legacy
         pass
 
     # 2. Try legacy Python/Node CLI validator
-    print("   ⚠️  Deno not found. Falling back to legacy 'bids-validator' CLI...")
+    if deno_failure_message:
+        print(f"   ⚠️  Deno validator failed: {deno_failure_message}")
+    print("   ⚠️  Falling back to legacy 'bids-validator' CLI...")
     try:
         # Check if bids-validator is installed
         subprocess.run(
@@ -295,8 +318,8 @@ def run_bids_validator(
             issues.append(("ERROR", f"BIDS Validator failed to run: {process.stderr}"))
 
     except (subprocess.CalledProcessError, FileNotFoundError):
-        issues.append(
-            ("WARNING", "bids-validator not found or failed to run. Is it installed?")
-        )
+        if deno_failure_message:
+            issues.append(("WARNING", f"BIDS Validator (Deno) failed: {deno_failure_message}"))
+        issues.append(("WARNING", "bids-validator not found or failed to run. Is it installed?"))
 
     return issues
