@@ -8,7 +8,7 @@ This folder contains materials for the PRISM hands-on workshop focused on **well
 - **[PREPARATION.md](PREPARATION.md)** - Setup checklist for instructors
 - **[STRUCTURE.md](STRUCTURE.md)** - Technical details about folder organization
 
-## 🎯 Exercises Overview
+## 🎯 Exercises Overview (Basics Track)
 
 ### Exercise 0: Project Setup (YODA)
 - **Goal:** Create organized research project following YODA principles
@@ -22,29 +22,31 @@ This folder contains materials for the PRISM hands-on workshop focused on **well
 - **Materials:** `exercise_1_raw_data/raw_data/wellbeing.xlsx` & `wellbeing.tsv`
 - **Output:** BIDS-structured dataset with participants and survey files
 
-### Exercise 2: Participant Demographic Mapping ⭐ NEW
-- **Goal:** Transform demographic data with custom encodings to standardized PRISM format
-- **Duration:** 45 minutes
-- **Folder:** `exercise_2_participant_mapping/`
-- **Key Concept:** Using `participants_mapping.json` to auto-transform demographic variables
-- **Learn:** 
-  - ✓ Document custom variable encodings
-  - ✓ Create mapping specifications
-  - ✓ Transform numeric codes (1→M, 2→F, 4→O)
-  - ✓ Auto-generate standardized participants.tsv
-- **Materials:** Template + solution included
-
-### Exercise 3: Metadata & Validation
-- **Goal:** Add item descriptions and validate dataset
+### Exercise 2: Metadata & Validation
+- **Goal:** Validate converted survey data and fix missing metadata
 - **Duration:** 25 minutes
-- **Template:** `exercise_4_templates/survey-wellbeing.json`
-- **Key Concept:** Making data self-documenting and reusable
+- **Folder:** `exercise_2_hunting_errors/`
+- **Key Concept:** Use validator feedback to complete sidecar metadata
 
-### Exercise 4: Scoring & Export
+### Exercise 3: Scoring & Export
 - **Goal:** Calculate wellbeing scores and export to SPSS
 - **Duration:** 20 minutes
 - **Recipe:** `exercise_3_using_recipes/recipe-wellbeing.json`
 - **Output:** SPSS file with calculated total scores
+
+## ➕ Optional Extensions
+
+### Participant Mapping (Advanced)
+- **Goal:** Transform demographic data with custom encodings to standardized PRISM format
+- **Duration:** 30-45 minutes
+- **Folder:** `exercise_5_participant_mapping/`
+- **Key Concept:** Using `participants_mapping.json` to auto-transform demographic variables
+
+### Templates
+- **Goal:** Create reusable survey template metadata
+- **Duration:** 20 minutes
+- **Folder:** `exercise_4_templates/`
+- **Template Example:** `exercise_4_templates/survey-wellbeing.json`
 
 ## 📁 Quick Reference
 

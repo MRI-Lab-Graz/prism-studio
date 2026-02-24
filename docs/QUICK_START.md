@@ -95,11 +95,15 @@ For a complete learning experience with example data:
 cd examples/workshop
 ```
 
-The workshop includes 4 exercises:
+The workshop basics track includes 4 exercises:
 1. **Project Setup** – YODA principles
 2. **Data Conversion** – Excel to PRISM format
-3. **Participant Mapping** – Demographic transformations
-4. **Recipes & Scoring** – Calculate questionnaire scores
+3. **Metadata & Validation** – Find and fix missing metadata
+4. **Recipes & Scoring** – Calculate questionnaire scores and export
+
+Optional add-ons (if time allows):
+- **Participant Mapping** – Demographic transformations
+- **Templates** – Build reusable survey metadata
 
 See [Workshop Guide](WORKSHOP.md) for details.
 

@@ -30,7 +30,7 @@ Welcome to the PRISM Hands-on Workshop! This guide will walk you through analyzi
 ### Launch PRISM Studio
 
 **Windows (standalone executable):**
-- Double-click `PrismValidator.exe`
+- Double-click `Prism.exe`
 - Browser opens to **http://localhost:5001**
 
 **From source:**
