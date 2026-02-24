@@ -2542,7 +2542,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             if "FileFormat" not in tech:
                 tech["FileFormat"] = "tsv"
             if "SoftwarePlatform" not in tech:
-                tech["SoftwarePlatform"] = "PRISM Studio"
+                tech["SoftwarePlatform"] = "Other"
             if "Language" not in tech:
                 tech["Language"] = language or ""
             if "Respondent" not in tech:
