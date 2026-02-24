@@ -63,28 +63,41 @@ def resolve_effective_library_path() -> Path:
     """
     Automatically resolve library path:
     1. First, try project's /code/library (only if it has templates)
-    2. Fall back to global library
+    2. Then try project's /official/library (or /official/library/survey)
+    3. Fall back to global library
 
     Returns the resolved Path to the library root.
     Raises an error if no valid library is found.
     """
     from src.web.blueprints.projects import get_current_project
 
-    # Try project library first, but only if it has templates
+    # Try project library first, then project official templates
     project = get_current_project()
     project_path = project.get("path")
     if project_path:
-        project_library = Path(project_path).expanduser().resolve() / "code" / "library"
-        if project_library.exists() and project_library.is_dir():
-            # Check if the library has any survey templates
-            survey_dir = (
-                project_library / "survey"
-                if (project_library / "survey").is_dir()
-                else project_library
-            )
-            if list(survey_dir.glob("survey-*.json")):
-                return project_library
-            # If project library exists but is empty, fall through to global library
+        project_root = Path(project_path).expanduser().resolve()
+
+        def _has_survey_templates(path: Path) -> bool:
+            if not path.exists() or not path.is_dir():
+                return False
+            survey_dir = path / "survey" if (path / "survey").is_dir() else path
+            return bool(list(survey_dir.glob("survey-*.json")))
+
+        # Preferred: project code/library
+        project_library = project_root / "code" / "library"
+        if _has_survey_templates(project_library):
+            return project_library
+
+        # Next: project official library
+        official_library = project_root / "official" / "library"
+        if _has_survey_templates(official_library):
+            return official_library
+
+        # Also accept direct official/library/survey as root
+        official_survey = official_library / "survey"
+        if _has_survey_templates(official_survey):
+            return official_survey
+        # If project libraries exist but lack templates, fall through to global library
 
     # Fall back to global library
     from src.config import get_effective_library_paths
@@ -110,5 +123,5 @@ def resolve_effective_library_path() -> Path:
             return location
 
     raise FileNotFoundError(
-        "No survey library found. Please create a project with /code/library or configure a global library."
+        "No survey library found. Please provide templates in project /code/library (preferred), project /official/library, or configure a global library."
     )
