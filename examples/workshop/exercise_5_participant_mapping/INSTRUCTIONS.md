@@ -1,7 +1,9 @@
-# Exercise 2: Participant Demographic Mapping
+# Exercise 5: Participant Demographic Mapping
 
 **Time:** 45 minutes  
 **Goal:** Create a participant mapping specification to convert raw demographic data with custom encodings into standardized PRISM format
+
+![Exercise 5 UI (Light Mode)](../../../docs/_static/screenshots/prism-studio-exercise-5-participant-mapping-light.png)
 
 ---
 

@@ -3,6 +3,8 @@
 **Time:** 20 minutes  
 **Goal:** Create a custom survey metadata template from scratch using the Template Editor.
 
+![Exercise 4 UI (Light Mode)](../../../docs/_static/screenshots/prism-studio-exercise-4-templates-light.png)
+
 ---
 
 ## What You'll Learn

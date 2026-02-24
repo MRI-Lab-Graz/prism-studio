@@ -3,6 +3,8 @@
 **Time:** 30 minutes  
 **Goal:** Transform unstructured CSV/TSV files into a valid BIDS/PRISM dataset
 
+![Exercise 1 UI (Light Mode)](../../../docs/_static/screenshots/prism-studio-exercise-1-data-conversion-light.png)
+
 ---
 
 ## What You'll Learn
@@ -216,6 +218,12 @@ Dataset (study level)
 
 ### Problem: "No data rows found"
 **Solution:** Check that your CSV has data (not just headers)
+
+### Problem: "No survey item columns matched the selected templates"
+**Solution:**
+- Make sure you loaded `wellbeing.tsv` from this exercise (`exercise_1_raw_data/raw_data/wellbeing.tsv`)
+- Ensure the file is tab-delimited TSV (not semicolon-separated)
+- Select the matching wellbeing template (`WB01`-`WB05`) or clear template filters and retry
 
 ---
 

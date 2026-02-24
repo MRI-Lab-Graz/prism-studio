@@ -2428,7 +2428,11 @@ def _convert_survey_dataframe_to_prism_dataset(
     if selected_tasks is not None:
         tasks_with_data = tasks_with_data.intersection(selected_tasks)
     if not tasks_with_data:
-        raise ValueError("No survey item columns matched the selected templates.")
+        raise ValueError(
+            "No survey item columns matched the selected templates. "
+            "Check that you loaded the correct survey file, selected matching templates "
+            "(e.g., WB01-WB05 for wellbeing), and that the file is tab-delimited TSV."
+        )
 
     # Build col_to_task for backward compatibility with existing functions
     col_to_task = {col: m.task for col, m in col_to_mapping.items()}
@@ -2549,6 +2553,8 @@ def _convert_survey_dataframe_to_prism_dataset(
                 tech["StimulusType"] = "Questionnaire"
             if "FileFormat" not in tech:
                 tech["FileFormat"] = "tsv"
+            if "SoftwarePlatform" not in tech:
+                tech["SoftwarePlatform"] = "PRISM Studio"
             if "Language" not in tech:
                 tech["Language"] = language or ""
             if "Respondent" not in tech:
@@ -3359,6 +3365,42 @@ def _load_and_preprocess_templates(
         except Exception:
             pass
 
+    def _register_template(
+        *,
+        json_path: Path,
+        sidecar: dict,
+        task_norm: str,
+        template_source: str,
+        global_match_task: str | None,
+    ) -> None:
+        templates[task_norm] = {
+            "path": json_path,
+            "json": sidecar,
+            "task": task_norm,
+            "source": template_source,
+            "global_match": global_match_task,
+        }
+
+        for k, v in sidecar.items():
+            if k in _NON_ITEM_TOPLEVEL_KEYS:
+                continue
+            if k in item_to_task and item_to_task[k] != task_norm:
+                duplicates.setdefault(k, set()).update({item_to_task[k], task_norm})
+            else:
+                item_to_task[k] = task_norm
+            if (
+                isinstance(v, dict)
+                and "Aliases" in v
+                and isinstance(v["Aliases"], list)
+            ):
+                for alias in v["Aliases"]:
+                    if alias in item_to_task and item_to_task[alias] != task_norm:
+                        duplicates.setdefault(alias, set()).update(
+                            {item_to_task[alias], task_norm}
+                        )
+                    else:
+                        item_to_task[alias] = task_norm
+
     for json_path in sorted(library_dir.glob("survey-*.json")):
         if _is_participant_template(json_path):
             continue
@@ -3438,34 +3480,60 @@ def _load_and_preprocess_templates(
                         f"Template '{task_norm}' differs from global '{matched_task}': {'; '.join(diff_parts)}"
                     )
 
-        templates[task_norm] = {
-            "path": json_path,
-            "json": sidecar,
-            "task": task_norm,
-            "source": template_source,
-            "global_match": global_match_task,
-        }
+        _register_template(
+            json_path=json_path,
+            sidecar=sidecar,
+            task_norm=task_norm,
+            template_source=template_source,
+            global_match_task=global_match_task,
+        )
 
-        for k, v in sidecar.items():
-            if k in _NON_ITEM_TOPLEVEL_KEYS:
+    # Fallback: include global templates that are missing from the project library.
+    # This keeps project-local templates as priority while ensuring official templates
+    # remain available when not copied into the project yet.
+    if global_templates and not is_using_global_library:
+        for task_norm, global_data in global_templates.items():
+            if task_norm in templates:
                 continue
-            if k in item_to_task and item_to_task[k] != task_norm:
-                duplicates.setdefault(k, set()).update({item_to_task[k], task_norm})
-            else:
-                item_to_task[k] = task_norm
-            # Aliases also mapped to task
-            if (
-                isinstance(v, dict)
-                and "Aliases" in v
-                and isinstance(v["Aliases"], list)
-            ):
-                for alias in v["Aliases"]:
-                    if alias in item_to_task and item_to_task[alias] != task_norm:
-                        duplicates.setdefault(alias, set()).update(
-                            {item_to_task[alias], task_norm}
+
+            try:
+                global_sidecar = _read_json(global_data["path"])
+            except Exception:
+                continue
+
+            if canonical_aliases:
+                global_sidecar = _canonicalize_template_items(
+                    sidecar=global_sidecar, canonical_aliases=canonical_aliases
+                )
+
+            if "_aliases" not in global_sidecar:
+                global_sidecar["_aliases"] = {}
+            if "_reverse_aliases" not in global_sidecar:
+                global_sidecar["_reverse_aliases"] = {}
+
+            for k, v in list(global_sidecar.items()):
+                if k in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(v, dict):
+                    continue
+                if "Aliases" in v and isinstance(v["Aliases"], list):
+                    for alias in v["Aliases"]:
+                        global_sidecar["_aliases"][alias] = k
+                        global_sidecar["_reverse_aliases"].setdefault(k, []).append(
+                            alias
                         )
-                    else:
-                        item_to_task[alias] = task_norm
+                if "AliasOf" in v:
+                    target = v["AliasOf"]
+                    global_sidecar["_aliases"][k] = target
+                    global_sidecar["_reverse_aliases"].setdefault(target, []).append(
+                        k
+                    )
+
+            _register_template(
+                json_path=global_data["path"],
+                sidecar=global_sidecar,
+                task_norm=task_norm,
+                template_source="global",
+                global_match_task=task_norm,
+            )
 
     return templates, item_to_task, duplicates, template_warnings
 

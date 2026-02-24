@@ -32,7 +32,7 @@ This exercise teaches you how to create and use `participants_mapping.json` file
 ## File Structure
 
 ```
-exercise_2_participant_mapping/
+exercise_5_participant_mapping/
 ├── INSTRUCTIONS.md                     # This guide
 ├── INSTRUCTIONS.pdf                    # Printable version
 ├── README.md                           # This file

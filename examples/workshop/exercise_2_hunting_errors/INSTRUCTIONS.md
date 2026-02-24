@@ -3,6 +3,8 @@
 **Time:** 25 minutes  
 **Goal:** Learn how to identify and understand common data issues using the PRISM Validator.
 
+![Exercise 2 UI (Light Mode)](../../../docs/_static/screenshots/prism-studio-exercise-2-validation-light.png)
+
 ---
 
 ## What You'll Learn

@@ -112,8 +112,8 @@ These files contain:
 - [ ] Exercise 1 instructions (convert Excel to PRISM)
 - [ ] Exercise 2 instructions (validate and fix metadata)
 - [ ] Exercise 3 instructions (apply recipe and export)
-- [ ] Updated WORKSHOP_HANDOUT.md
-- [ ] Updated WORKSHOP_PLAN.md
+- [ ] Updated WORKSHOP_HANDOUT_WELLBEING.md
+- [ ] Updated WORKSHOP_README.md
 
 ## Testing the Workshop
 

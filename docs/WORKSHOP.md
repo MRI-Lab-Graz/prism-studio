@@ -4,17 +4,18 @@ Learn PRISM through hands-on exercises with real example data.
 
 ## Overview
 
-The PRISM workshop takes you from raw survey data to a fully validated, scored, and exportable dataset. Each exercise builds on the previous one.
+The PRISM workshop takes you from raw survey data to a fully validated, scored, and exportable dataset. The **core basics track uses 4 folders** and optional extensions can be added if time allows.
 
 | Exercise | Topic | Duration | What You'll Learn |
 |----------|-------|----------|-------------------|
 | **0** | Project Setup | 15 min | YODA principles, folder structure |
 | **1** | Data Conversion | 30 min | Excel → PRISM format |
-| **2** | Participant Mapping | 45 min | Demographic transformations |
+| **2** | Metadata & Validation | 25 min | Find and fix metadata gaps |
 | **3** | Recipes & Scoring | 20 min | Calculate questionnaire scores |
-| **4** | Templates | 20 min | Create item descriptions |
+| *(Optional)* | Participant Mapping | 30-45 min | Demographic transformations |
+| *(Optional)* | Templates | 20 min | Create reusable item descriptions |
 
-**Total time: ~2 hours**
+**Total time: ~90 minutes (core) / ~2 hours (with extensions)**
 
 ## Getting Started
 
@@ -32,9 +33,10 @@ The workshop files are in:
 examples/workshop/
 ├── exercise_0_project_setup/
 ├── exercise_1_raw_data/
-├── exercise_2_participant_mapping/
+├── exercise_2_hunting_errors/
 ├── exercise_3_using_recipes/
-└── exercise_4_templates/
+├── exercise_4_templates/             # optional
+└── exercise_5_participant_mapping/   # optional extension
 ```
 
 ### 3. Follow the Handout
@@ -80,32 +82,20 @@ Open the complete guide: [WORKSHOP_HANDOUT_WELLBEING.md](https://github.com/MRI-
 
 **Output**: BIDS-structured files in `rawdata/sub-XXX/survey/`
 
-### Exercise 2: Participant Mapping
+### Exercise 2: Metadata & Validation
 
-**Goal**: Transform demographic data with custom encodings.
+**Goal**: Validate the converted dataset and fix missing survey metadata.
 
-**Challenge**: Your source data uses custom codes:
-- Sex: `1=Male, 2=Female, 4=Other`
-- Age: Stored as text `"25 years"`
-
-**Solution**: Create a `participants_mapping.json` that transforms:
-```json
-{
-  "sex": {
-    "source_column": "gender_code",
-    "mapping": {"1": "M", "2": "F", "4": "O"}
-  },
-  "age": {
-    "source_column": "age_text",
-    "transform": "extract_number"
-  }
-}
-```
+**Expected findings**:
+- Missing study-level survey metadata
+- Missing item descriptions
+- Missing response-level labels
 
 **Steps**:
-1. Go to **Projects → Participants**
-2. Create mapping rules
-3. Generate standardized `participants.tsv`
+1. Go to **Validator** (`/validate`)
+2. Select your `rawdata/` folder and run validation
+3. Use `exercise_4_templates/survey-wellbeing.json` as source metadata
+4. Re-run validation until issues are resolved
 
 ### Exercise 3: Recipes & Scoring
 
@@ -135,7 +125,7 @@ Open the complete guide: [WORKSHOP_HANDOUT_WELLBEING.md](https://github.com/MRI-
 3. Load `recipe-who5.json`
 4. Run and export as SPSS (.save)
 
-### Exercise 4: Templates
+### Optional Extension: Templates
 
 **Goal**: Create survey metadata with item descriptions.
 
@@ -147,6 +137,19 @@ Open the complete guide: [WORKSHOP_HANDOUT_WELLBEING.md](https://github.com/MRI-
 3. Add items with questions in English and German
 4. Add response options with labels
 5. Save to your project
+
+### Optional Extension: Participant Mapping
+
+**Goal**: Transform demographic encodings into standardized values.
+
+**Example**:
+- Sex codes: `1/2/4` → `M/F/O`
+- Age text: `"25 years"` → `25`
+
+**Steps**:
+1. Add a `participants_mapping.json` in project `code/library/`
+2. Run conversion/validation again
+3. Confirm standardized `participants.tsv` output
 
 ---
 

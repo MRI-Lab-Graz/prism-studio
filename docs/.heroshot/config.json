@@ -17,6 +17,55 @@
       "viewports": ["desktop"]
     },
     {
+      "id": "prism-studio-workshop-start",
+      "name": "PRISM Studio - Workshop Start (Projects)",
+      "url": "http://127.0.0.1:5001/projects",
+      "selector": "body",
+      "viewports": ["desktop"]
+    },
+    {
+      "id": "prism-studio-exercise-0-project-setup",
+      "name": "PRISM Studio - Exercise 0 (Project Setup)",
+      "url": "http://127.0.0.1:5001/projects",
+      "selector": "body",
+      "viewports": ["desktop"]
+    },
+    {
+      "id": "prism-studio-exercise-1-converter",
+      "name": "PRISM Studio - Exercise 1 (Data Conversion)",
+      "url": "http://127.0.0.1:5001/converter",
+      "selector": "body",
+      "viewports": ["desktop"]
+    },
+    {
+      "id": "prism-studio-exercise-2-validation",
+      "name": "PRISM Studio - Exercise 2 (Validation)",
+      "url": "http://127.0.0.1:5001/validate",
+      "selector": "body",
+      "viewports": ["desktop"]
+    },
+    {
+      "id": "prism-studio-exercise-3-recipes",
+      "name": "PRISM Studio - Exercise 3 (Recipes)",
+      "url": "http://127.0.0.1:5001/recipes",
+      "selector": "body",
+      "viewports": ["desktop"]
+    },
+    {
+      "id": "prism-studio-exercise-4-templates",
+      "name": "PRISM Studio - Exercise 4 (Templates)",
+      "url": "http://127.0.0.1:5001/template-editor",
+      "selector": "body",
+      "viewports": ["desktop"]
+    },
+    {
+      "id": "prism-studio-exercise-5-participant-mapping",
+      "name": "PRISM Studio - Exercise 5 (Participant Mapping)",
+      "url": "http://127.0.0.1:5001/converter",
+      "selector": "body",
+      "viewports": ["desktop"]
+    },
+    {
       "id": "prism-studio-recipes",
       "name": "PRISM Studio - Recipes",
       "url": "http://127.0.0.1:5001/recipes",
