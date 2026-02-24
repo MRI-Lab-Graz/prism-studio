@@ -42,7 +42,7 @@ python prism.py /path/to/dataset --schema-version stable
 
 For details, see:
 - [SCHEMA_VERSIONING.md](SCHEMA_VERSIONING.md)
-- [SCHEMA_VERSIONING_GUIDE.md](SCHEMA_VERSIONING_GUIDE.md)
+- [VALIDATOR.md](VALIDATOR.md)
 
 ---
 
@@ -79,7 +79,7 @@ PRISM supports generating derived variables (scores, subscales) from raw data. T
 
 - **Location**: `derivatives/surveys/` or `derivatives/biometrics/`
 - **Metadata**: Each derivative dataset must contain its own `dataset_description.json` (BIDS-derivatives requirement). PRISM automatically generates this file, inheriting relevant metadata from the root dataset.
-- **Recipes**: Transformations are defined in JSON recipe files. See [DERIVATIVES.md](DERIVATIVES.md) for the full specification.
+- **Recipes**: Transformations are defined in JSON recipe files. See [RECIPES.md](RECIPES.md) for the full specification.
 
 ---
 

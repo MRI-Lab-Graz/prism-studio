@@ -242,5 +242,5 @@ After building:
 ## See Also
 
 - [General Installation Guide](INSTALLATION.md)
-- [Windows Compatibility Notes](WINDOWS_COMPATIBILITY.md)
+- [Windows Setup Guide](WINDOWS_SETUP.md)
 - [Windows Setup Guide](WINDOWS_SETUP.md)

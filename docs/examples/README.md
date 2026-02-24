@@ -1,3 +1,5 @@
+:orphan:
+
 # Examples
 
 This folder contains example metadata and dataset description files used in documentation and tests.

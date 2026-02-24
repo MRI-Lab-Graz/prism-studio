@@ -378,6 +378,8 @@ This verifies:
    - Error messages
    - Output of the compatibility test
 
+### Common Installation Issues
+
 #### Issue: "Python is not recognized"
 **Solution**: Python is not in your PATH. Reinstall Python and check "Add Python to PATH".
 
@@ -387,6 +389,8 @@ This verifies:
 2. Navigate to: Computer Configuration → Administrative Templates → System → Filesystem
 3. Enable "Enable Win32 long paths"
 
+### Security Issues
+
 #### Issue: Antivirus (Defender, Norton, etc.) blocks the .exe
 **Solution**: This is a common "False Positive" for unsigned Python-based executables.
 1. **Windows Defender**: Click "More info" and then "Run anyway".
@@ -395,6 +399,8 @@ This verifies:
 
 #### Issue: Antivirus blocking script execution
 **Solution**: Add the project folder to your antivirus exclusions.
+
+### Policy Issues
 
 #### Issue: PowerShell execution policy
 **Solution**: If using PowerShell, you may need to run:

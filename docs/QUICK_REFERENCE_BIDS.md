@@ -69,7 +69,7 @@ dataset_description.json will contain all fields:
 
 ## 🔢 Field Type Conversions
 
-```javascript
+```text
 // USER INPUT in form (string) → STORAGE in JSON (array)
 "psychology, neuroscience, BIDS"  →  ["psychology", "neuroscience", "BIDS"]
 "NSF #123, Other Grant"           →  ["NSF #123", "Other Grant"]
@@ -222,7 +222,7 @@ python3 scripts/test_bids_compliance.py
 ### Visual Check
 ```bash
 # Check dataset_description.json structure
-cat <project>/rawdata/dataset_description.json | python3 -m json.tool
+cat <project>/dataset_description.json | python3 -m json.tool
 
 # Check CITATION.cff syntax
 cat <project>/CITATION.cff
@@ -270,7 +270,7 @@ cat <project>/CITATION.cff
 ls -la <project_path>/
 
 # View dataset_description.json
-cat <project_path>/rawdata/dataset_description.json | python3 -m json.tool
+cat <project_path>/dataset_description.json | python3 -m json.tool
 
 # View CITATION.cff
 cat <project_path>/CITATION.cff

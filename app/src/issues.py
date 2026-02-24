@@ -91,7 +91,7 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
     },
     "PRISM002": {
         "message": "No subjects found in dataset",
-        "fix_hint": "Ensure subject folders are named 'sub-<label>' and located at the dataset root",
+        "fix_hint": "Ensure subject folders are named 'sub-<label>' and located at the project dataset root",
     },
     "PRISM003": {
         "message": "Invalid dataset_description.json",

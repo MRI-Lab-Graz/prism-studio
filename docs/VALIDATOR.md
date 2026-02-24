@@ -11,7 +11,7 @@ This page is under construction. For now, see [Studio Overview](STUDIO_OVERVIEW.
 ### In PRISM Studio
 
 1. Go to **Validator** in the navigation
-2. Your project's `rawdata/` folder is pre-selected (if a project is loaded)
+2. Your project folder is pre-selected (if a project is loaded)
 3. Or browse to select a different folder
 4. Click **Validate**
 
@@ -19,13 +19,13 @@ This page is under construction. For now, see [Studio Overview](STUDIO_OVERVIEW.
 
 ```bash
 # Basic validation
-python prism.py /path/to/rawdata
+python prism.py /path/to/project
 
 # With auto-fix
-python prism.py /path/to/rawdata --fix
+python prism.py /path/to/project --fix
 
 # JSON output
-python prism.py /path/to/rawdata --json-pretty
+python prism.py /path/to/project --json-pretty
 ```
 
 ## Understanding Results
@@ -76,7 +76,7 @@ Some issues can be fixed automatically:
 
 **Command Line**:
 ```bash
-python prism.py /path/to/rawdata --fix
+python prism.py /path/to/project --fix
 ```
 
 ## BIDS Validation
@@ -90,7 +90,7 @@ Toggle **Include BIDS Validation** before validating.
 ### Command Line
 
 ```bash
-python prism.py /path/to/rawdata --bids
+python prism.py /path/to/project --bids
 ```
 
 ### BIDS vs PRISM
@@ -109,17 +109,17 @@ python prism.py /path/to/rawdata --bids
 ### JSON
 
 ```bash
-python prism.py /path/to/rawdata --json-pretty > results.json
+python prism.py /path/to/project --json-pretty > results.json
 ```
 
 ### SARIF (for CI/CD)
 
 ```bash
-python prism.py /path/to/rawdata --format sarif > results.sarif
+python prism.py /path/to/project --format sarif > results.sarif
 ```
 
 ### Markdown
 
 ```bash
-python prism.py /path/to/rawdata --format markdown > results.md
+python prism.py /path/to/project --format markdown > results.md
 ```

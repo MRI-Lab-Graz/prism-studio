@@ -252,13 +252,8 @@ class ProjectManager:
                 }
             )
 
-        # Determine BIDS root: check for rawdata/ first (YODA layout)
+        # Canonical PRISM location: project folder is the BIDS root.
         bids_root = project_path
-        if (project_path / "rawdata").is_dir() and (
-            project_path / "rawdata" / "dataset_description.json"
-        ).exists():
-            bids_root = project_path / "rawdata"
-            stats["is_yoda"] = True
 
         # Check root files (in the identified BIDS root)
         if (bids_root / "dataset_description.json").exists():
@@ -279,7 +274,7 @@ class ProjectManager:
         if (bids_root / "participants.tsv").exists():
             stats["has_participants_tsv"] = True
         else:
-            code = "PRISM002"
+            code = "PRISM004"
             msg = "Missing participants.tsv"
             issues.append(
                 {

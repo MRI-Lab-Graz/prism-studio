@@ -67,16 +67,9 @@ def update_participants_tsv(
     if not isinstance(participant_ids, set):
         participant_ids = set(participant_ids)
 
-    # Check both root and rawdata/ for participants.tsv (PRISM/YODA structure)
+    # Canonical PRISM location: participants files live at dataset root.
     participants_tsv = dataset_root / "participants.tsv"
     participants_json = dataset_root / "participants.json"
-
-    # If not in root, check in rawdata/ (PRISM structure)
-    if not participants_tsv.exists():
-        rawdata_tsv = dataset_root / "rawdata" / "participants.tsv"
-        if rawdata_tsv.exists() or (dataset_root / "rawdata").exists():
-            participants_tsv = rawdata_tsv
-            participants_json = dataset_root / "rawdata" / "participants.json"
 
     # Read existing participants.tsv if it exists
     existing_ids = set()
