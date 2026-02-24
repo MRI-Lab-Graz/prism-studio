@@ -101,6 +101,122 @@ _log_file_head = log_file_head
 _resolve_effective_library_path = resolve_effective_library_path
 
 
+def _should_retry_with_official_library(err: Exception) -> bool:
+    return isinstance(err, ValueError) and (
+        "no survey item columns matched" in str(err).lower()
+    )
+
+
+def _resolve_official_survey_dir(project_path: str | None) -> Path | None:
+    candidates: list[Path] = []
+
+    if project_path:
+        project_root = Path(project_path).expanduser().resolve()
+        if project_root.is_file():
+            project_root = project_root.parent
+
+        project_official = project_root / "official" / "library"
+        candidates.extend([project_official / "survey", project_official])
+
+    # Repo official library (always present)
+    base_dir = Path(current_app.root_path).parent.resolve()
+    candidates.append(base_dir / "official" / "library" / "survey")
+    candidates.append(base_dir / "official" / "library")
+
+    for candidate in candidates:
+        if candidate.exists() and candidate.is_dir():
+            if list(candidate.glob("survey-*.json")):
+                return candidate
+    return None
+
+
+def _copy_official_templates_to_project(
+    official_dir: Path,
+    tasks: list[str],
+    project_path: str | None,
+    log_fn=None,
+) -> None:
+    if not project_path or not tasks:
+        return
+    project_root = Path(project_path).expanduser().resolve()
+    if project_root.is_file():
+        project_root = project_root.parent
+
+    if (official_dir / "survey").is_dir() and not list(official_dir.glob("survey-*.json")):
+        official_dir = official_dir / "survey"
+
+    dest_dir = project_root / "code" / "library" / "survey"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+
+    copied = 0
+    for task in tasks:
+        src = official_dir / f"survey-{task}.json"
+        dest = dest_dir / f"survey-{task}.json"
+        if src.exists() and not dest.exists():
+            shutil.copy2(src, dest)
+            copied += 1
+
+    if copied:
+        msg = f"Copied {copied} official survey template(s) into project library."
+        if log_fn:
+            log_fn(msg, "info")
+        else:
+            print(f"[PRISM DEBUG] {msg}")
+
+
+def _is_project_code_library(library_dir: str | Path, project_path: str | None) -> bool:
+    if not project_path:
+        return False
+    project_root = Path(project_path).expanduser().resolve()
+    if project_root.is_file():
+        project_root = project_root.parent
+
+    library_dir = Path(library_dir).expanduser().resolve()
+    code_library = project_root / "code" / "library"
+    return library_dir in {code_library, code_library / "survey"}
+
+
+def _run_survey_with_official_fallback(
+    converter_fn,
+    *,
+    library_dir: str | Path,
+    fallback_project_path: str | None,
+    log_fn=None,
+    **kwargs,
+):
+    try:
+        return converter_fn(library_dir=str(library_dir), **kwargs)
+    except Exception as exc:
+        if _should_retry_with_official_library(exc):
+            official_dir = _resolve_official_survey_dir(fallback_project_path)
+            if official_dir and Path(official_dir).resolve() != Path(library_dir).resolve():
+                msg = (
+                    "No matches in project templates; retrying with official templates."
+                )
+                if log_fn:
+                    log_fn(msg, "info")
+                else:
+                    print(f"[PRISM DEBUG] {msg}")
+                result = converter_fn(library_dir=str(official_dir), **kwargs)
+                if kwargs.get("dry_run"):
+                    _copy_official_templates_to_project(
+                        official_dir=official_dir,
+                        tasks=getattr(result, "tasks_included", []),
+                        project_path=fallback_project_path,
+                        log_fn=log_fn,
+                    )
+                return result
+
+            msg = (
+                "No matches in project templates and no official templates found to fall back to."
+            )
+            if log_fn:
+                log_fn(msg, "warning")
+            else:
+                print(f"[PRISM DEBUG] {msg}")
+        raise
+
+
 def _extract_tasks_from_output(output_root: Path) -> list:
     """Extract unique task names from BIDS-style filenames in output directory."""
     tasks = set()
@@ -678,7 +794,8 @@ def api_survey_convert_preview():
 
         # Run dry-run conversion
         if suffix in {".xlsx", ".csv", ".tsv"}:
-            result = convert_survey_xlsx_to_prism_dataset(
+            result = _run_survey_with_official_fallback(
+                convert_survey_xlsx_to_prism_dataset,
                 input_path=input_path,
                 library_dir=str(effective_survey_dir),
                 output_root=output_root,
@@ -696,9 +813,12 @@ def api_survey_convert_preview():
                 alias_file=alias_path,
                 id_map_file=id_map_path,
                 duplicate_handling=duplicate_handling,
+                skip_participants=True,
+                fallback_project_path=str(project_path) if project_path else None,
             )
         elif suffix == ".lsa":
-            result = convert_survey_lsa_to_prism_dataset(
+            result = _run_survey_with_official_fallback(
+                convert_survey_lsa_to_prism_dataset,
                 input_path=input_path,
                 library_dir=str(effective_survey_dir),
                 output_root=output_root,
@@ -716,7 +836,9 @@ def api_survey_convert_preview():
                 id_map_file=id_map_path,
                 strict_levels=True if strict_levels else None,
                 duplicate_handling=duplicate_handling,
-                project_path=session.get("current_project_path"),
+                skip_participants=True,
+                project_path=str(project_path) if project_path else None,
+                fallback_project_path=str(project_path) if project_path else None,
             )
         else:
             return jsonify({"error": "Unsupported file format"}), 400
@@ -729,7 +851,8 @@ def api_survey_convert_preview():
                 validate_root.mkdir(parents=True, exist_ok=True)
 
                 if suffix in {".xlsx", ".csv", ".tsv"}:
-                    convert_survey_xlsx_to_prism_dataset(
+                    _run_survey_with_official_fallback(
+                        convert_survey_xlsx_to_prism_dataset,
                         input_path=input_path,
                         library_dir=str(effective_survey_dir),
                         output_root=validate_root,
@@ -747,9 +870,12 @@ def api_survey_convert_preview():
                         alias_file=alias_path,
                         id_map_file=id_map_path,
                         duplicate_handling=duplicate_handling,
+                        skip_participants=True,
+                        fallback_project_path=str(project_path) if project_path else None,
                     )
                 elif suffix == ".lsa":
-                    convert_survey_lsa_to_prism_dataset(
+                    _run_survey_with_official_fallback(
+                        convert_survey_lsa_to_prism_dataset,
                         input_path=input_path,
                         library_dir=str(effective_survey_dir),
                         output_root=validate_root,
@@ -767,7 +893,9 @@ def api_survey_convert_preview():
                         id_map_file=id_map_path,
                         strict_levels=True if strict_levels else None,
                         duplicate_handling=duplicate_handling,
-                        project_path=session.get("current_project_path"),
+                        skip_participants=True,
+                        project_path=str(project_path) if project_path else None,
+                        fallback_project_path=str(project_path) if project_path else None,
                     )
 
                 v_res = run_validation(
@@ -1006,6 +1134,8 @@ def api_survey_convert():
         input_path = tmp_dir_path / filename
         uploaded_file.save(str(input_path))
 
+        fallback_project_path = session.get("current_project_path")
+
         alias_path = None
         if alias_filename:
             alias_path = tmp_dir_path / alias_filename
@@ -1032,7 +1162,8 @@ def api_survey_convert():
 
         try:
             if suffix in {".xlsx", ".csv", ".tsv"}:
-                convert_survey_xlsx_to_prism_dataset(
+                _run_survey_with_official_fallback(
+                    convert_survey_xlsx_to_prism_dataset,
                     input_path=input_path,
                     library_dir=str(effective_survey_dir),
                     output_root=output_root,
@@ -1050,9 +1181,12 @@ def api_survey_convert():
                     alias_file=alias_path,
                     id_map_file=id_map_path,
                     duplicate_handling=duplicate_handling,
+                    skip_participants=True,
+                    fallback_project_path=fallback_project_path,
                 )
             elif suffix == ".lsa":
-                convert_survey_lsa_to_prism_dataset(
+                _run_survey_with_official_fallback(
+                    convert_survey_lsa_to_prism_dataset,
                     input_path=input_path,
                     library_dir=str(effective_survey_dir),
                     output_root=output_root,
@@ -1070,7 +1204,9 @@ def api_survey_convert():
                     id_map_file=id_map_path,
                     strict_levels=True if strict_levels else None,
                     duplicate_handling=duplicate_handling,
+                    skip_participants=True,
                     project_path=session.get("current_project_path"),
+                    fallback_project_path=fallback_project_path,
                 )
         except IdColumnNotDetectedError as e:
             return (
@@ -1350,7 +1486,8 @@ def api_survey_convert_validate():
         convert_result = None
         try:
             if suffix in {".xlsx", ".csv", ".tsv"}:
-                convert_result = convert_survey_xlsx_to_prism_dataset(
+                convert_result = _run_survey_with_official_fallback(
+                    convert_survey_xlsx_to_prism_dataset,
                     input_path=input_path,
                     library_dir=str(effective_survey_dir),
                     output_root=output_root,
@@ -1367,10 +1504,14 @@ def api_survey_convert_validate():
                     language=language,
                     alias_file=alias_path,
                     duplicate_handling=duplicate_handling,
+                    skip_participants=True,
+                    fallback_project_path=session.get("current_project_path"),
+                    log_fn=add_log,
                 )
             elif suffix == ".lsa":
                 add_log(f"Processing LimeSurvey archive: {filename}", "info")
-                convert_result = convert_survey_lsa_to_prism_dataset(
+                convert_result = _run_survey_with_official_fallback(
+                    convert_survey_lsa_to_prism_dataset,
                     input_path=input_path,
                     library_dir=str(effective_survey_dir),
                     output_root=output_root,
@@ -1387,7 +1528,10 @@ def api_survey_convert_validate():
                     alias_file=alias_path,
                     strict_levels=True if strict_levels else None,
                     duplicate_handling=duplicate_handling,
+                    skip_participants=True,
                     project_path=session.get("current_project_path"),
+                    fallback_project_path=session.get("current_project_path"),
+                    log_fn=add_log,
                 )
             add_log("Conversion completed successfully", "success")
         except IdColumnNotDetectedError as e:
