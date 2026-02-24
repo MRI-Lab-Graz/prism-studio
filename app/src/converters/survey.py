@@ -3,6 +3,12 @@
 This module provides a programmatic API for converting wide survey tables (e.g. .xlsx)
 into a PRISM/BIDS-style survey dataset.
 
+Architecture note:
+- Prefer class-based entry points for new integrations:
+    ``SurveyResponsesConverter`` (response conversion) and
+    ``ParticipantsConverter`` (participant-level handling).
+- Keep top-level ``convert_survey_*`` functions for backward compatibility.
+
 It is extracted from the CLI implementation in `prism_tools.py` so the Web UI and
 GUI can call the same logic without invoking subprocesses or relying on `sys.exit`.
 """
@@ -700,6 +706,157 @@ class SurveyConvertResult:
     tool_columns: list[str] = field(default_factory=list)  # LimeSurvey system columns
 
 
+class ParticipantsConverter:
+    """Participant-focused conversion helpers.
+
+    This class centralizes participant template loading/comparison and
+    participants.tsv writing so participant-level concerns stay separate from
+    response-level conversion logic.
+    """
+
+    def load_template(self, library_dir: str | Path) -> dict | None:
+        return _load_participants_template(Path(library_dir))
+
+    def load_global_template(self) -> dict | None:
+        return _load_global_participants_template()
+
+    def compare_with_global(
+        self,
+        project_template: dict | None,
+    ) -> tuple[bool, set[str], set[str], list[str]]:
+        return _compare_participants_templates(
+            project_template=project_template,
+            global_template=self.load_global_template(),
+        )
+
+    def normalize_template(self, template: dict | None) -> dict | None:
+        return _normalize_participant_template_dict(template)
+
+    def write_participants(
+        self,
+        *,
+        df,
+        output_root: Path,
+        id_col: str,
+        ses_col: str | None,
+        participant_template: dict | None,
+        normalize_sub_fn,
+        is_missing_fn,
+        lsa_col_renames: dict[str, str] | None = None,
+    ) -> None:
+        _write_survey_participants(
+            df=df,
+            output_root=output_root,
+            id_col=id_col,
+            ses_col=ses_col,
+            participant_template=participant_template,
+            normalize_sub_fn=normalize_sub_fn,
+            is_missing_fn=is_missing_fn,
+            lsa_col_renames=lsa_col_renames,
+        )
+
+
+class SurveyResponsesConverter:
+    """Response-focused survey conversion facade.
+
+    This class owns conversion of survey response tables/archives and delegates
+    participant-specific operations to ``ParticipantsConverter``.
+
+    This is the preferred integration API for new callers.
+    """
+
+    def __init__(self, participants: ParticipantsConverter | None = None) -> None:
+        self.participants = participants or ParticipantsConverter()
+
+    def convert_xlsx(
+        self,
+        *,
+        input_path: str | Path,
+        library_dir: str | Path,
+        output_root: str | Path,
+        survey: str | None = None,
+        id_column: str | None = None,
+        session_column: str | None = None,
+        session: str | None = None,
+        sheet: str | int = 0,
+        unknown: str = "warn",
+        dry_run: bool = False,
+        force: bool = False,
+        name: str | None = None,
+        authors: list[str] | None = None,
+        language: str | None = None,
+        alias_file: str | Path | None = None,
+        id_map_file: str | Path | None = None,
+        duplicate_handling: str = "error",
+        skip_participants: bool = True,
+    ) -> SurveyConvertResult:
+        return _convert_survey_xlsx_to_prism_dataset_impl(
+            input_path=input_path,
+            library_dir=library_dir,
+            output_root=output_root,
+            survey=survey,
+            id_column=id_column,
+            session_column=session_column,
+            session=session,
+            sheet=sheet,
+            unknown=unknown,
+            dry_run=dry_run,
+            force=force,
+            name=name,
+            authors=authors,
+            language=language,
+            alias_file=alias_file,
+            id_map_file=id_map_file,
+            duplicate_handling=duplicate_handling,
+            skip_participants=skip_participants,
+        )
+
+    def convert_lsa(
+        self,
+        *,
+        input_path: str | Path,
+        library_dir: str | Path,
+        output_root: str | Path,
+        survey: str | None = None,
+        id_column: str | None = None,
+        session_column: str | None = None,
+        session: str | None = None,
+        unknown: str = "warn",
+        dry_run: bool = False,
+        force: bool = False,
+        name: str | None = None,
+        authors: list[str] | None = None,
+        language: str | None = None,
+        alias_file: str | Path | None = None,
+        id_map_file: str | Path | None = None,
+        strict_levels: bool | None = None,
+        duplicate_handling: str = "error",
+        skip_participants: bool = True,
+        project_path: str | Path | None = None,
+    ) -> SurveyConvertResult:
+        return _convert_survey_lsa_to_prism_dataset_impl(
+            input_path=input_path,
+            library_dir=library_dir,
+            output_root=output_root,
+            survey=survey,
+            id_column=id_column,
+            session_column=session_column,
+            session=session,
+            unknown=unknown,
+            dry_run=dry_run,
+            force=force,
+            name=name,
+            authors=authors,
+            language=language,
+            alias_file=alias_file,
+            id_map_file=id_map_file,
+            strict_levels=strict_levels,
+            duplicate_handling=duplicate_handling,
+            skip_participants=skip_participants,
+            project_path=project_path,
+        )
+
+
 def _build_bids_survey_filename(
     sub_id: str, ses_id: str, task: str, run: int | None = None, extension: str = "tsv"
 ) -> str:
@@ -1078,7 +1235,7 @@ def _localize_survey_template(template: dict, language: str | None) -> dict:
     return _recurse(deepcopy(template))
 
 
-def convert_survey_xlsx_to_prism_dataset(
+def _convert_survey_xlsx_to_prism_dataset_impl(
     *,
     input_path: str | Path,
     library_dir: str | Path,
@@ -1385,7 +1542,7 @@ def _add_generated_template(
             item_to_task[code] = task_key
 
 
-def convert_survey_lsa_to_prism_dataset(
+def _convert_survey_lsa_to_prism_dataset_impl(
     *,
     input_path: str | Path,
     library_dir: str | Path,
@@ -1466,6 +1623,102 @@ def convert_survey_lsa_to_prism_dataset(
         skip_participants=skip_participants,
         lsa_analysis=lsa_analysis,
         source_format="lsa",
+    )
+
+
+def convert_survey_xlsx_to_prism_dataset(
+    *,
+    input_path: str | Path,
+    library_dir: str | Path,
+    output_root: str | Path,
+    survey: str | None = None,
+    id_column: str | None = None,
+    session_column: str | None = None,
+    session: str | None = None,
+    sheet: str | int = 0,
+    unknown: str = "warn",
+    dry_run: bool = False,
+    force: bool = False,
+    name: str | None = None,
+    authors: list[str] | None = None,
+    language: str | None = None,
+    alias_file: str | Path | None = None,
+    id_map_file: str | Path | None = None,
+    duplicate_handling: str = "error",
+    skip_participants: bool = True,
+) -> SurveyConvertResult:
+    """Backward-compatible wrapper around ``SurveyResponsesConverter``.
+
+    New integrations should prefer ``SurveyResponsesConverter.convert_xlsx``.
+    """
+    return SurveyResponsesConverter().convert_xlsx(
+        input_path=input_path,
+        library_dir=library_dir,
+        output_root=output_root,
+        survey=survey,
+        id_column=id_column,
+        session_column=session_column,
+        session=session,
+        sheet=sheet,
+        unknown=unknown,
+        dry_run=dry_run,
+        force=force,
+        name=name,
+        authors=authors,
+        language=language,
+        alias_file=alias_file,
+        id_map_file=id_map_file,
+        duplicate_handling=duplicate_handling,
+        skip_participants=skip_participants,
+    )
+
+
+def convert_survey_lsa_to_prism_dataset(
+    *,
+    input_path: str | Path,
+    library_dir: str | Path,
+    output_root: str | Path,
+    survey: str | None = None,
+    id_column: str | None = None,
+    session_column: str | None = None,
+    session: str | None = None,
+    unknown: str = "warn",
+    dry_run: bool = False,
+    force: bool = False,
+    name: str | None = None,
+    authors: list[str] | None = None,
+    language: str | None = None,
+    alias_file: str | Path | None = None,
+    id_map_file: str | Path | None = None,
+    strict_levels: bool | None = None,
+    duplicate_handling: str = "error",
+    skip_participants: bool = True,
+    project_path: str | Path | None = None,
+) -> SurveyConvertResult:
+    """Backward-compatible wrapper around ``SurveyResponsesConverter``.
+
+    New integrations should prefer ``SurveyResponsesConverter.convert_lsa``.
+    """
+    return SurveyResponsesConverter().convert_lsa(
+        input_path=input_path,
+        library_dir=library_dir,
+        output_root=output_root,
+        survey=survey,
+        id_column=id_column,
+        session_column=session_column,
+        session=session,
+        unknown=unknown,
+        dry_run=dry_run,
+        force=force,
+        name=name,
+        authors=authors,
+        language=language,
+        alias_file=alias_file,
+        id_map_file=id_map_file,
+        strict_levels=strict_levels,
+        duplicate_handling=duplicate_handling,
+        skip_participants=skip_participants,
+        project_path=project_path,
     )
 
 
@@ -2058,9 +2311,12 @@ def _convert_survey_dataframe_to_prism_dataset(
     # Initialize conversion warnings list early (will be extended throughout processing)
     conversion_warnings: list[str] = []
 
+    # Participants converter: participant-template loading, normalization, and writing
+    participants_converter = ParticipantsConverter()
+
     # Load participant template and compare with global
-    raw_participant_template = _load_participants_template(library_dir)
-    participant_template = _normalize_participant_template_dict(
+    raw_participant_template = participants_converter.load_template(library_dir)
+    participant_template = participants_converter.normalize_template(
         raw_participant_template
     )
     participant_columns_lower: set[str] = set()
@@ -2072,10 +2328,9 @@ def _convert_survey_dataframe_to_prism_dataset(
         }
 
     # Compare participants.json with global
-    global_participants = _load_global_participants_template()
-    if raw_participant_template and global_participants:
-        _, _, _, part_warnings = _compare_participants_templates(
-            raw_participant_template, global_participants
+    if raw_participant_template:
+        _, _, _, part_warnings = participants_converter.compare_with_global(
+            raw_participant_template
         )
         conversion_warnings.extend(part_warnings)
 
@@ -2499,7 +2754,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         )
 
     if not skip_participants:
-        _write_survey_participants(
+        participants_converter.write_participants(
             df=df,
             output_root=dataset_root,
             id_col=res_id_col,

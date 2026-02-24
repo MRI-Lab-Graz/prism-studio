@@ -19,6 +19,12 @@
     #converterTabs .nav-item:last-child {
         border-right: none;
     }
+
+    #converterTabs .nav-item.workflow-separator {
+        border-left: 2px solid #adb5bd;
+        margin-left: 6px;
+        padding-left: 6px;
+    }
     
     #converterTabs .nav-link {
         border-radius: 6px;
@@ -84,15 +90,12 @@
 
 {% block content %}
 <div class="container">
-    <div class="row mb-4">
+    <div class="row mb-3">
         <div class="col-12">
             <h2><i class="fas fa-exchange-alt text-warning me-2"></i>Prism Converter</h2>
             <p class="text-muted">Convert Survey, Biometrics, Physio, and Eyetracking inputs to PRISM/BIDS-style outputs.</p>
         </div>
     </div>
-
-    <!-- Project Context Banner -->
-    {% include 'includes/project_banner.html' %}
 
     <!-- LimeSurvey Quick Import Card (Legacy - now integrated into Survey tab) -->
     <div class="card border-success mb-4 shadow-sm d-none" id="legacyLimeSurveyCard">
@@ -234,38 +237,38 @@
             <!-- Ribbon Navigation -->
             <ul class="nav nav-pills nav-fill mb-4" id="converterTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="survey-tab" data-bs-toggle="pill" data-bs-target="#survey-panel" type="button" role="tab" aria-controls="survey-panel" aria-selected="true">
+                    <button class="nav-link active" id="participants-tab" data-bs-toggle="pill" data-bs-target="#participants-panel" type="button" role="tab" aria-controls="participants-panel" aria-selected="true">
+                        <i class="fas fa-users fa-lg mb-1 d-block"></i>
+                        <span class="fw-bold">Participants</span>
+                        <small class="d-block text-muted" style="font-size: 0.7rem;">Step 1</small>
+                    </button>
+                </li>
+                <li class="nav-item workflow-separator" role="presentation">
+                    <button class="nav-link" id="survey-tab" data-bs-toggle="pill" data-bs-target="#survey-panel" type="button" role="tab" aria-controls="survey-panel" aria-selected="false">
                         <i class="fas fa-clipboard-list fa-lg mb-1 d-block"></i>
                         <span class="fw-bold">Survey</span>
-                        <small class="d-block text-muted" style="font-size: 0.7rem;">Questionnaires</small>
+                        <small class="d-block text-muted" style="font-size: 0.7rem;">Step 2</small>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="biometrics-tab" data-bs-toggle="pill" data-bs-target="#biometrics-panel" type="button" role="tab" aria-controls="biometrics-panel" aria-selected="false">
                         <i class="fas fa-weight fa-lg mb-1 d-block"></i>
                         <span class="fw-bold">Biometrics</span>
-                        <small class="d-block text-muted" style="font-size: 0.7rem;">Physical measures</small>
+                        <small class="d-block text-muted" style="font-size: 0.7rem;">Step 2</small>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="physio-tab" data-bs-toggle="pill" data-bs-target="#physio-panel" type="button" role="tab" aria-controls="physio-panel" aria-selected="false">
                         <i class="fas fa-heartbeat fa-lg mb-1 d-block"></i>
                         <span class="fw-bold">Physio</span>
-                        <small class="d-block text-muted" style="font-size: 0.7rem;">ECG, Respiration</small>
+                        <small class="d-block text-muted" style="font-size: 0.7rem;">Step 2</small>
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="eyetracking-tab" data-bs-toggle="pill" data-bs-target="#eyetracking-panel" type="button" role="tab" aria-controls="eyetracking-panel" aria-selected="false">
                         <i class="fas fa-eye fa-lg mb-1 d-block"></i>
                         <span class="fw-bold">Eyetracking</span>
-                        <small class="d-block text-muted" style="font-size: 0.7rem;">Gaze data</small>
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="participants-tab" data-bs-toggle="pill" data-bs-target="#participants-panel" type="button" role="tab" aria-controls="participants-panel" aria-selected="false">
-                        <i class="fas fa-users fa-lg mb-1 d-block"></i>
-                        <span class="fw-bold">Participants</span>
-                        <small class="d-block text-muted" style="font-size: 0.7rem;">Demographics</small>
+                        <small class="d-block text-muted" style="font-size: 0.7rem;">Step 2</small>
                     </button>
                 </li>
             </ul>
