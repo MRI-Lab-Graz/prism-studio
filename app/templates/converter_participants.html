@@ -346,8 +346,25 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
         data.columns.forEach(col => {
             const th = document.createElement('th');
             th.textContent = col;
+
+            const nbField = data.neurobagel_schema?.[col];
+            const variableType = nbField?.Annotations?.VariableType;
+            const hasNeurobagelMapping = !!nbField?.Annotations?.IsAbout;
+
             if (col === data.id_column) {
                 th.innerHTML += ' <span class="badge bg-primary">ID</span>';
+            }
+            if (hasNeurobagelMapping) {
+                th.innerHTML += ' <span class="badge bg-info">NB</span>';
+            }
+            if (variableType) {
+                const typeLabel = variableType.toLowerCase() === 'continuous'
+                    ? 'CONT'
+                    : (variableType.toLowerCase() === 'categorical' ? 'CAT' : variableType.toUpperCase());
+                const typeClass = variableType.toLowerCase() === 'continuous'
+                    ? 'bg-success'
+                    : (variableType.toLowerCase() === 'categorical' ? 'bg-warning text-dark' : 'bg-secondary');
+                th.innerHTML += ` <span class="badge ${typeClass}">${typeLabel}</span>`;
             }
             headerRow.appendChild(th);
         });

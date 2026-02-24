@@ -54,11 +54,16 @@ def get_local_participants():
         df = pd.read_csv(tsv_path, sep="\t")
         result = {}
         for col in df.columns:
-            # Only return unique values for non-ID columns with reasonable number of unique values
-            if col.lower() not in ["participant_id", "id"] and df[col].nunique() < 50:
-                # Filter out NaNs and convert to strings
-                unique_vals = [str(v) for v in df[col].dropna().unique().tolist()]
-                result[col] = sorted(unique_vals)
+            # Always include non-ID columns so availability detection works
+            # for both categorical and continuous fields (e.g., age).
+            if col.lower() in ["participant_id", "id"]:
+                continue
+
+            # Keep payload bounded by sampling at most 50 unique values.
+            # The widget primarily needs column presence, and only uses
+            # values for categorical level suggestions.
+            unique_vals = [str(v) for v in df[col].dropna().unique().tolist()][:50]
+            result[col] = sorted(unique_vals)
 
         return jsonify({"columns": result})
     except Exception as e:
