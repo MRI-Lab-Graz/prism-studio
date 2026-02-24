@@ -3,6 +3,8 @@
 **Time:** 20 minutes  
 **Goal:** Calculate total scores automatically and export analysis-ready data to SPSS
 
+![Exercise 3 UI (Light Mode)](../../../docs/_static/screenshots/prism-studio-exercise-3-recipes-light.png)
+
 ---
 
 ## What You'll Learn
