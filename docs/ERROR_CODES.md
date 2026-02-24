@@ -265,7 +265,7 @@ python prism.py --list-fixes
 
 If you're still stuck after reading this documentation:
 
-1. Check [USAGE.md](USAGE.md) for general guidance
+1. Check [QUICK_START.md](QUICK_START.md) for general guidance
 2. Review example datasets in `docs/examples/`
 3. Open an issue on [GitHub](https://github.com/MRI-Lab-Graz/prism/issues)
 4. Consult the [BIDS Specification](https://bids-specification.readthedocs.io/)

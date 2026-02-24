@@ -53,7 +53,7 @@ Open the complete guide: [WORKSHOP_HANDOUT_WELLBEING.md](https://github.com/MRI-
 
 **Key Concepts**:
 - Separation of raw data, code, and results
-- `rawdata/` contains the validated PRISM dataset
+- Project root contains the validated PRISM dataset
 - `code/` contains analysis scripts
 - `analysis/` contains derived results
 
@@ -80,7 +80,7 @@ Open the complete guide: [WORKSHOP_HANDOUT_WELLBEING.md](https://github.com/MRI-
 4. Select all `WB*` columns as survey items
 5. Convert and save to your project
 
-**Output**: BIDS-structured files in `rawdata/sub-XXX/survey/`
+**Output**: BIDS-structured files in `sub-XXX/survey/` at project root
 
 ### Exercise 2: Metadata & Validation
 
@@ -93,7 +93,7 @@ Open the complete guide: [WORKSHOP_HANDOUT_WELLBEING.md](https://github.com/MRI-
 
 **Steps**:
 1. Go to **Validator** (`/validate`)
-2. Select your `rawdata/` folder and run validation
+2. Select your project folder and run validation
 3. Use `exercise_4_templates/survey-wellbeing.json` as source metadata
 4. Re-run validation until issues are resolved
 

@@ -24,7 +24,7 @@ Your PRISM Validator repository is configured to **automatically sign Windows ex
 
 ### Automatic Signing Workflow
 
-```mermaid
+```text
 graph LR
     A[Push Tag v1.0.0] --> B[GitHub Actions Triggered]
     B --> C[Build Windows .exe]
@@ -46,7 +46,7 @@ Signing is triggered automatically when you:
 
 ### Build Configuration
 
-From [.github/workflows/build.yml](.github/workflows/build.yml):
+From [build workflow](https://github.com/MRI-Lab-Graz/prism-studio/blob/main/.github/workflows/build.yml):
 
 ```yaml
 # Windows Code Signing (Free for Open Source via SignPath)

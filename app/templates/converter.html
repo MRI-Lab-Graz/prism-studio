@@ -4003,7 +4003,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     // Actual conversion mode
                     const warnings = result.warnings || [];
-                    let infoMsg = `✅ Converted ${result.converted || 0} files to rawdata/. ${result.errors || 0} errors.`;
+                    let infoMsg = `✅ Converted ${result.converted || 0} files to project dataset root. ${result.errors || 0} errors.`;
                     if (warnings.length) {
                         infoMsg += '\n\n⚠️ Warnings:\n' + warnings.join('\n');
                     }

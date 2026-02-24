@@ -1,3 +1,5 @@
+:orphan:
+
 # macOS App Build (Private Notes)
 
 This document describes how to build a local macOS `.app` bundle for PRISM.

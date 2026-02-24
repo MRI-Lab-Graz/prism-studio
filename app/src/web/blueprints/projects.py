@@ -39,31 +39,16 @@ def set_current_project(path: str, name: str = None):
 
 
 def get_bids_file_path(project_path: Path, filename: str) -> Path:
-    """Get path to a BIDS metadata file, checking both root and rawdata/ folder.
-
-    BIDS standard says participants.tsv, participants.json, and dataset_description.json
-    belong in the dataset ROOT. However, some DataLad-style projects use rawdata/ subfolder.
-    This function checks both locations and returns the correct path.
+    """Get path to a BIDS metadata file at the project (dataset) root.
 
     Args:
         project_path: Path to the project root
         filename: Name of the file (e.g., 'participants.json', 'dataset_description.json')
 
     Returns:
-        Path to the file (in root if exists, otherwise rawdata/, even if neither exists)
+        Path to the file at project root
     """
-    # Check root first (standard BIDS)
-    root_path = project_path / filename
-    if root_path.exists():
-        return root_path
-
-    # Check rawdata/ folder (DataLad-style)
-    rawdata_path = project_path / "rawdata" / filename
-    if rawdata_path.exists():
-        return rawdata_path
-
-    # If neither exists, prefer root (standard BIDS for new files)
-    return root_path
+    return project_path / filename
 
 
 _DEFAULT_CITATION_MESSAGE = "If you use this dataset, please cite it."
@@ -2335,7 +2320,7 @@ def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
     ``{"DataCollection.Platform": {"value": "LimeSurvey", "source": "task sidecar"}}``
     """
     hints: dict[str, dict] = {}
-    rawdata = project_path / "rawdata"
+    dataset_root = project_path
 
     # --- Scan task sidecars for platform / method / language ---
     platforms: list[str] = []
@@ -2343,8 +2328,8 @@ def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
     methods: list[str] = []
     languages: list[str] = []
 
-    if rawdata.is_dir():
-        for sidecar in rawdata.glob("task-*_survey.json"):
+    if dataset_root.is_dir():
+        for sidecar in dataset_root.glob("task-*_survey.json"):
             try:
                 with open(sidecar, "r", encoding="utf-8") as f:
                     sc = json.load(f)
@@ -2366,7 +2351,7 @@ def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
             except Exception:
                 pass
         # Also check tool sidecars (tool-limesurvey_survey.json)
-        for sidecar in rawdata.glob("tool-*_survey.json"):
+        for sidecar in dataset_root.glob("tool-*_survey.json"):
             try:
                 with open(sidecar, "r", encoding="utf-8") as f:
                     sc = json.load(f)
@@ -2451,14 +2436,14 @@ def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
                 break
 
     # --- Sample size from sub-* directories ---
-    if rawdata.is_dir():
+    if dataset_root.is_dir():
         sub_dirs = [
-            d for d in rawdata.iterdir() if d.is_dir() and d.name.startswith("sub-")
+            d for d in dataset_root.iterdir() if d.is_dir() and d.name.startswith("sub-")
         ]
         if sub_dirs:
             hints["Eligibility.ActualSampleSize"] = {
                 "value": len(sub_dirs),
-                "source": "rawdata sub-* folders",
+                "source": "dataset root sub-* folders",
             }
 
     # --- Sample size from participants.tsv ---
@@ -2672,11 +2657,11 @@ def get_procedure_status():
         for t in s.get("tasks", []):
             declared.add((sid, t.get("task", "")))
 
-    # Build on-disk set by scanning rawdata/
-    rawdata = project_path / "rawdata"
+    # Build on-disk set by scanning dataset root
+    dataset_root = project_path
     on_disk = set()
-    if rawdata.is_dir():
-        for sub_dir in rawdata.iterdir():
+    if dataset_root.is_dir():
+        for sub_dir in dataset_root.iterdir():
             if not sub_dir.is_dir() or not sub_dir.name.startswith("sub-"):
                 continue
             for ses_dir in sub_dir.iterdir():

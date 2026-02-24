@@ -1,3 +1,5 @@
+:orphan:
+
 # 📸 Quick Start: Workshop Screenshots
 
 The workshop uses **Heroshot**, an interactive visual screenshot tool. Unlike config-file tools, Heroshot lets you point-and-click to configure screenshots.
@@ -84,9 +86,9 @@ To add custom screenshots, edit `.heroshot/config.json` then re-run the capture 
 
 ## Learn More
 
-- [.heroshot/README.md](../../.heroshot/README.md) - Overview
-- [.heroshot/HEROSHOT_SETUP.md](../../.heroshot/HEROSHOT_SETUP.md) - Complete guide
-- [examples/workshop/README.md](../../examples/workshop/README.md) - Workshop overview
+- `.heroshot/README.md` - Overview
+- `.heroshot/HEROSHOT_SETUP.md` - Complete guide
+- `examples/workshop/README.md` - Workshop overview
 
 ---
 

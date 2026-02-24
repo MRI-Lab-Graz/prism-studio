@@ -295,8 +295,8 @@ Expected: All tests pass (✓ marks on all test cases)
 
 ## 📚 Documentation References
 
-1. **Implementation Details**: See [BIDS_COMPLIANCE_IMPLEMENTATION.md](docs/BIDS_COMPLIANCE_IMPLEMENTATION.md)
-2. **Field Mapping Audit**: See [METADATA_AUDIT.md](docs/METADATA_AUDIT.md)
+1. **Implementation Details**: See [BIDS_COMPLIANCE_IMPLEMENTATION.md](BIDS_COMPLIANCE_IMPLEMENTATION.md)
+2. **Field Mapping Audit**: See [QUICK_REFERENCE_BIDS.md](QUICK_REFERENCE_BIDS.md)
 3. **Official BIDS Spec**: https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/dataset-description.html
 4. **CITATION.cff Format**: https://citation-file-format.github.io/
 
@@ -331,8 +331,8 @@ Expected: All tests pass (✓ marks on all test cases)
 ## 📞 Support & Questions
 
 For questions about the BIDS compliance implementation:
-1. Check [BIDS_COMPLIANCE_IMPLEMENTATION.md](docs/BIDS_COMPLIANCE_IMPLEMENTATION.md) for detailed specifications
-2. Review [METADATA_AUDIT.md](docs/METADATA_AUDIT.md) for field mapping tables
+1. Check [BIDS_COMPLIANCE_IMPLEMENTATION.md](BIDS_COMPLIANCE_IMPLEMENTATION.md) for detailed specifications
+2. Review [QUICK_REFERENCE_BIDS.md](QUICK_REFERENCE_BIDS.md) for field mapping tables
 3. Run `python3 scripts/test_bids_compliance.py` to validate your system
 4. Refer to official BIDS specification: https://bids-specification.readthedocs.io/
 

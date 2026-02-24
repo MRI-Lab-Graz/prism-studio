@@ -16,13 +16,12 @@ PRISM projects follow the [YODA principles](https://handbook.datalad.org/en/late
 
 ```
 my_study/
-├── rawdata/                    # ← PRISM validates here
-│   ├── dataset_description.json
-│   ├── participants.tsv
-│   ├── participants.json
-│   └── sub-001/
-│       └── survey/
-│           └── sub-001_task-*_survey.tsv
+├── dataset_description.json
+├── participants.tsv
+├── participants.json
+├── sub-001/
+│   └── survey/
+│       └── sub-001_task-*_survey.tsv
 ├── code/                       # Analysis scripts
 ├── analysis/                   # Results and derivatives
 ├── project.json               # Project metadata
@@ -32,7 +31,7 @@ my_study/
 
 ## Dataset Description
 
-The `rawdata/dataset_description.json` file is required and contains:
+The `dataset_description.json` file at project root is required and contains:
 
 ```json
 {

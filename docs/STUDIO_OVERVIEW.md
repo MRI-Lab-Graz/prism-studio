@@ -57,9 +57,10 @@ Creates a YODA-structured project:
 
 ```
 project_name/
-├── rawdata/           ← PRISM validates here
-│   ├── dataset_description.json
-│   └── participants.tsv
+├── dataset_description.json
+├── participants.tsv
+├── sub-001/
+│   └── ...            ← PRISM validates here
 ├── code/              ← Your analysis scripts
 ├── analysis/          ← Results and derivatives
 ├── project.json       ← Project metadata
@@ -91,7 +92,7 @@ Once a project is loaded, you can edit:
 
 ### Running Validation
 
-1. Your project's `rawdata/` folder is pre-selected
+1. Your project folder is pre-selected
 2. Click **Validate**
 3. Wait for results (progress shown)
 
@@ -147,7 +148,7 @@ Toggle **Include BIDS Validation** to also run the standard BIDS validator. This
    - Choose which columns to include
    - Set the task name
 4. **Convert** – Generate PRISM-formatted files
-5. **Save to Project** – Copy files to your `rawdata/` folder
+5. **Save to Project** – Copy files to your project dataset root
 
 ### Participants Mapping
 

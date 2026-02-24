@@ -24,7 +24,10 @@ This creates a [YODA-structured](https://handbook.datalad.org/en/latest/basics/1
 
 ```
 my_first_study/
-├── rawdata/           ← Your data goes here
+├── dataset_description.json
+├── participants.tsv
+├── sub-001/
+│   └── ...            ← Your BIDS/PRISM data goes here
 ├── code/              ← Analysis scripts
 ├── analysis/          ← Results
 ├── project.json       ← Project metadata
@@ -42,22 +45,22 @@ my_first_study/
 
 ### Option B: Manual Import
 
-Copy your data files to `my_first_study/rawdata/`:
+Copy your data files to `my_first_study/`:
 
 ```
-rawdata/
+my_first_study/
 ├── dataset_description.json
 ├── participants.tsv
 └── sub-001/
-    └── survey/
-        ├── sub-001_task-questionnaire_survey.tsv
-        └── sub-001_task-questionnaire_survey.json
+   └── survey/
+      ├── sub-001_task-questionnaire_survey.tsv
+      └── sub-001_task-questionnaire_survey.json
 ```
 
 ## Step 4: Validate Your Dataset
 
 1. Click **Validator** in the navigation
-2. Your project's `rawdata/` folder is pre-selected
+2. Your project folder is pre-selected
 3. Click **Validate**
 4. Review results:
    - ✅ **Green**: Valid files
@@ -120,7 +123,7 @@ For batch processing and scripting:
 
 ```bash
 # Validate from command line
-python prism.py /path/to/rawdata
+python prism.py /path/to/project
 
 # Run all recipes
 python prism_tools.py recipes survey --prism /path/to/project --format save
@@ -134,11 +137,11 @@ See [CLI Reference](CLI_REFERENCE.md) for all commands.
 
 ### "No files found in dataset"
 
-Make sure your data is in the `rawdata/` subfolder, not the project root.
+Make sure your data is in the project root (next to `project.json`), not in a nested `rawdata/` subfolder.
 
 ### "Missing dataset_description.json"
 
-Create this required file in `rawdata/`:
+Create this required file in your project root:
 
 ```json
 {

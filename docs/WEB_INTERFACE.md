@@ -126,6 +126,6 @@ The Survey Export tool allows you to:
 
 ## 7) Tips for first-time use
 
-- Start with a small demo dataset: see [DEMO_DATA.md](DEMO_DATA.md).
+- Start with a small demo dataset: see [WORKSHOP.md](WORKSHOP.md).
 - Validate first, then iterate on metadata fields.
 - If you want strict automation, use `prism.py` in your terminal.
