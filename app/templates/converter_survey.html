@@ -12,29 +12,20 @@
                                 </div>
                             </div>
 
-                            <!-- Conversion Mode Toggle -->
-                            <div class="row g-3 mb-3">
-                                <div class="col-12">
-                                    <label class="form-label fw-bold">Conversion Mode</label>
-                                    <div class="btn-group w-100" role="group">
-                                        <input type="radio" class="btn-check" name="convertMode" id="convertModeData" value="data" checked>
-                                        <label class="btn btn-outline-warning" for="convertModeData">
-                                            <i class="fas fa-table me-1"></i>Data Conversion
-                                            <small class="d-block text-muted">Convert responses to BIDS format</small>
-                                        </label>
-                                        <input type="radio" class="btn-check" name="convertMode" id="convertModeTemplate" value="template">
-                                        <label class="btn btn-outline-success" for="convertModeTemplate">
-                                            <i class="fas fa-file-code me-1"></i>Template Generation
-                                            <small class="d-block text-muted">Extract structure only (no data)</small>
-                                        </label>
-                                    </div>
-                                </div>
+                            <div class="alert alert-light border-info mb-3">
+                                <i class="fas fa-info-circle text-info me-2"></i>
+                                <strong>Template generation moved:</strong>
+                                Use
+                                <a href="/template-editor" class="alert-link">
+                                    <i class="fas fa-file-code"></i> Template Editor
+                                </a>
+                                to generate templates from LimeSurvey/data-dictionary files.
                             </div>
 
                             <!-- Row 1: File upload -->
                             <div class="row g-3 mb-3">
                                 <div class="col-12">
-                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa, .lss)</label>
+                                    <label for="convertExcelFile" class="form-label">Survey File (.xlsx, .csv, .tsv, .lsa)</label>
                                     {% if current_project.path %}
                                     <div id="sourcedataQuickSelect" class="d-none mb-2">
                                         <div class="input-group input-group-sm">
@@ -45,9 +36,9 @@
                                         </div>
                                     </div>
                                     {% endif %}
-                                    <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv,.lss">
+                                    <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv">
                                     <div class="form-text" id="convertFileHint">
-                                        <span class="text-info"><i class="fas fa-info-circle me-1"></i>LimeSurvey (.lss/.lsa) or Data Dictionary (.xlsx/.csv/.tsv)</span>
+                                        <span class="text-info"><i class="fas fa-info-circle me-1"></i>LimeSurvey responses (.lsa) or Data Dictionary (.xlsx/.csv/.tsv)</span>
                                     </div>
                                 </div>
                             </div>
