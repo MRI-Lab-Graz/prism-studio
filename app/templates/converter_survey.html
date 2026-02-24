@@ -26,7 +26,12 @@
                                         </div>
                                     </div>
                                     {% endif %}
-                                    <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv">
+                                    <div class="input-group">
+                                        <input class="form-control" type="file" id="convertExcelFile" accept=".xlsx,.lsa,.csv,.tsv">
+                                        <button class="btn btn-outline-secondary d-none" type="button" id="clearConvertExcelFileBtn" aria-label="Clear selected survey file" title="Clear selection">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
                                     <div class="form-text" id="convertFileHint">
                                         <span class="text-info"><i class="fas fa-info-circle me-1"></i>LimeSurvey responses (.lsa) or Data Dictionary (.xlsx/.csv/.tsv)</span>
                                     </div>
@@ -78,7 +83,12 @@
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6" id="convertAliasGroup">
                                     <label for="convertIdMapFile" class="form-label">ID Mapping File (optional)</label>
-                                    <input class="form-control" type="file" id="convertIdMapFile" accept=".tsv,.txt,.csv">
+                                    <div class="input-group">
+                                        <input class="form-control" type="file" id="convertIdMapFile" accept=".tsv,.txt,.csv">
+                                        <button class="btn btn-outline-secondary d-none" type="button" id="clearIdMapFileBtn" aria-label="Clear selected ID mapping file" title="Clear selection">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
                                     <div class="form-text">Map source IDs to participant_id (two-column TSV/CSV).</div>
                                 </div>
                                 <div class="col-md-6" id="convertSessionGroup">

@@ -33,7 +33,12 @@
                                     <div class="row g-3 align-items-end">
                                         <div class="col-md-9">
                                             <label for="eyetrackingBatchFiles" class="form-label">Select Eyetracking Files</label>
-                                            <input class="form-control" type="file" id="eyetrackingBatchFiles" accept=".edf,.tsv,.tsv.gz" multiple>
+                                            <div class="input-group">
+                                                <input class="form-control" type="file" id="eyetrackingBatchFiles" accept=".edf,.tsv,.tsv.gz" multiple>
+                                                <button class="btn btn-outline-secondary d-none" type="button" id="clearEyetrackingBatchFilesBtn" aria-label="Clear selected eyetracking files" title="Clear selection">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
                                             <small class="text-muted">Select all files (Ctrl+A / Cmd+A)</small>
                                         </div>
                                         <div class="col-md-3">

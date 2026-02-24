@@ -22,7 +22,12 @@
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
                     <label for="biometricsDataFile" class="form-label">Biometrics File (.xlsx, .csv, .tsv)</label>
-                    <input class="form-control" type="file" id="biometricsDataFile" accept=".xlsx,.csv,.tsv">
+                    <div class="input-group">
+                        <input class="form-control" type="file" id="biometricsDataFile" accept=".xlsx,.csv,.tsv">
+                        <button class="btn btn-outline-secondary d-none" type="button" id="clearBiometricsDataFileBtn" aria-label="Clear selected biometrics file" title="Clear selection">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <label for="biometricsSessionSelect" class="form-label fw-bold text-danger">Session ID <span class="text-danger">*</span></label>
