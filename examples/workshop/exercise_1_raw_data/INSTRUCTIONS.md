@@ -1,9 +1,7 @@
-# Exercise 1: Import Raw Data & Create BIDS/PRISM Structure
+# Exercise 1: Handling Raw Data
 
-**⏱ Time:** 30 minutes  
-**🎯 Goal:** Convert raw survey data into a properly structured BIDS/PRISM dataset
-
-**📚 Concepts:** BIDS file naming, folder hierarchy, data format conversion, metadata sidecars
+**Time:** 30 minutes  
+**Goal:** Transform unstructured CSV/TSV files into a valid BIDS/PRISM dataset
 
 ![Exercise 1 UI (Light Mode)](../../../docs/_static/screenshots/prism-studio-exercise-1-data-conversion-light.png)
 
@@ -12,354 +10,214 @@
 ## What You'll Learn
 
 By the end of this exercise, you will:
-- ✅ Understand BIDS folder structure (Dataset → Subject → Session → Modality)
-- ✅ Know BIDS file naming conventions with entities (sub, ses, task)
-- ✅ Use PRISM Studio's Data Converter to format survey data
-- ✅ Recognize why sidecar JSON files are important
-- ✅ Set up proper directory structure for data organization
+- ✓ Understand BIDS folder hierarchy (Dataset → Subject → Session → Modality)
+- ✓ Know BIDS file naming conventions
+- ✓ Use the GUI converter to create structured datasets
+- ✓ Recognize the importance of sidecar JSON files
 
 ---
 
-## The Data You'll Be Working With
+## Starting Materials
 
-In the `raw_data/` folder, you'll find:
+Look in the `raw_data/` folder:
+- **`wellbeing.tsv`** - A survey about general wellness and life satisfaction.
+- **`fitness_data.tsv`** - Biometric measurements (heart rate, strength, etc.) from a physical fitness assessment.
 
-| File | Type | Content |
-|------|------|---------|
-| `wellbeing.tsv` | Tab-separated | WHO-5 survey responses (5 items) + demographics |
-| `wellbeing.xlsx` | Excel format | Same data in Excel (alternative format) |
-| `fitness_data.tsv` | Tab-separated | Optional bonus data (heart rate, strength measurements) |
-
-These are **"raw" data**: exactly as they came from your data collection tool. Your job is to transform them into a standard format that:
-- ✅ Follows international BIDS standards
-- ✅ Has consistent naming conventions
-- ✅ Includes proper metadata (who, when, how)
-- ✅ Can be processed by automated analysis tools
+These are typical "raw" data files - tab-delimited exports from your data collection tools.
 
 ---
 
-## The WHO-5 Well-Being Index
+## Your Task
 
-Let me quickly explain what we're importing:
-
-**Structure of wellbeing.tsv:**
-```
-participant_id    session    age    sex    education    handedness    WB01    WB02    WB03    WB04    WB05    completion_date
-DEMO001          baseline   28     2      4            1            4       4       2       3       4       2025-01-15
-DEMO002          baseline   34     1      5            1            3       3       3       3       3       2025-01-16
-...
-```
-
-**What each column represents:**
-- `participant_id`: Unique participant identifier
-- `session`: Visit/timepoint label
-- Demographics: `age`, `sex`, `education`, `handedness`
-- **Survey items**: `WB01` through `WB05` (scores 0-5, higher = better well-being)
-- `completion_date`: When the survey was filled out
+Convert both the Wellbeing and Fitness data into a proper BIDS/PRISM dataset with the correct folder structure and file naming.
 
 ---
 
-## Step-by-Step: Convert the Data
+## Step-by-Step Instructions
 
-### **Step 1: Make Sure PRISM Studio is Running**
+### Step 1: Launch PRISM Studio
+1. Open your web browser
+2. Go to: **http://localhost:5001**
+3. You should see the PRISM Studio home page
 
-Check that you can access: **http://localhost:5001**
+### Step 2: Open the Converter Tool
+1. Click on **"Converter"** in the navigation menu (top or sidebar)
+2. Select **"Survey Data Converter"**
 
-If needed, activate your environment and start PRISM:
-```bash
-source .venv/bin/activate  # macOS/Linux
-python prism-studio.py
-```
+### Step 3: Load Your Data (Wellbeing Survey)
+1. Click **"Browse"** or **"Choose File"**
+2. Navigate to: `demo/workshop/exercise_1_raw_data/raw_data/wellbeing.tsv`
+3. Click **"Upload"** or **"Load File"**
+4. Preview your data - you should see columns like `participant_id`, `session`, `age`, `WB01`, etc.
 
-### **Step 2: Navigate to the Converter**
+### Step 4: Map Columns
+The converter needs to know which column represents what:
 
-In PRISM Studio:
-1. Look for the navigation menu (usually on the left)
-2. Click **"Converter"** or **"Data Converter"**
-3. Select: **"Survey Data Converter"** or similar
+**Participant ID:**
+- In the dropdown, select: **"This column represents → participant_id"**
 
-Your screen should look similar to:
+**Session:**
+- Select: **"This column represents → session"**
 
-![PRISM Studio Data Converter Interface](../../../docs/_static/screenshots/prism-studio-converter-light.png)
+**Survey Name:**
+- Enter: **`wellbeing`**
+- This will appear in your filenames as `task-wellbeing`
 
-Alternatively, go directly to: **http://localhost:5001/converter**
+**Modality:**
+- Select: **`survey`**
 
-### **Step 3: Load the Wellbeing Survey Data**
+**Data Columns:**
+- The columns `WB01` through `WB05` are your survey items. The demographic columns (`age`, `sex`, etc.) will be automatically handled.
 
-In the converter interface:
+### Step 5: Configure Output
+1. **Output Directory:**
+   - Click **"Set Output Folder"**
+   - Navigate to: `demo/workshop/exercise_1_raw_data/`
+   - Create a new folder called: **`my_dataset`**
+   - Select this folder
 
-1. **Click "Browse" or "Choose File"**
-2. **Navigate to:** `examples/workshop/exercise_1_raw_data/raw_data/wellbeing.tsv`
-3. **Click "Load" or "Upload"**
-4. **Preview:** You should see a table with:
-   - Headers: participant_id, session, age, sex, ..., WB01, WB02, WB03, WB04, WB05
-   - Multiple rows of data (participants DEMO001-DEMO009)
+2. **Preview Filename:**
+   - Check the preview: `sub-{id}_ses-{session}_task-wellbeing_survey.tsv`
+   - This should look correct!
 
-**If you see an error:**
-- Check that the file is actually `wellbeing.tsv` (tab-separated, not comma-separated)
-- Verify the file exists at that location
-- Contact your instructor if issues persist
+3. **Options to Enable:**
+   - ☑ **Generate sidecars** (JSON files)
+   - ☑ **Create participants.tsv**
+   - ☑ **Create dataset_description.json**
 
-### **Step 4: Configure the Column Mapping**
+### Step 6: Convert!
+1. Click **"Convert to BIDS"**
+2. Wait for the progress bar
+3. Success message should appear.
 
-Now tell PRISM what each column represents.
-
-| Setting | Value | Notes |
-|---------|-------|-------|
-| **Participant ID Column** | `participant_id` | Dropdown: which column has the participant IDs? |
-| **Session Column** | `session` | Which column has the session/visit label? |
-| **Task/Survey Name** | `wellbeing` | This appears in filenames as `task-wellbeing` |
-| **Modality** | `survey` | Data type: survey (vs. biometrics, imaging, etc.) |
-| **Include Demographics** | ☑ Yes | Convert age, sex, education, handedness to participants.tsv |
-
-### **Step 5: Set Output Location**
-
-PRISM will create your new dataset structure here.
-
-1. **Click "Set Output Folder"** or **"Output Directory"**
-2. **Navigate to:** `examples/workshop/exercise_1_raw_data/`
-3. **Create a new folder called:** `my_dataset`
-4. **Select this folder as output**
-
-**What PRISM will create:**
-- `my_dataset/dataset_description.json` - Dataset-level metadata
-- `my_dataset/participants.tsv` - All participant demographics
-- `my_dataset/sub-DEMO001/` - Folders for each participant
-- `my_dataset/sub-DEMO001/ses-baseline/survey/` - Survey data for that participant
-
-### **Step 6: Enable Optional Features**
-
-Make sure these boxes are checked:
-
-- ☑ **Generate JSON sidecars** - Creates `.json` metadata files
-- ☑ **Create participants.tsv** - Consolidates all demographic info
-- ☑ **Create dataset_description.json** - Dataset-level metadata
-- ☑ **Validate after conversion** - (optional) Checks for errors
-
-### **Step 7: Review the Preview**
-
-PRISM should show you a preview of how the output filenames will look:
-
-**Expected filename pattern:**
-```
-sub-{PARTICIPANT_ID}_ses-{SESSION}_task-wellbeing_survey.tsv
-sub-DEMO001_ses-baseline_task-wellbeing_survey.tsv
-sub-DEMO002_ses-baseline_task-wellbeing_survey.tsv
-...
-```
-
-**Check:**
-- ✅ Hyphens after `sub-`, `ses-`, `task-`
-- ✅ Underscores between entities
-- ✅ Lowercase (except participant IDs)
-
-If something looks wrong, you can usually edit the mapping before proceeding.
-
-### **Step 8: Click "Convert"**
-
-1. **Click "Convert to BIDS"** or **"Start Conversion"**
-2. Watch the progress bar
-3. **Success message** should appear: "X files converted successfully" or similar
+### Step 7: Convert Biometrics (Bonus)
+Repeat the process for **`fitness_data.tsv`**:
+1. Load `fitness_data.tsv`
+2. Map `participant_id` and `session`
+3. Enter Survey/Task Name: **`fitness`**
+4. **Change Modality to: `biometrics`**
+5. Select the same **`my_dataset`** output folder
+6. Click **"Convert to BIDS"**
 
 ---
 
-## Step 9: Explore Your New Dataset
-
-After conversion, navigate to `my_dataset/` on your computer and look around:
+## Step 8: Explore Your Dataset
+Navigate to `my_dataset/` and explore the structure:
 
 ```
 my_dataset/
-├── dataset_description.json          (← dataset-level metadata)
-├── participants.tsv                  (← all participant demographics)
-│
-├── sub-DEMO001/
-│   └── ses-baseline/
-│       └── survey/
-│           ├── sub-DEMO001_ses-baseline_task-wellbeing_survey.tsv
-│           └── sub-DEMO001_ses-baseline_task-wellbeing_survey.json
-│
-├── sub-DEMO002/
-│   └── ses-baseline/
-│       └── survey/
-│           ├── sub-DEMO002_ses-baseline_task-wellbeing_survey.tsv
-│           └── sub-DEMO002_ses-baseline_task-wellbeing_survey.json
-│
-... (more participants)
+├── dataset_description.json
+├── participants.tsv
+└── sub-DEMO001/
+    └── ses-baseline/
+        ├── survey/
+        │   ├── sub-DEMO001_ses-baseline_task-wellbeing_survey.tsv
+        │   └── sub-DEMO001_ses-baseline_task-wellbeing_survey.json
+        └── biometrics/
+            ├── sub-DEMO001_ses-baseline_task-fitness_biometrics.tsv
+            └── sub-DEMO001_ses-baseline_task-fitness_biometrics.json
 ```
 
-### **Open and Examine Some Files:**
-
-**1. `dataset_description.json`**
-```bash
-cat my_dataset/dataset_description.json
-```
-
-You'll see metadata like dataset name, authors, BIDS version.
-
-**2. `participants.tsv`**
-```bash
-head my_dataset/participants.tsv
-```
-
-Shows:
-```
-participant_id    age    sex    education    handedness
-DEMO001          28     2      4            1
-DEMO002          34     1      5            1
-...
-```
-
-**3. A survey data file:**
-```bash
-cat my_dataset/sub-DEMO001/ses-baseline/survey/sub-DEMO001_ses-baseline_task-wellbeing_survey.tsv
-```
-
-Shows:
-```
-participant_id    session    WB01    WB02    WB03    WB04    WB05    completion_date
-DEMO001          baseline   4       4       2       3       4       2025-01-15
-```
-
-**4. A JSON sidecar:**
-```bash
-cat my_dataset/sub-DEMO001/ses-baseline/survey/sub-DEMO001_ses-baseline_task-wellbeing_survey.json
-```
-
-Shows basic metadata (we'll improve this in Exercise 5).
+**Open some files and look inside!**
 
 ---
 
-## Understanding BIDS Structure
+## Checkpoint: Did It Work?
 
-### **The Hierarchy**
+✅ **You should have:**
+- [ ] A `my_dataset/` folder with proper structure
+- [ ] `dataset_description.json` at the root
+- [ ] `participants.tsv` at the root
+- [ ] Folders named `sub-DEMO001/`, `sub-DEMO002/`, etc.
+- [ ] Inside each: `ses-baseline/survey/` (and `biometrics/` if you did the bonus)
+- [ ] `.tsv` data files with proper BIDS naming
+- [ ] `.json` sidecar files (one for each `.tsv`)
 
-```
-DATASET (study level)
-└── sub-PARTICIPANT (who?)
-    └── ses-SESSION (when?)
-        └── MODALITY (what data type?)
-            └── FILES (the actual data)
-```
-
-### **File Naming Rules**
-
-BIDS is very strict about naming. All files follow this pattern:
-
-```
-sub-<label>_[ses-<label>_]task-<label>_<suffix>.<extension>
-```
-
-**Breaking it down:**
-
-- `sub-` = Required entity meaning "subject/participant"
-- `DEMO001` = The actual participant ID (replace with any ID)
-- `_` = Entity separator
-- `ses-baseline` = Optional session entity
-- `task-wellbeing` = The task/survey name
-- `survey` = The suffix/modality
-- `.tsv` = The file extension
-
-**Examples:**
-- `sub-DEMO001_ses-baseline_task-wellbeing_survey.tsv` ✅ CORRECT
-- `subDEMO001_ses-baseline_task-wellbeing_survey.tsv` ❌ Missing hyphen after sub
-- `sub-DEMO001_ses-baseline_task-wellbeing_survey.csv` ❌ Wrong extension (should be .tsv)
-- `sub-DEMO001_task-wellbeing_survey.tsv` ✅ OK (session is optional)
-
-### **Why This Matters**
-
-BIDS naming is:
-- **Machine readable** - Tools can parse filenames automatically
-- **Unambiguous** - No confusion about what's in a file
-- **Standardized** - Same across all BIDS datasets worldwide
-- **Sortable** - Files organize naturally by alphabetical order
+✅ **File naming should follow this pattern:**
+- `sub-DEMO001` (with hyphen, not `subDEMO001`)
+- `ses-baseline` (with hyphen, not `sesbaseline`)
+- `task-wellbeing` (with hyphen, not `taskwellbeing`)
+- Underscores `_` separate the entities
+- Example: `sub-DEMO001_ses-baseline_task-wellbeing_survey.tsv`
 
 ---
 
-## Validation: Is Your Dataset Correct?
+## Quick Validation Test
 
-Let's check if your conversion worked properly.
+Let's check if your dataset is valid:
 
-### **Option 1: Use PRISM Validator**
-
-1. In PRISM Studio, go to **"Validator"** or **"Home"**
+1. Go to **"Home"** or **"Validator"** in PRISM Studio
 2. Click **"Select Dataset"**
-3. Navigate to and select: `examples/workshop/exercise_1_raw_data/my_dataset/`
+3. Choose your `my_dataset/` folder
 4. Click **"Validate Dataset"**
 
-**What you should see:**
-- ✅ **All files detected** - Shows count of subjects, sessions, etc.
-- ⚠️ **Warnings** - About missing metadata (this is OK! We'll fix it in Exercise 5)
-- ✅ **No ERRORS** about file structure or naming
+**Expected Result:**
+- ⚠️ Warnings about missing metadata (this is OK! We'll fix this in Exercise 2)
+- ✓ No critical errors about file structure or naming
+- ✓ All files detected correctly
 
-### **Option 2: Manual Check**
-
-Confirm these things exist:
-- [ ] `my_dataset/dataset_description.json` exists
-- [ ] `my_dataset/participants.tsv` exists with demographic data
-- [ ] Folders named `sub-DEMO001/`, `sub-DEMO002/`, etc. exist
-- [ ] Each has `ses-baseline/survey/` subfolder
-- [ ] Inside are `.tsv` and `.json` files with correct naming
+**If you see errors about file naming or structure:**
+- Double-check the filename pattern
+- Make sure there are hyphens after `sub-`, `ses-`, `task-`
+- Ask your instructor for help!
 
 ---
 
-## Bonus: Convert Fitness Data (Optional)
+## What Just Happened?
 
-If you want extra practice:
+🎯 **You converted unstructured data into a standardized format!**
 
-1. **Repeat Steps 3-8** but this time:
-   - Load: `examples/workshop/exercise_1_raw_data/raw_data/fitness_data.tsv`
-   - Set **Modality** to: `biometrics` (not `survey`)
-   - Set **Task Name** to: `fitness`
-   - **Output to the same** `my_dataset/` folder
-
-2. **Result:** You'll have both:
-   ```
-   sub-DEMO001/ses-baseline/survey/sub-DEMO001_ses-baseline_task-wellbeing_survey.tsv
-   sub-DEMO001/ses-baseline/biometrics/sub-DEMO001_ses-baseline_task-fitness_biometrics.tsv
-   ```
+**Before:** Just a CSV file sitting somewhere on your computer
+**After:** A properly structured dataset that:
+- Follows international standards (BIDS)
+- Can be understood by automated tools
+- Has a clear hierarchy (subject → session → modality)
+- Includes metadata files (JSON sidecars)
+- Is ready for sharing and archiving
 
 ---
 
-## Checklist: Ready for Next Exercise?
+## Key Concepts
 
-Before moving on, confirm:
+### BIDS Hierarchy
+```
+Dataset (study level)
+└── Subject (participant level) - sub-DEMO001, sub-DEMO002, ...
+    └── Session (visit level) - ses-baseline, ses-followup, ...
+        └── Modality (data type) - survey, biometrics, ...
+            └── Files (actual data)
+```
 
-- [ ] PRISM Studio can access `http://localhost:5001`
-- [ ] Data converted successfully with no ERRORS
-- [ ] `my_dataset/` folder exists with proper structure
-- [ ] Filenames follow BIDS pattern (sub-, ses-, task-, survey)
-- [ ] Both `.tsv` data and `.json` sidecar files exist
-- [ ] `dataset_description.json` and `participants.tsv` at root
+### File Naming Rules
+- **Entities** are key-value pairs: `sub-DEMO001`, `ses-baseline`, `task-wellbeing`
+- **Separator** between entities: underscore `_`
+- **Separator** within entities: hyphen `-`
+- **Suffix** describes the modality: `survey`, `biometrics`
+- **Extension** is the file type: `.tsv`, `.json`
 
----
-
-## Key Takeaways
-
-🎯 **What you just did:**
-
-1. ✅ Took unstructured survey data
-2. ✅ Converted it to BIDS/PRISM standard format
-3. ✅ Created proper folder hierarchy (subject → session → modality)
-4. ✅ Generated metadata files
-5. ✅ Made your data machine-readable and shareable
-
-**Why this matters:**
-- Other researchers can understand your data structure instantly
-- Automated analysis pipelines (fMRIPrep, etc.) can process your data
-- Your data is ready for archiving and sharing
-- Version control and reproducibility are enabled
+### Sidecar Files
+- Every data file (`.tsv`, `.json`, etc.) should have a `.json` sidecar
+- The sidecar contains metadata about the data file
+- Same filename, just different extension
+- Example:
+  - Data: `sub-DEMO001_ses-baseline_task-wellbeing_survey.tsv`
+  - Sidecar: `sub-DEMO001_ses-baseline_task-wellbeing_survey.json`
 
 ---
 
-## Troubleshooting Common Issues
+## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| "File format not recognized" | Make sure it's `.tsv` (tabs), not `.csv` (commas) |
-| "No data rows found" | Check that the file has actual data, not just headers |
-| "Invalid participant ID" | Don't use spaces or special characters in IDs |
-| "Column mapping failed" | Make sure column names exactly match (case-sensitive) |
-| "Output folder not writable" | Check file permissions on the output directory |
+### Problem: "Invalid column mapping"
+**Solution:** Make sure you selected a column for participant_id
+
+### Problem: "Invalid characters in filename"
+**Solution:** Check that task name doesn't have spaces or special characters
+
+### Problem: "Output folder not found"
+**Solution:** Make sure you created the `my_dataset/` folder first
+
+### Problem: "No data rows found"
+**Solution:** Check that your CSV has data (not just headers)
 
 ### Problem: "No survey item columns matched the selected templates"
 **Solution:**
@@ -371,39 +229,29 @@ Before moving on, confirm:
 
 ## Next Steps
 
-🎉 **Excellent!** Your dataset is now structured properly.
+✅ **Congratulations!** Your data is now structured.
 
-**But notice:** The JSON sidecar files are mostly empty! They have the filenames and basic structure, but not much metadata.
+But wait - the JSON sidecars are mostly empty! They only have basic information.
 
-**In Exercise 2: Error Hunting** you'll:
-- Learn to identify common data quality issues
-- See what the Validator reports
-- Understand error types and how to fix them
-
-**Ready?** → Go to `../exercise_2_hunting_errors/INSTRUCTIONS.md`
+**In Exercise 2**, you'll learn how to fill in the metadata to make your dataset truly self-documenting.
 
 ---
 
-## Advanced: Understanding File Conversions
+## Bonus Challenge (If You Have Extra Time)
 
-**What happened during conversion:**
+1. **Try with participants data:**
+   - Load `participants_raw.tsv`
+   - See if you can update the main `participants.tsv` file
 
-```
-Step 1: wellbeing.tsv (9 participants × 1 session)
-        ↓
-Step 2: Split by participant
-        ↓
-        sub-DEMO001_ses-baseline_task-wellbeing_survey.tsv
-        sub-DEMO002_ses-baseline_task-wellbeing_survey.tsv
-        ... (one file per participant)
-        ↓
-Step 3: Extract demographics → participants.tsv
-        ↓
-Step 4: Generate metadata → JSON sidecars
-        ↓
-Step 5: Organize → BIDS folder structure
-        ↓
-        Result: A valid BIDS/PRISM dataset!
-```
+2. **Add a second survey:**
+   - If there's a `gad7_anxiety.csv` file, convert it too
+   - It should go into the same dataset structure
+   - Files will be named: `sub-01_ses-01_task-gad7_survey.tsv`
 
-This is why the conversion tool is powerful - it handles all these transformations automatically instead of you doing it manually!
+3. **Explore the converter settings:**
+   - Can you change the file suffix from `survey` to `beh`?
+   - What happens if you choose a different modality?
+
+---
+
+**Ready for Exercise 2?** → Go to `../exercise_2_hunting_errors/`
