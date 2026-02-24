@@ -129,6 +129,21 @@
 
     <div class="card feature-card mb-4">
       <div class="card-body p-4">
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <label class="form-label fw-bold"><i class="fas fa-folder text-success me-1"></i>Project Templates</label>
+            <select id="projectTemplateSelect" class="form-select">
+              <option value="">(none in project)</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold"><i class="fas fa-globe text-info me-1"></i>Global Templates</label>
+            <select id="globalTemplateSelect" class="form-select">
+              <option value="">(select one)</option>
+            </select>
+          </div>
+        </div>
+
         <div class="card border-success-subtle bg-light mb-4">
           <div class="card-body py-3">
             <h6 class="mb-3"><i class="fas fa-file-import text-success me-2"></i>Template Import & Generation</h6>
@@ -153,20 +168,24 @@
                 <button class="btn btn-primary" id="btnNew" type="button">
                   <i class="fas fa-plus me-1"></i>Create New
                 </button>
+                <button class="btn btn-outline-primary mt-2" id="btnLoad" type="button">
+                  <i class="fas fa-folder-open me-1"></i>Load Template
+                </button>
               </div>
             </div>
             <div class="d-grid gap-2 d-md-flex">
-              <button class="btn btn-outline-info flex-fill" id="btnImportLs" type="button">
-                <i class="fas fa-file-import me-1"></i>Import .lsq/.lsg
-              </button>
-              <button class="btn btn-outline-success flex-fill" id="btnGenerateTemplate" type="button">
-                <i class="fas fa-file-code me-1"></i>Generate from .lss/.lsa/.xlsx/.csv/.tsv
+              <button class="btn btn-outline-success flex-fill" id="btnImportTemplateSource" type="button">
+                <i class="fas fa-file-import me-1"></i>Import Template Source
               </button>
             </div>
-            <div class="form-text mt-2">Generation loads a PRISM template directly into the editor for review, validation, and save.</div>
+            <div class="form-text mt-2 d-flex align-items-center gap-2">
+              <span>Imports structure directly into the editor for review, validation, and save.</span>
+              <span class="text-muted" data-bs-toggle="tooltip" data-bs-html="true" title="<strong>LimeSurvey XML</strong>: .lsq, .lsg, .lss<br><strong>LimeSurvey archive</strong>: .lsa<br><strong>Tabular dictionary</strong>: .xlsx, .csv, .tsv">
+                <i class="fas fa-circle-question"></i>
+              </span>
+            </div>
             <div id="projectLibraryStatus" class="form-text text-muted mt-1"></div>
-            <input type="file" id="lsFileInput" accept=".lsq,.lsg" style="display:none" />
-            <input type="file" id="templateSourceInput" accept=".lss,.lsa,.xlsx,.csv,.tsv" style="display:none" />
+            <input type="file" id="templateImportInput" accept=".lsq,.lsg,.lss,.lsa,.xlsx,.csv,.tsv" style="display:none" />
           </div>
         </div>
 
@@ -356,15 +375,15 @@
 (function() {
   const modalityEl = document.getElementById('modality');
   const schemaEl = document.getElementById('schemaVersion');
+  const projectTemplateSelectEl = document.getElementById('projectTemplateSelect');
+  const globalTemplateSelectEl = document.getElementById('globalTemplateSelect');
   const projectLibraryStatusEl = document.getElementById('projectLibraryStatus');
   const topLevelFormEl = document.getElementById('topLevelForm');
   const itemFormEl = document.getElementById('itemForm');
   const bulkEditFormEl = document.getElementById('bulkEditForm');
   const toolPropertiesFormEl = document.getElementById('toolPropertiesForm');
-  const btnImportLs = document.getElementById('btnImportLs');
-  const lsFileInput = document.getElementById('lsFileInput');
-  const btnGenerateTemplate = document.getElementById('btnGenerateTemplate');
-  const templateSourceInput = document.getElementById('templateSourceInput');
+  const btnImportTemplateSource = document.getElementById('btnImportTemplateSource');
+  const templateImportInput = document.getElementById('templateImportInput');
   const itemListEl = document.getElementById('itemList');
   const selectAllItemsEl = document.getElementById('selectAllItems');
   const newItemIdEl = document.getElementById('newItemId');
@@ -376,6 +395,7 @@
   const btnToggleDiff = document.getElementById('btnToggleDiff');
   const jsonDiffContainer = document.getElementById('jsonDiffContainer');
   const btnNew = document.getElementById('btnNew');
+  const btnLoad = document.getElementById('btnLoad');
   const btnValidate = document.getElementById('btnValidate');
   const btnSave = document.getElementById('btnSave');
   const btnDownload = document.getElementById('btnDownload');
@@ -2901,10 +2921,90 @@
 
     const data = await apiGet(`/api/template-editor/list-merged?modality=${encodeURIComponent(modality)}`);
 
+    const projectTemplates = (data.templates || []).filter(t => t.source === 'project');
+    const globalTemplates = (data.templates || []).filter(t => t.source !== 'project');
+
+    projectTemplateSelectEl.innerHTML = '<option value="">(none in project)</option>';
+    for (const t of projectTemplates) {
+      const expectedPrefix = `${modality}-`;
+      if (!t.filename.startsWith(expectedPrefix) && t.filename !== 'participants_mapping.json') {
+        continue;
+      }
+      if (modality === 'survey' && t.filename === 'participants_mapping.json') {
+        continue;
+      }
+      const opt = document.createElement('option');
+      opt.value = t.filename;
+      opt.textContent = t.filename;
+      opt.dataset.source = t.source;
+      opt.dataset.path = t.path;
+      opt.dataset.readonly = t.readonly;
+      projectTemplateSelectEl.appendChild(opt);
+      templateMetadata[t.filename] = t;
+    }
+
+    globalTemplateSelectEl.innerHTML = '<option value="">(select one)</option>';
+    for (const t of globalTemplates) {
+      const expectedPrefix = `${modality}-`;
+      if (!t.filename.startsWith(expectedPrefix)) {
+        continue;
+      }
+      const opt = document.createElement('option');
+      opt.value = t.filename;
+      opt.textContent = t.filename;
+      opt.dataset.source = t.source;
+      opt.dataset.path = t.path;
+      opt.dataset.readonly = t.readonly;
+      globalTemplateSelectEl.appendChild(opt);
+      templateMetadata[t.filename] = t;
+    }
+
     projectLibraryRoot = data.sources?.project_library_path || null;
     projectLibraryExists = Boolean(data.sources?.project_library_exists);
 
     updateProjectLibraryStatus();
+  }
+
+  async function loadSelectedTemplate() {
+    const modality = modalityEl.value;
+    const schema_version = schemaEl.value;
+    const filename = projectTemplateSelectEl.value || globalTemplateSelectEl.value;
+
+    if (!filename) {
+      showAlert('warning', 'Select a template to load.');
+      return;
+    }
+
+    clearAlert();
+    btnDownload.disabled = true;
+    btnSave.disabled = true;
+
+    await refreshSchema();
+
+    const meta = templateMetadata[filename];
+    const qp = new URLSearchParams({ modality, schema_version, filename });
+
+    if (meta && meta.path) {
+      const normalizedPath = meta.path.replace(/\\/g, '/');
+      const pathParts = normalizedPath.split('/');
+      const modalityIdx = pathParts.lastIndexOf(modality);
+      if (modalityIdx > 0) {
+        const libraryPath = pathParts.slice(0, modalityIdx).join('/');
+        if (libraryPath) {
+          qp.set('library_path', libraryPath);
+        }
+      }
+    }
+
+    const data = await apiGet(`/api/template-editor/load?${qp.toString()}`);
+    currentTemplate = data.template;
+    originalTemplate = cloneDeep(data.template);
+    checkedItemIds.clear();
+    selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
+    hasUserInteracted = true;
+    renderAll();
+    renderJsonDiff();
+    await validateCurrent();
   }
 
   async function loadNewTemplate() {
@@ -3046,15 +3146,14 @@
     window.URL.revokeObjectURL(url);
   }
 
-  // --- Import .lsq/.lsg handler ---
-  btnImportLs.addEventListener('click', () => {
-    lsFileInput.click();
+  btnImportTemplateSource.addEventListener('click', () => {
+    templateImportInput.click();
   });
 
-  lsFileInput.addEventListener('change', async () => {
-    const file = lsFileInput.files[0];
+  templateImportInput.addEventListener('change', async () => {
+    const file = templateImportInput.files[0];
     if (!file) return;
-    lsFileInput.value = ''; // reset for re-import
+    templateImportInput.value = '';
 
     clearAlert();
     btnDownload.disabled = true;
@@ -3063,95 +3162,59 @@
     try {
       await refreshSchema();
 
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const res = await fetch('/api/template-editor/import-lsq-lsg', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || `Import failed (${res.status})`);
-      }
-
-      currentTemplate = data.template;
-      originalTemplate = null; // no baseline for imports
-      checkedItemIds.clear();
-      selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
-      renderAll();
-
-      const langInfo = (data.languages && data.languages.length > 1)
-        ? ` | Languages: ${data.languages.join(', ')}`
-        : '';
-      showAlert('success',
-        `<strong>Imported ${file.name}</strong> (${data.source_type.toUpperCase()})` +
-        `<br>${data.item_count} item(s)${langInfo}` +
-        `<br><small class="text-muted">LimeSurvey properties are available in the Tool Properties panel.</small>`
-      );
-
-      await validateCurrent();
-    } catch (e) {
-      showAlert('danger', `Import failed: ${e.message}`);
-    }
-  });
-
-  btnGenerateTemplate.addEventListener('click', () => {
-    templateSourceInput.click();
-  });
-
-  templateSourceInput.addEventListener('change', async () => {
-    const file = templateSourceInput.files[0];
-    if (!file) return;
-    templateSourceInput.value = '';
-
-    clearAlert();
-    btnDownload.disabled = true;
-    btnSave.disabled = true;
-
-    try {
-      await refreshSchema();
-
-      const nameWithoutExt = (file.name || 'imported')
-        .replace(/\.[^.]+$/, '')
-        .trim();
+      const lowerName = (file.name || '').toLowerCase();
+      const isLsqOrLsg = lowerName.endsWith('.lsq') || lowerName.endsWith('.lsg');
 
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('mode', 'combined');
-      if (nameWithoutExt) {
-        formData.append('task_name', sanitizeTaskNameForFilename(nameWithoutExt));
+
+      let data;
+      if (isLsqOrLsg) {
+        const res = await fetch('/api/template-editor/import-lsq-lsg', {
+          method: 'POST',
+          body: formData,
+        });
+        data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || `Import failed (${res.status})`);
+        }
+        currentTemplate = data.template;
+      } else {
+        const nameWithoutExt = (file.name || 'imported')
+          .replace(/\.[^.]+$/, '')
+          .trim();
+        formData.append('mode', 'combined');
+        if (nameWithoutExt) {
+          formData.append('task_name', sanitizeTaskNameForFilename(nameWithoutExt));
+        }
+
+        const res = await fetch('/api/limesurvey-to-prism', {
+          method: 'POST',
+          body: formData,
+        });
+        data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || `Template import failed (${res.status})`);
+        }
+
+        if (!data.prism_json || typeof data.prism_json !== 'object') {
+          throw new Error('No PRISM template returned by generator.');
+        }
+        currentTemplate = data.prism_json;
       }
 
-      const res = await fetch('/api/limesurvey-to-prism', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || `Template generation failed (${res.status})`);
-      }
-
-      if (!data.prism_json || typeof data.prism_json !== 'object') {
-        throw new Error('No PRISM template returned by generator.');
-      }
-
-      currentTemplate = data.prism_json;
       originalTemplate = null;
       checkedItemIds.clear();
       selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
       renderAll();
 
-      const source = (file.name.split('.').pop() || '').toLowerCase();
-      showAlert(
-        'success',
-        `<strong>Template generated from ${file.name}</strong> (${source.toUpperCase()})` +
-        `<br>${data.question_count || itemKeysFromTemplate(currentTemplate).length} item(s) extracted.`
-      );
+      const source = (file.name.split('.').pop() || '').toLowerCase().toUpperCase();
+      const itemCount = data.item_count || data.question_count || itemKeysFromTemplate(currentTemplate).length;
+      showAlert('success', `<strong>Imported ${file.name}</strong> (${source})<br>${itemCount} item(s) extracted.`);
 
       await validateCurrent();
     } catch (e) {
-      showAlert('danger', `Template generation failed: ${e.message}`);
+      showAlert('danger', `Template import failed: ${e.message}`);
     }
   });
 
@@ -3188,6 +3251,26 @@
   btnNew.addEventListener('click', async () => {
     try {
       await loadNewTemplate();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  projectTemplateSelectEl.addEventListener('change', () => {
+    if (projectTemplateSelectEl.value) {
+      globalTemplateSelectEl.value = '';
+    }
+  });
+
+  globalTemplateSelectEl.addEventListener('change', () => {
+    if (globalTemplateSelectEl.value) {
+      projectTemplateSelectEl.value = '';
+    }
+  });
+
+  btnLoad.addEventListener('click', async () => {
+    try {
+      await loadSelectedTemplate();
     } catch (e) {
       showAlert('danger', e.message);
     }
