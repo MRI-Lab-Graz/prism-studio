@@ -73,15 +73,8 @@ class DatasetFixer:
         self.dataset_path = os.path.abspath(dataset_path)
         self.dry_run = dry_run
 
-        # Determine BIDS root (support YODA layout)
+        # Canonical PRISM location: project folder is the BIDS root.
         self.bids_path = self.dataset_path
-        if os.path.isdir(os.path.join(self.dataset_path, "rawdata")):
-            # If rawdata exists AND (is empty OR contains BIDS markers), treat it as BIDS root
-            rawdata = os.path.join(self.dataset_path, "rawdata")
-            if not os.listdir(rawdata) or os.path.exists(
-                os.path.join(rawdata, "dataset_description.json")
-            ):
-                self.bids_path = rawdata
 
         self.fixes: List[FixAction] = []
         self._analyzed = False

@@ -2,9 +2,9 @@
 
 This page is the **detailed reference** for PRISM’s command-line tools and scripts.
 
-- For a first-time, step-by-step narrative: see [WALKTHROUGH.md](WALKTHROUGH.md).
+- For a first-time, step-by-step narrative: see [QUICK_START.md](QUICK_START.md).
 - For specification / schema details: see [SPECIFICATIONS.md](SPECIFICATIONS.md).
-- For derivative scoring recipes: see [DERIVATIVES.md](DERIVATIVES.md).
+- For derivative scoring recipes: see [RECIPES.md](RECIPES.md).
 
 ---
 
@@ -263,7 +263,7 @@ python prism_tools.py derivatives surveys --prism /path/to/dataset --format pris
 python prism_tools.py derivatives biometrics --prism /path/to/dataset --format xlsx
 ```
 
-See [DERIVATIVES.md](DERIVATIVES.md) for details on how to write scoring recipes.
+See [RECIPES.md](RECIPES.md) for details on how to write scoring recipes.
 
 #### `library generate-methods-text`
 Generate manuscript-ready methods text from libraries.
@@ -284,4 +284,4 @@ If you’re a new user, prefer:
 - `python prism_tools.py ...` (imports/conversion/derivatives)
 - `python prism-studio.py` (web interface)
 
-If you’re developing PRISM, see [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md).
+If you’re developing PRISM, see [CHANGELOG.md](CHANGELOG.md).

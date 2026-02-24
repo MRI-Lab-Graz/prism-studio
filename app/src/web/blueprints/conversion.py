@@ -1531,8 +1531,8 @@ def api_survey_convert():
             if p_path:
                 p_path = Path(p_path)
                 if p_path.exists():
-                    # Prefer rawdata/ (BIDS/YODA standard), create if needed
-                    dest_root = p_path / "rawdata"
+                    # Canonical PRISM location: save into project root
+                    dest_root = p_path
                     dest_root.mkdir(parents=True, exist_ok=True)
 
                     # Merge output_root contents into dest_root
@@ -1991,11 +1991,11 @@ def api_survey_convert_validate():
                     project_path = project_path.parent
 
                 if project_path.exists() and project_path.is_dir():
-                    # Prefer rawdata/ (BIDS/YODA standard), create if needed
-                    dest_root = project_path / "rawdata"
+                    # Canonical PRISM location: save into project root
+                    dest_root = project_path
                     dest_root.mkdir(parents=True, exist_ok=True)
                     add_log(
-                        f"Saving output to project: {project_path.name} (into {dest_root.name}/)",
+                        f"Saving output to project: {project_path.name} (into project root)",
                         "info",
                     )
 
@@ -2630,9 +2630,11 @@ def api_batch_convert():
     dataset_name = (request.form.get("dataset_name") or "Converted Dataset").strip()
     modality_filter = request.form.get("modality", "all")
     save_to_project = (request.form.get("save_to_project") or "false").lower() == "true"
-    dest_root = (request.form.get("dest_root") or "rawdata").strip().lower()
-    if dest_root not in {"rawdata", "sourcedata"}:
-        dest_root = "rawdata"
+    dest_root = (request.form.get("dest_root") or "root").strip().lower()
+    if dest_root == "rawdata":
+        dest_root = "root"
+    if dest_root not in {"root", "sourcedata"}:
+        dest_root = "root"
     flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
     sampling_rate_str = request.form.get("sampling_rate", "").strip()
     dry_run = (request.form.get("dry_run") or "false").lower() == "true"
@@ -2678,7 +2680,8 @@ def api_batch_convert():
                 if p_path:
                     project_root = Path(p_path)
                     if project_root.exists():
-                        project_root = project_root / dest_root
+                        if dest_root == "sourcedata":
+                            project_root = project_root / "sourcedata"
                         project_root.mkdir(parents=True, exist_ok=True)
                         # Copy converted files to project
                         for file in output_dir.rglob("*"):
@@ -2808,7 +2811,8 @@ def api_batch_convert():
             if p_path:
                 project_root = Path(p_path)
                 if project_root.exists():
-                    project_root = project_root / dest_root
+                    if dest_root == "sourcedata":
+                        project_root = project_root / "sourcedata"
                     project_root.mkdir(parents=True, exist_ok=True)
                 else:
                     warnings.append(
@@ -2902,9 +2906,11 @@ def api_physio_rename():
     organize = request.form.get("organize", "false").lower() == "true"
     modality = request.form.get("modality", "physio")
     save_to_project = request.form.get("save_to_project", "false").lower() == "true"
-    dest_root = (request.form.get("dest_root") or "rawdata").strip().lower()
-    if dest_root not in {"rawdata", "sourcedata"}:
-        dest_root = "rawdata"
+    dest_root = (request.form.get("dest_root") or "root").strip().lower()
+    if dest_root == "rawdata":
+        dest_root = "root"
+    if dest_root not in {"root", "sourcedata"}:
+        dest_root = "root"
     flat_structure = (request.form.get("flat_structure") or "false").lower() == "true"
 
     files = request.files.getlist("files[]") or request.files.getlist("files")
@@ -2970,7 +2976,8 @@ def api_physio_rename():
         if p_path:
             project_root = Path(p_path)
             if project_root.exists():
-                project_root = project_root / dest_root
+                if dest_root == "sourcedata":
+                    project_root = project_root / "sourcedata"
                 project_root.mkdir(parents=True, exist_ok=True)
             else:
                 warnings.append(
@@ -3169,42 +3176,21 @@ def api_participants_check():
 
     project_root = Path(project_path)
 
-    # Check both root and rawdata subfolder
+    # Check canonical location at project root
     participants_tsv = project_root / "participants.tsv"
     participants_json = project_root / "participants.json"
-
-    rawdata_participants_tsv = project_root / "rawdata" / "participants.tsv"
-    rawdata_participants_json = project_root / "rawdata" / "participants.json"
-
     exists_root = participants_tsv.exists() or participants_json.exists()
-    exists_rawdata = (
-        rawdata_participants_tsv.exists() or rawdata_participants_json.exists()
-    )
 
     return jsonify(
         {
-            "exists": exists_root or exists_rawdata,
-            "location": (
-                "root" if exists_root else ("rawdata" if exists_rawdata else None)
-            ),
+            "exists": exists_root,
+            "location": ("root" if exists_root else None),
             "files": {
                 "participants_tsv": (
-                    str(participants_tsv)
-                    if participants_tsv.exists()
-                    else (
-                        str(rawdata_participants_tsv)
-                        if rawdata_participants_tsv.exists()
-                        else None
-                    )
+                    str(participants_tsv) if participants_tsv.exists() else None
                 ),
                 "participants_json": (
-                    str(participants_json)
-                    if participants_json.exists()
-                    else (
-                        str(rawdata_participants_json)
-                        if rawdata_participants_json.exists()
-                        else None
-                    )
+                    str(participants_json) if participants_json.exists() else None
                 ),
             },
         }
@@ -3462,18 +3448,12 @@ def api_participants_convert():
     # Check for existing files
     participants_tsv = project_root / "participants.tsv"
     participants_json = project_root / "participants.json"
-    rawdata_tsv = project_root / "rawdata" / "participants.tsv"
-    rawdata_json = project_root / "rawdata" / "participants.json"
 
     existing_files = []
     if participants_tsv.exists():
         existing_files.append(str(participants_tsv))
     if participants_json.exists():
         existing_files.append(str(participants_json))
-    if rawdata_tsv.exists():
-        existing_files.append(str(rawdata_tsv))
-    if rawdata_json.exists():
-        existing_files.append(str(rawdata_json))
 
     if existing_files and not force_overwrite:
         return (

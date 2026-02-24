@@ -121,14 +121,14 @@ The updated `_process_eyetracking_tsv()` function now:
 ## Example: Before and After
 
 ### BEFORE (Raw EyeLink Export)
-```tsv
+```text
 RECORDING_SESSION_LABEL	TRIAL_INDEX	AVERAGE_ACCELERATION_X	AVERAGE_GAZE_X	TIMESTAMP
 s17_nr_1	1	.	963.20	5529512.00
 s17_nr_1	1	-497.78	965.30	5529521.00
 ```
 
 ### AFTER (PRISM Normalized)
-```tsv
+```text
 TRIAL_INDEX	AVERAGE_ACCELERATION_X	x	timestamp
 1		963.20	5529512.00
 1	-497.78	965.30	5529521.00

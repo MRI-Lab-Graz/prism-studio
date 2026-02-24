@@ -117,14 +117,13 @@ PRISM encourages the [YODA principles](https://handbook.datalad.org/en/latest/ba
 
 ```
 my_study/
-├── rawdata/                    # ← PRISM validates here
-│   ├── dataset_description.json
-│   ├── participants.tsv
-│   ├── participants.json
-│   └── sub-001/
-│       └── survey/
-│           ├── sub-001_task-bdi_survey.tsv
-│           └── sub-001_task-bdi_survey.json
+├── dataset_description.json
+├── participants.tsv
+├── participants.json
+├── sub-001/
+│   └── survey/
+│       ├── sub-001_task-bdi_survey.tsv
+│       └── sub-001_task-bdi_survey.json
 ├── code/                       # Analysis scripts
 ├── analysis/                   # Results and derivatives
 └── project.json               # Project metadata

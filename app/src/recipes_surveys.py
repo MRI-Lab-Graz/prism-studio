@@ -79,20 +79,10 @@ def _copy_recipes_to_project(
 
     Args:
         recipes: Dict of loaded recipes (recipe_id -> {path, json})
-        dataset_root: Root of the dataset (might be rawdata/ or project root)
+        dataset_root: Root of the dataset (project root)
         modality: 'survey' or 'biometrics'
     """
-    # Determine project root (parent of rawdata/ if it exists)
-    if dataset_root.name == "rawdata":
-        project_root = dataset_root.parent
-    else:
-        # Check if we have a rawdata/ subfolder
-        rawdata_path = dataset_root / "rawdata"
-        if rawdata_path.exists() and rawdata_path.is_dir():
-            project_root = dataset_root
-        else:
-            # Might be legacy structure or non-YODA, skip copying
-            return
+    project_root = dataset_root
 
     # Create code/recipes/{modality}/ folder (YODA-compliant)
     recipes_dir = project_root / "code" / "recipes" / modality
@@ -782,11 +772,6 @@ def _write_recipes_dataset_description(
 
     # Try to inherit some metadata from the root dataset_description.json
     root_desc_path = prism_root / "dataset_description.json"
-    if (
-        not root_desc_path.exists()
-        and (prism_root / "rawdata" / "dataset_description.json").exists()
-    ):
-        root_desc_path = prism_root / "rawdata" / "dataset_description.json"
 
     root_meta = {}
     if root_desc_path.exists():
@@ -1142,25 +1127,20 @@ def _load_and_validate_recipes(
 
 def _find_tsv_files(prism_root: Path, modality: str) -> list[Path]:
     """Scan dataset for TSV files based on modality."""
-    # Handle BIDS project root (which contains rawdata/) vs. direct rawdata/ folder
-    search_roots = [prism_root]
-    if (prism_root / "rawdata").is_dir():
-        search_roots.append(prism_root / "rawdata")
-
     tsv_files: list[Path] = []
-    for root in search_roots:
-        if modality == "survey":
-            # Search in survey/ and beh/ (BIDS standard)
-            for folder in ("survey", "beh"):
-                tsv_files.extend(root.glob(f"sub-*/ses-*/{folder}/*.tsv"))
-                tsv_files.extend(root.glob(f"sub-*/{folder}/*.tsv"))
-        elif modality == "biometrics":
-            tsv_files.extend(root.glob("sub-*/ses-*/biometrics/*.tsv"))
-            tsv_files.extend(root.glob("sub-*/biometrics/*.tsv"))
-        else:
-            # Fallback: search both
-            tsv_files.extend(root.glob("sub-*/ses-*/*/*.tsv"))
-            tsv_files.extend(root.glob("sub-*/*/*.tsv"))
+    root = prism_root
+    if modality == "survey":
+        # Search in survey/ and beh/ (BIDS standard)
+        for folder in ("survey", "beh"):
+            tsv_files.extend(root.glob(f"sub-*/ses-*/{folder}/*.tsv"))
+            tsv_files.extend(root.glob(f"sub-*/{folder}/*.tsv"))
+    elif modality == "biometrics":
+        tsv_files.extend(root.glob("sub-*/ses-*/biometrics/*.tsv"))
+        tsv_files.extend(root.glob("sub-*/biometrics/*.tsv"))
+    else:
+        # Fallback: search both
+        tsv_files.extend(root.glob("sub-*/ses-*/*/*.tsv"))
+        tsv_files.extend(root.glob("sub-*/*/*.tsv"))
 
     return sorted(set([p for p in tsv_files if p.is_file()]))
 
@@ -1172,14 +1152,6 @@ def _load_participants_data(prism_root: Path) -> tuple[Any, dict]:
 
     participants_tsv = prism_root / "participants.tsv"
     participants_json = prism_root / "participants.json"
-
-    # If not in root, check in rawdata/
-    if (
-        not participants_tsv.is_file()
-        and (prism_root / "rawdata" / "participants.tsv").is_file()
-    ):
-        participants_tsv = prism_root / "rawdata" / "participants.tsv"
-        participants_json = prism_root / "rawdata" / "participants.json"
 
     if participants_tsv.is_file():
         try:
@@ -1795,11 +1767,7 @@ def compute_survey_recipes(
     if not prism_root.exists() or not prism_root.is_dir():
         raise ValueError(f"--prism is not a directory: {prism_root}")
 
-    # If prism_root points to rawdata, we use the parent as the PRISM root for output
-    # but keep prism_root for scanning files.
     output_prism_root = prism_root
-    if prism_root.name == "rawdata":
-        output_prism_root = prism_root.parent
 
     modality = str(modality or "survey").strip().lower()
     out_format = str(out_format or "prism").strip().lower()

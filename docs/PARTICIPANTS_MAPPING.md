@@ -27,8 +27,9 @@ my_dataset/
 │   └── raw_data/
 │       ├── wellbeing.tsv
 │       └── fitness_data.tsv
-├── rawdata/
-│   ├── dataset_description.json
+├── dataset_description.json
+├── participants.tsv
+├── sub-001/
 │   └── ...
 └── ...
 ```
@@ -342,10 +343,10 @@ The `participants_mapping.json` file should be placed in one of these **project 
    - Alternative location if raw data lives in sourcedata/
    - Clear association with raw data
 
-**Why not in `rawdata/`?**
+**Why not in the dataset root?**
 The mapping file is a **conversion specification**, not part of the final BIDS/PRISM dataset:
 - It's used to transform raw data INTO standardized format
-- Once data is imported to `rawdata/`, the mapping is no longer needed
+- Once data is imported into the dataset root structure, the mapping is no longer needed
 - Keeping it in `code/` or `sourcedata/` makes this clear
 - It's automatically excluded from BIDS validation
 

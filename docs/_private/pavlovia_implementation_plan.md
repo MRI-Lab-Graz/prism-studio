@@ -1,3 +1,5 @@
+:orphan:
+
 # Pavlovia Converter Implementation Plan
 
 ## Decision: Use PRISM JSON as Source ✅
@@ -107,7 +109,7 @@
 **PsychoPy:**
 - Component: Loop
 - Conditions file:
-  ```csv
+  ```text
   question_text,level_1,level_2,level_3,level_4
   I feel calm,Not at all,Somewhat,Moderately,Very much
   I feel secure,Not at all,Somewhat,Moderately,Very much

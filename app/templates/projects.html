@@ -194,7 +194,7 @@
                                 <i class="fas fa-info-circle me-2"></i>
                                 <strong>YODA Layout:</strong> This will create a project following 
                                 <a href="https://handbook.datalad.org/en/latest/basics/101-127-yoda.html" target="_blank">YODA principles</a>.
-                                Raw data goes into <code>rawdata/</code> (validation runs only there), code into <code>code/</code>, and results into <code>analysis/</code>.
+                                Raw data goes into the project dataset root, code into <code>code/</code>, and results into <code>analysis/</code>.
                                 <div class="mt-2 small text-muted">
                                     Includes <code>project.json</code>, <code>contributors.json</code>, <code>CITATION.cff</code>, and <code>derivatives/qc/</code> for scientific project governance.
                                 </div>
@@ -322,7 +322,7 @@
 
             <div class="alert alert-info border-0 bg-info bg-opacity-10 py-2 mb-3">
                 <i class="fas fa-info-circle me-2"></i>
-                This edits study methodology in <code>project.json</code> and dataset description in <code>rawdata/dataset_description.json</code>. 
+                This edits study methodology in <code>project.json</code> and dataset description in <code>dataset_description.json</code> at project root. 
                 Saving this form auto-generates an ANC-compliant README from this metadata.
             </div>
 
@@ -980,7 +980,7 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="exportRawdata" checked disabled>
                                 <label class="form-check-label" for="exportRawdata">
-                                    <code>rawdata/</code> - Raw experimental data
+                                    Dataset root files and <code>sub-*/</code> folders - Raw experimental data
                                 </label>
                             </div>
                             <div class="form-check">

@@ -302,30 +302,32 @@ Internationalization structure is invalid:
 
 ### 3. **Proper DOI Format**
 ```json
-"DOI": "10.1037/t00742-000"  // ✅ Good
-"DOI": "https://doi.org/10.1037/t00742-000"  // Also OK
-"DOI": "doi: 10.1037/t00742-000"  // ❌ Bad
+"DOI": "10.1037/t00742-000"
+"DOI": "https://doi.org/10.1037/t00742-000"
+"DOI": "doi: 10.1037/t00742-000"
 ```
 
 ### 4. **Item Organization**
 ```json
 {
-  "Study": { ... },
-  "ITEM01": { ... },
-  "ITEM02": { ... }
-}  // ✅ Good - Study first, then items
+  "Study": {},
+  "ITEM01": {},
+  "ITEM02": {}
+}
 
 {
-  "ITEM01": { ... },
-  "Study": { ... }
-}  // Still valid but prefer Study first
+  "ITEM01": {},
+  "Study": {}
+}
 ```
 
 ### 5. **Meaningful Item IDs**
 ```json
-"PHQ01": { ... }  // ✅ Instrument prefix + number
-"Item_1": { ... }  // ✅ Descriptive ID
-"a": { ... }  // ❌ Too generic
+{
+  "PHQ01": {},
+  "Item_1": {},
+  "a": {}
+}
 ```
 
 ## Troubleshooting
@@ -344,18 +346,19 @@ Check that items are defined as top-level keys in the JSON, not in a "Questions"
 Both of these are valid:
 
 ```json
-// ✅ Flat structure
 {
-  "Study": { ... },
-  "ITEM01": { ... }
+  "Study": {},
+  "ITEM01": {}
 }
+```
 
-// ✅ Nested structure
+```json
 {
-  "Study": { ... },
+  "Study": {},
   "Questions": {
-    "ITEM01": { ... }
+    "ITEM01": {}
   }
+}
 }
 ```
 
@@ -393,5 +396,5 @@ python app/prism.py /code/my-study --library /code/library
 ## See Also
 
 - [BIDS Specification](https://bids-standard.github.io/)
-- [PRISM Schemas](../schemas/)
-- [Dataset Validation](../USAGE.md)
+- PRISM Schemas: `app/schemas/`
+- [Dataset Validation](VALIDATOR.md)

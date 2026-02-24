@@ -55,14 +55,14 @@ Click **Convert** to generate:
 
 If you have a project loaded:
 - Click **Save to Project**
-- Files are copied to `rawdata/sub-XXX/survey/`
+- Files are copied to `sub-XXX/survey/` at project root
 
 ## Output Structure
 
 For a source file with participants sub-001 and sub-002:
 
 ```
-rawdata/
+my_study/
 ├── sub-001/
 │   └── survey/
 │       ├── sub-001_task-depression_survey.tsv

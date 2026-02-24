@@ -18,7 +18,7 @@ This exercise teaches you how to create and use `participants_mapping.json` file
 2. Copy template_participants_mapping.json to code/library/participants_mapping.json
 3. Edit it to map your demographic variables
 4. Run validation - mapping auto-applies
-5. Verify output in rawdata/participants.tsv
+5. Verify output in participants.tsv at project root
 6. Compare with solution_participants_mapping.json
 
 ## Key Concepts

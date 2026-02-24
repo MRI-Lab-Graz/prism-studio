@@ -204,16 +204,8 @@ def run_validation(
     Returns:
         Tuple of (issues list, stats object)
     """
-    # Support YODA layout: if dataset_path contains a rawdata/ folder, validate that instead
-    # but only if it contains a dataset_description.json (BIDS root marker)
-    if os.path.isdir(os.path.join(dataset_path, "rawdata")):
-        raw_marker = os.path.join(dataset_path, "rawdata", "dataset_description.json")
-        if os.path.exists(raw_marker):
-            dataset_path = os.path.join(dataset_path, "rawdata")
-            if progress_callback:
-                progress_callback(
-                    0, "Detected YODA layout, validating rawdata/ folder..."
-                )
+    # Canonical PRISM location: BIDS root is the provided project folder.
+    dataset_path = os.path.abspath(dataset_path)
 
     # Auto-apply participants mapping if present
     _apply_participants_mapping(dataset_path, progress_callback)

@@ -182,7 +182,7 @@ Backend validates against JSON schema and business rules; issues returned to fro
 │     IF not exists: set License = CC0     │  Logic               │
 │  4. Auto-set DatasetType = raw (if null) │                     │
 │  5. Validate against schema ─────────────┘                     │
-│  6. Save to rawdata/dataset_description.json                   │
+│  6. Save to dataset_description.json (project root)            │
 │  7. Call update_citation_cff()                                 │
 └────────────────────────┬────────────────────────────────────────┘
                          │

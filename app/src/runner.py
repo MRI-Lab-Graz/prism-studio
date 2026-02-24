@@ -68,19 +68,8 @@ def validate_dataset(
         if progress_callback:
             progress_callback(current, total, message, file_path)
 
-    # Support YODA layout: if root_dir contains a rawdata/ folder, validate that instead
-    # This ensures we skip analysis, paper, sourcedata, etc.
-    if os.path.isdir(os.path.join(root_dir, "rawdata")):
-        rawdata_marker = os.path.join(root_dir, "rawdata", "dataset_description.json")
-        if os.path.exists(rawdata_marker):
-            if verbose:
-                print(
-                    f"ℹ️  YODA layout detected. Focusing validation on {os.path.join(root_dir, 'rawdata')}"
-                )
-            root_dir = os.path.join(root_dir, "rawdata")
-            report_progress(
-                0, 100, "Detected YODA layout, switching focus to rawdata/..."
-            )
+    # Canonical PRISM location: BIDS root is the provided project folder.
+    root_dir = os.path.abspath(root_dir)
 
     report_progress(0, 100, "Loading schemas...")
 
@@ -239,20 +228,13 @@ def validate_dataset(
 
     # Procedure validation: cross-check declared sessions/tasks vs. on-disk data
     if run_prism:
-        # project.json lives one level above rawdata/ in YODA layout
-        rawdata_parent = os.path.dirname(root_dir)
-        project_json = os.path.join(rawdata_parent, "project.json")
-        if not os.path.exists(project_json):
-            # Also check root_dir itself (non-YODA layout)
-            project_json = os.path.join(root_dir, "project.json")
-            rawdata_parent = root_dir
-
+        project_json = os.path.join(root_dir, "project.json")
         if os.path.exists(project_json):
             from procedure_validator import validate_procedure
             from pathlib import Path as _Path
 
             procedure_issues = validate_procedure(
-                _Path(rawdata_parent), _Path(root_dir)
+                _Path(root_dir), _Path(root_dir)
             )
             issues.extend(procedure_issues)
 

@@ -169,7 +169,7 @@ For advanced data conversion tasks, use the `prism_tools.py` utility.
 ```bash
 ./prism_tools.py convert physio \
   --input ./sourcedata \
-  --output ./rawdata \
+  --output ./dataset \
   --task rest \
   --suffix ecg \
   --sampling-rate 256
@@ -225,7 +225,7 @@ Use the `convert physio` command to process the data.
 ```bash
 ./prism_tools.py convert physio \
   --input ./sourcedata \
-  --output ./rawdata \
+  --output ./dataset \
   --task rest \
   --suffix ecg \
   --sampling-rate 256
@@ -233,7 +233,7 @@ Use the `convert physio` command to process the data.
 
 **Arguments:**
 *   `--input`: Path to your organized `sourcedata` folder.
-*   `--output`: Where the BIDS-compliant `rawdata` should be generated.
+*   `--output`: Where the BIDS-compliant dataset root should be generated.
 *   `--task`: The task name to assign (e.g., `rest`, `task`).
 *   `--suffix`: The filename suffix (e.g., `ecg`, `physio`).
 *   `--sampling-rate`: (Optional) Force a specific sampling rate if the header is incorrect.
