@@ -3053,13 +3053,54 @@ document.addEventListener('DOMContentLoaded', function() {
                 const v = data.validation;
                 const errorCount = (v.errors || []).length;
                 const warningCount = (v.warnings || []).length;
+                const summaryErrors = v.summary && Number.isFinite(v.summary.total_errors)
+                    ? v.summary.total_errors
+                    : errorCount;
+                const summaryWarnings = v.summary && Number.isFinite(v.summary.total_warnings)
+                    ? v.summary.total_warnings
+                    : warningCount;
 
-                if (errorCount === 0 && warningCount === 0) {
+                if (summaryErrors === 0 && summaryWarnings === 0) {
                     appendLog('✓ Validation (preview) passed - dataset is valid!', 'success');
-                } else if (errorCount === 0) {
-                    appendLog(`⚠ Validation (preview) passed with ${warningCount} warning(s)`, 'warning');
+                } else if (summaryErrors === 0) {
+                    appendLog(`⚠ Validation (preview) passed with ${summaryWarnings} warning(s)`, 'warning');
                 } else {
-                    appendLog(`✗ Validation (preview) failed with ${errorCount} error(s)`, 'error');
+                    appendLog(`✗ Validation (preview) failed with ${summaryErrors} error(s)`, 'error');
+                }
+
+                if (summaryErrors > 0) {
+                    let printed = 0;
+                    const maxToShow = 20;
+
+                    if (v.formatted && Array.isArray(v.formatted.errors)) {
+                        for (const group of v.formatted.errors) {
+                            for (const fileIssue of (group.files || [])) {
+                                if (printed >= maxToShow) break;
+                                const msg = (fileIssue && fileIssue.message) ? fileIssue.message : (group.message || 'Validation error');
+                                appendLog(`  - ${msg}`, 'error');
+                                printed++;
+                            }
+                            if (printed >= maxToShow) break;
+                        }
+                    }
+
+                    if (printed === 0 && Array.isArray(v.errors)) {
+                        for (const err of v.errors) {
+                            if (printed >= maxToShow) break;
+                            if (typeof err === 'string') {
+                                appendLog(`  - ${err}`, 'error');
+                                printed++;
+                            }
+                        }
+                    }
+
+                    if (summaryErrors > printed) {
+                        appendLog(`  ... and ${summaryErrors - printed} more errors (see details below)`, 'error');
+                    }
+                }
+
+                if (summaryWarnings > 0) {
+                    appendLog(`⚠ ${summaryWarnings} warning(s) found`, 'warning');
                 }
 
                 displayValidationResults(data.validation);
@@ -3260,10 +3301,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
             appendLog('', 'info');
             appendLog('═══════════════════════════════════════', 'info');
-            appendLog('✓ PREVIEW COMPLETED SUCCESSFULLY', 'success');
+            const previewErrorCount = data.validation?.summary?.total_errors ?? (data.validation?.errors || []).length;
+            if (previewErrorCount > 0) {
+                appendLog('⚠ PREVIEW COMPLETED WITH VALIDATION ERRORS', 'warning');
+                convertInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Preview completed, but validation found errors. Fix these issues before converting.';
+            } else {
+                appendLog('✓ PREVIEW COMPLETED SUCCESSFULLY', 'success');
+                convertInfo.innerHTML = '<i class="fas fa-info-circle me-2"></i>Preview complete. Review the log above, then click <strong>Convert</strong> to proceed.';
+            }
             appendLog('═══════════════════════════════════════', 'info');
-            
-            convertInfo.innerHTML = '<i class="fas fa-info-circle me-2"></i>Preview complete. Review the log above, then click <strong>Convert</strong> to proceed.';
+
             convertInfo.classList.remove('d-none');
         })
         .catch(err => {

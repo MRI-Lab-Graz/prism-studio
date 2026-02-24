@@ -906,13 +906,19 @@ def api_survey_convert_preview():
                 # run_validation returns (issues, stats)
                 if v_res and isinstance(v_res, tuple):
                     issues, stats = v_res
-                    validation_result = {
-                        "errors": issues.get("errors", []),
-                        "warnings": issues.get("warnings", []),
-                        "summary": stats or {},
-                    }
-                    err_cnt = len(validation_result.get("errors", []))
-                    warn_cnt = len(validation_result.get("warnings", []))
+
+                    # Format preview validation consistently with /api/survey-convert-validate
+                    from src.web.reporting_utils import format_validation_results
+
+                    formatted = format_validation_results(
+                        issues, stats, str(validate_root)
+                    )
+
+                    validation_result = {"formatted": formatted}
+                    validation_result.update(formatted)
+
+                    err_cnt = formatted.get("summary", {}).get("total_errors", 0)
+                    warn_cnt = formatted.get("summary", {}).get("total_warnings", 0)
                     print(
                         f"[PRISM DEBUG] Preview validation: errors={err_cnt}, warnings={warn_cnt}"
                     )
