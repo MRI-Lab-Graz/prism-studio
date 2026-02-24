@@ -1097,7 +1097,7 @@ def convert_survey_xlsx_to_prism_dataset(
     alias_file: str | Path | None = None,
     id_map_file: str | Path | None = None,
     duplicate_handling: str = "error",
-    skip_participants: bool = False,
+    skip_participants: bool = True,
 ) -> SurveyConvertResult:
     """Convert a wide survey Excel table into a PRISM dataset.
 
@@ -1404,7 +1404,7 @@ def convert_survey_lsa_to_prism_dataset(
     id_map_file: str | Path | None = None,
     strict_levels: bool | None = None,
     duplicate_handling: str = "error",
-    skip_participants: bool = False,
+    skip_participants: bool = True,
     project_path: str | Path | None = None,
 ) -> SurveyConvertResult:
     """Convert a LimeSurvey response archive (.lsa) into a PRISM dataset.
@@ -1463,6 +1463,7 @@ def convert_survey_lsa_to_prism_dataset(
         strict_levels=effective_strict_levels,
         duplicate_handling=duplicate_handling,
         lsa_questions_map=lsa_questions_map,
+        skip_participants=skip_participants,
         lsa_analysis=lsa_analysis,
         source_format="lsa",
     )
@@ -1981,7 +1982,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     strict_levels: bool = True,
     duplicate_handling: str = "error",
     lsa_questions_map: dict | None = None,
-    skip_participants: bool = False,
+    skip_participants: bool = True,
     lsa_analysis: dict | None = None,
     source_format: str = "xlsx",
 ) -> SurveyConvertResult:

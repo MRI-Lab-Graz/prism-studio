@@ -613,6 +613,7 @@ def cmd_survey_convert(args):
             name=args.name,
             authors=args.authors,
             alias_file=getattr(args, "alias", None),
+            skip_participants=True,
         )
     except Exception as e:
         print(f"Error: {e}")
