@@ -570,9 +570,15 @@ Create a `.prismrc.json` file in your dataset root for per-project settings:
   "strict_mode": false,
   "run_bids": false,
   "ignore_paths": ["sourcedata/", "derivatives/"],
-  "plugins": ["./validators/custom_checks.py"]
+  "plugins": ["./validators/custom_checks.py"],
+  "neurobagelParticipantFilter": {
+    "minRepeatedPrefixCount": 3,
+    "participantKeywords": ["age", "sex", "gender", "diagnosis", "handedness"]
+  }
 }
 ```
+
+`neurobagelParticipantFilter` tunes project-level participant harmonization in the Participants import preview and NeuroBagel schema suggestion flow.
 
 Settings can be overridden via CLI arguments.
 

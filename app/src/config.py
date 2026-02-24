@@ -12,6 +12,7 @@ Configuration Options:
     runBids: Automatically run BIDS validator
     customModalities: Additional modality patterns to recognize
     templateLibraryPath: Path to external template library (overrides global default)
+    neurobagelParticipantFilter: Optional project-level NeuroBagel participant variable filter overrides
 
 Example .prismrc.json:
 {
@@ -77,6 +78,14 @@ class PrismConfig:
     # Template library path (overrides global default)
     # Points to external shared template library (Nextcloud, GitLab, etc.)
     template_library_path: Optional[str] = None
+
+    # Optional per-project tuning for NeuroBagel participant harmonization filter
+    # Example:
+    # {
+    #   "minRepeatedPrefixCount": 4,
+    #   "participantKeywords": ["age", "sex", "diagnosis"]
+    # }
+    neurobagel_participant_filter: Dict[str, Any] = field(default_factory=dict)
 
     # Config file location (set after loading)
     _config_path: Optional[str] = None
@@ -149,6 +158,9 @@ def load_config(dataset_path: str) -> PrismConfig:
             max_file_size_mb=data.get("maxFileSizeMb", 100),
             parallel_validation=data.get("parallelValidation", False),
             template_library_path=data.get("templateLibraryPath"),
+            neurobagel_participant_filter=data.get(
+                "neurobagelParticipantFilter", {}
+            ),
         )
         config._config_path = config_path
         return config
@@ -193,6 +205,9 @@ def save_config(
     # Only include template library path if set
     if config.template_library_path:
         data["templateLibraryPath"] = config.template_library_path
+
+    if config.neurobagel_participant_filter:
+        data["neurobagelParticipantFilter"] = config.neurobagel_participant_filter
 
     with open(config_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
