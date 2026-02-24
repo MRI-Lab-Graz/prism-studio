@@ -31,7 +31,7 @@ The Template Editor lets you define these once and reuse them forever.
 
 ### Step 1: Open the Template Editor
 1. In PRISM Studio, go to **Tools** → **JSON Template Editor**.
-2. Alternatively, go to: **http://localhost:5001/tools/template-editor**
+2. Alternatively, go to: **http://localhost:5001/template-editor**
 
 ### Step 2: Set Up the Metadata
 1. **Modality:** Select `Survey`.

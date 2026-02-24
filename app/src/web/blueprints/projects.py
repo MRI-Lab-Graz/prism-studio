@@ -286,6 +286,17 @@ def create_project():
             "hed_version": data.get("hed_version"),
             "dataset_type": data.get("dataset_type"),
             "description": data.get("description"),
+            # Study metadata sections (persist into project.json on creation)
+            "Basics": data.get("Basics"),
+            "Overview": data.get("Overview"),
+            "StudyDesign": data.get("StudyDesign"),
+            "Recruitment": data.get("Recruitment"),
+            "Eligibility": data.get("Eligibility"),
+            "DataCollection": data.get("DataCollection"),
+            "Procedure": data.get("Procedure"),
+            "MissingData": data.get("MissingData"),
+            "References": data.get("References"),
+            "Conditions": data.get("Conditions"),
         }
 
         result = _project_manager.create_project(path, config)

@@ -25,6 +25,22 @@ Welcome to the PRISM Hands-on Workshop! This guide will walk you through analyzi
 
 ---
 
+## Interface Screenshots
+
+![Workshop Start - Projects](../../docs/_static/screenshots/prism-studio-workshop-start-projects-light.png)
+
+![Exercise 1 - Data Conversion](../../docs/_static/screenshots/prism-studio-exercise-1-data-conversion-light.png)
+
+![Exercise 2 - Validation](../../docs/_static/screenshots/prism-studio-exercise-2-validation-light.png)
+
+![Exercise 3 - Recipes](../../docs/_static/screenshots/prism-studio-exercise-3-recipes-light.png)
+
+![Exercise 4 - Templates](../../docs/_static/screenshots/prism-studio-exercise-4-templates-light.png)
+
+![Exercise 5 - Participant Mapping](../../docs/_static/screenshots/prism-studio-exercise-5-participant-mapping-light.png)
+
+---
+
 ## Getting Started
 
 ### Launch PRISM Studio
@@ -43,7 +59,7 @@ python prism-studio.py
 ```bash
 # macOS/Linux
 source .venv/bin/activate
-python prism-studio.py
+./prism-studio.py
 ```
 
 ### Workshop Materials
@@ -81,9 +97,16 @@ This structure enables version control, reproducibility, and collaboration.
    - Project Name: `Wellbeing_Study_Workshop`
    - Location: Choose your preferred folder (Desktop, Documents, etc.)
    - Template: **YODA Structure** (if option exists)
-   - Click **Create & Activate**
 
-3. **Verify Structure**
+3. **Required Before Create: Fill Study Metadata (13 fields)**
+  - Open the **Study Metadata** section in the form
+  - Complete all required fields until no missing-field warning remains
+  - If you see **"Complete Study Metadata (13 fields missing)"**, continue filling fields first
+
+4. **Create & Activate**
+  - Click **Create & Activate** only after all 13 metadata fields are complete
+
+5. **Verify Structure**
    Your project should have:
    ```
    Wellbeing_Study_Workshop/
@@ -94,7 +117,7 @@ This structure enables version control, reproducibility, and collaboration.
    └── README.md
    ```
 
-4. **Confirm Active**
+6. **Confirm Active**
    - Top of screen shows: "Active Project: Wellbeing_Study_Workshop"
 
 ✅ **Complete!** You have a professional research project structure.

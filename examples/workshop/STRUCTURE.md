@@ -3,7 +3,7 @@
 ## 📁 Complete Folder Organization
 
 \`\`\`
-demo/workshop/
+examples/workshop/
 │
 ├── WORKSHOP_README.md                     ← START HERE! Main entry point
 ├── README.md                              ← Technical notes for instructors

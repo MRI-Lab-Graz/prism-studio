@@ -72,9 +72,11 @@ This folder contains materials for the PRISM hands-on workshop focused on **well
 ## 🚀 Getting Started
 
 1. **Read:** [WORKSHOP_HANDOUT_WELLBEING.md](WORKSHOP_HANDOUT_WELLBEING.md)
-2. **Launch:** PRISM Studio (`python prism-studio.py`)
+2. **Launch:** PRISM Studio (`source .venv/bin/activate && ./prism-studio.py` on macOS/Linux, or `.\.venv\Scripts\Activate.ps1` then `python prism-studio.py` on Windows)
 3. **Start:** Exercise 0 - Create your project
 4. **Follow:** Step-by-step instructions in each exercise folder
+
+> Note: This branch uses a newer PRISM Studio UI. Some labels may appear as `Recipes` vs `Recipes & Scoring` and routes follow `/projects`, `/converter`, `/validate`, `/recipes`, and `/template-editor`.
 
 ## 💡 Tips for Instructors
 

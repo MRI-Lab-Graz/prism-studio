@@ -53,14 +53,14 @@ Apply the Wellbeing and Fitness recipes to your dataset to:
 
 ### Step 1: Verify Recipe File Exists
 
-The recipes are located at `demo/workshop/recipes/surveys/wellbeing.json` and `demo/workshop/recipes/biometrics/fitness.json`.
+The recipes are located in the workshop materials, e.g. `examples/workshop/exercise_3_using_recipes/recipe-wellbeing.json`.
 
 ---
 
 ### Step 2: Open Recipes & Scoring Tool
 
 1. Open **PRISM Studio** (http://localhost:5001)
-2. Click **"Recipes & Scoring"** in the navigation menu
+2. Click **"Recipes"** (or **"Recipes & Scoring"**, depending on your build) in the navigation menu
 
 ---
 
@@ -68,7 +68,7 @@ The recipes are located at `demo/workshop/recipes/surveys/wellbeing.json` and `d
 
 **Dataset Folder:**
 1. Click **"Browse"** button next to "PRISM Dataset Folder"
-2. Navigate to: `demo/workshop/exercise_1_raw_data/my_dataset/`
+2. Navigate to: `examples/workshop/exercise_1_raw_data/my_dataset/`
 3. Select this folder
 
 ---
