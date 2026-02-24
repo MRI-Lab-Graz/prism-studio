@@ -351,7 +351,276 @@ def _format_unmatched_groups_response(uge, log_messages=None):
     return payload
 
 
-def _generate_neurobagel_schema(df, id_column):
+_PARTICIPANT_RELEVANT_KEYWORDS = {
+    "participant",
+    "subject",
+    "sub",
+    "id",
+    "age",
+    "sex",
+    "gender",
+    "hand",
+    "group",
+    "diagn",
+    "education",
+    "ethnic",
+    "race",
+    "site",
+    "center",
+    "cohort",
+    "condition",
+}
+
+_DEFAULT_NEUROBAGEL_KEYS = {
+    "participant_id",
+    "subject",
+    "sub",
+    "age",
+    "sex",
+    "gender",
+    "handedness",
+    "group",
+    "diagnosis",
+    "education",
+    "ethnicity",
+}
+
+_PARTICIPANT_FILTER_CONFIG = {
+    # Minimum number of columns like PREFIX01/PREFIX02 needed to treat PREFIX*
+    # as questionnaire-item style columns.
+    "min_repeated_prefix_count": 3,
+    # Known participant keywords used for lightweight semantic matching.
+    "participant_keywords": _PARTICIPANT_RELEVANT_KEYWORDS,
+}
+
+
+def _merge_participant_filter_config(overrides: dict | None) -> dict:
+    merged = {
+        "min_repeated_prefix_count": int(
+            _PARTICIPANT_FILTER_CONFIG.get("min_repeated_prefix_count", 3)
+        ),
+        "participant_keywords": {
+            str(k).lower()
+            for k in _PARTICIPANT_FILTER_CONFIG.get(
+                "participant_keywords", _PARTICIPANT_RELEVANT_KEYWORDS
+            )
+        },
+    }
+
+    if not isinstance(overrides, dict):
+        return merged
+
+    min_count = overrides.get(
+        "minRepeatedPrefixCount",
+        overrides.get("min_repeated_prefix_count"),
+    )
+    if isinstance(min_count, int) and min_count > 0:
+        merged["min_repeated_prefix_count"] = min_count
+
+    keywords = overrides.get("participantKeywords", overrides.get("participant_keywords"))
+    if isinstance(keywords, (list, tuple, set)):
+        cleaned = {
+            str(k).lower().strip() for k in keywords if str(k).strip()
+        }
+        if cleaned:
+            merged["participant_keywords"] = cleaned
+
+    return merged
+
+
+def _load_project_participant_filter_config(project_path: str | Path | None) -> dict:
+    default_config = _merge_participant_filter_config(None)
+    if not project_path:
+        return default_config
+
+    try:
+        from src.config import load_config
+
+        project_root = Path(project_path).expanduser().resolve()
+        if project_root.is_file():
+            project_root = project_root.parent
+
+        prism_config = load_config(str(project_root))
+        overrides = getattr(prism_config, "neurobagel_participant_filter", {})
+        return _merge_participant_filter_config(overrides)
+    except Exception:
+        return default_config
+
+
+def _normalize_column_name(name: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", str(name).lower().strip())
+
+
+def _load_participant_template_columns(library_path: Path | str | None) -> set[str]:
+    if not library_path:
+        return set()
+
+    root = Path(library_path)
+    for candidate in participant_json_candidates(root):
+        if not candidate.exists() or not candidate.is_file():
+            continue
+        try:
+            with open(candidate, "r", encoding="utf-8") as f:
+                template = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+
+        if isinstance(template, dict) and isinstance(template.get("Columns"), dict):
+            template = template["Columns"]
+        if not isinstance(template, dict):
+            continue
+
+        return {
+            _normalize_column_name(key)
+            for key in template.keys()
+            if isinstance(key, str)
+        }
+
+    return set()
+
+
+def _load_survey_template_item_ids(library_path: Path | str | None) -> set[str]:
+    if not library_path:
+        return set()
+
+    root = Path(library_path)
+    survey_root = root / "survey" if (root / "survey").is_dir() else root
+    if not survey_root.exists() or not survey_root.is_dir():
+        return set()
+
+    item_ids: set[str] = set()
+    for survey_json in survey_root.glob("survey-*.json"):
+        try:
+            with open(survey_json, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+
+        if not isinstance(payload, dict):
+            continue
+
+        for key, value in payload.items():
+            if key in _NON_ITEM_TOPLEVEL_KEYS or key.startswith("_"):
+                continue
+            if isinstance(value, dict):
+                item_ids.add(_normalize_column_name(key))
+
+    return item_ids
+
+
+def _detect_repeated_questionnaire_prefixes(
+    columns: list[str], participant_filter_config: dict | None = None
+) -> set[str]:
+    counts: dict[str, int] = {}
+    effective_config = _merge_participant_filter_config(participant_filter_config)
+    min_count = int(effective_config.get("min_repeated_prefix_count", 3))
+    for col in columns:
+        match = re.match(r"^([A-Za-z]{2,})[_-]?\d{1,4}$", str(col).strip())
+        if not match:
+            continue
+        prefix = match.group(1).lower()
+        counts[prefix] = counts.get(prefix, 0) + 1
+    return {prefix for prefix, count in counts.items() if count >= min_count}
+
+
+def _is_likely_questionnaire_column(
+    col_name: str,
+    normalized_name: str,
+    survey_item_ids: set[str],
+    repeated_prefixes: set[str],
+) -> bool:
+    if normalized_name in survey_item_ids:
+        return True
+
+    match = re.match(r"^([A-Za-z]{2,})[_-]?\d{1,4}$", str(col_name).strip())
+    if match and match.group(1).lower() in repeated_prefixes:
+        return True
+
+    return False
+
+
+def _filter_participant_relevant_columns(
+    df,
+    id_column: str,
+    library_path: Path | str | None,
+    neurobagel_keys: set[str] | None = None,
+    participant_filter_config: dict | None = None,
+) -> list[str]:
+    if df is None or getattr(df, "empty", True):
+        return []
+
+    template_columns = _load_participant_template_columns(library_path)
+    survey_item_ids = _load_survey_template_item_ids(library_path)
+    repeated_prefixes = _detect_repeated_questionnaire_prefixes(
+        [str(c) for c in df.columns],
+        participant_filter_config=participant_filter_config,
+    )
+    effective_config = _merge_participant_filter_config(participant_filter_config)
+    participant_keywords = {
+        str(k).lower().strip()
+        for k in effective_config.get(
+            "participant_keywords", _PARTICIPANT_RELEVANT_KEYWORDS
+        )
+        if str(k).strip()
+    }
+    normalized_nb_keys = {
+        _normalize_column_name(key)
+        for key in (neurobagel_keys or _DEFAULT_NEUROBAGEL_KEYS)
+    }
+
+    selected: list[str] = []
+    for col in df.columns:
+        col_str = str(col)
+        normalized = _normalize_column_name(col_str)
+
+        if col_str == id_column:
+            selected.append(col_str)
+            continue
+
+        in_template = normalized in template_columns
+        nb_match = any(
+            nb_key in normalized or normalized in nb_key
+            for nb_key in normalized_nb_keys
+            if nb_key and normalized
+        )
+        keyword_match = any(keyword in normalized for keyword in participant_keywords)
+
+        if not (in_template or nb_match or keyword_match):
+            continue
+
+        if not in_template and _is_likely_questionnaire_column(
+            col_str, normalized, survey_item_ids, repeated_prefixes
+        ):
+            continue
+
+        selected.append(col_str)
+
+    if id_column in df.columns and id_column not in selected:
+        selected.insert(0, id_column)
+
+    if len(selected) <= 1:
+        fallback = [id_column] if id_column in df.columns else []
+        for col in df.columns:
+            col_str = str(col)
+            if col_str == id_column:
+                continue
+            normalized = _normalize_column_name(col_str)
+            if _is_likely_questionnaire_column(
+                col_str, normalized, survey_item_ids, repeated_prefixes
+            ):
+                continue
+            fallback.append(col_str)
+        return fallback if fallback else list(df.columns)
+
+    return selected
+
+
+def _generate_neurobagel_schema(
+    df,
+    id_column,
+    library_path=None,
+    participant_filter_config: dict | None = None,
+):
     """
     Generate NeuroBagel-compliant participants.json schema from DataFrame.
     Auto-detects data types, standard variables, and suggests annotations.
@@ -436,10 +705,26 @@ def _generate_neurobagel_schema(df, id_column):
         "sub": {"term": "nb:ParticipantID", "label": "Subject ID", "type": "string"},
     }
 
+    normalized_vocab = {
+        _normalize_column_name(key): vocab for key, vocab in NEUROBAGEL_VOCAB.items()
+    }
+
+    selected_columns = _filter_participant_relevant_columns(
+        df,
+        id_column=id_column,
+        library_path=library_path,
+        neurobagel_keys=set(NEUROBAGEL_VOCAB.keys()),
+        participant_filter_config=participant_filter_config,
+    )
+
+    if selected_columns:
+        df = df[selected_columns]
+
     schema = {}
 
     for col in df.columns:
         col_lower = str(col).lower().strip()
+        col_normalized = _normalize_column_name(col)
         col_data = df[col].dropna()
 
         # Start with basic structure
@@ -447,8 +732,8 @@ def _generate_neurobagel_schema(df, id_column):
 
         # Check if column matches NeuroBagel vocabulary
         neurobagel_match = None
-        for key, vocab in NEUROBAGEL_VOCAB.items():
-            if key in col_lower or col_lower in key:
+        for key_normalized, vocab in normalized_vocab.items():
+            if key_normalized in col_normalized or col_normalized in key_normalized:
                 neurobagel_match = vocab
                 break
 
@@ -3006,6 +3291,9 @@ def api_participants_preview():
 
             # Get library path for participants.json
             library_path = _resolve_effective_library_path()
+            participant_filter_config = _load_project_participant_filter_config(
+                session.get("current_project_path")
+            )
 
             # SIMULATE CONVERSION: Show what the OUTPUT will look like
             # Check if participants.json exists in library to determine expected schema
@@ -3039,11 +3327,22 @@ def api_participants_preview():
 
             # If still empty (no matching columns), show a limited set from source
             if len(output_columns) <= 1:
-                # Show all columns but warn it's raw
-                output_df = df[list(df.columns)]
-                simulation_note = (
-                    "No participants.json schema found. Showing raw file structure."
+                filtered_columns = _filter_participant_relevant_columns(
+                    df,
+                    id_column=id_column,
+                    library_path=library_path,
+                    participant_filter_config=participant_filter_config,
                 )
+                if len(filtered_columns) > 1:
+                    output_df = df[filtered_columns]
+                    simulation_note = (
+                        "No participants.json schema found. Applied smart participant-variable filtering."
+                    )
+                else:
+                    output_df = df[list(df.columns)]
+                    simulation_note = (
+                        "No participants.json schema found. Showing raw file structure."
+                    )
             else:
                 # Show only the columns that will be in participants.tsv
                 output_df = df[output_columns]
@@ -3055,7 +3354,12 @@ def api_participants_preview():
             preview_df = output_df.head(20)
 
             # NEUROBAGEL INTEGRATION: Generate suggested participants.json with annotations
-            neurobagel_schema = _generate_neurobagel_schema(output_df, id_column)
+            neurobagel_schema = _generate_neurobagel_schema(
+                output_df,
+                id_column,
+                library_path=library_path,
+                participant_filter_config=participant_filter_config,
+            )
 
             return jsonify(
                 {
