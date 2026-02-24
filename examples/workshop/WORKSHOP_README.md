@@ -90,6 +90,8 @@ Use this screenshot at the start of the workshop to orient users:
 
 Use these screenshots for each exercise step:
 
+If the UI layout in your build differs, regenerate screenshots using [docs/workshop/SCREENSHOTS_QUICK_START.md](../../docs/workshop/SCREENSHOTS_QUICK_START.md).
+
 - Exercise 0 (Project Setup)  
 	![Exercise 0 - Project Setup](../../docs/_static/screenshots/prism-studio-exercise-0-project-setup-light.png)
 - Exercise 1 (Data Conversion)  
@@ -114,7 +116,7 @@ Locate and run **`Prism.exe`** in your workshop folder.
 If you are running from source:
 ```bash
 source .venv/bin/activate
-python prism-studio.py
+./prism-studio.py
 ```
 
 Open browser to: **http://localhost:5001**

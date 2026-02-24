@@ -1,9 +1,9 @@
-# Exercise 0: Project Setup (Metadata First)
+# Exercise 0: Project Setup
 
 **Time:** 15 minutes  
 **Goal:** Initialize your PRISM project and adopt a metadata-first workflow so your dataset is complete, reusable, and analysis-ready.
 
-![Exercise 0 UI (Light Mode)](../../../docs/_static/screenshots/prism-studio-exercise-0-project-setup-light.png)
+![Project Setup)](../../../docs/_static/screenshots/prism-studio-exercise-0-project-setup-light.png)
 
 ---
 
@@ -38,32 +38,29 @@ Good metadata now means easier validation, easier scoring, and cleaner exports l
 3. A terminal window will open—keep this open! It runs the backend server.
 4. Your default web browser should open automatically to **http://localhost:5001**.
 
-### Manual Launch (if browser doesn't open)
-1. Open your web browser (Chrome or Edge recommended).
-2. Go to: **http://localhost:5001**
-
-### If You See a Converter Error Here
-Exercise 0 only uses the **Projects** page. If you see an error like:
-**"No survey item columns matched the selected templates"**, you are in the converter tool too early.
-
-Go back to **Projects** and finish this setup exercise first.
-
----
-
 ## Your Task: Create a Project Ready for Complete Metadata
 
 Before conversion and validation, we need a project workspace where metadata files will be created and maintained.
 
 ### Step 1: Go to Projects
-1. In the sidebar or top navigation, click on **"Projects"**.
-2. Alternatively, go directly to: **http://localhost:5001/projects**
+In the sidebar or top navigation, click on **"Projects"**.
 
 ### Step 2: Create a New Project
 1. Look for the **"Create New Project"** section.
 2. **Project Name:** Enter `Wellbeing_Study_Workshop`.
 3. **Location:** Choose a folder on your computer where you want to store your data (e.g., your Desktop or a dedicated `workshop_results` folder).
 4. **Template:** Select **"YODA Structure"** (if available) to automatically create proper folders.
-5. Click **"Create & Activate"**.
+
+### Step 2a (Required): Complete Study Metadata First
+
+Before PRISM enables project creation, you **must fill out all mandatory Study Metadata fields**.
+
+- In the **"Study Metadata"** panel, complete every required field until the progress shows complete.
+- If you still see a button like **"Complete Study Metadata (13 fields missing)"**, do **not** continue yet.
+- Only proceed once missing fields are resolved.
+
+### Step 2b: Create & Activate
+5. After all 13 metadata fields are completed, click **"Create & Activate"**.
 
 ### Step 3: Explore Your Project Structure
 Your new project should have this structure:
@@ -92,6 +89,7 @@ Wellbeing_Study_Workshop/
 ### Step 5: Metadata Completeness Checklist (Important)
 Use this checklist throughout the workshop:
 
+- [ ] All 13 Study Metadata fields were filled before project creation
 - [ ] `dataset_description.json` exists and is filled
 - [ ] `participants.tsv` exists and required columns are present
 - [ ] Each data `.tsv` has a matching `.json` sidecar
@@ -129,3 +127,25 @@ This structure supports reproducibility, but in this workshop the priority is st
 Now that your project is ready, let's bring in data and fill metadata properly from the beginning.
 
 **Ready for Exercise 1?** → Go to `../exercise_1_raw_data/`
+
+---
+
+### Apendix: Running from Source 
+
+**macOS/Linux**
+```bash
+source .venv/bin/activate
+./prism-studio.py
+```
+
+**Windows (PowerShell)**
+```powershell
+.\.venv\Scripts\Activate.ps1
+python prism-studio.py
+```
+
+### Manual Launch (if browser doesn't open)
+1. Open your web browser (Chrome or Edge recommended).
+2. Go to: **http://localhost:5001**
+
+---

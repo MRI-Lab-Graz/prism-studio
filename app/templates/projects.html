@@ -2116,6 +2116,12 @@
     
     // ===== END MANDATORY METADATA VALIDATION =====
 
+    // Helper to convert textarea newlines to array
+    function _textToArray(val) {
+        if (!val) return undefined;
+        return val.split('\n').map(s => s.trim()).filter(s => s);
+    }
+
     // Create Project Form
     document.getElementById('createProjectForm').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -2158,7 +2164,61 @@
             funding: document.getElementById('metadataFunding').value.split(',').map(s => s.trim()).filter(s => s),
             references_and_links: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
             hed_version: document.getElementById('metadataHED').value.trim(),
-            dataset_type: document.getElementById('metadataType').value
+            dataset_type: document.getElementById('metadataType').value,
+            // Study metadata sections (persist directly into project.json at creation time)
+            Overview: {
+                Main: document.getElementById('smOverviewMain').value || undefined,
+                IndependentVariables: document.getElementById('smOverviewIV').value || undefined,
+                DependentVariables: document.getElementById('smOverviewDV').value || undefined,
+                ControlVariables: document.getElementById('smOverviewCV').value || undefined,
+                QualityAssessment: document.getElementById('smOverviewQA').value || undefined,
+            },
+            StudyDesign: {
+                Type: document.getElementById('smSDType').value || undefined,
+                TypeDescription: document.getElementById('smSDTypeDesc').value || undefined,
+                Blinding: document.getElementById('smSDBlinding').value || undefined,
+                Randomization: document.getElementById('smSDRandomization').value || undefined,
+                ControlCondition: document.getElementById('smSDControl').value || undefined,
+            },
+            Conditions: {
+                Type: document.getElementById('smSDConditionType').value || undefined,
+            },
+            Recruitment: {
+                Method: (function() {
+                    const list = getRecMethodList();
+                    return list.length ? list : undefined;
+                })(),
+                Location: (function() {
+                    const list = getRecLocationList();
+                    return list.length ? list : undefined;
+                })(),
+                Period: {
+                    Start: getYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth') || undefined,
+                    End: getYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth') || undefined,
+                },
+                Compensation: document.getElementById('smRecCompensation').value || undefined,
+            },
+            Eligibility: {
+                InclusionCriteria: _textToArray(document.getElementById('smEligInclusion').value) || undefined,
+                ExclusionCriteria: _textToArray(document.getElementById('smEligExclusion').value) || undefined,
+                TargetSampleSize: parseInt(document.getElementById('smEligSampleSize').value) || undefined,
+                PowerAnalysis: document.getElementById('smEligPower').value || undefined,
+            },
+            Procedure: {
+                Overview: document.getElementById('smProcOverview').value || undefined,
+                InformedConsent: document.getElementById('smProcConsent').value || undefined,
+                QualityControl: _textToArray(document.getElementById('smProcQC').value) || undefined,
+                MissingDataHandling: document.getElementById('smProcMissing').value || undefined,
+                Debriefing: document.getElementById('smProcDebriefing').value || undefined,
+                AdditionalData: document.getElementById('smProcAdditionalData').value || undefined,
+                Notes: document.getElementById('smProcNotes').value || undefined,
+            },
+            MissingData: {
+                Description: document.getElementById('smMissingDesc').value || undefined,
+                MissingFiles: document.getElementById('smMissingFiles').value || undefined,
+                KnownIssues: document.getElementById('smKnownIssues').value || undefined,
+            },
+            References: document.getElementById('smReferences').value || undefined
         };
 
         try {
