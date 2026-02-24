@@ -835,7 +835,7 @@ def _generate_recipes_boilerplate_sections(
     if lang == "de":
         sections.append("## Datenstandardisierung und Validierung\n")
         sections.append(
-            "Die Daten wurden nach dem PRISM-Standard (Psychological Research Information System & Metadata) organisiert und validiert. "
+            "Die Daten wurden nach dem PRISM-Standard (Psychological Research Information System & Management) organisiert und validiert. "
             "Dieser Standard erweitert die Brain Imaging Data Structure (BIDS) auf die psychologische Forschung. "
             "Die Datenverarbeitung und Berechnung der Scores erfolgte automatisiert mit dem PRISM-System, "
             "wobei die in den JSON-Rezepten definierten Scoring-Logiken angewendet wurden.\n"
@@ -843,7 +843,7 @@ def _generate_recipes_boilerplate_sections(
     else:
         sections.append("## Data Standardization and Validation\n")
         sections.append(
-            "Data were organized and validated according to the PRISM (Psychological Research Information System & Metadata) "
+            "Data were organized and validated according to the PRISM (Psychological Research Information System & Management) "
             "standard, which extends the Brain Imaging Data Structure (BIDS) to psychological research. "
             "Data processing and score calculation were performed automatically using the PRISM system, "
             "applying the scoring logic defined in machine-readable JSON recipes.\n"

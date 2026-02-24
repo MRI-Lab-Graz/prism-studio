@@ -6,7 +6,7 @@
 1. Go to https://about.signpath.io/product/open-source
 2. Fill out the form:
    - **Project URL**: https://github.com/yourusername/psycho-validator
-   - **Project Description**: "PRISM - Psychological Research Information Standard for Metadata. A validation tool for psychological research datasets."
+   - **Project Description**: "PRISM - Psychological Research Information System & Management. A validation tool for psychological research datasets."
    - **License**: (Your license, e.g., MIT)
 3. Submit and wait for approval email (usually 1-2 business days)
 

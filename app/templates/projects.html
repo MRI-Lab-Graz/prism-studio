@@ -45,24 +45,6 @@
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
     }
-    .modality-checkbox {
-        padding: 10px 15px;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        margin-bottom: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    .modality-checkbox:hover {
-        background-color: #f8f9fa;
-    }
-    .modality-checkbox input:checked + label {
-        font-weight: 600;
-    }
-    .modality-checkbox input:checked ~ .modality-checkbox {
-        border-color: #0d6efd;
-        background-color: #e7f1ff;
-    }
     .validation-result {
         padding: 20px;
         border-radius: 8px;
@@ -131,9 +113,6 @@
     .section-completeness-row .section-badge {
         font-size: 0.75rem;
     }
-    .sm-field-required::after { content: ' *'; color: #dc3545; font-weight: bold; }
-    .condition-group-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-    .condition-group-row input { flex: 1; }
     .sm-hint-badge { transition: opacity 0.2s; }
     .sm-hint-badge:hover { opacity: 0.8; }
 </style>
@@ -222,78 +201,33 @@
                             </div>
                         </div>
 
-                        <!-- Modern BIDS Metadata Section -->
                         <div class="col-12 mt-3">
-                            <button class="btn btn-sm btn-outline-secondary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#advancedMetadata" aria-expanded="false" aria-controls="advancedMetadata">
-                                <i class="fas fa-plus-circle me-1"></i> Add BIDS Dataset Metadata (Authors, License, DOI...)
-                            </button>
-                            
-                            <div class="collapse" id="advancedMetadata">
-                                <div class="card card-body bg-light border-0">
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label for="projectAuthors" class="form-label fw-bold">Authors</label>
-                                            <textarea class="form-control" id="projectAuthors" rows="2" placeholder="e.g. Paul Broca, Carl Wernicke"></textarea>
-                                            <small class="text-muted">Comma-separated list. At least one author required.</small>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectLicense" class="form-label fw-bold">License</label>
-                                            <select class="form-select" id="projectLicense">
-                                                <option value="CC0">CC0 (Public Domain)</option>
-                                                <option value="CC BY 4.0">CC BY 4.0</option>
-                                                <option value="CC BY-SA 4.0">CC BY-SA 4.0</option>
-                                                <option value="ODbL 1.0">Open Database License (ODbL)</option>
-                                                <option value="PDDL 1.0">Public Domain Dedication and License (PDDL)</option>
-                                                <option value="other">Other/Proprietary</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectDOI" class="form-label fw-bold">Dataset DOI</label>
-                                            <input type="text" class="form-control" id="projectDOI" placeholder="e.g. doi:10.18112/openneuro.ds000114.v1.0.1">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectKeywords" class="form-label fw-bold">Keywords</label>
-                                            <input type="text" class="form-control" id="projectKeywords" placeholder="e.g. psychology, dance, prism">
-                                            <small class="text-muted">Comma-separated. At least 3 keywords required for FAIR compliance.</small>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectAcknowledgements" class="form-label fw-bold">Acknowledgements</label>
-                                            <textarea class="form-control" id="projectAcknowledgements" rows="2" placeholder="Who helped with this dataset?"></textarea>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectEthics" class="form-label fw-bold">Ethics Approvals</label>
-                                            <input type="text" class="form-control" id="projectEthics" placeholder="Ethics committee/protocol identifiers">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectFunding" class="form-label fw-bold">Funding</label>
-                                            <input type="text" class="form-control" id="projectFunding" placeholder="Grant numbers, agencies...">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectType" class="form-label fw-bold">Dataset Type</label>
-                                            <select class="form-select" id="projectType">
-                                                <option value="raw" selected>raw</option>
-                                                <option value="derivative">derivative</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="projectHED" class="form-label fw-bold">HED Version</label>
-                                            <input type="text" class="form-control" id="projectHED" placeholder="8.2.0">
-                                        </div>
-                                        <div class="col-md-12">
-                                            <label for="projectDescription" class="form-label fw-bold">Dataset Description</label>
-                                            <textarea class="form-control" id="projectDescription" rows="2" placeholder="Scientific description..."></textarea>
-                                            <small class="text-muted">Saved to <code>rawdata/dataset_description.json</code> (BIDS). Minimum 50 characters requested for FAIR compliance.</small>
-                                        </div>
-                                        <div class="col-md-12">
-                                            <label for="projectHowToAcknowledge" class="form-label fw-bold">How to Acknowledge</label>
-                                            <textarea class="form-control" id="projectHowToAcknowledge" rows="2" placeholder="Instructions on how to acknowledge this dataset..."></textarea>
-                                        </div>
-                                        <div class="col-md-12">
-                                            <label for="projectReferences" class="form-label fw-bold">References and Links</label>
-                                            <textarea class="form-control" id="projectReferences" rows="2" placeholder="URLs or DOIs related to the dataset..."></textarea>
-                                        </div>
+                            <div class="alert alert-info border-0 bg-info bg-opacity-10 mb-0">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <strong>Recommended Before Creating:</strong> Fill in the fields below (marked <span class="badge bg-danger">REQUIRED</span> or <span class="badge bg-warning text-dark">RECOMMENDED</span>) to ensure your dataset is BIDS-compliant and well-documented. <strong>You can create without them</strong>, but your dataset will be incomplete.
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <strong class="small">BIDS Basics:</strong>
+                                        <ul class="mb-1 small">
+                                            <li><span class="badge bg-danger">REQUIRED</span> Dataset Name</li>
+                                            <li><span class="badge bg-secondary">OPTIONAL</span> Authors</li>
+                                            <li><span class="badge bg-warning text-dark">RECOMMENDED</span> License</li>
+                                        </ul>
+                                        <strong class="small">Study Design:</strong>
+                                        <ul class="mb-1 small">
+                                            <li>Study Design Type</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong class="small">Methods Context:</strong>
+                                        <ul class="mb-1 small">
+                                            <li>Dataset Overview</li>
+                                            <li>Recruitment Method & Locations</li>
+                                            <li>Inclusion/Exclusion Criteria</li>
+                                        </ul>
                                     </div>
                                 </div>
+                                <small class="text-muted mt-2 d-block"><i class="fas fa-info-circle me-1"></i>See badges in each field for details. Only <span class="badge bg-danger">REQUIRED</span> fields must be filled for BIDS compliance.</small>
                             </div>
                         </div>
 
@@ -357,118 +291,6 @@
         </div>
     </div>
 
-    <!-- Dataset Description Card -->
-    <div class="card shadow-sm mt-4" id="projectMetadataCard" style="display: none;">
-        <div class="card-header bg-primary bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#datasetDescriptionSection"
-             role="button" aria-expanded="false" aria-controls="datasetDescriptionSection">
-            <h5 class="mb-0 d-flex justify-content-between align-items-center">
-                <span><i class="fas fa-tags text-primary me-2"></i>Dataset Description</span>
-                <div>
-                    <span class="badge bg-primary me-2">v1.10.1</span>
-                    <i class="fas fa-chevron-down text-muted" id="datasetDescriptionChevron"></i>
-                </div>
-            </h5>
-        </div>
-        <div class="collapse" id="datasetDescriptionSection">
-        <div class="card-body">
-            <!-- Metadata Validation Feedback -->
-            <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
-            <div class="alert alert-info border-0 bg-info bg-opacity-10">
-                <i class="fas fa-info-circle me-2"></i>
-                This section edits <code>rawdata/dataset_description.json</code> and must remain BIDS-valid.
-                Project-level governance metadata is stored at the root (<code>project.json</code>, <code>contributors.json</code>, <code>CITATION.cff</code>).
-            </div>
-            
-            <form id="projectMetadataForm">
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Name</label>
-                        <input type="text" class="form-control" id="metadataName" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Authors (comma separated)</label>
-                        <input type="text" class="form-control" id="metadataAuthors" placeholder="Author 1, Author 2">
-                        <small class="text-muted">At least one author required.</small>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">License</label>
-                        <select class="form-select" id="metadataLicense">
-                            <option value="">Select a license...</option>
-                            <option value="CC0">CC0 (Public Domain)</option>
-                            <option value="CC BY 4.0">CC BY 4.0</option>
-                            <option value="CC BY-SA 4.0">CC BY-SA 4.0</option>
-                            <option value="CC BY-NC 4.0">CC BY-NC 4.0</option>
-                            <option value="CC BY-NC-SA 4.0">CC BY-NC-SA 4.0</option>
-                            <option value="ODbL 1.0">Open Database License (ODbL)</option>
-                            <option value="PDDL 1.0">Public Domain Dedication and License (PDDL)</option>
-                            <option value="Other">Other/Proprietary</option>
-                        </select>
-                    </div>
-                    <div class="col-md-12">
-                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Acknowledgements</label>
-                        <textarea class="form-control" id="metadataAcknowledgements" rows="2" placeholder="Funding, grants, people to thank..."></textarea>
-                    </div>
-                    <div class="col-md-12">
-                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Description</label>
-                        <textarea class="form-control" id="metadataDescription" rows="3" placeholder="Detailed scientific description of the study..."></textarea>
-                        <small class="text-muted">Minimum 50 characters required for FAIR compliance.</small>
-                    </div>
-                    <div class="col-md-12">
-                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-bs-toggle="collapse" data-bs-target="#metadataAdvanced">
-                            <i class="fas fa-chevron-down me-1"></i>More Fields (DOI, Ethics, Keywords...)
-                        </button>
-                        <div class="collapse mt-2" id="metadataAdvanced">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset DOI</label>
-                                    <input type="text" class="form-control" id="metadataDOI" placeholder="10.5281/zenodo.1234567">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Dataset Type</label>
-                                    <select class="form-select" id="metadataType">
-                                        <option value="raw">raw</option>
-                                        <option value="derivative">derivative</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Ethics Approvals (comma separated)</label>
-                                    <input type="text" class="form-control" id="metadataEthics" placeholder="Ethics Committee A, Ref 123">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">HED Version</label>
-                                    <input type="text" class="form-control" id="metadataHED" placeholder="8.2.0">
-                                </div>
-                                <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Keywords (comma separated)</label>
-                                    <input type="text" class="form-control" id="metadataKeywords" placeholder="psychology, experiment, PRISM">
-                                    <small class="text-muted">At least 3 keywords required for FAIR compliance.</small>
-                                </div>
-                                <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">Funding (comma separated)</label>
-                                    <input type="text" class="form-control" id="metadataFunding" placeholder="Grant agency 1, Grant number 2">
-                                </div>
-                                <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">How to Acknowledge</label>
-                                    <textarea class="form-control" id="metadataHowToAcknowledge" rows="2" placeholder="Please cite the following paper..."></textarea>
-                                </div>
-                                <div class="col-md-12">
-                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">References and Links (comma separated)</label>
-                                    <textarea class="form-control" id="metadataReferences" rows="2" placeholder="https://doi.org/..., https://example.com/..."></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-3 text-end">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i>Save Changes
-                    </button>
-                </div>
-            </form>
-        </div>
-        </div>
-    </div>
-
     <!-- Study Metadata Card -->
     <div class="card shadow-sm mt-4" id="studyMetadataCard" style="display: none;">
         <div class="card-header bg-info bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#studyMetadataSection"
@@ -500,10 +322,204 @@
 
             <div class="alert alert-info border-0 bg-info bg-opacity-10 py-2 mb-3">
                 <i class="fas fa-info-circle me-2"></i>
-                This edits study-level fields in <code>project.json</code>. Dataset description fields are in the card above.
+                This edits study methodology in <code>project.json</code> and dataset description in <code>rawdata/dataset_description.json</code>. 
+                Saving this form auto-generates an ANC-compliant README from this metadata.
             </div>
 
             <form id="studyMetadataForm">
+                <!-- Basics (BIDS) Section -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smBasics">
+                        <i class="fas fa-tags me-1"></i> Basics (BIDS)
+                        <span class="float-end" id="smBasicsBadge"></span>
+                    </button>
+                    <div class="collapse show" id="smBasics">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <!-- Metadata Validation Feedback -->
+                            <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
+                            <div class="alert alert-info border-0 bg-info bg-opacity-10">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>BIDS Compliance:</strong> This edits <code>dataset_description.json</code> (BIDS standard).
+                                Syncs to <code>CITATION.cff</code>. Legend:
+                                <span class="badge bg-danger">REQUIRED</span>
+                                <span class="badge bg-warning text-dark">RECOMMENDED</span>
+                                <span class="badge bg-secondary">OPTIONAL</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-danger">REQUIRED</span> Dataset Name
+                                    </label>
+                                    <input type="text" class="form-control form-control-sm" id="metadataName" required>
+                                    <small class="text-muted">BIDS: Name field. Also used in CITATION.cff.</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-secondary">OPTIONAL</span> Authors
+                                    </label>
+                                    <div id="metadataAuthorsList" class="d-flex flex-column gap-2"></div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addAuthorRow">
+                                        <i class="fas fa-user-plus me-1"></i>Add Author
+                                    </button>
+                                    <small class="text-muted d-block">If CITATION.cff exists, omitted per BIDS spec (use CITATION.cff authors instead).</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-warning text-dark">RECOMMENDED</span> License
+                                    </label>
+                                    <select class="form-select form-select-sm" id="metadataLicense">
+                                        <option value="">Select a license...</option>
+                                        <option value="CC0">CC0 (Public Domain)</option>
+                                        <option value="CC BY 4.0">CC BY 4.0</option>
+                                        <option value="CC BY-SA 4.0">CC BY-SA 4.0</option>
+                                        <option value="CC BY-NC 4.0">CC BY-NC 4.0</option>
+                                        <option value="CC BY-NC-SA 4.0">CC BY-NC-SA 4.0</option>
+                                        <option value="ODbL 1.0">Open Database License (ODbL)</option>
+                                        <option value="PDDL 1.0">Public Domain Dedication and License (PDDL)</option>
+                                        <option value="Other">Other/Proprietary</option>
+                                    </select>
+                                    <small class="text-muted">If CITATION.cff exists, omitted from dataset_description.json.</small>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-secondary">OPTIONAL</span> Acknowledgements
+                                    </label>
+                                    <textarea class="form-control form-control-sm" id="metadataAcknowledgements" rows="2" placeholder="Funding, grants, people to thank..."></textarea>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="mt-3 pt-3 border-top">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> Dataset DOI
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm" id="metadataDOI" placeholder="10.5281/zenodo.1234567">
+                                                <small class="text-muted">Syncs to CITATION.cff. Use valid URI format.</small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-warning text-dark">RECOMMENDED</span> Dataset Type
+                                                </label>
+                                                <select class="form-select form-select-sm" id="metadataType">
+                                                    <option value="raw" selected>raw</option>
+                                                    <option value="derivative">derivative</option>
+                                                    <option value="study">study</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> Ethics Approvals
+                                                </label>
+                                                <div class="mb-2">
+                                                    <input type="hidden" id="metadataEthicsApproved" value="no">
+                                                    <div class="btn-group btn-group-sm" role="group" aria-label="Ethics approvals">
+                                                        <button type="button" class="btn btn-outline-primary" id="metadataEthicsYes" onclick="setEthicsChoice('yes')">Yes</button>
+                                                        <button type="button" class="btn btn-primary" id="metadataEthicsNo" onclick="setEthicsChoice('no')">No</button>
+                                                    </div>
+                                                </div>
+                                                <div id="ethicsDetailsSection" style="display: none; margin-top: 12px;">
+                                                    <div class="row g-2">
+                                                        <div class="col-md-6">
+                                                            <input type="text" class="form-control form-control-sm" id="metadataEthicsCommittee" placeholder="Ethics Committee Name" required>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <input type="text" class="form-control form-control-sm" id="metadataEthicsVotum" placeholder="Votum Number/Reference" required>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <small class="text-muted">Format: Committee name, Reference number</small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-warning text-dark">RECOMMENDED</span> HED Version
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm" id="metadataHED" placeholder="8.2.0">
+                                                <small class="text-muted">If HED tags are used in your data.</small>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-warning text-dark">RECOMMENDED</span> Keywords (comma-separated)
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm" id="metadataKeywords" placeholder="psychology, experiment, PRISM">
+                                                <small class="text-muted">PRISM recommends at least 3 keywords for FAIR compliance and discoverability.</small>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> Funding
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm" id="metadataFunding" placeholder="National Science Foundation (NSF) Grant #1234567, Other funding sources">
+                                                <small class="text-muted">Grant agency and numbers separated by commas.</small>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> How to Acknowledge
+                                                </label>
+                                                <textarea class="form-control form-control-sm" id="metadataHowToAcknowledge" rows="2" placeholder="Please cite the following paper..."></textarea>
+                                                <small class="text-muted">Stored in CITATION.cff. Omitted from dataset_description.json if CITATION.cff exists (per BIDS spec).</small>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> References &amp; Links
+                                                </label>
+                                                <textarea class="form-control form-control-sm" id="metadataReferences" rows="2" placeholder="https://doi.org/..., https://example.com/..."></textarea>
+                                                <small class="text-muted">URLs or citations separated by commas. Stored in CITATION.cff. Omitted from dataset_description.json if CITATION.cff exists (per BIDS spec).</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overview Section -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smOverview">
+                        <i class="fas fa-file-alt me-1"></i> Overview
+                        <span class="float-end" id="smOverviewBadge"></span>
+                    </button>
+                    <div class="collapse show" id="smOverview">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Dataset Overview
+                                    </label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewMain" rows="4"
+                                              placeholder="A brief paragraph describing the goals, purpose, and unique value of this dataset..."></textarea>
+                                    <small class="text-muted">Include: Why was this dataset created? What makes it unique and valuable?</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Independent Variables</label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewIV" rows="3"
+                                              placeholder="One per line (e.g., pleasant vs. unpleasant images)"></textarea>
+                                    <small class="text-muted">Condition variables that were manipulated</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Dependent Variables</label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewDV" rows="3"
+                                              placeholder="One per line (e.g., reaction times, BOLD signal)"></textarea>
+                                    <small class="text-muted">Response variables that were measured</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Control Variables</label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewCV" rows="3"
+                                              placeholder="One per line (e.g., age, sex, reading performance)"></textarea>
+                                    <small class="text-muted">Aspects that were explicitly controlled</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Quality Assessment</label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewQA" rows="3"
+                                              placeholder="Link to quality report or brief quality notes"></textarea>
+                                    <small class="text-muted">Reference to quality control measures</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Study Design -->
                 <div class="mb-3">
                     <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
@@ -514,8 +530,10 @@
                     <div class="collapse show" id="smStudyDesign">
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small sm-field-required">Study Design Type</label>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Study Design Type
+                                    </label>
                                     <select class="form-select form-select-sm" id="smSDType" onchange="toggleExperimentalFields()">
                                         <option value="">-- Select --</option>
                                         <option value="cross-sectional">Cross-sectional</option>
@@ -529,7 +547,16 @@
                                         <option value="other">Other</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small">Condition Type</label>
+                                    <select class="form-select form-select-sm" id="smSDConditionType">
+                                        <option value="">-- N/A --</option>
+                                        <option value="between-subjects">Between-subjects</option>
+                                        <option value="within-subjects">Within-subjects</option>
+                                        <option value="mixed">Mixed</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
                                     <label class="form-label fw-bold small">Type Description</label>
                                     <input type="text" class="form-control form-control-sm" id="smSDTypeDesc"
                                            placeholder="e.g. 2x2 factorial design">
@@ -574,34 +601,61 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small sm-field-required">Method</label>
-                                    <input type="text" class="form-control form-control-sm" id="smRecMethod"
-                                           placeholder="e.g. Online ads and university mailing lists">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Method
+                                    </label>
+                                    <select class="form-select form-select-sm" id="smRecMethod" multiple>
+                                        <option value="">-- Select --</option>
+                                        <option value="online-ads">Online ads</option>
+                                        <option value="email-lists">University mailing lists</option>
+                                        <option value="participant-pool">Participant pool</option>
+                                        <option value="clinical-referral">Clinical referral</option>
+                                        <option value="community-outreach">Community outreach</option>
+                                        <option value="school-recruitment">School recruitment</option>
+                                        <option value="social-media">Social media</option>
+                                        <option value="flyers-posters">Flyers/posters</option>
+                                        <option value="snowball">Snowball sampling</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    <small class="text-muted">Hold Cmd/Ctrl to select multiple.</small>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small sm-field-required">Location</label>
-                                    <input type="text" class="form-control form-control-sm" id="smRecLocation"
-                                           placeholder="e.g. Graz, Austria">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Location
+                                    </label>
+                                    <div id="smRecLocationList" class="d-flex flex-column gap-2"></div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addRecLocationRow">
+                                        <i class="fas fa-plus me-1"></i>Add Location
+                                    </button>
+                                    <small class="text-muted d-block">Add one or more locations.</small>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label fw-bold small sm-field-required">Period Start</label>
-                                    <input type="text" class="form-control form-control-sm" id="smRecPeriodStart"
-                                           placeholder="YYYY-MM">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Period Start
+                                    </label>
+                                    <div class="d-flex gap-2">
+                                        <select class="form-select form-select-sm" id="smRecPeriodStartYear" required></select>
+                                        <select class="form-select form-select-sm" id="smRecPeriodStartMonth" required></select>
+                                    </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label fw-bold small">Period End</label>
-                                    <input type="text" class="form-control form-control-sm" id="smRecPeriodEnd"
-                                           placeholder="YYYY-MM">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Period End
+                                    </label>
+                                    <div class="d-flex gap-2">
+                                        <select class="form-select form-select-sm" id="smRecPeriodEndYear" required></select>
+                                        <select class="form-select form-select-sm" id="smRecPeriodEndMonth" required></select>
+                                    </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label fw-bold small">Compensation</label>
-                                    <input type="text" class="form-control form-control-sm" id="smRecCompensation"
-                                           placeholder="e.g. 15 EUR">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold small">Platform</label>
-                                    <input type="text" class="form-control form-control-sm" id="smRecPlatform"
-                                           placeholder="e.g. Prolific">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Financial Compensation
+                                    </label>
+                                    <select class="form-select form-select-sm" id="smRecCompensation" required>
+                                        <option value="">-- Select --</option>
+                                        <option value="Financial compensation">Yes</option>
+                                        <option value="No financial compensation">No</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -619,12 +673,16 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small sm-field-required">Inclusion Criteria</label>
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Inclusion Criteria
+                                    </label>
                                     <textarea class="form-control form-control-sm" id="smEligInclusion" rows="3"
                                               placeholder="One criterion per line"></textarea>
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold small sm-field-required">Exclusion Criteria</label>
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Exclusion Criteria
+                                    </label>
                                     <textarea class="form-control form-control-sm" id="smEligExclusion" rows="3"
                                               placeholder="One criterion per line"></textarea>
                                 </div>
@@ -643,67 +701,6 @@
                     </div>
                 </div>
 
-                <!-- Data Collection -->
-                <div class="mb-3">
-                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#smDataCollection">
-                        <i class="fas fa-laptop me-1"></i> Data Collection
-                        <span class="float-end" id="smDataCollectionBadge"></span>
-                    </button>
-                    <div class="collapse" id="smDataCollection">
-                        <div class="card card-body border-0 bg-light mt-1">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold small sm-field-required">Platform</label>
-                                    <input type="text" class="form-control form-control-sm" id="smDCPlatform"
-                                           placeholder="e.g. LimeSurvey">
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label fw-bold small">Version</label>
-                                    <input type="text" class="form-control form-control-sm" id="smDCPlatformVersion"
-                                           placeholder="e.g. 6.3">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold small sm-field-required">Method</label>
-                                    <select class="form-select form-select-sm" id="smDCMethod">
-                                        <option value="">-- Select --</option>
-                                        <option value="online">Online</option>
-                                        <option value="in-person">In-person</option>
-                                        <option value="phone">Phone</option>
-                                        <option value="mixed">Mixed</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold small">Supervision</label>
-                                    <select class="form-select form-select-sm" id="smDCSupervision">
-                                        <option value="">-- Select --</option>
-                                        <option value="unsupervised">Unsupervised</option>
-                                        <option value="remote-supervised">Remote supervised</option>
-                                        <option value="in-person-supervised">In-person supervised</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small">Setting</label>
-                                    <input type="text" class="form-control form-control-sm" id="smDCSetting"
-                                           placeholder="e.g. University laboratory">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold small">Avg. Duration</label>
-                                    <input type="number" class="form-control form-control-sm" id="smDCDurationValue"
-                                           min="0" step="1" placeholder="Value">
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold small">Unit</label>
-                                    <select class="form-select form-select-sm" id="smDCDurationUnit">
-                                        <option value="minutes">minutes</option>
-                                        <option value="hours">hours</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Procedure -->
                 <div class="mb-3">
                     <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
@@ -715,7 +712,9 @@
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
                                 <div class="col-12">
-                                    <label class="form-label fw-bold small sm-field-required">Overview</label>
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Overview
+                                    </label>
                                     <textarea class="form-control form-control-sm" id="smProcOverview" rows="3"
                                               placeholder="Narrative overview of the study procedure..."></textarea>
                                 </div>
@@ -746,6 +745,17 @@
                                                 <textarea class="form-control form-control-sm" id="smProcDebriefing" rows="2"
                                                           placeholder="Debriefing procedure"></textarea>
                                             </div>
+                                            <div class="col-12">
+                                                <label class="form-label fw-bold small">Additional Data Acquired</label>
+                                                <textarea class="form-control form-control-sm" id="smProcAdditionalData" rows="2"
+                                                          placeholder="Other data collected (questionnaires, swabs, clinical info, etc.)"></textarea>
+                                                <small class="text-muted">Especially relevant if not included in dataset</small>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label fw-bold small">Notes</label>
+                                                <textarea class="form-control form-control-sm" id="smProcNotes" rows="2"
+                                                          placeholder="Additional information about the procedure..."></textarea>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -754,31 +764,59 @@
                     </div>
                 </div>
 
-                <!-- Conditions -->
+                <!-- Missing Data & Issues -->
                 <div class="mb-3">
                     <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
-                            data-bs-toggle="collapse" data-bs-target="#smConditions">
-                        <i class="fas fa-random me-1"></i> Conditions
-                        <span class="float-end" id="smConditionsBadge"></span>
+                            data-bs-toggle="collapse" data-bs-target="#smMissingData">
+                        <i class="fas fa-exclamation-triangle me-1"></i> Missing Data & Known Issues
+                        <span class="float-end" id="smMissingDataBadge"></span>
                     </button>
-                    <div class="collapse" id="smConditions">
+                    <div class="collapse" id="smMissingData">
                         <div class="card card-body border-0 bg-light mt-1">
                             <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold small">Condition Type</label>
-                                    <select class="form-select form-select-sm" id="smCondType">
-                                        <option value="">-- N/A --</option>
-                                        <option value="between-subjects">Between-subjects</option>
-                                        <option value="within-subjects">Within-subjects</option>
-                                        <option value="mixed">Mixed</option>
-                                    </select>
+                                <div class="col-12">
+                                    <div class="alert alert-info py-2 mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Fill this section after data acquisition. Leave empty when starting a study.
+                                    </div>
                                 </div>
-                                <div class="col-md-8">
-                                    <label class="form-label fw-bold small">Groups</label>
-                                    <div id="smCondGroupsContainer"></div>
-                                    <button type="button" class="btn btn-sm btn-outline-info mt-1" onclick="addConditionGroup()">
-                                        <i class="fas fa-plus me-1"></i>Add Group
-                                    </button>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">Missing Data Description</label>
+                                    <textarea class="form-control form-control-sm" id="smMissingDesc" rows="3"
+                                              placeholder="General description of missing or problematic data..."></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">Missing Files (Table)</label>
+                                    <textarea class="form-control form-control-sm" id="smMissingFiles" rows="3"
+                                              placeholder="Format: sub-001 | T1w, task-rest&#10;sub-002 | ses-2 functional scans"></textarea>
+                                    <small class="text-muted">One entry per line: SubjectID | What's missing</small>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">Known Issues (Table)</label>
+                                    <textarea class="form-control form-control-sm" id="smKnownIssues" rows="3"
+                                              placeholder="Format: sub-001_task-nback_bold.nii | Shorter scan&#10;sub-002_T1w.nii | Resolution differs"></textarea>
+                                    <small class="text-muted">One entry per line: Filename | Issue description</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- References -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smReferences">
+                        <i class="fas fa-book me-1"></i> References
+                        <span class="float-end" id="smReferencesBadge"></span>
+                    </button>
+                    <div class="collapse" id="smReferences">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">References</label>
+                                    <textarea class="form-control form-control-sm" id="smReferences" rows="4"
+                                              placeholder="One reference per line or formatted citations..."></textarea>
+                                    <small class="text-muted">References used within the README</small>
                                 </div>
                             </div>
                         </div>
@@ -789,6 +827,9 @@
                     <button type="submit" class="btn btn-info">
                         <i class="fas fa-save me-1"></i>Save Study Metadata
                     </button>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-info-circle me-1"></i>Saving will auto-generate README.md
+                    </small>
                 </div>
             </form>
         </div>
@@ -975,14 +1016,117 @@
                             </div>
                         </div>
 
-                        <!-- Export Button -->
+                        <!-- AND Export Section -->
                         <div class="col-12 mt-4">
-                            <button type="submit" class="btn btn-warning btn-lg">
-                                <i class="fas fa-download me-2"></i>Export & Download Project
+                            <hr>
+                            <h6 class="mb-3">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>AND (Austrian NeuroCloud) Export
+                                <span class="badge bg-info ms-2">New</span>
+                            </h6>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="alert alert-info border-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>AND Export:</strong> Converts your PRISM dataset to AND-compatible format with required files 
+                                (README, CITATION.cff, .bids-validator-config.json) for submission to Austrian NeuroCloud.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="ancEnableExport">
+                                <label class="form-check-label fw-bold" for="ancEnableExport">
+                                    Enable AND Export
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Prepare dataset for AND submission with all required metadata files.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6" id="ancOptionsGroup" style="display: none;">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="ancConvertGitLfs">
+                                <label class="form-check-label" for="ancConvertGitLfs">
+                                    Convert to Git LFS
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Create .gitattributes for Git LFS (if required by AND). Default: DataLad-compatible.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6" id="ancOptionsGroup2" style="display: none;">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="ancIncludeCiExamples">
+                                <label class="form-check-label" for="ancIncludeCiExamples">
+                                    Include CI/CD Examples
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Add example GitLab CI and GitHub Actions workflows for dataset validation.
+                            </div>
+                        </div>
+
+                        <div class="col-12" id="ancMetadataSection" style="display: none;">
+                            <button type="button" class="btn btn-sm btn-outline-info mb-3" data-bs-toggle="collapse" 
+                                    data-bs-target="#ancMetadataForm" aria-expanded="false">
+                                <i class="fas fa-edit me-1"></i>Edit AND Metadata (Optional)
+                            </button>
+                            <div class="collapse" id="ancMetadataForm">
+                                <div class="card border-info">
+                                    <div class="card-body">
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold">Dataset Title</label>
+                                                <input type="text" class="form-control form-control-sm" id="ancDatasetTitle" 
+                                                       placeholder="Filled from dataset_description.json">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold">Contact Email</label>
+                                                <input type="email" class="form-control form-control-sm" id="ancContactEmail" 
+                                                       placeholder="contact@university.edu">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold">Author First Name</label>
+                                                <input type="text" class="form-control form-control-sm" id="ancAuthorGiven" 
+                                                       placeholder="John">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold">Author Last Name</label>
+                                                <input type="text" class="form-control form-control-sm" id="ancAuthorFamily" 
+                                                       placeholder="Doe">
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold">Dataset Description</label>
+                                                <textarea class="form-control form-control-sm" id="ancDatasetDescription" 
+                                                          rows="2" placeholder="Brief description of your dataset..."></textarea>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="form-text small">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Leave fields empty to use values from dataset_description.json. 
+                                                    Full metadata can be edited after export.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Export Buttons -->
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-warning btn-lg me-2">
+                                <i class="fas fa-download me-2"></i>Standard Export & Download
+                            </button>
+                            <button type="button" class="btn btn-info btn-lg" id="ancExportButton" style="display: none;">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>Export for AND
                             </button>
                             <div class="form-text mt-2">
                                 <i class="fas fa-info-circle me-1"></i>
-                                This will create a ZIP file with your selected options. Large datasets may take a few minutes.
+                                Standard export creates a shareable ZIP. AND export creates a submission-ready dataset folder.
                             </div>
                         </div>
                     </div>
@@ -1213,7 +1357,6 @@
         
         loadGlobalSettings();
         loadLibraryInfo();
-        loadProjectMetadata();
         showStudyMetadataCard();
         showExportCard();
         showMethodsCard();
@@ -1227,7 +1370,6 @@
         // Update chevron icons on collapse toggle
         const sections = [
             { element: 'openProjectSection', chevron: 'openProjectChevron' },
-            { element: 'datasetDescriptionSection', chevron: 'datasetDescriptionChevron' },
             { element: 'studyMetadataSection', chevron: 'studyMetadataChevron' },
             { element: 'methodsSectionBody', chevron: 'methodsSectionChevron' },
             { element: 'participantsSection', chevron: 'participantsChevron' },
@@ -1284,6 +1426,59 @@
         } catch (error) {
             console.error('Error loading settings:', error);
         }
+    }
+
+    // ===== HELPER FUNCTIONS =====
+    
+    /**
+     * Manage button loading state
+     * @param {HTMLElement} btn - Button element
+     * @param {boolean} isLoading - True to show loading, false to restore
+     * @param {string} loadingText - Text to show when loading
+     * @param {string} originalText - Text to restore (pass when isLoading=false)
+     * @returns {string} Current innerHTML (for saving before setting loading)
+     */
+    function setButtonLoading(btn, isLoading, loadingText = 'Loading...', originalText = null) {
+        if (isLoading) {
+            const current = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${loadingText}`;
+            btn.disabled = true;
+            return current;
+        } else {
+            btn.innerHTML = originalText || btn.innerHTML.replace(/<i[^>]*spinner[^>]*>.*?<\/i>\s*/, '');
+            btn.disabled = false;
+            return null;
+        }
+    }
+
+    /**
+     * Show an alert message in a container
+     * @param {string} containerId - ID of container element
+     * @param {string} type - Alert type: 'success', 'danger', 'warning', 'info'
+     * @param {string} title - Alert title (can include HTML)
+     * @param {string} message - Alert message (can include HTML)
+     */
+    function showAlert(containerId, type, title, message) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        const iconMap = {
+            'success': 'check-circle',
+            'danger': 'exclamation-circle',
+            'warning': 'exclamation-triangle',
+            'info': 'info-circle'
+        };
+        
+        const icon = iconMap[type] || 'info-circle';
+        const titleHtml = title ? `<h5><i class="fas fa-${icon} me-2"></i>${title}</h5>` : '';
+        
+        container.innerHTML = `
+            <div class="alert alert-${type}">
+                ${titleHtml}
+                ${message ? `<p class="mb-0">${message}</p>` : ''}
+            </div>
+        `;
+        container.style.display = 'block';
     }
 
     // Load library info (both global and project)
@@ -1367,9 +1562,7 @@
         e.preventDefault();
 
         const btn = this.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
-        btn.disabled = true;
+        const originalText = setButtonLoading(btn, true, 'Saving...');
 
         const libraryPath = document.getElementById('globalLibraryPath').value.trim();
         const recipesPath = document.getElementById('globalRecipesPath').value.trim();
@@ -1422,8 +1615,7 @@
                 </div>
             `;
         } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            setButtonLoading(btn, false, null, originalText);
         }
     });
 
@@ -1497,6 +1689,9 @@
             section.classList.remove('active');
         });
         document.getElementById('section-' + type).classList.add('active');
+
+        // Keep Study Metadata visible for create flow
+        showStudyMetadataCard();
     }
 
     // Browse button for project location
@@ -1564,12 +1759,377 @@
         }
     });
 
+    // ===== AUTHORS =====
+
+    function _formatAuthor(firstName, lastName) {
+        const first = (firstName || '').trim();
+        const last = (lastName || '').trim();
+        if (first && last) return `${last}, ${first}`;
+        return last || first || '';
+    }
+
+    function _parseAuthor(author) {
+        if (!author) return { first: '', last: '' };
+        if (author.includes(',')) {
+            const parts = author.split(',');
+            return { last: parts[0].trim(), first: (parts[1] || '').trim() };
+        }
+        const tokens = author.trim().split(/\s+/).filter(Boolean);
+        if (tokens.length <= 1) return { first: tokens[0] || '', last: '' };
+        return { first: tokens[0], last: tokens.slice(1).join(' ') };
+    }
+
+    function addAuthorRow(firstName = '', lastName = '') {
+        const list = document.getElementById('metadataAuthorsList');
+        if (!list) return;
+
+        const row = document.createElement('div');
+        row.className = 'd-flex gap-2 align-items-center author-row';
+        row.innerHTML = `
+            <input type="text" class="form-control form-control-sm author-first" placeholder="First" value="${firstName}">
+            <input type="text" class="form-control form-control-sm author-last" placeholder="Last" value="${lastName}">
+            <button type="button" class="btn btn-outline-danger btn-sm remove-author">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+
+        row.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => {
+                updateCreateProjectButton();
+            });
+        });
+
+        row.querySelector('.remove-author').addEventListener('click', () => {
+            row.remove();
+            if (!document.querySelector('#metadataAuthorsList .author-row')) {
+                addAuthorRow();
+            }
+            updateCreateProjectButton();
+        });
+
+        list.appendChild(row);
+    }
+
+    function getAuthorsList() {
+        const rows = document.querySelectorAll('#metadataAuthorsList .author-row');
+        const authors = [];
+        rows.forEach(row => {
+            const first = row.querySelector('.author-first')?.value || '';
+            const last = row.querySelector('.author-last')?.value || '';
+            const formatted = _formatAuthor(first, last);
+            if (formatted) authors.push(formatted);
+        });
+        return authors;
+    }
+
+    function hasAtLeastOneAuthor() {
+        return getAuthorsList().length > 0;
+    }
+
+    function setAuthorsList(authors) {
+        const list = document.getElementById('metadataAuthorsList');
+        if (!list) return;
+        list.innerHTML = '';
+        if (!Array.isArray(authors) || authors.length === 0) {
+            addAuthorRow();
+            return;
+        }
+        authors.forEach(author => {
+            const parsed = _parseAuthor(author);
+            addAuthorRow(parsed.first, parsed.last);
+        });
+    }
+
+    // ===== RECRUITMENT LOCATIONS =====
+
+    function addRecLocationRow(value = '') {
+        const list = document.getElementById('smRecLocationList');
+        if (!list) return;
+
+        const row = document.createElement('div');
+        row.className = 'd-flex gap-2 align-items-center rec-location-row';
+        row.innerHTML = `
+            <input type="text" class="form-control form-control-sm rec-location" placeholder="e.g. Graz, Austria" value="${value}">
+            <button type="button" class="btn btn-outline-danger btn-sm remove-location">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+
+        row.querySelector('.rec-location').addEventListener('input', () => {
+            updateCreateProjectButton();
+        });
+
+        row.querySelector('.remove-location').addEventListener('click', () => {
+            row.remove();
+            if (!document.querySelector('#smRecLocationList .rec-location-row')) {
+                addRecLocationRow();
+            }
+            updateCreateProjectButton();
+        });
+
+        list.appendChild(row);
+    }
+
+    function getRecLocationList() {
+        const rows = document.querySelectorAll('#smRecLocationList .rec-location-row');
+        const locations = [];
+        rows.forEach(row => {
+            const value = row.querySelector('.rec-location')?.value || '';
+            const trimmed = value.trim();
+            if (trimmed) locations.push(trimmed);
+        });
+        return locations;
+    }
+
+    function hasAtLeastOneRecLocation() {
+        return getRecLocationList().length > 0;
+    }
+
+    function setRecLocationList(locations) {
+        const list = document.getElementById('smRecLocationList');
+        if (!list) return;
+        list.innerHTML = '';
+        if (!Array.isArray(locations) || locations.length === 0) {
+            addRecLocationRow();
+            return;
+        }
+        locations.forEach(loc => addRecLocationRow(loc));
+    }
+
+    function getRecMethodList() {
+        const select = document.getElementById('smRecMethod');
+        if (!select) return [];
+        return Array.from(select.selectedOptions)
+            .map(opt => opt.value)
+            .filter(v => v && v.trim());
+    }
+
+    function hasAtLeastOneRecMethod() {
+        return getRecMethodList().length > 0;
+    }
+
+    function setRecMethodList(methods) {
+        const select = document.getElementById('smRecMethod');
+        if (!select) return;
+        const values = Array.isArray(methods) ? methods : [];
+        Array.from(select.options).forEach(opt => {
+            opt.selected = values.includes(opt.value);
+        });
+    }
+
+    function initYearMonthSelect(yearSelectId, monthSelectId) {
+        const yearSelect = document.getElementById(yearSelectId);
+        const monthSelect = document.getElementById(monthSelectId);
+        if (!yearSelect || !monthSelect) return;
+
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const startYear = currentYear - 20;
+        const endYear = currentYear;
+
+        yearSelect.innerHTML = '<option value="">Year</option>';
+        for (let y = endYear; y >= startYear; y -= 1) {
+            const opt = document.createElement('option');
+            opt.value = String(y);
+            opt.textContent = String(y);
+            yearSelect.appendChild(opt);
+        }
+
+        monthSelect.innerHTML = '<option value="">Month</option>';
+        const currentMonth = now.getMonth() + 1;
+        const orderedMonths = [];
+        for (let m = currentMonth; m <= 12; m += 1) orderedMonths.push(m);
+        for (let m = 1; m < currentMonth; m += 1) orderedMonths.push(m);
+        orderedMonths.forEach(m => {
+            const value = String(m).padStart(2, '0');
+            const opt = document.createElement('option');
+            opt.value = value;
+            opt.textContent = value;
+            monthSelect.appendChild(opt);
+        });
+    }
+
+    function getYearMonthValue(yearSelectId, monthSelectId) {
+        const year = document.getElementById(yearSelectId)?.value || '';
+        const month = document.getElementById(monthSelectId)?.value || '';
+        if (!year || !month) return '';
+        return `${year}-${month}`;
+    }
+
+    function setYearMonthValue(yearSelectId, monthSelectId, value) {
+        const yearSelect = document.getElementById(yearSelectId);
+        const monthSelect = document.getElementById(monthSelectId);
+        if (!value) {
+            if (yearSelect) yearSelect.value = '';
+            if (monthSelect) monthSelect.value = '';
+            return;
+        }
+        const parts = value.split('-');
+        if (parts.length < 2) return;
+        const year = parts[0];
+        const month = parts[1];
+        if (yearSelect) yearSelect.value = year;
+        if (monthSelect) monthSelect.value = month;
+    }
+
+    function hasRecPeriodStart() {
+        return Boolean(getYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth'));
+    }
+
+    function hasRecPeriodEnd() {
+        return Boolean(getYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth'));
+    }
+
+    // ===== MANDATORY METADATA VALIDATION =====
+    
+    // Function to check if all mandatory fields across all tabs are filled
+    function validateAllMandatoryFields() {
+        const mandatoryFields = [
+            // Basics (BIDS)
+            { id: 'metadataName', name: 'Dataset Name' },
+            { id: 'metadataAuthors', name: 'Authors', customCheck: hasAtLeastOneAuthor },
+            { id: 'metadataLicense', name: 'License' },
+            // Overview
+            { id: 'smOverviewMain', name: 'Dataset Overview' },
+            // Study Design
+            { id: 'smSDType', name: 'Study Design Type' },
+            // Recruitment
+            { id: 'smRecMethod', name: 'Recruitment Method', customCheck: hasAtLeastOneRecMethod },
+            { id: 'smRecLocation', name: 'Recruitment Location', customCheck: hasAtLeastOneRecLocation },
+            { id: 'smRecPeriodStart', name: 'Recruitment Period Start', customCheck: hasRecPeriodStart },
+            { id: 'smRecPeriodEnd', name: 'Recruitment Period End', customCheck: hasRecPeriodEnd },
+            { id: 'smRecCompensation', name: 'Financial Compensation' },
+            // Eligibility
+            { id: 'smEligInclusion', name: 'Inclusion Criteria' },
+            { id: 'smEligExclusion', name: 'Exclusion Criteria' },
+            // Procedure
+            { id: 'smProcOverview', name: 'Procedure Overview' }
+        ];
+        
+        const emptyFields = [];
+        
+        for (const field of mandatoryFields) {
+            if (field.customCheck) {
+                if (!field.customCheck()) emptyFields.push(field.name);
+                continue;
+            }
+            const element = document.getElementById(field.id);
+            if (element && element.value.trim() === '') emptyFields.push(field.name);
+        }
+        
+        return {
+            isValid: emptyFields.length === 0,
+            emptyFields: emptyFields
+        };
+    }
+    
+    // Function to update Create Project button state
+    function updateCreateProjectButton() {
+        const createBtn = document.querySelector('#createProjectForm button[type="submit"]');
+        const validation = validateAllMandatoryFields();
+        
+        if (validation.isValid) {
+            createBtn.disabled = false;
+            createBtn.classList.remove('btn-secondary');
+            createBtn.classList.add('btn-success');
+            createBtn.innerHTML = '<i class="fas fa-folder-plus me-2"></i>Create Project';
+        } else {
+            createBtn.disabled = true;
+            createBtn.classList.remove('btn-success');
+            createBtn.classList.add('btn-secondary');
+            const count = validation.emptyFields.length;
+            createBtn.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Complete Study Metadata (${count} field${count > 1 ? 's' : ''} missing)`;
+        }
+    }
+    
+    // Add event listeners to all mandatory fields
+    const mandatoryFieldIds = [
+        'metadataName', 'metadataLicense',
+        'smOverviewMain', 'smSDType', 'smRecMethod',
+        'smRecPeriodStartYear', 'smRecPeriodStartMonth',
+        'smRecPeriodEndYear', 'smRecPeriodEndMonth',
+        'smRecCompensation',
+        'smEligInclusion', 'smEligExclusion',
+        'smProcOverview'
+    ];
+    
+    mandatoryFieldIds.forEach(fieldId => {
+        const element = document.getElementById(fieldId);
+        if (element) {
+            const eventType = element.tagName === 'SELECT' ? 'change' : 'input';
+            element.addEventListener(eventType, function() {
+                updateCreateProjectButton();
+            });
+        }
+    });
+    
+    // Authors row add button
+    document.getElementById('addAuthorRow').addEventListener('click', () => addAuthorRow());
+
+    // Recruitment location add button
+    document.getElementById('addRecLocationRow').addEventListener('click', () => addRecLocationRow());
+
+    // Special handler for Dataset Name with auto-population
+    document.getElementById('metadataName').addEventListener('input', function() {
+        updateCreateProjectButton();
+        
+        // Auto-populate project name from dataset name (sanitized)
+        const datasetName = this.value.trim();
+        const projectNameField = document.getElementById('projectName');
+        
+        // Only auto-populate if the project name field is empty
+        if (projectNameField.value === '') {
+            // Convert dataset name to valid project name: lowercase, replace spaces/special chars with underscores
+            const sanitizedName = datasetName
+                .toLowerCase()
+                .replace(/[^a-z0-9_-]/g, '_')  // Replace invalid chars with underscore
+                .replace(/_+/g, '_')  // Replace multiple underscores with single
+                .replace(/^_|_$/g, '');  // Remove leading/trailing underscores
+            
+            if (sanitizedName) {
+                projectNameField.value = sanitizedName;
+            }
+        }
+    });
+    
+    // Initialize button state on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!document.querySelector('#metadataAuthorsList .author-row')) {
+            addAuthorRow();
+        }
+        if (!document.querySelector('#smRecLocationList .rec-location-row')) {
+            addRecLocationRow();
+        }
+        initYearMonthSelect('smRecPeriodStartYear', 'smRecPeriodStartMonth');
+        initYearMonthSelect('smRecPeriodEndYear', 'smRecPeriodEndMonth');
+        updateCreateProjectButton();
+        
+        // Set Dataset Type to raw by default
+        const datasetTypeSelect = document.getElementById('metadataType');
+        if (datasetTypeSelect) {
+            datasetTypeSelect.value = 'raw';
+        }
+        
+        // Initialize ethics fields visibility
+        setEthicsChoice(document.getElementById('metadataEthicsApproved')?.value || 'no');
+    });
+    
+    // ===== END MANDATORY METADATA VALIDATION =====
+
     // Create Project Form
     document.getElementById('createProjectForm').addEventListener('submit', async function(e) {
         e.preventDefault();
 
         const projectName = document.getElementById('projectName').value.trim();
         const projectPath = document.getElementById('projectPath').value.trim();
+
+        // Validate all mandatory metadata fields
+        const validation = validateAllMandatoryFields();
+        if (!validation.isValid) {
+            const fieldList = validation.emptyFields.map(f => `- ${f}`).join('\\n');
+            alert(`Please complete all mandatory fields in Study Metadata:\\n\\n${fieldList}`);
+            return;
+        }
 
         // Validate project name
         if (!/^[a-zA-Z0-9_-]+$/.test(projectName)) {
@@ -1578,9 +2138,7 @@
         }
 
         const btn = this.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
-        btn.disabled = true;
+        const originalText = setButtonLoading(btn, true, 'Creating...');
 
         // Combine path and project name
         const separator = projectPath.includes('/') ? '/' : '\\';
@@ -1589,19 +2147,18 @@
         const data = {
             path: fullPath,
             name: projectName,
-            // Modern BIDS metadata
-            authors: document.getElementById('projectAuthors').value.split(',').map(s => s.trim()).filter(s => s),
-            license: document.getElementById('projectLicense').value,
-            doi: document.getElementById('projectDOI').value.trim(),
-            keywords: document.getElementById('projectKeywords').value.split(',').map(s => s.trim()).filter(s => s),
-            acknowledgements: document.getElementById('projectAcknowledgements').value.trim(),
-            ethics_approvals: document.getElementById('projectEthics').value.split(',').map(s => s.trim()).filter(s => s),
-            how_to_acknowledge: document.getElementById('projectHowToAcknowledge').value.trim(),
-            funding: document.getElementById('projectFunding').value.split(',').map(s => s.trim()).filter(s => s),
-            references_and_links: document.getElementById('projectReferences').value.split(',').map(s => s.trim()).filter(s => s),
-            hed_version: document.getElementById('projectHED').value.trim(),
-            dataset_type: document.getElementById('projectType').value,
-            description: document.getElementById('projectDescription').value.trim()
+            // Modern BIDS metadata from Basics tab
+            authors: getAuthorsList(),
+            license: document.getElementById('metadataLicense').value,
+            doi: document.getElementById('metadataDOI').value.trim(),
+            keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
+            acknowledgements: document.getElementById('metadataAcknowledgements').value.trim(),
+            ethics_approvals: getEthicsApprovals(),
+            how_to_acknowledge: document.getElementById('metadataHowToAcknowledge').value.trim(),
+            funding: document.getElementById('metadataFunding').value.split(',').map(s => s.trim()).filter(s => s),
+            references_and_links: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
+            hed_version: document.getElementById('metadataHED').value.trim(),
+            dataset_type: document.getElementById('metadataType').value
         };
 
         try {
@@ -1647,7 +2204,6 @@
                 window.currentProjectPath = currentProjectPath;
                 window.currentProjectName = currentProjectName;
                 addRecentProject(currentProjectName, currentProjectPath);
-                await loadProjectMetadata();
                 if (window.updateNavbarProject) {
                     window.updateNavbarProject(currentProjectName, currentProjectPath);
                 }
@@ -1671,8 +2227,7 @@
             `;
             document.getElementById('createResult').style.display = 'block';
         } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            setButtonLoading(btn, false, null, originalText);
         }
     });
 
@@ -1681,9 +2236,7 @@
         e.preventDefault();
 
         const btn = this.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Validating...';
-        btn.disabled = true;
+        const originalText = setButtonLoading(btn, true, 'Validating...');
 
         const path = document.getElementById('existingPath').value;
 
@@ -1697,8 +2250,7 @@
                     <p class="mb-0">You must select the <strong>project.json</strong> file. Folder selection is no longer supported for project loading.</p>
                 </div>
             `;
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            setButtonLoading(btn, false, null, originalText);
             return;
         }
 
@@ -1847,7 +2399,6 @@
             window.currentProjectPath = currentProjectPath;
             window.currentProjectName = currentProjectName;
             addRecentProject(currentProjectName, currentProjectPath);
-            await loadProjectMetadata();
             if (window.updateNavbarProject) {
                 window.updateNavbarProject(currentProjectName, currentProjectPath);
             }
@@ -1864,8 +2415,7 @@
             `;
             document.getElementById('validationResult').style.display = 'block';
         } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            setButtonLoading(btn, false, null, originalText);
         }
     });
 
@@ -1928,31 +2478,23 @@
 
     // ===== DATASET DESCRIPTION / METADATA =====
 
-    async function loadProjectMetadata() {
-        const card = document.getElementById('projectMetadataCard');
-        if (!card) return;
-
-        if (!currentProjectPath) {
-            card.style.display = 'none';
-            return;
-        }
+    async function loadDatasetDescriptionFields() {
+        if (!currentProjectPath) return;
 
         try {
             const response = await fetch('/api/projects/description');
             const data = await response.json();
 
             if (data.success && data.description) {
-                card.style.display = 'block';
                 const desc = data.description;
 
                 // Fill form fields
                 document.getElementById('metadataName').value = desc.Name || '';
-                document.getElementById('metadataAuthors').value = Array.isArray(desc.Authors) ? desc.Authors.join(', ') : (desc.Authors || '');
+                setAuthorsList(Array.isArray(desc.Authors) ? desc.Authors : (desc.Authors ? [desc.Authors] : []));
                 document.getElementById('metadataLicense').value = desc.License || 'CC0';
                 document.getElementById('metadataAcknowledgements').value = desc.Acknowledgements || '';
-                document.getElementById('metadataDescription').value = desc.Description || '';
                 document.getElementById('metadataDOI').value = desc.DatasetDOI || '';
-                document.getElementById('metadataEthics').value = Array.isArray(desc.EthicsApprovals) ? desc.EthicsApprovals.join(', ') : (desc.EthicsApprovals || '');
+                setEthicsApprovals(desc.EthicsApprovals);
                 document.getElementById('metadataKeywords').value = Array.isArray(desc.Keywords) ? desc.Keywords.join(', ') : (desc.Keywords || '');
                 document.getElementById('metadataType').value = desc.DatasetType || 'raw';
                 document.getElementById('metadataHED').value = Array.isArray(desc.HEDVersion) ? desc.HEDVersion.join(', ') : (desc.HEDVersion || '');
@@ -1962,12 +2504,9 @@
                 
                 // Show issues if any
                 displayMetadataIssues(data.issues || []);
-            } else {
-                card.style.display = 'none';
             }
         } catch (error) {
-            console.error('Error loading project metadata:', error);
-            card.style.display = 'none';
+            console.error('Error loading dataset description:', error);
         }
     }
 
@@ -2007,31 +2546,34 @@
         feedbackDiv.innerHTML = html;
     }
 
-    // Handle Metadata Form Submission
-    document.getElementById('projectMetadataForm')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const btn = this.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
-
+    // Save dataset_description fields
+    async function saveDatasetDescription() {
         try {
+            // BIDS Validation: Check REQUIRED fields
+            const nameField = document.getElementById('metadataName');
+            if (!nameField || !nameField.value.trim()) {
+                throw new Error('❌ REQUIRED FIELD: Dataset Name is mandatory per BIDS specification');
+            }
+
+            const overviewMain = document.getElementById('smOverviewMain');
+            const overviewText = overviewMain ? overviewMain.value.trim() : '';
+
             // Reconstruct the JSON object
             const description = {
-                Name: document.getElementById('metadataName').value,
-                Authors: document.getElementById('metadataAuthors').value.split(',').map(s => s.trim()).filter(s => s),
+                Name: nameField.value.trim(),
+                Authors: getAuthorsList(),
                 License: document.getElementById('metadataLicense').value,
                 Acknowledgements: document.getElementById('metadataAcknowledgements').value,
-                Description: document.getElementById('metadataDescription').value,
                 DatasetDOI: document.getElementById('metadataDOI').value,
-                EthicsApprovals: document.getElementById('metadataEthics').value.split(',').map(s => s.trim()).filter(s => s),
+                EthicsApprovals: getEthicsApprovals(),
                 Keywords: document.getElementById('metadataKeywords').value.split(',').map(s => s.trim()).filter(s => s),
                 BIDSVersion: "1.10.1",
-                DatasetType: document.getElementById('metadataType').value,
+                DatasetType: document.getElementById('metadataType').value || 'raw',
                 HowToAcknowledge: document.getElementById('metadataHowToAcknowledge').value,
                 Funding: document.getElementById('metadataFunding').value.split(',').map(s => s.trim()).filter(s => s),
                 ReferencesAndLinks: document.getElementById('metadataReferences').value.split(',').map(s => s.trim()).filter(s => s),
-                HEDVersion: document.getElementById('metadataHED').value.trim()
+                HEDVersion: document.getElementById('metadataHED').value.trim(),
+                Description: overviewText || undefined
             };
 
             // Keep existing fields not in form (like GeneratedBy, SourceDatasets)
@@ -2055,8 +2597,6 @@
 
             const result = await response.json();
             if (result.success) {
-                showToast('Metadata saved successfully', 'success');
-                
                 // Show any remaining validation issues
                 displayMetadataIssues(result.issues || []);
 
@@ -2068,15 +2608,13 @@
                     }
                 }
             } else {
-                alert('Failed to save metadata: ' + result.error);
+                throw new Error(result.error || 'Failed to save metadata');
             }
         } catch (error) {
-            alert('Error saving project metadata: ' + error.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
+            console.error('Error saving dataset description:', error);
+            throw error;
         }
-    });
+    }
 
     // Toast helper if not defined elsewhere
     function showToast(message, type = 'success') {
@@ -2104,17 +2642,62 @@
     }
 
     // ===== STUDY METADATA =====
-    let _smConditionGroups = [];
 
     function showStudyMetadataCard() {
         const card = document.getElementById('studyMetadataCard');
         if (!card) return;
-        if (currentProjectPath) {
+        const createSection = document.getElementById('section-create');
+        const createActive = createSection && createSection.classList.contains('active');
+        if (currentProjectPath || createActive) {
             card.style.display = 'block';
-            loadStudyMetadata();
-        } else {
-            card.style.display = 'none';
+            if (currentProjectPath) {
+                loadStudyMetadata();
+            } else {
+                resetStudyMetadataForm();
+            }
+            return;
         }
+        card.style.display = 'none';
+    }
+
+    function resetStudyMetadataForm() {
+        const form = document.getElementById('studyMetadataForm');
+        if (!form) return;
+
+        form.querySelectorAll('input, textarea, select').forEach(el => {
+            if (el.tagName === 'SELECT') {
+                if (el.id === 'metadataType') {
+                    el.value = 'raw';
+                } else {
+                    el.value = '';
+                }
+            } else {
+                el.value = '';
+            }
+        });
+
+        setAuthorsList([]);
+        setRecLocationList([]);
+        setRecMethodList([]);
+        setYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth', '');
+        setYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth', '');
+        const condType = document.getElementById('smSDConditionType');
+        if (condType) condType.value = '';
+        _clearAllHintBadges();
+        displayMetadataIssues([]);
+
+        const badgeIds = [
+            'smBasicsBadge', 'smOverviewBadge', 'smStudyDesignBadge',
+            'smRecruitmentBadge', 'smEligibilityBadge',
+            'smProcedureBadge', 'smMissingDataBadge', 'smReferencesBadge'
+        ];
+        badgeIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = '';
+        });
+
+        updateCompletenessUI({ score: 0, sections: {} });
+        updateCreateProjectButton();
     }
 
     /**
@@ -2122,15 +2705,11 @@
      * Used to apply auto-detected values and show hint badges.
      */
     const _smHintFieldMap = {
-        'DataCollection.Platform':        { el: 'smDCPlatform', type: 'input' },
-        'DataCollection.PlatformVersion': { el: 'smDCPlatformVersion', type: 'input' },
-        'DataCollection.Method':          { el: 'smDCMethod', type: 'select' },
-        'Recruitment.Period.Start':       { el: 'smRecPeriodStart', type: 'input' },
-        'Recruitment.Period.End':         { el: 'smRecPeriodEnd', type: 'input' },
+        'Recruitment.Period.Start':       { el: null, type: 'period-start' },
+        'Recruitment.Period.End':         { el: null, type: 'period-end' },
         'StudyDesign.Type':               { el: 'smSDType', type: 'select' },
+        'Conditions.Type':                { el: 'smSDConditionType', type: 'select' },
         'Eligibility.ActualSampleSize':   { el: 'smEligSampleSize', type: 'input' },
-        'Conditions.Type':                { el: 'smCondType', type: 'select' },
-        'Conditions.Groups':              { el: null, type: 'special' },
     };
 
     function _clearAllHintBadges() {
@@ -2172,40 +2751,43 @@
         for (const [key, hint] of Object.entries(hints)) {
             const mapping = _smHintFieldMap[key];
             if (!mapping) continue;
-            if (mapping.type === 'special') {
-                // Handle Conditions.Groups separately
-                if (key === 'Conditions.Groups' && _smConditionGroups.length === 0 && Array.isArray(hint.value) && hint.value.length > 0) {
-                    const container = document.getElementById('smCondGroupsContainer');
-                    if (!container) continue;
-                    const badge = document.createElement('span');
-                    badge.className = 'sm-hint-badge badge bg-info bg-opacity-75 ms-1 mt-1';
-                    badge.style.cssText = 'cursor:pointer; font-size:0.7rem; display:inline-block;';
-                    badge.title = `Detected from ${hint.source} — click to apply`;
-                    badge.innerHTML = `<i class="fas fa-magic me-1"></i>${hint.value.length} groups detected`;
-                    badge.addEventListener('click', () => {
-                        _smConditionGroups = hint.value;
-                        renderConditionGroups();
-                        badge.remove();
-                    });
-                    container.parentElement.appendChild(badge);
-                }
+            if (mapping.type === 'period-start') {
+                setYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth', hint.value);
                 continue;
             }
+            if (mapping.type === 'period-end') {
+                setYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth', hint.value);
+                continue;
+            }
+            if (mapping.type === 'special') continue;
             _applyHintBadge(mapping.el, hint, mapping.type);
         }
     }
 
     async function loadStudyMetadata() {
         try {
+            if (!currentProjectPath) return;
+            // Load dataset description fields (Basics section)
+            await loadDatasetDescriptionFields();
+            
             const response = await fetch('/api/projects/study-metadata');
             const data = await response.json();
             if (!data.success) return;
 
             const sm = data.study_metadata;
 
+            // Overview
+            const overview = sm.Overview || {};
+            document.getElementById('smOverviewMain').value = overview.Main || '';
+            document.getElementById('smOverviewIV').value = overview.IndependentVariables || '';
+            document.getElementById('smOverviewDV').value = overview.DependentVariables || '';
+            document.getElementById('smOverviewCV').value = overview.ControlVariables || '';
+            document.getElementById('smOverviewQA').value = overview.QualityAssessment || '';
+
             // Study Design
             const sd = sm.StudyDesign || {};
             document.getElementById('smSDType').value = sd.Type || '';
+            document.getElementById('smSDConditionType').value = sm.Conditions?.Type || '';
             document.getElementById('smSDTypeDesc').value = sd.TypeDescription || '';
             document.getElementById('smSDBlinding').value = sd.Blinding || '';
             document.getElementById('smSDRandomization').value = sd.Randomization || '';
@@ -2214,13 +2796,35 @@
 
             // Recruitment
             const rec = sm.Recruitment || {};
-            document.getElementById('smRecMethod').value = rec.Method || '';
-            document.getElementById('smRecLocation').value = rec.Location || '';
+            if (Array.isArray(rec.Method)) {
+                setRecMethodList(rec.Method);
+            } else if (typeof rec.Method === 'string') {
+                setRecMethodList(rec.Method.split(';').map(s => s.trim()).filter(s => s));
+            } else {
+                setRecMethodList([]);
+            }
+            if (Array.isArray(rec.Location)) {
+                setRecLocationList(rec.Location);
+            } else if (typeof rec.Location === 'string') {
+                setRecLocationList(rec.Location.split(';').map(s => s.trim()).filter(s => s));
+            } else {
+                setRecLocationList([]);
+            }
             const period = rec.Period || {};
-            document.getElementById('smRecPeriodStart').value = period.Start || '';
-            document.getElementById('smRecPeriodEnd').value = period.End || '';
-            document.getElementById('smRecCompensation').value = rec.Compensation || '';
-            document.getElementById('smRecPlatform').value = rec.Platform || '';
+            setYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth', period.Start || '');
+            setYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth', period.End || '');
+            if (rec.Compensation) {
+                const comp = String(rec.Compensation).toLowerCase();
+                if (comp.includes('no')) {
+                    document.getElementById('smRecCompensation').value = 'No financial compensation';
+                } else if (comp.includes('financial')) {
+                    document.getElementById('smRecCompensation').value = 'Financial compensation';
+                } else {
+                    document.getElementById('smRecCompensation').value = rec.Compensation;
+                }
+            } else {
+                document.getElementById('smRecCompensation').value = '';
+            }
 
             // Eligibility
             const elig = sm.Eligibility || {};
@@ -2228,17 +2832,6 @@
             document.getElementById('smEligExclusion').value = Array.isArray(elig.ExclusionCriteria) ? elig.ExclusionCriteria.join('\n') : '';
             document.getElementById('smEligSampleSize').value = elig.TargetSampleSize || '';
             document.getElementById('smEligPower').value = elig.PowerAnalysis || '';
-
-            // Data Collection
-            const dc = sm.DataCollection || {};
-            document.getElementById('smDCPlatform').value = dc.Platform || '';
-            document.getElementById('smDCPlatformVersion').value = dc.PlatformVersion || '';
-            document.getElementById('smDCMethod').value = dc.Method || '';
-            document.getElementById('smDCSupervision').value = dc.SupervisionLevel || '';
-            document.getElementById('smDCSetting').value = dc.Setting || '';
-            const avgDur = dc.AverageDuration || {};
-            document.getElementById('smDCDurationValue').value = avgDur.Value || '';
-            document.getElementById('smDCDurationUnit').value = avgDur.Unit || 'minutes';
 
             // Procedure
             const proc = sm.Procedure || {};
@@ -2248,12 +2841,6 @@
             document.getElementById('smProcMissing').value = proc.MissingDataHandling || '';
             document.getElementById('smProcDebriefing').value = proc.Debriefing || '';
 
-            // Conditions
-            const cond = sm.Conditions || {};
-            document.getElementById('smCondType').value = cond.Type || '';
-            _smConditionGroups = Array.isArray(cond.Groups) ? cond.Groups : [];
-            renderConditionGroups();
-
             // Apply auto-detected hints for empty fields
             _applyHints(data.hints || {});
 
@@ -2261,6 +2848,9 @@
             if (data.completeness) {
                 updateCompletenessUI(data.completeness);
             }
+            
+            // Update Create Project button state after loading metadata
+            updateCreateProjectButton();
         } catch (error) {
             console.error('Error loading study metadata:', error);
         }
@@ -2275,39 +2865,214 @@
         }
     }
 
-    function renderConditionGroups() {
-        const container = document.getElementById('smCondGroupsContainer');
-        if (!container) return;
-        if (_smConditionGroups.length === 0) {
-            container.innerHTML = '<span class="text-muted small">No groups defined</span>';
+    function toggleEthicsFields() {
+        const approvedInput = document.getElementById('metadataEthicsApproved');
+        const detailsSection = document.getElementById('ethicsDetailsSection');
+        
+        if (!detailsSection) {
+            console.error('ethicsDetailsSection not found');
             return;
         }
-        container.innerHTML = _smConditionGroups.map((g, i) => `
-            <div class="condition-group-row">
-                <input type="text" class="form-control form-control-sm" placeholder="ID" value="${g.id || ''}"
-                       onchange="_smConditionGroups[${i}].id = this.value">
-                <input type="text" class="form-control form-control-sm" placeholder="Label" value="${g.label || ''}"
-                       onchange="_smConditionGroups[${i}].label = this.value">
-                <input type="text" class="form-control form-control-sm" placeholder="Description" value="${g.description || ''}"
-                       onchange="_smConditionGroups[${i}].description = this.value">
-                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeConditionGroup(${i})">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        `).join('');
+        
+        if (!approvedInput) {
+            console.warn('Ethics approval input not found, hiding details');
+            detailsSection.style.display = 'none';
+            detailsSection.classList.add('d-none');
+            return;
+        }
+
+        const approved = approvedInput.value === 'yes';
+        console.log('Ethics approved state:', approved ? 'yes' : 'no');
+        
+        detailsSection.hidden = !approved;
+        detailsSection.style.display = approved ? 'block' : 'none';
+        detailsSection.classList.toggle('d-none', !approved);
     }
 
-    function addConditionGroup() {
-        _smConditionGroups.push({ id: '', label: '', description: '' });
-        renderConditionGroups();
+    function setEthicsChoice(choice) {
+        const yesBtn = document.getElementById('metadataEthicsYes');
+        const noBtn = document.getElementById('metadataEthicsNo');
+        const approvedInput = document.getElementById('metadataEthicsApproved');
+        if (!yesBtn || !noBtn || !approvedInput) {
+            console.warn('Ethics approval inputs not found');
+            return;
+        }
+
+        const isYes = choice === 'yes';
+        approvedInput.value = isYes ? 'yes' : 'no';
+        yesBtn.classList.toggle('btn-primary', isYes);
+        yesBtn.classList.toggle('btn-outline-primary', !isYes);
+        noBtn.classList.toggle('btn-primary', !isYes);
+        noBtn.classList.toggle('btn-outline-primary', isYes);
+
+        toggleEthicsFields();
     }
 
-    function removeConditionGroup(idx) {
-        _smConditionGroups.splice(idx, 1);
-        renderConditionGroups();
+    function getEthicsApprovals() {
+        const approvedInput = document.getElementById('metadataEthicsApproved');
+        if (!approvedInput) {
+            console.warn('Ethics approval input not found, defaulting to "no"');
+            return [];
+        }
+        if (approvedInput.value === 'no') {
+            return [];
+        }
+        const committee = document.getElementById('metadataEthicsCommittee');
+        const votum = document.getElementById('metadataEthicsVotum');
+        if (!committee || !votum) {
+            console.warn('Ethics committee or votum fields not found');
+            return [];
+        }
+        const committeeValue = committee.value.trim();
+        const votumValue = votum.value.trim();
+        const approval = [];
+        if (committeeValue) {
+            approval.push(committeeValue + (votumValue ? ', ' + votumValue : ''));
+        }
+        return approval;
+    }
+
+    function setEthicsApprovals(ethicsArray) {
+        const committeeField = document.getElementById('metadataEthicsCommittee');
+        const votumField = document.getElementById('metadataEthicsVotum');
+        
+        if (!committeeField || !votumField) {
+            console.warn('Ethics approval form elements not found');
+            return;
+        }
+        
+        if (!ethicsArray || ethicsArray.length === 0) {
+            committeeField.value = '';
+            votumField.value = '';
+            setEthicsChoice('no');
+            return;
+        }
+
+        // Parse the first ethics approval entry
+        const ethicsStr = Array.isArray(ethicsArray) ? ethicsArray[0] : ethicsArray;
+        const parts = ethicsStr.split(',').map(s => s.trim());
+        
+        committeeField.value = parts[0] || '';
+        votumField.value = parts[1] || '';
+        setEthicsChoice('yes');
+    }
+
+
+    let lastCompleteness = null;
+
+    function computeLocalCompleteness() {
+        const experimentalTypes = ['randomized-controlled-trial', 'quasi-experimental', 'case-control'];
+        const sdType = document.getElementById('smSDType')?.value || '';
+        const isExperimental = experimentalTypes.includes(sdType);
+
+        const sections = {};
+        let filledFields = 0;
+        let totalFields = 0;
+
+        const requiredFields = {
+            Basics: new Set(['Name']),
+            Overview: new Set(['Main']),
+            StudyDesign: new Set(['Type']),
+            Recruitment: new Set(['Method', 'Location', 'Period.Start', 'Period.End', 'Compensation']),
+            Eligibility: new Set(['InclusionCriteria', 'ExclusionCriteria']),
+            Procedure: new Set(['Overview'])
+        };
+
+        const addField = (section, name, isFilled) => {
+            const isRequired = requiredFields[section]?.has(name) || false;
+            if (!sections[section]) {
+                sections[section] = {
+                    fields: [],
+                    filled: 0,
+                    total: 0,
+                    weight_filled: 0,
+                    weight_total: 0,
+                    required_filled: 0,
+                    required_total: 0,
+                    optional_filled: 0,
+                    optional_total: 0,
+                    read_only: section === 'SessionsTasks'
+                };
+            }
+            sections[section].fields.push({ name, filled: isFilled, priority: 1, hint: '', required: isRequired });
+            sections[section].total += 1;
+            sections[section].weight_total += 1;
+            if (isRequired) {
+                sections[section].required_total += 1;
+            } else {
+                sections[section].optional_total += 1;
+            }
+            totalFields += 1;
+            if (isFilled) {
+                sections[section].filled += 1;
+                sections[section].weight_filled += 1;
+                if (isRequired) {
+                    sections[section].required_filled += 1;
+                } else {
+                    sections[section].optional_filled += 1;
+                }
+                filledFields += 1;
+            }
+        };
+
+        const textFilled = (value) => Boolean((value || '').trim());
+
+        const keywordList = document.getElementById('metadataKeywords')?.value
+            .split(',').map(s => s.trim()).filter(s => s) || [];
+
+        addField('Basics', 'Name', textFilled(document.getElementById('metadataName')?.value));
+        addField('Basics', 'Authors', getAuthorsList().length > 0);
+        addField('Basics', 'Description', textFilled(document.getElementById('smOverviewMain')?.value));
+        addField('Basics', 'EthicsApprovals', getEthicsApprovals().length > 0);
+        addField('Basics', 'License', textFilled(document.getElementById('metadataLicense')?.value));
+        addField('Basics', 'Keywords', keywordList.length > 0);
+        addField('Basics', 'Acknowledgements', textFilled(document.getElementById('metadataAcknowledgements')?.value));
+        addField('Basics', 'DatasetDOI', textFilled(document.getElementById('metadataDOI')?.value));
+        addField('Basics', 'DatasetType', textFilled(document.getElementById('metadataType')?.value));
+        addField('Basics', 'HEDVersion', textFilled(document.getElementById('metadataHED')?.value));
+        addField('Basics', 'Funding', textFilled(document.getElementById('metadataFunding')?.value));
+        addField('Basics', 'HowToAcknowledge', textFilled(document.getElementById('metadataHowToAcknowledge')?.value));
+        addField('Basics', 'ReferencesAndLinks', textFilled(document.getElementById('metadataReferences')?.value));
+
+        addField('Overview', 'Main', textFilled(document.getElementById('smOverviewMain')?.value));
+        addField('Overview', 'IndependentVariables', textFilled(document.getElementById('smOverviewIV')?.value));
+        addField('Overview', 'DependentVariables', textFilled(document.getElementById('smOverviewDV')?.value));
+        addField('Overview', 'ControlVariables', textFilled(document.getElementById('smOverviewCV')?.value));
+        addField('Overview', 'QualityAssessment', textFilled(document.getElementById('smOverviewQA')?.value));
+
+        addField('StudyDesign', 'Type', textFilled(sdType));
+        addField('StudyDesign', 'ConditionType', textFilled(document.getElementById('smSDConditionType')?.value));
+        addField('StudyDesign', 'TypeDescription', textFilled(document.getElementById('smSDTypeDesc')?.value));
+        if (isExperimental) {
+            addField('StudyDesign', 'Blinding', textFilled(document.getElementById('smSDBlinding')?.value));
+            addField('StudyDesign', 'Randomization', textFilled(document.getElementById('smSDRandomization')?.value));
+            addField('StudyDesign', 'ControlCondition', textFilled(document.getElementById('smSDControl')?.value));
+        }
+
+        addField('Recruitment', 'Method', hasAtLeastOneRecMethod());
+        addField('Recruitment', 'Location', hasAtLeastOneRecLocation());
+        addField('Recruitment', 'Period.Start', hasRecPeriodStart());
+        addField('Recruitment', 'Period.End', hasRecPeriodEnd());
+        addField('Recruitment', 'Compensation', textFilled(document.getElementById('smRecCompensation')?.value));
+
+        addField('Eligibility', 'InclusionCriteria', textFilled(document.getElementById('smEligInclusion')?.value));
+        addField('Eligibility', 'ExclusionCriteria', textFilled(document.getElementById('smEligExclusion')?.value));
+
+        addField('Procedure', 'Overview', textFilled(document.getElementById('smProcOverview')?.value));
+
+        const score = totalFields > 0 ? Math.round((filledFields / totalFields) * 100) : 0;
+
+        return {
+            score,
+            filled_fields: filledFields,
+            total_fields: totalFields,
+            sections
+        };
     }
 
     function updateCompletenessUI(completeness) {
+        if (!completeness) return;
+        lastCompleteness = completeness;
         const score = completeness.score || 0;
 
         // Determine color
@@ -2344,17 +3109,16 @@
 
         const sections = completeness.sections || {};
         const sectionOrder = [
-            'StudyDesign', 'Recruitment', 'Eligibility', 'DataCollection',
-            'Procedure', 'Conditions', 'DatasetDescription', 'SessionsTasks'
+            'Basics', 'Overview', 'StudyDesign', 'Recruitment', 'Eligibility',
+            'Procedure', 'SessionsTasks'
         ];
         const sectionLabels = {
+            Basics: 'Basics (BIDS)',
+            Overview: 'Overview',
             StudyDesign: 'Study Design',
             Recruitment: 'Recruitment',
             Eligibility: 'Eligibility',
-            DataCollection: 'Data Collection',
             Procedure: 'Procedure',
-            Conditions: 'Conditions',
-            DatasetDescription: 'Dataset Description',
             SessionsTasks: 'Sessions & Tasks'
         };
 
@@ -2362,7 +3126,13 @@
         for (const key of sectionOrder) {
             const sec = sections[key];
             if (!sec) continue;
-            const pct = sec.total > 0 ? Math.round(sec.filled / sec.total * 100) : 0;
+            const reqTotal = sec.required_total || 0;
+            const reqFilled = sec.required_filled || 0;
+            const optTotal = sec.optional_total || 0;
+            const optFilled = sec.optional_filled || 0;
+            const baseTotal = reqTotal > 0 ? reqTotal : sec.total;
+            const baseFilled = reqTotal > 0 ? reqFilled : sec.filled;
+            const pct = baseTotal > 0 ? Math.round(baseFilled / baseTotal * 100) : 0;
             let dotClass = 'empty';
             if (pct === 100) dotClass = 'full';
             else if (pct > 0) dotClass = 'partial';
@@ -2371,19 +3141,20 @@
             html += `<div class="section-completeness-row">
                 <span class="section-label">${sectionLabels[key] || key}${autoLabel}</span>
                 <span class="completeness-dot ${dotClass}" title="${pct}%"></span>
-                <span class="section-badge text-muted">${sec.filled}/${sec.total}</span>
+                <span class="section-badge text-muted">Required ${reqFilled}/${reqTotal} • FAIR ${optFilled}/${optTotal}</span>
             </div>`;
 
             // Update per-section badges in the form
             const badgeEl = document.getElementById('sm' + key + 'Badge');
             if (badgeEl) {
-                if (pct === 100) {
-                    badgeEl.innerHTML = '<span class="badge bg-success bg-opacity-75">Complete</span>';
-                } else if (pct > 0) {
-                    badgeEl.innerHTML = `<span class="badge bg-warning bg-opacity-75">${sec.filled}/${sec.total}</span>`;
-                } else {
-                    badgeEl.innerHTML = `<span class="badge bg-secondary bg-opacity-50">${sec.filled}/${sec.total}</span>`;
-                }
+                const reqDone = reqTotal > 0 && reqFilled === reqTotal;
+                const optDone = optTotal > 0 && optFilled === optTotal;
+                const reqClass = reqDone ? 'bg-success' : 'bg-danger';
+                const optClass = optDone ? 'bg-primary' : 'bg-secondary';
+                badgeEl.innerHTML = `
+                    <span class="badge ${reqClass} bg-opacity-75">Required ${reqFilled}/${reqTotal}</span>
+                    <span class="badge ${optClass} bg-opacity-50">FAIR ${optFilled}/${optTotal}</span>
+                `;
             }
         }
         dotsDiv.innerHTML = html;
@@ -2394,15 +3165,27 @@
     }
 
     // Study Metadata Form Submission
-    document.getElementById('studyMetadataForm')?.addEventListener('submit', async function(e) {
+    const studyMetadataForm = document.getElementById('studyMetadataForm');
+    if (studyMetadataForm) {
+        const refreshCompleteness = () => updateCompletenessUI(computeLocalCompleteness());
+        studyMetadataForm.addEventListener('input', refreshCompleteness);
+        studyMetadataForm.addEventListener('change', refreshCompleteness);
+    }
+
+    studyMetadataForm?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const btn = this.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+        const originalText = setButtonLoading(btn, true, 'Saving...');
 
         try {
             const payload = {
+               Overview: {
+                    Main: document.getElementById('smOverviewMain').value || undefined,
+                    IndependentVariables: document.getElementById('smOverviewIV').value || undefined,
+                    DependentVariables: document.getElementById('smOverviewDV').value || undefined,
+                    ControlVariables: document.getElementById('smOverviewCV').value || undefined,
+                    QualityAssessment: document.getElementById('smOverviewQA').value || undefined,
+                },
                 StudyDesign: {
                     Type: document.getElementById('smSDType').value || undefined,
                     TypeDescription: document.getElementById('smSDTypeDesc').value || undefined,
@@ -2410,15 +3193,25 @@
                     Randomization: document.getElementById('smSDRandomization').value || undefined,
                     ControlCondition: document.getElementById('smSDControl').value || undefined,
                 },
+                Conditions: {
+                    Type: document.getElementById('smSDConditionType').value || undefined,
+                },
                 Recruitment: {
-                    Method: document.getElementById('smRecMethod').value || undefined,
-                    Location: document.getElementById('smRecLocation').value || undefined,
+                    Method: (function() {
+                        const list = getRecMethodList();
+                        if (!list.length) return undefined;
+                        return list.join('; ');
+                    })(),
+                    Location: (function() {
+                        const list = getRecLocationList();
+                        if (!list.length) return undefined;
+                        return list.join('; ');
+                    })(),
                     Period: {
-                        Start: document.getElementById('smRecPeriodStart').value || undefined,
-                        End: document.getElementById('smRecPeriodEnd').value || undefined,
+                        Start: getYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth') || undefined,
+                        End: getYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth') || undefined,
                     },
                     Compensation: document.getElementById('smRecCompensation').value || undefined,
-                    Platform: document.getElementById('smRecPlatform').value || undefined,
                 },
                 Eligibility: {
                     InclusionCriteria: _textToArray(document.getElementById('smEligInclusion').value) || undefined,
@@ -2426,29 +3219,21 @@
                     TargetSampleSize: parseInt(document.getElementById('smEligSampleSize').value) || undefined,
                     PowerAnalysis: document.getElementById('smEligPower').value || undefined,
                 },
-                DataCollection: {
-                    Platform: document.getElementById('smDCPlatform').value || undefined,
-                    PlatformVersion: document.getElementById('smDCPlatformVersion').value || undefined,
-                    Method: document.getElementById('smDCMethod').value || undefined,
-                    SupervisionLevel: document.getElementById('smDCSupervision').value || undefined,
-                    Setting: document.getElementById('smDCSetting').value || undefined,
-                    AverageDuration: (function() {
-                        const v = parseFloat(document.getElementById('smDCDurationValue').value);
-                        if (isNaN(v)) return undefined;
-                        return { Value: v, Unit: document.getElementById('smDCDurationUnit').value };
-                    })(),
-                },
                 Procedure: {
                     Overview: document.getElementById('smProcOverview').value || undefined,
                     InformedConsent: document.getElementById('smProcConsent').value || undefined,
                     QualityControl: _textToArray(document.getElementById('smProcQC').value) || undefined,
                     MissingDataHandling: document.getElementById('smProcMissing').value || undefined,
                     Debriefing: document.getElementById('smProcDebriefing').value || undefined,
+                    AdditionalData: document.getElementById('smProcAdditionalData').value || undefined,
+                    Notes: document.getElementById('smProcNotes').value || undefined,
                 },
-                Conditions: {
-                    Type: document.getElementById('smCondType').value || undefined,
-                    Groups: _smConditionGroups.filter(g => g.id || g.label) || undefined,
+                MissingData: {
+                    Description: document.getElementById('smMissingDesc').value || undefined,
+                    MissingFiles: document.getElementById('smMissingFiles').value || undefined,
+                    KnownIssues: document.getElementById('smKnownIssues').value || undefined,
                 },
+                References: document.getElementById('smReferences').value || undefined,
             };
 
             // Clean undefined values from nested objects
@@ -2483,14 +3268,18 @@
                 if (result.completeness) {
                     updateCompletenessUI(result.completeness);
                 }
+                // Save dataset_description
+                await saveDatasetDescription();
+                showToast('Dataset description saved', 'success');
+                // Auto-generate README
+                await generateReadme();
             } else {
                 showToast('Failed to save: ' + result.error, 'danger');
             }
         } catch (error) {
             showToast('Error: ' + error.message, 'danger');
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
+            setButtonLoading(btn, false, null, originalText);
         }
     });
 
@@ -2507,9 +3296,7 @@
 
     async function generateMethodsSection() {
         const btn = document.getElementById('generateMethodsBtn');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating...';
+        const originalText = setButtonLoading(btn, true, 'Generating...');
 
         const resultDiv = document.getElementById('methodsResult');
         const errorDiv = document.getElementById('methodsError');
@@ -2559,8 +3346,7 @@
                     <i class="fas fa-exclamation-circle me-2"></i>${error.message}
                 </div>`;
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
+            setButtonLoading(btn, false, null, originalText);
         }
     }
 
@@ -2589,9 +3375,7 @@
         }
 
         const btn = this.querySelector('button[type="submit"]');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Preparing Export...';
+        const originalText = setButtonLoading(btn, true, 'Preparing Export...');
 
         // Show progress UI
         const progressDiv = document.getElementById('exportProgress');
@@ -2668,8 +3452,171 @@
                 </div>
             `;
         } finally {
-            btn.disabled = false;
-            btn.innerHTML = originalText;
+            setButtonLoading(btn, false, null, originalText);
+        }
+    });
+
+    // ===== README GENERATION =====
+    async function generateReadme() {
+        if (!currentProjectPath) {
+            showToast('No project selected', 'warning');
+            return;
+        }
+
+        if (!confirm('Generate README.md from study metadata?\n\nThis will overwrite any existing README.md file.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/projects/generate-readme', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showToast('README.md generated successfully! Check your project folder.', 'success');
+            } else {
+                showToast(`Failed to generate README: ${data.error}`, 'danger');
+            }
+        } catch (error) {
+            showToast(`Error: ${error.message}`, 'danger');
+        }
+    }
+
+    // ===== AND EXPORT =====
+    document.getElementById('ancEnableExport')?.addEventListener('change', function() {
+        const isEnabled = this.checked;
+        document.getElementById('ancOptionsGroup').style.display = isEnabled ? 'block' : 'none';
+        document.getElementById('ancOptionsGroup2').style.display = isEnabled ? 'block' : 'none';
+        document.getElementById('ancMetadataSection').style.display = isEnabled ? 'block' : 'none';
+        document.getElementById('ancExportButton').style.display = isEnabled ? 'inline-block' : 'none';
+    });
+
+    document.getElementById('ancExportButton')?.addEventListener('click', async function(e) {
+        e.preventDefault();
+
+        if (!currentProjectPath) {
+            alert('No project is currently loaded');
+            return;
+        }
+
+        const btn = this;
+        const originalText = setButtonLoading(btn, true, 'Exporting for AND...');
+
+        const progressDiv = document.getElementById('exportProgress');
+        const resultDiv = document.getElementById('exportResult');
+        const statusText = document.getElementById('exportStatusText');
+        progressDiv.style.display = 'block';
+        resultDiv.style.display = 'none';
+        statusText.textContent = 'Preparing AND export...';
+
+        // Gather ANC-specific metadata
+        const metadata = {};
+        const title = document.getElementById('ancDatasetTitle').value.trim();
+        const email = document.getElementById('ancContactEmail').value.trim();
+        const givenName = document.getElementById('ancAuthorGiven').value.trim();
+        const familyName = document.getElementById('ancAuthorFamily').value.trim();
+        const description = document.getElementById('ancDatasetDescription').value.trim();
+
+        if (title) metadata.DATASET_NAME = title;
+        if (email) metadata.CONTACT_EMAIL = email;
+        if (givenName) metadata.AUTHOR_GIVEN_NAME = givenName;
+        if (familyName) metadata.AUTHOR_FAMILY_NAME = familyName;
+        if (description) metadata.DATASET_ABSTRACT = description;
+
+        const data = {
+            project_path: currentProjectPath,
+            convert_to_git_lfs: document.getElementById('ancConvertGitLfs').checked,
+            include_ci_examples: document.getElementById('ancIncludeCiExamples').checked,
+            metadata: metadata
+        };
+
+        try {
+            const response = await fetch('/api/projects/anc-export', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            progressDiv.style.display = 'none';
+            resultDiv.style.display = 'block';
+
+            if (result.success) {
+                let infoHtml = '';
+                if (data.convert_to_git_lfs) {
+                    infoHtml += `
+                        <div class="alert alert-info py-2 mt-2 mb-2">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Git LFS configuration added. See <code>GIT_LFS_SETUP.md</code> in the export folder for setup instructions.
+                        </div>
+                    `;
+                } else {
+                    infoHtml += `
+                        <div class="alert alert-info py-2 mt-2 mb-2">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Export is DataLad-compatible. See <code>DATALAD_NOTE.md</code> for more information.
+                        </div>
+                    `;
+                }
+
+                if (data.include_ci_examples) {
+                    infoHtml += `
+                        <div class="alert alert-info py-2 mt-2 mb-2">
+                            <i class="fas fa-info-circle me-2"></i>
+                            CI/CD example files included. See <code>CI_SETUP.md</code> for instructions.
+                        </div>
+                    `;
+                }
+
+                const filesList = result.generated_files ? 
+                    Object.entries(result.generated_files).map(([key, path]) => 
+                        `<li><code>${path.split('/').pop()}</code></li>`
+                    ).join('') : '';
+
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-check-circle me-2"></i>AND Export Successful!</h5>
+                        <p class="mb-2">Dataset exported to: <strong><code>${result.output_path}</code></strong></p>
+                        ${filesList ? `
+                            <div class="mt-2">
+                                <strong>Generated files:</strong>
+                                <ul class="mb-0 mt-1">${filesList}</ul>
+                            </div>
+                        ` : ''}
+                        ${infoHtml}
+                        <div class="mt-3">
+                            <strong>Next steps:</strong>
+                            <ol class="mb-0 mt-1">
+                                <li>Review and edit <code>README.md</code> and <code>CITATION.cff</code> in the export folder</li>
+                                <li>Run BIDS validator to verify compliance</li>
+                                <li>Submit to AND</li>
+                            </ol>
+                        </div>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-circle me-2"></i>AND Export Failed</h5>
+                        <p class="mb-0">${result.error || 'Unknown error occurred'}</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            progressDiv.style.display = 'none';
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>AND Export Failed</h5>
+                    <p class="mb-0">${error.message}</p>
+                </div>
+            `;
+        } finally {
+            setButtonLoading(btn, false, null, originalText);
         }
     });
 </script>

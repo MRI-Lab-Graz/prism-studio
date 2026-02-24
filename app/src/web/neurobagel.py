@@ -8,16 +8,42 @@ from functools import lru_cache
 from typing import Any, Dict
 
 
+def get_fallback_neurobagel_schema() -> Dict[str, Any]:
+    """Return minimal NeuroBagel schema when external fetch fails.
+
+    Returns a basic structure with common participant fields that will be
+    augmented by augment_neurobagel_data() with full controlled vocabularies.
+    """
+    return {
+        "properties": {
+            "participant_id": {"data_type": "identifier"},
+            "session_id": {"data_type": "identifier"},
+            "age": {"data_type": "continuous"},
+            "sex": {"data_type": "categorical"},
+            "gender": {"data_type": "categorical"},
+            "group": {"data_type": "categorical"},
+            "diagnosis": {"data_type": "categorical"},
+            "handedness": {"data_type": "categorical"},
+            "education_level": {"data_type": "categorical"},
+        }
+    }
+
+
 @lru_cache(maxsize=8)
 def fetch_neurobagel_participants() -> Any:
-    """Fetch NeuroBagel participants dictionary and cache it."""
+    """Fetch NeuroBagel participants dictionary and cache it.
+
+    Falls back to built-in schema if external URL is unavailable.
+    All controlled vocabularies are defined in augment_neurobagel_data().
+    """
     url = "https://neurobagel.org/data_models/dictionaries/participants.json"
     try:
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
         return resp.json()
     except Exception:
-        return None
+        # External source unavailable - use built-in fallback
+        return get_fallback_neurobagel_schema()
 
 
 def augment_neurobagel_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
