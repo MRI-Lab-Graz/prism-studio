@@ -716,8 +716,8 @@ def cmd_survey_convert(args):
             else:
                 print("\n✅ NO DATA ISSUES DETECTED")
 
-            # 📝 Participants.tsv Preview (NEW!)
-            if "participants_tsv" in preview:
+            # 📝 Participants.tsv Preview (only shown when participants are being created)
+            if "participants_tsv" in preview and preview.get("participants_tsv"):
                 print("\n📝 PARTICIPANTS.TSV PREVIEW")
                 print("   This file will be created with the following structure:\n")
 
