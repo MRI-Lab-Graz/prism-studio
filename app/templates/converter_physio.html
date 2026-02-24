@@ -53,7 +53,12 @@
                                     <div class="row g-3 align-items-end">
                                         <div class="col-md-6">
                                             <label for="physioBatchFiles" class="form-label fw-bold">Select Physio Files</label>
-                                            <input class="form-control" type="file" id="physioBatchFiles" accept=".raw,.vpd" multiple>
+                                            <div class="input-group">
+                                                <input class="form-control" type="file" id="physioBatchFiles" accept=".raw,.vpd" multiple>
+                                                <button class="btn btn-outline-secondary d-none" type="button" id="clearPhysioBatchFilesBtn" aria-label="Clear selected physio files" title="Clear selection">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
                                             <small class="text-muted">Select individual files</small>
                                         </div>
                                         <div class="col-md-6">
@@ -61,6 +66,9 @@
                                                 <label for="physioBatchFolder" class="form-label fw-bold">Or Select a Folder</label>
                                                 <div class="input-group">
                                                     <input class="form-control" type="file" id="physioBatchFolder" webkitdirectory directory multiple>
+                                                    <button class="btn btn-outline-secondary d-none" type="button" id="clearPhysioBatchFolderBtn" aria-label="Clear selected physio folder" title="Clear selection">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
                                                     <button class="btn btn-outline-primary" type="button" id="autoDetectPhysioBtn" title="Auto-detect sourcedata/physio folder">
                                                         <i class="fas fa-folder-open me-2"></i>Auto-detect
                                                     </button>
