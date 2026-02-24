@@ -300,17 +300,30 @@ def convert_biometrics_table_to_prism_dataset(
         except Exception as e:  # pragma: no cover
             raise RuntimeError("pandas is required for biometrics conversion") from e
 
-        participants = (
+        # Extract unique participant IDs from the input data
+        participant_ids = (
             df[col_pid]
             .astype(str)
             .map(_normalize_sub_id)
             .loc[lambda s: s.astype(str).str.len() > 0]
             .drop_duplicates()
-            .sort_values()
+            .tolist()
         )
-        pd.DataFrame({"participant_id": participants}).to_csv(
-            output_root / "participants.tsv", sep="\t", index=False
-        )
+
+        # Use the update utility to add/preserve participants
+        try:
+            from ..utils.io import update_participants_tsv
+
+            update_participants_tsv(
+                output_root,
+                participant_ids,
+                log_fn=None,  # Could pass a logger here if available
+            )
+        except Exception:
+            # Fallback to old behavior if update fails
+            pd.DataFrame({"participant_id": sorted(participant_ids)}).to_csv(
+                output_root / "participants.tsv", sep="\t", index=False
+            )
 
     tasks_included: list[str] = []
 

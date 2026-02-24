@@ -752,17 +752,14 @@ def _load_participants_mapping(output_root: Path, log_fn=None) -> dict | None:
     participants.tsv and how they map to standard variable names.
 
     Args:
-        output_root: Path to the output root (rawdata/ or dataset root)
+        output_root: Path to the dataset root (where participants.tsv will be created)
         log_fn: Optional logging function (callable taking message string)
 
     Returns:
         Mapping dict if found, None otherwise
     """
-    # Determine project root from output_root
-    if output_root.name == "rawdata":
-        project_root = output_root.parent
-    else:
-        project_root = output_root
+    # output_root is the dataset root
+    project_root = output_root
 
     # Search locations for participants_mapping.json
     candidates = [
@@ -996,21 +993,12 @@ def _copy_templates_to_project(
     Args:
         templates: Dict of loaded templates (task -> {path, json})
         tasks_with_data: Set of tasks that were actually used
-        dataset_root: Root of the dataset (parent of rawdata/)
+        dataset_root: Root of the dataset (where sub-XX folders and code/ are)
         language: Language used for localization
         technical_overrides: Any technical field overrides applied
     """
-    # Determine project root (parent of rawdata/)
-    if dataset_root.name == "rawdata":
-        project_root = dataset_root.parent
-    else:
-        # Dataset root might be the project root itself
-        rawdata_path = dataset_root / "rawdata"
-        if rawdata_path.exists() and rawdata_path.is_dir():
-            project_root = dataset_root
-        else:
-            # Can't determine project root, skip copying
-            return
+    # dataset_root is the project root (where sub-XX folders are)
+    project_root = dataset_root
 
     # Create code/library/survey/ folder (YODA-compliant)
     library_dir = project_root / "code" / "library" / "survey"
@@ -3137,7 +3125,9 @@ def _build_participant_col_renames(
             continue
         if len(sanitized) > LS_MAX:
             # Hash used for generating short suffixes, not for security
-            hash_suffix = hashlib.md5(field_name.encode(), usedforsecurity=False).hexdigest()[:2]
+            hash_suffix = hashlib.md5(
+                field_name.encode(), usedforsecurity=False
+            ).hexdigest()[:2]
             sanitized = sanitized[: LS_MAX - 2] + hash_suffix
 
         sanitized_lower = sanitized.lower()
@@ -3311,7 +3301,58 @@ def _write_survey_participants(
         df_part = df_part.merge(df_extra, on="participant_id", how="left")
 
     df_part = df_part.drop_duplicates(subset=["participant_id"]).reset_index(drop=True)
-    df_part.to_csv(output_root / "participants.tsv", sep="\t", index=False)
+
+    # Merge with existing participants.tsv if it exists
+    participants_tsv_path = output_root / "participants.tsv"
+    if participants_tsv_path.exists():
+        try:
+            existing_df = pd.read_csv(participants_tsv_path, sep="\t", dtype=str)
+            if "participant_id" in existing_df.columns:
+                # Merge new data with existing, preferring new values for overlapping participants
+                # but keeping all existing participants and columns
+                df_part = pd.merge(
+                    existing_df,
+                    df_part,
+                    on="participant_id",
+                    how="outer",
+                    suffixes=("_old", "_new"),
+                )
+
+                # For each column that exists in both, prefer new value if not n/a
+                for col in df_part.columns:
+                    if col.endswith("_new"):
+                        base_col = col[:-4]  # Remove "_new"
+                        old_col = base_col + "_old"
+                        if old_col in df_part.columns:
+                            # Prefer new value, fall back to old if new is n/a
+                            df_part[base_col] = df_part.apply(
+                                lambda row: (
+                                    row[col]
+                                    if pd.notna(row[col])
+                                    and str(row[col]) not in ("n/a", "nan", "")
+                                    else (
+                                        row[old_col]
+                                        if pd.notna(row[old_col])
+                                        else "n/a"
+                                    )
+                                ),
+                                axis=1,
+                            )
+                            # Drop the _old and _new columns
+                            df_part = df_part.drop(columns=[old_col, col])
+                        else:
+                            # No old column, just rename new column
+                            df_part = df_part.rename(columns={col: base_col})
+
+                # Sort by participant_id
+                df_part = df_part.sort_values("participant_id").reset_index(drop=True)
+                print(
+                    f"[INFO] Merged with existing participants.tsv ({len(existing_df)} existing → {len(df_part)} total)"
+                )
+        except Exception as e:
+            print(f"[WARNING] Could not merge with existing participants.tsv: {e}")
+
+    df_part.to_csv(participants_tsv_path, sep="\t", index=False)
 
     # participants.json - all columns must be documented
     parts_json_path = output_root / "participants.json"

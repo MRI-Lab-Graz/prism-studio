@@ -15,7 +15,7 @@ Keep each file lean — avoid dumping detailed logs or reference tables into CLA
 
 ## Project Overview
 
-PRISM (Psychological Research Information Standard for Metadata) is a BIDS-compatible validator for psychology/neuroscience datasets. Extends BIDS with survey and biometrics modalities without breaking BIDS compatibility.
+PRISM (Psychological Research Information System & Management) is a BIDS-compatible validator for psychology/neuroscience datasets. Extends BIDS with survey and biometrics modalities without breaking BIDS compatibility.
 
 ## Development Standards
 

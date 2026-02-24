@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Setup script for PRISM (Psychological Research Information Standard for Metadata)
+Setup script for PRISM (Psychological Research Information System & Management)
 """
 
 from setuptools import setup

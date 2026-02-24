@@ -319,8 +319,11 @@ def get_fix_hint(code: str, message: str = "") -> str:
                     "eyetracking": "Ensure the filename ends with '_eyetrack.<ext>' or '_eye.<ext>' or '_gaze.<ext>' where <ext> is tsv, tsv.gz, json, edf, or asc (e.g., sub-001_task-rest_trackedEye-left_eyetrack.tsv)",
                     "events": "Ensure the filename ends with '_events.tsv' (e.g., sub-001_task-rest_events.tsv)",
                 }
-                return modality_hints.get(modality, f"Ensure the filename ends with '_{modality}.<ext>' appropriate for this modality")
-        
+                return modality_hints.get(
+                    modality,
+                    f"Ensure the filename ends with '_{modality}.<ext>' appropriate for this modality",
+                )
+
         # Schema validation errors (PRISM301)
         if code == "PRISM301":
             if "licenseid" in message.lower() or "license" in message.lower():
