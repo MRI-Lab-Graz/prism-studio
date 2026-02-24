@@ -739,7 +739,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const convertLibraryPathInput = document.getElementById('convertLibraryPath');
     const convertBrowseLibraryBtn = document.getElementById('convertBrowseLibraryBtn');
     const convertExcelFile = document.getElementById('convertExcelFile');
+    const clearConvertExcelFileBtn = document.getElementById('clearConvertExcelFileBtn');
     const convertIdMapFile = document.getElementById('convertIdMapFile');
+    const clearIdMapFileBtn = document.getElementById('clearIdMapFileBtn');
     const convertBtn = document.getElementById('convertBtn');
     const previewBtn = document.getElementById('previewBtn');
     const convertDatasetName = document.getElementById('convertDatasetName');
@@ -748,17 +750,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const convertInfo = document.getElementById('convertInfo');
 
     if (convertIdMapFile) {
+        const updateIdMapClearButtonState = () => {
+            const hasFile = Boolean(convertIdMapFile.files && convertIdMapFile.files[0]);
+            clearIdMapFileBtn?.classList.toggle('d-none', !hasFile);
+        };
+
         convertIdMapFile.addEventListener('change', () => {
             const f = convertIdMapFile.files && convertIdMapFile.files[0];
             if (f) {
                 // Just log selection, don't validate (avoids stream issues)
                 console.log(`ID map file selected: ${f.name} (${f.size} bytes)`);
             }
+            updateIdMapClearButtonState();
         });
+
+        clearIdMapFileBtn?.addEventListener('click', () => {
+            convertIdMapFile.value = '';
+            updateIdMapClearButtonState();
+            convertError?.classList.add('d-none');
+            convertError.textContent = '';
+        });
+
+        updateIdMapClearButtonState();
     }
 
     // --- Biometrics Convert ---
     const biometricsDataFile = document.getElementById('biometricsDataFile');
+    const clearBiometricsDataFileBtn = document.getElementById('clearBiometricsDataFileBtn');
     const biometricsPreviewBtn = document.getElementById('biometricsPreviewBtn');
     const biometricsConvertBtn = document.getElementById('biometricsConvertBtn');
     const biometricsError = document.getElementById('biometricsError');
@@ -774,7 +792,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Physio Convert (Batch) ---
     const physioBatchFiles = document.getElementById('physioBatchFiles');
+    const clearPhysioBatchFilesBtn = document.getElementById('clearPhysioBatchFilesBtn');
     const physioBatchFolder = document.getElementById('physioBatchFolder');
+    const clearPhysioBatchFolderBtn = document.getElementById('clearPhysioBatchFolderBtn');
     const physioBatchSamplingRate = document.getElementById('physioBatchSamplingRate');
     const physioBatchDryRun = document.getElementById('physioBatchDryRun');
     const physioBatchConvertBtn = document.getElementById('physioBatchConvertBtn');
@@ -798,6 +818,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Eyetracking Convert (Batch) ---
     const eyetrackingBatchFiles = document.getElementById('eyetrackingBatchFiles');
+    const clearEyetrackingBatchFilesBtn = document.getElementById('clearEyetrackingBatchFilesBtn');
     const eyetrackingBatchDatasetName = document.getElementById('eyetrackingBatchDatasetName');
     const eyetrackingBatchConvertBtn = document.getElementById('eyetrackingBatchConvertBtn');
     const eyetrackingBatchError = document.getElementById('eyetrackingBatchError');
@@ -1088,6 +1109,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Detect columns from file for ID column selector
+    function resetDetectedColumnsState() {
+        const idColumnSelect = document.getElementById('convertIdColumn');
+        const idColumnStatus = document.getElementById('idColumnStatus');
+        const idColumnHelp = document.getElementById('idColumnHelp');
+        if (!idColumnSelect) return;
+
+        window._isPrismData = false;
+        idColumnSelect.innerHTML = '<option value="auto" selected>Auto-detect (PRISM surveys only)</option>';
+        idColumnSelect.classList.remove('border-danger');
+        if (idColumnStatus) idColumnStatus.innerHTML = '';
+        if (idColumnHelp) idColumnHelp.innerHTML = '<i class="fas fa-info-circle me-1"></i>Upload a file to detect available columns';
+    }
+
     async function detectFileColumns(file) {
         const filename = file.name.toLowerCase();
         const idColumnSelect = document.getElementById('convertIdColumn');
@@ -1096,9 +1130,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!idColumnSelect) return;
 
         // Reset state
-        window._isPrismData = false;
-        idColumnSelect.innerHTML = '<option value="auto" selected>Auto-detect (PRISM surveys only)</option>';
-        idColumnSelect.classList.remove('border-danger');
+        resetDetectedColumnsState();
 
         // For .lss files, no columns to detect (structure only)
         if (filename.endsWith('.lss')) {
@@ -1208,6 +1240,8 @@ document.addEventListener('DOMContentLoaded', function() {
             convertBtn.classList.remove('btn-success');
             convertBtn.classList.add('btn-warning');
         }
+
+        clearConvertExcelFileBtn?.classList.toggle('d-none', !hasFile);
     }
 
     convertExcelFile.addEventListener('change', async function() {
@@ -1224,8 +1258,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Detect columns for ID selection
             await detectFileColumns(file);
+        } else {
+            convertInfo.classList.add('d-none');
+            resetDetectedColumnsState();
         }
         updateConvertBtn();
+    });
+
+    clearConvertExcelFileBtn?.addEventListener('click', function() {
+        convertExcelFile.value = '';
+        convertExcelFile.dispatchEvent(new Event('change', { bubbles: true }));
+        if (sourcedataFileSelect) {
+            sourcedataFileSelect.value = '';
+        }
+        convertError.classList.add('d-none');
+        convertError.textContent = '';
     });
 
     // Clear error styling when ID column is changed
@@ -3328,12 +3375,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasFile = biometricsDataFile && biometricsDataFile.files && biometricsDataFile.files.length === 1;
         if (biometricsPreviewBtn) biometricsPreviewBtn.disabled = !hasFile;
         if (biometricsConvertBtn) biometricsConvertBtn.disabled = !hasFile;
+        clearBiometricsDataFileBtn?.classList.toggle('d-none', !hasFile);
     }
 
     if (biometricsDataFile) {
         biometricsDataFile.addEventListener('change', updateBiometricsBtn);
         updateBiometricsBtn();
     }
+
+    clearBiometricsDataFileBtn?.addEventListener('click', function() {
+        if (biometricsDataFile) {
+            biometricsDataFile.value = '';
+            biometricsDataFile.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        biometricsError.classList.add('d-none');
+        biometricsError.textContent = '';
+        biometricsInfo.classList.add('d-none');
+        biometricsInfo.textContent = '';
+        resetBiometricsUI();
+    });
 
     function downloadCurrentBiometricsZip() {
         if (!currentBiometricsZipBlob) return;
@@ -3763,6 +3823,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasFolder = physioBatchFolder && physioBatchFolder.files && physioBatchFolder.files.length > 0;
         const hasAutoPath = physioBatchFolderPath && physioBatchFolderPath.value && physioBatchFolderPath.value.length > 0;
         const shouldEnable = hasFiles || hasFolder || hasAutoPath;
+
+        clearPhysioBatchFilesBtn?.classList.toggle('d-none', !hasFiles);
+        clearPhysioBatchFolderBtn?.classList.toggle('d-none', !(hasFolder || hasAutoPath));
         
         if (physioBatchConvertBtn) {
             physioBatchConvertBtn.disabled = !shouldEnable;
@@ -3793,6 +3856,33 @@ document.addEventListener('DOMContentLoaded', function() {
         physioBatchFolder.addEventListener('change', updatePhysioBatchBtn);
         updatePhysioBatchBtn();
     }
+
+    clearPhysioBatchFilesBtn?.addEventListener('click', function() {
+        if (physioBatchFiles) {
+            physioBatchFiles.value = '';
+            physioBatchFiles.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        physioBatchError.classList.add('d-none');
+        physioBatchError.textContent = '';
+    });
+
+    clearPhysioBatchFolderBtn?.addEventListener('click', function() {
+        if (physioBatchFolder) {
+            physioBatchFolder.value = '';
+            physioBatchFolder.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        if (physioBatchFolderPath) {
+            physioBatchFolderPath.value = '';
+        }
+        if (autoDetectHint) {
+            autoDetectHint.textContent = '';
+        }
+        physioBatchError.classList.add('d-none');
+        physioBatchError.textContent = '';
+        physioBatchInfo.classList.add('d-none');
+        physioBatchInfo.textContent = '';
+        updatePhysioBatchBtn();
+    });
     
     if (physioBatchDryRun) {
         physioBatchDryRun.addEventListener('change', updatePhysioBatchBtn);
@@ -4001,6 +4091,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Eyetracking Batch Convert ---
     function updateEyetrackingBatchBtn() {
         const hasFiles = eyetrackingBatchFiles && eyetrackingBatchFiles.files && eyetrackingBatchFiles.files.length > 0;
+        clearEyetrackingBatchFilesBtn?.classList.toggle('d-none', !hasFiles);
         if (eyetrackingBatchConvertBtn) eyetrackingBatchConvertBtn.disabled = !hasFiles;
     }
 
@@ -4008,6 +4099,17 @@ document.addEventListener('DOMContentLoaded', function() {
         eyetrackingBatchFiles.addEventListener('change', updateEyetrackingBatchBtn);
         updateEyetrackingBatchBtn();
     }
+
+    clearEyetrackingBatchFilesBtn?.addEventListener('click', function() {
+        if (eyetrackingBatchFiles) {
+            eyetrackingBatchFiles.value = '';
+            eyetrackingBatchFiles.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        eyetrackingBatchError.classList.add('d-none');
+        eyetrackingBatchError.textContent = '';
+        eyetrackingBatchInfo.classList.add('d-none');
+        eyetrackingBatchInfo.textContent = '';
+    });
 
     if (eyetrackingBatchLogClearBtn) {
         eyetrackingBatchLogClearBtn.addEventListener('click', () => {
