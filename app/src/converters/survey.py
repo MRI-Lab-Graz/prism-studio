@@ -2460,6 +2460,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             is_missing_fn=_is_missing_value,
             ls_system_cols=ls_system_cols,
             participant_template=participant_template,
+            skip_participants=skip_participants,
             output_root=output_root,
             dataset_root=_resolve_dataset_root(output_root),
             lsa_questions_map=lsa_questions_map,
@@ -3772,6 +3773,7 @@ def _generate_dry_run_preview(
     is_missing_fn,
     ls_system_cols: list[str],
     participant_template: dict | None,
+    skip_participants: bool = True,
     output_root: Path,
     dataset_root: Path,
     lsa_questions_map: dict | None = None,
@@ -3973,22 +3975,23 @@ def _generate_dry_run_preview(
         }
     )
 
-    # Participants files
-    files_to_create.append(
-        {
-            "path": "participants.tsv",
-            "type": "metadata",
-            "description": f"Participant list ({len(participants_info)} participants)",
-        }
-    )
+    # Participants files (optional)
+    if not skip_participants:
+        files_to_create.append(
+            {
+                "path": "participants.tsv",
+                "type": "metadata",
+                "description": f"Participant list ({len(participants_info)} participants)",
+            }
+        )
 
-    files_to_create.append(
-        {
-            "path": "participants.json",
-            "type": "metadata",
-            "description": "Participant column definitions",
-        }
-    )
+        files_to_create.append(
+            {
+                "path": "participants.json",
+                "type": "metadata",
+                "description": "Participant column definitions",
+            }
+        )
 
     # Task sidecars
     for task in sorted(tasks_with_data):
@@ -4056,22 +4059,23 @@ def _generate_dry_run_preview(
     preview["files_to_create"] = files_to_create
     preview["summary"]["total_files"] = len(files_to_create)
 
-    # Generate participants.tsv preview
-    participants_tsv_preview = _generate_participants_preview(
-        df=df,
-        res_id_col=res_id_col,
-        res_ses_col=res_ses_col,
-        session=session,
-        normalize_sub_fn=normalize_sub_fn,
-        normalize_ses_fn=normalize_ses_fn,
-        is_missing_fn=is_missing_fn,
-        participant_template=participant_template,
-        output_root=output_root,
-        survey_columns=set(col_to_mapping.keys()),  # Columns used for survey items
-        ls_system_columns=ls_system_cols,  # LimeSurvey system columns
-        lsa_questions_map=lsa_questions_map,  # LSA metadata for decoding field names
-    )
-    preview["participants_tsv"] = participants_tsv_preview
+    if not skip_participants:
+        # Generate participants.tsv preview
+        participants_tsv_preview = _generate_participants_preview(
+            df=df,
+            res_id_col=res_id_col,
+            res_ses_col=res_ses_col,
+            session=session,
+            normalize_sub_fn=normalize_sub_fn,
+            normalize_ses_fn=normalize_ses_fn,
+            is_missing_fn=is_missing_fn,
+            participant_template=participant_template,
+            output_root=output_root,
+            survey_columns=set(col_to_mapping.keys()),  # Columns used for survey items
+            ls_system_columns=ls_system_cols,  # LimeSurvey system columns
+            lsa_questions_map=lsa_questions_map,  # LSA metadata for decoding field names
+        )
+        preview["participants_tsv"] = participants_tsv_preview
 
     return preview
 
