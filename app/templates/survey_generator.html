@@ -290,6 +290,20 @@ document.addEventListener('DOMContentLoaded', function() {
     function getSelectedTool() { return targetToolSelect.value; }
     function getToolConfig() { return toolConfig[getSelectedTool()] || toolConfig.limesurvey; }
 
+    // Helper: Button loading state
+    function setButtonLoading(btn, isLoading, loadingText = 'Loading...', originalText = null) {
+        if (isLoading) {
+            const current = btn.innerHTML;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i>${loadingText}`;
+            btn.disabled = true;
+            return current;
+        } else {
+            btn.innerHTML = originalText || btn.innerHTML.replace(/<i[^>]*spinner[^>]*>.*?<\/i>\s*/, '');
+            btn.disabled = false;
+            return null;
+        }
+    }
+
     // Show/hide tool-specific option groups based on selected tool
     function updateToolOptions() {
         const tool = getSelectedTool();
@@ -333,12 +347,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (source === 'both') return '<span class="badge source-badge-both">Global + Project</span>';
         if (source === 'project') return '<span class="badge source-badge-project">Project</span>';
         return '<span class="badge source-badge-global">Global</span>';
-    }
-
-    function langBadgesHtml(detectedLangs) {
-        return (detectedLangs || []).map(l =>
-            `<span class="lang-badge ${detectedLangs.includes(currentLanguage) ? 'lang-badge-available' : 'lang-badge-missing'}">${l.toUpperCase()}</span>`
-        ).join(' ');
     }
 
     function hasAllExportLanguages(fileLangs) {
@@ -803,8 +811,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.file-checkbox:checked').forEach(cb => selected.push(cb.value));
         if (selected.length === 0) return;
 
-        generateBoilerplateBtn.disabled = true;
-        generateBoilerplateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>...';
+        const originalText = setButtonLoading(generateBoilerplateBtn, true, '...');
 
         fetch('/api/generate-boilerplate', {
             method: 'POST',
@@ -818,8 +825,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(err => alert(err.message))
         .finally(() => {
-            generateBoilerplateBtn.disabled = false;
-            generateBoilerplateBtn.innerHTML = '<i class="fas fa-file-alt me-1"></i>Boilerplate';
+            setButtonLoading(generateBoilerplateBtn, false, null, originalText);
         });
     });
 
@@ -829,8 +835,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (files.length === 0) { alert("Select at least one file and one question."); return; }
 
         const cfg = getToolConfig();
-        generateLssBtn.disabled = true;
-        generateLssBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>...';
+        const originalText = setButtonLoading(generateLssBtn, true, '...');
 
         const payload = {
             files, languages: selectedExportLanguages, base_language: currentLanguage,
@@ -853,8 +858,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(err => alert(err.message))
         .finally(() => {
-            generateLssBtn.disabled = false;
-            generateLssBtn.innerHTML = `<i class="fas fa-file-export me-1"></i>Quick Export (${cfg.fileExt})`;
+            setButtonLoading(generateLssBtn, false, null, originalText);
         });
     });
 

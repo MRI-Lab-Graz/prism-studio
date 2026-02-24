@@ -782,14 +782,21 @@ async function loadNeurobagelWidget() {
     }
     
     // Load local participants.tsv columns first for mapping
+    const projectPath = "{{ current_project.path or '' }}";
+    console.log('🔄 Fetching participants TSV columns...');
     try {
-        const tsvResponse = await fetch('/api/projects/participants/columns');
+        const tsvResponse = await fetch(`/api/neurobagel/local-participants?project_path=${encodeURIComponent(projectPath)}`);
+        console.log('📡 TSV columns response status:', tsvResponse.status);
         const tsvData = await tsvResponse.json();
+        console.log('📊 TSV columns data:', tsvData);
         if (tsvData.columns) {
             window.participantsTsvData = tsvData.columns;
+            console.log('✅ Set window.participantsTsvData:', Object.keys(window.participantsTsvData));
+        } else if (tsvData.error) {
+            console.error('❌ API returned error:', tsvData.error);
         }
     } catch (error) {
-        console.warn('Could not load participants TSV columns:', error);
+        console.error('❌ Could not load participants TSV columns:', error);
     }
     
     // Check if widget is already loaded

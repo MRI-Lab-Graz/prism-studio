@@ -137,12 +137,15 @@ app.config["BASE_DIR"] = BASE_DIR  # Make BASE_DIR available to blueprints
 # Track app startup for session management
 app.config["PRISM_STARTUP_ID"] = uuid.uuid4().hex
 
-# Load last project from settings (will be restored to session on first request)
-from src.config import load_app_settings
+# Load app settings and clear last project on startup (no autoload)
+from src.config import load_app_settings, save_app_settings
 
 _app_settings = load_app_settings(app_root=str(BASE_DIR))
-app.config["LAST_PROJECT_PATH"] = getattr(_app_settings, "last_project_path", None)
-app.config["LAST_PROJECT_NAME"] = getattr(_app_settings, "last_project_name", None)
+_app_settings.last_project_path = None
+_app_settings.last_project_name = None
+save_app_settings(_app_settings, app_root=str(BASE_DIR))
+app.config["LAST_PROJECT_PATH"] = None
+app.config["LAST_PROJECT_NAME"] = None
 
 # Initialize Survey Manager with global library paths
 from src.config import get_effective_library_paths
@@ -244,18 +247,11 @@ def ensure_project_selected_first():
     This keeps all features consistently anchored to the active project path
     (stored in session as current_project_path/current_project_name).
     """
-    # If this is a new browser session, restore the last project from settings
+    # If this is a new browser session, clear any prior project selection
     if session.get("_prism_startup_id") != app.config.get("PRISM_STARTUP_ID"):
         session["_prism_startup_id"] = app.config.get("PRISM_STARTUP_ID")
-        # Restore last project if it still exists
-        last_path = app.config.get("LAST_PROJECT_PATH")
-        last_name = app.config.get("LAST_PROJECT_NAME")
-        if last_path and os.path.exists(last_path):
-            session["current_project_path"] = last_path
-            session["current_project_name"] = last_name or Path(last_path).name
-        else:
-            session.pop("current_project_path", None)
-            session.pop("current_project_name", None)
+        session.pop("current_project_path", None)
+        session.pop("current_project_name", None)
 
     if session.get("current_project_path"):
         return None
@@ -266,6 +262,8 @@ def ensure_project_selected_first():
     if path.startswith("/static/"):
         return None
     if path == "/projects" or path.startswith("/api/projects/"):
+        return None
+    if path == "/assets/prism-logo" or path == "/assets/prism-logo.png":
         return None
 
     # Allow utility endpoints needed before a project is selected (used on /projects).
@@ -354,22 +352,23 @@ def favicon_ico():
 
 @app.route("/assets/prism-logo")
 def prism_logo():
-    """Serve PRISM logo from docs/img with caching"""
+    """Serve PRISM logo from docs/img with caching (transparent PNG)"""
     from flask import send_file, Response
 
     candidates = [
+        safe_path_join(BASE_DIR.parent, "docs", "img", "prism_logo.png"),
+        safe_path_join(BASE_DIR, "static", "img", "prism_logo.png"),
         safe_path_join(BASE_DIR.parent, "docs", "img", "prism_logo.jpg"),
         safe_path_join(BASE_DIR, "static", "img", "prism_logo.jpg"),
-        safe_path_join(BASE_DIR.parent, "docs", "img", "prism_logo_old.jpg"),
-        safe_path_join(BASE_DIR, "static", "img", "prism_logo_old.jpg"),
     ]
 
     for path in candidates:
         file_path = Path(path)
         if file_path.exists():
+            mimetype = "image/png" if str(path).endswith(".png") else "image/jpeg"
             return send_file(
                 str(file_path),
-                mimetype="image/jpeg",
+                mimetype=mimetype,
                 max_age=86400,  # Cache for 24 hours
             )
 

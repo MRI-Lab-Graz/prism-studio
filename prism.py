@@ -4,11 +4,24 @@ import sys
 from pathlib import Path
 
 
+def find_project_root():
+    """Find the project root directory (contains app/ and .venv/)."""
+    # Start from script location
+    current = Path(__file__).resolve().parent
+
+    # If we're in .venv/bin/, go up two levels
+    if current.name == "bin" and current.parent.name == ".venv":
+        return current.parent.parent
+
+    # Otherwise, current directory should be the project root
+    return current
+
+
 # Check if we're in the correct virtual environment
 def check_and_activate_venv():
     """Check if the correct venv is activated, if not try to re-execute with it."""
-    current_dir = Path(__file__).resolve().parent
-    venv_dir = current_dir / ".venv"
+    project_root = find_project_root()
+    venv_dir = project_root / ".venv"
 
     # Check if venv exists
     if not venv_dir.exists():
@@ -41,10 +54,10 @@ check_and_activate_venv()
 
 # Redirect to the consolidated app folder
 if __name__ == "__main__":
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    app_script = os.path.join(current_dir, "app", "prism.py")
-    if os.path.exists(app_script):
-        os.execv(sys.executable, [sys.executable, app_script] + sys.argv[1:])
+    project_root = find_project_root()
+    app_script = project_root / "app" / "prism.py"
+    if app_script.exists():
+        os.execv(sys.executable, [sys.executable, str(app_script)] + sys.argv[1:])
     else:
         print(f"Error: {app_script} not found.")
         sys.exit(1)

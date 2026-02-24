@@ -6,7 +6,7 @@
   "version": "1.9.1",
   "url": "https://prism-studio.readthedocs.io/en/latest/",
   "codeRepository": "https://github.com/MRI-Lab-Graz/prism-studio",
-  "license": "MIT",
+  "license": "AGPL-3.0",
   "programmingLanguage": ["Python"],
   "dateCreated": "2025-12-22",
   "keywords": ["BIDS", "validation", "metadata", "psychology", "surveys", "biometrics"]

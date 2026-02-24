@@ -16,6 +16,7 @@ from pathlib import Path
 from flask import Blueprint, render_template, jsonify, request, session
 
 from src.project_manager import ProjectManager, get_available_modalities
+from src.readme_generator import ReadmeGenerator
 
 projects_bp = Blueprint("projects", __name__)
 
@@ -35,6 +36,148 @@ def set_current_project(path: str, name: str = None):
     """Set the current working project in session."""
     session["current_project_path"] = path
     session["current_project_name"] = name or Path(path).name
+
+
+def get_bids_file_path(project_path: Path, filename: str) -> Path:
+    """Get path to a BIDS metadata file, checking both root and rawdata/ folder.
+
+    BIDS standard says participants.tsv, participants.json, and dataset_description.json
+    belong in the dataset ROOT. However, some DataLad-style projects use rawdata/ subfolder.
+    This function checks both locations and returns the correct path.
+
+    Args:
+        project_path: Path to the project root
+        filename: Name of the file (e.g., 'participants.json', 'dataset_description.json')
+
+    Returns:
+        Path to the file (in root if exists, otherwise rawdata/, even if neither exists)
+    """
+    # Check root first (standard BIDS)
+    root_path = project_path / filename
+    if root_path.exists():
+        return root_path
+
+    # Check rawdata/ folder (DataLad-style)
+    rawdata_path = project_path / "rawdata" / filename
+    if rawdata_path.exists():
+        return rawdata_path
+
+    # If neither exists, prefer root (standard BIDS for new files)
+    return root_path
+
+
+_DEFAULT_CITATION_MESSAGE = "If you use this dataset, please cite it."
+
+
+def _parse_cff_value(raw: str) -> str:
+    value = raw.strip()
+    if not value:
+        return ""
+    if (value.startswith("\"") and value.endswith("\"")) or (
+        value.startswith("'") and value.endswith("'")
+    ):
+        try:
+            return json.loads(value)
+        except Exception:
+            return value.strip("\"'")
+    return value
+
+
+def _read_citation_cff_fields(citation_path: Path) -> dict:
+    if not citation_path.exists():
+        return {}
+
+    authors = []
+    references = []
+    fields = {}
+    current_author = None
+    in_authors = False
+    in_references = False
+
+    try:
+        with open(citation_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+    except Exception:
+        return {}
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+
+        if stripped.startswith("authors:"):
+            in_authors = True
+            in_references = False
+            continue
+
+        if stripped.startswith("references:"):
+            in_references = True
+            in_authors = False
+            continue
+
+        if stripped.startswith("title:"):
+            fields["Title"] = _parse_cff_value(stripped.split(":", 1)[1])
+            continue
+
+        if stripped.startswith("doi:"):
+            fields["DatasetDOI"] = _parse_cff_value(stripped.split(":", 1)[1])
+            continue
+
+        if stripped.startswith("license:"):
+            fields["License"] = _parse_cff_value(stripped.split(":", 1)[1])
+            continue
+
+        if stripped.startswith("message:"):
+            fields["HowToAcknowledge"] = _parse_cff_value(stripped.split(":", 1)[1])
+            continue
+
+        if in_authors:
+            if stripped.startswith("- family-names:"):
+                if current_author:
+                    authors.append(current_author)
+                current_author = {"family": _parse_cff_value(stripped.split(":", 1)[1]), "given": ""}
+                continue
+            if stripped.startswith("given-names:") and current_author is not None:
+                current_author["given"] = _parse_cff_value(stripped.split(":", 1)[1])
+                continue
+
+        if in_references and stripped.startswith("-"):
+            references.append(_parse_cff_value(stripped[1:].strip()))
+
+    if current_author:
+        authors.append(current_author)
+
+    if authors:
+        formatted = []
+        for author in authors:
+            given = author.get("given", "").strip()
+            family = author.get("family", "").strip()
+            if given and family:
+                formatted.append(f"{given} {family}")
+            elif family:
+                formatted.append(family)
+            elif given:
+                formatted.append(given)
+        fields["Authors"] = formatted
+
+    if references:
+        fields["ReferencesAndLinks"] = references
+
+    if fields.get("HowToAcknowledge") == _DEFAULT_CITATION_MESSAGE:
+        fields.pop("HowToAcknowledge", None)
+
+    return fields
+
+
+def _merge_citation_fields(target: dict, citation_fields: dict) -> dict:
+    if not citation_fields:
+        return dict(target)
+
+    merged = dict(target)
+    for key in ("Authors", "License", "HowToAcknowledge", "ReferencesAndLinks"):
+        if not merged.get(key) and citation_fields.get(key):
+            merged[key] = citation_fields[key]
+    return merged
 
 
 @projects_bp.route("/projects")
@@ -511,8 +654,8 @@ def get_library_path():
                     if yoda_library.exists()
                     else (legacy_library / "biometrics").exists()
                 ),
-                "has_participants": (
-                    project_path / "rawdata" / "participants.json"
+                "has_participants": get_bids_file_path(
+                    project_path, "participants.json"
                 ).exists(),
                 "has_external_library": library_info.get("effective_external_path")
                 is not None,
@@ -534,7 +677,7 @@ def get_participants_schema():
         return jsonify({"success": False, "error": "No project selected"}), 400
 
     project_path = Path(current["path"])
-    participants_path = project_path / "rawdata" / "participants.json"
+    participants_path = get_bids_file_path(project_path, "participants.json")
 
     if not participants_path.exists():
         return jsonify(
@@ -610,7 +753,7 @@ def save_participants_schema():
         }
 
     project_path = Path(current["path"])
-    participants_path = project_path / "rawdata" / "participants.json"
+    participants_path = get_bids_file_path(project_path, "participants.json")
 
     try:
         with open(participants_path, "w", encoding="utf-8") as f:
@@ -646,7 +789,7 @@ def get_dataset_description():
         return jsonify({"success": False, "error": "No project selected"}), 400
 
     project_path = Path(current["path"])
-    desc_path = project_path / "rawdata" / "dataset_description.json"
+    desc_path = get_bids_file_path(project_path, "dataset_description.json")
 
     if not desc_path.exists():
         return (
@@ -658,8 +801,21 @@ def get_dataset_description():
         with open(desc_path, "r", encoding="utf-8") as f:
             description = json.load(f)
 
-        # Validate on load
-        issues = _project_manager.validate_dataset_description(description)
+        # Merge CITATION.cff fields for UI display (if dataset_description omits them)
+        citation_fields = _read_citation_cff_fields(project_path / "CITATION.cff")
+        if citation_fields:
+            if not description.get("Authors") and citation_fields.get("Authors"):
+                description["Authors"] = citation_fields["Authors"]
+            if not description.get("License") and citation_fields.get("License"):
+                description["License"] = citation_fields["License"]
+            if not description.get("HowToAcknowledge") and citation_fields.get("HowToAcknowledge"):
+                description["HowToAcknowledge"] = citation_fields["HowToAcknowledge"]
+            if not description.get("ReferencesAndLinks") and citation_fields.get("ReferencesAndLinks"):
+                description["ReferencesAndLinks"] = citation_fields["ReferencesAndLinks"]
+
+        # Validate on load using merged view (supports CITATION.cff-only fields)
+        validation_description = _merge_citation_fields(description, citation_fields)
+        issues = _project_manager.validate_dataset_description(validation_description)
 
         return jsonify({"success": True, "description": description, "issues": issues})
     except Exception as e:
@@ -689,14 +845,14 @@ def save_dataset_description():
 
     description = data["description"]
     project_path = Path(current["path"])
-    desc_path = project_path / "rawdata" / "dataset_description.json"
+    desc_path = get_bids_file_path(project_path, "dataset_description.json")
 
     try:
         # Ensure name remains standard BIDS 'Name' (case sensitivity)
         if "Name" not in description and "name" in description:
             description["Name"] = description.pop("name")
 
-        # Basic BIDS validation - ensure Name and BIDSVersion exist
+        # Basic BIDS validation - ensure Name and BIDSVersion exist (REQUIRED per BIDS spec)
         if "Name" not in description:
             return (
                 jsonify({"success": False, "error": "Dataset 'Name' is required"}),
@@ -705,11 +861,52 @@ def save_dataset_description():
         if "BIDSVersion" not in description:
             description["BIDSVersion"] = "1.10.1"
 
-        # Validate before saving
-        issues = _project_manager.validate_dataset_description(description)
+        # BIDS compliance: If CITATION.cff exists, certain fields MUST be omitted
+        # Per BIDS spec: Authors, HowToAcknowledge, License, ReferencesAndLinks should be in CITATION.cff only
+        citation_cff_path = project_path / "CITATION.cff"
+        existing_citation_fields = _read_citation_cff_fields(citation_cff_path)
+        submitted_citation_fields = {
+            "Authors": description.get("Authors"),
+            "HowToAcknowledge": description.get("HowToAcknowledge"),
+            "License": description.get("License"),
+            "ReferencesAndLinks": description.get("ReferencesAndLinks"),
+        }
+        citation_fields = dict(existing_citation_fields)
+        for key, value in submitted_citation_fields.items():
+            if value not in (None, "", [], {}):
+                citation_fields[key] = value
+        if citation_cff_path.exists():
+            # These fields belong in CITATION.cff, not dataset_description.json
+            fields_to_remove_if_citation = ["Authors", "HowToAcknowledge", "License", "ReferencesAndLinks"]
+            for field in fields_to_remove_if_citation:
+                if field in description:
+                    description.pop(field)
+        else:
+            # If no CITATION.cff, ensure RECOMMENDED fields have values
+            if "License" not in description:
+                description["License"] = "CC0"
+
+        # Set RECOMMENDED fields
+        if "DatasetType" not in description:
+            description["DatasetType"] = "raw"
+        if "HEDVersion" not in description:
+            description.pop("HEDVersion", None)  # Remove if empty
+
+        # Validate before saving using merged view (supports CITATION.cff-only fields)
+        validation_description = _merge_citation_fields(description, citation_fields)
+        issues = _project_manager.validate_dataset_description(validation_description)
 
         with open(desc_path, "w", encoding="utf-8") as f:
             json.dump(description, f, indent=2, ensure_ascii=False)
+
+        try:
+            citation_payload = dict(description)
+            for key, value in citation_fields.items():
+                if value not in (None, "", [], {}):
+                    citation_payload[key] = value
+            _project_manager.update_citation_cff(project_path, citation_payload)
+        except Exception as e:
+            print(f"Warning: could not update CITATION.cff: {e}")
 
         # If name changed, also update session name for UI consistency
         if "Name" in description:
@@ -745,7 +942,7 @@ def get_participants_columns():
         return jsonify({"error": "No project selected"}), 400
 
     project_path = Path(current["path"])
-    tsv_path = project_path / "rawdata" / "participants.tsv"
+    tsv_path = get_bids_file_path(project_path, "participants.tsv")
 
     if not tsv_path.exists():
         return jsonify({"columns": {}})
@@ -1106,6 +1303,80 @@ def export_project():
         return jsonify({"error": str(e)}), 500
 
 
+@projects_bp.route("/api/projects/anc-export", methods=["POST"])
+def anc_export_project():
+    """
+    Export the current project to AND (Austrian NeuroCloud) compatible format.
+
+    Expected JSON body:
+    {
+        "project_path": "/path/to/project",
+        "convert_to_git_lfs": false,
+        "include_ci_examples": false,
+        "metadata": {
+            "DATASET_NAME": "My Study",
+            "CONTACT_EMAIL": "contact@example.com",
+            "AUTHOR_GIVEN_NAME": "John",
+            "AUTHOR_FAMILY_NAME": "Doe",
+            "DATASET_ABSTRACT": "Description of the dataset"
+        }
+    }
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "No data provided"}), 400
+
+        project_path = data.get("project_path")
+        if not project_path or not os.path.exists(project_path):
+            return jsonify({"success": False, "error": "Invalid project path"}), 400
+
+        project_path = Path(project_path)
+
+        # Import AND exporter
+        from src.converters.anc_export import ANCExporter
+
+        # Get export options
+        convert_to_git_lfs = bool(data.get("convert_to_git_lfs", False))
+        include_ci_examples = bool(data.get("include_ci_examples", False))
+        metadata = data.get("metadata", {})
+
+        # Determine output path
+        output_path = project_path.parent / f"{project_path.name}_anc_export"
+
+        # Create exporter
+        exporter = ANCExporter(project_path, output_path)
+
+        # Perform export
+        result_path = exporter.export(
+            metadata=metadata,
+            convert_to_git_lfs=convert_to_git_lfs,
+            include_ci_examples=include_ci_examples,
+            copy_data=True,
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                "output_path": str(result_path),
+                "message": "AND export completed successfully",
+                "generated_files": {
+                    "readme": str(result_path / "README.md"),
+                    "citation": str(result_path / "CITATION.cff"),
+                    "validator_config": str(
+                        result_path / ".bids-validator-config.json"
+                    ),
+                },
+            }
+        )
+
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # =============================================================================
 # Session & Procedure Tracking Endpoints
 # =============================================================================
@@ -1172,7 +1443,7 @@ def _compute_participant_stats(project_path: Path, lang: str = "en") -> dict | N
     sex_counts, additional_columns.  Returns None when the file is
     missing or unreadable.
     """
-    tsv_path = project_path / "rawdata" / "participants.tsv"
+    tsv_path = get_bids_file_path(project_path, "participants.tsv")
     if not tsv_path.exists():
         return None
 
@@ -1536,7 +1807,7 @@ def generate_methods_section():
 
     # Read dataset_description.json
     dataset_desc = None
-    desc_path = project_path / "rawdata" / "dataset_description.json"
+    desc_path = get_bids_file_path(project_path, "dataset_description.json")
     if desc_path.exists():
         try:
             with open(desc_path, "r", encoding="utf-8") as f:
@@ -1630,11 +1901,15 @@ _EXPERIMENTAL_TYPES = {
 }
 
 _EDITABLE_SECTIONS = (
+    "Basics",
+    "Overview",
     "StudyDesign",
     "Recruitment",
     "Eligibility",
     "DataCollection",
     "Procedure",
+    "MissingData",
+    "References",
     "Conditions",
 )
 
@@ -1688,24 +1963,17 @@ def _compute_methods_completeness(
         ),
         (
             "StudyDesign",
+            "ConditionType",
+            2,
+            "Condition type",
+            _filled(cond.get("Type")),
+        ),
+        (
+            "StudyDesign",
             "TypeDescription",
             2,
             "Describe the design in detail",
             _filled(sd.get("TypeDescription")),
-        ),
-        (
-            "StudyDesign",
-            "Blinding",
-            1,
-            "Blinding procedure (experimental studies)",
-            _filled(sd.get("Blinding")),
-        ),
-        (
-            "StudyDesign",
-            "Randomization",
-            1,
-            "Randomization method",
-            _filled(sd.get("Randomization")),
         ),
         # Recruitment
         (
@@ -1743,13 +2011,6 @@ def _compute_methods_completeness(
             "Participant compensation",
             _filled(rec.get("Compensation")),
         ),
-        (
-            "Recruitment",
-            "Platform",
-            1,
-            "Recruitment platform (e.g. Prolific)",
-            _filled(rec.get("Platform")),
-        ),
         # Eligibility
         (
             "Eligibility",
@@ -1778,49 +2039,6 @@ def _compute_methods_completeness(
             1,
             "Power analysis description",
             _filled(elig.get("PowerAnalysis")),
-        ),
-        # DataCollection
-        (
-            "DataCollection",
-            "Platform",
-            3,
-            "Data collection platform",
-            _filled(dc.get("Platform")),
-        ),
-        (
-            "DataCollection",
-            "PlatformVersion",
-            1,
-            "Platform version",
-            _filled(dc.get("PlatformVersion")),
-        ),
-        (
-            "DataCollection",
-            "Method",
-            3,
-            "Collection method (online/in-person/...)",
-            _filled(dc.get("Method")),
-        ),
-        (
-            "DataCollection",
-            "SupervisionLevel",
-            2,
-            "Level of supervision",
-            _filled(dc.get("SupervisionLevel")),
-        ),
-        (
-            "DataCollection",
-            "Setting",
-            2,
-            "Data collection setting",
-            _filled(dc.get("Setting")),
-        ),
-        (
-            "DataCollection",
-            "AverageDuration",
-            2,
-            "Average completion time",
-            _obj_filled(dc.get("AverageDuration"), "Value"),
         ),
         # Procedure
         (
@@ -1858,63 +2076,133 @@ def _compute_methods_completeness(
             "Debriefing procedure",
             _filled(proc.get("Debriefing")),
         ),
-        # Conditions (weight depends on experimental design)
+        # Basics (BIDS dataset_description.json fields)
         (
-            "Conditions",
-            "Type",
-            2 if is_experimental else 1,
-            "Condition type",
-            _filled(cond.get("Type")),
-        ),
-        (
-            "Conditions",
-            "Groups",
-            2 if is_experimental else 1,
-            "Define experimental groups",
-            _filled(cond.get("Groups")),
-        ),
-        # Read-only sections: DatasetDescription
-        (
-            "DatasetDescription",
+            "Basics",
             "Name",
             3,
             "Dataset name (dataset_description.json)",
             _filled(dd.get("Name")),
         ),
         (
-            "DatasetDescription",
+            "Basics",
             "Authors",
             3,
             "Authors (dataset_description.json)",
             _filled(dd.get("Authors")),
         ),
         (
-            "DatasetDescription",
+            "Basics",
             "Description",
             2,
-            "Dataset description text",
-            _filled(dd.get("Description")),
+            "Dataset overview text",
+            _filled((project_data.get("Overview") or {}).get("Main") or dd.get("Description")),
         ),
         (
-            "DatasetDescription",
+            "Basics",
             "EthicsApprovals",
             2,
             "Ethics approvals",
             _filled(dd.get("EthicsApprovals")),
         ),
         (
-            "DatasetDescription",
+            "Basics",
             "License",
             2,
             "Data license",
             _filled(dd.get("License")),
         ),
         (
-            "DatasetDescription",
+            "Basics",
             "Keywords",
             1,
             "Keywords for discoverability",
             _filled(dd.get("Keywords")),
+        ),
+        (
+            "Basics",
+            "Acknowledgements",
+            1,
+            "Acknowledgements",
+            _filled(dd.get("Acknowledgements")),
+        ),
+        (
+            "Basics",
+            "DatasetDOI",
+            1,
+            "Dataset DOI",
+            _filled(dd.get("DatasetDOI")),
+        ),
+        (
+            "Basics",
+            "DatasetType",
+            1,
+            "Dataset type",
+            _filled(dd.get("DatasetType")),
+        ),
+        (
+            "Basics",
+            "HEDVersion",
+            1,
+            "HED version",
+            _filled(dd.get("HEDVersion")),
+        ),
+        (
+            "Basics",
+            "Funding",
+            1,
+            "Funding",
+            _filled(dd.get("Funding")),
+        ),
+        (
+            "Basics",
+            "HowToAcknowledge",
+            1,
+            "How to acknowledge",
+            _filled(dd.get("HowToAcknowledge")),
+        ),
+        (
+            "Basics",
+            "ReferencesAndLinks",
+            1,
+            "References and links",
+            _filled(dd.get("ReferencesAndLinks")),
+        ),
+        # Overview
+        (
+            "Overview",
+            "Main",
+            3,
+            "Dataset overview",
+            _filled((project_data.get("Overview") or {}).get("Main")),
+        ),
+        (
+            "Overview",
+            "IndependentVariables",
+            1,
+            "Independent variables",
+            _filled((project_data.get("Overview") or {}).get("IndependentVariables")),
+        ),
+        (
+            "Overview",
+            "DependentVariables",
+            1,
+            "Dependent variables",
+            _filled((project_data.get("Overview") or {}).get("DependentVariables")),
+        ),
+        (
+            "Overview",
+            "ControlVariables",
+            1,
+            "Control variables",
+            _filled((project_data.get("Overview") or {}).get("ControlVariables")),
+        ),
+        (
+            "Overview",
+            "QualityAssessment",
+            1,
+            "Quality assessment",
+            _filled((project_data.get("Overview") or {}).get("QualityAssessment")),
         ),
         # Read-only: Sessions & Tasks
         (
@@ -1933,6 +2221,42 @@ def _compute_methods_completeness(
         ),
     ]
 
+    if is_experimental:
+        fields.extend(
+            [
+                (
+                    "StudyDesign",
+                    "Blinding",
+                    1,
+                    "Blinding procedure (experimental studies)",
+                    _filled(sd.get("Blinding")),
+                ),
+                (
+                    "StudyDesign",
+                    "Randomization",
+                    1,
+                    "Randomization method",
+                    _filled(sd.get("Randomization")),
+                ),
+                (
+                    "StudyDesign",
+                    "ControlCondition",
+                    1,
+                    "Control condition",
+                    _filled(sd.get("ControlCondition")),
+                ),
+            ]
+        )
+
+    required_fields = {
+        "Basics": {"Name"},
+        "Overview": {"Main"},
+        "StudyDesign": {"Type"},
+        "Recruitment": {"Method", "Location", "Period.Start", "Period.End", "Compensation"},
+        "Eligibility": {"InclusionCriteria", "ExclusionCriteria"},
+        "Procedure": {"Overview"},
+    }
+
     # Build per-section summary
     sections_map: dict[str, dict] = {}
     total_weight = 0
@@ -1941,6 +2265,7 @@ def _compute_methods_completeness(
     filled_fields = 0
 
     for section_key, field_name, priority, hint, is_filled in fields:
+        is_required = field_name in required_fields.get(section_key, set())
         if section_key not in sections_map:
             sections_map[section_key] = {
                 "fields": [],
@@ -1948,7 +2273,11 @@ def _compute_methods_completeness(
                 "total": 0,
                 "weight_filled": 0,
                 "weight_total": 0,
-                "read_only": section_key in ("DatasetDescription", "SessionsTasks"),
+                "required_filled": 0,
+                "required_total": 0,
+                "optional_filled": 0,
+                "optional_total": 0,
+                "read_only": section_key in ("SessionsTasks",),
             }
         sec = sections_map[section_key]
         sec["fields"].append(
@@ -1957,15 +2286,24 @@ def _compute_methods_completeness(
                 "filled": is_filled,
                 "priority": priority,
                 "hint": hint,
+                "required": is_required,
             }
         )
         sec["total"] += 1
         sec["weight_total"] += priority
+        if is_required:
+            sec["required_total"] += 1
+        else:
+            sec["optional_total"] += 1
         total_weight += priority
         total_fields += 1
         if is_filled:
             sec["filled"] += 1
             sec["weight_filled"] += priority
+            if is_required:
+                sec["required_filled"] += 1
+            else:
+                sec["optional_filled"] += 1
             filled_weight += priority
             filled_fields += 1
 
@@ -2113,8 +2451,8 @@ def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
             }
 
     # --- Sample size from participants.tsv ---
-    tsv_path = rawdata / "participants.tsv" if rawdata.is_dir() else None
-    if tsv_path and tsv_path.exists():
+    tsv_path = get_bids_file_path(project_path, "participants.tsv")
+    if tsv_path.exists():
         try:
             import pandas as pd
 
@@ -2205,13 +2543,20 @@ def get_study_metadata():
 
     # Read dataset_description for completeness calculation
     dataset_desc = None
-    desc_path = project_path / "rawdata" / "dataset_description.json"
+    desc_path = get_bids_file_path(project_path, "dataset_description.json")
     if desc_path.exists():
         try:
             with open(desc_path, "r", encoding="utf-8") as f:
                 dataset_desc = json.load(f)
         except Exception:
             pass
+
+    if dataset_desc:
+        citation_fields = _read_citation_cff_fields(project_path / "CITATION.cff")
+        if citation_fields:
+            for key in ("Authors", "License", "HowToAcknowledge", "ReferencesAndLinks"):
+                if not dataset_desc.get(key) and citation_fields.get(key):
+                    dataset_desc[key] = citation_fields[key]
 
     completeness = _compute_methods_completeness(data, dataset_desc)
     hints = _auto_detect_study_hints(project_path, data)
@@ -2258,13 +2603,20 @@ def save_study_metadata():
 
     # Recompute completeness
     dataset_desc = None
-    desc_path = project_path / "rawdata" / "dataset_description.json"
+    desc_path = get_bids_file_path(project_path, "dataset_description.json")
     if desc_path.exists():
         try:
             with open(desc_path, "r", encoding="utf-8") as f:
                 dataset_desc = json.load(f)
         except Exception:
             pass
+
+    if dataset_desc:
+        citation_fields = _read_citation_cff_fields(project_path / "CITATION.cff")
+        if citation_fields:
+            for key in ("Authors", "License", "HowToAcknowledge", "ReferencesAndLinks"):
+                if not dataset_desc.get(key) and citation_fields.get(key):
+                    dataset_desc[key] = citation_fields[key]
 
     completeness = _compute_methods_completeness(data, dataset_desc)
 
@@ -2342,3 +2694,60 @@ def get_procedure_status():
             "undeclared": [{"session": s, "task": t} for s, t in undeclared],
         }
     )
+
+
+@projects_bp.route("/api/projects/generate-readme", methods=["POST"])
+def generate_readme():
+    """Generate README.md from project.json study metadata."""
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    project_path = Path(current["path"])
+
+    # Check if project.json exists
+    if not (project_path / "project.json").exists():
+        return jsonify({"success": False, "error": "project.json not found"}), 404
+
+    try:
+        # Generate README
+        generator = ReadmeGenerator(project_path)
+        output_path = generator.save()
+
+        return jsonify(
+            {
+                "success": True,
+                "message": "README.md generated successfully",
+                "path": str(output_path),
+            }
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@projects_bp.route("/api/projects/preview-readme", methods=["GET"])
+def preview_readme():
+    """Preview README.md content without saving."""
+    current = get_current_project()
+    if not current.get("path"):
+        return jsonify({"success": False, "error": "No project selected"}), 400
+
+    project_path = Path(current["path"])
+
+    # Check if project.json exists
+    if not (project_path / "project.json").exists():
+        return jsonify({"success": False, "error": "project.json not found"}), 404
+
+    try:
+        # Generate README content
+        generator = ReadmeGenerator(project_path)
+        content = generator.generate()
+
+        return jsonify(
+            {
+                "success": True,
+                "content": content,
+            }
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500

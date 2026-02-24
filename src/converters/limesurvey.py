@@ -1292,7 +1292,6 @@ def convert_lsa_to_dataset(
         **group_duration_fields,
     }
 
-    # process_dataframe will copy needed sidecars into rawdata
     # We iterate manually to inject task-specific durations if available
     for t_name, t_schema in schemas.items():
         # Skip the internal 'limesurvey' metadata container; it's not a task to be exported.
