@@ -445,8 +445,11 @@ def _validate_modality_dir(
                     sidecar_issues = validator.validate_sidecar(
                         file_path, sidecar_modality, root_dir
                     )
+                    sidecar_issue_path = resolve_sidecar_path(
+                        file_path, root_dir, validator.library_path
+                    )
                     for level, msg in sidecar_issues:
-                        issues.append((level, msg, file_path))
+                        issues.append((level, msg, sidecar_issue_path))
 
                 # Extract OriginalName for stats
                 try:
