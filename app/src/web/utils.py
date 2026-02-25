@@ -115,12 +115,16 @@ def extract_path_from_message(message: str) -> str:
     return ""
 
 
-def shorten_path(path: str, max_len: int = 80) -> str:
+def shorten_path(path: str, max_parts: int = 3) -> str:
     if _import_shorten_path is not None:
-        return _import_shorten_path(path, max_len=max_len)
-    if len(path) <= max_len:
-        return path
-    return "..." + path[-(max_len - 3) :]
+        return _import_shorten_path(path, max_parts=max_parts)
+    if not path:
+        return "General"
+    import os
+    parts = path.replace("\\", os.sep).split(os.sep)
+    if len(parts) <= max_parts:
+        return os.sep.join(parts)
+    return "..." + os.sep + os.sep.join(parts[-max_parts:])
 
 
 def get_filename_from_path(path: str) -> str:
