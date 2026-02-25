@@ -683,8 +683,15 @@ def _generate_neurobagel_schema(
         "education": {
             "term": "nb:EducationLevel",
             "label": "Education Level",
-            "type": "continuous",
-            "unit": "years",
+            "type": "categorical",
+            "levels": {
+                "1": {"label": "Primary education", "uri": "nb:EducationLevel/Primary"},
+                "2": {"label": "Secondary education", "uri": "nb:EducationLevel/Secondary"},
+                "3": {"label": "Vocational training", "uri": "nb:EducationLevel/Vocational"},
+                "4": {"label": "Bachelor level", "uri": "nb:EducationLevel/Bachelor"},
+                "5": {"label": "Master level", "uri": "nb:EducationLevel/Master"},
+                "6": {"label": "Doctoral level", "uri": "nb:EducationLevel/Doctoral"},
+            },
         },
         "ethnicity": {
             "term": "nb:Ethnicity",
@@ -3309,6 +3316,19 @@ def api_participants_preview():
             output_columns = [id_column]  # Always include ID column first
             for col in expected_columns:
                 if col != id_column and col in df.columns:
+                    output_columns.append(col)
+
+            # Always merge in additional participant-relevant columns from source.
+            # This prevents valid demographics (e.g., education) from being hidden
+            # when participants.json is missing, outdated, or minimal.
+            filtered_columns = _filter_participant_relevant_columns(
+                df,
+                id_column=id_column,
+                library_path=library_path,
+                participant_filter_config=participant_filter_config,
+            )
+            for col in filtered_columns:
+                if col not in output_columns:
                     output_columns.append(col)
 
             # If still empty (no matching columns), show a limited set from source
