@@ -394,8 +394,8 @@
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                                     <span class="badge bg-secondary">OPTIONAL</span> Dataset DOI
                                                 </label>
-                                                <input type="text" class="form-control form-control-sm" id="metadataDOI" placeholder="10.5281/zenodo.1234567">
-                                                <small class="text-muted">Syncs to CITATION.cff. Use valid URI format.</small>
+                                                <input type="text" class="form-control form-control-sm" id="metadataDOI" placeholder="Example: 10.5281/zenodo.1234567">
+                                                <small class="text-muted">Example only (placeholder). Enter your DOI only if available; syncs to CITATION.cff.</small>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
@@ -421,21 +421,21 @@
                                                 <div id="ethicsDetailsSection" style="display: none; margin-top: 12px;">
                                                     <div class="row g-2">
                                                         <div class="col-md-6">
-                                                            <input type="text" class="form-control form-control-sm" id="metadataEthicsCommittee" placeholder="Ethics Committee Name" required>
+                                                            <input type="text" class="form-control form-control-sm" id="metadataEthicsCommittee" placeholder="Example: Ethics Committee Name" required>
                                                         </div>
                                                         <div class="col-md-6">
-                                                            <input type="text" class="form-control form-control-sm" id="metadataEthicsVotum" placeholder="Votum Number/Reference" required>
+                                                            <input type="text" class="form-control form-control-sm" id="metadataEthicsVotum" placeholder="Example: EK-2026-014" required>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <small class="text-muted">Format: Committee name, Reference number</small>
+                                                <small class="text-muted">Example format: Committee name, Reference number. Placeholder text is not saved.</small>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
                                                     <span class="badge bg-warning text-dark">RECOMMENDED</span> HED Version
                                                 </label>
-                                                <input type="text" class="form-control form-control-sm" id="metadataHED" placeholder="8.2.0">
-                                                <small class="text-muted">If HED tags are used in your data.</small>
+                                                <input type="text" class="form-control form-control-sm" id="metadataHED" placeholder="Example: 8.2.0">
+                                                <small class="text-muted">Example only (placeholder). Leave empty if HED is not used in your data.</small>
                                             </div>
                                             <div class="col-md-12">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
@@ -1984,38 +1984,42 @@
     
     // Function to check if all mandatory fields across all tabs are filled
     function validateAllMandatoryFields() {
-        const mandatoryFields = [
-            // Basics (BIDS)
-            { id: 'metadataName', name: 'Dataset Name' },
-            { id: 'metadataAuthors', name: 'Authors', customCheck: hasAtLeastOneAuthor },
-            { id: 'metadataLicense', name: 'License' },
-            // Overview
-            { id: 'smOverviewMain', name: 'Dataset Overview' },
-            // Study Design
-            { id: 'smSDType', name: 'Study Design Type' },
-            // Recruitment
-            { id: 'smRecMethod', name: 'Recruitment Method', customCheck: hasAtLeastOneRecMethod },
-            { id: 'smRecLocation', name: 'Recruitment Location', customCheck: hasAtLeastOneRecLocation },
-            { id: 'smRecPeriodStart', name: 'Recruitment Period Start', customCheck: hasRecPeriodStart },
-            { id: 'smRecPeriodEnd', name: 'Recruitment Period End', customCheck: hasRecPeriodEnd },
-            { id: 'smRecCompensation', name: 'Financial Compensation' },
-            // Eligibility
-            { id: 'smEligInclusion', name: 'Inclusion Criteria' },
-            { id: 'smEligExclusion', name: 'Exclusion Criteria' },
-            // Procedure
-            { id: 'smProcOverview', name: 'Procedure Overview' }
-        ];
-        
+        const completeness = computeLocalCompleteness();
         const emptyFields = [];
-        
-        for (const field of mandatoryFields) {
-            if (field.customCheck) {
-                if (!field.customCheck()) emptyFields.push(field.name);
-                continue;
+
+        const labels = {
+            Basics: {
+                Name: 'Dataset Name'
+            },
+            Overview: {
+                Main: 'Dataset Overview'
+            },
+            StudyDesign: {
+                Type: 'Study Design Type'
+            },
+            Recruitment: {
+                Method: 'Recruitment Method',
+                Location: 'Recruitment Location',
+                'Period.Start': 'Recruitment Period Start',
+                'Period.End': 'Recruitment Period End',
+                Compensation: 'Financial Compensation'
+            },
+            Eligibility: {
+                InclusionCriteria: 'Inclusion Criteria',
+                ExclusionCriteria: 'Exclusion Criteria'
+            },
+            Procedure: {
+                Overview: 'Procedure Overview'
             }
-            const element = document.getElementById(field.id);
-            if (element && element.value.trim() === '') emptyFields.push(field.name);
-        }
+        };
+
+        Object.entries(completeness.sections || {}).forEach(([sectionName, section]) => {
+            (section.fields || []).forEach(field => {
+                if (!field.required || field.filled) return;
+                const friendlyLabel = labels[sectionName]?.[field.name] || `${sectionName}: ${field.name}`;
+                emptyFields.push(friendlyLabel);
+            });
+        });
         
         return {
             isValid: emptyFields.length === 0,
@@ -2044,7 +2048,7 @@
     
     // Add event listeners to all mandatory fields
     const mandatoryFieldIds = [
-        'metadataName', 'metadataLicense',
+        'metadataName',
         'smOverviewMain', 'smSDType', 'smRecMethod',
         'smRecPeriodStartYear', 'smRecPeriodStartMonth',
         'smRecPeriodEndYear', 'smRecPeriodEndMonth',
@@ -3227,7 +3231,10 @@
     // Study Metadata Form Submission
     const studyMetadataForm = document.getElementById('studyMetadataForm');
     if (studyMetadataForm) {
-        const refreshCompleteness = () => updateCompletenessUI(computeLocalCompleteness());
+        const refreshCompleteness = () => {
+            updateCompletenessUI(computeLocalCompleteness());
+            updateCreateProjectButton();
+        };
         studyMetadataForm.addEventListener('input', refreshCompleteness);
         studyMetadataForm.addEventListener('change', refreshCompleteness);
     }
