@@ -68,6 +68,52 @@ def _parse_cff_value(raw: str) -> str:
     return value
 
 
+def _split_recruitment_locations(raw_locations) -> list[str]:
+    if raw_locations is None:
+        return []
+    if isinstance(raw_locations, str):
+        values = raw_locations.split(";")
+    elif isinstance(raw_locations, list):
+        values = raw_locations
+    else:
+        return []
+    return [str(item).strip() for item in values if str(item).strip()]
+
+
+def _is_online_only_location(value: str) -> bool:
+    normalized = re.sub(r"\s+", " ", (value or "").strip().lower())
+    return normalized in {"online", "online only", "online-only"}
+
+
+def _validate_recruitment_payload(recruitment: dict | None) -> str | None:
+    if not isinstance(recruitment, dict):
+        return None
+
+    locations = _split_recruitment_locations(recruitment.get("Location"))
+    for location in locations:
+        if _is_online_only_location(location):
+            continue
+        country = location.rsplit(",", 1)[-1].strip() if "," in location else location.strip()
+        if not country:
+            return "Recruitment location must include a country, or be set to 'Online'."
+
+    period = recruitment.get("Period")
+    if not isinstance(period, dict):
+        return None
+
+    start = str(period.get("Start") or "").strip()
+    end = str(period.get("End") or "").strip()
+    if not start or not end:
+        return None
+
+    date_pattern = re.compile(r"^\d{4}(-\d{2}){0,2}$")
+    if date_pattern.fullmatch(start) and date_pattern.fullmatch(end) and len(start) == len(end):
+        if start > end:
+            return "Recruitment period start must be before or equal to period end."
+
+    return None
+
+
 def _read_citation_cff_fields(citation_path: Path) -> dict:
     if not citation_path.exists():
         return {}
@@ -254,6 +300,10 @@ def create_project():
         path = data.get("path")
         if not path:
             return jsonify({"success": False, "error": "Path is required"}), 400
+
+        recruitment_error = _validate_recruitment_payload(data.get("Recruitment"))
+        if recruitment_error:
+            return jsonify({"success": False, "error": recruitment_error}), 400
 
         # Build config from request
         config = {
@@ -1639,6 +1689,10 @@ def save_sessions():
     req = request.get_json()
     if not req:
         return jsonify({"success": False, "error": "No data provided"}), 400
+
+    recruitment_error = _validate_recruitment_payload(req.get("Recruitment"))
+    if recruitment_error:
+        return jsonify({"success": False, "error": recruitment_error}), 400
 
     project_path = Path(current["path"])
     data = _read_project_json(project_path)
