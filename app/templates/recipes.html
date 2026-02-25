@@ -38,33 +38,27 @@
       <h5 class="mb-0">Process & Export</h5>
     </div>
     <div class="card-body">
-      <div class="row g-3 align-items-end">
+      <div class="row g-3 align-items-start">
         <div class="col-md-12">
           <label for="derivModality" class="form-label">Modality</label>
           <select class="form-select" id="derivModality">
-            <option value="survey" selected>Survey</option>
-            <option value="biometrics">Biometrics</option>
-            <option value="physio">Physio</option>
+            {% for modality in (available_modalities or [{"value": "survey", "label": "Survey"}]) %}
+            <option value="{{ modality.value }}" {% if modality.value == (default_modality or 'survey') %}selected{% endif %}>{{ modality.label }}</option>
+            {% endfor %}
           </select>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-6">
           <label for="derivFormat" class="form-label">Output Format</label>
           <select class="form-select" id="derivFormat">
-            <option value="save">SPSS (.save - contains Levels/Labels)</option>
+            <option value="save">SPSS (.sav - contains Levels/Labels)</option>
             <option value="r">R (feather/.feather if r writer missing)</option>
             <option value="csv" selected>CSV (includes metadata & Jamovi R-Helper)</option>
             <option value="xlsx">Excel (.xlsx)</option>
           </select>
         </div>
 
-        <div class="col-md-4">
-          <label for="derivSurvey" class="form-label">Recipe Filter (optional)</label>
-          <input type="text" class="form-control" id="derivSurvey" placeholder="e.g. ads,psqi">
-          <div class="form-text">Leave empty to run all matching recipes.</div>
-        </div>
-
-        <div class="col-md-4">
+        <div class="col-md-6">
           <label class="form-label">File Output</label>
           <div class="form-check">
             <input class="form-check-input" type="radio" name="derivMerge" id="derivMergeSeparate" value="separate" checked>
@@ -80,25 +74,7 @@
           </div>
         </div>
 
-        <div class="col-md-4">
-          <label for="derivLang" class="form-label">Language</label>
-          <select class="form-select" id="derivLang">
-            <option value="en" selected>English</option>
-            <option value="de">German</option>
-          </select>
-          <div class="form-text">For metadata labels in exports.</div>
-        </div>
-
-        <div class="col-md-4">
-          <label for="derivLayout" class="form-label">Layout</label>
-          <select class="form-select" id="derivLayout">
-            <option value="long" selected>Long (one row per session)</option>
-            <option value="wide">Wide (one row per participant)</option>
-          </select>
-          <div class="form-text">For repeated measures.</div>
-        </div>
-
-        <div class="col-md-4">
+        <div class="col-md-6">
           <label class="form-label">Sessions</label>
           <div class="form-check">
             <input class="form-check-input" type="checkbox" id="derivSessionsAll" checked>
@@ -110,7 +86,7 @@
           <div class="form-text">Uncheck “All sessions” to pick specific sessions.</div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-6">
           <div class="form-check mb-2">
             <input class="form-check-input" type="checkbox" id="derivIncludeRaw">
             <label class="form-check-label" for="derivIncludeRaw">
@@ -122,6 +98,35 @@
             <label class="form-check-label" for="derivBoilerplate">
               Generate Methods Boilerplate
             </label>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="border rounded p-3 bg-light-subtle">
+            <h6 class="mb-3">Advanced (optional)</h6>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label for="derivSurvey" class="form-label">Recipe Filter</label>
+                <input type="text" class="form-control" id="derivSurvey" placeholder="e.g. ads,psqi">
+                <div class="form-text">Leave empty to run all matching recipes.</div>
+              </div>
+              <div class="col-md-4">
+                <label for="derivLang" class="form-label">Language</label>
+                <select class="form-select" id="derivLang">
+                  <option value="en" selected>English</option>
+                  <option value="de">German</option>
+                </select>
+                <div class="form-text">For metadata labels in exports.</div>
+              </div>
+              <div class="col-md-4">
+                <label for="derivLayout" class="form-label">Layout</label>
+                <select class="form-select" id="derivLayout">
+                  <option value="long" selected>Long (one row per session)</option>
+                  <option value="wide">Wide (one row per participant)</option>
+                </select>
+                <div class="form-text">For repeated measures.</div>
+              </div>
+            </div>
           </div>
         </div>
 
