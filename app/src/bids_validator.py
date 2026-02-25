@@ -8,7 +8,6 @@ import json
 import subprocess
 from typing import List, Tuple, Set, Optional
 
-
 DENO_BIDS_VALIDATOR_SPEC = "jsr:@bids/validator@2.4.1"
 
 
@@ -214,9 +213,7 @@ def run_bids_validator(
                     f"Deno validator produced no output. Stderr: {stderr_msg}"
                 )
             else:
-                deno_failure_message = (
-                    f"Deno validator produced no output (exit code {process.returncode})"
-                )
+                deno_failure_message = f"Deno validator produced no output (exit code {process.returncode})"
 
     except (subprocess.CalledProcessError, FileNotFoundError):
         # Deno not found, fall back to legacy
@@ -319,7 +316,11 @@ def run_bids_validator(
 
     except (subprocess.CalledProcessError, FileNotFoundError):
         if deno_failure_message:
-            issues.append(("WARNING", f"BIDS Validator (Deno) failed: {deno_failure_message}"))
-        issues.append(("WARNING", "bids-validator not found or failed to run. Is it installed?"))
+            issues.append(
+                ("WARNING", f"BIDS Validator (Deno) failed: {deno_failure_message}")
+            )
+        issues.append(
+            ("WARNING", "bids-validator not found or failed to run. Is it installed?")
+        )
 
     return issues

@@ -2036,9 +2036,11 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
         except Exception as e:
             # Parse tokenization errors to provide user-friendly messages
             error_msg = str(e)
-            
+
             # Detect "Expected X fields in line Y, saw Z" errors
-            token_match = re.search(r"Expected (\d+) fields in line (\d+), saw (\d+)", error_msg)
+            token_match = re.search(
+                r"Expected (\d+) fields in line (\d+), saw (\d+)", error_msg
+            )
             if token_match:
                 expected, line_num, got = token_match.groups()
                 return_msg = (
@@ -2050,7 +2052,7 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
                     f"Please check the file structure and ensure all rows have the same number of columns."
                 )
                 raise ValueError(return_msg) from e
-            
+
             raise ValueError(f"Failed to read CSV: {error_msg}") from e
 
         if df is None or df.empty:
@@ -2066,9 +2068,11 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
         except Exception as e:
             # Parse tokenization errors to provide user-friendly messages
             error_msg = str(e)
-            
+
             # Detect "Expected X fields in line Y, saw Z" errors
-            token_match = re.search(r"Expected (\d+) fields in line (\d+), saw (\d+)", error_msg)
+            token_match = re.search(
+                r"Expected (\d+) fields in line (\d+), saw (\d+)", error_msg
+            )
             if token_match:
                 expected, line_num, got = token_match.groups()
                 return_msg = (
@@ -2080,7 +2084,7 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
                     f"Please check the file structure and ensure all rows have the same number of columns."
                 )
                 raise ValueError(return_msg) from e
-            
+
             raise ValueError(f"Failed to read TSV: {error_msg}") from e
 
         if df is None or df.empty:
@@ -2659,11 +2663,11 @@ def _convert_survey_dataframe_to_prism_dataset(
                 if str(v).strip()
             ]
         )
-        print(
-            f"[PRISM INFO] Sessions detected in {res_ses_col}: {detected_sessions}"
-        )
+        print(f"[PRISM INFO] Sessions detected in {res_ses_col}: {detected_sessions}")
     else:
-        print(f"[PRISM DEBUG] No session column detected (res_ses_col is None). Available columns: {list(df.columns)[:20]}")
+        print(
+            f"[PRISM DEBUG] No session column detected (res_ses_col is None). Available columns: {list(df.columns)[:20]}"
+        )
 
     # --- Filter Rows by Selected Session ---
     # If both session column exists and a specific session is selected,
@@ -2674,9 +2678,7 @@ def _convert_survey_dataframe_to_prism_dataset(
     if res_ses_col and session and session != "all":
         # Normalize the session value for comparison
         session_normalized = str(session).strip()
-        df_filtered = df[
-            df[res_ses_col].astype(str).str.strip() == session_normalized
-        ]
+        df_filtered = df[df[res_ses_col].astype(str).str.strip() == session_normalized]
         if len(df_filtered) == 0:
             raise ValueError(
                 f"No rows found with session '{session}' in column '{res_ses_col}'. "
@@ -2686,14 +2688,17 @@ def _convert_survey_dataframe_to_prism_dataset(
         print(
             f"[PRISM INFO] Filtered {rows_before_filter} rows → {len(df)} rows for session '{session}'"
         )
-    elif res_ses_col and not session and detected_sessions and duplicate_handling == "error":
+    elif (
+        res_ses_col
+        and not session
+        and detected_sessions
+        and duplicate_handling == "error"
+    ):
         # PREVIEW MODE: If session column exists but user hasn't selected a session,
         # and no custom duplicate handling, auto-select first session for preview
         # to avoid blocking on duplicate IDs (which are legitimate across sessions)
         first_session = detected_sessions[0]
-        df_filtered = df[
-            df[res_ses_col].astype(str).str.strip() == first_session
-        ]
+        df_filtered = df[df[res_ses_col].astype(str).str.strip() == first_session]
         if len(df_filtered) > 0:
             df = df_filtered
             print(

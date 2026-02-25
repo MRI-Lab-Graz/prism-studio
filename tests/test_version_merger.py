@@ -1,9 +1,6 @@
 """Tests for version merger functionality."""
 
-import pytest
-from pathlib import Path
 import json
-import tempfile
 
 from src.converters.version_merger import (
     merge_survey_versions,
@@ -28,10 +25,10 @@ class TestVersionMerger:
             "TEST_04": {"Description": "Question 4", "Levels": {"1": "No", "5": "Yes"}},
             "TEST_05": {"Description": "Question 5", "Levels": {"1": "No", "5": "Yes"}},
         }
-        
+
         existing_path = tmp_path / "survey-test.json"
         existing_path.write_text(json.dumps(existing))
-        
+
         # New items (long form - 10 items, includes all short form items)
         new_items = {
             "TEST_01": {"Description": "Question 1", "Levels": {"1": "No", "5": "Yes"}},
@@ -43,30 +40,33 @@ class TestVersionMerger:
             "TEST_07": {"Description": "Question 7", "Levels": {"1": "No", "5": "Yes"}},
             "TEST_08": {"Description": "Question 8", "Levels": {"1": "No", "5": "Yes"}},
             "TEST_09": {"Description": "Question 9", "Levels": {"1": "No", "5": "Yes"}},
-            "TEST_10": {"Description": "Question 10", "Levels": {"1": "No", "5": "Yes"}},
+            "TEST_10": {
+                "Description": "Question 10",
+                "Levels": {"1": "No", "5": "Yes"},
+            },
         }
-        
+
         # Merge
         merged = merge_survey_versions(
             existing_template_path=existing_path,
             new_items=new_items,
             new_version_name="long",
-            existing_version_name="short"
+            existing_version_name="short",
         )
-        
+
         # Check Study.Versions
         assert "Versions" in merged["Study"]
         assert "short" in merged["Study"]["Versions"]
         assert "long" in merged["Study"]["Versions"]
-        
+
         # Check item count
         assert merged["Study"]["ItemCount"] == 10
-        
+
         # Check overlapping items have both versions
         assert "ApplicableVersions" in merged["TEST_01"]
         assert "short" in merged["TEST_01"]["ApplicableVersions"]
         assert "long" in merged["TEST_01"]["ApplicableVersions"]
-        
+
         # Check new items have only long version
         assert "ApplicableVersions" in merged["TEST_06"]
         assert merged["TEST_06"]["ApplicableVersions"] == ["long"]
@@ -80,41 +80,41 @@ class TestVersionMerger:
             "Study": {"TaskName": "bdi", "OriginalName": "Beck Depression Inventory"},
             "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": "2024-01-01"},
         }
-        
+
         # Add 20 items
         for i in range(1, 21):
             existing[f"BDI_{i:02d}"] = {
                 "Description": f"Item {i}",
-                "Levels": {"0": "Not at all", "3": "Very much"}
+                "Levels": {"0": "Not at all", "3": "Very much"},
             }
-        
+
         existing_path = tmp_path / "survey-bdi.json"
         existing_path.write_text(json.dumps(existing))
-        
+
         # New items (short screening - 9 items)
         new_items = {}
         for i in range(1, 10):
             new_items[f"BDI_{i:02d}"] = {
                 "Description": f"Item {i}",
-                "Levels": {"0": "Not at all", "3": "Very much"}
+                "Levels": {"0": "Not at all", "3": "Very much"},
             }
-        
+
         # Merge
         merged = merge_survey_versions(
             existing_template_path=existing_path,
             new_items=new_items,
             new_version_name="screening",
-            existing_version_name="full"
+            existing_version_name="full",
         )
-        
+
         # Check versions
         assert "screening" in merged["Study"]["Versions"]
         assert "full" in merged["Study"]["Versions"]
-        
+
         # Check overlapping items
         assert "screening" in merged["BDI_01"]["ApplicableVersions"]
         assert "full" in merged["BDI_01"]["ApplicableVersions"]
-        
+
         # Check items only in full version
         assert "ApplicableVersions" in merged["BDI_15"]
         assert merged["BDI_15"]["ApplicableVersions"] == ["full"]
@@ -128,17 +128,17 @@ class TestVersionMerger:
             "PHQ_01": {"Description": "Q1"},
             "PHQ_02": {"Description": "Q2"},
         }
-        
+
         existing_path = tmp_path / "survey-phq-short.json"
         existing_path.write_text(json.dumps(existing))
-        
+
         # Import longer form
         new_items = {f"PHQ_{i:02d}": {"Description": f"Q{i}"} for i in range(1, 10)}
-        
+
         suggested_new, suggested_existing = detect_version_name_from_import(
             new_items, existing_path
         )
-        
+
         # Should detect short/long based on item counts and filename
         assert suggested_new == "long"
         assert suggested_existing == "short"
@@ -163,22 +163,22 @@ class TestVersionMerger:
             "Metadata": {"SchemaVersion": "1.1.1", "CreationDate": "2024-01-01"},
             "TEST_01": {"Description": "Q1"},
         }
-        
+
         existing_path = tmp_path / "survey-test.json"
         existing_path.write_text(json.dumps(existing))
-        
+
         # Merge with new items
         new_items = {
             "TEST_01": {"Description": "Q1"},
             "TEST_02": {"Description": "Q2"},
         }
-        
+
         merged = merge_survey_versions(
             existing_template_path=existing_path,
             new_items=new_items,
-            new_version_name="extended"
+            new_version_name="extended",
         )
-        
+
         # Check all metadata preserved
         assert merged["Study"]["Authors"] == ["Smith, J.", "Doe, J."]
         assert merged["Study"]["DOI"] == "10.1234/test"
@@ -187,19 +187,16 @@ class TestVersionMerger:
     def test_save_merged_template(self, tmp_path):
         """Test saving a merged template."""
         template = {
-            "Study": {
-                "TaskName": "test",
-                "Versions": ["v1", "v2"]
-            },
+            "Study": {"TaskName": "test", "Versions": ["v1", "v2"]},
             "TEST_01": {
                 "Description": "Question 1",
-                "ApplicableVersions": ["v1", "v2"]
-            }
+                "ApplicableVersions": ["v1", "v2"],
+            },
         }
-        
+
         output_path = tmp_path / "merged.json"
         save_merged_template(template, output_path)
-        
+
         # Verify saved correctly
         assert output_path.exists()
         loaded = json.loads(output_path.read_text())

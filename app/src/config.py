@@ -158,9 +158,7 @@ def load_config(dataset_path: str) -> PrismConfig:
             max_file_size_mb=data.get("maxFileSizeMb", 100),
             parallel_validation=data.get("parallelValidation", False),
             template_library_path=data.get("templateLibraryPath"),
-            neurobagel_participant_filter=data.get(
-                "neurobagelParticipantFilter", {}
-            ),
+            neurobagel_participant_filter=data.get("neurobagelParticipantFilter", {}),
         )
         config._config_path = config_path
         return config

@@ -15,7 +15,7 @@ import json
 
 def _read_json(path: Path) -> dict:
     """Simple JSON reader fallback."""
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -36,9 +36,11 @@ _NON_ITEM_TOPLEVEL_KEYS = {
 class ItemCollisionError(Exception):
     """Raised when an item ID collision is detected."""
 
-    def __init__(self, message, collision_type="duplicate", existing_meta=None, new_meta=None):
+    def __init__(
+        self, message, collision_type="duplicate", existing_meta=None, new_meta=None
+    ):
         """Initialize collision error with metadata.
-        
+
         Args:
             message: Error message
             collision_type: "duplicate", "version_candidate", or "incompatible"
@@ -108,9 +110,9 @@ class ItemRegistry:
                 continue
 
             template_name = json_path.stem  # e.g., "survey-phq9"
-            task_name = sidecar.get("Study", {}).get("TaskName") or template_name.replace(
-                "survey-", ""
-            )
+            task_name = sidecar.get("Study", {}).get(
+                "TaskName"
+            ) or template_name.replace("survey-", "")
 
             # Register each item key
             for item_id, item_data in sidecar.items():
@@ -122,11 +124,19 @@ class ItemRegistry:
                 # Extract description for error messages
                 desc = item_data.get("Description", "")
                 if isinstance(desc, dict):
-                    desc = desc.get("en") or desc.get("de") or next(iter(desc.values()), "")
+                    desc = (
+                        desc.get("en")
+                        or desc.get("de")
+                        or next(iter(desc.values()), "")
+                    )
 
                 # Register (but allow local to override official)
                 existing = self._items.get(item_id)
-                if existing and existing["source_type"] == "official" and source_type == "local":
+                if (
+                    existing
+                    and existing["source_type"] == "official"
+                    and source_type == "local"
+                ):
                     # Local override is OK
                     pass
                 elif item_id not in self._items:
@@ -166,7 +176,7 @@ class ItemRegistry:
 
             # Check if this might be a version variant
             is_candidate = self.is_version_candidate(item_id, template_name, existing)
-            
+
             # Build error message
             if existing_source == "import":
                 msg = (
@@ -222,8 +232,8 @@ class ItemRegistry:
                     "item_id": item_id,
                     "template_name": template_name,
                     "description": description,
-                    "item_data": item_data or {}
-                }
+                    "item_data": item_data or {},
+                },
             )
 
         # Register new item
@@ -253,7 +263,11 @@ class ItemRegistry:
                 # Extract description
                 desc = item_data.get("Description", "")
                 if isinstance(desc, dict):
-                    desc = desc.get("en") or desc.get("de") or next(iter(desc.values()), "")
+                    desc = (
+                        desc.get("en")
+                        or desc.get("de")
+                        or next(iter(desc.values()), "")
+                    )
 
                 existing_source = existing["source_type"]
                 existing_template = existing["source_template"]
@@ -289,15 +303,16 @@ class ItemRegistry:
         self, item_id: str, new_item_data: dict, existing_item_data: dict
     ) -> tuple[bool, str]:
         """Check if two items with same ID are compatible as version variants.
-        
+
         Args:
             item_id: The item identifier
             new_item_data: Item data from import
             existing_item_data: Item data from existing template
-            
+
         Returns:
             Tuple of (is_compatible, reason)
         """
+
         # Extract descriptions
         def get_desc(data):
             desc = data.get("Description", "")
@@ -305,74 +320,75 @@ class ItemRegistry:
                 # Get first non-empty language
                 return next((v for v in desc.values() if v), "")
             return str(desc)
-        
+
         new_desc = get_desc(new_item_data)
         existing_desc = get_desc(existing_item_data)
-        
+
         # Normalize for comparison (strip whitespace, lowercase)
         new_desc_norm = new_desc.strip().lower()
         existing_desc_norm = existing_desc.strip().lower()
-        
+
         if not new_desc_norm or not existing_desc_norm:
             return False, "Missing description"
-        
+
         # Check if descriptions match (allowing for minor variations)
         if new_desc_norm != existing_desc_norm:
             # Check if one is substring of other (e.g., with/without instructions)
-            if new_desc_norm not in existing_desc_norm and existing_desc_norm not in new_desc_norm:
-                return False, f"Different descriptions"
-        
+            if (
+                new_desc_norm not in existing_desc_norm
+                and existing_desc_norm not in new_desc_norm
+            ):
+                return False, "Different descriptions"
+
         # Check Levels compatibility
         new_levels = new_item_data.get("Levels", {})
         existing_levels = existing_item_data.get("Levels", {})
-        
+
         if new_levels or existing_levels:
             # Both should have levels if either does
             if bool(new_levels) != bool(existing_levels):
                 return False, "One has Levels, other doesn't"
-            
+
             # Check if level structures are compatible
             if isinstance(new_levels, dict) and isinstance(existing_levels, dict):
                 # Check if keys match
                 if set(new_levels.keys()) != set(existing_levels.keys()):
                     return False, "Different level values"
-        
+
         # Items are compatible
         return True, "Compatible"
 
     def is_version_candidate(
-        self, 
-        item_id: str, 
-        template_name: str, 
-        existing_meta: dict
+        self, item_id: str, template_name: str, existing_meta: dict
     ) -> bool:
         """Check if collision looks like a version variant scenario.
-        
+
         Args:
             item_id: The colliding item ID
             template_name: Template being imported
             existing_meta: Metadata about existing item
-            
+
         Returns:
             True if this looks like a version variant import
         """
+
         # Extract task names from template names
         # e.g., "survey-phq9" -> "phq9", "survey-bdi-short" -> "bdi-short"
         def extract_task(name):
             return name.replace("survey-", "").replace("-", "").lower()
-        
+
         new_task = extract_task(template_name)
         existing_task = extract_task(existing_meta.get("source_template", ""))
-        
+
         # If base task names are similar, might be version variant
         # e.g., "bdi" matches "bdi", "bdishort" matches "bdilong"
         if new_task.startswith(existing_task) or existing_task.startswith(new_task):
             return True
-        
+
         # Also check if item ID prefix matches task
         # e.g., "BDI_01" starts with "BDI"
         item_prefix = item_id.split("_")[0].lower()
         if item_prefix in new_task and item_prefix in existing_task:
             return True
-        
+
         return False

@@ -318,13 +318,21 @@ def augment_neurobagel_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
         source_data_type = str(col_data.get("data_type", "")).lower().strip()
         has_levels = "Levels" in col_data and isinstance(col_data["Levels"], dict)
 
-        if has_levels or source_data_type in {"categorical", "category", "enum"} or col_name in categorical_vocabularies:
+        if (
+            has_levels
+            or source_data_type in {"categorical", "category", "enum"}
+            or col_name in categorical_vocabularies
+        ):
             aug_col["data_type"] = "categorical"
 
             # Augment with vocabulary if available
             if col_name in categorical_vocabularies:
                 aug_col["levels"] = {}
-                source_levels = col_data.get("Levels", {}) if isinstance(col_data.get("Levels"), dict) else {}
+                source_levels = (
+                    col_data.get("Levels", {})
+                    if isinstance(col_data.get("Levels"), dict)
+                    else {}
+                )
 
                 # If source provides levels, merge source values with known vocab URIs.
                 if source_levels:
@@ -359,7 +367,13 @@ def augment_neurobagel_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
                     }
                 else:
                     aug_col["levels"] = {}
-        elif source_data_type in {"continuous", "float", "number", "integer", "int"} or col_name in ["age"]:
+        elif source_data_type in {
+            "continuous",
+            "float",
+            "number",
+            "integer",
+            "int",
+        } or col_name in ["age"]:
             aug_col["data_type"] = "continuous"
             if "Unit" in col_data:
                 aug_col["unit"] = col_data["Unit"]

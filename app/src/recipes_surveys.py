@@ -1447,7 +1447,7 @@ def _export_recipe_aggregated(
         except Exception:
             df.to_excel(out_fname, index=False)
     elif out_format == "save":
-        out_fname = out_root / f"{recipe_id}.sav"
+        out_fname = out_root / f"{recipe_id}.save"
         try:
             import pyreadstat
             import numpy as np
@@ -1973,7 +1973,7 @@ def compute_survey_recipes(
 
         # Write combined file
         out_stem = f"combined_{modality}"
-        ext_map = {"csv": ".csv", "xlsx": ".xlsx", "save": ".sav", "r": ".feather"}
+        ext_map = {"csv": ".csv", "xlsx": ".xlsx", "save": ".save", "r": ".feather"}
         ext = ext_map.get(out_format, ".csv")
         out_path = out_root / f"{out_stem}{ext}"
 

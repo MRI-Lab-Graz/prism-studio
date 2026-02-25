@@ -12,8 +12,6 @@ Run: python3 test_bids_compliance.py <project_path>
 """
 
 import json
-import sys
-from pathlib import Path
 
 
 def test_dataset_description_schema(description: dict) -> list:
@@ -22,59 +20,71 @@ def test_dataset_description_schema(description: dict) -> list:
 
     # Check REQUIRED fields
     if "Name" not in description or not description["Name"].strip():
-        issues.append({
-            "severity": "ERROR",
-            "field": "Name",
-            "message": "REQUIRED: Name field is missing",
-            "fix": "Dataset Name is mandatory per BIDS specification"
-        })
+        issues.append(
+            {
+                "severity": "ERROR",
+                "field": "Name",
+                "message": "REQUIRED: Name field is missing",
+                "fix": "Dataset Name is mandatory per BIDS specification",
+            }
+        )
 
     if "BIDSVersion" not in description:
-        issues.append({
-            "severity": "WARNING",
-            "field": "BIDSVersion",
-            "message": "RECOMMENDED: BIDSVersion should be set",
-            "fix": "Set to current BIDS version (e.g., 1.10.1)"
-        })
+        issues.append(
+            {
+                "severity": "WARNING",
+                "field": "BIDSVersion",
+                "message": "RECOMMENDED: BIDSVersion should be set",
+                "fix": "Set to current BIDS version (e.g., 1.10.1)",
+            }
+        )
 
     # Check RECOMMENDED fields
     if "DatasetType" not in description:
-        issues.append({
-            "severity": "INFO",
-            "field": "DatasetType",
-            "message": "RECOMMENDED: DatasetType not specified",
-            "fix": "Set to 'raw', 'derivative', or 'study'"
-        })
+        issues.append(
+            {
+                "severity": "INFO",
+                "field": "DatasetType",
+                "message": "RECOMMENDED: DatasetType not specified",
+                "fix": "Set to 'raw', 'derivative', or 'study'",
+            }
+        )
 
     if "License" not in description:
-        issues.append({
-            "severity": "INFO",
-            "field": "License",
-            "message": "RECOMMENDED: License not specified",
-            "fix": "Set to CC0, CC BY 4.0, or another SPDX identifier"
-        })
+        issues.append(
+            {
+                "severity": "INFO",
+                "field": "License",
+                "message": "RECOMMENDED: License not specified",
+                "fix": "Set to CC0, CC BY 4.0, or another SPDX identifier",
+            }
+        )
 
     # Check OPTIONAL field constraints
     if "Authors" in description and isinstance(description["Authors"], list):
         for author in description["Authors"]:
             if isinstance(author, dict):
                 if "name" not in author:
-                    issues.append({
-                        "severity": "WARNING",
-                        "field": "Authors",
-                        "message": f"Author missing 'name' field: {author}",
-                        "fix": "Ensure all authors have at least 'name' and optionally 'email'"
-                    })
+                    issues.append(
+                        {
+                            "severity": "WARNING",
+                            "field": "Authors",
+                            "message": f"Author missing 'name' field: {author}",
+                            "fix": "Ensure all authors have at least 'name' and optionally 'email'",
+                        }
+                    )
 
     # Check CITATION.cff precedence constraints
     if "Authors" in description and "License" in description:
         # This would indicate CITATION.cff check failed on backend
-        issues.append({
-            "severity": "INFO",
-            "field": "CITATION.cff",
-            "message": "Authors and License both in dataset_description.json",
-            "fix": "If CITATION.cff exists, these fields should be in CITATION.cff only"
-        })
+        issues.append(
+            {
+                "severity": "INFO",
+                "field": "CITATION.cff",
+                "message": "Authors and License both in dataset_description.json",
+                "fix": "If CITATION.cff exists, these fields should be in CITATION.cff only",
+            }
+        )
 
     return issues
 
@@ -86,38 +96,40 @@ def test_field_type_conversions():
             "name": "Keywords parsing",
             "input": "psychology, neuroscience, BIDS",
             "expected": ["psychology", "neuroscience", "BIDS"],
-            "operation": lambda x: [s.strip() for s in x.split(',') if s.strip()]
+            "operation": lambda x: [s.strip() for s in x.split(",") if s.strip()],
         },
         {
             "name": "Funding parsing",
             "input": "NSF Grant #123, Other Funding",
             "expected": ["NSF Grant #123", "Other Funding"],
-            "operation": lambda x: [s.strip() for s in x.split(',') if s.strip()]
+            "operation": lambda x: [s.strip() for s in x.split(",") if s.strip()],
         },
         {
             "name": "Empty input handling",
             "input": "",
             "expected": [],
-            "operation": lambda x: [s.strip() for s in x.split(',') if s.strip()]
+            "operation": lambda x: [s.strip() for s in x.split(",") if s.strip()],
         },
         {
             "name": "Single value (no comma)",
             "input": "psychology",
             "expected": ["psychology"],
-            "operation": lambda x: [s.strip() for s in x.split(',') if s.strip()]
-        }
+            "operation": lambda x: [s.strip() for s in x.split(",") if s.strip()],
+        },
     ]
 
     results = []
     for test_case in test_cases:
         result = test_case["operation"](test_case["input"])
         passed = result == test_case["expected"]
-        results.append({
-            "test": test_case["name"],
-            "passed": passed,
-            "expected": test_case["expected"],
-            "actual": result
-        })
+        results.append(
+            {
+                "test": test_case["name"],
+                "passed": passed,
+                "expected": test_case["expected"],
+                "actual": result,
+            }
+        )
 
     return results
 
@@ -131,18 +143,16 @@ def test_round_trip_serialization():
         "License": "CC BY 4.0",
         "Authors": [
             {"name": "Alice Smith", "email": "alice@example.com"},
-            {"name": "Bob Jones"}
+            {"name": "Bob Jones"},
         ],
         "Keywords": ["psychology", "neuroscience", "BIDS"],
         "Funding": ["NSF Grant #ABC123", "Other Grant"],
         "Acknowledgements": "Thanks to XYZ Foundation",
-        "EthicsApprovals": [
-            {"name": "University IRB", "reference": "2024-001"}
-        ],
+        "EthicsApprovals": [{"name": "University IRB", "reference": "2024-001"}],
         "HEDVersion": "8.2.0",
         "DatasetDOI": "10.5281/zenodo.1234567",
         "HowToAcknowledge": "Please cite: Smith et al. 2024",
-        "ReferencesAndLinks": ["https://doi.org/...", "https://github.com/..."]
+        "ReferencesAndLinks": ["https://doi.org/...", "https://github.com/..."],
     }
 
     # Simulate round-trip: Object → JSON → Parse → Object
@@ -165,7 +175,7 @@ def test_round_trip_serialization():
         "passed": len(issues) == 0,
         "issues": issues,
         "original": test_description,
-        "loaded": loaded_description
+        "loaded": loaded_description,
     }
 
 
@@ -206,7 +216,7 @@ def main():
         "Name": "Test Dataset",
         "BIDSVersion": "1.10.1",
         "DatasetType": "raw",
-        "License": "CC0"
+        "License": "CC0",
     }
     issues = test_dataset_description_schema(sample_description)
     if not issues:
@@ -224,11 +234,24 @@ def main():
     print("-" * 70)
     field_coverage = {
         "REQUIRED": ["Name", "BIDSVersion"],
-        "RECOMMENDED": ["DatasetType", "License", "HEDVersion", "GeneratedBy", "SourceDatasets"],
+        "RECOMMENDED": [
+            "DatasetType",
+            "License",
+            "HEDVersion",
+            "GeneratedBy",
+            "SourceDatasets",
+        ],
         "OPTIONAL": [
-            "Authors", "Keywords", "Acknowledgements", "HowToAcknowledge", "Funding",
-            "EthicsApprovals", "ReferencesAndLinks", "DatasetDOI", "DatasetLinks"
-        ]
+            "Authors",
+            "Keywords",
+            "Acknowledgements",
+            "HowToAcknowledge",
+            "Funding",
+            "EthicsApprovals",
+            "ReferencesAndLinks",
+            "DatasetDOI",
+            "DatasetLinks",
+        ],
     }
 
     total_fields = sum(len(fields) for fields in field_coverage.values())
@@ -245,11 +268,9 @@ def main():
     citation_rules = {
         "If CITATION.cff exists": {
             "remove": ["Authors", "HowToAcknowledge", "License", "ReferencesAndLinks"],
-            "keep": ["Name", "DatasetDOI"]
+            "keep": ["Name", "DatasetDOI"],
         },
-        "If CITATION.cff NOT found": {
-            "set_default": {"License": "CC0"}
-        }
+        "If CITATION.cff NOT found": {"set_default": {"License": "CC0"}},
     }
     print("✓ Precedence rules implemented:")
     for scenario, rules in citation_rules.items():
