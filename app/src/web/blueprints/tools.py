@@ -511,6 +511,8 @@ def api_survey_customizer_export():
         "exportOptions": {"ls_version": "3", "matrix": true, "matrix_global": false}
     }
     """
+    anonymized_count = 0
+
     try:
         from src.limesurvey_exporter import generate_lss_from_customization
     except ImportError:
@@ -724,9 +726,78 @@ def file_management():
     return render_template("file_management.html")
 
 
+def _detect_available_recipe_modalities(project_root: Path) -> tuple[list[dict], str]:
+    """Detect recipe modalities available for the current project.
+
+    A modality is considered available when matching dataset TSVs exist and at
+    least one recipe JSON is available in project recipe folders.
+    """
+    roots = [project_root]
+    rawdata_root = project_root / "rawdata"
+    if rawdata_root.is_dir():
+        roots.append(rawdata_root)
+
+    def _has_data(modality: str) -> bool:
+        for root in roots:
+            if modality == "survey":
+                for folder in ("survey", "beh"):
+                    if any(root.glob(f"sub-*/ses-*/{folder}/*.tsv")):
+                        return True
+                    if any(root.glob(f"sub-*/{folder}/*.tsv")):
+                        return True
+            elif modality == "biometrics":
+                if any(root.glob("sub-*/ses-*/biometrics/*.tsv")):
+                    return True
+                if any(root.glob("sub-*/biometrics/*.tsv")):
+                    return True
+        return False
+
+    def _has_recipes(modality: str) -> bool:
+        candidates = [
+            project_root / "code" / "recipes" / modality,
+            project_root / "recipe" / modality,
+            project_root / "official" / "recipes" / modality,
+        ]
+        for folder in candidates:
+            if folder.is_dir() and any(folder.glob("*.json")):
+                return True
+        return False
+
+    modality_labels = {
+        "survey": "Survey",
+        "biometrics": "Biometrics",
+    }
+
+    available: list[dict] = []
+    for modality in ("survey", "biometrics"):
+        if _has_data(modality) and _has_recipes(modality):
+            available.append({"value": modality, "label": modality_labels[modality]})
+
+    if not available:
+        available = [{"value": "survey", "label": "Survey"}]
+
+    default_modality = available[0]["value"]
+    return available, default_modality
+
+
 @tools_bp.route("/recipes")
 def recipes():
-    return render_template("recipes.html")
+    project = get_current_project()
+    project_path = (project.get("path") or "").strip()
+
+    available_modalities = [{"value": "survey", "label": "Survey"}]
+    default_modality = "survey"
+
+    if project_path and Path(project_path).is_dir():
+        available_modalities, default_modality = _detect_available_recipe_modalities(
+            Path(project_path)
+        )
+
+    return render_template(
+        "recipes.html",
+        available_modalities=available_modalities,
+        default_modality=default_modality,
+    )
 
 
 @tools_bp.route("/template-editor")
@@ -1162,7 +1233,7 @@ def api_recipes_surveys():
         format_exts = {
             "csv": [".csv"],
             "xlsx": [".xlsx"],
-            "save": [".save"],
+            "save": [".sav", ".save"],
             "r": [".feather"],
         }
         codebook_suffixes = {
@@ -1360,13 +1431,13 @@ def api_recipes_surveys():
                 # Anonymize files based on format
                 anonymized_count = 0
 
-                if out_format in ("save", "save", "spss"):
-                    # Handle SPSS .save files
+                if out_format in ("save", "spss"):
+                    # Handle SPSS .sav files (and legacy .save)
                     try:
                         import pyreadstat
                     except ImportError:
                         print(
-                            "[ANONYMIZATION] WARNING: pyreadstat not available, cannot anonymize .save files"
+                            "[ANONYMIZATION] WARNING: pyreadstat not available, cannot anonymize .sav files"
                         )
                         print("[ANONYMIZATION] Install with: pip install pyreadstat")
                         raise ImportError(
@@ -1375,7 +1446,7 @@ def api_recipes_surveys():
 
                     for root, dirs, files in os.walk(output_dir):
                         for file in files:
-                            if file.endswith(".save"):
+                            if file.endswith((".sav", ".save")):
                                 sav_path = os.path.join(root, file)
                                 print(f"  Processing: {file}")
 
@@ -1443,6 +1514,50 @@ def api_recipes_surveys():
 
                                 df_data.to_csv(file_path, sep=sep, index=False)
 
+                elif out_format in ("xlsx", "excel"):
+                    # Handle Excel files (all sheets)
+                    for root, dirs, files in os.walk(output_dir):
+                        for file in files:
+                            if file.endswith(".xlsx"):
+                                file_path = os.path.join(root, file)
+                                print(f"  Processing: {file}")
+
+                                excel_file = pd.ExcelFile(file_path)
+                                sheet_names = excel_file.sheet_names
+                                sheet_frames = {
+                                    sheet_name: pd.read_excel(
+                                        file_path, sheet_name=sheet_name
+                                    )
+                                    for sheet_name in sheet_names
+                                }
+
+                                file_had_participant_ids = False
+                                for sheet_name, df_data in sheet_frames.items():
+                                    if "participant_id" in df_data.columns:
+                                        original_ids = df_data["participant_id"].unique()
+                                        df_data["participant_id"] = df_data[
+                                            "participant_id"
+                                        ].map(lambda x: participant_mapping.get(x, x))
+                                        anonymized_ids = df_data[
+                                            "participant_id"
+                                        ].unique()
+                                        print(
+                                            f"    ✓ [{sheet_name}] {len(original_ids)} IDs → {len(anonymized_ids)} anonymized"
+                                        )
+                                        file_had_participant_ids = True
+
+                                    if mask_questions and "question" in df_data.columns:
+                                        df_data["question"] = "[MASKED]"
+
+                                with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
+                                    for sheet_name in sheet_names:
+                                        sheet_frames[sheet_name].to_excel(
+                                            writer, sheet_name=sheet_name, index=False
+                                        )
+
+                                if file_had_participant_ids:
+                                    anonymized_count += 1
+
                 print(f"[ANONYMIZATION] ✓ Anonymized {anonymized_count} file(s)")
                 if mask_questions:
                     print("[ANONYMIZATION] ✓ Masked copyrighted question text")
@@ -1480,7 +1595,10 @@ def api_recipes_surveys():
         msg += f" (note: {result.fallback_note})"
 
     if anonymize and mapping_file:
-        msg += f"\n🔒 Anonymized with {'random' if random_ids else 'deterministic'} IDs (length: {id_length})"
+        if anonymized_count > 0:
+            msg += f"\n🔒 Anonymized {anonymized_count} file(s) with {'random' if random_ids else 'deterministic'} IDs (length: {id_length})"
+        else:
+            msg += "\n⚠️  No output files with participant_id were anonymized"
         if mask_questions:
             msg += "\n🔒 Masked copyrighted question text"
         msg += (
@@ -1503,6 +1621,7 @@ def api_recipes_surveys():
                 str(result.boilerplate_path) if result.boilerplate_path else None
             ),
             "anonymized": anonymize,
+            "anonymized_files": anonymized_count,
             "mapping_file": os.path.basename(mapping_file) if mapping_file else None,
             "boilerplate_html_path": (
                 str(result.boilerplate_html_path)
