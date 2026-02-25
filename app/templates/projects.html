@@ -1690,6 +1690,23 @@
         });
         document.getElementById('section-' + type).classList.add('active');
 
+        // Starting a new project should always begin with a clean draft UI
+        if (type === 'create') {
+            const createResult = document.getElementById('createResult');
+            if (createResult) {
+                createResult.style.display = 'none';
+                createResult.innerHTML = '';
+            }
+            const projectNameInput = document.getElementById('projectName');
+            if (projectNameInput) {
+                projectNameInput.value = '';
+                projectNameInput.classList.remove('is-invalid');
+            }
+            const projectNameError = document.getElementById('projectNameError');
+            if (projectNameError) projectNameError.textContent = '';
+            resetStudyMetadataForm();
+        }
+
         // Keep Study Metadata visible for create flow
         showStudyMetadataCard();
     }
@@ -2126,6 +2143,57 @@
         return val.split('\n').map(s => s.trim()).filter(s => s);
     }
 
+    function buildDraftDatasetDescriptionForValidation() {
+        const overviewMain = document.getElementById('smOverviewMain')?.value?.trim() || '';
+        return {
+            Name: document.getElementById('metadataName')?.value?.trim() || '',
+            Authors: getAuthorsList(),
+            License: document.getElementById('metadataLicense')?.value || '',
+            Acknowledgements: document.getElementById('metadataAcknowledgements')?.value?.trim() || '',
+            DatasetDOI: document.getElementById('metadataDOI')?.value?.trim() || '',
+            EthicsApprovals: getEthicsApprovals(),
+            Keywords: (document.getElementById('metadataKeywords')?.value || '')
+                .split(',').map(s => s.trim()).filter(s => s),
+            BIDSVersion: '1.10.1',
+            DatasetType: document.getElementById('metadataType')?.value || 'raw',
+            HowToAcknowledge: document.getElementById('metadataHowToAcknowledge')?.value?.trim() || '',
+            Funding: (document.getElementById('metadataFunding')?.value || '')
+                .split(',').map(s => s.trim()).filter(s => s),
+            ReferencesAndLinks: (document.getElementById('metadataReferences')?.value || '')
+                .split(',').map(s => s.trim()).filter(s => s),
+            HEDVersion: document.getElementById('metadataHED')?.value?.trim() || '',
+            Description: overviewMain || undefined
+        };
+    }
+
+    let descriptionValidationTimer = null;
+    async function validateDatasetDescriptionDraftLive() {
+        const payload = { description: buildDraftDatasetDescriptionForValidation() };
+        try {
+            const response = await fetch('/api/projects/description/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (result.success) {
+                displayMetadataIssues(result.issues || []);
+            }
+        } catch (error) {
+            // Keep UX quiet for transient validation failures
+            console.debug('Live description validation failed:', error);
+        }
+    }
+
+    function scheduleLiveDescriptionValidation() {
+        if (descriptionValidationTimer) {
+            clearTimeout(descriptionValidationTimer);
+        }
+        descriptionValidationTimer = setTimeout(() => {
+            validateDatasetDescriptionDraftLive();
+        }, 250);
+    }
+
     // Create Project Form
     document.getElementById('createProjectForm').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -2140,6 +2208,9 @@
             alert(`Please complete all mandatory fields in Study Metadata:\\n\\n${fieldList}`);
             return;
         }
+
+        // Validate dataset_description draft before creation so issues are surfaced early
+        await validateDatasetDescriptionDraftLive();
 
         // Validate project name
         if (!/^[a-zA-Z0-9_-]+$/.test(projectName)) {
@@ -2714,10 +2785,10 @@
         const createActive = createSection && createSection.classList.contains('active');
         if (currentProjectPath || createActive) {
             card.style.display = 'block';
-            if (currentProjectPath) {
-                loadStudyMetadata();
-            } else {
+            if (createActive) {
                 resetStudyMetadataForm();
+            } else if (currentProjectPath) {
+                loadStudyMetadata();
             }
             return;
         }
@@ -3234,9 +3305,16 @@
         const refreshCompleteness = () => {
             updateCompletenessUI(computeLocalCompleteness());
             updateCreateProjectButton();
+            scheduleLiveDescriptionValidation();
         };
         studyMetadataForm.addEventListener('input', refreshCompleteness);
         studyMetadataForm.addEventListener('change', refreshCompleteness);
+    }
+
+    const createProjectForm = document.getElementById('createProjectForm');
+    if (createProjectForm) {
+        createProjectForm.addEventListener('input', scheduleLiveDescriptionValidation);
+        createProjectForm.addEventListener('change', scheduleLiveDescriptionValidation);
     }
 
     studyMetadataForm?.addEventListener('submit', async function(e) {
