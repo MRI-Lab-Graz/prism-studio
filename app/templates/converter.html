@@ -3412,10 +3412,58 @@ document.addEventListener('DOMContentLoaded', function() {
 
             appendLog('', 'info');
             appendLog('═══════════════════════════════════════', 'info');
-            const previewErrorCount = data.validation?.summary?.total_errors ?? (data.validation?.errors || []).length;
+            
+            // Count errors and warnings from validation results and data issues
+            let previewErrorCount = 0;
+            let previewWarningCount = 0;
+            
+            if (data.validation) {
+                // Check for validation.summary
+                if (data.validation.summary) {
+                    previewErrorCount = data.validation.summary.total_errors || 0;
+                    previewWarningCount = data.validation.summary.total_warnings || 0;
+                }
+                // Check for validation.errors array
+                else if (data.validation.errors && Array.isArray(data.validation.errors)) {
+                    previewErrorCount = data.validation.errors.length;
+                }
+                // Check for validation.warnings array 
+                if (data.validation.warnings && Array.isArray(data.validation.warnings)) {
+                    previewWarningCount = (previewWarningCount || 0) + data.validation.warnings.length;
+                }
+                // Check if validation itself is an error (single error object/string)
+                if (data.validation.error) {
+                    previewErrorCount++;
+                }
+            }
+            
+            // Add data_issues count (these are warnings)
+            const dataIssueCount = preview.data_issues ? preview.data_issues.length : 0;
+            if (dataIssueCount > 0) {
+                previewWarningCount += dataIssueCount;
+            }
+            
+            console.log(`Counts - Errors: ${previewErrorCount}, Warnings: ${previewWarningCount}`);
+            
             if (previewErrorCount > 0) {
                 appendLog('⚠ PREVIEW COMPLETED WITH VALIDATION ERRORS', 'warning');
+                appendLog(`   🔴 ${previewErrorCount} error(s) - FIX REQUIRED before converting`, 'error');
+                if (previewWarningCount > 0) {
+                    appendLog(`   🟡 ${previewWarningCount} warning(s)`, 'warning');
+                }
+                if (dataIssueCount > 0) {
+                    appendLog(`   ⚠️  ${dataIssueCount} data issue(s)`, 'warning');
+                }
                 convertInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Preview completed, but validation found errors. Fix these issues before converting.';
+            } else if (previewWarningCount > 0 || dataIssueCount > 0) {
+                appendLog('✓ PREVIEW COMPLETED (with warnings)', 'warning');
+                if (previewWarningCount > 0) {
+                    appendLog(`   🟡 ${previewWarningCount} warning(s) - review recommended`, 'warning');
+                }
+                if (dataIssueCount > 0) {
+                    appendLog(`   ⚠️  ${dataIssueCount} data issue(s)`, 'warning');
+                }
+                convertInfo.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Preview completed with warnings. Review above before converting.';
             } else {
                 appendLog('✓ PREVIEW COMPLETED SUCCESSFULLY', 'success');
                 convertInfo.innerHTML = '<i class="fas fa-info-circle me-2"></i>Preview complete. Review the log above, then click <strong>Convert</strong> to proceed.';

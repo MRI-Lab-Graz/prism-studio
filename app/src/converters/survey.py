@@ -2033,7 +2033,24 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
         except EmptyDataError:
             raise ValueError("Input CSV is empty (no content in file).")
         except Exception as e:
-            raise ValueError(f"Failed to read CSV: {e}") from e
+            # Parse tokenization errors to provide user-friendly messages
+            error_msg = str(e)
+            
+            # Detect "Expected X fields in line Y, saw Z" errors
+            token_match = re.search(r"Expected (\d+) fields in line (\d+), saw (\d+)", error_msg)
+            if token_match:
+                expected, line_num, got = token_match.groups()
+                return_msg = (
+                    f"CSV format error in row {line_num}: Expected {expected} columns but found {got}. "
+                    f"This usually indicates:\n"
+                    f"  • Extra commas or quotes within a cell\n"
+                    f"  • Inconsistent number of columns across rows\n"
+                    f"  • Unescaped quotes or embedded newlines in data\n"
+                    f"Please check the file structure and ensure all rows have the same number of columns."
+                )
+                raise ValueError(return_msg) from e
+            
+            raise ValueError(f"Failed to read CSV: {error_msg}") from e
 
         if df is None or df.empty:
             raise ValueError("Input CSV is empty (no content in file).")
@@ -2046,7 +2063,24 @@ def _read_table_as_dataframe(*, input_path: Path, kind: str, sheet: str | int = 
         except EmptyDataError:
             raise ValueError("Input TSV is empty (no content in file).")
         except Exception as e:
-            raise ValueError(f"Failed to read TSV: {e}") from e
+            # Parse tokenization errors to provide user-friendly messages
+            error_msg = str(e)
+            
+            # Detect "Expected X fields in line Y, saw Z" errors
+            token_match = re.search(r"Expected (\d+) fields in line (\d+), saw (\d+)", error_msg)
+            if token_match:
+                expected, line_num, got = token_match.groups()
+                return_msg = (
+                    f"TSV format error in row {line_num}: Expected {expected} columns but found {got}. "
+                    f"This usually indicates:\n"
+                    f"  • Extra tabs or newlines within a cell\n"
+                    f"  • Inconsistent number of columns across rows\n"
+                    f"  • Trailing tabs at the end of a line\n"
+                    f"Please check the file structure and ensure all rows have the same number of columns."
+                )
+                raise ValueError(return_msg) from e
+            
+            raise ValueError(f"Failed to read TSV: {error_msg}") from e
 
         if df is None or df.empty:
             raise ValueError("Input TSV is empty (no content in file).")
