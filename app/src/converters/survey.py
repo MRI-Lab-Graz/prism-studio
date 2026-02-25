@@ -692,6 +692,7 @@ class SurveyConvertResult:
     missing_items_by_task: dict[str, int]
     id_column: str
     session_column: str | None
+    detected_sessions: list[str] = field(default_factory=list)  # Sessions found in file
     missing_cells_by_subject: dict[str, int] = field(default_factory=dict)
     missing_value_token: str = _MISSING_TOKEN
     conversion_warnings: list[str] = field(default_factory=list)
@@ -2647,6 +2648,58 @@ def _convert_survey_dataframe_to_prism_dataset(
     if alias_map:
         df = _apply_alias_map_to_dataframe(df=df, alias_map=alias_map)
 
+    # --- Detect Available Sessions ---
+    detected_sessions: list[str] = []
+    if res_ses_col:
+        # Get unique session values from the file
+        detected_sessions = sorted(
+            [
+                str(v).strip()
+                for v in df[res_ses_col].dropna().unique()
+                if str(v).strip()
+            ]
+        )
+        print(
+            f"[PRISM INFO] Sessions detected in {res_ses_col}: {detected_sessions}"
+        )
+
+    # --- Filter Rows by Selected Session ---
+    # If both session column exists and a specific session is selected,
+    # filter to only rows matching that session.
+    # This MUST happen before duplicate checking so that legitimate duplicates
+    # (same subject in different sessions) can be filtered to a single session.
+    rows_before_filter = len(df)
+    if res_ses_col and session and session != "all":
+        # Normalize the session value for comparison
+        session_normalized = str(session).strip()
+        df_filtered = df[
+            df[res_ses_col].astype(str).str.strip() == session_normalized
+        ]
+        if len(df_filtered) == 0:
+            raise ValueError(
+                f"No rows found with session '{session}' in column '{res_ses_col}'. "
+                f"Available values: {', '.join(detected_sessions if detected_sessions else ['none'])}"
+            )
+        df = df_filtered
+        print(
+            f"[PRISM INFO] Filtered {rows_before_filter} rows → {len(df)} rows for session '{session}'"
+        )
+    elif res_ses_col and not session and detected_sessions and duplicate_handling == "error":
+        # PREVIEW MODE: If session column exists but user hasn't selected a session,
+        # and no custom duplicate handling, auto-select first session for preview
+        # to avoid blocking on duplicate IDs (which are legitimate across sessions)
+        first_session = detected_sessions[0]
+        df_filtered = df[
+            df[res_ses_col].astype(str).str.strip() == first_session
+        ]
+        if len(df_filtered) > 0:
+            df = df_filtered
+            print(
+                f"[PRISM INFO] Auto-filtering to first session '{first_session}' for preview ({rows_before_filter} rows → {len(df)} rows)"
+            )
+    elif session == "all" and res_ses_col:
+        print(f"[PRISM INFO] Processing all sessions from '{res_ses_col}'")
+
     # --- Extract LimeSurvey System Columns ---
     # These are platform metadata (timestamps, tokens, timings) that should be
     # written to a separate tool-limesurvey file, not mixed with questionnaire data
@@ -2761,6 +2814,7 @@ def _convert_survey_dataframe_to_prism_dataset(
             missing_items_by_task=missing_items_by_task,
             id_column=res_id_col,
             session_column=res_ses_col,
+            detected_sessions=detected_sessions,
             conversion_warnings=conversion_warnings,
             task_runs=task_runs,
             dry_run_preview=dry_run_preview,
@@ -2848,25 +2902,16 @@ def _convert_survey_dataframe_to_prism_dataset(
             cleaned = _strip_internal_keys(localized)
             _write_json(sidecar_path, cleaned)
 
-    # Copy used templates to project's code/library/ for reproducibility (YODA)
-    # This ensures the exact template used for conversion is preserved in the project
-    _copy_templates_to_project(
-        templates=templates,
-        tasks_with_data=tasks_with_data,
-        dataset_root=dataset_root,
-        language=language,
-        technical_overrides=technical_overrides,
-    )
-
     # --- Process and Write Responses ---
     missing_cells_by_subject: dict[str, int] = {}
     items_using_tolerance: dict[str, set[str]] = {}
 
     for _, row in df.iterrows():
         sub_id = _normalize_sub_id(row[res_id_col])
+        # Determine session: if session="all", treat as if no override (use file values)
         ses_id = (
             _normalize_ses_id(session)
-            if session
+            if session and session != "all"
             else (_normalize_ses_id(row[res_ses_col]) if res_ses_col else "ses-1")
         )
         modality_dir = _ensure_dir(output_root / sub_id / ses_id / "survey")
@@ -2958,6 +3003,7 @@ def _convert_survey_dataframe_to_prism_dataset(
         missing_items_by_task=missing_items_by_task,
         id_column=res_id_col,
         session_column=res_ses_col,
+        detected_sessions=detected_sessions,
         missing_cells_by_subject=missing_cells_by_subject,
         missing_value_token=_MISSING_TOKEN,
         conversion_warnings=conversion_warnings,

@@ -2322,6 +2322,7 @@ def detect_columns():
 
     try:
         columns = []
+        df = None
 
         if filename.endswith(".lsa"):
             # Extract response columns from LimeSurvey archive (.lsr XML)
@@ -2342,15 +2343,15 @@ def detect_columns():
                 shutil.rmtree(tmp_dir, ignore_errors=True)
 
         elif filename.endswith(".xlsx"):
-            df = pd.read_excel(file, nrows=1)
+            df = pd.read_excel(file)
             columns = list(df.columns)
 
         elif filename.endswith(".csv"):
-            df = pd.read_csv(file, nrows=1)
+            df = pd.read_csv(file)
             columns = list(df.columns)
 
         elif filename.endswith(".tsv"):
-            df = pd.read_csv(file, sep="\t", nrows=1)
+            df = pd.read_csv(file, sep="\t")
             columns = list(df.columns)
 
         else:
@@ -2377,11 +2378,31 @@ def detect_columns():
             has_prismmeta=_has_pm,
         )
 
+        session_column = None
+        detected_sessions = []
+        if columns and df is not None:
+            lower_to_col = {str(c).strip().lower(): str(c).strip() for c in columns}
+            for candidate in ("session", "ses", "visit", "timepoint"):
+                if candidate in lower_to_col:
+                    session_column = lower_to_col[candidate]
+                    break
+
+            if session_column and session_column in df.columns:
+                detected_sessions = sorted(
+                    [
+                        str(v).strip()
+                        for v in df[session_column].dropna().unique()
+                        if str(v).strip()
+                    ]
+                )
+
         return jsonify(
             {
                 "columns": columns,
                 "suggested_id_column": suggested,
                 "is_prism_data": is_prism_data,
+                "session_column": session_column,
+                "detected_sessions": detected_sessions,
             }
         )
 
