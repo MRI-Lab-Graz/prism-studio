@@ -1233,7 +1233,7 @@ def api_recipes_surveys():
         format_exts = {
             "csv": [".csv"],
             "xlsx": [".xlsx"],
-            "save": [".sav", ".save"],
+            "save": [".save", ".save"],
             "r": [".feather"],
         }
         codebook_suffixes = {
@@ -1432,12 +1432,12 @@ def api_recipes_surveys():
                 anonymized_count = 0
 
                 if out_format in ("save", "spss"):
-                    # Handle SPSS .sav files (and legacy .save)
+                    # Handle SPSS .save files (and legacy .save)
                     try:
                         import pyreadstat
                     except ImportError:
                         print(
-                            "[ANONYMIZATION] WARNING: pyreadstat not available, cannot anonymize .sav files"
+                            "[ANONYMIZATION] WARNING: pyreadstat not available, cannot anonymize .save files"
                         )
                         print("[ANONYMIZATION] Install with: pip install pyreadstat")
                         raise ImportError(
@@ -1446,7 +1446,7 @@ def api_recipes_surveys():
 
                     for root, dirs, files in os.walk(output_dir):
                         for file in files:
-                            if file.endswith((".sav", ".save")):
+                            if file.endswith((".save", ".save")):
                                 sav_path = os.path.join(root, file)
                                 print(f"  Processing: {file}")
 
@@ -1534,7 +1534,9 @@ def api_recipes_surveys():
                                 file_had_participant_ids = False
                                 for sheet_name, df_data in sheet_frames.items():
                                     if "participant_id" in df_data.columns:
-                                        original_ids = df_data["participant_id"].unique()
+                                        original_ids = df_data[
+                                            "participant_id"
+                                        ].unique()
                                         df_data["participant_id"] = df_data[
                                             "participant_id"
                                         ].map(lambda x: participant_mapping.get(x, x))
@@ -1549,7 +1551,9 @@ def api_recipes_surveys():
                                     if mask_questions and "question" in df_data.columns:
                                         df_data["question"] = "[MASKED]"
 
-                                with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
+                                with pd.ExcelWriter(
+                                    file_path, engine="openpyxl"
+                                ) as writer:
                                     for sheet_name in sheet_names:
                                         sheet_frames[sheet_name].to_excel(
                                             writer, sheet_name=sheet_name, index=False

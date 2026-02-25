@@ -233,9 +233,7 @@ def validate_dataset(
             from procedure_validator import validate_procedure
             from pathlib import Path as _Path
 
-            procedure_issues = validate_procedure(
-                _Path(root_dir), _Path(root_dir)
-            )
+            procedure_issues = validate_procedure(_Path(root_dir), _Path(root_dir))
             issues.extend(procedure_issues)
 
     # If no subjects were discovered, this usually means the user pointed

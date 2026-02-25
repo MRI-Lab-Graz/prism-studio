@@ -130,7 +130,7 @@ Now that your project is ready, let's bring in data and fill metadata properly f
 
 ---
 
-### Apendix: Running from Source 
+### Appendix: Running from Source 
 
 **macOS/Linux**
 ```bash

@@ -143,7 +143,9 @@ def _copy_official_templates_to_project(
     if project_root.is_file():
         project_root = project_root.parent
 
-    if (official_dir / "survey").is_dir() and not list(official_dir.glob("survey-*.json")):
+    if (official_dir / "survey").is_dir() and not list(
+        official_dir.glob("survey-*.json")
+    ):
         official_dir = official_dir / "survey"
 
     dest_dir = project_root / "code" / "library" / "survey"
@@ -190,7 +192,10 @@ def _run_survey_with_official_fallback(
     except Exception as exc:
         if _should_retry_with_official_library(exc):
             official_dir = _resolve_official_survey_dir(fallback_project_path)
-            if official_dir and Path(official_dir).resolve() != Path(library_dir).resolve():
+            if (
+                official_dir
+                and Path(official_dir).resolve() != Path(library_dir).resolve()
+            ):
                 msg = (
                     "No matches in project templates; retrying with official templates."
                 )
@@ -208,9 +213,7 @@ def _run_survey_with_official_fallback(
                     )
                 return result
 
-            msg = (
-                "No matches in project templates and no official templates found to fall back to."
-            )
+            msg = "No matches in project templates and no official templates found to fall back to."
             if log_fn:
                 log_fn(msg, "warning")
             else:
@@ -418,11 +421,11 @@ def _merge_participant_filter_config(overrides: dict | None) -> dict:
     if isinstance(min_count, int) and min_count > 0:
         merged["min_repeated_prefix_count"] = min_count
 
-    keywords = overrides.get("participantKeywords", overrides.get("participant_keywords"))
+    keywords = overrides.get(
+        "participantKeywords", overrides.get("participant_keywords")
+    )
     if isinstance(keywords, (list, tuple, set)):
-        cleaned = {
-            str(k).lower().strip() for k in keywords if str(k).strip()
-        }
+        cleaned = {str(k).lower().strip() for k in keywords if str(k).strip()}
         if cleaned:
             merged["participant_keywords"] = cleaned
 
@@ -705,8 +708,14 @@ def _generate_neurobagel_schema(
             "type": "categorical",
             "levels": {
                 "1": {"label": "Primary education", "uri": "nb:EducationLevel/Primary"},
-                "2": {"label": "Secondary education", "uri": "nb:EducationLevel/Secondary"},
-                "3": {"label": "Vocational training", "uri": "nb:EducationLevel/Vocational"},
+                "2": {
+                    "label": "Secondary education",
+                    "uri": "nb:EducationLevel/Secondary",
+                },
+                "3": {
+                    "label": "Vocational training",
+                    "uri": "nb:EducationLevel/Vocational",
+                },
                 "4": {"label": "Bachelor level", "uri": "nb:EducationLevel/Bachelor"},
                 "5": {"label": "Master level", "uri": "nb:EducationLevel/Master"},
                 "6": {"label": "Doctoral level", "uri": "nb:EducationLevel/Doctoral"},
@@ -1212,7 +1221,9 @@ def api_survey_convert_preview():
                         id_map_file=id_map_path,
                         duplicate_handling=duplicate_handling,
                         skip_participants=True,
-                        fallback_project_path=str(project_path) if project_path else None,
+                        fallback_project_path=(
+                            str(project_path) if project_path else None
+                        ),
                     )
                 elif suffix == ".lsa":
                     _run_survey_with_official_fallback(
@@ -1236,7 +1247,9 @@ def api_survey_convert_preview():
                         duplicate_handling=duplicate_handling,
                         skip_participants=True,
                         project_path=str(project_path) if project_path else None,
-                        fallback_project_path=str(project_path) if project_path else None,
+                        fallback_project_path=(
+                            str(project_path) if project_path else None
+                        ),
                     )
 
                 v_res = run_validation(
@@ -1278,10 +1291,14 @@ def api_survey_convert_preview():
             "conversion_warnings": result.conversion_warnings,
             "task_runs": result.task_runs,
         }
-        
+
         # DEBUG: Log what we're returning
-        print(f"[API DEBUG] Returning detected_sessions: {response_data.get('detected_sessions')}")
-        print(f"[API DEBUG] Returning session_column: {response_data.get('session_column')}")
+        print(
+            f"[API DEBUG] Returning detected_sessions: {response_data.get('detected_sessions')}"
+        )
+        print(
+            f"[API DEBUG] Returning session_column: {response_data.get('session_column')}"
+        )
 
         if validation_result is not None:
             response_data["validation"] = validation_result
@@ -1341,10 +1358,16 @@ def api_survey_convert_preview():
             response_data["conversion_summary"] = conv_summary
 
         # DEBUG: Verify detected_sessions is in response before sending
-        print(f"[API RESPONSE DEBUG] Final response_data keys: {list(response_data.keys())}")
-        print(f"[API RESPONSE DEBUG] detected_sessions value: {response_data.get('detected_sessions')}")
-        print(f"[API RESPONSE DEBUG] detected_sessions type: {type(response_data.get('detected_sessions'))}")
-        
+        print(
+            f"[API RESPONSE DEBUG] Final response_data keys: {list(response_data.keys())}"
+        )
+        print(
+            f"[API RESPONSE DEBUG] detected_sessions value: {response_data.get('detected_sessions')}"
+        )
+        print(
+            f"[API RESPONSE DEBUG] detected_sessions type: {type(response_data.get('detected_sessions'))}"
+        )
+
         return jsonify(response_data)
     except IdColumnNotDetectedError as e:
         return (
@@ -3449,9 +3472,7 @@ def api_participants_preview():
                 )
                 if len(filtered_columns) > 1:
                     output_df = df[filtered_columns]
-                    simulation_note = (
-                        "No participants.json schema found. Applied smart participant-variable filtering."
-                    )
+                    simulation_note = "No participants.json schema found. Applied smart participant-variable filtering."
                 else:
                     output_df = df[list(df.columns)]
                     simulation_note = (
@@ -3627,13 +3648,20 @@ def api_participants_convert():
                     project_root / "participants_mapping.json",
                     project_root / "code" / "participants_mapping.json",
                     project_root / "code" / "library" / "participants_mapping.json",
-                    project_root / "code" / "library" / "survey" / "participants_mapping.json",
+                    project_root
+                    / "code"
+                    / "library"
+                    / "survey"
+                    / "participants_mapping.json",
                 ]
                 for candidate in mapping_candidates:
                     if candidate.exists() and candidate.is_file():
                         mapping = converter.load_mapping_from_file(candidate)
                         if mapping:
-                            log_msg("INFO", f"Using participants_mapping.json from {candidate}")
+                            log_msg(
+                                "INFO",
+                                f"Using participants_mapping.json from {candidate}",
+                            )
                             break
 
                 # Backward compatibility: normalize legacy flat dict format
@@ -3659,7 +3687,9 @@ def api_participants_convert():
                         "description": "Normalized legacy participant mapping",
                         "mappings": legacy_mappings,
                     }
-                    log_msg("INFO", "Normalized legacy participants_mapping.json format")
+                    log_msg(
+                        "INFO", "Normalized legacy participants_mapping.json format"
+                    )
 
                 if not mapping:
                     # No mapping file, try auto-detection from file headers

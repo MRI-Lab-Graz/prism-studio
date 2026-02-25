@@ -58,7 +58,7 @@ def _parse_cff_value(raw: str) -> str:
     value = raw.strip()
     if not value:
         return ""
-    if (value.startswith("\"") and value.endswith("\"")) or (
+    if (value.startswith('"') and value.endswith('"')) or (
         value.startswith("'") and value.endswith("'")
     ):
         try:
@@ -93,7 +93,9 @@ def _validate_recruitment_payload(recruitment: dict | None) -> str | None:
     for location in locations:
         if _is_online_only_location(location):
             continue
-        country = location.rsplit(",", 1)[-1].strip() if "," in location else location.strip()
+        country = (
+            location.rsplit(",", 1)[-1].strip() if "," in location else location.strip()
+        )
         if not country:
             return "Recruitment location must include a country, or be set to 'Online'."
 
@@ -107,7 +109,11 @@ def _validate_recruitment_payload(recruitment: dict | None) -> str | None:
         return None
 
     date_pattern = re.compile(r"^\d{4}(-\d{2}){0,2}$")
-    if date_pattern.fullmatch(start) and date_pattern.fullmatch(end) and len(start) == len(end):
+    if (
+        date_pattern.fullmatch(start)
+        and date_pattern.fullmatch(end)
+        and len(start) == len(end)
+    ):
         if start > end:
             return "Recruitment period start must be before or equal to period end."
 
@@ -166,7 +172,10 @@ def _read_citation_cff_fields(citation_path: Path) -> dict:
             if stripped.startswith("- family-names:"):
                 if current_author:
                     authors.append(current_author)
-                current_author = {"family": _parse_cff_value(stripped.split(":", 1)[1]), "given": ""}
+                current_author = {
+                    "family": _parse_cff_value(stripped.split(":", 1)[1]),
+                    "given": "",
+                }
                 continue
             if stripped.startswith("given-names:") and current_author is not None:
                 current_author["given"] = _parse_cff_value(stripped.split(":", 1)[1])
@@ -854,10 +863,16 @@ def get_dataset_description():
                 description["Authors"] = citation_fields["Authors"]
             if not description.get("License") and citation_fields.get("License"):
                 description["License"] = citation_fields["License"]
-            if not description.get("HowToAcknowledge") and citation_fields.get("HowToAcknowledge"):
+            if not description.get("HowToAcknowledge") and citation_fields.get(
+                "HowToAcknowledge"
+            ):
                 description["HowToAcknowledge"] = citation_fields["HowToAcknowledge"]
-            if not description.get("ReferencesAndLinks") and citation_fields.get("ReferencesAndLinks"):
-                description["ReferencesAndLinks"] = citation_fields["ReferencesAndLinks"]
+            if not description.get("ReferencesAndLinks") and citation_fields.get(
+                "ReferencesAndLinks"
+            ):
+                description["ReferencesAndLinks"] = citation_fields[
+                    "ReferencesAndLinks"
+                ]
 
         # Validate on load using merged view (supports CITATION.cff-only fields)
         validation_description = _merge_citation_fields(description, citation_fields)
@@ -923,7 +938,12 @@ def save_dataset_description():
                 citation_fields[key] = value
         if citation_cff_path.exists():
             # These fields belong in CITATION.cff, not dataset_description.json
-            fields_to_remove_if_citation = ["Authors", "HowToAcknowledge", "License", "ReferencesAndLinks"]
+            fields_to_remove_if_citation = [
+                "Authors",
+                "HowToAcknowledge",
+                "License",
+                "ReferencesAndLinks",
+            ]
             for field in fields_to_remove_if_citation:
                 if field in description:
                     description.pop(field)
@@ -2189,7 +2209,10 @@ def _compute_methods_completeness(
             "Description",
             2,
             "Dataset overview text",
-            _filled((project_data.get("Overview") or {}).get("Main") or dd.get("Description")),
+            _filled(
+                (project_data.get("Overview") or {}).get("Main")
+                or dd.get("Description")
+            ),
         ),
         (
             "Basics",
@@ -2345,7 +2368,13 @@ def _compute_methods_completeness(
         "Basics": {"Name"},
         "Overview": {"Main"},
         "StudyDesign": {"Type"},
-        "Recruitment": {"Method", "Location", "Period.Start", "Period.End", "Compensation"},
+        "Recruitment": {
+            "Method",
+            "Location",
+            "Period.Start",
+            "Period.End",
+            "Compensation",
+        },
         "Eligibility": {"InclusionCriteria", "ExclusionCriteria"},
         "Procedure": {"Overview"},
     }
@@ -2535,7 +2564,9 @@ def _auto_detect_study_hints(project_path: Path, project_data: dict) -> dict:
     # --- Sample size from sub-* directories ---
     if dataset_root.is_dir():
         sub_dirs = [
-            d for d in dataset_root.iterdir() if d.is_dir() and d.name.startswith("sub-")
+            d
+            for d in dataset_root.iterdir()
+            if d.is_dir() and d.name.startswith("sub-")
         ]
         if sub_dirs:
             hints["Eligibility.ActualSampleSize"] = {

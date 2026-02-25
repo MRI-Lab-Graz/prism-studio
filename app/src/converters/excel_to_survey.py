@@ -265,10 +265,10 @@ def process_excel(
     print(f"Loading metadata from {excel_file}...")
     try:
         surveys_data = extract_excel_templates(
-            excel_file, 
+            excel_file,
             participants_prefix=participants_prefix,
             output_dir=output_dir,
-            check_collisions=True
+            check_collisions=True,
         )
     except Exception as e:
         print(f"Error during extraction: {e}")
@@ -300,11 +300,17 @@ def process_excel(
     print("Done!")
 
 
-def extract_excel_templates(excel_file, participants_prefix=None, output_dir=None, check_collisions=True, version_merge_handler=None):
+def extract_excel_templates(
+    excel_file,
+    participants_prefix=None,
+    output_dir=None,
+    check_collisions=True,
+    version_merge_handler=None,
+):
     """
     Core extraction logic that returns a dictionary of templates {prefix: sidecar_dict}.
     Extracted from process_excel for use in Web UI.
-    
+
     Args:
         excel_file: Path to Excel/CSV/TSV file
         participants_prefix: Optional prefix for participants template
@@ -449,13 +455,13 @@ def extract_excel_templates(excel_file, participants_prefix=None, output_dir=Non
     surveys = {}
     surveys_meta = {}
     version_collisions = {}  # Track version candidate collisions per prefix
-    
+
     # Initialize item registry for collision detection
     item_registry = None
     if check_collisions and ItemRegistry is not None:
         local_library = None
         official_library = None
-        
+
         # Determine local library path from output_dir
         if output_dir:
             output_path = Path(output_dir)
@@ -466,9 +472,12 @@ def extract_excel_templates(excel_file, participants_prefix=None, output_dir=Non
             elif (output_path / "library" / "survey").exists():
                 local_library = output_path / "library" / "survey"
             # Try: output_dir/../library/survey (if output_dir is code)
-            elif output_path.name == "code" and (output_path.parent / "code" / "library" / "survey").exists():
+            elif (
+                output_path.name == "code"
+                and (output_path.parent / "code" / "library" / "survey").exists()
+            ):
                 local_library = output_path.parent / "code" / "library" / "survey"
-        
+
         # Find official library relative to this script
         script_dir = Path(__file__).parent.parent.parent.resolve()
         for candidate in [
@@ -478,13 +487,14 @@ def extract_excel_templates(excel_file, participants_prefix=None, output_dir=Non
             if candidate.exists():
                 official_library = candidate
                 break
-        
+
         try:
             item_registry = ItemRegistry.from_libraries(
-                local_library=local_library,
-                official_library=official_library
+                local_library=local_library, official_library=official_library
             )
-            print(f"[PRISM] Item collision checking enabled ({item_registry.get_item_count()} existing items)")
+            print(
+                f"[PRISM] Item collision checking enabled ({item_registry.get_item_count()} existing items)"
+            )
         except Exception as e:
             print(f"[PRISM] Warning: Could not initialize item registry: {e}")
             item_registry = None
@@ -763,16 +773,18 @@ def extract_excel_templates(excel_file, participants_prefix=None, output_dir=Non
             # Extract description for error message
             desc = entry.get("Description", {})
             if isinstance(desc, dict):
-                desc_str = desc.get("en") or desc.get("de") or next(iter(desc.values()), "")
+                desc_str = (
+                    desc.get("en") or desc.get("de") or next(iter(desc.values()), "")
+                )
             else:
                 desc_str = str(desc)
-            
+
             try:
                 item_registry.register_item(
                     item_id=var_name,
                     template_name=f"survey-{prefix}",
                     description=desc_str[:100],
-                    item_data=entry
+                    item_data=entry,
                 )
             except ItemCollisionError as e:
                 # Check if this is a version candidate collision
@@ -781,11 +793,11 @@ def extract_excel_templates(excel_file, participants_prefix=None, output_dir=Non
                     # Track this collision for later resolution
                     if prefix not in version_collisions:
                         version_collisions[prefix] = {
-                            'items': {},
-                            'existing_template': e.existing_meta.get('source_template'),
-                            'existing_meta': e.existing_meta
+                            "items": {},
+                            "existing_template": e.existing_meta.get("source_template"),
+                            "existing_meta": e.existing_meta,
                         }
-                    version_collisions[prefix]['items'][var_name] = entry
+                    version_collisions[prefix]["items"][var_name] = entry
                     # Don't add to surveys yet - will be handled after all items processed
                     continue
                 else:
@@ -798,69 +810,79 @@ def extract_excel_templates(excel_file, participants_prefix=None, output_dir=Non
     # Handle version candidate collisions
     if version_collisions and merge_survey_versions is not None:
         print(f"\n[PRISM] Processing {len(version_collisions)} version candidate(s)...")
-        
+
         for prefix, collision_info in version_collisions.items():
-            existing_template_name = collision_info['existing_template']
-            colliding_items = collision_info['items']
-            
+            existing_template_name = collision_info["existing_template"]
+            colliding_items = collision_info["items"]
+
             # Include ALL items from this prefix (both colliding and non-colliding)
             new_items = dict(colliding_items)  # Start with colliding items
             if prefix in surveys:
                 # Add any non-colliding items from the same prefix
                 for item_id, item_data in surveys[prefix].items():
-                    if item_id not in new_items and not item_id.startswith(('Technical', 'Study', 'Metadata')):
+                    if item_id not in new_items and not item_id.startswith(
+                        ("Technical", "Study", "Metadata")
+                    ):
                         new_items[item_id] = item_data
-            
+
             # Find existing template file
             existing_template_path = None
             if local_library and local_library.exists():
                 candidate = local_library / f"{existing_template_name}.json"
                 if candidate.exists():
                     existing_template_path = candidate
-            
+
             if not existing_template_path:
-                print(f"[PRISM WARNING] Could not find existing template {existing_template_name}, skipping merge")
+                print(
+                    f"[PRISM WARNING] Could not find existing template {existing_template_name}, skipping merge"
+                )
                 # Add items to surveys normally
                 for item_id, item_data in new_items.items():
                     surveys[prefix][item_id] = item_data
                 continue
-            
+
             # Prompt for version name
-            print(f"\n{'='*60}")
-            print(f"Survey '{prefix}' appears to be a version of '{existing_template_name}'")
+            print(f"\n{'=' * 60}")
+            print(
+                f"Survey '{prefix}' appears to be a version of '{existing_template_name}'"
+            )
             print(f"  Existing template: {existing_template_path.name}")
             print(f"  Total items in import: {len(new_items)}")
             print(f"  Colliding items: {len(colliding_items)}")
-            
+
             if version_merge_handler:
                 # Use provided handler (for GUI)
-                version_name = version_merge_handler(existing_template_path, new_items, prefix)
+                version_name = version_merge_handler(
+                    existing_template_path, new_items, prefix
+                )
             else:
                 # CLI: prompt user
                 suggested_new, suggested_existing = detect_version_name_from_import(
                     new_items, existing_template_path
                 )
                 print(f"  Suggested new version name: '{suggested_new}'")
-                version_name = input(f"Enter version name for this import (or press Enter for '{suggested_new}'): ").strip()
+                version_name = input(
+                    f"Enter version name for this import (or press Enter for '{suggested_new}'): "
+                ).strip()
                 if not version_name:
                     version_name = suggested_new
-            
+
             print(f"[PRISM] Merging as version: '{version_name}'")
-            
+
             # Perform merge
             merged_template = merge_survey_versions(
                 existing_template_path=existing_template_path,
                 new_items=new_items,
-                new_version_name=version_name
+                new_version_name=version_name,
             )
-            
+
             # Save merged template
             save_merged_template(merged_template, existing_template_path)
-            
+
             # Add new items to surveys dict (they've been validated by merge)
             for item_id, item_data in new_items.items():
                 surveys[prefix][item_id] = item_data
-            
+
             print(f"[PRISM] ✓ Version merge complete for '{prefix}'\n")
 
     # Create Sidecar structures

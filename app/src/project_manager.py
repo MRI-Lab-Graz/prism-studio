@@ -781,13 +781,16 @@ Subfolders:
                 author_lines.append(f"    given-names: {self._yaml_quote(given)}")
         if not author_lines:
             author_lines = [
-                "  - name: \"TODO: Add author name\"",
+                '  - name: "TODO: Add author name"',
             ]
 
         title = config.get("name", name)
         doi = config.get("doi", "")
         license_value = config.get("license", "")
-        message = config.get("how_to_acknowledge") or "If you use this dataset, please cite it."
+        message = (
+            config.get("how_to_acknowledge")
+            or "If you use this dataset, please cite it."
+        )
         references = config.get("references", []) or []
         if isinstance(references, str):
             references = [references]
@@ -813,7 +816,9 @@ Subfolders:
 
         return "\n".join(lines) + "\n"
 
-    def update_citation_cff(self, project_path: Path, description: Dict[str, Any]) -> None:
+    def update_citation_cff(
+        self, project_path: Path, description: Dict[str, Any]
+    ) -> None:
         """Update CITATION.cff based on dataset_description.json metadata."""
         name = description.get("Name", "Untitled Dataset")
         authors = description.get("Authors", []) or []
