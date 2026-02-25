@@ -5,6 +5,11 @@ All notable changes to the PRISM project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.1] - 2026-02-25
+
+### Fixed
+- **Logo Display in Executable**: Added PRISM logo to `app/static/img/` to ensure it displays correctly in bundled Windows executable. The logo now resolves from the bundled static assets rather than requiring parent directory traversal.
+
 ## [1.10.0] - 2026-02-25
 
 ### Added
