@@ -26,7 +26,7 @@ try:
     from cross_platform import CrossPlatformFile, normalize_path
     from system_files import filter_system_files
 except ImportError as e:
-    print(f"❌ Import error: {e}")
+    print(f"FAIL Import error: {e}")
     sys.exit(1)
 
 
@@ -70,7 +70,7 @@ class TestWindowsDatasetStructure:
 
     def test_case_insensitive_validation(self):
         """Test validation on case-insensitive Windows filesystem"""
-        print("  🧪 Testing case-insensitive validation...")
+        print("  TEST Testing case-insensitive validation...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create files with different cases
@@ -93,17 +93,17 @@ class TestWindowsDatasetStructure:
                 )
 
                 if len(actual_files) == 1:
-                    print("    ✅ Windows case-insensitive behavior confirmed")
+                    print("    OK Windows case-insensitive behavior confirmed")
                 else:
-                    print("    ⚠️  Expected 1 file due to case-insensitivity")
+                    print("    WARN Expected 1 file due to case-insensitivity")
             else:
-                print("    ⚠️  Not on Windows, case-sensitive behavior")
+                print("    WARN Not on Windows, case-sensitive behavior")
 
             return True
 
     def test_mixed_case_subject_folders(self):
         """Test handling of subject folders with mixed case"""
-        print("  🧪 Testing mixed case subject folders...")
+        print("  TEST Testing mixed case subject folders...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Try to create folders with different cases
@@ -117,7 +117,7 @@ class TestWindowsDatasetStructure:
                     if os.path.exists(folder_path):
                         created_folders.append(folder)
                 except Exception as e:
-                    print(f"    ⚠️  Error creating {folder}: {e}")
+                    print(f"    WARN Error creating {folder}: {e}")
 
             # Check actual directory listing
             actual_dirs = [
@@ -129,17 +129,17 @@ class TestWindowsDatasetStructure:
             print(f"    Actual: {len(actual_dirs)} directories")
 
             if sys.platform.startswith("win") and len(actual_dirs) == 1:
-                print("    ✅ Case-insensitive folder creation (expected on Windows)")
+                print("    OK Case-insensitive folder creation (expected on Windows)")
             elif not sys.platform.startswith("win") and len(actual_dirs) == len(
                 folders
             ):
-                print("    ✅ Case-sensitive folder creation (expected on Unix)")
+                print("    OK Case-sensitive folder creation (expected on Unix)")
 
             return True
 
     def test_windows_path_validation(self):
         """Test validation with Windows-style paths"""
-        print("  🧪 Testing Windows path validation...")
+        print("  TEST Testing Windows path validation...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             self.create_mock_dataset(tmpdir)
@@ -159,23 +159,23 @@ class TestWindowsDatasetStructure:
             # Normalize all paths
             normalized = [normalize_path(f) for f in all_files]
 
-            print(f"    ✅ Found {len(all_files)} files")
-            print(f"    ✅ Normalized {len(normalized)} paths")
+            print(f"    OK Found {len(all_files)} files")
+            print(f"    OK Normalized {len(normalized)} paths")
 
             # Check for backslashes
             backslash_paths = [p for p in normalized if "\\" in p]
             if backslash_paths:
-                print(f"    ⚠️  {len(backslash_paths)} paths still have backslashes")
+                print(f"    WARN {len(backslash_paths)} paths still have backslashes")
                 for p in backslash_paths[:3]:
                     print(f"        {p}")
             else:
-                print("    ✅ All paths normalized to forward slashes")
+                print("    OK All paths normalized to forward slashes")
 
             return True
 
     def test_system_file_filtering_in_dataset(self):
         """Test that system files are filtered during validation"""
-        print("  🧪 Testing system file filtering...")
+        print("  TEST Testing system file filtering...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             self.create_mock_dataset(tmpdir)
@@ -213,10 +213,10 @@ class TestWindowsDatasetStructure:
             expected_system = ["Thumbs.db", ".DS_Store", "Desktop.ini"]
             for sys_file in expected_system:
                 if sys_file in filtered:
-                    print(f"    ❌ System file not filtered: {sys_file}")
+                    print(f"    FAIL System file not filtered: {sys_file}")
                     return False
                 else:
-                    print(f"    ✅ Filtered: {sys_file}")
+                    print(f"    OK Filtered: {sys_file}")
 
             return True
 
@@ -226,7 +226,7 @@ class TestWindowsFileHandling:
 
     def test_locked_file_handling(self):
         """Test handling of locked/in-use files"""
-        print("  🧪 Testing locked file handling...")
+        print("  TEST Testing locked file handling...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             test_file = os.path.join(tmpdir, "locked.json")
@@ -241,24 +241,24 @@ class TestWindowsFileHandling:
                 # Try to read with our utility (should work with shared lock)
                 try:
                     content2 = CrossPlatformFile.read_text(test_file)
-                    print("    ✅ Can read file while open for reading")
+                    print("    OK Can read file while open for reading")
                 except Exception as e:
-                    print(f"    ⚠️  Read failed: {e}")
+                    print(f"    WARN Read failed: {e}")
                     return False
 
             # Try exclusive write
             try:
                 CrossPlatformFile.write_text(test_file, '{"test": "updated"}')
-                print("    ✅ Can write after file closed")
+                print("    OK Can write after file closed")
             except Exception as e:
-                print(f"    ❌ Write failed: {e}")
+                print(f"    FAIL Write failed: {e}")
                 return False
 
             return True
 
     def test_long_filename_paths(self):
         """Test handling of paths exceeding 260 character limit"""
-        print("  🧪 Testing long file paths...")
+        print("  TEST Testing long file paths...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create a deep directory structure
@@ -274,7 +274,7 @@ class TestWindowsFileHandling:
             print(f"    Path length: {path_length} characters")
 
             if path_length > 260:
-                print("    ⚠️  Exceeds traditional Windows limit (260)")
+                print("    WARN Exceeds traditional Windows limit (260)")
 
             try:
                 # Try to create the directories and file
@@ -282,25 +282,25 @@ class TestWindowsFileHandling:
                 CrossPlatformFile.write_text(full_path, '{"test": "data"}')
 
                 if os.path.exists(full_path):
-                    print("    ✅ Long path handled successfully")
+                    print("    OK Long path handled successfully")
 
                     # Try to read it back
                     content = CrossPlatformFile.read_text(full_path)
-                    print("    ✅ Can read long path")
+                    print("    OK Can read long path")
                 else:
-                    print("    ❌ File not created")
+                    print("    FAIL File not created")
                     return False
 
             except Exception as e:
-                print(f"    ⚠️  Long path error: {e}")
+                print(f"    WARN Long path error: {e}")
                 if sys.platform.startswith("win"):
-                    print("    ℹ️  May need long path support enabled in Windows")
+                    print("    INFO May need long path support enabled in Windows")
 
             return True
 
     def test_special_characters_in_content(self):
         """Test files with special characters in content"""
-        print("  🧪 Testing special characters in file content...")
+        print("  TEST Testing special characters in file content...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             test_cases = [
@@ -324,17 +324,17 @@ class TestWindowsFileHandling:
                     # Parse as JSON
                     json.loads(read_content)
 
-                    print(f"    ✅ {filename}")
+                    print(f"    OK {filename}")
 
                 except Exception as e:
-                    print(f"    ❌ {filename}: {e}")
+                    print(f"    FAIL {filename}: {e}")
                     return False
 
             return True
 
     def test_readonly_file_handling(self):
         """Test handling of read-only files"""
-        print("  🧪 Testing read-only file handling...")
+        print("  TEST Testing read-only file handling...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             test_file = os.path.join(tmpdir, "readonly.json")
@@ -351,22 +351,22 @@ class TestWindowsFileHandling:
                 # Try to read
                 try:
                     content = CrossPlatformFile.read_text(test_file)
-                    print("    ✅ Can read read-only file")
+                    print("    OK Can read read-only file")
                 except Exception as e:
-                    print(f"    ❌ Cannot read read-only: {e}")
+                    print(f"    FAIL Cannot read read-only: {e}")
                     return False
 
                 # Try to write (should fail gracefully)
                 try:
                     CrossPlatformFile.write_text(test_file, '{"test": "updated"}')
-                    print("    ⚠️  Write to read-only succeeded (unexpected)")
+                    print("    WARN Write to read-only succeeded (unexpected)")
                 except Exception as e:
-                    print(f"    ✅ Write to read-only blocked: {type(e).__name__}")
+                    print(f"    OK Write to read-only blocked: {type(e).__name__}")
 
                 # Restore permissions for cleanup
                 os.chmod(test_file, stat.S_IWRITE | stat.S_IREAD)
             else:
-                print("    ⚠️  Not on Windows, skipping")
+                print("    WARN Not on Windows, skipping")
 
             return True
 
@@ -376,7 +376,7 @@ class TestWindowsBIDSCompatibility:
 
     def test_bidsignore_windows_paths(self):
         """Test .bidsignore with Windows paths"""
-        print("  🧪 Testing .bidsignore with Windows paths...")
+        print("  TEST Testing .bidsignore with Windows paths...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create .bidsignore
@@ -410,14 +410,14 @@ Desktop.ini
                 os.makedirs(os.path.dirname(full_path), exist_ok=True)
                 CrossPlatformFile.write_text(full_path, "test")
 
-            print("    ✅ Created test structure with .bidsignore")
-            print(f"    ✅ {len(test_files)} test files")
+            print("    OK Created test structure with .bidsignore")
+            print(f"    OK {len(test_files)} test files")
 
             return True
 
     def test_cross_platform_dataset_sharing(self):
         """Test dataset that might be shared between Windows and Unix"""
-        print("  🧪 Testing cross-platform dataset...")
+        print("  TEST Testing cross-platform dataset...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create files with both system file types
@@ -437,21 +437,21 @@ Desktop.ini
             filtered = filter_system_files(basenames)
 
             if len(filtered) == 0:
-                print("    ✅ All cross-platform system files filtered")
+                print("    OK All cross-platform system files filtered")
                 return True
             else:
-                print(f"    ❌ Some system files not filtered: {filtered}")
+                print(f"    FAIL Some system files not filtered: {filtered}")
                 return False
 
 
 def run_all_tests():
     """Run all Windows dataset validation tests"""
     print("=" * 70)
-    print("📂 WINDOWS DATASET VALIDATION TESTS")
+    print("WINDOWS DATASET VALIDATION TESTS")
     print("=" * 70)
 
     if not sys.platform.startswith("win"):
-        print("\n⚠️  Warning: Not running on Windows!")
+        print("\nWARN Warning: Not running on Windows!")
         print("Some tests may behave differently on non-Windows platforms.\n")
 
     test_classes = [
@@ -464,7 +464,7 @@ def run_all_tests():
     total_tests = 0
 
     for class_name, test_class in test_classes:
-        print(f"\n📋 {class_name}")
+        print(f"\nSECTION {class_name}")
         print("-" * 70)
 
         instance = test_class()
@@ -478,9 +478,9 @@ def run_all_tests():
                 if method():
                     total_passed += 1
                 else:
-                    print(f"    ❌ {method_name} failed")
+                    print(f"    FAIL {method_name} failed")
             except Exception as e:
-                print(f"    ❌ {method_name} error: {e}")
+                print(f"    FAIL {method_name} error: {e}")
                 import traceback
 
                 traceback.print_exc()
@@ -488,13 +488,13 @@ def run_all_tests():
         print()
 
     print("=" * 70)
-    print(f"📊 RESULTS: {total_passed}/{total_tests} tests passed")
+    print(f"RESULTS: {total_passed}/{total_tests} tests passed")
 
     if total_passed == total_tests:
-        print("🎉 All Windows dataset validation tests passed!")
+        print("All Windows dataset validation tests passed!")
         return 0
     else:
-        print(f"❌ {total_tests - total_passed} test(s) failed")
+        print(f"{total_tests - total_passed} test(s) failed")
         return 1
 
 

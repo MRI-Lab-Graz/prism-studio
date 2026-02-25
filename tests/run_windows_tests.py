@@ -10,45 +10,58 @@ import subprocess
 from datetime import datetime
 
 
+def _safe_print(text: str) -> None:
+    """Print text with non-ASCII replaced to avoid Windows cp1252 failures."""
+    if text is None:
+        return
+    safe_text = text.encode("ascii", errors="replace").decode("ascii")
+    print(safe_text)
+
+
 def run_test_file(test_file, description):
     """Run a single test file and return results"""
     print(f"\n{'=' * 70}")
-    print(f"🧪 {description}")
+    print(f"TEST: {description}")
     print(f"{'=' * 70}")
 
     try:
+        env = os.environ.copy()
+        env.setdefault("PYTHONIOENCODING", "utf-8")
         result = subprocess.run(
             [sys.executable, test_file],
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=env,
             timeout=300,  # 5 minute timeout
         )
 
-        print(result.stdout)
+        _safe_print(result.stdout)
         if result.stderr:
-            print("STDERR:", result.stderr)
+            _safe_print("STDERR: " + result.stderr)
 
         return result.returncode == 0
 
     except subprocess.TimeoutExpired:
-        print("❌ Test timed out after 5 minutes")
+        print("ERROR: Test timed out after 5 minutes")
         return False
     except Exception as e:
-        print(f"❌ Error running test: {e}")
+        print(f"ERROR: Error running test: {e}")
         return False
 
 
 def main():
     """Run all Windows-specific tests"""
     print("=" * 70)
-    print("🪟 PRISM WINDOWS TEST SUITE")
+    print("PRISM WINDOWS TEST SUITE")
     print("=" * 70)
     print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"Platform: {sys.platform}")
     print(f"Python: {sys.version}")
 
     if not sys.platform.startswith("win"):
-        print("\n⚠️  WARNING: Not running on Windows!")
+        print("\nWARNING: Not running on Windows!")
         print("These tests are designed for Windows but will run on any platform.")
         print("Results may differ from actual Windows behavior.\n")
 
@@ -71,7 +84,7 @@ def main():
         test_path = os.path.join(tests_dir, test_file)
 
         if not os.path.exists(test_path):
-            print(f"\n⚠️  Test file not found: {test_file}")
+            print(f"\nWARNING: Test file not found: {test_file}")
             results[description] = False
             continue
 
@@ -80,14 +93,14 @@ def main():
 
     # Summary
     print("\n" + "=" * 70)
-    print("📊 WINDOWS TEST SUITE SUMMARY")
+    print("WINDOWS TEST SUITE SUMMARY")
     print("=" * 70)
 
     total_suites = len(results)
     passed_suites = sum(1 for v in results.values() if v)
 
     for description, success in results.items():
-        status = "✅ PASS" if success else "❌ FAIL"
+        status = "PASS" if success else "FAIL"
         print(f"{status} - {description}")
 
     print("-" * 70)
@@ -95,10 +108,10 @@ def main():
     print(f"Finished: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     if passed_suites == total_suites:
-        print("\n🎉 All Windows test suites passed!")
+        print("\nAll Windows test suites passed!")
         return 0
     else:
-        print(f"\n❌ {total_suites - passed_suites} test suite(s) failed")
+        print(f"\n{total_suites - passed_suites} test suite(s) failed")
         return 1
 
 
