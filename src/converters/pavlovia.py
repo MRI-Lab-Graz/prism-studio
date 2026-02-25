@@ -12,7 +12,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple, Optional
 from defusedxml import ElementTree as ET
 from defusedxml import minidom
 import pandas as pd
@@ -106,7 +106,9 @@ def determine_component_type(question: Dict[str, Any]) -> str:
     return "form"
 
 
-def create_conditions_csv(questions: List[Dict[str, Any]], output_dir: Path) -> Path:
+def create_conditions_csv(
+    questions: List[Dict[str, Any]], output_dir: Path
+) -> Optional[Path]:
     """Create conditions spreadsheet for loop-based questions."""
     conditions_data = []
 
@@ -218,7 +220,7 @@ def build_psyexp_xml(
 
     # 2. Question routines
     # Group questions by their group name
-    grouped_questions = {}
+    grouped_questions: Dict[str, List[Dict[str, Any]]] = {}
     for q in questions:
         group = q["position"].get("Group", "questions")
         if group not in grouped_questions:
@@ -353,8 +355,8 @@ This will create PRISM-compatible TSV files.
 
 def export_to_pavlovia(
     json_path: Path,
-    output_dir: Path = None,
-    experiment_name: str = None,
+    output_dir: Optional[Path] = None,
+    experiment_name: Optional[str] = None,
 ) -> Path:
     """Main export function.
 
@@ -413,8 +415,8 @@ def export_to_pavlovia(
 def import_from_pavlovia(
     pavlovia_csv: Path,
     prism_json: Path,
-    output_tsv: Path = None,
-) -> Path:
+    output_tsv: Optional[Path] = None,
+) -> Optional[Path]:
     """Import Pavlovia data back to PRISM format.
 
     Args:

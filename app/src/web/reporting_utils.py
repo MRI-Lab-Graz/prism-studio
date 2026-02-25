@@ -38,7 +38,7 @@ def format_validation_results(
     warning_groups: Dict[str, Dict[str, Any]] = {}
 
     # Track unique files and their issues to avoid double-counting and ensure correct categorization
-    file_issues = {}  # path -> {errors: [], warnings: []}
+    file_issues: Dict[str, Dict[str, list]] = {}  # path -> {errors: [], warnings: []}
     file_paths = set()
 
     for issue in issues:
@@ -221,7 +221,7 @@ def format_validation_results(
         desc_path = os.path.join(dataset_path, "dataset_description.json")
         if os.path.exists(desc_path):
             with open(desc_path, "r") as f:
-                desc_data = json.load(f)
+                desc_data: dict = json.load(f)
                 if "Name" in desc_data:
                     dataset_name = desc_data["Name"]
     except Exception:
