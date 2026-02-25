@@ -11,6 +11,8 @@ This module has been refactored to use modular components from src/web/:
 
 import os
 import sys
+import signal
+import time
 import webbrowser
 import threading
 import socket
@@ -395,23 +397,36 @@ def specifications():
 @app.route("/shutdown", methods=["POST"])
 def shutdown():
     """Shutdown the server"""
-    import os
-    import signal
-    import threading
-    import time
-
-    def kill_server():
-        time.sleep(1)
+    def terminate_process():
+        time.sleep(0.35)
         print("🛑 Shutting down server...")
-        os.kill(os.getpid(), signal.SIGINT)
 
-    # Try Werkzeug shutdown first (works in debug mode)
+        for shutdown_signal in (
+            getattr(signal, "SIGINT", None),
+            getattr(signal, "SIGTERM", None),
+        ):
+            if shutdown_signal is None:
+                continue
+            try:
+                os.kill(os.getpid(), shutdown_signal)
+                return
+            except Exception:
+                continue
+
+        time.sleep(0.4)
+        os._exit(0)
+
+    # Try Werkzeug shutdown first (works in Flask dev server)
     func = request.environ.get("werkzeug.server.shutdown")
-    if func:
-        func()
+    if callable(func):
+        def werkzeug_shutdown():
+            time.sleep(0.15)
+            func()
+
+        threading.Thread(target=werkzeug_shutdown, daemon=True).start()
     else:
         # Fallback for Waitress/Production
-        threading.Thread(target=kill_server).start()
+        threading.Thread(target=terminate_process, daemon=True).start()
 
     return jsonify({"success": True, "message": "Server is shutting down..."})
 

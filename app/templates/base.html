@@ -240,11 +240,15 @@
             document.getElementById('quitAppBtn')?.addEventListener('click', async function(e) {
                 e.preventDefault();
                 if (!confirm('Are you sure you want to quit PRISM Studio?')) return;
+                const isWindows = navigator.platform.toLowerCase().includes('win');
+                const manualHint = isWindows
+                    ? 'If PRISM is still running, open Command Prompt and run:\nnetstat -ano | findstr :5001\nthen\ntaskkill /PID <PID> /F'
+                    : 'If PRISM is still running, return to the terminal and press Ctrl+C.';
                 
                 try {
                     const response = await fetch('/shutdown', { method: 'POST' });
-                    const result = await response.json();
-                    if (result.success) {
+                    const result = await response.json().catch(() => ({ success: response.ok }));
+                    if (response.ok && result.success) {
                         document.body.innerHTML = `
                             <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f8f9fa;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;">
                                 <div style="text-align:center;">
@@ -254,10 +258,16 @@
                                 </div>
                             </div>
                         `;
+                        setTimeout(() => {
+                            window.open('', '_self');
+                            window.close();
+                        }, 800);
+                    } else {
+                        throw new Error('Shutdown endpoint did not confirm success');
                     }
                 } catch (error) {
                     console.error('Shutdown failed:', error);
-                    alert('Could not shut down automatically. Please close the console window manually.');
+                    alert(`Could not shut down automatically. ${manualHint}`);
                 }
             });
         });
