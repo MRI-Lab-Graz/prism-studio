@@ -8,6 +8,7 @@ import json
 import re
 import shutil
 import tempfile
+import warnings
 import zipfile
 import base64
 import unicodedata
@@ -484,26 +485,44 @@ def _load_survey_template_item_ids(library_path: Path | str | None) -> set[str]:
         return set()
 
     root = Path(library_path)
-    survey_root = root / "survey" if (root / "survey").is_dir() else root
-    if not survey_root.exists() or not survey_root.is_dir():
-        return set()
-
     item_ids: set[str] = set()
-    for survey_json in survey_root.glob("survey-*.json"):
-        try:
-            with open(survey_json, "r", encoding="utf-8") as f:
-                payload = json.load(f)
-        except (OSError, json.JSONDecodeError):
-            continue
 
-        if not isinstance(payload, dict):
-            continue
+    roots_to_scan: list[tuple[Path, str]] = []
+    survey_root = root / "survey" if (root / "survey").is_dir() else root
+    if survey_root.exists() and survey_root.is_dir():
+        roots_to_scan.append((survey_root, "survey-*.json"))
 
-        for key, value in payload.items():
-            if key in _NON_ITEM_TOPLEVEL_KEYS or key.startswith("_"):
+    biometrics_root = root / "biometrics" if (root / "biometrics").is_dir() else root
+    if biometrics_root.exists() and biometrics_root.is_dir():
+        roots_to_scan.append((biometrics_root, "biometrics-*.json"))
+
+    biometrics_non_item_top_keys = {
+        "Technical",
+        "Study",
+        "I18n",
+        "Metadata",
+    }
+
+    for template_root, pattern in roots_to_scan:
+        for template_json in template_root.glob(pattern):
+            try:
+                with open(template_json, "r", encoding="utf-8") as f:
+                    payload = json.load(f)
+            except (OSError, json.JSONDecodeError):
                 continue
-            if isinstance(value, dict):
-                item_ids.add(_normalize_column_name(key))
+
+            if not isinstance(payload, dict):
+                continue
+
+            for key, value in payload.items():
+                if (
+                    key in _NON_ITEM_TOPLEVEL_KEYS
+                    or key in biometrics_non_item_top_keys
+                    or key.startswith("_")
+                ):
+                    continue
+                if isinstance(value, dict):
+                    item_ids.add(_normalize_column_name(key))
 
     return item_ids
 
@@ -749,18 +768,48 @@ def _generate_neurobagel_schema(
             data_type = "string"
             is_categorical = False
         else:
+            # Detect date/time-like columns first (name + value patterns).
+            # These should not be treated as categorical even with few unique values.
+            date_name_hint = any(
+                token in col_normalized
+                for token in ["date", "time", "timestamp", "datetime"]
+            )
+            col_text = col_data.astype(str).str.strip()
+            if len(col_text) > 0:
+                date_like_pattern = r"^(\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{4}[./-]\d{1,2}[./-]\d{1,2})(\s+\d{1,2}:\d{2}(:\d{2})?)?$"
+                date_like_ratio = float(
+                    col_text.str.match(date_like_pattern, na=False).mean()
+                )
+                should_try_date_parse = date_name_hint or date_like_ratio >= 0.3
+
+                if should_try_date_parse:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", UserWarning)
+                        parsed_dates = pd.to_datetime(
+                            col_text, errors="coerce", dayfirst=True
+                        )
+                    date_parse_ratio = float(parsed_dates.notna().mean())
+                else:
+                    date_parse_ratio = 0.0
+            else:
+                date_parse_ratio = 0.0
+
+            if date_name_hint or date_parse_ratio >= 0.8:
+                data_type = "string"
+                is_categorical = False
             # Try to detect if numeric
-            try:
-                pd.to_numeric(col_data, errors="raise")
-                unique_count = col_data.nunique()
-                # If less than 10 unique values, likely categorical
-                is_categorical = unique_count < 10
-                data_type = "categorical" if is_categorical else "continuous"
-            except (ValueError, TypeError):
-                # String data - check uniqueness
-                unique_count = col_data.nunique()
-                is_categorical = unique_count < 20
-                data_type = "categorical" if is_categorical else "string"
+            else:
+                try:
+                    pd.to_numeric(col_data, errors="raise")
+                    unique_count = col_data.nunique()
+                    # If less than 10 unique values, likely categorical
+                    is_categorical = unique_count < 10
+                    data_type = "categorical" if is_categorical else "continuous"
+                except (ValueError, TypeError):
+                    # String data - check uniqueness
+                    unique_count = col_data.nunique()
+                    is_categorical = unique_count < 20
+                    data_type = "categorical" if is_categorical else "string"
 
         # Build description
         if neurobagel_match:
@@ -3092,7 +3141,7 @@ def api_physio_rename():
 
 @conversion_bp.route("/api/save-participant-mapping", methods=["POST"])
 def save_participant_mapping():
-    """Save participant mapping JSON file to the project survey library directory.
+    """Save additional-variables mapping JSON file to the project survey library directory.
 
     Priority:
     1. Save to project library if available
@@ -3149,19 +3198,49 @@ def save_participant_mapping():
                 400,
             )
 
+        # Normalize frontend payload to converter-compatible mapping structure.
+        # Frontend sends a flat dict: {source_column: standard_variable}
+        # Converter expects: {"version": ..., "mappings": {var: {source_column, standard_variable}}}
+        normalized_mapping = mapping
+        if isinstance(mapping, dict) and "mappings" not in mapping:
+            mappings_block = {}
+            for source_column, standard_variable in mapping.items():
+                src = str(source_column).strip()
+                if not src:
+                    continue
+
+                std_raw = str(standard_variable).strip() or src
+                std = re.sub(r"[^a-zA-Z0-9_]+", "_", std_raw).strip("_").lower()
+                if not std:
+                    std = re.sub(r"[^a-zA-Z0-9_]+", "_", src).strip("_").lower()
+                if not std:
+                    continue
+
+                mappings_block[std] = {
+                    "source_column": src,
+                    "standard_variable": std,
+                    "type": "string",
+                }
+
+            normalized_mapping = {
+                "version": "1.0",
+                "description": "Additional variables mapping created from PRISM web UI",
+                "mappings": mappings_block,
+            }
+
         # Create participants_mapping.json in the target library directory
         mapping_file = target_lib_path / "participants_mapping.json"
 
         # Write the mapping file
         with open(mapping_file, "w") as f:
-            json.dump(mapping, f, indent=2)
+            json.dump(normalized_mapping, f, indent=2)
 
         return jsonify(
             {
                 "status": "success",
                 "file_path": str(mapping_file),
                 "library_source": used_source,
-                "message": f"Participant mapping saved to {mapping_file.name}",
+                "message": f"Additional variables mapping saved to {mapping_file.name}",
             }
         )
     except Exception as e:
@@ -3288,6 +3367,25 @@ def api_participants_preview():
                 session.get("current_project_path")
             )
 
+            # Detect questionnaire/item-like columns from project templates and
+            # repeated item prefixes (e.g., WB01, WB02, ...).
+            template_item_ids = _load_survey_template_item_ids(library_path)
+            repeated_prefixes = _detect_repeated_questionnaire_prefixes(
+                [str(c) for c in df.columns],
+                participant_filter_config=participant_filter_config,
+            )
+            questionnaire_like_columns = [
+                str(col)
+                for col in df.columns
+                if str(col) != id_column
+                and _is_likely_questionnaire_column(
+                    str(col),
+                    _normalize_column_name(str(col)),
+                    template_item_ids,
+                    repeated_prefixes,
+                )
+            ]
+
             # SIMULATE CONVERSION: Show what the OUTPUT will look like
             # Check if participants.json exists in library to determine expected schema
             participants_json_path = library_path / "participants.json"
@@ -3371,6 +3469,8 @@ def api_participants_preview():
                 {
                     "status": "success",
                     "columns": list(output_df.columns),
+                    "source_columns": list(df.columns),
+                    "questionnaire_like_columns": questionnaire_like_columns,
                     "id_column": id_column,
                     "participant_count": len(df),
                     "preview_rows": preview_df.to_dict(orient="records"),
@@ -3511,8 +3611,46 @@ def api_participants_convert():
                 # Initialize converter
                 converter = ParticipantsConverter(project_root, log_callback=log_msg)
 
-                # Load or create mapping
-                mapping = converter.load_mapping()
+                # Load mapping from common project locations
+                mapping = None
+                mapping_candidates = [
+                    project_root / "participants_mapping.json",
+                    project_root / "code" / "participants_mapping.json",
+                    project_root / "code" / "library" / "participants_mapping.json",
+                    project_root / "code" / "library" / "survey" / "participants_mapping.json",
+                ]
+                for candidate in mapping_candidates:
+                    if candidate.exists() and candidate.is_file():
+                        mapping = converter.load_mapping_from_file(candidate)
+                        if mapping:
+                            log_msg("INFO", f"Using participants_mapping.json from {candidate}")
+                            break
+
+                # Backward compatibility: normalize legacy flat dict format
+                if isinstance(mapping, dict) and "mappings" not in mapping:
+                    legacy_mappings = {}
+                    for source_column, standard_variable in mapping.items():
+                        src = str(source_column).strip()
+                        if not src:
+                            continue
+                        std_raw = str(standard_variable).strip() or src
+                        std = re.sub(r"[^a-zA-Z0-9_]+", "_", std_raw).strip("_").lower()
+                        if not std:
+                            std = re.sub(r"[^a-zA-Z0-9_]+", "_", src).strip("_").lower()
+                        if not std:
+                            continue
+                        legacy_mappings[std] = {
+                            "source_column": src,
+                            "standard_variable": std,
+                            "type": "string",
+                        }
+                    mapping = {
+                        "version": "1.0",
+                        "description": "Normalized legacy participant mapping",
+                        "mappings": legacy_mappings,
+                    }
+                    log_msg("INFO", "Normalized legacy participants_mapping.json format")
+
                 if not mapping:
                     # No mapping file, try auto-detection from file headers
                     import pandas as pd
@@ -3566,10 +3704,11 @@ def api_participants_convert():
                         log_msg("WARNING", f"Could not auto-detect columns: {e}")
                         mapping = {"version": "1.0", "mappings": {}}
                 else:
-                    log_msg(
-                        "INFO",
-                        f"Using participants_mapping.json from {converter.mapping_file}",
-                    )
+                    if mapping.get("mappings"):
+                        log_msg(
+                            "INFO",
+                            f"Using explicit participant mapping for {len(mapping.get('mappings', {}))} columns",
+                        )
 
                 # Convert using the uploaded file
                 success, df, messages = converter.convert_participant_data(

@@ -311,36 +311,55 @@ def augment_neurobagel_data(raw_data: Dict[str, Any]) -> Dict[str, Any]:
         if col_name in standardized_mappings:
             aug_col["standardized_variable"] = standardized_mappings[col_name]
 
-        # Infer data type from Levels (if present, it's categorical)
-        if "Levels" in col_data and isinstance(col_data["Levels"], dict):
+        # Infer data type with precedence:
+        # 1) explicit Levels in source schema
+        # 2) explicit source data_type/category hints
+        # 3) known vocabularies (categorical)
+        source_data_type = str(col_data.get("data_type", "")).lower().strip()
+        has_levels = "Levels" in col_data and isinstance(col_data["Levels"], dict)
+
+        if has_levels or source_data_type in {"categorical", "category", "enum"} or col_name in categorical_vocabularies:
             aug_col["data_type"] = "categorical"
 
             # Augment with vocabulary if available
             if col_name in categorical_vocabularies:
                 aug_col["levels"] = {}
-                for level_key, level_label in col_data["Levels"].items():
-                    if level_key in categorical_vocabularies[col_name]:
-                        aug_col["levels"][level_key] = categorical_vocabularies[
-                            col_name
-                        ][level_key]
-                    else:
-                        # Fallback: use provided label (no URI)
-                        aug_col["levels"][level_key] = {
-                            "label": (
-                                level_label
-                                if isinstance(level_label, str)
-                                else str(level_key)
-                            ),
-                            "description": f"Value: {level_key}",
-                            "uri": None,
-                        }
+                source_levels = col_data.get("Levels", {}) if isinstance(col_data.get("Levels"), dict) else {}
+
+                # If source provides levels, merge source values with known vocab URIs.
+                if source_levels:
+                    for level_key, level_label in source_levels.items():
+                        if level_key in categorical_vocabularies[col_name]:
+                            aug_col["levels"][level_key] = categorical_vocabularies[
+                                col_name
+                            ][level_key]
+                        else:
+                            # Fallback: use provided label (no URI)
+                            aug_col["levels"][level_key] = {
+                                "label": (
+                                    level_label
+                                    if isinstance(level_label, str)
+                                    else str(level_key)
+                                ),
+                                "description": f"Value: {level_key}",
+                                "uri": None,
+                            }
+                else:
+                    # No source levels: still expose known vocabulary levels for editing.
+                    aug_col["levels"] = {
+                        key: value.copy()
+                        for key, value in categorical_vocabularies[col_name].items()
+                    }
             else:
-                # No vocabulary available, use raw levels (no URIs)
-                aug_col["levels"] = {
-                    k: {"label": v, "description": f"Value: {k}", "uri": None}
-                    for k, v in col_data["Levels"].items()
-                }
-        elif col_name in ["age"]:
+                # No vocabulary available; use raw levels when present.
+                if isinstance(col_data.get("Levels"), dict):
+                    aug_col["levels"] = {
+                        k: {"label": v, "description": f"Value: {k}", "uri": None}
+                        for k, v in col_data["Levels"].items()
+                    }
+                else:
+                    aug_col["levels"] = {}
+        elif source_data_type in {"continuous", "float", "number", "integer", "int"} or col_name in ["age"]:
             aug_col["data_type"] = "continuous"
             if "Unit" in col_data:
                 aug_col["unit"] = col_data["Unit"]
