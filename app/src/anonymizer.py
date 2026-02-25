@@ -11,6 +11,9 @@ repo_root = Path(__file__).resolve().parents[2]
 real_anonymizer_path = repo_root / "src" / "anonymizer.py"
 
 spec = importlib.util.spec_from_file_location("_real_anonymizer", real_anonymizer_path)
+if spec is None or spec.loader is None:
+    raise ImportError(f"Could not load anonymizer module from {real_anonymizer_path}")
+
 _real_anonymizer = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(_real_anonymizer)
 

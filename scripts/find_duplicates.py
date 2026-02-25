@@ -36,7 +36,7 @@ def iter_template_items(file_path):
 
 # Check all files
 target_ids = {"2D_l", "2D_r", "4D_r", "4d_l"}
-found_items = {}
+found_items: dict[str, list[dict[str, object]]] = {}
 
 for file_path in sorted(library_path.glob("*.json")):
     if not (
