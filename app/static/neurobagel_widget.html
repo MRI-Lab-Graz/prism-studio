@@ -207,16 +207,7 @@
     }
   </style>
 
-  <div style="margin-bottom: 10px; display: flex; gap: 8px;">
-    <button class="nb-toggle-btn" onclick="window.toggleNeurobagelWidget()">
-      📝 Show/Hide Quick Editor
-    </button>
-    <button class="nb-btn" onclick="window.autoMatchNeurobagelConcepts()" style="background: #eef7ff; color: #0056b3; border-color: #cce5ff;">
-      <i class="fas fa-magic me-1"></i>Auto-Match Concepts
-    </button>
-  </div>
-
-  <div class="neurobagel-widget" id="neurobagelWidgetContent" style="display: none;">
+  <div class="neurobagel-widget" id="neurobagelWidgetContent" style="display: flex;">
     <!-- Sidebar -->
     <div class="nb-sidebar">
       <div class="nb-section-title">Standardized Variables</div>
@@ -348,7 +339,10 @@ window.applyNeurobagelEnrichment = function(colName) {
   colData.label = concept;
   if (mapping.data_type) colData.data_type = mapping.data_type;
   if (mapping.description && !colData.description) colData.description = mapping.description;
-  if (mapping.unit) colData.unit = mapping.unit;
+  if (mapping.unit) {
+    colData.unit = mapping.unit;
+    console.log(`✅ Applied unit "${mapping.unit}" to ${colName}`);
+  }
   
   // For categorical, try to match existing level keys
   if (mapping.levels && colData.levels) {
@@ -374,8 +368,8 @@ window.applyNeurobagelEnrichment = function(colName) {
   console.log(`✅ Applied ${concept} enrichment to ${colName}`);
   window.renderNeurobagelEditor(colName, colData);
   
-  // Re-render widget sidebar to update variable categorization
-  window.renderNeurobagelWidget();
+  // Re-render sidebar only (don't re-fetch data, preserves enrichments)
+  window.renderNeurobagelSidebar();
 };
 
 window.autoMatchNeurobagelConcepts = function() {
@@ -663,6 +657,28 @@ window.renderNeurobagelWidget = async function() {
   
   window.neurobagelWidgetState.allColumns = enrichedData;
   
+  // Render the sidebar
+  window.renderNeurobagelSidebar();
+  
+  // Force widget to be visible
+  const widgetContent = document.getElementById('neurobagelWidgetContent');
+  if (widgetContent) {
+    widgetContent.style.display = 'flex';
+    console.log('✅ Widget content display set to flex');
+  }
+  
+  console.log('✅ renderNeurobagelWidget completed successfully');
+};
+
+// Render just the sidebar (preserves enriched data, doesn't re-fetch)
+window.renderNeurobagelSidebar = function() {
+  console.log('🔄 Rendering sidebar from existing state');
+  const enrichedData = window.neurobagelWidgetState.allColumns;
+  if (!enrichedData) {
+    console.error('❌ No allColumns state to render sidebar from');
+    return;
+  }
+  
   // Categorize columns into AVAILABLE (in TSV) and TO ADD (suggestions)
   const tsvColumns = window.participantsTsvData ? Object.keys(window.participantsTsvData) : [];
   const available = {};  // Columns in the TSV file
@@ -799,14 +815,7 @@ window.renderNeurobagelWidget = async function() {
     sidebar.appendChild(toAddSection);
   }
   
-  // Force widget to be visible
-  const widgetContent = document.getElementById('neurobagelWidgetContent');
-  if (widgetContent) {
-    widgetContent.style.display = 'flex';
-    console.log('✅ Widget content display set to flex');
-  }
-  
-  console.log('✅ renderNeurobagelWidget completed successfully');
+  console.log('✅ Sidebar rendered successfully');
 };
 
 window.selectNeurobagelColumn = function(colName) {
@@ -938,17 +947,6 @@ window.renderNeurobagelEditor = function(colName, colData) {
     `;
   }
   
-  html += `
-    <div class="nb-button-group">
-      <button class="nb-btn nb-btn-primary" onclick="window.applyNeurobagelToForm('${colName}')">
-        ✓ Apply to Form
-      </button>
-      <button class="nb-btn" onclick="window.copyNeurobagelData('${colName}')">
-        📋 Copy
-      </button>
-    </div>
-  `;
-  
   editor.innerHTML = html;
   
   // Store edited values back to column data when user changes them
@@ -1008,59 +1006,6 @@ window.applyNeurobagelLevel = function(colName, levelKey) {
       showAlert(`Applied ${colName}/${levelKey} level annotation`, 'success');
     }
   }
-};
-
-window.applyNeurobagelToForm = function(colName) {
-  const colData = window.neurobagelWidgetState.allColumns[colName];
-  
-  // Find form fields for this column
-  const selector = `[data-json-path^="${colName}."]`;
-  const matches = Array.from(document.querySelectorAll(selector));
-  
-  if (matches.length === 0) {
-    if (typeof showAlert === 'function') {
-      showAlert(`No form fields found for ${colName}`, 'warning');
-    }
-    return;
-  }
-  
-  // Build comprehensive annotation
-  let annotation = `Column: ${colName}\n`;
-  annotation += `Type: ${colData.data_type}\n`;
-  annotation += `Standardized Variable: ${colData.standardized_variable || 'N/A'}\n`;
-  annotation += `Description: ${colData.description || 'N/A'}\n`;
-  
-  if (colData.data_type === 'categorical' && colData.levels) {
-    annotation += `\nCategorical Levels:\n`;
-    for (const [k, v] of Object.entries(colData.levels)) {
-      annotation += `  ${k}: ${v.label} (${v.uri || 'No URI'})\n`;
-    }
-  } else if (colData.data_type === 'continuous') {
-    annotation += `Unit: ${colData.unit || 'Not specified'}\n`;
-  }
-  
-  // Apply to first textarea
-  if (matches.length > 0) {
-    matches[0].value = annotation;
-  }
-  
-  if (typeof showAlert === 'function') {
-    showAlert(`Applied annotation to ${colName}`, 'success');
-  }
-  
-  // Re-render widget to update sidebar categorization (e.g., custom → harmonized)
-  window.renderNeurobagelWidget();
-};
-
-window.copyNeurobagelData = function(colName) {
-  const colData = window.neurobagelWidgetState.allColumns[colName];
-  const json = JSON.stringify(colData, null, 2);
-  
-  navigator.clipboard.writeText(json).then(() => {
-    if (typeof showAlert === 'function') {
-      showAlert(`Copied ${colName} data to clipboard`, 'success');
-    }
-  });
 };
 
 // Initialize widget when NeuroBagel data loads
