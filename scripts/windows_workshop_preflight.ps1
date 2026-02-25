@@ -72,7 +72,7 @@ Run-Step "Verify venv Python" {
 }
 
 Run-Step "Critical import checks" {
-    & $VenvPython -c "from src.participants_converter import ParticipantsConverter; from src.web.blueprints.conversion import api_participants_convert; print('import checks ok')" | Out-Host
+    & $VenvPython -c "import sys; sys.path.insert(0, 'app'); from src.participants_converter import ParticipantsConverter; from src.web.blueprints.conversion import api_participants_convert; print('import checks ok')" | Out-Host
     if ($LASTEXITCODE -ne 0) {
         throw "Critical import check failed"
     }

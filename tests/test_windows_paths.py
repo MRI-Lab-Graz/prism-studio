@@ -29,7 +29,7 @@ try:
     )
     from system_files import is_system_file, filter_system_files
 except ImportError as e:
-    print(f"❌ Import error: {e}")
+    print(f"FAIL Import error: {e}")
     sys.exit(1)
 
 
@@ -38,7 +38,7 @@ class TestWindowsPaths:
 
     def test_drive_letters(self):
         """Test handling of Windows drive letters"""
-        print("  🧪 Testing drive letters...")
+        print("  TEST Testing drive letters...")
 
         test_cases = [
             ("C:\\Users\\test\\dataset", True),
@@ -51,17 +51,17 @@ class TestWindowsPaths:
         for path, should_work in test_cases:
             try:
                 normalized = normalize_path(path)
-                print(f"    ✅ {path} -> {normalized}")
+                print(f"    OK {path} -> {normalized}")
             except Exception as e:
                 if should_work:
-                    print(f"    ❌ Failed to normalize {path}: {e}")
+                    print(f"    FAIL Failed to normalize {path}: {e}")
                     return False
 
         return True
 
     def test_unc_paths(self):
         """Test UNC (network) path handling"""
-        print("  🧪 Testing UNC paths...")
+        print("  TEST Testing UNC paths...")
 
         test_cases = [
             "\\\\server\\share\\dataset",
@@ -73,15 +73,15 @@ class TestWindowsPaths:
         for path in test_cases:
             try:
                 normalized = normalize_path(path)
-                print(f"    ✅ {path} -> {normalized}")
+                print(f"    OK {path} -> {normalized}")
             except Exception:
-                print(f"    ⚠️  UNC path may not be fully supported: {path}")
+                print(f"    WARN UNC path may not be fully supported: {path}")
 
         return True
 
     def test_long_paths(self):
         """Test long path support (>260 characters)"""
-        print("  🧪 Testing long paths...")
+        print("  TEST Testing long paths...")
 
         # Create a path longer than the traditional 260 char limit
         base = "C:\\very\\long\\path"
@@ -92,22 +92,22 @@ class TestWindowsPaths:
         if len(long_path) > 260:
             try:
                 normalized = normalize_path(long_path)
-                print("    ✅ Long path normalized successfully")
+                print("    OK Long path normalized successfully")
 
                 # Test with \\?\ prefix for long path support
                 if sys.platform.startswith("win"):
                     extended_path = "\\\\?\\" + long_path
                     extended_normalized = normalize_path(extended_path)
-                    print("    ✅ Extended path format supported")
+                    print("    OK Extended path format supported")
 
             except Exception as e:
-                print(f"    ⚠️  Long path handling: {e}")
+                print(f"    WARN Long path handling: {e}")
 
         return True
 
     def test_mixed_separators(self):
         """Test paths with mixed forward/backward slashes"""
-        print("  🧪 Testing mixed path separators...")
+        print("  TEST Testing mixed path separators...")
 
         test_cases = [
             "C:\\Users\\test/dataset/sub-01",
@@ -120,18 +120,18 @@ class TestWindowsPaths:
                 normalized = normalize_path(path)
                 # Check that result is consistent
                 if "\\" in normalized and "/" in normalized:
-                    print(f"    ⚠️  Mixed separators remain: {normalized}")
+                    print(f"    WARN Mixed separators remain: {normalized}")
                 else:
-                    print(f"    ✅ {path} -> {normalized}")
+                    print(f"    OK {path} -> {normalized}")
             except Exception as e:
-                print(f"    ❌ Failed: {e}")
+                print(f"    FAIL Failed: {e}")
                 return False
 
         return True
 
     def test_relative_paths_windows(self):
         """Test Windows-style relative paths"""
-        print("  🧪 Testing relative paths on Windows...")
+        print("  TEST Testing relative paths on Windows...")
 
         test_cases = [
             "..\\parent\\dataset",
@@ -142,16 +142,16 @@ class TestWindowsPaths:
         for path in test_cases:
             try:
                 normalized = normalize_path(path)
-                print(f"    ✅ {path} -> {normalized}")
+                print(f"    OK {path} -> {normalized}")
             except Exception as e:
-                print(f"    ❌ Failed: {e}")
+                print(f"    FAIL Failed: {e}")
                 return False
 
         return True
 
     def test_special_windows_chars(self):
         """Test handling of Windows special characters in paths"""
-        print("  🧪 Testing special characters...")
+        print("  TEST Testing special characters...")
 
         # Valid characters
         valid_paths = [
@@ -163,9 +163,9 @@ class TestWindowsPaths:
         for path in valid_paths:
             try:
                 normalized = normalize_path(path)
-                print(f"    ✅ {path}")
+                print(f"    OK {path}")
             except Exception as e:
-                print(f"    ❌ Failed on valid path: {e}")
+                print(f"    FAIL Failed on valid path: {e}")
                 return False
 
         return True
@@ -176,7 +176,7 @@ class TestWindowsFilenames:
 
     def test_reserved_names(self):
         """Test Windows reserved filenames"""
-        print("  🧪 Testing reserved filenames...")
+        print("  TEST Testing reserved filenames...")
 
         reserved = [
             "CON.json",
@@ -193,11 +193,11 @@ class TestWindowsFilenames:
             issues = validate_filename_cross_platform(filename)
             if sys.platform.startswith("win"):
                 if not issues:
-                    print(f"    ❌ Should detect reserved name: {filename}")
+                    print(f"    FAIL Should detect reserved name: {filename}")
                     return False
-                print(f"    ✅ Detected: {filename} - {issues[0]}")
+                print(f"    OK Detected: {filename} - {issues[0]}")
             else:
-                print(f"    ⚠️  Not on Windows, skipping: {filename}")
+                print(f"    WARN Not on Windows, skipping: {filename}")
 
         # Test compound extensions (these are harder to detect)
         compound = [
@@ -205,14 +205,14 @@ class TestWindowsFilenames:
             "COM1.tar.gz",
         ]
 
-        print("    ℹ️  Note: Reserved names with compound extensions (.nii.gz)")
+        print("    INFO Note: Reserved names with compound extensions (.nii.gz)")
         print("        may not be detected by splitext - this is a known limitation")
 
         return True
 
     def test_invalid_characters(self):
         """Test Windows invalid filename characters"""
-        print("  🧪 Testing invalid characters...")
+        print("  TEST Testing invalid characters...")
 
         invalid_chars = ["<", ">", ":", '"', "|", "?", "*"]
 
@@ -222,17 +222,17 @@ class TestWindowsFilenames:
 
             if sys.platform.startswith("win"):
                 if not issues:
-                    print(f"    ❌ Should detect invalid char '{char}'")
+                    print(f"    FAIL Should detect invalid char '{char}'")
                     return False
-                print(f"    ✅ Detected invalid char '{char}' in {filename}")
+                print(f"    OK Detected invalid char '{char}' in {filename}")
             else:
-                print(f"    ⚠️  Not on Windows, char '{char}' may be valid")
+                print(f"    WARN Not on Windows, char '{char}' may be valid")
 
         return True
 
     def test_trailing_spaces_dots(self):
         """Test filenames with trailing spaces or dots"""
-        print("  🧪 Testing trailing spaces and dots...")
+        print("  TEST Testing trailing spaces and dots...")
 
         invalid_names = [
             "sub-01_bold.nii.gz ",  # trailing space
@@ -244,19 +244,19 @@ class TestWindowsFilenames:
             issues = validate_filename_cross_platform(filename)
             if sys.platform.startswith("win"):
                 if not issues:
-                    print(f"    ❌ Should detect invalid: {repr(filename)}")
+                    print(f"    FAIL Should detect invalid: {repr(filename)}")
                     return False
-                print(f"    ✅ Detected: {repr(filename)}")
+                print(f"    OK Detected: {repr(filename)}")
 
         # Test case with space before extension - this is valid on Windows
         # The space is part of the base name, not trailing
-        print("    ℹ️  Note: 'file .json' has space before extension (valid)")
+        print("    INFO Note: 'file .json' has space before extension (valid)")
 
         return True
 
     def test_filename_length(self):
         """Test maximum filename length"""
-        print("  🧪 Testing filename length limits...")
+        print("  TEST Testing filename length limits...")
 
         # 255 character limit
         short_name = "a" * 200 + ".json"
@@ -266,14 +266,14 @@ class TestWindowsFilenames:
         long_issues = validate_filename_cross_platform(long_name)
 
         if short_issues:
-            print("    ❌ 200 char filename should be valid")
+            print("    FAIL 200 char filename should be valid")
             return False
 
         if not long_issues:
-            print("    ❌ 260 char filename should be invalid")
+            print("    FAIL 260 char filename should be invalid")
             return False
 
-        print("    ✅ Filename length validation working")
+        print("    OK Filename length validation working")
         return True
 
 
@@ -282,7 +282,7 @@ class TestWindowsSystemFiles:
 
     def test_windows_system_files(self):
         """Test detection of Windows-specific system files"""
-        print("  🧪 Testing Windows system files...")
+        print("  TEST Testing Windows system files...")
 
         system_files = [
             "Thumbs.db",
@@ -294,15 +294,15 @@ class TestWindowsSystemFiles:
 
         for filename in system_files:
             if not is_system_file(filename):
-                print(f"    ❌ Should detect system file: {filename}")
+                print(f"    FAIL Should detect system file: {filename}")
                 return False
-            print(f"    ✅ Detected: {filename}")
+            print(f"    OK Detected: {filename}")
 
         return True
 
     def test_macos_system_files(self):
         """Test detection of macOS system files (for cross-platform datasets)"""
-        print("  🧪 Testing macOS system files...")
+        print("  TEST Testing macOS system files...")
 
         macos_files = [
             ".DS_Store",
@@ -315,15 +315,15 @@ class TestWindowsSystemFiles:
 
         for filename in macos_files:
             if not is_system_file(filename):
-                print(f"    ❌ Should detect macOS system file: {filename}")
+                print(f"    FAIL Should detect macOS system file: {filename}")
                 return False
-            print(f"    ✅ Detected: {filename}")
+            print(f"    OK Detected: {filename}")
 
         return True
 
     def test_filter_mixed_list(self):
         """Test filtering a mixed list of files"""
-        print("  🧪 Testing system file filtering...")
+        print("  TEST Testing system file filtering...")
 
         file_list = [
             "sub-01_bold.nii.gz",
@@ -344,11 +344,11 @@ class TestWindowsSystemFiles:
         ]
 
         if filtered != expected:
-            print(f"    ❌ Expected: {expected}")
-            print(f"    ❌ Got: {filtered}")
+            print(f"    FAIL Expected: {expected}")
+            print(f"    FAIL Got: {filtered}")
             return False
 
-        print(f"    ✅ Filtered {len(file_list) - len(filtered)} system files")
+        print(f"    OK Filtered {len(file_list) - len(filtered)} system files")
         return True
 
 
@@ -357,7 +357,7 @@ class TestWindowsFileOperations:
 
     def test_unicode_filenames(self):
         """Test handling of Unicode characters in filenames"""
-        print("  🧪 Testing Unicode filenames...")
+        print("  TEST Testing Unicode filenames...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             test_files = [
@@ -377,22 +377,22 @@ class TestWindowsFileOperations:
                     if os.path.exists(filepath):
                         read_content = CrossPlatformFile.read_text(filepath)
                         if read_content == content:
-                            print(f"    ✅ {filename}")
+                            print(f"    OK {filename}")
                         else:
-                            print(f"    ❌ Content mismatch: {filename}")
+                            print(f"    FAIL Content mismatch: {filename}")
                             return False
                     else:
-                        print(f"    ❌ File not created: {filename}")
+                        print(f"    FAIL File not created: {filename}")
                         return False
 
                 except Exception as e:
-                    print(f"    ⚠️  {filename}: {e}")
+                    print(f"    WARN {filename}: {e}")
 
         return True
 
     def test_line_endings(self):
         """Test line ending handling (CRLF vs LF)"""
-        print("  🧪 Testing line endings...")
+        print("  TEST Testing line endings...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             test_file = os.path.join(tmpdir, "line_endings.txt")
@@ -413,21 +413,21 @@ class TestWindowsFileOperations:
                     # Check that content is readable and normalized
                     if len(read_back) > 0:
                         print(
-                            f"    ✅ {name}: {len(content)} -> {len(read_back)} chars"
+                            f"    OK {name}: {len(content)} -> {len(read_back)} chars"
                         )
                     else:
-                        print(f"    ❌ {name}: empty after read")
+                        print(f"    FAIL {name}: empty after read")
                         return False
 
                 except Exception as e:
-                    print(f"    ❌ {name}: {e}")
+                    print(f"    FAIL {name}: {e}")
                     return False
 
         return True
 
     def test_encoding_handling(self):
         """Test different text encodings"""
-        print("  🧪 Testing text encodings...")
+        print("  TEST Testing text encodings...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             test_content = {
@@ -443,16 +443,16 @@ class TestWindowsFileOperations:
 
                     # Read back with default UTF-8
                     read_content = CrossPlatformFile.read_text(filepath)
-                    print(f"    ✅ {encoding_name}: {len(content)} chars")
+                    print(f"    OK {encoding_name}: {len(content)} chars")
 
                 except Exception as e:
-                    print(f"    ⚠️  {encoding_name}: {e}")
+                    print(f"    WARN {encoding_name}: {e}")
 
         return True
 
     def test_file_locking(self):
         """Test file operations with potential lock conflicts"""
-        print("  🧪 Testing file locking scenarios...")
+        print("  TEST Testing file locking scenarios...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             test_file = os.path.join(tmpdir, "locktest.json")
@@ -471,25 +471,25 @@ class TestWindowsFileOperations:
                 content2 = CrossPlatformFile.read_text(test_file)
 
                 if content1 != content2:
-                    print("    ✅ File operations without lock conflicts")
+                    print("    OK File operations without lock conflicts")
                     return True
                 else:
-                    print("    ❌ File not updated properly")
+                    print("    FAIL File not updated properly")
                     return False
 
             except Exception as e:
-                print(f"    ❌ Lock conflict: {e}")
+                print(f"    FAIL Lock conflict: {e}")
                 return False
 
 
 def run_all_tests():
     """Run all Windows-specific tests"""
     print("=" * 70)
-    print("🪟 WINDOWS-SPECIFIC PATH & FILENAME TESTS")
+    print("WINDOWS-SPECIFIC PATH & FILENAME TESTS")
     print("=" * 70)
 
     if not sys.platform.startswith("win"):
-        print("\n⚠️  Warning: Not running on Windows!")
+        print("\nWARN Warning: Not running on Windows!")
         print("Some tests may behave differently on non-Windows platforms.\n")
 
     test_classes = [
@@ -503,7 +503,7 @@ def run_all_tests():
     total_tests = 0
 
     for class_name, test_class in test_classes:
-        print(f"\n📁 {class_name}")
+        print(f"\nSECTION {class_name}")
         print("-" * 70)
 
         instance = test_class()
@@ -517,9 +517,9 @@ def run_all_tests():
                 if method():
                     total_passed += 1
                 else:
-                    print(f"    ❌ {method_name} failed")
+                    print(f"    FAIL {method_name} failed")
             except Exception as e:
-                print(f"    ❌ {method_name} error: {e}")
+                print(f"    FAIL {method_name} error: {e}")
                 import traceback
 
                 traceback.print_exc()
@@ -527,13 +527,13 @@ def run_all_tests():
         print()
 
     print("=" * 70)
-    print(f"📊 RESULTS: {total_passed}/{total_tests} tests passed")
+    print(f"RESULTS: {total_passed}/{total_tests} tests passed")
 
     if total_passed == total_tests:
-        print("🎉 All Windows-specific tests passed!")
+        print("All Windows-specific tests passed!")
         return 0
     else:
-        print(f"❌ {total_tests - total_passed} test(s) failed")
+        print(f"{total_tests - total_passed} test(s) failed")
         return 1
 
 

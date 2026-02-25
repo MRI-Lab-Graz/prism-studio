@@ -33,7 +33,7 @@ try:
     )
     from system_files import filter_system_files, is_system_file
 except ImportError as e:
-    print(f"❌ Import error: {e}")
+    print(f"FAIL Import error: {e}")
     sys.exit(1)
 
 
@@ -42,7 +42,7 @@ class TestWindowsWebUpload:
 
     def test_upload_path_normalization(self):
         """Test that uploaded file paths are normalized correctly"""
-        print("  🧪 Testing upload path normalization...")
+        print("  TEST Testing upload path normalization...")
 
         # Simulate paths that might come from web upload
         upload_paths = [
@@ -56,18 +56,18 @@ class TestWindowsWebUpload:
                 normalized = normalize_path(path)
                 # Should be consistent forward slashes
                 if "\\" in normalized:
-                    print(f"    ⚠️  Backslashes remain in: {normalized}")
+                    print(f"    WARN Backslashes remain in: {normalized}")
                 else:
-                    print(f"    ✅ {path} -> {normalized}")
+                    print(f"    OK {path} -> {normalized}")
             except Exception as e:
-                print(f"    ❌ Failed to normalize: {path}: {e}")
+                print(f"    FAIL Failed to normalize: {path}: {e}")
                 return False
 
         return True
 
     def test_upload_with_drive_letter(self):
         """Test handling when Windows drive letters appear in upload paths"""
-        print("  🧪 Testing drive letter in upload paths...")
+        print("  TEST Testing drive letter in upload paths...")
 
         # These shouldn't happen in normal web uploads, but test resilience
         problematic_paths = [
@@ -83,15 +83,15 @@ class TestWindowsWebUpload:
                 relative_parts = [p for p in parts if not p.endswith(":") and p != "\\"]
                 relative_path = os.path.join(*relative_parts) if relative_parts else ""
 
-                print(f"    ✅ {path} -> {relative_path}")
+                print(f"    OK {path} -> {relative_path}")
             except Exception as e:
-                print(f"    ⚠️  {path}: {e}")
+                print(f"    WARN {path}: {e}")
 
         return True
 
     def test_metadata_path_json_format(self):
         """Test the metadata_paths_json format used for large uploads"""
-        print("  🧪 Testing metadata paths JSON format...")
+        print("  TEST Testing metadata paths JSON format...")
 
         # Simulate the JSON string sent from frontend
         metadata_paths = [
@@ -112,23 +112,23 @@ class TestWindowsWebUpload:
             # Normalize all paths
             normalized_paths = [normalize_path(p) for p in parsed_paths]
 
-            print(f"    ✅ Processed {len(normalized_paths)} paths")
+            print(f"    OK Processed {len(normalized_paths)} paths")
 
             # Check for system files
             filtered = filter_system_files(
                 [os.path.basename(p) for p in normalized_paths]
             )
-            print(f"    ✅ Filtered to {len(filtered)} valid files")
+            print(f"    OK Filtered to {len(filtered)} valid files")
 
             return True
 
         except Exception as e:
-            print(f"    ❌ Failed: {e}")
+            print(f"    FAIL Failed: {e}")
             return False
 
     def test_batch_file_upload_simulation(self):
         """Simulate batch upload of 5000+ files"""
-        print("  🧪 Testing large batch upload simulation...")
+        print("  TEST Testing large batch upload simulation...")
 
         # Generate realistic file list
         file_list = []
@@ -165,25 +165,25 @@ class TestWindowsWebUpload:
         try:
             # Test JSON serialization (as sent to backend)
             json_string = json.dumps(file_list)
-            print(f"    ✅ JSON string size: {len(json_string):,} bytes")
+            print(f"    OK JSON string size: {len(json_string):,} bytes")
 
             # Test parsing
             parsed = json.loads(json_string)
-            print(f"    ✅ Parsed {len(parsed)} paths")
+            print(f"    OK Parsed {len(parsed)} paths")
 
             # Test path normalization on all
             normalized = [normalize_path(p) for p in parsed[:10]]  # Test first 10
-            print("    ✅ Path normalization successful")
+            print("    OK Path normalization successful")
 
             return True
 
         except Exception as e:
-            print(f"    ❌ Failed: {e}")
+            print(f"    FAIL Failed: {e}")
             return False
 
     def test_datalab_style_upload(self):
         """Test DataLad-style upload (metadata only, skip large files)"""
-        print("  🧪 Testing DataLad-style upload...")
+        print("  TEST Testing DataLad-style upload...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create mock file structure
@@ -223,12 +223,12 @@ class TestWindowsWebUpload:
                 else:
                     upload_files.append(file_path)
 
-            print(f"    ✅ Upload: {len(upload_files)} files")
-            print(f"    ✅ Skip: {len(skip_files)} files")
+            print(f"    OK Upload: {len(upload_files)} files")
+            print(f"    OK Skip: {len(skip_files)} files")
 
             # Verify system files were skipped
             if "Thumbs.db" in [os.path.basename(f) for f in upload_files]:
-                print("    ❌ System file not filtered")
+                print("    FAIL System file not filtered")
                 return False
 
             return True
@@ -239,7 +239,7 @@ class TestWindowsSessionManagement:
 
     def test_temp_directory_creation(self):
         """Test temporary upload directory creation on Windows"""
-        print("  🧪 Testing temp directory creation...")
+        print("  TEST Testing temp directory creation...")
 
         with tempfile.TemporaryDirectory() as base_tmpdir:
             # Simulate session directory creation
@@ -248,7 +248,7 @@ class TestWindowsSessionManagement:
 
             try:
                 os.makedirs(session_dir, exist_ok=True)
-                print(f"    ✅ Created: {session_dir}")
+                print(f"    OK Created: {session_dir}")
 
                 # Create subdirectories
                 subdirs = ["sub-01/func", "sub-01/anat", "sub-02/func"]
@@ -256,22 +256,22 @@ class TestWindowsSessionManagement:
                     full_path = os.path.join(session_dir, subdir)
                     os.makedirs(full_path, exist_ok=True)
 
-                print(f"    ✅ Created {len(subdirs)} subdirectories")
+                print(f"    OK Created {len(subdirs)} subdirectories")
 
                 # Verify structure
                 if os.path.exists(session_dir):
                     return True
                 else:
-                    print("    ❌ Directory not created")
+                    print("    FAIL Directory not created")
                     return False
 
             except Exception as e:
-                print(f"    ❌ Failed: {e}")
+                print(f"    FAIL Failed: {e}")
                 return False
 
     def test_session_cleanup(self):
         """Test session directory cleanup"""
-        print("  🧪 Testing session cleanup...")
+        print("  TEST Testing session cleanup...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create mock session directories
@@ -287,7 +287,7 @@ class TestWindowsSessionManagement:
 
                 sessions.append(session_dir)
 
-            print(f"    ✅ Created {len(sessions)} mock sessions")
+            print(f"    OK Created {len(sessions)} mock sessions")
 
             # Clean up sessions
             try:
@@ -298,19 +298,19 @@ class TestWindowsSessionManagement:
                 # Verify cleanup
                 remaining = [s for s in sessions if os.path.exists(s)]
                 if remaining:
-                    print(f"    ❌ {len(remaining)} sessions not cleaned")
+                    print(f"    FAIL {len(remaining)} sessions not cleaned")
                     return False
 
-                print("    ✅ All sessions cleaned up")
+                print("    OK All sessions cleaned up")
                 return True
 
             except Exception as e:
-                print(f"    ❌ Cleanup failed: {e}")
+                print(f"    FAIL Cleanup failed: {e}")
                 return False
 
     def test_concurrent_session_isolation(self):
         """Test that concurrent sessions don't interfere"""
-        print("  🧪 Testing concurrent session isolation...")
+        print("  TEST Testing concurrent session isolation...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create multiple session directories
@@ -335,14 +335,14 @@ class TestWindowsSessionManagement:
                     data = json.loads(content)
 
                     if data["session"] != session_id:
-                        print(f"    ❌ Session data mixed: {session_id}")
+                        print(f"    FAIL Session data mixed: {session_id}")
                         return False
 
-                print(f"    ✅ {len(sessions)} sessions properly isolated")
+                print(f"    OK {len(sessions)} sessions properly isolated")
                 return True
 
             except Exception as e:
-                print(f"    ❌ Failed: {e}")
+                print(f"    FAIL Failed: {e}")
                 return False
 
 
@@ -351,7 +351,7 @@ class TestWindowsFileSecurity:
 
     def test_path_traversal_prevention(self):
         """Test prevention of path traversal attacks"""
-        print("  🧪 Testing path traversal prevention...")
+        print("  TEST Testing path traversal prevention...")
 
         malicious_paths = [
             "../../../etc/passwd",
@@ -376,19 +376,19 @@ class TestWindowsFileSecurity:
                     )
 
                     if not real_full.startswith(real_tmpdir):
-                        print(f"    ⚠️  Potential escape: {path}")
+                        print(f"    WARN Potential escape: {path}")
                     else:
-                        print(f"    ✅ Contained: {path}")
+                        print(f"    OK Contained: {path}")
 
                 except Exception:
                     # Exception is acceptable for malicious paths
-                    print(f"    ✅ Blocked: {path}")
+                    print(f"    OK Blocked: {path}")
 
         return True
 
     def test_filename_injection_prevention(self):
         """Test prevention of filename injection attacks"""
-        print("  🧪 Testing filename injection prevention...")
+        print("  TEST Testing filename injection prevention...")
 
         malicious_names = [
             "file.json; rm -rf /",
@@ -401,20 +401,20 @@ class TestWindowsFileSecurity:
         for name in malicious_names:
             issues = validate_filename_cross_platform(name)
             if issues:
-                print(f"    ✅ Detected issue in: {repr(name)}")
+                print(f"    OK Detected issue in: {repr(name)}")
             else:
                 # Check for dangerous characters manually
                 dangerous = [";", "|", "&", "`", "\x00"]
                 if any(c in name for c in dangerous):
-                    print(f"    ⚠️  Should detect: {repr(name)}")
+                    print(f"    WARN Should detect: {repr(name)}")
                 else:
-                    print(f"    ✅ Clean: {repr(name)}")
+                    print(f"    OK Clean: {repr(name)}")
 
         return True
 
     def test_hidden_file_handling(self):
         """Test handling of hidden files on Windows"""
-        print("  🧪 Testing hidden file handling...")
+        print("  TEST Testing hidden file handling...")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create normal and "hidden" files
@@ -431,11 +431,11 @@ class TestWindowsFileSecurity:
                 is_sys = is_system_file(filename)
 
                 if should_be_system and not is_sys:
-                    print(f"    ⚠️  Should be detected as system: {filename}")
+                    print(f"    WARN Should be detected as system: {filename}")
                 elif not should_be_system and is_sys:
-                    print(f"    ⚠️  Should not be system: {filename}")
+                    print(f"    WARN Should not be system: {filename}")
                 else:
-                    print(f"    ✅ {filename}: {'system' if is_sys else 'normal'}")
+                    print(f"    OK {filename}: {'system' if is_sys else 'normal'}")
 
         return True
 
@@ -443,11 +443,11 @@ class TestWindowsFileSecurity:
 def run_all_tests():
     """Run all Windows web upload tests"""
     print("=" * 70)
-    print("🌐 WINDOWS WEB INTERFACE UPLOAD TESTS")
+    print("WINDOWS WEB INTERFACE UPLOAD TESTS")
     print("=" * 70)
 
     if not sys.platform.startswith("win"):
-        print("\n⚠️  Warning: Not running on Windows!")
+        print("\nWARN Warning: Not running on Windows!")
         print("Some tests may behave differently on non-Windows platforms.\n")
 
     test_classes = [
@@ -460,7 +460,7 @@ def run_all_tests():
     total_tests = 0
 
     for class_name, test_class in test_classes:
-        print(f"\n🔧 {class_name}")
+        print(f"\nSECTION {class_name}")
         print("-" * 70)
 
         instance = test_class()
@@ -474,9 +474,9 @@ def run_all_tests():
                 if method():
                     total_passed += 1
                 else:
-                    print(f"    ❌ {method_name} failed")
+                    print(f"    FAIL {method_name} failed")
             except Exception as e:
-                print(f"    ❌ {method_name} error: {e}")
+                print(f"    FAIL {method_name} error: {e}")
                 import traceback
 
                 traceback.print_exc()
@@ -484,13 +484,13 @@ def run_all_tests():
         print()
 
     print("=" * 70)
-    print(f"📊 RESULTS: {total_passed}/{total_tests} tests passed")
+    print(f"RESULTS: {total_passed}/{total_tests} tests passed")
 
     if total_passed == total_tests:
-        print("🎉 All Windows web tests passed!")
+        print("All Windows web tests passed!")
         return 0
     else:
-        print(f"❌ {total_tests - total_passed} test(s) failed")
+        print(f"{total_tests - total_passed} test(s) failed")
         return 1
 
 

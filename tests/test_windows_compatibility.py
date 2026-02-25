@@ -29,13 +29,13 @@ try:
         is_case_sensitive_filesystem,
     )
 except ImportError as e:
-    print(f"❌ Import error: {e}")
+    print(f"FAIL Import error: {e}")
     sys.exit(1)
 
 
 def test_platform_detection():
     """Test platform detection works correctly"""
-    print("🧪 Testing platform detection...")
+    print("TEST Testing platform detection...")
 
     info = get_platform_info()
     print(f"   Platform: {info['platform']}")
@@ -48,7 +48,7 @@ def test_platform_detection():
 
 def test_path_handling():
     """Test cross-platform path handling"""
-    print("🧪 Testing path handling...")
+    print("TEST Testing path handling...")
 
     # Test path normalization
     test_paths = [
@@ -71,7 +71,7 @@ def test_path_handling():
 
 def test_filename_validation():
     """Test Windows filename validation"""
-    print("🧪 Testing filename validation...")
+    print("TEST Testing filename validation...")
 
     test_files = [
         "sub-01_task-test_bold.nii.gz",  # Good
@@ -83,7 +83,7 @@ def test_filename_validation():
 
     for filename in test_files:
         issues = validate_filename_cross_platform(filename)
-        status = "❌" if issues else "✅"
+        status = "FAIL" if issues else "OK"
         print(f"   {status} {filename[:50]}{'...' if len(filename) > 50 else ''}")
         for issue in issues:
             print(f"      • {issue}")
@@ -93,7 +93,7 @@ def test_filename_validation():
 
 def test_file_operations():
     """Test cross-platform file operations"""
-    print("🧪 Testing file operations...")
+    print("TEST Testing file operations...")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         test_file = os.path.join(temp_dir, "test.json")
@@ -102,18 +102,18 @@ def test_file_operations():
         # Test writing
         try:
             CrossPlatformFile.write_text(test_file, test_content)
-            print("   ✅ File writing works")
+            print("   OK File writing works")
         except Exception as e:
-            print(f"   ❌ File writing failed: {e}")
+            print(f"   FAIL File writing failed: {e}")
             return False
 
         # Test reading
         try:
             read_content = CrossPlatformFile.read_text(test_file)
-            print("   ✅ File reading works")
+            print("   OK File reading works")
             print(f"      Content length: {len(read_content)} chars")
         except Exception as e:
-            print(f"   ❌ File reading failed: {e}")
+            print(f"   FAIL File reading failed: {e}")
             return False
 
     return True
@@ -121,7 +121,7 @@ def test_file_operations():
 
 def test_case_sensitivity():
     """Test filesystem case sensitivity detection"""
-    print("🧪 Testing filesystem case sensitivity...")
+    print("TEST Testing filesystem case sensitivity...")
 
     try:
         is_case_sensitive = is_case_sensitive_filesystem()
@@ -132,22 +132,22 @@ def test_case_sensitivity():
         # This is expected behavior
         if sys.platform.startswith("win") and is_case_sensitive:
             print(
-                "   ⚠️  Warning: Windows filesystem detected as case-sensitive (unusual)"
+                "   WARN Warning: Windows filesystem detected as case-sensitive (unusual)"
             )
         elif not sys.platform.startswith("win") and not is_case_sensitive:
-            print("   ⚠️  Warning: Non-Windows filesystem detected as case-insensitive")
+            print("   WARN Warning: Non-Windows filesystem detected as case-insensitive")
         else:
-            print("   ✅ Case sensitivity detection matches expected platform behavior")
+            print("   OK Case sensitivity detection matches expected platform behavior")
 
         return True
     except Exception as e:
-        print(f"   ❌ Case sensitivity test failed: {e}")
+        print(f"   FAIL Case sensitivity test failed: {e}")
         return False
 
 
 def test_import_compatibility():
     """Test that main modules can be imported"""
-    print("🧪 Testing module imports...")
+    print("TEST Testing module imports...")
 
     try:
         # Test absolute imports
@@ -165,20 +165,20 @@ def test_import_compatibility():
         import stats
         import reporting
 
-        print("   ✅ All core modules import successfully")
+        print("   OK All core modules import successfully")
         return True
     except ImportError as e:
-        print(f"   ⚠️  Import warning: {e}")
-        print("   ℹ️  This is expected when running outside the package context")
+        print(f"   WARN Import warning: {e}")
+        print("   INFO This is expected when running outside the package context")
         return True  # Don't fail the test for this
     except Exception as e:
-        print(f"   ❌ Unexpected error: {e}")
+        print(f"   FAIL Unexpected error: {e}")
         return False
 
 
 def test_json_handling():
     """Test JSON file handling with various encodings"""
-    print("🧪 Testing JSON handling...")
+    print("TEST Testing JSON handling...")
 
     with tempfile.TemporaryDirectory() as temp_dir:
         # Test different content types
@@ -205,13 +205,13 @@ def test_json_handling():
                 parsed = json.loads(content)
 
                 if parsed == data:
-                    print(f"   ✅ {filename}")
+                    print(f"   OK {filename}")
                 else:
-                    print(f"   ❌ {filename} - data mismatch")
+                    print(f"   FAIL {filename} - data mismatch")
                     return False
 
             except Exception as e:
-                print(f"   ❌ {filename} - error: {e}")
+                print(f"   FAIL {filename} - error: {e}")
                 return False
 
     return True
@@ -219,7 +219,7 @@ def test_json_handling():
 
 def main():
     """Run all Windows compatibility tests"""
-    print("🔍 WINDOWS COMPATIBILITY TESTS")
+    print("WINDOWS COMPATIBILITY TESTS")
     print("=" * 50)
 
     tests = [
@@ -236,25 +236,25 @@ def main():
     total = len(tests)
 
     for test_name, test_func in tests:
-        print(f"\n📋 {test_name}")
+        print(f"\nSECTION {test_name}")
         print("-" * 30)
         try:
             if test_func():
                 passed += 1
             else:
-                print(f"   ❌ {test_name} failed")
+                print(f"   FAIL {test_name} failed")
         except Exception as e:
-            print(f"   ❌ {test_name} error: {e}")
+            print(f"   FAIL {test_name} error: {e}")
         print()
 
     print("=" * 50)
-    print(f"📊 RESULTS: {passed}/{total} tests passed")
+    print(f"RESULTS: {passed}/{total} tests passed")
 
     if passed == total:
-        print("🎉 All Windows compatibility tests passed!")
+        print("All Windows compatibility tests passed!")
         return 0
     else:
-        print("❌ Some compatibility issues found")
+        print("Some compatibility issues found")
         return 1
 
 

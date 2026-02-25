@@ -17,16 +17,16 @@ try:
     if str(abs_path) not in sys.path:
         sys.path.insert(0, str(abs_path))
 
-    print(f"📝 JSON Editor path: {abs_path}")
+    print(f"INFO JSON Editor path: {abs_path}")
 
     # Now import from the json_editor src
     from backend.file_manager import FileManager
     from backend.json_validator import JSONValidator
     from schema_loader import BIDSSchemaLoader
 
-    print("✓ JSON Editor components imported successfully")
+    print("OK JSON Editor components imported successfully")
 except ImportError as e:
-    print(f"⚠️  Warning: Could not import JSON editor components: {e}")
+    print(f"WARN Could not import JSON editor components: {e}")
     import traceback
 
     traceback.print_exc()
@@ -67,7 +67,7 @@ def create_json_editor_blueprint(bids_folder=None):
         try:
             schema_loader.load_schema()
         except Exception as e:
-            print(f"⚠️  Warning: Could not load BIDS schema: {e}")
+            print(f"[WARN] Could not load BIDS schema: {e}")
     else:
         file_manager = None
         validator = None
@@ -86,12 +86,12 @@ def create_json_editor_blueprint(bids_folder=None):
                 project_path_obj = Path(project_path)
 
                 dataset_path = project_path_obj
-                print(f"📁 [JSON EDITOR] Using project path: {dataset_path}")
+                print(f"INFO [JSON EDITOR] Using project path: {dataset_path}")
 
                 file_manager.set_bids_folder(str(dataset_path))
             except Exception as e:
                 print(
-                    f"⚠️ [JSON EDITOR] Could not set BIDS folder to {project_path}: {e}"
+                    f"WARN [JSON EDITOR] Could not set BIDS folder to {project_path}: {e}"
                 )
 
     @bp.route("/")
@@ -103,7 +103,7 @@ def create_json_editor_blueprint(bids_folder=None):
             return render_template("json_editor.html")
 
         except Exception as e:
-            print(f"⚠️  [JSON EDITOR] Could not render template: {e}")
+            print(f"WARN [JSON EDITOR] Could not render template: {e}")
             import traceback
 
             traceback.print_exc()

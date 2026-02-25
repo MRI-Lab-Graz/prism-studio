@@ -33,35 +33,35 @@ class TestGitHubSigningConfiguration:
 
     def test_workflow_file_exists(self):
         """Test that the build workflow file exists"""
-        print("  🧪 Testing workflow file exists...")
+        print("  TEST Testing workflow file exists...")
 
         if not os.path.exists(self.workflow_path):
-            print(f"    ❌ Workflow file not found: {self.workflow_path}")
+            print(f"    FAIL Workflow file not found: {self.workflow_path}")
             return False
 
-        print(f"    ✅ Found: {self.workflow_path}")
+        print(f"    OK Found: {self.workflow_path}")
         return True
 
     def test_workflow_yaml_valid(self):
         """Test that the workflow YAML is valid"""
-        print("  🧪 Testing workflow YAML syntax...")
+        print("  TEST Testing workflow YAML syntax...")
 
         try:
             with open(self.workflow_path, "r", encoding="utf-8") as f:
                 workflow = yaml.safe_load(f)
 
-            print("    ✅ YAML syntax is valid")
+            print("    OK YAML syntax is valid")
             return True
         except yaml.YAMLError as e:
-            print(f"    ❌ YAML syntax error: {e}")
+            print(f"    FAIL YAML syntax error: {e}")
             return False
         except Exception as e:
-            print(f"    ❌ Error reading file: {e}")
+            print(f"    FAIL Error reading file: {e}")
             return False
 
     def test_signing_step_configured(self):
         """Test that the signing step is properly configured"""
-        print("  🧪 Testing Windows signing step configuration...")
+        print("  TEST Testing Windows signing step configuration...")
 
         try:
             with open(self.workflow_path, "r", encoding="utf-8") as f:
@@ -69,42 +69,42 @@ class TestGitHubSigningConfiguration:
 
             # Check for signing step
             if "Sign Windows Executable" not in content:
-                print("    ❌ Signing step not found in workflow")
+                print("    FAIL Signing step not found in workflow")
                 return False
 
-            print("    ✅ Signing step found")
+            print("    OK Signing step found")
 
             # Check for SignPath action
             if "signpath/github-action-submit-signing-request" not in content:
-                print("    ❌ SignPath action not configured")
+                print("    FAIL SignPath action not configured")
                 return False
 
-            print("    ✅ SignPath action configured")
+            print("    OK SignPath action configured")
 
             # Check for conditional execution
             if "if: runner.os == 'Windows'" not in content:
-                print("    ⚠️  Signing step not limited to Windows")
+                print("    WARN Signing step not limited to Windows")
             else:
-                print("    ✅ Signing limited to Windows runners")
+                print("    OK Signing limited to Windows runners")
 
             # Check for graceful secret handling
             if (
                 "env.SIGNPATH_API_TOKEN != ''" in content
                 or "secrets.SIGNPATH_API_TOKEN" in content
             ):
-                print("    ✅ Graceful secret handling configured")
+                print("    OK Graceful secret handling configured")
             else:
-                print("    ⚠️  Secret handling not configured")
+                print("    WARN Secret handling not configured")
 
             return True
 
         except Exception as e:
-            print(f"    ❌ Error: {e}")
+            print(f"    FAIL Error: {e}")
             return False
 
     def test_required_secrets_documented(self):
         """Test that required secrets are documented"""
-        print("  🧪 Testing required secrets documentation...")
+        print("  TEST Testing required secrets documentation...")
 
         try:
             with open(self.workflow_path, "r", encoding="utf-8") as f:
@@ -119,26 +119,26 @@ class TestGitHubSigningConfiguration:
             for secret in required_secrets:
                 if secret in content:
                     found_secrets.append(secret)
-                    print(f"    ✅ Secret referenced: {secret}")
+                    print(f"    OK Secret referenced: {secret}")
                 else:
-                    print(f"    ❌ Secret not found: {secret}")
+                    print(f"    FAIL Secret not found: {secret}")
 
             if len(found_secrets) == len(required_secrets):
-                print(f"    ✅ All {len(required_secrets)} required secrets referenced")
+                print(f"    OK All {len(required_secrets)} required secrets referenced")
                 return True
             else:
                 print(
-                    f"    ❌ Missing {len(required_secrets) - len(found_secrets)} secrets"
+                    f"    FAIL Missing {len(required_secrets) - len(found_secrets)} secrets"
                 )
                 return False
 
         except Exception as e:
-            print(f"    ❌ Error: {e}")
+            print(f"    FAIL Error: {e}")
             return False
 
     def test_signing_configuration_parameters(self):
         """Test that signing parameters are properly configured"""
-        print("  🧪 Testing signing configuration parameters...")
+        print("  TEST Testing signing configuration parameters...")
 
         try:
             with open(self.workflow_path, "r", encoding="utf-8") as f:
@@ -159,28 +159,28 @@ class TestGitHubSigningConfiguration:
             for param, description in required_params.items():
                 if param in content:
                     found_params.append(param)
-                    print(f"    ✅ {description}: {param}")
+                    print(f"    OK {description}: {param}")
                 else:
-                    print(f"    ⚠️  Missing: {param}")
+                    print(f"    WARN Missing: {param}")
 
             if len(found_params) >= 6:  # At least core parameters
                 print(
-                    f"    ✅ Essential signing parameters configured ({len(found_params)}/{len(required_params)})"
+                    f"    OK Essential signing parameters configured ({len(found_params)}/{len(required_params)})"
                 )
                 return True
             else:
                 print(
-                    f"    ❌ Too few parameters configured ({len(found_params)}/{len(required_params)})"
+                    f"    FAIL Too few parameters configured ({len(found_params)}/{len(required_params)})"
                 )
                 return False
 
         except Exception as e:
-            print(f"    ❌ Error: {e}")
+            print(f"    FAIL Error: {e}")
             return False
 
     def test_artifact_paths_correct(self):
         """Test that artifact paths reference the correct executable"""
-        print("  🧪 Testing artifact path configuration...")
+        print("  TEST Testing artifact path configuration...")
 
         try:
             with open(self.workflow_path, "r", encoding="utf-8") as f:
@@ -188,26 +188,26 @@ class TestGitHubSigningConfiguration:
 
             # Check for correct executable path
             if "PrismValidator.exe" in content:
-                print("    ✅ Executable name referenced correctly")
+                print("    OK Executable name referenced correctly")
             else:
-                print("    ❌ Executable name not found")
+                print("    FAIL Executable name not found")
                 return False
 
             # Check for dist directory path
             if "dist/PrismValidator" in content or "dist\\PrismValidator" in content:
-                print("    ✅ Distribution directory path configured")
+                print("    OK Distribution directory path configured")
             else:
-                print("    ⚠️  Distribution path may be incorrect")
+                print("    WARN Distribution path may be incorrect")
 
             return True
 
         except Exception as e:
-            print(f"    ❌ Error: {e}")
+            print(f"    FAIL Error: {e}")
             return False
 
     def test_build_before_signing(self):
         """Test that build step comes before signing"""
-        print("  🧪 Testing build order (build before sign)...")
+        print("  TEST Testing build order (build before sign)...")
 
         try:
             with open(self.workflow_path, "r", encoding="utf-8") as f:
@@ -218,32 +218,32 @@ class TestGitHubSigningConfiguration:
             sign_pos = content.find("Sign Windows Executable")
 
             if build_pos == -1:
-                print("    ❌ Build step not found")
+                print("    FAIL Build step not found")
                 return False
 
             if sign_pos == -1:
-                print("    ⚠️  Signing step not found")
+                print("    WARN Signing step not found")
                 return True  # Not an error if signing is optional
 
             if build_pos < sign_pos:
-                print("    ✅ Build step comes before signing")
+                print("    OK Build step comes before signing")
                 return True
             else:
-                print("    ❌ Signing step before build step (incorrect order)")
+                print("    FAIL Signing step before build step (incorrect order)")
                 return False
 
         except Exception as e:
-            print(f"    ❌ Error: {e}")
+            print(f"    FAIL Error: {e}")
             return False
 
     def test_documentation_exists(self):
         """Test that signing documentation exists"""
-        print("  🧪 Testing signing documentation...")
+        print("  TEST Testing signing documentation...")
 
         doc_path = os.path.join(self.repo_root, "docs", "WINDOWS_BUILD.md")
 
         if not os.path.exists(doc_path):
-            print(f"    ⚠️  Documentation not found: {doc_path}")
+            print(f"    WARN Documentation not found: {doc_path}")
             return True  # Not critical
 
         try:
@@ -263,22 +263,22 @@ class TestGitHubSigningConfiguration:
 
             if found_keywords >= 3:
                 print(
-                    f"    ✅ Signing documentation comprehensive ({found_keywords}/{len(signing_keywords)} keywords)"
+                    f"    OK Signing documentation comprehensive ({found_keywords}/{len(signing_keywords)} keywords)"
                 )
                 return True
             else:
                 print(
-                    f"    ⚠️  Limited signing documentation ({found_keywords}/{len(signing_keywords)} keywords)"
+                    f"    WARN Limited signing documentation ({found_keywords}/{len(signing_keywords)} keywords)"
                 )
                 return True  # Not critical
 
         except Exception as e:
-            print(f"    ⚠️  Error reading documentation: {e}")
+            print(f"    WARN Error reading documentation: {e}")
             return True  # Not critical
 
     def test_secrets_not_exposed(self):
         """Test that secrets are not hardcoded in the workflow"""
-        print("  🧪 Testing secrets security...")
+        print("  TEST Testing secrets security...")
 
         try:
             with open(self.workflow_path, "r", encoding="utf-8") as f:
@@ -286,14 +286,14 @@ class TestGitHubSigningConfiguration:
 
             # Check that secrets are referenced correctly
             if "secrets.SIGNPATH_API_TOKEN" in content:
-                print("    ✅ API token using secrets manager")
+                print("    OK API token using secrets manager")
             else:
-                print("    ⚠️  API token not using secrets manager")
+                print("    WARN API token not using secrets manager")
 
             if "secrets.SIGNPATH_ORGANIZATION_ID" in content:
-                print("    ✅ Organization ID using secrets manager")
+                print("    OK Organization ID using secrets manager")
             else:
-                print("    ⚠️  Organization ID not using secrets manager")
+                print("    WARN Organization ID not using secrets manager")
 
             # Check for accidental exposure patterns
             dangerous_patterns = [
@@ -305,22 +305,22 @@ class TestGitHubSigningConfiguration:
             exposed = False
             for pattern in dangerous_patterns:
                 if re.search(pattern, content, re.IGNORECASE):
-                    print("    ❌ Potential secret exposure detected")
+                    print("    FAIL Potential secret exposure detected")
                     exposed = True
                     break
 
             if not exposed:
-                print("    ✅ No hardcoded secrets detected")
+                print("    OK No hardcoded secrets detected")
 
             return not exposed
 
         except Exception as e:
-            print(f"    ❌ Error: {e}")
+            print(f"    FAIL Error: {e}")
             return False
 
     def test_signpath_action_version(self):
         """Test that SignPath action uses a pinned version"""
-        print("  🧪 Testing SignPath action version...")
+        print("  TEST Testing SignPath action version...")
 
         try:
             with open(self.workflow_path, "r", encoding="utf-8") as f:
@@ -333,30 +333,30 @@ class TestGitHubSigningConfiguration:
 
             if match:
                 version = match.group(1)
-                print(f"    ✅ SignPath action version pinned: {version}")
+                print(f"    OK SignPath action version pinned: {version}")
 
                 # Warn if using very old version
                 if version.startswith("v0."):
                     print(
-                        f"    ℹ️  Consider updating to newer version (currently {version})"
+                        f"    INFO Consider updating to newer version (currently {version})"
                     )
 
                 return True
             else:
-                print("    ⚠️  SignPath action version not pinned")
+                print("    WARN SignPath action version not pinned")
                 return True  # Not critical
 
         except Exception as e:
-            print(f"    ❌ Error: {e}")
+            print(f"    FAIL Error: {e}")
             return False
 
     def generate_signing_report(self):
         """Generate a comprehensive signing configuration report"""
-        print("  📊 Generating signing configuration report...")
+        print("  REPORT Generating signing configuration report...")
 
         report = []
         report.append("\n" + "=" * 70)
-        report.append("🔐 WINDOWS CODE SIGNING CONFIGURATION REPORT")
+        report.append("WINDOWS CODE SIGNING CONFIGURATION REPORT")
         report.append("=" * 70)
 
         try:
@@ -364,12 +364,12 @@ class TestGitHubSigningConfiguration:
                 content = f.read()
 
             # Extract configuration details
-            report.append("\n📋 Configuration Details:")
+            report.append("\nConfiguration Details:")
             report.append("-" * 70)
 
             # Find SignPath configuration
             if "signpath/github-action-submit-signing-request" in content:
-                report.append("✅ Signing Provider: SignPath.io")
+                report.append("OK Signing Provider: SignPath.io")
 
                 # Extract version
                 match = re.search(r"@(v[\d.]+)", content)
@@ -393,24 +393,24 @@ class TestGitHubSigningConfiguration:
                     report.append("   Wait for completion: Yes")
 
             else:
-                report.append("⚠️  No signing provider configured")
+                report.append("WARN No signing provider configured")
 
             # Secrets configuration
-            report.append("\n🔑 Required Secrets:")
+            report.append("\nRequired Secrets:")
             report.append("-" * 70)
             secrets = ["SIGNPATH_API_TOKEN", "SIGNPATH_ORGANIZATION_ID"]
             for secret in secrets:
                 if secret in content:
-                    report.append(f"✅ {secret}")
+                    report.append(f"OK {secret}")
                 else:
-                    report.append(f"❌ {secret} (missing)")
+                    report.append(f"FAIL {secret} (missing)")
 
             # Artifact configuration
-            report.append("\n📦 Artifact Configuration:")
+            report.append("\nArtifact Configuration:")
             report.append("-" * 70)
 
             if "PrismValidator.exe" in content:
-                report.append("✅ Target Executable: PrismValidator.exe")
+                report.append("OK Target Executable: PrismValidator.exe")
 
             input_match = re.search(
                 r"input-artifact-path:\s*['\"]?([^'\"]+)['\"]?", content
@@ -425,24 +425,24 @@ class TestGitHubSigningConfiguration:
                 report.append(f"   Output Path: {output_match.group(1)}")
 
             # Conditional execution
-            report.append("\n⚙️  Execution Conditions:")
+            report.append("\nExecution Conditions:")
             report.append("-" * 70)
 
             if "runner.os == 'Windows'" in content:
-                report.append("✅ Limited to Windows runners")
+                report.append("OK Limited to Windows runners")
 
             if "env.SIGNPATH_API_TOKEN != ''" in content:
-                report.append("✅ Gracefully handles missing secrets")
+                report.append("OK Gracefully handles missing secrets")
 
             # Documentation
-            report.append("\n📚 Documentation:")
+            report.append("\nDocumentation:")
             report.append("-" * 70)
 
             doc_path = os.path.join(self.repo_root, "docs", "WINDOWS_BUILD.md")
             if os.path.exists(doc_path):
-                report.append("✅ Found: docs/WINDOWS_BUILD.md")
+                report.append("OK Found: docs/WINDOWS_BUILD.md")
             else:
-                report.append("⚠️  WINDOWS_BUILD.md not found")
+                report.append("WARN WINDOWS_BUILD.md not found")
 
             report.append("\n" + "=" * 70)
 
@@ -454,19 +454,19 @@ class TestGitHubSigningConfiguration:
             with open(report_file, "w", encoding="utf-8") as f:
                 f.write(report_text)
 
-            print(f"\n💾 Report saved to: {report_file}")
+            print(f"\nReport saved to: {report_file}")
 
             return True
 
         except Exception as e:
-            print(f"    ❌ Error generating report: {e}")
+            print(f"    FAIL Error generating report: {e}")
             return False
 
 
 def run_all_tests():
     """Run all signing configuration tests"""
     print("=" * 70)
-    print("🔐 GITHUB ACTIONS CODE SIGNING CONFIGURATION TESTS")
+    print("GITHUB ACTIONS CODE SIGNING CONFIGURATION TESTS")
     print("=" * 70)
 
     tester = TestGitHubSigningConfiguration()
@@ -488,15 +488,15 @@ def run_all_tests():
     total = len(tests)
 
     for test_name, test_func in tests:
-        print(f"\n📋 {test_name}")
+        print(f"\nSECTION {test_name}")
         print("-" * 70)
         try:
             if test_func():
                 passed += 1
             else:
-                print(f"    ❌ {test_name} failed")
+                print(f"    FAIL {test_name} failed")
         except Exception as e:
-            print(f"    ❌ {test_name} error: {e}")
+            print(f"    FAIL {test_name} error: {e}")
         print()
 
     # Generate comprehensive report
@@ -504,11 +504,11 @@ def run_all_tests():
     tester.generate_signing_report()
 
     print("\n" + "=" * 70)
-    print(f"📊 RESULTS: {passed}/{total} tests passed")
+    print(f"RESULTS: {passed}/{total} tests passed")
 
     if passed == total:
-        print("🎉 All signing configuration tests passed!")
-        print("\n✅ Your Windows executable will be signed via SignPath when:")
+        print("All signing configuration tests passed!")
+        print("\nOK Your Windows executable will be signed via SignPath when:")
         print("   1. You push a tag (e.g., git tag v1.0.0)")
         print(
             "   2. GitHub secrets are configured (SIGNPATH_API_TOKEN, SIGNPATH_ORGANIZATION_ID)"
@@ -516,8 +516,8 @@ def run_all_tests():
         print("   3. SignPath approves the signing request")
         return 0
     else:
-        print(f"⚠️  {total - passed} test(s) failed or have warnings")
-        print("\n📝 Review the issues above and update your configuration")
+        print(f"WARN {total - passed} test(s) failed or have warnings")
+        print("\nReview the issues above and update your configuration")
         return 1
 
 
