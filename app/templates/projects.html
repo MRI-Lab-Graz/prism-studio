@@ -624,10 +624,16 @@
                                         <span class="badge bg-danger">REQUIRED</span> Location
                                     </label>
                                     <div id="smRecLocationList" class="d-flex flex-column gap-2"></div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" id="smRecLocationOnlineOnly">
+                                        <label class="form-check-label small" for="smRecLocationOnlineOnly">
+                                            Online-only recruitment
+                                        </label>
+                                    </div>
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addRecLocationRow">
                                         <i class="fas fa-plus me-1"></i>Add Location
                                     </button>
-                                    <small class="text-muted d-block">Add one or more locations.</small>
+                                    <small class="text-muted d-block">Country is required; city is optional.</small>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold small">
@@ -1859,20 +1865,54 @@
 
     // ===== RECRUITMENT LOCATIONS =====
 
+    function _parseRecLocationValue(value = '') {
+        const raw = String(value || '').trim();
+        if (!raw) return { city: '', country: '' };
+        if (/^online(\s+only)?$/i.test(raw)) return { city: '', country: '' };
+
+        const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
+        if (parts.length <= 1) {
+            return { city: '', country: raw };
+        }
+        return {
+            city: parts.slice(0, -1).join(', '),
+            country: parts[parts.length - 1]
+        };
+    }
+
+    function toggleRecLocationInputs() {
+        const onlineOnly = document.getElementById('smRecLocationOnlineOnly')?.checked;
+        const addBtn = document.getElementById('addRecLocationRow');
+        const rows = document.querySelectorAll('#smRecLocationList .rec-location-row');
+
+        if (addBtn) addBtn.disabled = Boolean(onlineOnly);
+        rows.forEach(row => {
+            row.querySelectorAll('input, button').forEach(el => {
+                el.disabled = Boolean(onlineOnly);
+            });
+        });
+    }
+
     function addRecLocationRow(value = '') {
         const list = document.getElementById('smRecLocationList');
         if (!list) return;
 
+        const parsed = _parseRecLocationValue(value);
         const row = document.createElement('div');
         row.className = 'd-flex gap-2 align-items-center rec-location-row';
         row.innerHTML = `
-            <input type="text" class="form-control form-control-sm rec-location" placeholder="e.g. Graz, Austria" value="${value}">
+            <input type="text" class="form-control form-control-sm rec-location-city" placeholder="City (optional)" value="${parsed.city}">
+            <input type="text" class="form-control form-control-sm rec-location-country" placeholder="Country (required)" value="${parsed.country}">
             <button type="button" class="btn btn-outline-danger btn-sm remove-location">
                 <i class="fas fa-times"></i>
             </button>
         `;
 
-        row.querySelector('.rec-location').addEventListener('input', () => {
+        row.querySelector('.rec-location-city').addEventListener('input', () => {
+            updateCreateProjectButton();
+        });
+
+        row.querySelector('.rec-location-country').addEventListener('input', () => {
             updateCreateProjectButton();
         });
 
@@ -1885,20 +1925,30 @@
         });
 
         list.appendChild(row);
+        toggleRecLocationInputs();
     }
 
     function getRecLocationList() {
+        const onlineOnly = document.getElementById('smRecLocationOnlineOnly')?.checked;
+        if (onlineOnly) {
+            return ['Online'];
+        }
+
         const rows = document.querySelectorAll('#smRecLocationList .rec-location-row');
         const locations = [];
         rows.forEach(row => {
-            const value = row.querySelector('.rec-location')?.value || '';
-            const trimmed = value.trim();
-            if (trimmed) locations.push(trimmed);
+            const city = (row.querySelector('.rec-location-city')?.value || '').trim();
+            const country = (row.querySelector('.rec-location-country')?.value || '').trim();
+            if (!country) return;
+            locations.push(city ? `${city}, ${country}` : country);
         });
         return locations;
     }
 
     function hasAtLeastOneRecLocation() {
+        if (document.getElementById('smRecLocationOnlineOnly')?.checked) {
+            return true;
+        }
         return getRecLocationList().length > 0;
     }
 
@@ -1906,11 +1956,21 @@
         const list = document.getElementById('smRecLocationList');
         if (!list) return;
         list.innerHTML = '';
-        if (!Array.isArray(locations) || locations.length === 0) {
+
+        const onlineOnlyInput = document.getElementById('smRecLocationOnlineOnly');
+        const values = Array.isArray(locations) ? locations : [];
+        const nonOnline = values.filter(loc => !/^online(\s+only)?$/i.test(String(loc || '').trim()));
+        if (onlineOnlyInput) {
+            onlineOnlyInput.checked = values.some(loc => /^online(\s+only)?$/i.test(String(loc || '').trim()));
+        }
+
+        if (nonOnline.length === 0) {
             addRecLocationRow();
+            toggleRecLocationInputs();
             return;
         }
-        locations.forEach(loc => addRecLocationRow(loc));
+        nonOnline.forEach(loc => addRecLocationRow(loc));
+        toggleRecLocationInputs();
     }
 
     function getRecMethodList() {
@@ -1997,12 +2057,23 @@
         return Boolean(getYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth'));
     }
 
+    function getRecPeriodRangeError() {
+        const start = getYearMonthValue('smRecPeriodStartYear', 'smRecPeriodStartMonth');
+        const end = getYearMonthValue('smRecPeriodEndYear', 'smRecPeriodEndMonth');
+        if (!start || !end) return '';
+        if (start > end) {
+            return 'Recruitment period start must be before or equal to period end.';
+        }
+        return '';
+    }
+
     // ===== MANDATORY METADATA VALIDATION =====
     
     // Function to check if all mandatory fields across all tabs are filled
     function validateAllMandatoryFields() {
         const completeness = computeLocalCompleteness();
         const emptyFields = [];
+        const invalidFields = [];
 
         const labels = {
             Basics: {
@@ -2037,10 +2108,16 @@
                 emptyFields.push(friendlyLabel);
             });
         });
+
+        const periodError = getRecPeriodRangeError();
+        if (periodError) {
+            invalidFields.push(periodError);
+        }
         
         return {
-            isValid: emptyFields.length === 0,
-            emptyFields: emptyFields
+            isValid: emptyFields.length === 0 && invalidFields.length === 0,
+            emptyFields: emptyFields,
+            invalidFields: invalidFields
         };
     }
     
@@ -2058,8 +2135,8 @@
             createBtn.disabled = true;
             createBtn.classList.remove('btn-success');
             createBtn.classList.add('btn-secondary');
-            const count = validation.emptyFields.length;
-            createBtn.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Complete Study Metadata (${count} field${count > 1 ? 's' : ''} missing)`;
+            const count = validation.emptyFields.length + (validation.invalidFields?.length || 0);
+            createBtn.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>Complete Study Metadata (${count} issue${count > 1 ? 's' : ''})`;
         }
     }
     
@@ -2069,6 +2146,7 @@
         'smOverviewMain', 'smSDType', 'smRecMethod',
         'smRecPeriodStartYear', 'smRecPeriodStartMonth',
         'smRecPeriodEndYear', 'smRecPeriodEndMonth',
+        'smRecLocationOnlineOnly',
         'smRecCompensation',
         'smEligInclusion', 'smEligExclusion',
         'smProcOverview'
@@ -2089,6 +2167,10 @@
 
     // Recruitment location add button
     document.getElementById('addRecLocationRow').addEventListener('click', () => addRecLocationRow());
+    document.getElementById('smRecLocationOnlineOnly').addEventListener('change', () => {
+        toggleRecLocationInputs();
+        updateCreateProjectButton();
+    });
 
     // Special handler for Dataset Name with auto-population
     document.getElementById('metadataName').addEventListener('input', function() {
@@ -2121,6 +2203,7 @@
         if (!document.querySelector('#smRecLocationList .rec-location-row')) {
             addRecLocationRow();
         }
+        toggleRecLocationInputs();
         initYearMonthSelect('smRecPeriodStartYear', 'smRecPeriodStartMonth');
         initYearMonthSelect('smRecPeriodEndYear', 'smRecPeriodEndMonth');
         updateCreateProjectButton();
@@ -2204,8 +2287,11 @@
         // Validate all mandatory metadata fields
         const validation = validateAllMandatoryFields();
         if (!validation.isValid) {
-            const fieldList = validation.emptyFields.map(f => `- ${f}`).join('\\n');
-            alert(`Please complete all mandatory fields in Study Metadata:\\n\\n${fieldList}`);
+            const issues = [
+                ...validation.emptyFields.map(f => `- ${f}`),
+                ...(validation.invalidFields || []).map(f => `- ${f}`)
+            ].join('\\n');
+            alert(`Please fix the Study Metadata issues:\\n\\n${issues}`);
             return;
         }
 
@@ -3319,6 +3405,13 @@
 
     studyMetadataForm?.addEventListener('submit', async function(e) {
         e.preventDefault();
+
+        const periodError = getRecPeriodRangeError();
+        if (periodError) {
+            showToast(periodError, 'danger');
+            return;
+        }
+
         const btn = this.querySelector('button[type="submit"]');
         const originalText = setButtonLoading(btn, true, 'Saving...');
 
