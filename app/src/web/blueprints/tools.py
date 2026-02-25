@@ -1159,8 +1159,40 @@ def api_recipes_surveys():
     )
     if derivatives_dir.exists() and not force_overwrite:
         existing_files = []
-        for ext in [".csv", ".tsv", ".xlsx", ".save", ".feather"]:
+        format_exts = {
+            "csv": [".csv"],
+            "xlsx": [".xlsx"],
+            "save": [".save"],
+            "r": [".feather"],
+        }
+        codebook_suffixes = {
+            "csv": ["_codebook.json", "_codebook.tsv"],
+            "xlsx": [],
+            "save": ["_codebook.json"],
+            "r": ["_codebook.json"],
+        }
+
+        exts = format_exts.get(out_format, [".csv"])
+        suffixes = codebook_suffixes.get(out_format, [])
+
+        # If SPSS or feather support is missing, include CSV fallbacks in the check.
+        if out_format == "save":
+            try:
+                import pyreadstat  # noqa: F401
+            except Exception:
+                exts = list(set(exts + [".csv"]))
+                suffixes = list(set(suffixes + ["_codebook.json", "_codebook.tsv"]))
+        if out_format == "r":
+            try:
+                import pyarrow  # noqa: F401
+            except Exception:
+                exts = list(set(exts + [".csv"]))
+                suffixes = list(set(suffixes + ["_codebook.json", "_codebook.tsv"]))
+
+        for ext in exts:
             existing_files.extend(derivatives_dir.glob(f"*{ext}"))
+        for suffix in suffixes:
+            existing_files.extend(derivatives_dir.glob(f"*{suffix}"))
 
         if existing_files:
             file_names = [f.name for f in existing_files[:10]]  # Show first 10

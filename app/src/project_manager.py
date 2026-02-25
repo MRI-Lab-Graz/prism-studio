@@ -796,9 +796,10 @@ Subfolders:
             "cff-version: 1.2.0",
             f"title: {self._yaml_quote(title)}",
             f"message: {self._yaml_quote(message)}",
-            f"date-released: {date.today().isoformat()}",
-            f"doi: {self._yaml_quote(doi)}",
+            f"date-released: {self._yaml_quote(date.today().isoformat())}",
         ]
+        if doi:
+            lines.append(f"doi: {self._yaml_quote(doi)}")
         if license_value:
             lines.append(f"license: {self._yaml_quote(license_value)}")
 
