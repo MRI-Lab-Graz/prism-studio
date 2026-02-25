@@ -7,7 +7,7 @@ survey without item ID collisions by adding version metadata.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 import json
 
 _NON_ITEM_TOPLEVEL_KEYS = {
@@ -28,7 +28,7 @@ def merge_survey_versions(
     existing_template_path: Path,
     new_items: dict[str, Any],
     new_version_name: str,
-    existing_version_name: str = None,
+    existing_version_name: Optional[str] = None,
 ) -> dict[str, Any]:
     """Merge a new version into an existing survey template.
 

@@ -160,7 +160,7 @@ def _build_variable_metadata(
     columns: list[str],
     participants_meta: dict,
     recipe: dict,
-    sidecar_meta: dict = None,
+    sidecar_meta: Optional[dict] = None,
     lang: str = "en",
 ) -> tuple[dict[str, str], dict[str, dict], dict[str, dict]]:
     """Build variable labels and value labels from metadata sources.
@@ -257,7 +257,7 @@ def _build_survey_metadata(recipe: dict, lang: str = "en") -> dict:
     if recipe.get("Kind"):
         meta["kind"] = recipe["Kind"]
 
-    # Survey info block
+        sidecar_meta: Optional[dict] = None,
     survey_info = recipe.get("Survey") or {}
     if survey_info.get("Name"):
         meta["survey_name"] = get_i18n_text(survey_info["Name"], lang)
