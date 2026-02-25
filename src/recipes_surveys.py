@@ -116,7 +116,7 @@ def _build_variable_metadata(
     columns: list[str],
     participants_meta: dict,
     recipe: dict,
-    sidecar_meta: dict = None,
+    sidecar_meta: Optional[dict] = None,
     lang: str = "en",
 ) -> tuple[dict[str, str], dict[str, dict], dict[str, dict]]:
     """Build variable labels and value labels from metadata sources.
@@ -983,7 +983,9 @@ def _load_and_validate_recipes(
         recipe_errors: list[str] = []
         for recipe_id, rec in sorted(all_recipes.items()):
             errs = validate_recipe(rec.get("json") or {}, recipe_id=recipe_id)
-            recipe_errors.extend([f"{rec.get('path').name}: {e}" for e in errs])
+            rec_path = rec.get("path")
+            rec_name = rec_path.name if isinstance(rec_path, Path) else str(recipe_id)
+            recipe_errors.extend([f"{rec_name}: {e}" for e in errs])
 
         if recipe_errors:
             raise ValueError(

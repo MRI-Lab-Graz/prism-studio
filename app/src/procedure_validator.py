@@ -81,9 +81,9 @@ def validate_procedure(project_path: Path, rawdata_path: Path) -> List[Tuple[str
                     for mod_dir in item.iterdir():
                         if not mod_dir.is_dir():
                             continue
-                        for f in mod_dir.iterdir():
-                            if f.is_file() and "_task-" in f.name:
-                                m = re.search(r"_task-([^_]+)", f.name)
+                        for data_file in mod_dir.iterdir():
+                            if data_file.is_file() and "_task-" in data_file.name:
+                                m = re.search(r"_task-([^_]+)", data_file.name)
                                 if m:
                                     disk_set.add((ses_id, m.group(1)))
 
