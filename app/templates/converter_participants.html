@@ -41,7 +41,7 @@
             <!-- Action Buttons -->
             <div class="row g-3 mt-4">
                 <div class="col-md-4">
-                    <button class="btn btn-outline-success text-dark w-100" type="button" data-bs-toggle="modal" data-bs-target="#participantMappingModal">
+                    <button class="btn btn-outline-success text-dark w-100" type="button" id="createParticipantMappingBtn">
                         <i class="fas fa-list-check me-2"></i>Create Participant Mapping
                     </button>
                     <small class="form-text text-muted">Define column mappings to participants.json schema</small>
@@ -379,6 +379,22 @@ document.getElementById('participantsPreviewBtn')?.addEventListener('click', asy
             });
             tbody.appendChild(tr);
         });
+
+        // Make preview columns immediately available to the NeuroBagel quick editor
+        // so users can map uploaded TSV fields before conversion.
+        const previewColumnValues = {};
+        data.columns.forEach(col => {
+            const values = [];
+            data.preview_rows.forEach(row => {
+                const raw = row[col];
+                if (raw !== null && raw !== undefined && String(raw).trim() !== '') {
+                    values.push(String(raw));
+                }
+            });
+            previewColumnValues[col] = [...new Set(values)].slice(0, 50);
+        });
+        window.participantsTsvData = previewColumnValues;
+        console.log('✅ Set window.participantsTsvData from preview:', Object.keys(window.participantsTsvData));
         
         previewResults.classList.remove('d-none');
         
