@@ -465,9 +465,8 @@ class ProjectManager:
             "Name": name,
             "BIDSVersion": "1.10.1",
             "DatasetType": config.get("dataset_type", "raw"),
-            "Description": config.get(
-                "description", "A PRISM-compatible dataset for psychological research."
-            ),
+            "Description": config.get("description")
+            or "A PRISM-compatible dataset for psychological research.",
             "License": config.get("license", "CC0"),
             "Authors": config.get("authors", ["TODO: Add author names"]),
             "Acknowledgements": config.get("acknowledgements", ""),

@@ -928,6 +928,49 @@ def save_dataset_description():
         )
 
 
+@projects_bp.route("/api/projects/description/validate", methods=["POST"])
+def validate_dataset_description_draft():
+    """Validate a draft dataset_description payload (without saving)."""
+    try:
+        data = request.get_json()
+        if not data or "description" not in data:
+            return (
+                jsonify({"success": False, "error": "No description data provided"}),
+                400,
+            )
+
+        description = data.get("description") or {}
+        if not isinstance(description, dict):
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "error": "Description must be an object",
+                    }
+                ),
+                400,
+            )
+
+        citation_fields = data.get("citation_fields") or {}
+        if not isinstance(citation_fields, dict):
+            citation_fields = {}
+
+        validation_description = _merge_citation_fields(description, citation_fields)
+        issues = _project_manager.validate_dataset_description(validation_description)
+
+        return jsonify({"success": True, "issues": issues})
+    except Exception as e:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "error": f"Failed to validate description draft: {str(e)}",
+                }
+            ),
+            500,
+        )
+
+
 @projects_bp.route("/api/projects/participants/columns", methods=["GET"])
 def get_participants_columns():
     """Extract unique values from project's participants.tsv."""
