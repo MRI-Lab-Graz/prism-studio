@@ -5,7 +5,7 @@ Validates survey/biometrics template structure, metadata completeness, and item 
 
 import json
 from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional, Set
 
 
 class TemplateValidationError:
@@ -17,8 +17,8 @@ class TemplateValidationError:
         error_type: str,
         message: str,
         severity: str = "error",
-        item: str = None,
-        details: str = None,
+        item: Optional[str] = None,
+        details: Optional[str] = None,
     ):
         self.file = file
         self.error_type = error_type
@@ -101,8 +101,8 @@ class TemplateValidator:
         Returns:
             Tuple of (error_list, summary_dict)
         """
-        errors = []
-        summary = {
+        errors: List[TemplateValidationError] = []
+        summary: Dict[str, Any] = {
             "total_files": 0,
             "valid_files": 0,
             "files_with_errors": 0,
@@ -156,7 +156,7 @@ class TemplateValidator:
         Returns:
             List of validation errors (empty if valid)
         """
-        errors = []
+        errors: List[TemplateValidationError] = []
         file_name = file_path.name
 
         # 1. Check if file can be parsed as JSON
@@ -231,7 +231,7 @@ class TemplateValidator:
         self, file_name: str, study_data: Any
     ) -> List[TemplateValidationError]:
         """Validate Study metadata section."""
-        errors = []
+        errors: List[TemplateValidationError] = []
 
         if not isinstance(study_data, dict):
             errors.append(
@@ -334,7 +334,7 @@ class TemplateValidator:
         self, file_name: str, i18n_data: Any
     ) -> List[TemplateValidationError]:
         """Validate internationalization (I18n) settings."""
-        errors = []
+        errors: List[TemplateValidationError] = []
 
         if not isinstance(i18n_data, dict):
             errors.append(
@@ -415,7 +415,7 @@ class TemplateValidator:
         self, file_name: str, items: Dict[str, Any]
     ) -> List[TemplateValidationError]:
         """Validate item definitions."""
-        errors = []
+        errors: List[TemplateValidationError] = []
 
         if not items:
             return errors
@@ -544,7 +544,7 @@ class TemplateValidator:
         # Check Levels i18n consistency
         if isinstance(item_def.get("Levels"), dict):
             levels = item_def["Levels"]
-            level_languages = set()
+            level_languages: Set[str] = set()
 
             for level_def in levels.values():
                 if isinstance(level_def, dict):
@@ -577,7 +577,7 @@ class TemplateValidator:
         """
         import re
 
-        errors = []
+        errors: List[TemplateValidationError] = []
         lang_re = re.compile(r"^[a-z]{2}(-[A-Z]{2})?$")
         items = self._extract_items(data)
         if not items:
@@ -588,7 +588,7 @@ class TemplateValidator:
             technical_lang = data["Technical"].get("Language")
 
         # Collect per-item language keys from Description dicts
-        item_desc_langs: Dict[str, set] = {}
+        item_desc_langs: Dict[str, Set[str]] = {}
         # Collect per-language description texts for fake-translation check
         lang_desc_texts: Dict[str, List[str]] = {}
 
@@ -793,7 +793,11 @@ def validate_templates(
             print(f"{'-' * 70}")
 
             # Group errors by severity
-            errors_by_severity = {"error": [], "warning": [], "info": []}
+            errors_by_severity: Dict[str, List[TemplateValidationError]] = {
+                "error": [],
+                "warning": [],
+                "info": [],
+            }
             for error in errors:
                 errors_by_severity[error.severity].append(error)
 

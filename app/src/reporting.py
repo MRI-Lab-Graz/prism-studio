@@ -193,7 +193,7 @@ def _format_reference(ref: dict, lang: str = "en") -> str:
 
 def _pick_references(study: dict, lang: str = "en") -> dict:
     """Return a small structured set of references for reporting."""
-    out = {
+    out: dict[str, str | None] = {
         "primary": None,
         "manual": None,
         "translation": None,
@@ -517,7 +517,7 @@ def generate_full_methods(
     eligibility = project_data.get("Eligibility") or {}
     has_pstats = bool(pstats.get("n"))
     if recruitment or eligibility or has_pstats:
-        parts: list[str] = []
+        parts = []
 
         if has_pstats:
             n = pstats["n"]
@@ -620,7 +620,7 @@ def generate_full_methods(
     cond_type = conditions.get("Type", "")
     groups = conditions.get("Groups") or []
     if cond_type and groups and not is_brief:
-        parts: list[str] = []
+        parts = []
         parts.append(
             f"The study used a {cond_type.replace('-', ' ')} design with {len(groups)} conditions:"
         )
@@ -644,7 +644,7 @@ def generate_full_methods(
     sessions = project_data.get("Sessions") or []
     task_defs = project_data.get("TaskDefinitions") or {}
     if procedure or sessions:
-        parts: list[str] = []
+        parts = []
         overview = procedure.get("Overview", "")
         if overview:
             parts.append(overview.rstrip(".") + ".")
@@ -896,7 +896,7 @@ def generate_full_methods(
     # --- Data Collection ---
     dc = project_data.get("DataCollection") or {}
     if dc:
-        parts: list[str] = []
+        parts = []
         platform = dc.get("Platform", "")
         platform_ver = dc.get("PlatformVersion", "")
         method = dc.get("Method", "")
@@ -955,7 +955,7 @@ def generate_full_methods(
     qc = (procedure.get("QualityControl") or []) if procedure else []
     missing_data = (procedure.get("MissingDataHandling") or "") if procedure else ""
     if (qc or missing_data) and not is_brief:
-        parts: list[str] = []
+        parts = []
         if qc:
             joined = "; ".join(item.rstrip(".") for item in qc)
             parts.append(f"Quality control measures included: {joined}.")
