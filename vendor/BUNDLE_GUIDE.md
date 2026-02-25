@@ -35,7 +35,7 @@ Copy the **entire pyedflib folder** from the Windows VM to your Mac:
 - Transfer it to your Mac (via shared folder, USB, network, etc.)
 
 **On Mac:**
-Paste it into: `/Users/karl/work/github/prism-studio/vendor/`
+Paste it into: `/path/to/psycho-validator/vendor/`
 
 Your structure should look like:
 ```
@@ -52,7 +52,7 @@ vendor/
 ### Step 3: Test It
 
 ```bash
-cd /Users/karl/work/github/prism-studio
+cd /path/to/psycho-validator
 source .venv/bin/activate
 python -c "import sys; sys.path.insert(0, 'vendor'); import pyedflib; print('Success!', pyedflib.__version__)"
 ```
@@ -71,7 +71,7 @@ If you want a cleaner approach:
 
 ```bash
 # On your Mac:
-cd /Users/karl/work/github/prism-studio/vendor
+cd /path/to/psycho-validator/vendor
 mkdir -p wheels
 
 # Download Windows wheels for different Python versions

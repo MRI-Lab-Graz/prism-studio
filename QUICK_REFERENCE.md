@@ -127,7 +127,7 @@ df['x'].isna()  # ← Automatically detects empty cells
 ## Test It
 
 ```bash
-cd /Users/karl/work/github/prism-studio
+cd /path/to/psycho-validator
 source .venv/bin/activate
 python test_eyetracking_normalization.py
 ```

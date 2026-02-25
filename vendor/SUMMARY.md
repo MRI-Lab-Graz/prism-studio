@@ -46,10 +46,10 @@ Copy the `pyedflib` folder.
 
 ### On Your Mac:
 
-Paste into `/Users/karl/work/github/prism-studio/vendor/`
+Paste into `/path/to/psycho-validator/vendor/`
 
 ```bash
-cd /Users/karl/work/github/prism-studio
+cd /path/to/psycho-validator
 git add vendor/pyedflib/
 git commit -m "Bundle pre-compiled pyedflib for Windows"
 git push

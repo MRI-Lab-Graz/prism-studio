@@ -40,13 +40,13 @@ explorer [paste path here]
 
 Paste `pyedflib` folder into:
 ```
-/Users/karl/work/github/prism-studio/vendor/
+/path/to/psycho-validator/vendor/
 ```
 
 ### Step 3: Verify (30 seconds)
 
 ```bash
-cd /Users/karl/work/github/prism-studio
+cd /path/to/psycho-validator
 python vendor/verify_structure.py
 ```
 

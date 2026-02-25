@@ -48,7 +48,7 @@ Right-click the `pyedflib` folder → Copy
 
 Open Finder and navigate to:
 ```
-/Users/karl/work/github/prism-studio/vendor/
+/path/to/psycho-validator/vendor/
 ```
 
 Paste the `pyedflib` folder there.
@@ -57,7 +57,7 @@ Paste the `pyedflib` folder there.
 
 Open Terminal and check:
 ```bash
-cd /Users/karl/work/github/prism-studio
+cd /path/to/psycho-validator
 ls -la vendor/pyedflib/
 ```
 
@@ -143,7 +143,7 @@ If you prefer not to use your Windows VM:
 
 ```bash
 # On your Mac:
-cd /Users/karl/work/github/prism-studio/vendor
+cd /path/to/psycho-validator/vendor
 mkdir -p wheels
 
 # Download pre-compiled wheels

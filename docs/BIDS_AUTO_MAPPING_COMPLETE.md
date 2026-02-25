@@ -286,7 +286,7 @@
 
 ### Run Validation Tests
 ```bash
-cd /Users/karl/work/github/prism-studio
+cd /path/to/psycho-validator
 python3 scripts/test_bids_compliance.py
 ```
 Expected: All tests pass (✓ marks on all test cases)
