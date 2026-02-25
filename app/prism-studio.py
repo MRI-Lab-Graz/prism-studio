@@ -417,6 +417,7 @@ def specifications():
 @app.route("/shutdown", methods=["POST"])
 def shutdown():
     """Shutdown the server"""
+
     def terminate_process():
         time.sleep(0.35)
         print("🛑 Shutting down server...")
@@ -439,6 +440,7 @@ def shutdown():
     # Try Werkzeug shutdown first (works in Flask dev server)
     func = request.environ.get("werkzeug.server.shutdown")
     if callable(func):
+
         def werkzeug_shutdown():
             time.sleep(0.15)
             func()

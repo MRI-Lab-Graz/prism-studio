@@ -1346,7 +1346,7 @@ def _export_recipe_aggregated(
         except Exception:
             df.to_excel(out_fname, index=False)
     elif out_format == "save":
-        out_fname = out_root / f"{recipe_id}.sav"
+        out_fname = out_root / f"{recipe_id}.save"
         try:
             import pyreadstat
 

@@ -315,7 +315,9 @@ class ParticipantsConverter:
                         "INFO",
                         f"Normalized participant IDs to BIDS format for {normalized_non_null} rows",
                     )
-                    messages.append("✓ Normalized participant_id values to BIDS format (sub-<label>)")
+                    messages.append(
+                        "✓ Normalized participant_id values to BIDS format (sub-<label>)"
+                    )
 
                 output_df[standard_variable] = column_data
                 self._log("INFO", f"Mapped '{source_column}' → '{standard_variable}'")
@@ -335,7 +337,9 @@ class ParticipantsConverter:
                 self._normalize_participant_id
             )
         else:
-            participant_ids = pd.Series([None] * len(df), index=df.index, dtype="object")
+            participant_ids = pd.Series(
+                [None] * len(df), index=df.index, dtype="object"
+            )
 
         # If participant_id is missing or empty, try to recover from source columns
         if participant_ids.notna().sum() == 0:

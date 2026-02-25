@@ -135,7 +135,9 @@ def test_case_sensitivity():
                 "   WARN Warning: Windows filesystem detected as case-sensitive (unusual)"
             )
         elif not sys.platform.startswith("win") and not is_case_sensitive:
-            print("   WARN Warning: Non-Windows filesystem detected as case-insensitive")
+            print(
+                "   WARN Warning: Non-Windows filesystem detected as case-insensitive"
+            )
         else:
             print("   OK Case sensitivity detection matches expected platform behavior")
 
