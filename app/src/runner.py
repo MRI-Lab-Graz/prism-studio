@@ -244,6 +244,7 @@ def validate_dataset(
             (
                 "ERROR",
                 "No subjects found in dataset. Did you point the validator at the dataset root?",
+                root_dir,
             )
         )
 

@@ -16,7 +16,7 @@ def run_bids_validator(
     verbose: bool = False,
     placeholders: Optional[Set[str]] = None,
     structure_only: bool = False,
-) -> List[Tuple[str, str]]:
+) -> List[Tuple[str, str, str]]:
     """
     Run the standard BIDS validator CLI and return issues.
 
@@ -27,7 +27,7 @@ def run_bids_validator(
         structure_only: Whether this is a structure-only upload (suppress content errors)
 
     Returns:
-        List of (severity, message) tuples
+        List of (severity, message, file_path) tuples
     """
     issues = []
     print("\n🤖 Running standard BIDS Validator...")
@@ -187,7 +187,7 @@ def run_bids_validator(
                         msg += f"\n    Location: {location}"
 
                     # Try to extract a specific file path from the location
-                    issue_file = None
+                    issue_file: Optional[str] = None
                     if location:
                         # Deno location starts with /
                         if location.startswith("/"):
@@ -198,7 +198,7 @@ def run_bids_validator(
                     if issue_file:
                         issues.append((level, msg, issue_file))
                     else:
-                        issues.append((level, msg))
+                        issues.append((level, msg, root_dir))
 
                 return issues
 
@@ -299,7 +299,7 @@ def run_bids_validator(
                         if first_file:
                             issues.append((level, msg, first_file))
                         else:
-                            issues.append((level, msg))
+                            issues.append((level, msg, root_dir))
 
             except json.JSONDecodeError:
                 if verbose:
@@ -308,19 +308,24 @@ def run_bids_validator(
                     (
                         "INFO",
                         "BIDS Validator ran but output could not be parsed. See console for details if verbose.",
+                        root_dir,
                     )
                 )
 
         if process.returncode != 0 and not issues:
-            issues.append(("ERROR", f"BIDS Validator failed to run: {process.stderr}"))
+            issues.append(("ERROR", f"BIDS Validator failed to run: {process.stderr}", root_dir))
 
     except (subprocess.CalledProcessError, FileNotFoundError):
         if deno_failure_message:
             issues.append(
-                ("WARNING", f"BIDS Validator (Deno) failed: {deno_failure_message}")
+                (
+                    "WARNING",
+                    f"BIDS Validator (Deno) failed: {deno_failure_message}",
+                    root_dir,
+                )
             )
         issues.append(
-            ("WARNING", "bids-validator not found or failed to run. Is it installed?")
+            ("WARNING", "bids-validator not found or failed to run. Is it installed?", root_dir)
         )
 
     return issues

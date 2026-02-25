@@ -10,10 +10,13 @@ import pandas as pd
 from pathlib import Path
 import argparse
 import sys
+from typing import Optional
 
 
 def fix_numeric_columns(
-    tsv_path: str | Path, output_path: str | Path = None, dry_run: bool = False
+    tsv_path: str | Path,
+    output_path: Optional[str | Path] = None,
+    dry_run: bool = False,
 ):
     """
     Fix numeric columns in a TSV file.

@@ -1,10 +1,10 @@
 # Core dependencies
 jsonschema
-Pillow
+Pillow>=12.1.1
 numpy
 Nibabel
-Flask>=2.0.0
-Werkzeug>=2.0.0
+Flask>=3.1.3
+Werkzeug>=3.1.6
 bidsschematools>=0.8.0
 requests>=2.25.0
 bids-validator
@@ -14,6 +14,7 @@ waitress
 pyreadstat
 beautifulsoup4
 colorama
+cryptography>=46.0.5
 
 # Note: tkinter (required for folder picker on Windows/Linux) is part of Python's
 # standard library but requires system installation. Cannot be installed via pip.

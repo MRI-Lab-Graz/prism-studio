@@ -300,7 +300,7 @@ class AppSettings:
         return d
 
 
-def get_app_settings_path(app_root: str = None) -> str:
+def get_app_settings_path(app_root: Optional[str] = None) -> str:
     """
     Get the path to the app settings file.
 
@@ -327,7 +327,7 @@ def get_app_settings_path(app_root: str = None) -> str:
     return os.path.join(app_root, APP_SETTINGS_FILENAME)
 
 
-def load_app_settings(app_root: str = None) -> AppSettings:
+def load_app_settings(app_root: Optional[str] = None) -> AppSettings:
     """
     Load app-level settings.
 
@@ -362,7 +362,7 @@ def load_app_settings(app_root: str = None) -> AppSettings:
         return AppSettings()
 
 
-def save_app_settings(settings: AppSettings, app_root: str = None) -> str:
+def save_app_settings(settings: AppSettings, app_root: Optional[str] = None) -> str:
     """
     Save app-level settings.
 
@@ -397,7 +397,7 @@ def save_app_settings(settings: AppSettings, app_root: str = None) -> str:
 
 
 def get_effective_library_paths(
-    app_root: str = None, app_settings: AppSettings = None
+    app_root: Optional[str] = None, app_settings: Optional[AppSettings] = None
 ) -> Dict[str, Optional[str]]:
     """
     Get the effective global library and recipe paths.
@@ -426,7 +426,7 @@ def get_effective_library_paths(
         # Use parent directory of the src folder (i.e., the app/ folder)
         app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    result = {
+    result: Dict[str, Optional[str]] = {
         "global_library_root": None,
         "global_library_path": None,
         "global_recipe_path": None,
@@ -469,7 +469,9 @@ def get_effective_library_paths(
 
 
 def get_effective_template_library_path(
-    project_path: str = None, app_settings: AppSettings = None, app_root: str = None
+    project_path: Optional[str] = None,
+    app_settings: Optional[AppSettings] = None,
+    app_root: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Get the effective template library paths considering both global and project settings.

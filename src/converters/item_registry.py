@@ -153,7 +153,7 @@ class ItemRegistry:
         template_name: str,
         description: str = "",
         source_type: str = "import",
-        item_data: dict = None,
+        item_data: dict | None = None,
     ) -> None:
         """Register a new item from an import.
 

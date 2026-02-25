@@ -11,12 +11,13 @@ import pandas as pd
 from pathlib import Path
 import argparse
 import sys
+from typing import Optional, Any
 
 
 def fix_participants_tsv(
     tsv_path: str | Path,
-    output_path: str | Path = None,
-    sex_mapping: dict = None,
+    output_path: Optional[str | Path] = None,
+    sex_mapping: Optional[dict[Any, Any]] = None,
     dry_run: bool = False,
 ):
     """

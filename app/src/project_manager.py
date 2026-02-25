@@ -225,18 +225,15 @@ class ProjectManager:
                 "fixable_issues": [],
             }
 
-        issues = []
-        fixable_issues = []
-        stats = {
-            "subjects": 0,
-            "sessions": set(),
-            "modalities": set(),
-            "has_dataset_description": False,
-            "has_participants_tsv": False,
-            "has_participants_json": False,
-            "has_bidsignore": False,
-            "is_yoda": False,
-        }
+        issues: List[Dict[str, Any]] = []
+        fixable_issues: List[str] = []
+        subject_count = 0
+        sessions: set[str] = set()
+        modalities: set[str] = set()
+        has_dataset_description = False
+        has_participants_tsv = False
+        has_participants_json = False
+        has_bidsignore = False
 
         # Require project.json at the project root
         project_json_path = project_path / "project.json"
@@ -257,7 +254,7 @@ class ProjectManager:
 
         # Check root files (in the identified BIDS root)
         if (bids_root / "dataset_description.json").exists():
-            stats["has_dataset_description"] = True
+            has_dataset_description = True
         else:
             code = "PRISM001"
             msg = "Missing dataset_description.json"
@@ -272,7 +269,7 @@ class ProjectManager:
             fixable_issues.append(code)
 
         if (bids_root / "participants.tsv").exists():
-            stats["has_participants_tsv"] = True
+            has_participants_tsv = True
         else:
             code = "PRISM004"
             msg = "Missing participants.tsv"
@@ -286,35 +283,42 @@ class ProjectManager:
             )
 
         if (bids_root / "participants.json").exists():
-            stats["has_participants_json"] = True
+            has_participants_json = True
 
         if (bids_root / ".bidsignore").exists():
-            stats["has_bidsignore"] = True
+            has_bidsignore = True
 
         # Scan for subjects in BIDS root
         for item in bids_root.iterdir():
             if item.is_dir() and item.name.startswith("sub-"):
-                stats["subjects"] += 1
+                subject_count += 1
 
                 # Check for sessions
                 for sub_item in item.iterdir():
                     if sub_item.is_dir():
                         if sub_item.name.startswith("ses-"):
-                            stats["sessions"].add(sub_item.name)
+                            sessions.add(sub_item.name)
                             # Check modalities in session
                             for mod_item in sub_item.iterdir():
                                 if (
                                     mod_item.is_dir()
                                     and mod_item.name in PRISM_MODALITIES
                                 ):
-                                    stats["modalities"].add(mod_item.name)
+                                    modalities.add(mod_item.name)
                         elif sub_item.name in PRISM_MODALITIES:
                             # Direct modality folder (no session)
-                            stats["modalities"].add(sub_item.name)
+                            modalities.add(sub_item.name)
 
-        # Convert sets to lists for JSON serialization
-        stats["sessions"] = sorted(list(stats["sessions"]))
-        stats["modalities"] = sorted(list(stats["modalities"]))
+        stats = {
+            "subjects": subject_count,
+            "sessions": sorted(sessions),
+            "modalities": sorted(modalities),
+            "has_dataset_description": has_dataset_description,
+            "has_participants_tsv": has_participants_tsv,
+            "has_participants_json": has_participants_json,
+            "has_bidsignore": has_bidsignore,
+            "is_yoda": False,
+        }
 
         # Use DatasetFixer to find additional fixable issues
         try:
@@ -455,7 +459,7 @@ class ProjectManager:
     # =========================================================================
 
     def _create_dataset_description(
-        self, name: str, config: Dict[str, Any] = None
+        self, name: str, config: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Create dataset_description.json content following BIDS v1.10.1."""
         if config is None:

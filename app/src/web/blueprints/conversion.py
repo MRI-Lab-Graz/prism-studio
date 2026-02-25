@@ -13,10 +13,12 @@ import zipfile
 import base64
 import unicodedata
 from pathlib import Path
+from typing import Any
 from flask import Blueprint, request, jsonify, send_file, current_app, session
 from werkzeug.utils import secure_filename
-from src.web.utils import list_survey_template_languages, sanitize_jsonable
-from src.web import run_validation
+from src.web.survey_utils import list_survey_template_languages
+from src.web.reporting_utils import sanitize_jsonable
+from src.web.validation import run_validation
 
 try:
     import defusedxml.ElementTree as ET
@@ -48,6 +50,13 @@ def _normalize_filename(name: str) -> str:
 
 
 # Import conversion logic
+convert_survey_xlsx_to_prism_dataset: Any = None
+convert_survey_lsa_to_prism_dataset: Any = None
+infer_lsa_metadata: Any = None
+MissingIdMappingError: Any = None
+UnmatchedGroupsError: Any = None
+_NON_ITEM_TOPLEVEL_KEYS: set[str] = set()
+
 try:
     from src.converters.survey import (
         convert_survey_xlsx_to_prism_dataset,
@@ -58,28 +67,29 @@ try:
         _NON_ITEM_TOPLEVEL_KEYS,
     )
 except ImportError:
-    convert_survey_xlsx_to_prism_dataset = None
-    convert_survey_lsa_to_prism_dataset = None
-    infer_lsa_metadata = None
-    MissingIdMappingError = None
-    UnmatchedGroupsError = None
-    _NON_ITEM_TOPLEVEL_KEYS = set()
+    pass
 
+IdColumnNotDetectedError: Any = None
 try:
     from src.converters.id_detection import IdColumnNotDetectedError
 except ImportError:
-    IdColumnNotDetectedError = None
+    pass
 
+convert_biometrics_table_to_prism_dataset: Any = None
 try:
     from src.converters.biometrics import convert_biometrics_table_to_prism_dataset
 except ImportError:
-    convert_biometrics_table_to_prism_dataset = None
+    pass
 
+convert_varioport: Any = None
 try:
     from helpers.physio.convert_varioport import convert_varioport
 except ImportError:
-    convert_varioport = None
+    pass
 
+batch_convert_folder: Any = None
+create_dataset_description: Any = None
+parse_bids_filename: Any = None
 try:
     from src.batch_convert import (
         batch_convert_folder,
@@ -87,14 +97,12 @@ try:
         parse_bids_filename,
     )
 except ImportError:
-    batch_convert_folder = None
-    create_dataset_description = None
-    parse_bids_filename = None
+    pass
 
 conversion_bp = Blueprint("conversion", __name__)
 
 # Batch conversion job tracking
-_batch_convert_jobs = {}
+_batch_convert_jobs: dict[str, Any] = {}
 
 # Keep backward-compatible wrappers for any internal calls
 _participant_json_candidates = participant_json_candidates
