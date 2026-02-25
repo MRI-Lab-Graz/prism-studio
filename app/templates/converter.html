@@ -1025,6 +1025,37 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(() => {});
     }
 
+    function populateSurveySessionPickerFromDetected(detectedSessions) {
+        if (!convertSessionSelect || !Array.isArray(detectedSessions) || detectedSessions.length === 0) {
+            return false;
+        }
+
+        while (convertSessionSelect.options.length > 1) {
+            convertSessionSelect.remove(1);
+        }
+
+        const allOpt = document.createElement('option');
+        allOpt.value = 'all';
+        allOpt.textContent = '✓ All sessions';
+        convertSessionSelect.appendChild(allOpt);
+
+        detectedSessions.forEach((ses) => {
+            const opt = document.createElement('option');
+            opt.value = ses;
+            opt.textContent = ses;
+            convertSessionSelect.appendChild(opt);
+        });
+
+        if (!getSurveySessionValue()) {
+            convertSessionSelect.value = 'all';
+        }
+        if (convertSessionCustom) {
+            convertSessionCustom.value = '';
+        }
+
+        return true;
+    }
+
     // Resolve the effective session value: select wins if set, otherwise custom input
     function getSessionValue(selectEl, customEl) {
         const selVal = selectEl ? selectEl.value.trim() : '';
@@ -1160,6 +1191,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     const data = await response.json();
                     window._isPrismData = !!data.is_prism_data;
 
+                    const sessionsLoaded = populateSurveySessionPickerFromDetected(data.detected_sessions);
+                    if (!sessionsLoaded) {
+                        populateSessionPickers();
+                    }
+
                     if (data.columns && data.columns.length > 0) {
                         // Add detected columns
                         data.columns.forEach(col => {
@@ -1264,6 +1300,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             convertInfo.classList.add('d-none');
             resetDetectedColumnsState();
+            populateSessionPickers();
         }
         updateConvertBtn();
     });
@@ -3122,6 +3159,16 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(async response => {
             const data = await response.json();
+            
+            // DEBUG: Log the FULL response to understand structure
+            console.log('[SURVEY-PREVIEW FULL RESPONSE]', data);
+            console.log('[SURVEY-PREVIEW RESPONSE]', {
+                status: response.ok,
+                detected_sessions: data.detected_sessions,
+                session_column: data.session_column,
+                has_preview: !!data.preview,
+                all_keys: Object.keys(data)
+            });
 
             if (!response.ok) {
                 if (data.error === 'id_column_required') {
@@ -3137,6 +3184,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     return null;
                 }
                 throw new Error(data.error || 'Preview failed');
+            }
+
+            const sessionsLoaded = populateSurveySessionPickerFromDetected(data.detected_sessions);
+            if (sessionsLoaded) {
+                appendLog(`✓ Sessions auto-detected: ${data.detected_sessions.join(', ')}`, 'success');
+            } else if (data.session_column) {
+                appendLog(`⚠ Session column '${data.session_column}' found but no sessions detected. Enter session manually.`, 'warning');
             }
 
             const preview = data.preview;

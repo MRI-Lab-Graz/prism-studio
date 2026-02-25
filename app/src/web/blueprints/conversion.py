@@ -1274,9 +1274,14 @@ def api_survey_convert_preview():
             "missing_items_by_task": result.missing_items_by_task,
             "id_column": result.id_column,
             "session_column": result.session_column,
+            "detected_sessions": result.detected_sessions,
             "conversion_warnings": result.conversion_warnings,
             "task_runs": result.task_runs,
         }
+        
+        # DEBUG: Log what we're returning
+        print(f"[API DEBUG] Returning detected_sessions: {response_data.get('detected_sessions')}")
+        print(f"[API DEBUG] Returning session_column: {response_data.get('session_column')}")
 
         if validation_result is not None:
             response_data["validation"] = validation_result
@@ -1335,6 +1340,11 @@ def api_survey_convert_preview():
         if conv_summary:
             response_data["conversion_summary"] = conv_summary
 
+        # DEBUG: Verify detected_sessions is in response before sending
+        print(f"[API RESPONSE DEBUG] Final response_data keys: {list(response_data.keys())}")
+        print(f"[API RESPONSE DEBUG] detected_sessions value: {response_data.get('detected_sessions')}")
+        print(f"[API RESPONSE DEBUG] detected_sessions type: {type(response_data.get('detected_sessions'))}")
+        
         return jsonify(response_data)
     except IdColumnNotDetectedError as e:
         return (
