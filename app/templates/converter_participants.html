@@ -177,25 +177,6 @@
                             </button>
                         </div>
                         <div class="card-body">
-                            <!-- Full NeuroBagel Tool Link (for controlled vocabularies) -->
-                            <div class="alert alert-info mb-3">
-                                <i class="fas fa-lightbulb me-2"></i>
-                                <strong>Need SNOMED-CT, NIDM or other controlled vocabularies?</strong><br>
-                                <small class="text-muted">Use the official NeuroBagel tool for full semantic harmonization with ontology lookups:</small>
-                                <div class="mt-2">
-                                    <a href="https://annotate.neurobagel.org/" target="_blank" class="btn btn-sm btn-info">
-                                        <i class="fas fa-external-link-alt me-1"></i>Open Full NeuroBagel Annotation Tool
-                                    </a>
-                                </div>
-                            </div>
-                            
-                            <hr>
-                            
-                            <p class="text-muted small mb-3">
-                                <strong>Quick Editor:</strong> Add descriptions and level labels to your participants.json. 
-                                This simplified editor auto-detects columns from your participants.tsv file.
-                            </p>
-                            
                             <!-- Embedded NeuroBagel widget placeholder -->
                             <div id="neurobagelWidgetContainer"></div>
                             
@@ -206,6 +187,20 @@
                                 <button class="btn btn-outline-secondary" id="cancelNeurobagelBtn">
                                     <i class="fas fa-times me-1"></i>Cancel
                                 </button>
+                            </div>
+                            
+                            <hr class="my-3">
+                            
+                            <!-- Full NeuroBagel Tool Link (for controlled vocabularies) -->
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <strong>Need SNOMED-CT, NIDM or other controlled vocabularies?</strong><br>
+                                <small class="text-muted">Use the official NeuroBagel tool for full semantic harmonization with ontology lookups:</small>
+                                <div class="mt-2">
+                                    <a href="https://annotate.neurobagel.org/" target="_blank" class="btn btn-sm btn-info">
+                                        <i class="fas fa-external-link-alt me-1"></i>Open Full NeuroBagel Annotation Tool
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -728,7 +723,23 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
     // Build the annotated participants.json (BIDS + NeuroBagel Enrichment)
     const annotatedData = {};
     
+    // Get TSV columns to filter out suggestions
+    const tsvColumns = window.participantsTsvData ? Object.keys(window.participantsTsvData) : [];
+    console.log('💾 Saving only columns present in TSV:', tsvColumns);
+    
     for (const [colName, colData] of Object.entries(allColumns)) {
+        // Only save columns that exist in the actual TSV file
+        const colNameLower = colName.toLowerCase().replace(/_/g, '');
+        const isInTsv = tsvColumns.some(c => {
+            const cLower = c.toLowerCase().replace(/_/g, '');
+            return cLower === colNameLower || cLower === colName.toLowerCase();
+        });
+        
+        if (!isInTsv) {
+            console.log(`⏭️ Skipping "${colName}" - not in TSV`);
+            continue;
+        }
+        
         annotatedData[colName] = {
             Description: colData.description || colData.Description || ""
         };
@@ -796,8 +807,9 @@ document.getElementById('saveNeurobagelBtn')?.addEventListener('click', async fu
             successDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i><strong>Success!</strong> Participants schema saved to participants.json';
             successDiv.classList.remove('d-none');
             
-            document.getElementById('neurobagelSection').style.display = 'none';
-            document.getElementById('participantsHelp').style.display = 'block';
+            // Keep the editor open so user can continue annotating
+            // document.getElementById('neurobagelSection').style.display = 'none';
+            // document.getElementById('participantsHelp').style.display = 'block';
         } else {
             alert('Failed to save: ' + result.error);
         }
