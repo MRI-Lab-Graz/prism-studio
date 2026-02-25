@@ -29,6 +29,10 @@ EXTRA_BIDSIGNORE_RULES = {
     "prism_summary.json",
     "validation_report.json",
     ".upload_manifest.json",
+    "project.json",
+    "contributors.json",
+    "CITATION.cff",
+    ".prismrc.json",
     "survey/",  # Root survey definition folder
     "derivatives/",  # Explicitly ignore derivatives if needed
     "*_survey.*",  # Ignore any survey related data/sidecars

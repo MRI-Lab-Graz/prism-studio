@@ -90,6 +90,36 @@ class ParticipantsConverter:
 
         return f"sub-{label}"
 
+    @staticmethod
+    def _find_participant_id_source_column(columns: List[str]) -> str | None:
+        """Find the most likely participant ID source column from a table header."""
+        if not columns:
+            return None
+
+        # Prefer exact, explicit ID columns first
+        preferred_exact = [
+            "participant_id",
+            "prism_participant_id",
+            "participantid",
+            "subject_id",
+            "sub_id",
+            "subject",
+            "sub",
+            "id",
+        ]
+        by_lower = {str(c).strip().lower(): c for c in columns}
+        for key in preferred_exact:
+            if key in by_lower:
+                return by_lower[key]
+
+        # Fallback: columns that contain both "participant" and "id"
+        for column in columns:
+            lowered = str(column).strip().lower()
+            if "participant" in lowered and "id" in lowered:
+                return column
+
+        return None
+
     def load_mapping(self) -> Optional[Dict[str, Any]]:
         """
         Load the participants mapping specification from default location.
@@ -295,6 +325,61 @@ class ParticipantsConverter:
                 self._log("ERROR", f"Failed to map '{source_column}': {e}")
                 messages.append(f"✗ Failed to map '{source_column}': {e}")
                 continue
+
+        # Enforce BIDS-required participant_id column:
+        # - must exist
+        # - values must be normalized as sub-<label>
+        # - must be the first column
+        if "participant_id" in output_df.columns:
+            participant_ids = output_df["participant_id"].map(
+                self._normalize_participant_id
+            )
+        else:
+            participant_ids = pd.Series([None] * len(df), index=df.index, dtype="object")
+
+        # If participant_id is missing or empty, try to recover from source columns
+        if participant_ids.notna().sum() == 0:
+            source_id_col = self._find_participant_id_source_column(list(df.columns))
+            if source_id_col:
+                participant_ids = df[source_id_col].map(self._normalize_participant_id)
+                recovered_count = int(participant_ids.notna().sum())
+                self._log(
+                    "INFO",
+                    f"Recovered participant_id from source column '{source_id_col}' ({recovered_count} rows)",
+                )
+                messages.append(
+                    f"✓ Recovered participant_id from '{source_id_col}' and normalized to sub-<label>"
+                )
+
+        # Keep only rows with valid participant IDs (cannot be represented in BIDS otherwise)
+        valid_mask = participant_ids.notna()
+        dropped_rows = int((~valid_mask).sum())
+        if dropped_rows > 0:
+            output_df = output_df.loc[valid_mask].copy()
+            participant_ids = participant_ids.loc[valid_mask]
+            self._log(
+                "WARNING",
+                f"Dropped {dropped_rows} rows without valid participant_id",
+            )
+            messages.append(
+                f"⚠ Dropped {dropped_rows} rows without valid participant_id"
+            )
+
+        if int(participant_ids.notna().sum()) == 0:
+            error_msg = (
+                "Could not determine participant_id values. "
+                "Provide or map an ID column (e.g., participant_id, subject_id, sub, id)."
+            )
+            self._log("ERROR", error_msg)
+            messages.append(f"✗ {error_msg}")
+            return False, None, messages
+
+        # Insert/overwrite participant_id and reorder so it is always first
+        output_df["participant_id"] = participant_ids.values
+        ordered_columns = ["participant_id"] + [
+            col for col in output_df.columns if col != "participant_id"
+        ]
+        output_df = output_df[ordered_columns]
 
         # Write output
         if output_file is None:

@@ -326,7 +326,7 @@
                 Saving this form auto-generates an ANC-compliant README from this metadata.
             </div>
 
-            <form id="studyMetadataForm">
+            <form id="studyMetadataForm" novalidate>
                 <!-- Basics (BIDS) Section -->
                 <div class="mb-3">
                     <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
@@ -2850,6 +2850,39 @@
         console.log(`[${type}] ${message}`);
     }
 
+    function showTopFeedback(message, type = 'success') {
+        const level = (type || 'success').toLowerCase();
+        const bsType = level === 'danger' ? 'danger' : (level === 'warning' ? 'warning' : 'success');
+        const icon = bsType === 'danger'
+            ? 'fa-exclamation-triangle'
+            : (bsType === 'warning' ? 'fa-exclamation-circle' : 'fa-check-circle');
+
+        let host = document.getElementById('topFeedbackHost');
+        if (!host) {
+            host = document.createElement('div');
+            host.id = 'topFeedbackHost';
+            host.className = 'container-fluid mt-2';
+
+            const target = document.querySelector('main')
+                || document.querySelector('.container-fluid')
+                || document.body;
+            if (target.prepend) {
+                target.prepend(host);
+            } else {
+                document.body.insertBefore(host, document.body.firstChild);
+            }
+        }
+
+        host.innerHTML = `
+            <div class="alert alert-${bsType} alert-dismissible fade show shadow-sm" role="alert">
+                <i class="fas ${icon} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     // ===== DATA EXPORT / SHARE =====
     function showExportCard() {
         const card = document.getElementById('exportProjectCard');
@@ -3406,6 +3439,18 @@
     studyMetadataForm?.addEventListener('submit', async function(e) {
         e.preventDefault();
 
+        if (!this.checkValidity()) {
+            const firstInvalid = this.querySelector(':invalid');
+            showTopFeedback('Please complete the required Study Metadata fields before saving.', 'warning');
+            if (typeof this.reportValidity === 'function') {
+                this.reportValidity();
+            }
+            if (firstInvalid && firstInvalid.scrollIntoView) {
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return;
+        }
+
         const periodError = getRecPeriodRangeError();
         if (periodError) {
             showToast(periodError, 'danger');
@@ -3503,6 +3548,7 @@
             const result = await response.json();
             if (result.success) {
                 showToast('Study metadata saved', 'success');
+                showTopFeedback('Study metadata saved successfully.', 'success');
                 if (result.completeness) {
                     updateCompletenessUI(result.completeness);
                 }
@@ -3513,9 +3559,11 @@
                 await generateReadme();
             } else {
                 showToast('Failed to save: ' + result.error, 'danger');
+                showTopFeedback('Failed to save study metadata: ' + (result.error || 'Unknown error'), 'danger');
             }
         } catch (error) {
             showToast('Error: ' + error.message, 'danger');
+            showTopFeedback('Error while saving study metadata: ' + error.message, 'danger');
         } finally {
             setButtonLoading(btn, false, null, originalText);
         }
