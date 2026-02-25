@@ -774,12 +774,14 @@ Subfolders:
         author_lines = []
         for author in authors:
             given, family = self._split_author_name(str(author))
+            if not given and not family:
+                continue
             author_lines.append(f"  - family-names: {self._yaml_quote(family)}")
-            author_lines.append(f"    given-names: {self._yaml_quote(given)}")
+            if given:
+                author_lines.append(f"    given-names: {self._yaml_quote(given)}")
         if not author_lines:
             author_lines = [
-                "  - family-names: \"\"",
-                "    given-names: \"\"",
+                "  - name: \"TODO: Add author name\"",
             ]
 
         title = config.get("name", name)
