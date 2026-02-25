@@ -373,6 +373,9 @@ window.applyNeurobagelEnrichment = function(colName) {
   
   console.log(`✅ Applied ${concept} enrichment to ${colName}`);
   window.renderNeurobagelEditor(colName, colData);
+  
+  // Re-render widget sidebar to update variable categorization
+  window.renderNeurobagelWidget();
 };
 
 window.autoMatchNeurobagelConcepts = function() {
@@ -431,6 +434,21 @@ window.toggleNeurobagelWidget = function() {
 // Auto-detect data type for custom columns based on TSV values
 window.autoDetectDataType = function(colName, uniqueValues) {
   if (!uniqueValues || uniqueValues.length === 0) {
+    return 'text';
+  }
+
+  // Rule 0: Date/time-like columns should be text (not categorical)
+  const lowerName = String(colName || '').toLowerCase();
+  const hasDateNameHint = ['date', 'time', 'timestamp', 'datetime'].some(token => lowerName.includes(token));
+  const dateLikeRegex = /^(\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{4}[./-]\d{1,2}[./-]\d{1,2})(\s+\d{1,2}:\d{2}(:\d{2})?)?$/;
+  const dateLikeCount = uniqueValues.filter(v => {
+    const s = String(v ?? '').trim();
+    if (!s) return false;
+    if (dateLikeRegex.test(s)) return true;
+    const parsed = Date.parse(s);
+    return !Number.isNaN(parsed);
+  }).length;
+  if (hasDateNameHint || (dateLikeCount / uniqueValues.length) > 0.6) {
     return 'text';
   }
   
@@ -616,6 +634,32 @@ window.renderNeurobagelWidget = async function() {
       }
     }
   }
+
+  // Reconcile type using current TSV evidence (preview/local), so stale schema text
+  // types do not override clear categorical columns like education_level/sleep codes.
+  if (window.participantsTsvData) {
+    for (const [colName, uniqueValues] of Object.entries(window.participantsTsvData)) {
+      if (!enrichedData[colName]) continue;
+      const inferred = window.autoDetectDataType(colName, uniqueValues);
+      const currentType = (enrichedData[colName].data_type || '').toLowerCase();
+
+      if (inferred === 'categorical' && (currentType === 'text' || currentType === 'string' || currentType === 'unknown' || !currentType)) {
+        enrichedData[colName].data_type = 'categorical';
+        if (!enrichedData[colName].levels) {
+          enrichedData[colName].levels = {};
+        }
+        uniqueValues.forEach(value => {
+          if (!enrichedData[colName].levels[value]) {
+            enrichedData[colName].levels[value] = {
+              label: value,
+              description: '',
+              uri: null
+            };
+          }
+        });
+      }
+    }
+  }
   
   window.neurobagelWidgetState.allColumns = enrichedData;
   
@@ -650,7 +694,7 @@ window.renderNeurobagelWidget = async function() {
   }
   sidebar.innerHTML = '';
   
-  // AVAILABLE section
+  // AVAILABLE section - split into NeuroBagel harmonized and custom variables
   if (Object.keys(available).length > 0) {
     const availableSection = document.createElement('div');
     availableSection.style.marginBottom = '16px';
@@ -661,17 +705,68 @@ window.renderNeurobagelWidget = async function() {
     availableTitle.textContent = '✓ Available';
     availableSection.appendChild(availableTitle);
     
+    // Separate into harmonized (has standardized_variable) and custom
+    const harmonized = {};
+    const custom = {};
+    
     for (const [colName, colData] of Object.entries(available)) {
-      const item = document.createElement('div');
-      item.className = 'nb-column-item';
-      item.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-          <span>${colName}</span>
-          <span class="nb-column-item-type">${colData.data_type}</span>
-        </div>
-      `;
-      item.onclick = () => window.selectNeurobagelColumn(colName);
-      availableSection.appendChild(item);
+      if (colData.standardized_variable) {
+        harmonized[colName] = colData;
+      } else {
+        custom[colName] = colData;
+      }
+    }
+    
+    // Render NeuroBagel Harmonized subsection
+    if (Object.keys(harmonized).length > 0) {
+      const harmonizedSubtitle = document.createElement('div');
+      harmonizedSubtitle.style.fontSize = '11px';
+      harmonizedSubtitle.style.fontWeight = '600';
+      harmonizedSubtitle.style.color = '#0d6efd';
+      harmonizedSubtitle.style.marginTop = '8px';
+      harmonizedSubtitle.style.marginBottom = '4px';
+      harmonizedSubtitle.style.paddingLeft = '4px';
+      harmonizedSubtitle.textContent = '🔷 NEUROBAGEL HARMONIZED';
+      availableSection.appendChild(harmonizedSubtitle);
+      
+      for (const [colName, colData] of Object.entries(harmonized)) {
+        const item = document.createElement('div');
+        item.className = 'nb-column-item';
+        item.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <span>${colName}</span>
+            <span class="nb-column-item-type">${colData.data_type}</span>
+          </div>
+        `;
+        item.onclick = () => window.selectNeurobagelColumn(colName);
+        availableSection.appendChild(item);
+      }
+    }
+    
+    // Render Custom Variables subsection
+    if (Object.keys(custom).length > 0) {
+      const customSubtitle = document.createElement('div');
+      customSubtitle.style.fontSize = '11px';
+      customSubtitle.style.fontWeight = '600';
+      customSubtitle.style.color = '#6c757d';
+      customSubtitle.style.marginTop = '12px';
+      customSubtitle.style.marginBottom = '4px';
+      customSubtitle.style.paddingLeft = '4px';
+      customSubtitle.textContent = '📋 CUSTOM VARIABLES';
+      availableSection.appendChild(customSubtitle);
+      
+      for (const [colName, colData] of Object.entries(custom)) {
+        const item = document.createElement('div');
+        item.className = 'nb-column-item';
+        item.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <span>${colName}</span>
+            <span class="nb-column-item-type">${colData.data_type}</span>
+          </div>
+        `;
+        item.onclick = () => window.selectNeurobagelColumn(colName);
+        availableSection.appendChild(item);
+      }
     }
     
     sidebar.appendChild(availableSection);
@@ -952,6 +1047,9 @@ window.applyNeurobagelToForm = function(colName) {
   if (typeof showAlert === 'function') {
     showAlert(`Applied annotation to ${colName}`, 'success');
   }
+  
+  // Re-render widget to update sidebar categorization (e.g., custom → harmonized)
+  window.renderNeurobagelWidget();
 };
 
 window.copyNeurobagelData = function(colName) {

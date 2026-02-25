@@ -291,15 +291,15 @@
     </div>
 </div>
 
-<!-- Modal: Create Participant Mapping -->
+<!-- Modal: Add Additional Variables -->
 <div class="modal fade" id="participantMappingModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title">
-                    <i class="fas fa-map me-2"></i>Create Participant Mapping
+                    <i class="fas fa-map me-2"></i>Add Additional Variables
                     <small class="d-block mt-1" style="font-size: 0.7em; font-weight: normal;">
-                        Map unused survey columns to participants.tsv
+                        Optional: include selected non-core columns in participants.tsv
                         <span class="badge bg-warning text-dark ms-2">Different from ID Mapping</span>
                     </small>
                 </h5>
@@ -309,7 +309,7 @@
                 <div class="alert alert-info">
                     <strong>ℹ️ What is this?</strong><br>
                     <small>
-                        <strong>Participant Mapping:</strong> Maps demographic/unused columns from your survey to participants.tsv (saved to PROJECT library)<br>
+                        <strong>Additional Variables:</strong> Adds selected non-core columns from your data to participants.tsv (saved to PROJECT library)<br>
                         <strong>ID Mapping:</strong> Maps participant IDs between different systems<br>
                         <br>
                         <i class="fas fa-check-circle text-success me-1"></i> File will be saved to your <strong>project</strong> library survey directory<br>
@@ -319,11 +319,11 @@
                 </div>
 
                 <div id="mappingColumnsContainer">
-                    <p class="text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading unused columns...</p>
+                    <p class="text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading available variables...</p>
                 </div>
 
                 <div id="mappingSuccess" class="alert alert-success d-none mt-3">
-                    <i class="fas fa-check-circle me-2"></i>Mapping file created successfully!
+                    <i class="fas fa-check-circle me-2"></i>Additional variables saved successfully!
                     <div id="mappingFilePath" class="mt-2 small"></div>
                 </div>
 
@@ -334,7 +334,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelMappingBtn">Cancel</button>
                 <button type="button" class="btn btn-success" id="saveMappingBtn" disabled>
-                    <i class="fas fa-save me-2"></i>Save Mapping
+                    <i class="fas fa-save me-2"></i>Save Selection
                 </button>
                 <button type="button" class="btn btn-primary d-none" id="downloadMappingBtn">
                     <i class="fas fa-download me-2"></i>Download JSON
@@ -2804,14 +2804,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Participant Mapping button handler
+    // Additional Variables button handler
     const createParticipantMappingBtn = document.getElementById('createParticipantMappingBtn');
     if (createParticipantMappingBtn) {
         createParticipantMappingBtn.addEventListener('click', function() {
             // Check if project is loaded using template variable
             const currentProjectPath = "{{ current_project.path or '' }}";
             if (!currentProjectPath) {
-                alert('Please load a project first to create participant mapping. Projects are managed in the Projects page.');
+                alert('Please load a project first to add additional variables. Projects are managed in the Projects page.');
                 return;
             }
 
@@ -2826,13 +2826,71 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show the modal and prepare the mapping interface
             const modal = new bootstrap.Modal(document.getElementById('participantMappingModal'));
             
-            // Get the current preview to extract unused columns
+            // Get preview candidates from either survey preview or participants preview
+            let mappingCandidates = [];
+
             if (window.lastPreviewData && window.lastPreviewData.participants_tsv) {
                 const tsv = window.lastPreviewData.participants_tsv;
-                const unusedCols = tsv.unused_columns || [];
-                
-                renderParticipantMappingForm(unusedCols);
+                mappingCandidates = tsv.unused_columns || [];
+            } else if (window.lastParticipantsPreviewData && Array.isArray(window.lastParticipantsPreviewData.columns)) {
+                const p = window.lastParticipantsPreviewData;
+                const idCol = p.id_column;
+                const schema = p.neurobagel_schema || {};
+                const participantColumns = Array.isArray(p.source_columns) && p.source_columns.length > 0
+                    ? p.source_columns
+                    : p.columns;
+                const excludedQuestionnaireCols = new Set(
+                    Array.isArray(p.questionnaire_like_columns) ? p.questionnaire_like_columns : []
+                );
+                const previewRows = Array.isArray(p.preview_rows) ? p.preview_rows : [];
+
+                function inferReason(colName, values) {
+                    const lower = String(colName || '').toLowerCase();
+                    const cleaned = (values || [])
+                        .map(v => String(v ?? '').trim())
+                        .filter(v => v.length > 0);
+
+                    if (['date', 'time', 'timestamp', 'datetime'].some(t => lower.includes(t))) {
+                        return 'Inferred as date/time from column name';
+                    }
+
+                    const dateLikeRegex = /^(\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{4}[./-]\d{1,2}[./-]\d{1,2})(\s+\d{1,2}:\d{2}(:\d{2})?)?$/;
+                    const dateLikeCount = cleaned.filter(v => dateLikeRegex.test(v) || !Number.isNaN(Date.parse(v))).length;
+                    if (cleaned.length > 0 && (dateLikeCount / cleaned.length) >= 0.6) {
+                        return 'Inferred as date/time from values';
+                    }
+
+                    const uniqueCount = new Set(cleaned).size;
+                    const numericValues = cleaned.map(v => Number(v)).filter(v => !Number.isNaN(v));
+                    const numericRatio = cleaned.length ? (numericValues.length / cleaned.length) : 0;
+
+                    if (numericRatio > 0.8 && uniqueCount > 10) {
+                        return 'Inferred as continuous (mostly numeric with many unique values)';
+                    }
+                    if (uniqueCount <= 10) {
+                        return 'Inferred as categorical (few unique values)';
+                    }
+                    return 'Inferred as text/string (default)';
+                }
+
+                mappingCandidates = participantColumns
+                    .filter(col => col !== idCol && !excludedQuestionnaireCols.has(col))
+                    .map(col => ({
+                        field_code: col,
+                        description: schema[col]?.Description || '',
+                        infer_reason: inferReason(
+                            col,
+                            previewRows
+                                .map(row => row ? row[col] : null)
+                                .filter(v => v !== null && v !== undefined && String(v).trim() !== '')
+                        )
+                    }));
+            }
+
+            if (mappingCandidates.length > 0) {
+                renderParticipantMappingForm(mappingCandidates);
             } else {
+                document.getElementById('saveMappingBtn').disabled = true;
                 document.getElementById('mappingColumnsContainer').innerHTML = 
                     '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>No preview data available. Please run a preview first.</div>';
             }
@@ -2841,12 +2899,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Helper function to render the participant mapping form
+    // Helper function to render the additional variables form
     function renderParticipantMappingForm(unusedCols) {
         const container = document.getElementById('mappingColumnsContainer');
         
         if (!unusedCols || unusedCols.length === 0) {
-            container.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>No unused columns available to map.</div>';
+            container.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>No additional variables available to add.</div>';
             document.getElementById('saveMappingBtn').disabled = true;
             return;
         }
@@ -2860,13 +2918,16 @@ document.addEventListener('DOMContentLoaded', function() {
         unusedCols.forEach((item, idx) => {
             const fieldCode = typeof item === 'object' ? item.field_code : item;
             const description = typeof item === 'object' ? (item.description || '') : '';
-            const safeName = fieldCode.replace(/[^a-zA-Z0-9_]/g, '_');
+            const inferReason = typeof item === 'object' ? (item.infer_reason || '') : '';
+            const inferIcon = inferReason
+                ? `<i class="fas fa-circle-info text-muted ms-1" title="${String(inferReason).replace(/"/g, '&quot;')}"></i>`
+                : '';
             
             html += `
                 <div class="form-check mb-2">
                     <input class="form-check-input col-selector" type="checkbox" id="col_${idx}" value="${fieldCode}" data-description="${description}">
                     <label class="form-check-label" for="col_${idx}">
-                        <strong>${fieldCode}</strong>
+                        <strong>${fieldCode}</strong>${inferIcon}
                         ${description ? `<br><small class="text-muted">→ ${description}</small>` : ''}
                     </label>
                 </div>
@@ -2896,7 +2957,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Save Mapping button handler
+    // Save Selection button handler
     const saveMappingBtn = document.getElementById('saveMappingBtn');
     if (saveMappingBtn) {
         saveMappingBtn.addEventListener('click', async function() {
@@ -2936,7 +2997,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const result = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(result.error || 'Failed to save mapping');
+                    throw new Error(result.error || 'Failed to save additional variables selection');
                 }
 
                 showMappingSuccess(result.file_path);
@@ -3200,7 +3261,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Store preview data globally for the mapping button
                 window.lastPreviewData = preview;
                 
-                // Enable the participant mapping button if there are unused columns
+                // Enable the additional variables button if there are unused columns
                 if (createParticipantMappingBtn) {
                     createParticipantMappingBtn.disabled = !(tsv.unused_columns && tsv.unused_columns.length > 0);
                 }
@@ -3285,9 +3346,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         appendLog(`      ... and ${tsv.unused_columns.length - 10} more columns`, 'warning');
                     }
                     
-                    // Add button to create participant mapping
+                    // Add hint to open additional variables selector
                     appendLog('', 'info');
-                    appendLog(`   💡 TIP: Click "Create Participant Mapping" button below to map these columns to participants.tsv`, 'info');
+                    appendLog(`   💡 TIP: Click "Add Additional Variables (Optional)" to include selected columns in participants.tsv`, 'info');
                 }
                 
                 appendLog('', 'info');
