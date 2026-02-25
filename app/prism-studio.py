@@ -71,6 +71,26 @@ SRC_DIR = BASE_DIR / "src"
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
+
+def _startup_module_check() -> None:
+    """Warn early if critical modules are not importable in this runtime layout."""
+    import importlib.util
+
+    required_modules = [
+        "src.participants_converter",
+        "src.web.blueprints.conversion",
+    ]
+
+    missing = [m for m in required_modules if importlib.util.find_spec(m) is None]
+    if missing:
+        print("[WARN]  Missing critical modules: " + ", ".join(missing))
+        print(
+            "[WARN]  Please run setup and verify app/src contains required modules for this build."
+        )
+
+
+_startup_module_check()
+
 # Import refactored web modules
 get_error_description = None
 get_error_documentation_url = None
