@@ -5,7 +5,7 @@ All notable changes to the PRISM project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.10.0] - 2026-02-25
 
 ### Added
 - **Survey Customizer — LimeSurvey Survey Settings**: New collapsible accordion with three sections for LimeSurvey-specific survey configuration (closes #9):
@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Template Editor — Global Template Access**: Fixed `initializeLibraryPath()` incorrectly setting the library path to project directory, which caused `refreshTemplateList()` to use the non-merged API and hide global templates. Now uses merged API when a project is active, showing both `[Global]` and `[Project]` templates.
+
+## [Unreleased]
 
 ## [1.9.2] - 2026-02-05
 
