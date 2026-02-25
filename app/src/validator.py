@@ -389,7 +389,8 @@ class DatasetValidator:
 
         if dtype == "integer":
             try:
-                if not float(value).is_integer():
+                # Support both periods and commas as decimal separators (EU locales use commas)
+                if not float(value.replace(",", ".")).is_integer():
                     issues.append(
                         (
                             "ERROR",
@@ -405,7 +406,8 @@ class DatasetValidator:
                 )
         elif dtype == "float":
             try:
-                float(value)
+                # Support both periods and commas as decimal separators (EU locales use commas)
+                float(value.replace(",", "."))
             except ValueError:
                 issues.append(
                     (
@@ -458,7 +460,8 @@ class DatasetValidator:
 
         issues = []
         try:
-            num_val = float(value)
+            # Support both periods and commas as decimal separators (EU locales use commas)
+            num_val = float(value.replace(",", "."))
             # Mandatory bounds (ERROR)
             for key, op, msg in [
                 ("MinValue", lambda a, b: a < b, "less than MinValue"),

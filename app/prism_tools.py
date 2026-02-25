@@ -89,7 +89,8 @@ def _parse_numeric_cell(val: str | None) -> float | None:
     if not s or s.lower() == "n/a":
         return None
     try:
-        return float(s)
+        # Support both periods and commas as decimal separators (EU locales use commas)
+        return float(s.replace(",", "."))
     except ValueError:
         return None
 
