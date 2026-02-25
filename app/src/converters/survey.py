@@ -2662,6 +2662,8 @@ def _convert_survey_dataframe_to_prism_dataset(
         print(
             f"[PRISM INFO] Sessions detected in {res_ses_col}: {detected_sessions}"
         )
+    else:
+        print(f"[PRISM DEBUG] No session column detected (res_ses_col is None). Available columns: {list(df.columns)[:20]}")
 
     # --- Filter Rows by Selected Session ---
     # If both session column exists and a specific session is selected,
