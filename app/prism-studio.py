@@ -527,21 +527,25 @@ def main():
         and sys.platform.startswith("win")
         and not args.no_browser
     ):
-        try:
-            import ctypes
+        def show_startup_dialog():
+            """Show startup notification with proper DPI scaling using tkinter"""
+            try:
+                import tkinter as tk
+                from tkinter import messagebox
 
-            MessageBox = ctypes.windll.user32.MessageBoxW
-            threading.Thread(
-                target=lambda: MessageBox(
-                    0,
-                    f"PRISM Studio is starting...\n\nOpening browser at:\n{url}\n\nIf browser doesn't open automatically,\nplease visit the URL manually.",
+                root = tk.Tk()
+                root.withdraw()  # Hide main window
+                root.attributes("-topmost", True)  # Bring to front
+                
+                messagebox.showinfo(
                     "PRISM Studio",
-                    0x40,  # MB_ICONINFORMATION
-                ),
-                daemon=True,
-            ).start()
-        except Exception as e:
-            print(f"Could not show startup notification: {e}")
+                    f"PRISM Studio is starting...\n\nOpening browser at:\n{url}\n\nIf browser doesn't open automatically,\nplease visit the URL manually."
+                )
+                root.destroy()
+            except Exception as e:
+                print(f"Could not show startup notification: {e}")
+
+        threading.Thread(target=show_startup_dialog, daemon=True).start()
 
     # Open browser in a separate thread to avoid blocking the Flask server
     if not args.no_browser:
