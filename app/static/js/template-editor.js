@@ -2459,7 +2459,10 @@
     previewContentEl.innerHTML = '';
     const items = itemKeysFromTemplate(currentTemplate);
     if (!items.length) {
-      previewContentEl.innerHTML = '<div class="text-muted">No questions in this template.</div>';
+      const emptyState = document.createElement('div');
+      emptyState.className = 'text-muted';
+      emptyState.textContent = 'No questions in this template.';
+      previewContentEl.appendChild(emptyState);
       return;
     }
 
@@ -2473,12 +2476,23 @@
       // Question code
       const codeEl = document.createElement('div');
       codeEl.className = 'q-code';
-      let codeText = key;
+      codeEl.appendChild(document.createTextNode(key));
       // Badges
-      if (item.Reversed === true) codeText += ' <span class="badge preview-badge-reversed ms-1">Reversed</span>';
+      if (item.Reversed === true) {
+        const reversedBadge = document.createElement('span');
+        reversedBadge.className = 'badge preview-badge-reversed ms-1';
+        reversedBadge.textContent = 'Reversed';
+        codeEl.appendChild(document.createTextNode(' '));
+        codeEl.appendChild(reversedBadge);
+      }
       const isMandatory = item.LimeSurvey?.mandatory === true || item.Required === true;
-      if (isMandatory) codeText += ' <span class="badge preview-badge-mandatory ms-1">Required</span>';
-      codeEl.innerHTML = codeText;
+      if (isMandatory) {
+        const requiredBadge = document.createElement('span');
+        requiredBadge.className = 'badge preview-badge-mandatory ms-1';
+        requiredBadge.textContent = 'Required';
+        codeEl.appendChild(document.createTextNode(' '));
+        codeEl.appendChild(requiredBadge);
+      }
       card.appendChild(codeEl);
 
       // Description
@@ -2486,9 +2500,16 @@
       descEl.className = 'q-desc';
       const desc = getLocalizedText(item.Description, lang);
       if (desc.missing && desc.text) {
-        descEl.innerHTML = `<span class="preview-missing-translation" title="No '${lang}' translation">${desc.text}</span>`;
+        const span = document.createElement('span');
+        span.className = 'preview-missing-translation';
+        span.title = `No '${lang}' translation`;
+        span.textContent = desc.text;
+        descEl.appendChild(span);
       } else if (desc.missing) {
-        descEl.innerHTML = `<span class="preview-missing-translation">No translation for '${lang}'</span>`;
+        const span = document.createElement('span');
+        span.className = 'preview-missing-translation';
+        span.textContent = `No translation for '${lang}'`;
+        descEl.appendChild(span);
       } else {
         descEl.textContent = desc.text || '(no description)';
       }
@@ -2499,7 +2520,9 @@
         const instrEl = document.createElement('div');
         instrEl.className = 'text-muted small mb-2';
         const instr = getLocalizedText(item.Instructions, lang);
-        instrEl.innerHTML = `<em>${instr.text || ''}</em>`;
+        const em = document.createElement('em');
+        em.textContent = instr.text || '';
+        instrEl.appendChild(em);
         card.appendChild(instrEl);
       }
 
@@ -2522,12 +2545,24 @@
           const label = document.createElement('label');
           label.className = 'form-check-label';
           const lvText = getLocalizedText(lv, lang);
+          const keySpan = document.createElement('span');
+          keySpan.className = 'text-muted';
+          keySpan.textContent = `${lk}:`;
+          label.appendChild(keySpan);
+          label.appendChild(document.createTextNode(' '));
           if (lvText.missing && lvText.text) {
-            label.innerHTML = `<span class="text-muted">${lk}:</span> <span class="preview-missing-translation" title="No '${lang}' translation">${lvText.text}</span>`;
+            const valueSpan = document.createElement('span');
+            valueSpan.className = 'preview-missing-translation';
+            valueSpan.title = `No '${lang}' translation`;
+            valueSpan.textContent = lvText.text;
+            label.appendChild(valueSpan);
           } else if (lvText.missing) {
-            label.innerHTML = `<span class="text-muted">${lk}:</span> <span class="preview-missing-translation">No translation</span>`;
+            const valueSpan = document.createElement('span');
+            valueSpan.className = 'preview-missing-translation';
+            valueSpan.textContent = 'No translation';
+            label.appendChild(valueSpan);
           } else {
-            label.innerHTML = `<span class="text-muted">${lk}:</span> ${lvText.text}`;
+            label.appendChild(document.createTextNode(lvText.text));
           }
 
           row.appendChild(radio);
