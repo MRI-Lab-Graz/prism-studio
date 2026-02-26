@@ -59,6 +59,13 @@ python prism.py /path/to/dataset
 | `--bids-warnings` | Include warnings from BIDS validator output (default hidden). |
 | `--no-prism` | Skip PRISM-specific checks (only BIDS if `--bids` is set). |
 | `--validate-templates PATH` | Validate all survey/biometrics JSON templates in a library directory. See [Template Validation](TEMPLATE_VALIDATION.md) for details. |
+| `--build-environment` | Build a privacy-safe `*_environment.tsv` from `scans.tsv` anchors (no dataset validation run). |
+| `--scans-tsv PATH` | Input scans table containing `filename` and `prism_time_anchor` (required with `--build-environment`). |
+| `--environment-tsv PATH` | Output path for generated `*_environment.tsv` (required with `--build-environment`). |
+| `--lat FLOAT` | Site latitude used by environment providers (required with `--build-environment`). |
+| `--lon FLOAT` | Site longitude used by environment providers (required with `--build-environment`). |
+| `--environment-providers ...` | Provider list for enrichment (default: `weather pollen air_quality`). |
+| `--environment-cache PATH` | Cache file for provider responses (default: `.prism/environment_cache.json`). |
 | `--json` | Output a JSON report to stdout (compact). |
 | `--json-pretty` | Output a JSON report to stdout (pretty). |
 | `--format {json,sarif,junit,markdown,csv}` | Set an explicit output format. |
@@ -86,12 +93,27 @@ python prism.py /data/study-01 --format sarif -o prism.sarif
 # Validate survey templates in your project library
 python prism.py --validate-templates /code/library/survey
 
+# Build privacy-safe environment table from scans anchors
+python prism.py \
+  --build-environment \
+  --scans-tsv /data/study-01/sub-01/ses-01/sub-01_ses-01_scans.tsv \
+  --environment-tsv /data/study-01/sub-01/ses-01/environment/sub-01_ses-01_environment.tsv \
+  --lat 47.07 \
+  --lon 15.44
+
 # Auto-fix (preview)
 python prism.py /data/study-01 --fix --dry-run
 
 # Auto-fix (apply)
 python prism.py /data/study-01 --fix
 ```
+
+### Environment build mode (`--build-environment`)
+
+- Uses privacy-safe temporal anchors (`prism_time_anchor`) from `scans.tsv`.
+- Rejects raw time keys like `date`, `datetime`, `timestamp`, `acquisition_time` in input rows.
+- Runs independently from normal dataset validation (you can call it without positional `dataset`).
+- Current bundled providers: `weather`, `pollen`, `air_quality`.
 
 ---
 
@@ -276,6 +298,45 @@ python prism_tools.py library generate-methods-text --output methods_de.md --lan
 ---
 
 ## 3) “Scripts” in `scripts/`
+
+### Environment enrichment scripts
+
+PRISM now provides **two separate scripts** for environmental enrichment:
+
+1. **Scanner / DICOM workflow** (site-fixed, scanner-related):
+
+```bash
+python scripts/build_environment_from_dicom.py \
+  --dicom /path/to/file.dcm \
+  --dataset-root /path/to/dataset \
+  --subject-id sub-01 \
+  --session-id ses-01
+```
+
+- Extracts acquisition timestamp from DICOM.
+- Uses hardcoded scanner site coordinates.
+- Writes directly to `sub-*/ses-*/environment/*_environment.tsv`.
+- Updates `.bidsignore` in dataset root.
+
+2. **Survey / international workflow** (location provided per run):
+
+```bash
+python scripts/build_environment_from_survey.py \
+  --timestamp 2026-02-26T14:30:00 \
+  --lat 47.0707 \
+  --lon 15.4395 \
+  --location-label survey-site \
+  --output /path/to/sub-01_ses-01_environment.tsv \
+  --subject-id sub-01 \
+  --session-id ses-01
+```
+
+- Uses provided timestamp + coordinates.
+- Designed for multi-country survey studies.
+- Writes one-row environment TSV for the specified context.
+
+Both scripts query Open-Meteo hourly weather/air-quality/pollen APIs and include
+moon and sun context variables.
 
 Most files under `scripts/` are **implementation details** called by the CLIs.
 
