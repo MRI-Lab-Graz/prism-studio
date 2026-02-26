@@ -1,0 +1,905 @@
+<!-- Include JSON Editor JavaScript -->
+<script src="{{ url_for('json_editor.static', filename='js/api.js') }}"></script>
+<script src="{{ url_for('json_editor.static', filename='js/form-builder.js') }}"></script>
+<!-- NeuroBagel helpers -->
+<script src="{{ url_for('static', filename='js/neurobagel.js') }}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const folderInput = document.getElementById('datasetFolder');
+    const zipInput = document.getElementById('datasetZip');
+    const folderBtn = document.getElementById('folderBtn');
+    const zipBtn = document.getElementById('zipBtn');
+    const uploadInfo = document.getElementById('uploadInfo');
+    const toolSelectionSection = document.getElementById('toolSelectionSection');
+    const editorSection = document.getElementById('editorSection');
+    const bagelSection = document.getElementById('bagelSection');
+    const fileSelector = document.getElementById('fileSelector');
+    const alertContainer = document.getElementById('alertContainer');
+    
+    // Tool buttons
+    const toolMetadataBtn = document.getElementById('toolMetadataBtn');
+    const toolBagelBtn = document.getElementById('toolBagelBtn');
+    const backFromEditorBtn = document.getElementById('backFromEditorBtn');
+    const backFromBagelBtn = document.getElementById('backFromBagelBtn');
+    const bagelSaveBtn = document.getElementById('bagelSaveBtn');
+    const bagelCancelBtn = document.getElementById('bagelCancelBtn');
+    
+    let currentDatasetPath = null;
+    let selectedFiles = null;
+
+    // Check for autoload parameter (coming from project page)
+    const urlParams = new URLSearchParams(window.location.search);
+    const autoloadFile = urlParams.get('autoload');
+    const fromProject = urlParams.get('from') === 'project';
+    
+    if (fromProject && autoloadFile) {
+        // Skip file selection and directly load the requested file
+        console.log('🔄 Auto-loading from project:', autoloadFile);
+        
+        // Hide upload area, show editor
+        uploadArea.closest('.card').style.display = 'none';
+        toolSelectionSection.style.display = 'none';
+        editorSection.style.display = 'block';
+        
+        // Set the file selector to participants
+        fileSelector.value = autoloadFile;
+        
+        // Trigger file load
+        await loadFileForEditing(autoloadFile);
+    }
+
+    // Check for webkitdirectory support
+    const supportsFolderUpload = 'webkitdirectory' in document.createElement('input');
+    
+    // Tool selection handlers
+    toolMetadataBtn.addEventListener('click', function() {
+        toolSelectionSection.style.display = 'none';
+        editorSection.style.display = 'block';
+        fileSelector.value = '';
+        document.getElementById('formContainer').innerHTML = `
+            <p class="text-muted text-center py-3">
+                <i class="fas fa-info-circle me-2"></i>
+                Select a file to begin editing
+            </p>
+        `;
+    });
+    
+    toolBagelBtn.addEventListener('click', async function() {
+        toolSelectionSection.style.display = 'none';
+        bagelSection.style.display = 'block';
+        
+        // Load NeuroBagel widget
+        const widgetPlaceholder = document.getElementById('neurobagelWidgetPlaceholder');
+        if (!document.getElementById('neurobagelAnnotationWidget')) {
+            const response = await fetch('{{ url_for("static", filename="neurobagel_widget.html") }}');
+            const html = await response.text();
+            
+            // Parse HTML to separate markup from scripts
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Find and remove scripts
+            const scripts = doc.querySelectorAll('script');
+            const scriptTexts = [];
+            scripts.forEach(script => {
+                scriptTexts.push(script.textContent);
+                script.remove();
+            });
+            
+            // Insert the HTML without scripts
+            widgetPlaceholder.innerHTML = doc.body.innerHTML;
+            
+            // Execute scripts in order
+            scriptTexts.forEach(scriptText => {
+                try {
+                    new Function(scriptText)();
+                } catch (err) {
+                    console.error('Error executing widget script:', err);
+                }
+            });
+            
+            // Initialize widget
+            await new Promise(resolve => setTimeout(resolve, 100));
+            if (window.renderNeurobagelWidget) {
+                console.log('Initializing NeuroBagel widget...');
+                await window.renderNeurobagelWidget();
+            }
+        }
+    });
+    
+    backFromEditorBtn.addEventListener('click', function() {
+        editorSection.style.display = 'none';
+        toolSelectionSection.style.display = 'block';
+    });
+    
+    backFromBagelBtn.addEventListener('click', function() {
+        bagelSection.style.display = 'none';
+        toolSelectionSection.style.display = 'block';
+    });
+    
+    bagelCancelBtn.addEventListener('click', function() {
+        bagelSection.style.display = 'none';
+        toolSelectionSection.style.display = 'block';
+    });
+    
+    bagelSaveBtn.addEventListener('click', async function() {
+        try {
+            // Get the current state of the NeuroBagel widget
+            // The widget maintains state in window.neurobagelWidgetState
+            const widgetState = window.neurobagelWidgetState || {};
+            const allColumns = widgetState.allColumns || {};
+            
+            // Build annotated participants.json structure
+            const annotatedData = {};
+            
+            // Get current form data if it exists (participants.json editing)
+            const participantsContainer = document.getElementById('participantsContainer');
+            if (participantsContainer) {
+                // Extract from form if it exists
+                const allTextareas = document.querySelectorAll('[data-json-path]');
+                allTextareas.forEach(textarea => {
+                    const path = textarea.dataset.jsonPath;
+                    const value = textarea.value;
+                    
+                    try {
+                        let parsedValue;
+                        if (value.trim().startsWith('{') || value.trim().startsWith('[')) {
+                            parsedValue = JSON.parse(value);
+                        } else if (value === 'true' || value === 'false') {
+                            parsedValue = JSON.parse(value);
+                        } else if (value === 'null') {
+                            parsedValue = null;
+                        } else if (!isNaN(value) && value !== '') {
+                            parsedValue = Number(value);
+                        } else {
+                            parsedValue = value;
+                        }
+                        
+                        // Set nested value using path
+                        const pathParts = path.split('.');
+                        let current = annotatedData;
+                        for (let i = 0; i < pathParts.length - 1; i++) {
+                            const part = pathParts[i];
+                            if (!current[part]) current[part] = {};
+                            current = current[part];
+                        }
+                        current[pathParts[pathParts.length - 1]] = parsedValue;
+                    } catch (e) {
+                        console.warn('Error parsing value for path', path, e);
+                    }
+                });
+            }
+            
+            // Add NeuroBagel annotations from widget state
+            for (const [colName, colData] of Object.entries(allColumns)) {
+                if (!annotatedData[colName]) {
+                    annotatedData[colName] = {};
+                }
+                
+                // Add description if available (use 'description' or 'Description')
+                const desc = colData.description || colData.Description;
+                if (desc) {
+                    annotatedData[colName].Description = desc;
+                }
+                
+                // Add unit if available (for continuous variables)
+                if (colData.unit) {
+                    annotatedData[colName].Unit = colData.unit;
+                }
+                
+                // Add levels if available (for categorical variables)
+                if (colData.levels && Object.keys(colData.levels).length > 0) {
+                    annotatedData[colName].Levels = {};
+                    for (const [levelKey, levelData] of Object.entries(colData.levels)) {
+                        annotatedData[colName].Levels[levelKey] = levelData.label || levelKey;
+                    }
+                }
+                
+                // Add NeuroBagel-specific annotations
+                if (colData.standardized_variable || colData.data_type) {
+                    if (!annotatedData[colName].Annotations) {
+                        annotatedData[colName].Annotations = {};
+                    }
+                    
+                    // Add IsAbout annotation (only if standardized variable exists)
+                    if (colData.standardized_variable) {
+                        annotatedData[colName].Annotations.IsAbout = {
+                            TermURL: 'nb:' + colData.standardized_variable,
+                            Label: colData.standardized_variable
+                        };
+                    }
+                    
+                    // Add VariableType annotation
+                    const typeMap = {
+                        'categorical': 'Categorical',
+                        'continuous': 'Continuous',
+                        'text': 'Text'
+                    };
+                    
+                    if (colData.data_type && typeMap[colData.data_type]) {
+                        annotatedData[colName].Annotations.VariableType = typeMap[colData.data_type];
+                    }
+                    
+                    // Add level annotations for categorical variables
+                    if (colData.data_type === 'categorical' && colData.levels) {
+                        annotatedData[colName].Annotations.Levels = {};
+                        for (const [levelKey, levelData] of Object.entries(colData.levels)) {
+                            const levelEntry = {
+                                Label: levelData.label || levelKey
+                            };
+                            
+                            // Only add TermURL if it exists (don't add undefined/null)
+                            if (levelData.uri) {
+                                levelEntry.TermURL = levelData.uri;
+                            }
+                            
+                            annotatedData[colName].Annotations.Levels[levelKey] = levelEntry;
+                        }
+                    }
+                }
+            }
+            
+            // Download as JSON file
+            const jsonString = JSON.stringify(annotatedData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'participants.json';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            showAlert('✅ Annotated participants.json downloaded! Replace your original file in the dataset folder.', 'success');
+            
+        } catch (error) {
+            console.error('Error saving annotated file:', error);
+            showAlert('Error saving file: ' + error.message, 'danger');
+        }
+    });
+
+    // Folder button click
+    folderBtn.addEventListener('click', function() {
+        console.log('Folder button clicked');
+        console.log('supportsFolderUpload:', supportsFolderUpload);
+        console.log('folderInput:', folderInput);
+        if (supportsFolderUpload) {
+            console.log('Clicking folder input...');
+            folderInput.click();
+        } else {
+            showAlert('Folder upload is not supported in this browser. Please use the ZIP file option or try a modern browser like Chrome, Firefox, or Edge.', 'warning');
+        }
+    });
+
+    // ZIP button click
+    zipBtn.addEventListener('click', function() {
+        zipInput.click();
+    });
+
+    // Handle folder selection
+    folderInput.addEventListener('change', function() {
+        if (folderInput.files.length > 0) {
+            selectedFiles = folderInput.files;
+            uploadInfo.innerHTML = `<i class="fas fa-check-circle me-1 text-success"></i>Selected folder with ${folderInput.files.length} files`;
+            processSelectedFiles(folderInput.files);
+        }
+    });
+
+    // Handle ZIP selection
+    zipInput.addEventListener('change', function() {
+        if (zipInput.files.length > 0) {
+            showAlert('ZIP file support: Please extract the ZIP file and select the extracted folder.', 'info');
+            uploadInfo.innerHTML = '<i class="fas fa-info-circle me-1"></i>ZIP selected - please extract and re-select folder';
+        }
+    });
+
+    // Function to load a specific file for editing (used by autoload from project context)
+    async function loadFileForEditing(fileType) {
+        try {
+            // Call API to load file from current project
+            const response = await fetch(`/editor/api/file/${fileType}`);
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    showAlert(`File ${fileType}.json not found in current project. Please create it first.`, 'warning');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return;
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Simulate file path for compatibility with existing renderJSONForm
+                const filePath = `${fileType}.json`;
+                await renderJSONForm(result.data, filePath);
+                showAlert(`Loaded ${fileType}.json from project`, 'success');
+            } else {
+                showAlert(result.error || 'Failed to load file', 'danger');
+            }
+        } catch (error) {
+            console.error('Error loading file:', error);
+            showAlert('Error loading file: ' + error.message, 'danger');
+        }
+    }
+
+    // Local folder path input (removed - using only Browse buttons)
+    
+    // Auto-load file when selected from dropdown
+    fileSelector.addEventListener('change', async function() {
+        const selectedFilePath = fileSelector.value;
+        if (!selectedFilePath) {
+            // Clear the form if no file selected
+            document.getElementById('formContainer').innerHTML = `
+                <p class="text-muted text-center py-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Select a file to begin editing
+                </p>
+            `;
+            return;
+        }
+
+        try {
+            // Find the file object from selected dataset files
+            const fileObj = window.selectedDatasetFiles.find(f => 
+                (f.webkitRelativePath || f.name) === selectedFilePath
+            );
+            
+            if (!fileObj) {
+                showAlert('File not found in dataset', 'danger');
+                return;
+            }
+            
+            // Read the file content
+            const fileContent = await fileObj.text();
+            const jsonData = JSON.parse(fileContent);
+            
+            // Render the JSON in the form container
+            renderJSONForm(jsonData, selectedFilePath);
+            
+        } catch (error) {
+            showAlert('Error loading file: ' + error.message, 'danger');
+        }
+    });
+    
+    // Render JSON data as an editable form using BIDS Form Generator
+    async function renderJSONForm(jsonData, filePath) {
+        const formContainer = document.getElementById('formContainer');
+        
+        try {
+            // Store current file path and data globally
+            window.currentFilePath = filePath;
+            window.currentFileData = jsonData;
+            
+            // Determine file type from path (e.g., dataset_description.json -> dataset_description)
+            const fileName = filePath.split('/').pop();
+            const fileType = fileName.replace('.json', '');
+            
+            // Try to get schema for this file type
+            const response = await fetch(`/editor/api/schema/${fileType}`);
+            let schema = null;
+            
+            if (response.ok) {
+                const schemaData = await response.json();
+                if (schemaData.success) {
+                    schema = schemaData.schema;
+                }
+            }
+            
+            formContainer.innerHTML = '';
+            
+                if (schema && typeof BIDSFormGenerator !== 'undefined') {
+                // Use the beautiful form generator
+                const form = BIDSFormGenerator.generateForm(schema, jsonData);
+                formContainer.appendChild(form);
+                showAlert(`Loaded: ${fileName} (form)`, 'success');
+            } else if (fileType === 'participants') {
+                // Special handling for participants.json - recursive nested structure
+                formContainer.innerHTML = `
+                    <div class="mb-3">
+                        <h5>${fileName}</h5>
+                        <p class="text-muted small">Edit JSON values. All keys are fixed.</p>
+                        <div id="participantsContainer"></div>
+                    </div>
+                `;
+                
+                // Recursive function to build nested forms with collapsible sections
+                function buildNestedForm(obj, parentKey = '', depth = 0) {
+                    const container = document.createElement('div');
+                    
+                    Object.entries(obj).forEach(([key, value]) => {
+                        const fieldDiv = document.createElement('div');
+                        fieldDiv.className = 'mb-1';
+                        fieldDiv.style.paddingLeft = (depth * 15) + 'px';
+                        
+                        // Check if value is an object or primitive
+                        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                            // Nested object - create collapsible section
+                            const collapsibleId = `collapse_${parentKey}${key}`.replace(/\./g, '_');
+                            
+                            // Header with toggle button
+                            const headerDiv = document.createElement('div');
+                            headerDiv.className = 'd-flex align-items-center gap-2';
+                            headerDiv.style.cursor = 'pointer';
+                            headerDiv.style.userSelect = 'none';
+                            headerDiv.style.padding = '0.25rem 0';
+                            
+                            // Toggle button
+                            const toggleBtn = document.createElement('i');
+                            toggleBtn.className = 'fas fa-chevron-right';
+                            toggleBtn.style.fontSize = '11px';
+                            toggleBtn.style.color = '#666';
+                            toggleBtn.style.minWidth = '12px';
+                            toggleBtn.style.textAlign = 'center';
+                            
+                            // Key label
+                            const keyLabel = document.createElement('label');
+                            keyLabel.className = 'form-label mb-0';
+                            keyLabel.style.fontWeight = depth === 0 ? '600' : 'normal';
+                            keyLabel.style.fontSize = depth === 0 ? '13px' : '12px';
+                            keyLabel.style.cursor = 'pointer';
+                            keyLabel.textContent = key;
+                            
+                            headerDiv.appendChild(toggleBtn);
+                            headerDiv.appendChild(keyLabel);
+                            fieldDiv.appendChild(headerDiv);
+                            
+                            // Content section (collapsible)
+                            const contentDiv = document.createElement('div');
+                            contentDiv.style.display = 'none';
+                            contentDiv.style.borderLeft = '1px solid #dee2e6';
+                            contentDiv.style.marginLeft = '6px';
+                            contentDiv.style.paddingLeft = '10px';
+                            contentDiv.style.marginTop = '0.25rem';
+                            
+                            const nestedForm = buildNestedForm(value, `${parentKey}${key}.`, depth + 1);
+                            contentDiv.appendChild(nestedForm);
+                            fieldDiv.appendChild(contentDiv);
+                            
+                            // Toggle functionality
+                            headerDiv.addEventListener('click', () => {
+                                const isHidden = contentDiv.style.display === 'none';
+                                contentDiv.style.display = isHidden ? 'block' : 'none';
+                                toggleBtn.className = isHidden ? 'fas fa-chevron-down' : 'fas fa-chevron-right';
+                                toggleBtn.style.color = isHidden ? '#0d6efd' : '#666';
+                            });
+                        } else {
+                            // Primitive value - inline label with textarea
+                            const labelDiv = document.createElement('div');
+                            labelDiv.className = 'mb-1';
+                            
+                            const keyLabel = document.createElement('label');
+                            keyLabel.className = 'form-label mb-1';
+                            keyLabel.style.fontSize = '12px';
+                            keyLabel.style.fontWeight = '500';
+                            keyLabel.textContent = key;
+                            labelDiv.appendChild(keyLabel);
+                            fieldDiv.appendChild(labelDiv);
+                            
+                            let textarea;
+                            if (Array.isArray(value)) {
+                                // Array - show as JSON textarea
+                                textarea = document.createElement('textarea');
+                                textarea.className = 'form-control form-control-sm';
+                                textarea.rows = 2;
+                                textarea.style.cssText = "font-family: 'Courier New', monospace; font-size: 11px; white-space: pre;";
+                                textarea.value = JSON.stringify(value, null, 2);
+                            } else if (typeof value === 'string') {
+                                // String
+                                textarea = document.createElement('textarea');
+                                textarea.className = 'form-control form-control-sm';
+                                textarea.rows = value.length > 50 ? 2 : 1;
+                                textarea.style.cssText = "font-family: monospace; font-size: 11px;";
+                                textarea.value = value;
+                            } else {
+                                // Number, boolean, null
+                                textarea = document.createElement('textarea');
+                                textarea.className = 'form-control form-control-sm';
+                                textarea.rows = 1;
+                                textarea.style.cssText = "font-family: monospace; font-size: 11px;";
+                                textarea.value = String(value);
+                            }
+                            
+                            textarea.dataset.jsonPath = `${parentKey}${key}`;
+                            fieldDiv.appendChild(textarea);
+                        }
+                        
+                        container.appendChild(fieldDiv);
+                    });
+                    
+                    return container;
+                }
+                
+                // Generate the nested form for all participants columns
+                const participantsContainer = document.getElementById('participantsContainer');
+                // Add NeuroBagel toolbar above participants container
+                const toolbarDiv = document.createElement('div');
+                toolbarDiv.className = 'mb-3 d-flex gap-2 align-items-center';
+                toolbarDiv.innerHTML = `
+                    <label class="form-label mb-0 me-2" style="font-weight:500;">NeuroBagel suggestions:</label>
+                    <select id="neurobagelSelect" class="form-select form-select-sm" style="max-width:320px;">
+                        <option>Loading...</option>
+                    </select>
+                    <button id="neurobagelInsertBtn" class="btn btn-outline-primary btn-sm">Insert Suggestion</button>
+                `;
+                participantsContainer.parentNode.insertBefore(toolbarDiv, participantsContainer);
+
+                // Populate suggestions
+                const nbSelect = toolbarDiv.querySelector('#neurobagelSelect');
+                window.populateParticipantsSuggestions(nbSelect).catch(err => {
+                    console.warn('NeuroBagel populate failed', err);
+                    nbSelect.innerHTML = '<option>No suggestions</option>';
+                });
+
+                // Hook insert button
+                toolbarDiv.querySelector('#neurobagelInsertBtn').addEventListener('click', function() {
+                    const sel = nbSelect.value;
+                    if (!sel) {
+                        showAlert('Please choose a NeuroBagel field to insert', 'warning');
+                        return;
+                    }
+                    window.applyNeurobagelSuggestion(sel);
+                });
+                Object.entries(jsonData).forEach(([colKey, colValue]) => {
+                    const columnSection = document.createElement('div');
+                    columnSection.className = 'mb-4 p-3 rounded';
+                    columnSection.style.backgroundColor = '#f8f9fa';
+                    columnSection.style.border = '1px solid #dee2e6';
+                    
+                    // Top-level column key
+                    const colHeader = document.createElement('h6');
+                    colHeader.className = 'mb-3';
+                    colHeader.style.fontWeight = 'bold';
+                    colHeader.style.color = '#212529';
+                    colHeader.textContent = colKey;
+                    columnSection.appendChild(colHeader);
+                    
+                    // Build nested form for this column
+                    const nestedForm = buildNestedForm(colValue, `${colKey}.`, 0);
+                    columnSection.appendChild(nestedForm);
+                    
+                    participantsContainer.appendChild(columnSection);
+                });
+                
+                showAlert(`Loaded: ${fileName} - Edit nested values`, 'info');
+            } else {
+                // Fallback to JSON textarea for other files without schema
+                const jsonString = JSON.stringify(jsonData, null, 2);
+                formContainer.innerHTML = `
+                    <div class="mb-3">
+                        <label for="jsonEditor" class="form-label">
+                            <i class="fas fa-file-code me-2"></i>
+                            ${fileName}
+                        </label>
+                        <textarea id="jsonEditor" class="form-control" rows="25" style="font-family: 'Courier New', monospace; font-size: 13px; white-space: pre; overflow-wrap: normal; line-height: 1.5;"></textarea>
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Edit the JSON content directly - click Save to download
+                        </small>
+                    </div>
+                `;
+                // Set textarea content separately to avoid HTML escaping issues
+                const textarea = document.getElementById('jsonEditor');
+                if (textarea) {
+                    textarea.value = jsonString;
+                }
+                showAlert(`Loaded: ${fileName} - Edit JSON content`, 'info');
+            }
+            
+        } catch (error) {
+            console.error('Error rendering form:', error);
+            formContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Error rendering form: ${error.message}
+                </div>
+            `;
+        }
+    }
+    
+    // Save button handler
+    document.getElementById('saveBtn').addEventListener('click', async function() {
+        try {
+            let updatedJson;
+            const fileName = window.currentFilePath ? window.currentFilePath.split('/').pop() : 'file.json';
+            const fileType = fileName.replace('.json', '');
+            
+            if (fileType === 'participants') {
+                // Reconstruct participants object from nested form
+                updatedJson = {};
+                
+                // Get all textareas with jsonPath (nested values)
+                const allTextareas = document.querySelectorAll('[data-json-path]');
+                allTextareas.forEach(textarea => {
+                    const path = textarea.dataset.jsonPath;
+                    const value = textarea.value;
+                    
+                    try {
+                        // Parse value based on context
+                        let parsedValue;
+                        if (value.trim().startsWith('{') || value.trim().startsWith('[')) {
+                            parsedValue = JSON.parse(value);
+                        } else if (value === 'true' || value === 'false') {
+                            parsedValue = JSON.parse(value);
+                        } else if (value === 'null') {
+                            parsedValue = null;
+                        } else if (!isNaN(value) && value !== '') {
+                            parsedValue = Number(value);
+                        } else {
+                            parsedValue = value;
+                        }
+                        
+                        // Set nested value using path (e.g., "participant_id.Description")
+                        const pathParts = path.split('.');
+                        let current = updatedJson;
+                        for (let i = 0; i < pathParts.length - 1; i++) {
+                            const part = pathParts[i];
+                            if (!current[part]) current[part] = {};
+                            current = current[part];
+                        }
+                        current[pathParts[pathParts.length - 1]] = parsedValue;
+                    } catch (e) {
+                        showAlert(`Invalid value for "${path}": ${e.message}`, 'warning');
+                    }
+                });
+            } else {
+                // Check if we're using the form builder or textarea
+                const form = document.querySelector('.bids-form');
+                if (form && typeof BIDSFormGenerator !== 'undefined') {
+                    // Extract data from form
+                    updatedJson = BIDSFormGenerator.getFormData(form);
+                } else {
+                    // Get data from textarea
+                    const editor = document.getElementById('jsonEditor');
+                    if (editor) {
+                        updatedJson = JSON.parse(editor.value);
+                    } else {
+                        showAlert('No data to save', 'warning');
+                        return;
+                    }
+                }
+            }
+            
+            // Create a downloadable JSON file
+            const blob = new Blob([JSON.stringify(updatedJson, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showAlert(`File downloaded: ${a.download}. Replace the original file in your dataset.`, 'success');
+            
+        } catch (error) {
+            showAlert('Error saving file: ' + error.message, 'danger');
+        }
+    });
+    
+    // New File button handler
+    document.getElementById('newFileBtn').addEventListener('click', function() {
+        const formContainer = document.getElementById('formContainer');
+        formContainer.innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Select a file from your dataset to edit, or create a new JSON file manually.
+            </div>
+        `;
+    });
+    
+    
+    // Handle drag and drop
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            selectedFiles = files;
+            processSelectedFiles(files);
+        }
+    });
+
+    function processSelectedFiles(files) {
+        currentDatasetPath = null;
+        
+        // Extract metadata files - ONLY .json at root level
+        // Also extract participants.tsv if present (for categorical value mapping)
+        const metadataFiles = [];
+        let participantsTsvFile = null;
+        const skippedFiles = [];
+        
+        console.log('Processing', files.length, 'total files...');
+        
+        for (let file of files) {
+            const fileName = file.name.toLowerCase();
+            const filePath = file.webkitRelativePath || file.name;
+            
+            console.log('Checking file:', filePath);
+            
+            // Check for participants.tsv at root level
+            if (fileName === 'participants.tsv' && !filePath.includes('sub-')) {
+                console.log('  -> Found participants.tsv for value mapping');
+                participantsTsvFile = file;
+                continue;
+            }
+            
+            // Only include .json files
+            if (!fileName.endsWith('.json')) {
+                skippedFiles.push(`${filePath} (not JSON)`);
+                continue;
+            }
+            
+            // Skip .tsv, .csv, .txt files
+            if (fileName.endsWith('.tsv') || fileName.endsWith('.csv') || fileName.endsWith('.txt')) {
+                skippedFiles.push(`${filePath} (TSV/CSV/TXT)`);
+                continue;
+            }
+            
+            // Skip files in subject directories (contain 'sub-')
+            if (filePath.includes('sub-')) {
+                skippedFiles.push(`${filePath} (in subject folder)`);
+                continue;
+            }
+            
+            console.log('  -> Including:', filePath);
+            metadataFiles.push(file);
+        }
+        
+        console.log('Skipped files:', skippedFiles);
+        
+        if (metadataFiles.length === 0) {
+            showAlert('No root-level JSON metadata files found in the selected folder.', 'warning');
+            return;
+        }
+        
+        // Parse participants.tsv if found
+        if (participantsTsvFile) {
+            parseParticipantsTsv(participantsTsvFile);
+        } else {
+            window.participantsTsvData = null;
+            console.log('No participants.tsv found');
+        }
+        
+        // Populate file selector
+        const fileList = metadataFiles.map(f => f.webkitRelativePath || f.name);
+        populateFileSelector(fileList);
+        
+        // Debug logging
+        console.log('Loaded metadata files:', fileList);
+        console.log('Total JSON files found:', metadataFiles.length);
+        metadataFiles.forEach(f => console.log('  -', f.webkitRelativePath || f.name));
+        
+        // Store files for later loading
+        window.selectedDatasetFiles = metadataFiles;
+        
+        // Show tool selection instead of editor directly
+        document.getElementById('toolSelectionSection').style.display = 'block';
+        
+        // Check if participants.json exists to show NeuroBagel option
+        const hasParticipants = metadataFiles.some(f => 
+            (f.webkitRelativePath || f.name).endsWith('participants.json')
+        );
+        
+        if (hasParticipants) {
+            document.getElementById('toolBagelBtnContainer').style.display = 'block';
+        } else {
+            document.getElementById('toolBagelBtnContainer').style.display = 'none';
+        }
+        
+        uploadArea.style.display = 'none';
+        showAlert(`Dataset loaded! Found ${metadataFiles.length} root-level JSON metadata files.`, 'success');
+    }
+
+    // Parse participants.tsv and extract unique values for each column
+    function parseParticipantsTsv(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const content = e.target.result;
+                const lines = content.trim().split('\n');
+                
+                if (lines.length < 2) {
+                    console.warn('participants.tsv is empty or has only header');
+                    return;
+                }
+                
+                // Parse header - handle potential BOM and trim
+                let headerLine = lines[0];
+                if (headerLine.startsWith('\ufeff')) {
+                    headerLine = headerLine.substring(1);
+                }
+                const headers = headerLine.split('\t').map(h => h.trim());
+                console.log('TSV headers:', headers);
+                
+                // Extract unique values for each column
+                const columnValues = {};
+                headers.forEach(header => {
+                    if (header) columnValues[header] = new Set();
+                });
+                
+                // Process data rows
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split('\t');
+                    headers.forEach((header, idx) => {
+                        if (idx < values.length && values[idx].trim()) {
+                            columnValues[header].add(values[idx].trim());
+                        }
+                    });
+                }
+                
+                // Convert Sets to sorted arrays
+                const uniqueValues = {};
+                Object.keys(columnValues).forEach(header => {
+                    uniqueValues[header] = Array.from(columnValues[header]).sort();
+                });
+                
+                window.participantsTsvData = uniqueValues;
+                console.log('Extracted TSV unique values:', uniqueValues);
+            } catch (err) {
+                console.error('Error parsing participants.tsv:', err);
+                window.participantsTsvData = null;
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function populateFileSelector(files) {
+        fileSelector.innerHTML = '<option value="">-- Select File --</option>';
+        
+        if (files.length === 0) {
+            console.warn('No files to populate in selector');
+            showAlert('No JSON files found. Ensure your dataset has metadata files at the root level.', 'warning');
+        }
+        
+        files.forEach(file => {
+            const fileValue = typeof file === 'string' ? file : file.name;
+            const fileDisplay = typeof file === 'string' ? file : file.name;
+            
+            console.log('Adding to selector:', fileDisplay);
+            
+            const option = document.createElement('option');
+            option.value = fileValue;
+            option.textContent = fileDisplay;
+            fileSelector.appendChild(option);
+        });
+        
+        console.log('File selector populated with', files.length, 'files');
+    }
+
+    function showAlert(message, type = 'info') {
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.role = 'alert';
+        alert.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        alertContainer.appendChild(alert);
+        
+        // Auto-dismiss non-error alerts after 5 seconds
+        if (type !== 'danger') {
+            setTimeout(() => {
+                if (alert.parentNode) alert.remove();
+            }, 5000);
+        }
+    }
+});
+</script>

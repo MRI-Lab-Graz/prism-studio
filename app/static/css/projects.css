@@ -1,0 +1,130 @@
+.project-card {
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+.project-card:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.15);
+    transform: translateY(-2px);
+}
+.project-card.active {
+    border-color: #0d6efd;
+    background-color: #f8f9ff;
+}
+.project-card i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+.project-card h5 {
+    margin-bottom: 10px;
+}
+.project-card p {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+.form-section {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+.form-section.active {
+    display: block;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.validation-result {
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+.validation-result.valid {
+    background-color: #d1e7dd;
+    border: 1px solid #badbcc;
+}
+.validation-result.invalid {
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+}
+.validation-result.warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffecb5;
+}
+.issue-item {
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    background-color: #fff;
+    border-left: 4px solid;
+}
+.issue-item.fixable {
+    border-left-color: #ffc107;
+}
+.issue-item.not-fixable {
+    border-left-color: #dc3545;
+}
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+.stat-item {
+    text-align: center;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+.stat-item .stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #0d6efd;
+}
+.stat-item .stat-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+/* Study Metadata completeness */
+.completeness-dots { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.completeness-dot {
+    width: 12px; height: 12px; border-radius: 50%; display: inline-block;
+}
+.completeness-dot.full { background-color: #198754; }
+.completeness-dot.partial { background-color: #ffc107; }
+.completeness-dot.empty { background-color: #dee2e6; }
+.section-completeness-row {
+    display: flex; align-items: center; gap: 8px; padding: 4px 0;
+}
+.section-completeness-row .section-label {
+    min-width: 140px; font-size: 0.85rem; font-weight: 500;
+}
+.section-completeness-row .section-badge {
+    font-size: 0.75rem;
+}
+.sm-hint-badge { transition: opacity 0.2s; }
+.sm-hint-badge:hover { opacity: 0.8; }
+/* Required field validation states */
+.form-control.required-field-empty {
+    background-color: #ffe6e6;
+    border-color: #dc3545;
+}
+.form-control.required-field-filled {
+    background-color: #e6ffe6;
+    border-color: #198754;
+}
+.form-control:focus.required-field-empty {
+    background-color: #ffcccc;
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+.form-control:focus.required-field-filled {
+    background-color: #ccffcc;
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}
