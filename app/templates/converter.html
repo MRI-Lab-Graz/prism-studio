@@ -309,11 +309,13 @@
                 <div class="alert alert-info">
                     <strong>ℹ️ What is this?</strong><br>
                     <small>
-                        <strong>Additional Variables:</strong> Adds selected non-core columns from your data to participants.tsv (saved to PROJECT library)<br>
+                        <strong>Additional Variables:</strong> Saves your selected non-core columns as a <code>participants_mapping.json</code> in your project library.<br>
+                        These columns are then included in <code>participants.tsv</code> the next time you run <strong>2. Extract &amp; Convert</strong>.<br>
                         <strong>ID Mapping:</strong> Maps participant IDs between different systems<br>
                         <br>
-                        <i class="fas fa-check-circle text-success me-1"></i> File will be saved to your <strong>project</strong> library survey directory<br>
-                        <i class="fas fa-book text-info me-1"></i> References participant.json template from <strong>global</strong> library<br>
+                        <i class="fas fa-check-circle text-success me-1"></i> File will be saved as <code>code/library/participants_mapping.json</code><br>
+                        <i class="fas fa-book text-info me-1"></i> It references <code>participants.json</code> definitions from your library/global template<br>
+                        <i class="fas fa-circle-info text-primary me-1"></i> This does <strong>not</strong> overwrite <code>participants.json</code> directly<br>
                         <i class="fas fa-circle-info text-secondary me-1"></i> Variables without NeuroBagel template definitions will be added as custom fields
                     </small>
                 </div>
@@ -323,7 +325,7 @@
                 </div>
 
                 <div id="mappingSuccess" class="alert alert-success d-none mt-3">
-                    <i class="fas fa-check-circle me-2"></i>Additional variables saved successfully!
+                    <i class="fas fa-check-circle me-2"></i>Mapping saved successfully!
                     <div id="mappingFilePath" class="mt-2 small"></div>
                 </div>
 
@@ -334,7 +336,7 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelMappingBtn">Cancel</button>
                 <button type="button" class="btn btn-success" id="saveMappingBtn" disabled>
-                    <i class="fas fa-save me-2"></i>Save Selection
+                    <i class="fas fa-save me-2"></i>Save Mapping
                 </button>
                 <button type="button" class="btn btn-primary d-none" id="downloadMappingBtn">
                     <i class="fas fa-download me-2"></i>Download JSON
@@ -2948,7 +2950,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let html = `
             <div class="mb-3">
-                <h6>Select columns to include in participants.tsv:</h6>
+                <h6>Select columns to include in participants.tsv (on next Extract & Convert):</h6>
                 <div class="form-check-list" style="max-height: 300px; overflow-y: auto;">
         `;
 
@@ -3005,14 +3007,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Build mapping object
-            const mapping = {};
+            // Build explicit participants_mapping.json-compatible object.
+            // Important: keep selected variable names as-is (e.g., session, completion_date)
+            // so they appear exactly in participants.tsv after conversion.
+            const mapping = {
+                version: '1.0',
+                description: 'Additional variables mapping created from PRISM web UI',
+                mappings: {}
+            };
             selected.forEach(checkbox => {
-                const fieldCode = checkbox.value;
-                const description = checkbox.getAttribute('data-description');
-                // Use the description as target column name if available, otherwise use field code
-                const targetCol = description ? description.toLowerCase().replace(/\s+/g, '_') : fieldCode;
-                mapping[fieldCode] = targetCol;
+                const fieldCode = String(checkbox.value || '').trim();
+                if (!fieldCode) return;
+
+                const description = String(checkbox.getAttribute('data-description') || '').trim();
+                mapping.mappings[fieldCode] = {
+                    source_column: fieldCode,
+                    standard_variable: fieldCode,
+                    type: 'string'
+                };
+                if (description) {
+                    mapping.mappings[fieldCode].description = description;
+                }
             });
 
             // Get the library path from the form (will use project library by preference in backend)
@@ -3049,7 +3064,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('mappingSuccess').classList.remove('d-none');
         document.getElementById('mappingError').classList.add('d-none');
         document.getElementById('mappingFilePath').innerHTML = `
-            <strong>File created:</strong> <code>${filePath}</code>
+            <strong>File created:</strong> <code>${filePath}</code><br>
+            <span class="text-muted">Run <strong>2. Extract &amp; Convert</strong> to apply these variables to participants.tsv.</span>
         `;
         
         // Hide the Save and Cancel buttons, show the Close button
@@ -3402,7 +3418,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Add hint to open additional variables selector
                     appendLog('', 'info');
-                    appendLog(`   💡 TIP: Click "Add Additional Variables (Optional)" to include selected columns in participants.tsv`, 'info');
+                    appendLog(`   💡 TIP: Click "Add Additional Variables (Optional)", save the mapping, then run "2. Extract & Convert" to apply it.`, 'info');
                 }
                 
                 appendLog('', 'info');

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="520" viewBox="0 0 1600 520" role="img" aria-labelledby="title desc">
+  <title id="title">PRISM Workshop Flow</title>
+  <desc id="desc">Flow image showing import, validate, recipes, templates.</desc>
+  <rect width="1600" height="520" fill="#0b1020"/>
+  <text x="80" y="90" fill="#ffffff" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="52" font-weight="700">Workshop Flow</text>
+  <text x="80" y="132" fill="#a5b4fc" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="26">Participants first, surveys second, then quality + outputs</text>
+
+  <g font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24" font-weight="600">
+    <rect x="80" y="200" width="210" height="96" rx="16" fill="#1d4ed8"/>
+    <text x="108" y="258" fill="#ffffff">Participants</text>
+
+    <rect x="350" y="200" width="190" height="96" rx="16" fill="#2563eb"/>
+    <text x="395" y="258" fill="#ffffff">Survey</text>
+
+    <rect x="600" y="200" width="190" height="96" rx="16" fill="#3b82f6"/>
+    <text x="648" y="258" fill="#0f172a">Validate</text>
+
+    <rect x="850" y="200" width="190" height="96" rx="16" fill="#60a5fa"/>
+    <text x="903" y="258" fill="#0f172a">Recipes</text>
+
+    <rect x="1100" y="200" width="220" height="96" rx="16" fill="#93c5fd"/>
+    <text x="1154" y="258" fill="#0f172a">Templates</text>
+  </g>
+
+  <g stroke="#cbd5e1" stroke-width="6" fill="none">
+    <line x1="292" y1="248" x2="344" y2="248"/>
+    <line x1="542" y1="248" x2="594" y2="248"/>
+    <line x1="792" y1="248" x2="844" y2="248"/>
+    <line x1="1042" y1="248" x2="1094" y2="248"/>
+  </g>
+
+  <text x="80" y="420" fill="#cbd5e1" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24">Keep metadata complete at every stage for BIDS app compatibility.</text>
+</svg>
