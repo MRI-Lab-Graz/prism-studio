@@ -11,7 +11,6 @@ This module has been refactored to use modular components from src/web/:
 
 import os
 import sys
-import signal
 import time
 import webbrowser
 import threading
@@ -149,6 +148,7 @@ else:
 # Global shutdown flag to signal graceful termination
 _shutdown_requested = threading.Event()
 
+
 def cleanup_and_exit(exit_code=0):
     """Cleanup resources and exit the entire process (not just Flask)."""
     try:
@@ -163,6 +163,7 @@ def cleanup_and_exit(exit_code=0):
         # Force exit the entire Python process
         # This is necessary for the compiled exe to fully terminate
         os._exit(exit_code)
+
 
 # Register cleanup on normal exit
 atexit.register(lambda: cleanup_and_exit(0))
@@ -445,15 +446,15 @@ def health_check():
 @app.route("/shutdown", methods=["POST"])
 def shutdown():
     """Shutdown the server and exit the entire application process."""
-    
+
     def terminate_app():
         """Terminate the Flask server and exit the process."""
         # Brief delay to allow response to be sent
         time.sleep(0.3)
-        
+
         try:
             print("🛑 Shutdown request received, terminating application...")
-            
+
             # Try Werkzeug shutdown first (works in Flask dev server)
             func = request.environ.get("werkzeug.server.shutdown")
             if callable(func):
@@ -469,13 +470,12 @@ def shutdown():
             # Force exit the entire process
             # This ensures the exe/process completely terminates, not just the server
             cleanup_and_exit(0)
-    
+
     # Start termination in a background thread so we can send the response first
     term_thread = threading.Thread(target=terminate_app, daemon=False)
     term_thread.start()
-    
-    return jsonify({"success": True, "message": "Application is shutting down..."})
 
+    return jsonify({"success": True, "message": "Application is shutting down..."})
 
 
 # Note: Validation, Conversion, Library, and Tools routes are now handled by blueprints.
@@ -552,6 +552,7 @@ def main():
         and sys.platform.startswith("win")
         and not args.no_browser
     ):
+
         def show_startup_dialog():
             """Show startup notification with proper DPI scaling using tkinter"""
             try:
@@ -561,10 +562,10 @@ def main():
                 root = tk.Tk()
                 root.withdraw()  # Hide main window
                 root.attributes("-topmost", True)  # Bring to front
-                
+
                 messagebox.showinfo(
                     "PRISM Studio",
-                    f"PRISM Studio is starting...\n\nOpening browser at:\n{url}\n\nIf browser doesn't open automatically,\nplease visit the URL manually."
+                    f"PRISM Studio is starting...\n\nOpening browser at:\n{url}\n\nIf browser doesn't open automatically,\nplease visit the URL manually.",
                 )
                 root.destroy()
             except Exception as e:

@@ -299,7 +299,9 @@ export function validateAllMandatoryFields() {
 
     const labels = {
         Basics: {
-            Name: 'Dataset Name'
+            Name: 'Dataset Name (min. 3 characters)',
+            Authors: 'Authors (at least 1)',
+            Keywords: 'Keywords (at least 3)'
         },
         Overview: {
             Main: 'Dataset Overview'
@@ -336,6 +338,22 @@ export function validateAllMandatoryFields() {
         invalidFields.push(periodError);
     }
 
+    const datasetName = (document.getElementById('metadataName')?.value || '').trim();
+    if (datasetName.length > 0 && datasetName.length < 3) {
+        invalidFields.push('Dataset Name must be at least 3 characters long.');
+    }
+
+    const authors = getAuthorsList();
+    if (authors.length < 1) {
+        invalidFields.push('At least one Author is required.');
+    }
+
+    const keywords = (document.getElementById('metadataKeywords')?.value || '')
+        .split(',').map(s => s.trim()).filter(s => s);
+    if (keywords.length < 3) {
+        invalidFields.push('At least 3 Keywords are required (comma-separated).');
+    }
+
     return {
         isValid: emptyFields.length === 0 && invalidFields.length === 0,
         emptyFields,
@@ -365,6 +383,7 @@ export function updateCreateProjectButton() {
 
 const mandatoryFieldIds = [
     'metadataName',
+    'metadataKeywords',
     'smOverviewMain', 'smSDType', 'smRecMethod',
     'smRecPeriodStartYear', 'smRecPeriodStartMonth',
     'smRecPeriodEndYear', 'smRecPeriodEndMonth',
@@ -921,7 +940,7 @@ export function computeLocalCompleteness() {
     let totalFields = 0;
 
     const requiredFields = {
-        Basics: new Set(['Name']),
+        Basics: new Set(['Name', 'Authors', 'Keywords']),
         Overview: new Set(['Main']),
         StudyDesign: new Set(['Type']),
         Recruitment: new Set(['Method', 'Location', 'Period.Start', 'Period.End', 'Compensation']),
@@ -971,12 +990,13 @@ export function computeLocalCompleteness() {
     const keywordList = document.getElementById('metadataKeywords')?.value
         .split(',').map(s => s.trim()).filter(s => s) || [];
 
-    addField('Basics', 'Name', textFilled(document.getElementById('metadataName')?.value));
+    const datasetName = (document.getElementById('metadataName')?.value || '').trim();
+    addField('Basics', 'Name', datasetName.length >= 3);
     addField('Basics', 'Authors', getAuthorsList().length > 0);
     addField('Basics', 'Description', textFilled(document.getElementById('smOverviewMain')?.value));
     addField('Basics', 'EthicsApprovals', getEthicsApprovals().length > 0);
     addField('Basics', 'License', textFilled(document.getElementById('metadataLicense')?.value));
-    addField('Basics', 'Keywords', keywordList.length > 0);
+    addField('Basics', 'Keywords', keywordList.length >= 3);
     addField('Basics', 'Acknowledgements', textFilled(document.getElementById('metadataAcknowledgements')?.value));
     addField('Basics', 'DatasetDOI', textFilled(document.getElementById('metadataDOI')?.value));
     addField('Basics', 'DatasetType', textFilled(document.getElementById('metadataType')?.value));
