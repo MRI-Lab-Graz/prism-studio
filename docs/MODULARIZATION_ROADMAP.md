@@ -49,7 +49,7 @@ Principles:
 - One command domain per module.
 - Shared logic moved to `services/`.
 
-## Phase 3 — Incremental Extraction (in progress)
+## Phase 3 — Incremental Extraction (completed)
 
 Recommended order (lowest risk first):
 
@@ -82,11 +82,12 @@ Migration rules:
 - Leave compatibility wrappers in old paths for one release cycle.
 - Update docs and internal references after each batch.
 
-## Phase 5 — Cleanup and Hardening
+## Phase 5 — Cleanup and Hardening (completed)
 
 - Remove temporary wrappers after one release cycle.
 - Add import boundary checks (no command module reaches unrelated domains).
 - Update developer docs for new layout and contribution flow.
+- Follow `docs/WRAPPER_CLEANUP_CHECKLIST.md` for deterministic wrapper retirement.
 
 ## Progress Log
 
@@ -129,6 +130,18 @@ Migration rules:
   - CLI/environment examples now reference `scripts/data/*`
   - moved data scripts now advertise canonical invocation paths in their usage headers
 - Audited non-doc automation hooks (workflows/config/helper surfaces) for legacy root-script paths; no remaining references found for moved scripts.
+- Added wrapper retirement playbook in `docs/WRAPPER_CLEANUP_CHECKLIST.md` with explicit exit criteria, removal steps, and rollback plan.
+- Added import-boundary tests for CLI command modules:
+  - `tests/test_cli_command_import_boundaries.py`
+  - forbids command-module imports of `src.cli.commands.*` and CLI wiring modules (`dispatch`, `parser`, `entrypoint`)
+  - forbids relative imports in command modules to keep boundaries explicit
+- Added release-note coverage in `CHANGELOG.md` for canonical script paths and wrapper grace-period policy.
+- Added wrapper-removal readiness gate report in `docs/WRAPPER_REMOVAL_READINESS.md` with current go/no-go status and trigger conditions.
+- Executed immediate wrapper cleanup (user-directed):
+  - removed legacy root-level script wrappers
+  - standardized script execution on canonical paths in `scripts/{ci,data,dev,maintenance,release,setup}`
+  - moved setup test utilities to `scripts/ci/` with setup-path compatibility wrappers
+  - updated changelog + readiness/checklist docs to reflect completed cleanup
 
 ## Learned Lessions
 
@@ -151,7 +164,12 @@ Migration rules:
 - Canonical-path doc updates can happen incrementally right after each move as long as wrappers remain available.
 - A single regex scan over all moved root scripts is an efficient way to catch remaining stale path references after each reorg batch.
 - Separating path-audit scans into docs and non-doc automation scopes makes it easy to confirm migration completeness without unnecessary edits.
+- Wrapper deletion is safer when gated by explicit release-cycle, reference-scan, and rollback criteria documented up front.
+- AST-based import boundary tests provide a low-cost guardrail against cross-domain coupling regressions.
+- Declaring migration policy in changelog early reduces ambiguity for downstream users and automation maintainers.
+- Explicit go/no-go readiness reporting prevents premature wrapper deletion and keeps cleanup decisions auditable.
+- When cleanup timing changes, update policy docs first and record the override decision explicitly to keep migration history coherent.
 
 ## Immediate next step
 
-- Keep wrappers for one release cycle, then plan a cleanup PR that removes wrappers and updates any remaining external references in one controlled step.
+- Monitor downstream automation for stale root-script references and hotfix only missing compatibility wrappers if breakage is reported.

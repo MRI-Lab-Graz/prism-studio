@@ -37,6 +37,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Scripts Canonicalization**: Reorganized utility scripts into domain folders (`scripts/ci`, `scripts/data`, `scripts/dev`, `scripts/maintenance`, `scripts/release`, `scripts/setup`) and updated internal docs/examples to canonical paths.
+- **Setup Test Script Placement**: Moved setup-related test utilities to `scripts/ci/` and retained setup-path compatibility wrappers for transition.
+
+### Added
+- **Wrapper Retirement Playbook**: Added `docs/WRAPPER_CLEANUP_CHECKLIST.md` with explicit exit criteria, removal sequence, validation commands, and rollback plan for controlled wrapper removal.
+
+### Removed
+- **Legacy Root Script Wrappers**: Removed old root-level `scripts/*.py|*.sh|*.bat|*.ps1` wrappers and standardized execution on canonical script locations under `scripts/{ci,data,dev,maintenance,release,setup}`.
+
 ## [1.9.2] - 2026-02-05
 
 ### Security
