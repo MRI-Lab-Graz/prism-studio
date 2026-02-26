@@ -8,7 +8,7 @@ Tests the round-trip serialization of metadata fields:
 3. dataset_description.json → CITATION.cff sync
 4. dataset_description.json → Form UI reload
 
-Run: python3 test_bids_compliance.py <project_path>
+Run: python3 scripts/ci/test_bids_compliance.py <project_path>
 """
 
 import json

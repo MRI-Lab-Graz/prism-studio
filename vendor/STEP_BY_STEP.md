@@ -106,7 +106,7 @@ When they clone/download your repository:
 
 They can verify with:
 ```cmd
-scripts\test_pyedflib.bat
+scripts\ci\test_pyedflib.bat
 ```
 
 ---
