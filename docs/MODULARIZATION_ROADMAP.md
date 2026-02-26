@@ -56,7 +56,7 @@ Recommended order (lowest risk first):
 1. `library` + `dataset` handlers ✅
 2. `convert` + `anonymize` handlers ✅
 3. `biometrics` handlers ✅
-4. `survey` handlers ✅ (support handlers)
+4. `survey` handlers ✅
 5. `recipes` handlers ✅
 
 After each extraction:
@@ -98,9 +98,10 @@ Migration rules:
   - `commands/convert.py`
   - `commands/anonymize.py`
   - `commands/biometrics.py`
-  - `commands/survey.py` (safe support handlers)
+  - `commands/survey.py` (including `survey convert`)
   - `commands/recipes.py`
 - Kept compatibility by delegating from `app/prism_tools.py` wrappers.
+- Centralized CLI dispatch routing in `app/src/cli/dispatch.py` and wired `app/prism_tools.py` to it.
 
 ## Learned Lessions
 
@@ -109,8 +110,11 @@ Migration rules:
 - Keep extraction batches small and domain-focused (`library`, `dataset`, etc.) to simplify review.
 - Validate after every batch with targeted CLI tests plus repository safety checks.
 - Keep BIDS compatibility constraints explicit in refactor decisions.
+- Large handler moves are safer when performed as pure function relocation + thin wrapper delegation.
+- Keep temporary lifecycle objects (`TemporaryDirectory`) scoped exactly as in legacy behavior during migration.
+- Moving dispatch first (before full parser migration) reduces risk and makes final parser extraction straightforward.
 
 ## Immediate next step
 
-- Extract the remaining `survey convert` handler into `commands/survey.py`,
-  then centralize parser/dispatch wiring in `app/src/cli/parser.py` + `dispatch.py`.
+- Centralize parser construction in `app/src/cli/parser.py`,
+  then reduce `app/prism_tools.py` to a thin compatibility entrypoint.
