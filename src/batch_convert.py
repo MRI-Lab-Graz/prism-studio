@@ -821,7 +821,6 @@ def batch_convert_folder(
                 except ImportError:
                     # Fallback if running from different location
                     import sys
-                    from pathlib import Path
 
                     app_src = Path(__file__).parent.parent / "app" / "src"
                     if app_src.exists():
