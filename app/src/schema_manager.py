@@ -91,6 +91,7 @@ def load_all_schemas(schema_dir="schemas", version=None):
     modalities = [
         "survey",
         "biometrics",
+        "environment",
         "events",
         "physio",
         "eyetracking",
