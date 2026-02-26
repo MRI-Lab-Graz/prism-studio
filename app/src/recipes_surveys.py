@@ -593,7 +593,9 @@ def _calculate_derived_variables(
                 if not any_missing:
                     try:
                         # Use SAFE_GLOBALS to prevent code injection
-                        d_result = eval(expr, SAFE_GLOBALS, {})  # nosec B307 - sandboxed with SAFE_GLOBALS
+                        d_result = eval(
+                            expr, SAFE_GLOBALS, {}
+                        )  # nosec B307 - sandboxed with SAFE_GLOBALS
                     except Exception:
                         d_result = None
 
@@ -655,7 +657,9 @@ def _calculate_scores(
                     expr = expr.replace(f"{{{item_id}}}", val_str)
                 try:
                     # Use SAFE_GLOBALS to prevent code injection
-                    result = eval(expr, SAFE_GLOBALS, {})  # nosec B307 - sandboxed with SAFE_GLOBALS
+                    result = eval(
+                        expr, SAFE_GLOBALS, {}
+                    )  # nosec B307 - sandboxed with SAFE_GLOBALS
                 except Exception:
                     result = None
         elif method == "map":

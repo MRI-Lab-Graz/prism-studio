@@ -445,9 +445,9 @@ class EdfWriter:
         if not self._enforce_record_duration and not any(
             f is None for f in sample_freqs
         ):
-            assert all(isinstance(f, (float, int)) for f in sample_freqs), (
-                f"{sample_freqs=} contains non int/float"
-            )
+            assert all(
+                isinstance(f, (float, int)) for f in sample_freqs
+            ), f"{sample_freqs=} contains non int/float"
             self.record_duration = _calculate_record_duration(sample_freqs)
 
         set_technician(self.handle, du(self.technician))
@@ -1029,10 +1029,8 @@ class EdfWriter:
         if (len(data_list)) == 0:
             raise WrongInputSize("Data list is empty")
         if len(data_list) != len(self.channels):
-            raise WrongInputSize(
-                "Number of channels ({}) \
-             unequal to length of data ({})".format(len(self.channels), len(data_list))
-            )
+            raise WrongInputSize("Number of channels ({}) \
+             unequal to length of data ({})".format(len(self.channels), len(data_list)))
 
         # Check for F-contiguous arrays
         if not all(s.flags.c_contiguous for s in data_list):

@@ -19,7 +19,9 @@ from pyedflib.edfwriter import EdfWriter
 
 def _compare_cropped_edf(path_orig_edf, path_cropped_edf):
     # Load original EDF
-    orig_signals, orig_signal_headers, orig_header = highlevel.read_edf(path_orig_edf)  # noqa: E501
+    orig_signals, orig_signal_headers, orig_header = highlevel.read_edf(
+        path_orig_edf
+    )  # noqa: E501
     orig_start = orig_header["startdate"]
 
     # Load cropped EDF

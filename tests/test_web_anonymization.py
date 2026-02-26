@@ -103,21 +103,21 @@ def test_anonymization_with_test_dataset():
         print(anonymized_content)
 
         # Check that original IDs are gone
-        assert "sub-001" not in anonymized_content, (
-            "Original ID found in anonymized file"
-        )
-        assert "sub-002" not in anonymized_content, (
-            "Original ID found in anonymized file"
-        )
-        assert "sub-003" not in anonymized_content, (
-            "Original ID found in anonymized file"
-        )
+        assert (
+            "sub-001" not in anonymized_content
+        ), "Original ID found in anonymized file"
+        assert (
+            "sub-002" not in anonymized_content
+        ), "Original ID found in anonymized file"
+        assert (
+            "sub-003" not in anonymized_content
+        ), "Original ID found in anonymized file"
 
         # Check that questions are masked
         assert "How old are you?" not in anonymized_content, "Question text not masked"
-        assert "[MASKED]" in anonymized_content or "***" in anonymized_content, (
-            "No masking marker found"
-        )
+        assert (
+            "[MASKED]" in anonymized_content or "***" in anonymized_content
+        ), "No masking marker found"
 
         print("✅ Anonymization verification passed")
 
