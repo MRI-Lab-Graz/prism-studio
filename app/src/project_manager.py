@@ -712,7 +712,7 @@ Subfolders:
         """Create project-level metadata template."""
         return {
             "name": name,
-            "paths": {"rawdata": "rawdata", "sourcedata": "sourcedata"},
+            "paths": {"sourcedata": "sourcedata"},
             "app": {"schema": "1", "last_opened": date.today().isoformat()},
             "governance": {
                 "funding": config.get("funding", []),

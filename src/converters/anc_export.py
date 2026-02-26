@@ -386,7 +386,7 @@ abstract: >-
   {metadata.get("DATASET_ABSTRACT", "A PRISM/BIDS dataset.")}
 license: {metadata.get("LICENSE", "Unknown")}
 version: 1.0.0
-date-released: {datetime.now().strftime("%Y-%m-%d")}
+date-released: "{datetime.now().strftime("%Y-%m-%d")}"
 """
 
         output_file = self.output_path / "CITATION.cff"
