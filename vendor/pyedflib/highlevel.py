@@ -398,9 +398,9 @@ def read_edf(
         the main header of the EDF file containing meta information.
 
     """
-    assert (ch_nrs is None) or (ch_names is None), (
-        "names xor numbers should be supplied"
-    )
+    assert (ch_nrs is None) or (
+        ch_names is None
+    ), "names xor numbers should be supplied"
     if ch_nrs is not None and not isinstance(ch_nrs, list):
         ch_nrs = [ch_nrs]
     if ch_names is not None and not isinstance(ch_names, list):
@@ -454,9 +454,9 @@ def read_edf(
             dtype = np.int32 if digital else float
             signals = np.array(signals, dtype=dtype)
 
-    assert len(signals) == len(signal_headers), (
-        "Something went wrong, lengths of headers is not length of signals"
-    )
+    assert len(signals) == len(
+        signal_headers
+    ), "Something went wrong, lengths of headers is not length of signals"
     del f
     return signals, signal_headers, header
 
@@ -499,13 +499,13 @@ def write_edf(
     bool
          True if successful, False if failed.
     """
-    assert header is None or isinstance(header, dict), (
-        "header must be dictioniary or None"
-    )
+    assert header is None or isinstance(
+        header, dict
+    ), "header must be dictioniary or None"
     assert isinstance(signal_headers, list), "signal headers must be list"
-    assert len(signal_headers) == len(signals), (
-        "signals and signal_headers must be same length"
-    )
+    assert len(signal_headers) == len(
+        signals
+    ), "signals and signal_headers must be same length"
     assert file_type in [-1, 0, 1, 2, 3], "file_type must be in range -1, 3"
 
     # copy objects to prevent accidental changes to mutable objects
@@ -541,19 +541,19 @@ def write_edf(
         pmin, pmax = shead["physical_min"], shead["physical_max"]
         label = shead["label"]
         if digital:  # exception as it will lead to clipping
-            assert dmin <= sig.min(), (
-                "digital_min is {}, but signal_min is {}for channel {}".format(
-                    dmin, sig.min(), label
-                )
+            assert (
+                dmin <= sig.min()
+            ), "digital_min is {}, but signal_min is {}for channel {}".format(
+                dmin, sig.min(), label
             )
-            assert dmax >= sig.max(), (
-                "digital_min is {}, but signal_min is {}for channel {}".format(
-                    dmax, sig.max(), label
-                )
+            assert (
+                dmax >= sig.max()
+            ), "digital_min is {}, but signal_min is {}for channel {}".format(
+                dmax, sig.max(), label
             )
-            assert pmin != pmax, (
-                f"physical_min {pmin} should be different from physical_max {pmax}"
-            )
+            assert (
+                pmin != pmax
+            ), f"physical_min {pmin} should be different from physical_max {pmax}"
         else:  # only warning if difference is larger than the rounding error (which is quite large as edf scales data between phys_min and phys_max using -dig_min and +dig_max)
             edf_accuracy = min([sig.max() / dmax, sig.min() / dmin])
             if abs(pmin - sig.min()) < edf_accuracy:
@@ -563,10 +563,10 @@ def write_edf(
                     category=UserWarning,
                 )
             else:  # difference is > edf_accuracy
-                assert pmin <= sig.min(), (
-                    "phys_min is {}, but signal_min is {} for channel {}".format(
-                        pmin, sig.min(), label
-                    )
+                assert (
+                    pmin <= sig.min()
+                ), "phys_min is {}, but signal_min is {} for channel {}".format(
+                    pmin, sig.min(), label
                 )
             if abs(sig.max() - pmax) < edf_accuracy:
                 warnings.warn(
@@ -575,10 +575,10 @@ def write_edf(
                     category=UserWarning,
                 )
             else:
-                assert pmax >= sig.max(), (
-                    "phys_max is {}, but signal_max is {} for channel {}".format(
-                        pmax, sig.max(), label
-                    )
+                assert (
+                    pmax >= sig.max()
+                ), "phys_max is {}, but signal_max is {} for channel {}".format(
+                    pmax, sig.max(), label
                 )
 
     # get annotations, in format [[timepoint, duration, description], [...]]
@@ -784,13 +784,13 @@ def drop_channels(
     # check all parameters are good
     assert to_keep is None or to_drop is None, "Supply only to_keep xor to_drop"
     if to_keep is not None:
-        assert all(isinstance(ch, (str, int)) for ch in to_keep), (
-            "channels must be int or string"
-        )
+        assert all(
+            isinstance(ch, (str, int)) for ch in to_keep
+        ), "channels must be int or string"
     if to_drop is not None:
-        assert all(isinstance(ch, (str, int)) for ch in to_drop), (
-            "channels must be int or string"
-        )
+        assert all(
+            isinstance(ch, (str, int)) for ch in to_drop
+        ), "channels must be int or string"
     assert os.path.exists(edf_source), f"source file {edf_source} does not exist"
     assert edf_source != edf_target, "For safet, target must not be source file."
 
@@ -966,16 +966,16 @@ def crop_edf(
             stop = current_start + timedelta(seconds=stop)
         else:
             pass
-    assert stop <= current_stop, (
-        "new stop value must not be after current end of recording"
-    )
+    assert (
+        stop <= current_stop
+    ), "new stop value must not be after current end of recording"
 
-    assert start < current_stop, (
-        "new start value must not be after current end of recording"
-    )
-    assert stop > current_start, (
-        "new stop value must not be before current start of recording"
-    )
+    assert (
+        start < current_stop
+    ), "new start value must not be after current end of recording"
+    assert (
+        stop > current_start
+    ), "new stop value must not be before current start of recording"
     stop_diff_from_start = (stop - current_start).total_seconds()
 
     # Crop each signal

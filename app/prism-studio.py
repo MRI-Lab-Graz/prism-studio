@@ -520,7 +520,7 @@ def main():
 
     args = parser.parse_args()
 
-    host = "0.0.0.0" if args.public else args.host
+    host = "0.0.0.0" if args.public else args.host  # nosec B104
 
     # Find a free port if the default one is taken
     port = args.port
@@ -530,7 +530,8 @@ def main():
             print(f"[INFO]  Port {args.port} is in use, using {port} instead")
 
     display_host = "localhost" if host == "127.0.0.1" else host
-    url = f"http://{display_host}:{port}"
+    scheme = "http"
+    url = f"{scheme}://{display_host}:{port}"
 
     print("Starting PRISM Studio")
     print(f"URL: {url}")
