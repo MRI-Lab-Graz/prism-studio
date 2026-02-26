@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **Settings Management**: Corrected last project path and name persistence in application settings.
-- **ANC Export Metadata**: Fixed date format handling in ANC export for better compatibility with external tools.
+- **AND Export Metadata**: Fixed date format handling in AND export for better compatibility with external tools.
 
 ## [1.10.1] - 2026-02-25
 

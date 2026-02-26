@@ -121,7 +121,15 @@ def run_bids_validator(
 
         # Run Deno validator
         process = subprocess.run(
-            ["deno", "run", "-ERWN", DENO_BIDS_VALIDATOR_SPEC, root_dir, "--json"],
+            [
+                "deno",
+                "run",
+                "-ERWN",
+                "--allow-sys",
+                DENO_BIDS_VALIDATOR_SPEC,
+                root_dir,
+                "--json",
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -313,7 +321,9 @@ def run_bids_validator(
                 )
 
         if process.returncode != 0 and not issues:
-            issues.append(("ERROR", f"BIDS Validator failed to run: {process.stderr}", root_dir))
+            issues.append(
+                ("ERROR", f"BIDS Validator failed to run: {process.stderr}", root_dir)
+            )
 
     except (subprocess.CalledProcessError, FileNotFoundError):
         if deno_failure_message:
@@ -325,7 +335,11 @@ def run_bids_validator(
                 )
             )
         issues.append(
-            ("WARNING", "bids-validator not found or failed to run. Is it installed?", root_dir)
+            (
+                "WARNING",
+                "bids-validator not found or failed to run. Is it installed?",
+                root_dir,
+            )
         )
 
     return issues

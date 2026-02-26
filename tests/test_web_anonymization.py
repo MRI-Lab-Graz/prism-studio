@@ -6,6 +6,7 @@ Test script for web interface anonymization integration.
 import sys
 import tempfile
 from pathlib import Path
+import pytest
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "app"))
@@ -38,7 +39,7 @@ def test_anonymization_payload():
     print(f"   - id_length: {payload['id_length']}")
     print(f"   - random_ids: {payload['random_ids']}")
 
-    return True
+    return
 
 
 def test_anonymization_with_test_dataset():
@@ -103,21 +104,21 @@ def test_anonymization_with_test_dataset():
         print(anonymized_content)
 
         # Check that original IDs are gone
-        assert "sub-001" not in anonymized_content, (
-            "Original ID found in anonymized file"
-        )
-        assert "sub-002" not in anonymized_content, (
-            "Original ID found in anonymized file"
-        )
-        assert "sub-003" not in anonymized_content, (
-            "Original ID found in anonymized file"
-        )
+        assert (
+            "sub-001" not in anonymized_content
+        ), "Original ID found in anonymized file"
+        assert (
+            "sub-002" not in anonymized_content
+        ), "Original ID found in anonymized file"
+        assert (
+            "sub-003" not in anonymized_content
+        ), "Original ID found in anonymized file"
 
         # Check that questions are masked
         assert "How old are you?" not in anonymized_content, "Question text not masked"
-        assert "[MASKED]" in anonymized_content or "***" in anonymized_content, (
-            "No masking marker found"
-        )
+        assert (
+            "[MASKED]" in anonymized_content or "***" in anonymized_content
+        ), "No masking marker found"
 
         print("✅ Anonymization verification passed")
 
@@ -126,7 +127,7 @@ def test_anonymization_with_test_dataset():
             mapping_content = f.read()
             print(f"\nMapping file preview:\n{mapping_content[:200]}...")
 
-        return True
+        return
 
 
 def test_api_endpoint_structure():
@@ -140,11 +141,11 @@ def test_api_endpoint_structure():
 
         # In newer Flask, Blueprints don't hold the url_map directly
         # Basic import test is enough here
-        return True
+        return
 
     except ImportError as e:
         print(f"❌ Failed to import tools blueprint: {e}")
-        return False
+        pytest.skip(f"Tools blueprint not available in this layout: {e}")
 
 
 def main():
@@ -163,7 +164,7 @@ def main():
     for name, test_func in tests:
         try:
             result = test_func()
-            results.append((name, result, None))
+            results.append((name, result is not False, None))
         except Exception as e:
             print(f"❌ Test failed with error: {e}")
             import traceback

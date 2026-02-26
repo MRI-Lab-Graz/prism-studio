@@ -12,7 +12,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Any, Tuple, Optional
+from typing import Dict, List, Any, Optional
 from defusedxml import ElementTree as ET
 from defusedxml import minidom
 import pandas as pd

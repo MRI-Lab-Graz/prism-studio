@@ -121,6 +121,7 @@ def shorten_path(path: str, max_parts: int = 3) -> str:
     if not path:
         return "General"
     import os
+
     parts = path.replace("\\", os.sep).split(os.sep)
     if len(parts) <= max_parts:
         return os.sep.join(parts)

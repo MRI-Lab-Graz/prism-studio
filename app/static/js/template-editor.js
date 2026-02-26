@@ -1,4 +1,3 @@
-<script>
 (function() {
   const modalityEl = document.getElementById('modality');
   const schemaEl = document.getElementById('schemaVersion');
@@ -43,7 +42,8 @@
   const editorHintEl = document.getElementById('editorHint');
 
   const RESERVED_TOPLEVEL = new Set([
-    'Technical', 'Study', 'Metadata', 'I18n', 'LimeSurvey', 'Scoring', 'Normative'
+    'Technical', 'Study', 'Metadata', 'I18n', 'LimeSurvey', 'Scoring', 'Normative',
+    '_aliases', '_reverse_aliases'
   ]);
 
   const LS_QUESTION_TYPES = {
@@ -121,6 +121,13 @@
     return obj === undefined ? undefined : JSON.parse(JSON.stringify(obj));
   }
 
+  function stripInternalTemplateKeys(template) {
+    if (!template || typeof template !== 'object') return template;
+    delete template._aliases;
+    delete template._reverse_aliases;
+    return template;
+  }
+
   function isMissingValue(val, fieldSchema) {
     if (val === undefined || val === null) return true;
     const t = Array.isArray(fieldSchema?.type) ? fieldSchema.type : fieldSchema?.type;
@@ -149,13 +156,32 @@
       }
     } catch {}
     // Focus input
-    const inp = document.getElementById(`field_${section}_${name}`);
+    const inp = name ? document.getElementById(`field_${section}_${name}`) : null;
     if (inp) {
       inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
       inp.focus();
       inp.classList.add('border-warning');
       setTimeout(() => inp.classList.remove('border-warning'), 1500);
+      return;
     }
+
+    const sectionBody = document.getElementById(`tlBody_${section}`);
+    const firstInput = sectionBody ? sectionBody.querySelector('input, select, textarea, button') : null;
+    if (firstInput) {
+      firstInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (typeof firstInput.focus === 'function') firstInput.focus();
+    }
+  }
+
+  function deriveFocusPath(path, message) {
+    const rawPath = String(path || '');
+    const rawMessage = String(message || '');
+    const requiredMatch = rawMessage.match(/'([^']+)'\s+is a required property/);
+    if (requiredMatch && requiredMatch[1]) {
+      const missingProp = requiredMatch[1];
+      return rawPath ? `${rawPath}/${missingProp}` : missingProp;
+    }
+    return rawPath;
   }
 
   function recomputeMissingFields() {
@@ -2433,7 +2459,10 @@
     previewContentEl.innerHTML = '';
     const items = itemKeysFromTemplate(currentTemplate);
     if (!items.length) {
-      previewContentEl.innerHTML = '<div class="text-muted">No questions in this template.</div>';
+      const emptyState = document.createElement('div');
+      emptyState.className = 'text-muted';
+      emptyState.textContent = 'No questions in this template.';
+      previewContentEl.appendChild(emptyState);
       return;
     }
 
@@ -2447,12 +2476,23 @@
       // Question code
       const codeEl = document.createElement('div');
       codeEl.className = 'q-code';
-      let codeText = key;
+      codeEl.appendChild(document.createTextNode(key));
       // Badges
-      if (item.Reversed === true) codeText += ' <span class="badge preview-badge-reversed ms-1">Reversed</span>';
+      if (item.Reversed === true) {
+        const reversedBadge = document.createElement('span');
+        reversedBadge.className = 'badge preview-badge-reversed ms-1';
+        reversedBadge.textContent = 'Reversed';
+        codeEl.appendChild(document.createTextNode(' '));
+        codeEl.appendChild(reversedBadge);
+      }
       const isMandatory = item.LimeSurvey?.mandatory === true || item.Required === true;
-      if (isMandatory) codeText += ' <span class="badge preview-badge-mandatory ms-1">Required</span>';
-      codeEl.innerHTML = codeText;
+      if (isMandatory) {
+        const requiredBadge = document.createElement('span');
+        requiredBadge.className = 'badge preview-badge-mandatory ms-1';
+        requiredBadge.textContent = 'Required';
+        codeEl.appendChild(document.createTextNode(' '));
+        codeEl.appendChild(requiredBadge);
+      }
       card.appendChild(codeEl);
 
       // Description
@@ -2460,9 +2500,16 @@
       descEl.className = 'q-desc';
       const desc = getLocalizedText(item.Description, lang);
       if (desc.missing && desc.text) {
-        descEl.innerHTML = `<span class="preview-missing-translation" title="No '${lang}' translation">${desc.text}</span>`;
+        const span = document.createElement('span');
+        span.className = 'preview-missing-translation';
+        span.title = `No '${lang}' translation`;
+        span.textContent = desc.text;
+        descEl.appendChild(span);
       } else if (desc.missing) {
-        descEl.innerHTML = `<span class="preview-missing-translation">No translation for '${lang}'</span>`;
+        const span = document.createElement('span');
+        span.className = 'preview-missing-translation';
+        span.textContent = `No translation for '${lang}'`;
+        descEl.appendChild(span);
       } else {
         descEl.textContent = desc.text || '(no description)';
       }
@@ -2473,7 +2520,9 @@
         const instrEl = document.createElement('div');
         instrEl.className = 'text-muted small mb-2';
         const instr = getLocalizedText(item.Instructions, lang);
-        instrEl.innerHTML = `<em>${instr.text || ''}</em>`;
+        const em = document.createElement('em');
+        em.textContent = instr.text || '';
+        instrEl.appendChild(em);
         card.appendChild(instrEl);
       }
 
@@ -2496,12 +2545,24 @@
           const label = document.createElement('label');
           label.className = 'form-check-label';
           const lvText = getLocalizedText(lv, lang);
+          const keySpan = document.createElement('span');
+          keySpan.className = 'text-muted';
+          keySpan.textContent = `${lk}:`;
+          label.appendChild(keySpan);
+          label.appendChild(document.createTextNode(' '));
           if (lvText.missing && lvText.text) {
-            label.innerHTML = `<span class="text-muted">${lk}:</span> <span class="preview-missing-translation" title="No '${lang}' translation">${lvText.text}</span>`;
+            const valueSpan = document.createElement('span');
+            valueSpan.className = 'preview-missing-translation';
+            valueSpan.title = `No '${lang}' translation`;
+            valueSpan.textContent = lvText.text;
+            label.appendChild(valueSpan);
           } else if (lvText.missing) {
-            label.innerHTML = `<span class="text-muted">${lk}:</span> <span class="preview-missing-translation">No translation</span>`;
+            const valueSpan = document.createElement('span');
+            valueSpan.className = 'preview-missing-translation';
+            valueSpan.textContent = 'No translation';
+            label.appendChild(valueSpan);
           } else {
-            label.innerHTML = `<span class="text-muted">${lk}:</span> ${lvText.text}`;
+            label.appendChild(document.createTextNode(lvText.text));
           }
 
           row.appendChild(radio);
@@ -2624,8 +2685,8 @@
     }
 
     const data = await apiGet(`/api/template-editor/load?${qp.toString()}`);
-    currentTemplate = data.template;
-    originalTemplate = cloneDeep(data.template);
+    currentTemplate = stripInternalTemplateKeys(data.template);
+    originalTemplate = cloneDeep(currentTemplate);
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     hasUserInteracted = true;
@@ -2644,7 +2705,7 @@
     await refreshSchema();
 
     const data = await apiGet(`/api/template-editor/new?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schema_version)}`);
-    currentTemplate = data.template;
+    currentTemplate = stripInternalTemplateKeys(data.template);
     originalTemplate = null; // no baseline for new templates
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
@@ -2694,7 +2755,8 @@
       const errs = (data.errors || []).slice(0, 50);
       const list = errs.map(e => {
         const p = e.path || '(root)';
-        const link = `<a href=\"#\" class=\"error-link\" data-path=\"${p}\"><code>${p}</code></a>`;
+        const focusPath = deriveFocusPath(e.path, e.message);
+        const link = `<a href=\"#\" class=\"error-link\" data-path=\"${focusPath}\"><code>${p}</code></a>`;
         return `<li>${link}: ${e.message}</li>`;
       }).join('');
       const extra = (data.errors || []).length > errs.length ? `<div class=\"mt-2 text-muted small\">(showing first ${errs.length} errors)</div>` : '';
@@ -2805,7 +2867,7 @@
         if (!res.ok) {
           throw new Error(data.error || `Import failed (${res.status})`);
         }
-        currentTemplate = data.template;
+        currentTemplate = stripInternalTemplateKeys(data.template);
       } else {
         const nameWithoutExt = (file.name || 'imported')
           .replace(/\.[^.]+$/, '')
@@ -2827,7 +2889,7 @@
         if (!data.prism_json || typeof data.prism_json !== 'object') {
           throw new Error('No PRISM template returned by generator.');
         }
-        currentTemplate = data.prism_json;
+        currentTemplate = stripInternalTemplateKeys(data.prism_json);
       }
 
       originalTemplate = null;
@@ -2975,4 +3037,3 @@
     }
   })();
 })();
-</script>

@@ -233,7 +233,7 @@ Run the automated test:
 
 ```powershell
 # Test signing configuration
-python tests/test_github_signing.py
+python tests/github_signing_check.py
 ```
 
 Expected output:
@@ -305,7 +305,7 @@ See [WINDOWS_BUILD.md](WINDOWS_BUILD.md) for self-signing instructions.
 - Secrets: https://docs.github.com/en/actions/security-guides/encrypted-secrets
 
 ### Testing
-- Run signing tests: `python tests/test_github_signing.py`
+- Run signing tests: `python tests/github_signing_check.py`
 - View signing report: `signing_config_report.txt`
 - Check workflow logs: Repository → Actions → Latest build
 
