@@ -1,0 +1,110 @@
+  .schema-hint {
+    cursor: help;
+  }
+  .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  }
+  .item-list {
+    max-height: 240px;
+    overflow: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.25rem;
+  }
+  .item-list .list-group-item {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+  }
+  .item-list .form-check-input {
+    margin-right: 0.75rem;
+    cursor: pointer;
+  }
+  .item-list .item-name {
+    flex-grow: 1;
+  }
+  .lang-bar {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .lang-bar .badge {
+    font-size: 0.8rem;
+  }
+  .lang-bar-warn {
+    border-color: #ffc107;
+    background: #fff8e1;
+  }
+  .preview-question-card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: #fff;
+  }
+  .preview-question-card .q-code {
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+  }
+  .preview-question-card .q-desc {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+  }
+  .preview-missing-translation {
+    color: #dc3545;
+    font-style: italic;
+    border: 1px dashed #dc3545;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    background: #fff5f5;
+  }
+  .preview-badge-reversed {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  .preview-badge-mandatory {
+    background-color: #0d6efd;
+  }
+  .completion-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #f8f9fa;
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+  }
+  .completion-bar {
+    flex: 1;
+    height: 24px;
+    background: #e9ecef;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    border: 1px solid #adb5bd;
+  }
+  .completion-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ffc107 0%, #ff9800 100%);
+    transition: width 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 30px;
+  }
+  .completion-bar-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+</style>

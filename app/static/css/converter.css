@@ -1,0 +1,81 @@
+/* Converter Tabs Styling */
+#converterTabs {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 4px;
+    background-color: #f8f9fa;
+}
+
+#converterTabs .nav-item {
+    border-right: 1px solid #dee2e6;
+}
+
+#converterTabs .nav-item:last-child {
+    border-right: none;
+}
+
+#converterTabs .nav-item.workflow-separator {
+    border-left: 2px solid #adb5bd;
+    margin-left: 6px;
+    padding-left: 6px;
+}
+
+#converterTabs .nav-link {
+    border-radius: 6px;
+    margin: 2px;
+    color: #495057;
+    transition: all 0.2s ease;
+}
+
+#converterTabs .nav-link:hover:not(.active) {
+    background-color: #e9ecef;
+}
+
+#converterTabs .nav-link.active {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Survey tab - Yellow */
+#survey-tab.active {
+    background-color: #ffc107;
+    color: #212529;
+}
+#survey-tab.active small {
+    color: rgba(0,0,0,0.6) !important;
+}
+
+/* Biometrics tab - Yellow */
+#biometrics-tab.active {
+    background-color: #ffc107;
+    color: #212529;
+}
+#biometrics-tab.active small {
+    color: rgba(0,0,0,0.6) !important;
+}
+
+/* Physio tab - Yellow */
+#physio-tab.active {
+    background-color: #ffc107;
+    color: #212529;
+}
+#physio-tab.active small {
+    color: rgba(0,0,0,0.6) !important;
+}
+
+/* Eyetracking tab - Yellow */
+#eyetracking-tab.active {
+    background-color: #ffc107;
+    color: #212529;
+}
+#eyetracking-tab.active small {
+    color: rgba(0,0,0,0.6) !important;
+}
+
+/* Participants tab - Green */
+#participants-tab.active {
+    background-color: #198754;
+    color: #ffffff;
+}
+#participants-tab.active small {
+    color: rgba(255,255,255,0.8) !important;
+}

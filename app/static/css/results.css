@@ -1,0 +1,46 @@
+    .status-badge {
+        font-size: 1rem;
+        padding: 0.5rem 1.5rem;
+        border-radius: 50px;
+    }
+    .summary-card {
+        transition: all 0.3s ease;
+    }
+    .summary-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+    }
+    .error-group-header {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .error-group-header:hover {
+        background-color: #fff5f5;
+    }
+    .file-path {
+        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        font-size: 0.85rem;
+    }
+    .modality-icon {
+        width: 24px;
+        text-align: center;
+    }
+    .progress-thin {
+        height: 6px;
+    }
+    .bg-danger-soft {
+        background-color: rgba(220, 53, 69, 0.1);
+    }
+    .bg-success-soft {
+        background-color: rgba(25, 135, 84, 0.1);
+    }
+    .bg-warning-soft {
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+    .bg-info-soft {
+        background-color: rgba(13, 202, 240, 0.1);
+    }
+    .x-small {
+        font-size: 0.75rem;
+    }
+</style>
