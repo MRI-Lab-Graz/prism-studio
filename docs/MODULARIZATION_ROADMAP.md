@@ -102,6 +102,7 @@ Migration rules:
   - `commands/recipes.py`
 - Kept compatibility by delegating from `app/prism_tools.py` wrappers.
 - Centralized CLI dispatch routing in `app/src/cli/dispatch.py` and wired `app/prism_tools.py` to it.
+- Centralized CLI parser construction in `app/src/cli/parser.py` and wired `app/prism_tools.py` main to it.
 
 ## Learned Lessions
 
@@ -113,8 +114,9 @@ Migration rules:
 - Large handler moves are safer when performed as pure function relocation + thin wrapper delegation.
 - Keep temporary lifecycle objects (`TemporaryDirectory`) scoped exactly as in legacy behavior during migration.
 - Moving dispatch first (before full parser migration) reduces risk and makes final parser extraction straightforward.
+- Returning both root parser and named subgroup parser handles from the parser module keeps help fallbacks stable during dispatch migration.
 
 ## Immediate next step
 
-- Centralize parser construction in `app/src/cli/parser.py`,
-  then reduce `app/prism_tools.py` to a thin compatibility entrypoint.
+- Reduce `app/prism_tools.py` to a thin compatibility entrypoint by moving handler wrappers into a dedicated CLI entry module,
+  while preserving command names and help output.
