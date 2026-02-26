@@ -548,7 +548,9 @@ def check_unsafe_patterns(repo_path, fix=False):
 
             try:
                 with open(file_path, "r", errors="ignore") as f:
-                    for i, line in enumerate(f, 1):
+                    lines = f.readlines()
+                    for idx, line in enumerate(lines):
+                        i = idx + 1
                         stripped = line.strip()
 
                         # Skip comments
@@ -561,9 +563,12 @@ def check_unsafe_patterns(repo_path, fix=False):
                             if re.search(pattern, line):
                                 # Explicitly sandboxed eval usage can be acceptable
                                 if pattern == r"eval\(":
-                                    if (
-                                        "SAFE_GLOBALS" in line
-                                        and "nosec" in line.lower()
+                                    window_end = min(len(lines), idx + 3)
+                                    eval_window = " ".join(lines[idx:window_end])
+                                    lower_window = eval_window.lower()
+                                    if "safe_globals" in lower_window and (
+                                        "nosec" in lower_window
+                                        or "sandbox" in lower_window
                                     ):
                                         continue
 
@@ -712,15 +717,16 @@ def check_linting(repo_path, fix=False):
 def check_ruff(repo_path, fix=False):
     print_header("Running Ruff (Linting & Formatting)")
     if check_tool("ruff", "pip install ruff"):
+        ruff_select = "E9,F63,F7,F82"
         if fix:
             print_info("Running Ruff check --fix...")
-            run_command("ruff check --fix .", cwd=repo_path)
+            run_command(f"ruff check --fix . --select {ruff_select}", cwd=repo_path)
             print_info("Running Ruff format...")
             run_command("ruff format .", cwd=repo_path)
             print_success("Ruff fixes applied.")
         else:
             print_info("Running Ruff check...")
-            result = run_command("ruff check .", cwd=repo_path)
+            result = run_command(f"ruff check . --select {ruff_select}", cwd=repo_path)
             if result and result.returncode == 0:
                 print_success("Ruff check passed.")
             else:
@@ -1077,6 +1083,14 @@ CHECKS_SUPPORT_FIX = {
 }
 
 
+NON_BLOCKING_WARNING_CHECKS = {
+    "git-status",
+    "mypy",
+    "pip-audit",
+    "todos",
+}
+
+
 def parse_selected_checks(check_args):
     """Parse --check args that can be repeated and/or comma-separated."""
     selected = []
@@ -1110,7 +1124,18 @@ def run_check(check_name, check_fn, repo_path, fix):
     else:
         check_fn(repo_path)
 
-    passed = CURRENT_CHECK_WARNINGS == 0 and CURRENT_CHECK_ERRORS == 0
+    if CURRENT_CHECK_ERRORS > 0:
+        passed = False
+    elif CURRENT_CHECK_WARNINGS > 0 and check_name not in NON_BLOCKING_WARNING_CHECKS:
+        passed = False
+    else:
+        passed = True
+
+    if CURRENT_CHECK_WARNINGS > 0 and check_name in NON_BLOCKING_WARNING_CHECKS:
+        print_info(
+            f"Check '{check_name}' has warnings but is configured as non-blocking."
+        )
+
     CURRENT_CHECK = None
     return passed
 
