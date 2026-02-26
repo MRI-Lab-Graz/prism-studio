@@ -494,11 +494,42 @@ document.getElementById('participantsConvertBtn')?.addEventListener('click', asy
             <ul class="mb-0 mt-2">
                 ${data.files_created.map(f => `<li><code>${f.split('/').pop()}</code></li>`).join('')}
             </ul>
+            <div class="mt-2 small text-muted">Refreshing preview…</div>
         `;
         successDiv.classList.remove('d-none');
+
+        // Conversion created/updated participants files. Clear stale preview schema
+        // so Annotate Participants loads from the saved project participants.json.
+        window.lastParticipantsPreviewData = null;
+
+        // Refresh local participants.tsv columns cache used by the annotation widget.
+        const projectPath = "{{ current_project.path or '' }}";
+        if (projectPath) {
+            try {
+                const tsvResponse = await fetch(`/api/neurobagel/local-participants?project_path=${encodeURIComponent(projectPath)}`);
+                const tsvData = await tsvResponse.json();
+                if (tsvData.columns) {
+                    window.participantsTsvData = tsvData.columns;
+                }
+            } catch (error) {
+                console.warn('Could not refresh participants TSV columns after conversion:', error);
+            }
+        }
         
         // Hide warning
         warningDiv.classList.add('d-none');
+
+        // Auto-refresh preview so users immediately see updated participant columns.
+        const previewBtn = document.getElementById('participantsPreviewBtn');
+        if (previewBtn && fileInput && fileInput.files && fileInput.files[0]) {
+            setTimeout(() => {
+                try {
+                    previewBtn.click();
+                } catch (e) {
+                    console.warn('Could not auto-refresh participants preview:', e);
+                }
+            }, 100);
+        }
         
     } catch (error) {
         errorDiv.textContent = error.message;
@@ -647,41 +678,42 @@ async function loadNeurobagelWidget() {
     const container = document.getElementById('neurobagelWidgetContainer');
     if (!container) return;
 
-    const hasPreviewContext = !!(window.lastParticipantsPreviewData && window.lastParticipantsPreviewData.neurobagel_schema);
-    
-    // Prefer latest preview schema (current file/session context). Fallback to existing participants.json.
-    if (!(window.lastParticipantsPreviewData && window.lastParticipantsPreviewData.neurobagel_schema)) {
-        try {
-            const schemaResponse = await fetch('/api/projects/participants');
-            const schemaData = await schemaResponse.json();
-            if (schemaData.success && schemaData.exists) {
-                window.existingParticipantsData = schemaData.schema;
-            }
-        } catch (error) {
-            console.warn('Could not load existing participants schema:', error);
+    const hasPreviewSchema = !!(window.lastParticipantsPreviewData && window.lastParticipantsPreviewData.neurobagel_schema);
+
+    // Prefer currently saved project participants.json (important after conversion).
+    let loadedProjectSchema = false;
+    try {
+        const schemaResponse = await fetch('/api/projects/participants');
+        const schemaData = await schemaResponse.json();
+        if (schemaData.success && schemaData.exists && schemaData.schema) {
+            window.existingParticipantsData = schemaData.schema;
+            loadedProjectSchema = true;
         }
-    } else {
+    } catch (error) {
+        console.warn('Could not load existing participants schema:', error);
+    }
+
+    // Fallback to current preview schema only if no saved project schema exists yet.
+    if (!loadedProjectSchema && hasPreviewSchema) {
         window.existingParticipantsData = window.lastParticipantsPreviewData.neurobagel_schema;
     }
-    
-    // Load local participants.tsv columns only when no active preview context exists.
-    if (!hasPreviewContext) {
-        const projectPath = "{{ current_project.path or '' }}";
-        console.log('🔄 Fetching participants TSV columns...');
-        try {
-            const tsvResponse = await fetch(`/api/neurobagel/local-participants?project_path=${encodeURIComponent(projectPath)}`);
-            console.log('📡 TSV columns response status:', tsvResponse.status);
-            const tsvData = await tsvResponse.json();
-            console.log('📊 TSV columns data:', tsvData);
-            if (tsvData.columns) {
-                window.participantsTsvData = tsvData.columns;
-                console.log('✅ Set window.participantsTsvData:', Object.keys(window.participantsTsvData));
-            } else if (tsvData.error) {
-                console.error('❌ API returned error:', tsvData.error);
-            }
-        } catch (error) {
-            console.error('❌ Could not load participants TSV columns:', error);
+
+    // Always refresh local participants.tsv columns.
+    const projectPath = "{{ current_project.path or '' }}";
+    console.log('🔄 Fetching participants TSV columns...');
+    try {
+        const tsvResponse = await fetch(`/api/neurobagel/local-participants?project_path=${encodeURIComponent(projectPath)}`);
+        console.log('📡 TSV columns response status:', tsvResponse.status);
+        const tsvData = await tsvResponse.json();
+        console.log('📊 TSV columns data:', tsvData);
+        if (tsvData.columns) {
+            window.participantsTsvData = tsvData.columns;
+            console.log('✅ Set window.participantsTsvData:', Object.keys(window.participantsTsvData));
+        } else if (tsvData.error) {
+            console.error('❌ API returned error:', tsvData.error);
         }
+    } catch (error) {
+        console.error('❌ Could not load participants TSV columns:', error);
     }
     
     // Check if widget is already loaded

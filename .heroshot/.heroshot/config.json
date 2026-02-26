@@ -1,0 +1,15 @@
+{
+  "outputDirectory": "heroshots",
+  "outputFormat": "png",
+  "jpegQuality": 80,
+  "screenshots": [
+    {
+      "id": "12b42fc0",
+      "name": "prism-studio-home-light",
+      "url": "http://127.0.0.1:5001/"
+    }
+  ],
+  "browser": {
+    "colorScheme": "light"
+  }
+}
