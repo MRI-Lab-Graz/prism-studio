@@ -261,6 +261,11 @@ def main() -> int:
         datas.append(f"survey_library{sep}survey_library")
         print("[OK] Including survey_library (from root)")
 
+    # Include examples folder
+    if (project_root / "examples").exists():
+        datas.append(f"examples{sep}examples")
+        print("[OK] Including examples")
+
     pyinstaller_args = [
         f"--name={args.name}",
         "--clean",
