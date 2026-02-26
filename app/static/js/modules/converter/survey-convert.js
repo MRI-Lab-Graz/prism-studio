@@ -1,111 +1,60 @@
-import { initLimeSurveyQuickImport } from './modules/converter/limesurvey.js';
-import { initBiometrics } from './modules/converter/biometrics.js';
-import { initPhysio } from './modules/converter/physio.js';
-import { initEyetracking } from './modules/converter/eyetracking.js';
-import { initSurveyConvert } from './modules/converter/survey-convert.js';
+/**
+ * Survey Convert Module (Landgig Integration)
+ * Handles Excel/LimeSurvey data conversion to PRISM survey format
+ * Includes: column detection, ID mapping, preview, participants mapping, validation
+ */
 
-document.addEventListener('DOMContentLoaded', function() {
-    // --- LimeSurvey Quick Import ---
-    // Initialize LimeSurvey module with DOM elements
-    const lssElements = {
-        lssFile: document.getElementById('lssFile'),
-        lssTaskName: document.getElementById('lssTaskName'),
-        lssConvertBtn: document.getElementById('lssConvertBtn'),
-        lssError: document.getElementById('lssError'),
-        lssResultSingle: document.getElementById('lssResultSingle'),
-        lssQuestionCount: document.getElementById('lssQuestionCount'),
-        lssPreviewBtn: document.getElementById('lssPreviewBtn'),
-        lssDownloadBtn: document.getElementById('lssDownloadBtn'),
-        lssPreview: document.getElementById('lssPreview'),
-        lssPreviewContent: document.getElementById('lssPreviewContent'),
-        lssResultMultiple: document.getElementById('lssResultMultiple'),
-        lssGroupCount: document.getElementById('lssGroupCount'),
-        lssTotalQuestions: document.getElementById('lssTotalQuestions'),
-        lssDownloadAllBtn: document.getElementById('lssDownloadAllBtn'),
-        lssQuestionnaireList: document.getElementById('lssQuestionnaireList'),
-        lssResultQuestions: document.getElementById('lssResultQuestions'),
-        lssIndividualCount: document.getElementById('lssIndividualCount'),
-        lssDownloadAllQuestionsBtn: document.getElementById('lssDownloadAllQuestionsBtn'),
-        lssQuestionsList: document.getElementById('lssQuestionsList'),
-        lssSaveGroupsToProjectBtn: document.getElementById('lssSaveGroupsToProjectBtn'),
-        lssSaveQuestionsToProjectBtn: document.getElementById('lssSaveQuestionsToProjectBtn'),
-        lssSaveSuccess: document.getElementById('lssSaveSuccess'),
-        lssSaveSuccessMessage: document.getElementById('lssSaveSuccessMessage')
-    };
-    
-    // Only initialize if lssFile exists (page guard)
-    if (lssElements.lssFile) {
-        initLimeSurveyQuickImport(lssElements);
-    }
-    
-    // --- Landgig: Survey Convert ---
-    const convertExcelFile = document.getElementById('convertExcelFile');
-    const convertBtn = document.getElementById('convertBtn');
-    const previewBtn = document.getElementById('previewBtn');
-    
-    if (convertExcelFile && convertBtn) {
-        initSurveyConvert({
-            // Survey Convert DOM elements
-            convertLibraryPathInput: document.getElementById('convertLibraryPath'),
-            convertBrowseLibraryBtn: document.getElementById('convertBrowseLibraryBtn'),
-            convertExcelFile,
-            clearConvertExcelFileBtn: document.getElementById('clearConvertExcelFileBtn'),
-            convertIdMapFile: document.getElementById('convertIdMapFile'),
-            clearIdMapFileBtn: document.getElementById('clearIdMapFileBtn'),
-            convertBtn,
-            previewBtn,
-            convertDatasetName: document.getElementById('convertDatasetName'),
-            convertLanguage: document.getElementById('convertLanguage'),
-            convertError: document.getElementById('convertError'),
-            convertInfo: document.getElementById('convertInfo'),
-            convertIdColumnGroup: document.getElementById('convertIdColumnGroup'),
-            convertIdColumn: document.getElementById('convertIdColumn'),
-            convertTemplateExportGroup: document.getElementById('convertTemplateExportGroup'),
-            convertLanguageGroup: document.getElementById('convertLanguageGroup'),
-            convertAliasGroup: document.getElementById('convertAliasGroup'),
-            convertSessionGroup: document.getElementById('convertSessionGroup'),
-            templateResultsContainer: document.getElementById('templateResultsContainer'),
-            convertSessionSelect: document.getElementById('convertSessionSelect'),
-            convertSessionCustom: document.getElementById('convertSessionCustom'),
-            biometricsSessionSelect: document.getElementById('biometricsSessionSelect'),
-            biometricsSessionCustom: document.getElementById('biometricsSessionCustom'),
-            sourcedataQuickSelect: document.getElementById('sourcedataQuickSelect'),
-            sourcedataFileSelect: document.getElementById('sourcedataFileSelect'), conversionLogContainer: document.getElementById('conversionLogContainer'),
-            conversionLog: document.getElementById('conversionLog'),
-            conversionLogBody: document.getElementById('conversionLogBody'),
-            toggleLogBtn: document.getElementById('toggleLogBtn'),
-            validationResultsContainer: document.getElementById('validationResultsContainer'),
-            validationResultsCard: document.getElementById('validationResultsCard'),
-            validationResultsHeader: document.getElementById('validationResultsHeader'),
-            validationBadge: document.getElementById('validationBadge'),
-            validationSummary: document.getElementById('validationSummary'),
-            validationDetails: document.getElementById('validationDetails'),
-            downloadSection: document.getElementById('downloadSection'),
-            downloadWarningSection: document.getElementById('downloadWarningSection'),
-            downloadZipBtn: document.getElementById('downloadZipBtn'),
-            downloadZipWarningBtn: document.getElementById('downloadZipWarningBtn'),
-            conversionSummaryContainer: document.getElementById('conversionSummaryContainer'),
-            conversionSummaryBody: document.getElementById('conversionSummaryBody'),
-            toggleSummaryBtn: document.getElementById('toggleSummaryBtn'),
-            // Shared functions from converter scope
-            downloadBase64Zip,
-            populateSessionPickers
-        });
-    }
+export function initSurveyConvert(elements) {
+    const {
+        // Survey Convert DOM elements
+        convertLibraryPathInput,
+        convertBrowseLibraryBtn,
+        convertExcelFile,
+        clearConvertExcelFileBtn,
+        convertIdMapFile,
+        clearIdMapFileBtn,
+        convertBtn,
+        previewBtn,
+        convertDatasetName,
+        convertLanguage,
+        convertError,
+        convertInfo,
+        convertIdColumnGroup,
+        convertIdColumn,
+        convertTemplateExportGroup,
+        convertLanguageGroup,
+        convertAliasGroup,
+        convertSessionGroup,
+        templateResultsContainer,
+        convertSessionSelect,
+        convertSessionCustom,
+        biometricsSessionSelect,
+        biometricsSessionCustom,
+        sourcedataQuickSelect,
+        sourcedataFileSelect,
+        conversionLogContainer,
+        conversionLog,
+        conversionLogBody,
+        toggleLogBtn,
+        validationResultsContainer,
+        validationResultsCard,
+        validationResultsHeader,
+        validationBadge,
+        validationSummary,
+        validationDetails,
+        downloadSection,
+        downloadWarningSection,
+        downloadZipBtn,
+        downloadZipWarningBtn,
+        conversionSummaryContainer,
+        conversionSummaryBody,
+        toggleSummaryBtn,
+        // Shared functions
+        downloadBase64Zip,
+        populateSessionPickers
+    } = elements;
 
-    // ===== INITIALIZE BIOMETRICS MODULE =====
-    const convertBrowseLibraryBtn = document.getElementById('convertBrowseLibraryBtn');
-    const convertExcelFile = document.getElementById('convertExcelFile');
-    const clearConvertExcelFileBtn = document.getElementById('clearConvertExcelFileBtn');
-    const convertIdMapFile = document.getElementById('convertIdMapFile');
-    const clearIdMapFileBtn = document.getElementById('clearIdMapFileBtn');
-    const convertBtn = document.getElementById('convertBtn');
-    const previewBtn = document.getElementById('previewBtn');
-    const convertDatasetName = document.getElementById('convertDatasetName');
-    const convertLanguage = document.getElementById('convertLanguage');
-    const convertError = document.getElementById('convertError');
-    const convertInfo = document.getElementById('convertInfo');
-
+    // ID Map file handlers
     if (convertIdMapFile) {
         const updateIdMapClearButtonState = () => {
             const hasFile = Boolean(convertIdMapFile.files && convertIdMapFile.files[0]);
@@ -115,7 +64,6 @@ document.addEventListener('DOMContentLoaded', function() {
         convertIdMapFile.addEventListener('change', () => {
             const f = convertIdMapFile.files && convertIdMapFile.files[0];
             if (f) {
-                // Just log selection, don't validate (avoids stream issues)
                 console.log(`ID map file selected: ${f.name} (${f.size} bytes)`);
             }
             updateIdMapClearButtonState();
@@ -124,112 +72,14 @@ document.addEventListener('DOMContentLoaded', function() {
         clearIdMapFileBtn?.addEventListener('click', () => {
             convertIdMapFile.value = '';
             updateIdMapClearButtonState();
-            convertError?.classList.add('d-none');
+           convertError?.classList.add('d-none');
             convertError.textContent = '';
         });
 
         updateIdMapClearButtonState();
     }
 
-    // --- Biometrics Convert ---
-    const biometricsDataFile = document.getElementById('biometricsDataFile');
-    const clearBiometricsDataFileBtn = document.getElementById('clearBiometricsDataFileBtn');
-    const biometricsPreviewBtn = document.getElementById('biometricsPreviewBtn');
-    const biometricsConvertBtn = document.getElementById('biometricsConvertBtn');
-    const biometricsError = document.getElementById('biometricsError');
-    const biometricsInfo = document.getElementById('biometricsInfo');
-    const biometricsLogContainer = document.getElementById('biometricsLogContainer');
-    const biometricsLog = document.getElementById('biometricsLog');
-    const biometricsLogBody = document.getElementById('biometricsLogBody');
-    const toggleBiometricsLogBtn = document.getElementById('toggleBiometricsLogBtn');
-    const biometricsValidationResultsContainer = document.getElementById('biometricsValidationResultsContainer');
-    const biometricsValidationResultsCard = document.getElementById('biometricsValidationResultsCard');
-    const biometricsValidationResultsHeader = document.getElementById('biometricsValidationResultsHeader');
-    const biometricsValidationBadge = document.getElementById('biometricsValidationBadge');
-    const biometricsValidationSummary = document.getElementById('biometricsValidationSummary');
-    const biometricsValidationDetails = document.getElementById('biometricsValidationDetails');
-    const biometricsDownloadSection = document.getElementById('biometricsDownloadSection');
-    const biometricsDownloadWarningSection = document.getElementById('biometricsDownloadWarningSection');
-    const biometricsDownloadZipBtn = document.getElementById('biometricsDownloadZipBtn');
-    const biometricsDownloadZipWarningBtn = document.getElementById('biometricsDownloadZipWarningBtn');
-    const biometricsDetectedContainer = document.getElementById('biometricsDetectedContainer');
-    const biometricsDetectedList = document.getElementById('biometricsDetectedList');
-    const biometricsConfirmBtn = document.getElementById('biometricsConfirmBtn');
-    const biometricsSelectAll = document.getElementById('biometricsSelectAll');
-
-    // --- Physio Convert (Single) ---
-    const physioRawFile = document.getElementById('physioRawFile');
-    const physioTask = document.getElementById('physioTask');
-    const physioSamplingRate = document.getElementById('physioSamplingRate');
-    const physioConvertBtn = document.getElementById('physioConvertBtn');
-    const physioError = document.getElementById('physioError');
-    const physioInfo = document.getElementById('physioInfo');
-
-    // --- Physio Convert (Batch) ---
-    const physioBatchFiles = document.getElementById('physioBatchFiles');
-    const clearPhysioBatchFilesBtn = document.getElementById('clearPhysioBatchFilesBtn');
-    const physioBatchFolder = document.getElementById('physioBatchFolder');
-    const clearPhysioBatchFolderBtn = document.getElementById('clearPhysioBatchFolderBtn');
-    const physioBatchSamplingRate = document.getElementById('physioBatchSamplingRate');
-    const physioBatchDryRun = document.getElementById('physioBatchDryRun');
-    const physioBatchConvertBtn = document.getElementById('physioBatchConvertBtn');
-    const physioBatchError = document.getElementById('physioBatchError');
-    const physioBatchInfo = document.getElementById('physioBatchInfo');
-    const physioBatchProgress = document.getElementById('physioBatchProgress');
-    const physioBatchLogContainer = document.getElementById('physioBatchLogContainer');
-    const physioBatchLog = document.getElementById('physioBatchLog');
-    const physioBatchLogClearBtn = document.getElementById('physioBatchLogClearBtn');
-    const autoDetectPhysioBtn = document.getElementById('autoDetectPhysioBtn');
-    const autoDetectHint = document.getElementById('autoDetectHint');
-
-    // --- Eyetracking Convert (Single) ---
-    const eyetrackingSingleFile = document.getElementById('eyetrackingSingleFile');
-    const eyetrackingSubject = document.getElementById('eyetrackingSubject');
-    const eyetrackingSession = document.getElementById('eyetrackingSession');
-    const eyetrackingTask = document.getElementById('eyetrackingTask');
-    const eyetrackingSingleConvertBtn = document.getElementById('eyetrackingSingleConvertBtn');
-    const eyetrackingSingleError = document.getElementById('eyetrackingSingleError');
-    const eyetrackingSingleInfo = document.getElementById('eyetrackingSingleInfo');
-
-    // --- Eyetracking Convert (Batch) ---
-    const eyetrackingBatchFiles = document.getElementById('eyetrackingBatchFiles');
-    const clearEyetrackingBatchFilesBtn = document.getElementById('clearEyetrackingBatchFilesBtn');
-    const eyetrackingBatchDatasetName = document.getElementById('eyetrackingBatchDatasetName');
-    const eyetrackingBatchConvertBtn = document.getElementById('eyetrackingBatchConvertBtn');
-    const eyetrackingBatchError = document.getElementById('eyetrackingBatchError');
-    const eyetrackingBatchInfo = document.getElementById('eyetrackingBatchInfo');
-    const eyetrackingBatchProgress = document.getElementById('eyetrackingBatchProgress');
-    const eyetrackingBatchLogContainer = document.getElementById('eyetrackingBatchLogContainer');
-    const eyetrackingBatchLog = document.getElementById('eyetrackingBatchLog');
-    const eyetrackingBatchLogClearBtn = document.getElementById('eyetrackingBatchLogClearBtn');
-
-    // --- Organize (Batch) ---
-    const organizeFiles = document.getElementById('organizeFiles');
-    const organizeDatasetName = document.getElementById('organizeDatasetName');
-    const organizeModality = document.getElementById('organizeModality');
-    const organizeBtn = document.getElementById('organizeBtn');
-    const organizeError = document.getElementById('organizeError');
-    const organizeInfo = document.getElementById('organizeInfo');
-    const organizeProgress = document.getElementById('organizeProgress');
-    const organizeLogContainer = document.getElementById('organizeLogContainer');
-    const organizeLog = document.getElementById('organizeLog');
-    const organizeLogClearBtn = document.getElementById('organizeLogClearBtn');
-
-    // --- Physio Renamer ---
-    const renamerFiles = document.getElementById('renamerFiles');
-    const renamerPattern = document.getElementById('renamerPattern');
-    const renamerReplacement = document.getElementById('renamerReplacement');
-    const renamerTask = document.getElementById('renamerTask');
-    const renamerDryRunBtn = document.getElementById('renamerDryRunBtn');
-    const renamerDownloadBtn = document.getElementById('renamerDownloadBtn');
-    const renamerResetBtn = document.getElementById('renamerResetBtn');
-    const renamerPreview = document.getElementById('renamerPreview');
-    const renamerPreviewBody = document.getElementById('renamerPreviewBody');
-    const renamerFilterAll = document.getElementById('renamerFilterAll');
-    const renamerFilterUnmatched = document.getElementById('renamerFilterUnmatched');
-    const renamerError = document.getElementById('renamerError');
-    const renamerInfo = document.getElementById('renamerInfo');
-
+    // Library path browser
     if (convertBrowseLibraryBtn && convertLibraryPathInput) {
         convertBrowseLibraryBtn.addEventListener('click', function() {
             fetch('/api/browse-folder')
@@ -249,23 +99,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function downloadBase64Zip(base64Data, filename) {
-        const binaryString = window.atob(base64Data);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-        }
-        const blob = new Blob([bytes], {type: 'application/zip'});
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-    }
-
     function refreshConvertLanguages() {
         const libraryPath = convertLibraryPathInput ? convertLibraryPathInput.value.trim() : '';
         const surveyI18nWarning = document.getElementById('surveyI18nWarning');
@@ -274,7 +107,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const surveyStructureMessage = document.getElementById('surveyStructureMessage');
         
         if (!libraryPath) {
-            // Hide warnings and reset languages if no path
             if (surveyI18nWarning) surveyI18nWarning.classList.add('d-none');
             if (surveyStructureWarning) surveyStructureWarning.classList.add('d-none');
             return;
@@ -287,7 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!convertLanguage) return;
                 const current = convertLanguage.value || 'auto';
 
-                // Reset options (keep Auto)
                 convertLanguage.innerHTML = '';
                 const autoOpt = document.createElement('option');
                 autoOpt.value = 'auto';
@@ -310,8 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     convertLanguage.value = 'auto';
                 }
-                
-                // Show structure warning if missing folders/files
+
                 if (surveyStructureWarning && surveyStructureMessage && data.structure) {
                     const missing = data.structure.missing_items || [];
                     if (missing.length > 0) {
@@ -323,8 +153,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (surveyStructureWarning) {
                     surveyStructureWarning.classList.add('d-none');
                 }
-                
-                // Show I18n warning if templates don't have multilanguage support
+
                 if (surveyI18nWarning && surveyI18nMessage) {
                     const hasI18n = langs.length > 0;
                     const templateCount = data.template_count || 0;
@@ -344,7 +173,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(() => {
-                // If this fails, keep the dropdown as-is (Auto only)
                 if (surveyI18nWarning) surveyI18nWarning.classList.add('d-none');
                 if (surveyStructureWarning) surveyStructureWarning.classList.add('d-none');
             });
@@ -361,42 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Conversion Elements ---
-    const convertIdColumnGroup = document.getElementById('convertIdColumnGroup');
-    const convertIdColumn = document.getElementById('convertIdColumn');
-    const convertTemplateExportGroup = document.getElementById('convertTemplateExportGroup');
-    const convertLanguageGroup = document.getElementById('convertLanguageGroup');
-    const convertAliasGroup = document.getElementById('convertAliasGroup');
-    const convertSessionGroup = document.getElementById('convertSessionGroup');
-    const templateResultsContainer = document.getElementById('templateResultsContainer');
-
-    // --- Session Picker: populate from declared sessions ---
-    const convertSessionSelect = document.getElementById('convertSessionSelect');
-    const convertSessionCustom = document.getElementById('convertSessionCustom');
-    const biometricsSessionSelect = document.getElementById('biometricsSessionSelect');
-    const biometricsSessionCustom = document.getElementById('biometricsSessionCustom');
-
-    function populateSessionPickers() {
-        fetch('/api/projects/sessions/declared')
-            .then(r => r.json())
-            .then(data => {
-                const sessions = data.sessions || [];
-                [convertSessionSelect, biometricsSessionSelect].forEach(sel => {
-                    if (!sel) return;
-                    // Clear existing options except the first placeholder
-                    while (sel.options.length > 1) sel.remove(1);
-                    sessions.forEach(s => {
-                        const opt = document.createElement('option');
-                        // Strip ses- prefix for display value (converter adds it back)
-                        opt.value = s.id.replace(/^ses-/, '');
-                        opt.textContent = s.label !== s.id ? `${s.id} — ${s.label}` : s.id;
-                        sel.appendChild(opt);
-                    });
-                });
-            })
-            .catch(() => {});
-    }
-
+    // Session picker functions
     function populateSurveySessionPickerFromDetected(detectedSessions) {
         if (!convertSessionSelect || !Array.isArray(detectedSessions) || detectedSessions.length === 0) {
             return false;
@@ -428,7 +221,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
     }
 
-    // Resolve the effective session value: select wins if set, otherwise custom input
     function getSessionValue(selectEl, customEl) {
         const selVal = selectEl ? selectEl.value.trim() : '';
         const custVal = customEl ? customEl.value.trim() : '';
@@ -443,7 +235,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return getSessionValue(biometricsSessionSelect, biometricsSessionCustom);
     }
 
-    // Clear custom input when a declared session is selected
     if (convertSessionSelect) {
         convertSessionSelect.addEventListener('change', function() {
             if (this.value && convertSessionCustom) convertSessionCustom.value = '';
@@ -465,9 +256,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Register conversion result in project.json
     function registerSessionInProject(sessionId, tasks, modality, sourceFile, converter) {
-        if (!sessionId || !tasks || !tasks.length) return;
+        if (!sessionId || !tasks || ! tasks.length) return;
         fetch('/api/projects/sessions/register', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -483,22 +273,17 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 console.log(`Registered in project.json: ${data.session_id} → ${data.registered_tasks.join(', ')}`);
-                // Refresh session pickers to reflect the new registration
                 populateSessionPickers();
             }
         })
         .catch(() => {});
     }
 
-    // Populate session pickers on load
-    populateSessionPickers();
-
-    // Converter is now data-conversion only
+    // Mode handling
     function getConvertMode() {
         return 'data';
     }
 
-    // Keep conversion UI in data mode
     function handleModeSwitch() {
         convertIdColumnGroup?.classList.remove('d-none');
         convertTemplateExportGroup?.classList.add('d-none');
@@ -514,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateConvertBtn();
     }
 
-    // Detect columns from file for ID column selector
+    // Column detection
     function resetDetectedColumnsState() {
         const idColumnSelect = document.getElementById('convertIdColumn');
         const idColumnStatus = document.getElementById('idColumnStatus');
@@ -535,20 +320,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const idColumnHelp = document.getElementById('idColumnHelp');
         if (!idColumnSelect) return;
 
-        // Reset state
         resetDetectedColumnsState();
 
-        // For .lss files, no columns to detect (structure only)
         if (filename.endsWith('.lss')) {
             if (idColumnStatus) idColumnStatus.innerHTML = '<span class="text-muted">(structure only)</span>';
             if (idColumnHelp) idColumnHelp.innerHTML = '<i class="fas fa-info-circle me-1"></i>.lss files have no response data';
             return;
         }
 
-        // Show loading status
         if (idColumnStatus) idColumnStatus.innerHTML = '<span class="text-info"><i class="fas fa-spinner fa-spin me-1"></i>Loading...</span>';
 
-        // For .lsa and other files, try to detect columns
         if (filename.endsWith('.lsa') || filename.endsWith('.xlsx') || filename.endsWith('.csv') || filename.endsWith('.tsv')) {
             try {
                 const formData = new FormData();
@@ -569,12 +350,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
 
                     if (data.columns && data.columns.length > 0) {
-                        // Add detected columns
                         data.columns.forEach(col => {
                             const opt = document.createElement('option');
                             opt.value = col;
                             opt.textContent = col;
-                            // Mark only the suggested column with star
                             if (data.suggested_id_column && col === data.suggested_id_column) {
                                 opt.textContent += ' \u2605';
                             }
@@ -582,7 +361,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
 
                         if (data.is_prism_data && data.suggested_id_column) {
-                            // PRISM data: auto-select suggested column, show green indicator
                             idColumnSelect.value = data.suggested_id_column;
                             if (idColumnStatus) {
                                 idColumnStatus.innerHTML = `<span class="text-success"><i class="fas fa-check me-1"></i>PRISM data (${data.columns.length} columns)</span>`;
@@ -591,7 +369,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 idColumnHelp.innerHTML = `<i class="fas fa-check-circle me-1 text-success"></i>PRISM ID column detected: <strong>${data.suggested_id_column}</strong>`;
                             }
                         } else if (!data.is_prism_data) {
-                            // Non-PRISM data: require manual selection
                             idColumnSelect.querySelector('option[value="auto"]').textContent = '-- Select ID column --';
                             idColumnSelect.value = 'auto';
                             if (idColumnStatus) {
@@ -601,7 +378,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                 idColumnHelp.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>No PRISM ID column found. Please select the participant ID column manually.';
                             }
                         } else {
-                            // PRISM data but no suggested column (shouldn't normally happen)
                             if (idColumnStatus) {
                                 idColumnStatus.innerHTML = `<span class="text-success"><i class="fas fa-check me-1"></i>${data.columns.length} columns</span>`;
                             }
@@ -667,7 +443,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 convertInfo.classList.add('d-none');
             }
 
-            // Detect columns for ID selection
             await detectFileColumns(file);
         } else {
             convertInfo.classList.add('d-none');
@@ -687,7 +462,6 @@ document.addEventListener('DOMContentLoaded', function() {
         convertError.textContent = '';
     });
 
-    // Clear error styling when ID column is changed
     const idColSelect = document.getElementById('convertIdColumn');
     if (idColSelect) {
         idColSelect.addEventListener('change', function() {
@@ -696,16 +470,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Initialize mode on page load
     handleModeSwitch();
     updateConvertBtn();
 
-    // --- Sourcedata quick-select ---
-    const sourcedataQuickSelect = document.getElementById('sourcedataQuickSelect');
-    const sourcedataFileSelect = document.getElementById('sourcedataFileSelect');
-
+    // Sourcedata quick-select
     if (sourcedataQuickSelect && sourcedataFileSelect) {
-        // Fetch sourcedata files on page load
         fetch('/api/projects/sourcedata-files')
             .then(r => r.json())
             .then(data => {
@@ -720,9 +489,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
             })
-            .catch(() => {}); // Silently ignore if no project
+            .catch(() => {});
 
-        // When a sourcedata file is selected, load it into the file input
         sourcedataFileSelect.addEventListener('change', async function() {
             const filename = this.value;
             if (!filename) return;
@@ -735,77 +503,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 const dt = new DataTransfer();
                 dt.items.add(file);
                 convertExcelFile.files = dt.files;
-                // Trigger the change event so column detection runs
                 convertExcelFile.dispatchEvent(new Event('change', { bubbles: true }));
             } catch (err) {
                 console.error('Failed to load sourcedata file:', err);
                 convertError.textContent = `Failed to load ${filename} from sourcedata.`;
-                convertError.classList.remove('d-none');
+convertError.classList.remove('d-none');
             }
         });
     }
 
-    // Terminal log elements
-    const conversionLogContainer = document.getElementById('conversionLogContainer');
-    const conversionLog = document.getElementById('conversionLog');
-    const conversionLogBody = document.getElementById('conversionLogBody');
-    const toggleLogBtn = document.getElementById('toggleLogBtn');
-    const validationResultsContainer = document.getElementById('validationResultsContainer');
-    const validationResultsCard = document.getElementById('validationResultsCard');
-    const validationResultsHeader = document.getElementById('validationResultsHeader');
-    const validationBadge = document.getElementById('validationBadge');
-    const validationSummary = document.getElementById('validationSummary');
-    const validationDetails = document.getElementById('validationDetails');
-    const downloadSection = document.getElementById('downloadSection');
-    const downloadWarningSection = document.getElementById('downloadWarningSection');
-    const downloadZipBtn = document.getElementById('downloadZipBtn');
-    const downloadZipWarningBtn = document.getElementById('downloadZipWarningBtn');
-    const conversionSummaryContainer = document.getElementById('conversionSummaryContainer');
-    const conversionSummaryBody = document.getElementById('conversionSummaryBody');
-    const toggleSummaryBtn = document.getElementById('toggleSummaryBtn');
-
-    // Biometrics elements
-    const biometricsLogContainer = document.getElementById('biometricsLogContainer');
-    const biometricsLog = document.getElementById('biometricsLog');
-    const biometricsLogBody = document.getElementById('biometricsLogBody');
-    const toggleBiometricsLogBtn = document.getElementById('toggleBiometricsLogBtn');
-    const biometricsValidationResultsContainer = document.getElementById('biometricsValidationResultsContainer');
-    const biometricsValidationResultsCard = document.getElementById('biometricsValidationResultsCard');
-    const biometricsValidationResultsHeader = document.getElementById('biometricsValidationResultsHeader');
-    const biometricsValidationBadge = document.getElementById('biometricsValidationBadge');
-    const biometricsValidationSummary = document.getElementById('biometricsValidationSummary');
-    const biometricsValidationDetails = document.getElementById('biometricsValidationDetails');
-    const biometricsDownloadSection = document.getElementById('biometricsDownloadSection');
-    const biometricsDownloadWarningSection = document.getElementById('biometricsDownloadWarningSection');
-    const biometricsDownloadZipBtn = document.getElementById('biometricsDownloadZipBtn');
-    const biometricsDownloadZipWarningBtn = document.getElementById('biometricsDownloadZipWarningBtn');
-    const biometricsDetectedContainer = document.getElementById('biometricsDetectedContainer');
-    const biometricsDetectedList = document.getElementById('biometricsDetectedList');
-    const biometricsConfirmBtn = document.getElementById('biometricsConfirmBtn');
-    const biometricsSelectAll = document.getElementById('biometricsSelectAll');
-
     let currentZipBlob = null;
 
-    // Toggle log visibility
     if (toggleLogBtn) {
         toggleLogBtn.addEventListener('click', function() {
             conversionLogBody.classList.toggle('d-none');
             const icon = toggleLogBtn.querySelector('i');
             if (conversionLogBody.classList.contains('d-none')) {
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-right');
-            } else {
-                icon.classList.remove('fa-chevron-right');
-                icon.classList.add('fa-chevron-down');
-            }
-        });
-    }
-
-    if (toggleBiometricsLogBtn) {
-        toggleBiometricsLogBtn.addEventListener('click', function() {
-            biometricsLogBody.classList.toggle('d-none');
-            const icon = toggleBiometricsLogBtn.querySelector('i');
-            if (biometricsLogBody.classList.contains('d-none')) {
                 icon.classList.remove('fa-chevron-down');
                 icon.classList.add('fa-chevron-right');
             } else {
@@ -850,7 +563,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let html = '';
 
-        // Matched Templates section
         const matches = summary.template_matches;
         if (matches && Object.keys(matches).length > 0) {
             html += `<h6 class="mb-2"><i class="fas fa-puzzle-piece me-1"></i>Matched Templates</h6>`;
@@ -868,7 +580,6 @@ document.addEventListener('DOMContentLoaded', function() {
             html += `</tbody></table>`;
         }
 
-        // Tool-Specific Columns section
         const toolCols = summary.tool_columns;
         if (toolCols && toolCols.length > 0) {
             html += `<h6 class="mb-2"><i class="fas fa-wrench me-1"></i>Tool-Specific Columns <span class="badge bg-secondary">${toolCols.length}</span></h6>`;
@@ -876,7 +587,6 @@ document.addEventListener('DOMContentLoaded', function() {
             html += `<div class="mt-1"><code>${toolCols.join('</code>, <code>')}</code></div></details></div>`;
         }
 
-        // Unmatched Columns section
         const unknownCols = summary.unknown_columns;
         if (unknownCols && unknownCols.length > 0) {
             html += `<h6 class="mb-2"><i class="fas fa-question-circle me-1 text-warning"></i>Unmatched Columns <span class="badge bg-warning text-dark">${unknownCols.length}</span></h6>`;
@@ -888,7 +598,6 @@ document.addEventListener('DOMContentLoaded', function() {
             conversionSummaryBody.innerHTML = html;
             conversionSummaryContainer.classList.remove('d-none');
 
-            // Wire toggle button
             if (toggleSummaryBtn) {
                 toggleSummaryBtn.onclick = function() {
                     const body = conversionSummaryBody;
@@ -904,8 +613,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-
-    // --- Unmatched Groups Resolution UI ---
 
     function displayUnmatchedGroupsError(data) {
         let html = `
@@ -968,7 +675,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 checkAllGroupsSaved();
             } else {
                 btn.innerHTML = '<i class="fas fa-times me-1"></i>Failed';
-                btn.classList.replace('btn-outline-primary', 'btn-outline-danger');
+                btn.classList.replace('bn-outline-primary', 'btn-outline-danger');
                 btn.disabled = false;
                 appendLog(`Failed to save template for ${g.group_name}: ${result.error}`, 'error');
             }
@@ -1021,7 +728,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const warnings = validation.warnings || [];
         const isValid = errors.length === 0;
         
-        // Update card styling based on result
         card.classList.remove('border-success', 'border-warning', 'border-danger');
         header.classList.remove('bg-success', 'bg-warning', 'bg-danger', 'text-white', 'text-dark');
         
@@ -1042,7 +748,6 @@ document.addEventListener('DOMContentLoaded', function() {
             badge.textContent = `✗ ${errors.length} Error(s)`;
         }
         
-        // Summary
         const summary = validation.summary || {};
         summaryEl.innerHTML = `
             <div class="row text-center">
@@ -1061,7 +766,6 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
-        // Details
         let detailsHtml = '';
         
         if (validation.formatted) {
@@ -1072,7 +776,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 f.errors.forEach(group => {
                     detailsHtml += `
                         <div class="validation-group mb-3 p-3 border rounded bg-light shadow-sm">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
+<div class="d-flex justify-content-between align-items-start mb-2">
                                 <div class="fw-bold text-danger">
                                     <span class="badge bg-danger me-2">${group.code}</span>
                                     ${escapeHtml(group.message)}
@@ -1149,7 +853,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         } else {
-            // Fallback to old list
             if (errors.length > 0) {
                 detailsHtml += '<h6 class="text-danger mt-3"><i class="fas fa-times-circle me-1"></i>Errors</h6><ul class="list-unstyled">';
                 errors.forEach(e => {
@@ -1168,7 +871,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         detailsEl.innerHTML = detailsHtml;
         
-        // Show appropriate download button
         if (isValid && warnings.length === 0) {
             dlSection.classList.remove('d-none');
             dlWarningSection.classList.add('d-none');
@@ -1206,10 +908,8 @@ document.addEventListener('DOMContentLoaded', function() {
         downloadZipWarningBtn.addEventListener('click', downloadCurrentZip);
     }
 
-    // Store template results for download
-    let currentTemplateData = null;
+    // ===== TEMPLATE GENERATION =====
 
-    // Handle template generation (structure only, no data)
     async function handleTemplateGeneration(file) {
         const exportMode = document.getElementById('convertTemplateExport')?.value || 'groups';
         const taskName = document.getElementById('convertDatasetName')?.value.trim() || '';
@@ -1299,7 +999,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const icon = {exact: 'fa-check-circle', high: 'fa-check', medium: 'fa-question-circle', low: 'fa-minus-circle'}[m.confidence] || 'fa-circle';
             const actionLabel = {use_library: 'Use library template instead', review: 'Review differences', create_new: 'Create new template'}[m.suggested_action] || '';
             const details = [];
-            if (m.overlap_count !== undefined) details.push(`${m.overlap_count}/${m.template_items} items match`);
+            if (m.overlap_count !==undefined) details.push(`${m.overlap_count}/${m.template_items} items match`);
             if (m.levels_match === true) details.push('levels verified');
             const matchDiv = document.createElement('div');
             matchDiv.id = 'templateSingleMatch';
@@ -1978,6 +1678,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // ===== MAIN CONVERT HANDLER =====
+
+    let currentTemplateData = null;
+
+    convertBtn.addEventListener('click', async function() {
+        convertError.classList.add('d-none');
+        convertInfo.classList.add('d-none');
+        convertError.textContent = '';
+        convertInfo.textContent = '';
+        resetConversionUI();
+
+        // Hide template results and participant metadata section
+        if (templateResultsContainer) {
+            templateResultsContainer.classList.add('d-none');
+            document.getElementById('templateResultSingle')?.classList.add('d-none');
+            document.getElementById('templateResultGroups')?.classList.add('d-none');
+            document.getElementById('templateResultQuestions')?.classList.add('d-none');
+            document.getElementById('participantMetadataSection')?.classList.add('d-none');
+        }
+
+        const file = convertExcelFile.files && convertExcelFile.files[0];
+        if (!file) {
+            return;
+        }
+
+        const filename = file.name.toLowerCase();
+        const isLssFile = filename.endsWith('.lss');
+        const isLimeSurveyFile = filename.endsWith('.lss') || filename.endsWith('.lsa');
+
         // DATA CONVERSION MODE — session is required
         const sessionVal = getSurveySessionValue();
 
@@ -2174,7 +1903,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Additional Variables button handler
+    // ===== ADDITIONAL VARIABLES MAPPING =====
+
     const createParticipantMappingBtn = document.getElementById('createParticipantMappingBtn');
     if (createParticipantMappingBtn) {
         createParticipantMappingBtn.addEventListener('click', function() {
@@ -2411,7 +2141,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('mappingSuccess').classList.add('d-none');
     }
 
-    // Preview button (dry-run) handler
+    // ===== PREVIEW HANDLER (DRY-RUN) =====
+
     previewBtn.addEventListener('click', async function() {
         convertError.classList.add('d-none');
         convertInfo.classList.add('d-none');
@@ -2655,14 +2386,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 appendLog('', 'info');
             }
 
-            // Display participants.tsv preview (only if participants are being created)
+            // Display participants.tsv preview (rest of the preview handler continues...)
+            // NOTE: This section includes participants.tsv display, participant preview,
+            // column mapping, file structure, etc. - the full code from lines 2383-2856
+
+            // (Continuing with participantstsv preview and remaining sections...)
             if (preview.participants_tsv && Object.keys(preview.participants_tsv).length > 0) {
                 const tsv = preview.participants_tsv;
-                
-                // Store preview data globally for the mapping button
                 window.lastPreviewData = preview;
                 
-                // Enable the additional variables button if there are unused columns
                 if (createParticipantMappingBtn) {
                     createParticipantMappingBtn.disabled = !(tsv.unused_columns && tsv.unused_columns.length > 0);
                 }
@@ -2671,13 +2403,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 appendLog('   This file will be created with the following structure:', 'info');
                 appendLog('', 'info');
                 
-                // Columns
                 appendLog(`   Columns (${tsv.columns.length} total):`, 'info');
                 tsv.columns.forEach(col => {
                     appendLog(`     • ${col}`, 'info');
                 });
                 
-                // Mappings
                 if (Object.keys(tsv.mappings).length > 0) {
                     appendLog('', 'info');
                     appendLog('   Column Mappings:', 'info');
@@ -2691,31 +2421,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
-                // Sample data
                 if (tsv.sample_rows.length > 0) {
                     appendLog('', 'info');
                     const sampleCount = Math.min(5, tsv.sample_rows.length);
                     appendLog(`   Sample Data (showing first ${sampleCount} of ${tsv.total_rows} participants):`, 'info');
                     appendLog(`   ${'-'.repeat(100)}`, 'info');
-                    
-                    // Header
                     const header = tsv.columns.map(col => col.padEnd(20)).join(' | ');
                     appendLog(`   ${header}`, 'info');
                     appendLog(`   ${'-'.repeat(100)}`, 'info');
-                    
-                    // Rows
                     tsv.sample_rows.slice(0, 5).forEach(rowData => {
                         const row = tsv.columns.map(col => String(rowData[col] || 'n/a').padEnd(20)).join(' | ');
                         appendLog(`   ${row}`, 'info');
                     });
-                    
                     if (tsv.sample_rows.length > 5) {
                         appendLog(`   ... and ${tsv.sample_rows.length - 5} more rows shown above (total ${tsv.total_rows} participants)`, 'info');
                     }
                     appendLog(`   ${'-'.repeat(100)}`, 'info');
                 }
                 
-                // Notes
                 if (tsv.notes.length > 0) {
                     appendLog('', 'info');
                     appendLog('   📌 Notes:', 'info');
@@ -2724,14 +2447,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
-                // Unused columns
                 if (tsv.unused_columns && tsv.unused_columns.length > 0) {
                     appendLog('', 'info');
                     appendLog(`   ⚠️  UNUSED COLUMNS (${tsv.unused_columns.length} available for participants.tsv):`, 'warning');
                     appendLog(`      These columns are not being imported as survey data and could be included`, 'warning');
                     appendLog(`      in participants.tsv if you create/update participants_mapping.json:`, 'warning');
                     tsv.unused_columns.slice(0, 10).forEach(item => {
-                        // Handle both old format (string) and new format (dict with description)
                         if (typeof item === 'object') {
                             const fieldCode = item.field_code || '';
                             const description = item.description || '';
@@ -2746,12 +2467,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (tsv.unused_columns.length > 10) {
                         appendLog(`      ... and ${tsv.unused_columns.length - 10} more columns`, 'warning');
                     }
-                    
-                    // Add hint to open additional variables selector
                     appendLog('', 'info');
                     appendLog(`   💡 TIP: Click "Add Additional Variables (Optional)", save the mapping, then run "2. Extract & Convert" to apply it.`, 'info');
                 }
-                
                 appendLog('', 'info');
             }
 
@@ -2814,31 +2532,24 @@ document.addEventListener('DOMContentLoaded', function() {
             appendLog('', 'info');
             appendLog('═══════════════════════════════════════', 'info');
             
-            // Count errors and warnings from validation results and data issues
             let previewErrorCount = 0;
             let previewWarningCount = 0;
             
             if (data.validation) {
-                // Check for validation.summary
                 if (data.validation.summary) {
                     previewErrorCount = data.validation.summary.total_errors || 0;
                     previewWarningCount = data.validation.summary.total_warnings || 0;
-                }
-                // Check for validation.errors array
-                else if (data.validation.errors && Array.isArray(data.validation.errors)) {
+                } else if (data.validation.errors && Array.isArray(data.validation.errors)) {
                     previewErrorCount = data.validation.errors.length;
                 }
-                // Check for validation.warnings array 
                 if (data.validation.warnings && Array.isArray(data.validation.warnings)) {
                     previewWarningCount = (previewWarningCount || 0) + data.validation.warnings.length;
                 }
-                // Check if validation itself is an error (single error object/string)
                 if (data.validation.error) {
                     previewErrorCount++;
                 }
             }
             
-            // Add data_issues count (these are warnings)
             const dataIssueCount = preview.data_issues ? preview.data_issues.length : 0;
             if (dataIssueCount > 0) {
                 previewWarningCount += dataIssueCount;
@@ -2883,696 +2594,4 @@ document.addEventListener('DOMContentLoaded', function() {
             convertBtn.disabled = false;
         });
     });
-
-    // ===== INITIALIZE BIOMETRICS MODULE =====
-    if (biometricsDataFile) {
-        initBiometrics({
-            biometricsDataFile,
-            clearBiometricsDataFileBtn,
-            biometricsPreviewBtn,
-            biometricsConvertBtn,
-            biometricsError,
-            biometricsInfo,
-            biometricsLogContainer,
-            biometricsLog,
-            biometricsLogBody,
-            toggleBiometricsLogBtn,
-            biometricsValidationResultsContainer,
-            biometricsValidationResultsCard,
-            biometricsValidationResultsHeader,
-            biometricsValidationBadge,
-            biometricsValidationSummary,
-            biometricsValidationDetails,
-            biometricsDownloadSection,
-            biometricsDownloadWarningSection,
-            biometricsDownloadZipBtn,
-            biometricsDownloadZipWarningBtn,
-            biometricsDetectedContainer,
-            biometricsDetectedList,
-            biometricsConfirmBtn,
-            biometricsSelectAll,
-            biometricsSessionSelect,
-            biometricsSessionCustom,
-            // Shared helper functions available in converter scope
-            appendLog,
-            displayValidationResults,
-            downloadBase64Zip,
-            registerSessionInProject,
-            getBiometricsSessionValue
-        });
-    }
-
-    // ===== INITIALIZE PHYSIO MODULE =====
-    if (physioRawFile) {
-        initPhysio({
-            // Single mode
-            physioRawFile,
-            physioTask,
-            physioSamplingRate,
-            physioConvertBtn,
-            physioError,
-            physioInfo,
-            // Batch mode
-            physioBatchFiles,
-            clearPhysioBatchFilesBtn,
-            physioBatchFolder,
-            clearPhysioBatchFolderBtn,
-            physioBatchSamplingRate,
-            physioBatchDryRun,
-            physioBatchConvertBtn,
-            physioBatchError,
-            physioBatchInfo,
-            physioBatchProgress,
-            physioBatchLogContainer,
-            physioBatchLog,
-            physioBatchLogClearBtn,
-            autoDetectPhysioBtn,
-            autoDetectHint,
-            physioBatchFolderPath,
-            // Shared functions
-            appendLog
-        });
-    }
-
-    // ===== INITIALIZE EYETRACKING MODULE =====
-    if (eyetrackingSingleFile) {
-        initEyetracking({
-            // Single convert elements
-            eyetrackingSingleFile,
-            eyetrackingSubject,
-            eyetrackingSession,
-            eyetrackingTask,
-            eyetrackingSingleConvertBtn,
-            eyetrackingSingleError,
-            eyetrackingSingleInfo,
-            // Batch convert elements
-            eyetrackingBatchFiles,
-            clearEyetrackingBatchFilesBtn,
-            eyetrackingBatchDatasetName,
-            eyetrackingBatchConvertBtn,
-            eyetrackingBatchError,
-            eyetrackingBatchInfo,
-            eyetrackingBatchProgress,
-            eyetrackingBatchLogContainer,
-            eyetrackingBatchLog,
-            eyetrackingBatchLogClearBtn,
-            eyetrackingBatchDryRunCheckbox: document.getElementById('eyetrackingBatchDryRun'),
-            // Shared functions
-            downloadBase64Zip
-        });
-    }
-
-    // --- Organize Batch ---
-    function updateOrganizeBtn() {
-        const hasFiles = organizeFiles && organizeFiles.files && organizeFiles.files.length > 0;
-        if (organizeBtn) organizeBtn.disabled = !hasFiles;
-    }
-
-    if (organizeFiles) {
-        organizeFiles.addEventListener('change', updateOrganizeBtn);
-        updateOrganizeBtn();
-    }
-
-    if (organizeLogClearBtn) {
-        organizeLogClearBtn.addEventListener('click', () => {
-            if (organizeLog) organizeLog.textContent = '';
-        });
-    }
-
-    if (organizeBtn) {
-        organizeBtn.addEventListener('click', async function() {
-            organizeError.classList.add('d-none');
-            organizeInfo.classList.add('d-none');
-            organizeProgress.classList.remove('d-none');
-            organizeLogContainer.classList.remove('d-none');
-            organizeLog.textContent = '';
-            organizeBtn.disabled = true;
-
-            const files = Array.from(organizeFiles.files);
-            const datasetName = organizeDatasetName ? organizeDatasetName.value.trim() : 'Organized Dataset';
-            const modality = organizeModality ? organizeModality.value : 'anat';
-
-            const formData = new FormData();
-            files.forEach(f => formData.append('files', f));
-            formData.append('dataset_name', datasetName);
-            formData.append('modality', modality);
-
-            try {
-                const response = await fetch('/api/batch-convert', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    const data = await response.json().catch(() => null);
-                    throw new Error(data && data.error ? data.error : 'Organization failed');
-                }
-
-                const result = await response.json();
-                
-                // Show log with colors based on level
-                if (result.logs && Array.isArray(result.logs)) {
-                    const logLines = result.logs.map(log => {
-                        let colorClass = 'ansi-reset';
-                        if (log.level === 'error') colorClass = 'ansi-red';
-                        else if (log.level === 'warning') colorClass = 'ansi-yellow';
-                        else if (log.level === 'success') colorClass = 'ansi-green';
-                        else if (log.level === 'info') colorClass = 'ansi-blue';
-                        else if (log.level === 'preview') colorClass = 'ansi-cyan';
-                        
-                        const escaped = log.message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                        return `<span class="${colorClass}">${escaped}</span>`;
-                    });
-                    organizeLog.innerHTML = logLines.join('<br>');
-                    organizeLog.scrollTop = organizeLog.scrollHeight;
-                } else if (result.log) {
-                    organizeLog.textContent = result.log;
-                }
-
-                // Download the ZIP
-                if (result.zip) {
-                    downloadBase64Zip(result.zip, `${datasetName}_prism.zip`);
-                }
-
-                organizeInfo.textContent = `Organized ${result.converted || 0} files. ${result.errors || 0} errors.`;
-                organizeInfo.classList.remove('d-none');
-            } catch (err) {
-                organizeError.textContent = err.message;
-                organizeError.classList.remove('d-none');
-            } finally {
-                organizeProgress.classList.add('d-none');
-                updateOrganizeBtn();
-            }
-        });
-    }
-
-    // --- Physio Renamer Logic ---
-    const renamerExampleContainer = document.getElementById('renamerExampleContainer');
-    const renamerOriginalExample = document.getElementById('renamerOriginalExample');
-    const renamerNewExample = document.getElementById('renamerNewExample');
-    const renamerModality = document.getElementById('renamerModality');
-    const renamerExampleHint = document.getElementById('renamerExampleHint');
-    let currentExampleFile = null;
-
-    const modalityHints = {
-        'physio': 'sub-001_task-rest_physio.edf',
-        'biometrics': 'sub-001_biometrics-height_biometrics.tsv',
-        'events': 'sub-001_task-rest_events.tsv',
-        'survey': 'sub-001_survey-phq9_survey.tsv'
-    };
-
-    const renamerRecordingContainer = document.getElementById('renamerRecordingContainer');
-    const renamerRecording = document.getElementById('renamerRecording');
-
-    function updateRecordingVisibility() {
-        if (renamerModality && renamerRecordingContainer) {
-            const showRecording = renamerModality.value === 'physio';
-            renamerRecordingContainer.style.display = showRecording ? 'block' : 'none';
-        }
-    }
-
-    if (renamerModality) {
-        renamerModality.addEventListener('change', () => {
-            const mod = renamerModality.value;
-            let hint = modalityHints[mod] || 'sub-001_task-rest_physio.edf';
-            
-            // Update hint based on recording selection for physio
-            if (mod === 'physio' && renamerRecording && renamerRecording.value) {
-                hint = `sub-001_task-rest_recording-${renamerRecording.value}_physio.edf`;
-            }
-            
-            if (renamerExampleHint) renamerExampleHint.innerHTML = `Example: <code>${hint}</code>`;
-            if (renamerNewExample) renamerNewExample.placeholder = `e.g. ${hint}`;
-            
-            updateRecordingVisibility();
-            inferPattern();
-        });
-    }
-
-    if (renamerRecording) {
-        renamerRecording.addEventListener('change', () => {
-            const mod = renamerModality ? renamerModality.value : 'physio';
-            let hint = modalityHints[mod] || 'sub-001_task-rest_physio.edf';
-            
-            if (renamerRecording.value) {
-                hint = `sub-001_task-rest_recording-${renamerRecording.value}_physio.edf`;
-            }
-            
-            if (renamerExampleHint) renamerExampleHint.innerHTML = `Example: <code>${hint}</code>`;
-            if (renamerNewExample) renamerNewExample.placeholder = `e.g. ${hint}`;
-            inferPattern();
-        });
-    }
-
-    // Initialize visibility
-    updateRecordingVisibility();
-
-    function updateRenamerBtn() {
-        const hasFiles = renamerFiles && renamerFiles.files && renamerFiles.files.length > 0;
-        const hasNewName = renamerNewExample && renamerNewExample.value.trim().length > 0;
-        if (renamerDownloadBtn) renamerDownloadBtn.disabled = !hasFiles || !hasNewName;
-    }
-
-    function pickExampleFile() {
-        if (!renamerFiles || !renamerFiles.files || renamerFiles.files.length === 0) return;
-        const files = Array.from(renamerFiles.files);
-        currentExampleFile = files[Math.floor(Math.random() * files.length)];
-        if (renamerOriginalExample) renamerOriginalExample.textContent = currentExampleFile.name;
-        if (renamerExampleContainer) renamerExampleContainer.classList.remove('d-none');
-        if (renamerNewExample) {
-            renamerNewExample.value = '';
-            renamerNewExample.focus();
-        }
-        updateRenamerBtn();
-        if (renamerPreview) renamerPreview.classList.add('d-none');
-    }
-
-    if (renamerFiles) {
-        renamerFiles.addEventListener('change', () => {
-            pickExampleFile();
-            updateRenamerBtn();
-        });
-    }
-
-    if (renamerResetBtn) {
-        renamerResetBtn.addEventListener('click', pickExampleFile);
-    }
-
-    function inferPattern() {
-        if (!currentExampleFile || !renamerNewExample) return;
-        const oldName = currentExampleFile.name;
-        const newName = renamerNewExample.value.trim();
-        if (!newName) {
-            if (renamerPreview) renamerPreview.classList.add('d-none');
-            return;
-        }
-
-        // Find all digit sequences in oldName
-        const digitRegex = /\d+/g;
-        const matches = [];
-        let match;
-        while ((match = digitRegex.exec(oldName)) !== null) {
-            matches.push({ value: match[0], index: match.index });
-        }
-
-        // Create regex pattern from oldName by replacing digit sequences with (\d+)
-        // and escaping other characters
-        let finalPattern = "";
-        let lastIndex = 0;
-        matches.forEach(m => {
-            finalPattern += oldName.substring(lastIndex, m.index).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            finalPattern += '(\\d+)';
-            lastIndex = m.index + m.value.length;
-        });
-        finalPattern += oldName.substring(lastIndex).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        
-        // Now create the replacement string
-        let replacement = newName;
-        
-        if (matches.length > 0) {
-            // Sort matches by length descending to avoid partial matches (e.g. matching '1' inside '014')
-            const uniqueValues = [...new Set(matches.map(m => m.value))].sort((a, b) => b.length - a.length);
-            
-            // Create a map from value to its first group index
-            const valueToGroup = {};
-            matches.forEach((m, i) => {
-                if (!(m.value in valueToGroup)) {
-                    valueToGroup[m.value] = i + 1;
-                }
-            });
-
-            const combinedRegex = new RegExp(uniqueValues.map(v => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g');
-            replacement = replacement.replace(combinedRegex, (matched) => {
-                return `\\${valueToGroup[matched]}`;
-            });
-        }
-
-        if (renamerPattern) renamerPattern.value = finalPattern;
-        if (renamerReplacement) renamerReplacement.value = replacement;
-        
-        // Run dry run automatically
-        runRenamer(true);
-    }
-
-    if (renamerNewExample) {
-        renamerNewExample.addEventListener('input', () => {
-            inferPattern();
-            updateRenamerBtn();
-        });
-    }
-
-    const renamerOrganize = document.getElementById('renamerOrganize');
-    if (renamerOrganize) {
-        renamerOrganize.addEventListener('change', () => {
-            runRenamer(true);
-        });
-    }
-
-    function filterRenamerTable(showOnlyUnmatched) {
-        if (!renamerPreviewBody) return;
-        const rows = renamerPreviewBody.querySelectorAll('tr');
-        rows.forEach(row => {
-            const isMatch = row.getAttribute('data-match') === 'true';
-            if (showOnlyUnmatched) {
-                row.classList.toggle('d-none', isMatch);
-            } else {
-                row.classList.remove('d-none');
-            }
-        });
-        
-        if (renamerFilterAll) renamerFilterAll.classList.toggle('active', !showOnlyUnmatched);
-        if (renamerFilterUnmatched) renamerFilterUnmatched.classList.toggle('active', showOnlyUnmatched);
-    }
-
-    if (renamerFilterAll) {
-        renamerFilterAll.addEventListener('click', () => filterRenamerTable(false));
-    }
-    if (renamerFilterUnmatched) {
-        renamerFilterUnmatched.addEventListener('click', () => filterRenamerTable(true));
-    }
-
-    async function runRenamer(isDryRun) {
-        if (!renamerPattern || !renamerReplacement || !renamerPattern.value) return;
-        
-        renamerError.classList.add('d-none');
-        renamerInfo.classList.add('d-none');
-        
-        const formData = new FormData();
-        formData.append('pattern', renamerPattern.value);
-        formData.append('replacement', renamerReplacement.value);
-        formData.append('dry_run', isDryRun);
-        
-        const renamerOrganize = document.getElementById('renamerOrganize');
-        if (renamerOrganize) {
-            formData.append('organize', renamerOrganize.checked);
-        }
-
-        if (renamerModality) {
-            formData.append('modality', renamerModality.value);
-        }
-        
-        const files = Array.from(renamerFiles.files);
-        if (files.length === 0 && !isDryRun) return;
-        
-        // For dry run, we only send filenames to be faster
-        if (isDryRun) {
-            files.forEach(f => formData.append('filenames', f.name));
-        } else {
-            files.forEach(f => formData.append('files', f));
-        }
-        
-        try {
-            const response = await fetch('/api/physio-rename', {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (!response.ok) {
-                const data = await response.json().catch(() => null);
-                throw new Error(data && data.error ? data.error : 'Renaming failed');
-            }
-            
-            const result = await response.json();
-            
-            if (isDryRun) {
-                renamerPreviewBody.innerHTML = '';
-                let matchCount = 0;
-                const unmatchedFiles = [];
-                const selectedModality = renamerModality ? renamerModality.value : 'physio';
-
-                result.results.forEach(res => {
-                    const isMatch = res.old !== res.new;
-                    
-                    // Basic BIDS validation for the new name
-                    let isValidBids = true;
-                    let bidsError = '';
-                    
-                    if (isMatch) {
-                        if (!res.new.startsWith('sub-')) {
-                            isValidBids = false;
-                            bidsError = 'Missing sub- prefix';
-                        } else if (!res.new.includes('_')) {
-                            isValidBids = false;
-                            bidsError = 'Missing entities/suffix';
-                        } else {
-                            // Check suffix
-                            const stem = res.new.split('.')[0];
-                            const suffix = stem.split('_').pop();
-                            const expectedSuffixes = {
-                                'physio': 'physio',
-                                'biometrics': 'biometrics',
-                                'events': 'events',
-                                'survey': 'survey'
-                            };
-                            if (expectedSuffixes[selectedModality] && suffix !== expectedSuffixes[selectedModality]) {
-                                isValidBids = false;
-                                bidsError = `Expected _${expectedSuffixes[selectedModality]} suffix`;
-                            }
-                        }
-                    }
-
-                    if (isMatch && isValidBids) {
-                        matchCount++;
-                    } else if (!isMatch) {
-                        unmatchedFiles.push(res.old);
-                    }
-                    
-                    const tr = document.createElement('tr');
-                    tr.setAttribute('data-match', isMatch && isValidBids);
-                    
-                    let displayNew = res.new;
-                    if (res.path && res.path !== res.new) {
-                        displayNew = `<span class="text-muted">${res.path.substring(0, res.path.lastIndexOf('/') + 1)}</span>${res.new}`;
-                    }
-
-                    tr.innerHTML = `
-                        <td class="font-monospace small">${res.old}</td>
-                        <td><i class="fas fa-arrow-right text-muted"></i></td>
-                        <td class="font-monospace small ${isMatch ? (isValidBids ? 'text-success' : 'text-danger') : 'text-muted'}">
-                            ${displayNew}
-                            ${!isValidBids && isMatch ? `<br><small class="text-danger"><i class="fas fa-times-circle me-1"></i>${bidsError}</small>` : ''}
-                        </td>
-                        <td class="text-center">
-                            ${(isMatch && isValidBids) ? '<i class="fas fa-check-circle text-success"></i>' : 
-                              (!isMatch ? '<i class="fas fa-exclamation-triangle text-warning" title="No match found - file will not be renamed"></i>' : 
-                              '<i class="fas fa-times-circle text-danger" title="Invalid BIDS/PRISM format"></i>')}
-                        </td>
-                    `;
-                    renamerPreviewBody.appendChild(tr);
-                });
-                renamerPreview.classList.remove('d-none');
-
-                if (matchCount < result.results.length && result.results.length > 0) {
-                    const unmatchedCount = result.results.length - matchCount;
-                    renamerError.innerHTML = `
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-exclamation-triangle me-3 fa-2x"></i>
-                            <div>
-                                <strong>Warning: ${unmatchedCount} files are either unmatched or invalid.</strong><br>
-                                Only files with a green checkmark will be renamed correctly. Check the "New PRISM Filename" column for errors.
-                                <div class="mt-2">
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="document.getElementById('renamerFilterUnmatched').click()">
-                                        <i class="fas fa-search me-1"></i>Show Incompatible Files
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    renamerError.classList.remove('d-none');
-                }
-                
-                // Reset filter to "All" on new dry run
-                filterRenamerTable(false);
-            } else {
-                if (result.zip) {
-                    downloadBase64Zip(result.zip, 'renamed_files.zip');
-                    renamerInfo.textContent = `Successfully renamed ${result.results.length} files. ZIP download started.`;
-                    renamerInfo.classList.remove('d-none');
-                }
-            }
-        } catch (err) {
-            if (!isDryRun) {
-                renamerError.textContent = err.message;
-                renamerError.classList.remove('d-none');
-            }
-        }
-    }
-
-    if (renamerDownloadBtn) {
-        renamerDownloadBtn.addEventListener('click', () => runRenamer(false));
-    }
-
-    // Toggle chevron icon for global renamer
-    const globalRenamerCollapse = document.getElementById('globalRenamerCollapse');
-    if (globalRenamerCollapse) {
-        globalRenamerCollapse.addEventListener('show.bs.collapse', function () {
-            const icon = document.querySelector('[data-bs-target="#globalRenamerCollapse"] i.fa-chevron-down');
-            if (icon) icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
-        });
-        globalRenamerCollapse.addEventListener('hide.bs.collapse', function () {
-            const icon = document.querySelector('[data-bs-target="#globalRenamerCollapse"] i.fa-chevron-up');
-            if (icon) icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
-        });
-    }
-
-    // --- Auto-fill library paths from current project ---
-    // Store available library paths for quick switching
-    const availableConvertPaths = {
-        global: null,
-        project: null
-    };
-
-    // Update source badge display
-    function updateConvertLibrarySourceBadge(source) {
-        const badge = document.getElementById('convertLibrarySourceBadge');
-        const text = document.getElementById('convertLibrarySourceText');
-        if (!badge || !text) return;
-
-        if (source) {
-            badge.style.display = 'inline-block';
-            if (source === 'global') {
-                badge.className = 'badge bg-info ms-2';
-                text.textContent = 'Global Library';
-            } else if (source === 'project') {
-                badge.className = 'badge bg-success ms-2';
-                text.textContent = 'Project Library';
-            } else {
-                badge.className = 'badge bg-secondary ms-2';
-                text.textContent = 'Custom Path';
-            }
-        } else {
-            badge.style.display = 'none';
-        }
-    }
-
-    // Determine current source based on path
-    function detectConvertLibrarySource() {
-        if (!convertLibraryPathInput) return null;
-        const currentPath = convertLibraryPathInput.value.trim();
-        if (!currentPath) return null;
-
-        // Normalize paths for comparison
-        const normalize = p => p.replace(/\\/g, '/').replace(/\/$/, '').toLowerCase();
-        const normalizedCurrent = normalize(currentPath);
-
-        if (availableConvertPaths.project && normalize(availableConvertPaths.project) === normalizedCurrent) {
-            return 'project';
-        }
-        if (availableConvertPaths.global && normalize(availableConvertPaths.global) === normalizedCurrent) {
-            return 'global';
-        }
-        return 'custom';
-    }
-
-    async function initializeLibraryPathsFromProject() {
-        const globalBtn = document.getElementById('convertUseGlobalLibraryBtn');
-        const projectBtn = document.getElementById('convertUseProjectLibraryBtn');
-
-        try {
-            const response = await fetch('/api/projects/library-path');
-            const data = await response.json();
-
-            // Store available paths
-            availableConvertPaths.global = data.global_library_path || null;
-            availableConvertPaths.project = data.project_library_path || null;
-
-            // Enable/disable quick switch buttons based on availability
-            if (globalBtn) {
-                if (availableConvertPaths.global) {
-                    globalBtn.disabled = false;
-                    globalBtn.title = availableConvertPaths.global;
-                } else {
-                    globalBtn.disabled = true;
-                    globalBtn.title = 'No global library configured';
-                }
-            }
-
-            if (projectBtn) {
-                if (availableConvertPaths.project) {
-                    projectBtn.disabled = false;
-                    projectBtn.title = availableConvertPaths.project;
-                } else {
-                    projectBtn.disabled = true;
-                    projectBtn.title = data.project_path ? 'Project has no library folder' : 'No project selected';
-                }
-            }
-
-            // Auto-fill with best available path (prefer global for templates)
-            if (convertLibraryPathInput && !convertLibraryPathInput.value) {
-                let selectedPath = null;
-                let selectedSource = null;
-
-                if (availableConvertPaths.global) {
-                    selectedPath = availableConvertPaths.global;
-                    selectedSource = 'global';
-                } else if (availableConvertPaths.project) {
-                    selectedPath = availableConvertPaths.project;
-                    selectedSource = 'project';
-                } else if (data.library_path) {
-                    selectedPath = data.library_path;
-                    selectedSource = 'custom';
-                }
-
-                if (selectedPath) {
-                    convertLibraryPathInput.value = selectedPath;
-                    updateConvertLibrarySourceBadge(selectedSource);
-                    // Trigger language detection
-                    refreshConvertLanguages();
-                }
-            } else {
-                // Path already set, detect source
-                updateConvertLibrarySourceBadge(detectConvertLibrarySource());
-            }
-
-            // Biometrics library path is auto-resolved on the backend
-
-            console.log('Library paths initialized:', {
-                global: availableConvertPaths.global,
-                project: availableConvertPaths.project
-            });
-        } catch (err) {
-            console.warn('Could not load project library path:', err);
-        }
-
-        // Set up click handlers for quick switch buttons
-        if (globalBtn) {
-            globalBtn.addEventListener('click', function() {
-                if (availableConvertPaths.global && convertLibraryPathInput) {
-                    convertLibraryPathInput.value = availableConvertPaths.global;
-                    updateConvertLibrarySourceBadge('global');
-                    refreshConvertLanguages();
-                }
-            });
-        }
-
-        if (projectBtn) {
-            projectBtn.addEventListener('click', function() {
-                if (availableConvertPaths.project && convertLibraryPathInput) {
-                    convertLibraryPathInput.value = availableConvertPaths.project;
-                    updateConvertLibrarySourceBadge('project');
-                    refreshConvertLanguages();
-                }
-            });
-        }
-
-        // Update source badge when path changes manually
-        if (convertLibraryPathInput) {
-            convertLibraryPathInput.addEventListener('input', function() {
-                updateConvertLibrarySourceBadge(detectConvertLibrarySource());
-            });
-        }
-    }
-
-    // Initial populate
-    refreshConvertLanguages();
-
-    // Auto-fill from project (async, doesn't block)
-    initializeLibraryPathsFromProject();
-
-    // Listen for library settings changes from other tabs/pages
-    window.addEventListener('prism-library-settings-changed', function(event) {
-        console.log('Library settings changed, refreshing paths...');
-        // Re-initialize library paths to pick up new global/project settings
-        initializeLibraryPathsFromProject();
-    });
-});
+}
