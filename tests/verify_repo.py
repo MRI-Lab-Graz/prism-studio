@@ -4,6 +4,10 @@ import argparse
 import subprocess
 import re
 import fnmatch
+import ast
+import tempfile
+import json
+import importlib.util
 from pathlib import Path
 from datetime import datetime
 from colorama import init, Fore, Style
@@ -1041,8 +1045,391 @@ def check_documentation(repo_path, fix=False):
             print_error("No README found! Please add one.")
 
 
+def _extract_assignment_values(file_path, variable_name):
+    """Extract list/set/dict-key values from a top-level Python assignment."""
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            tree = ast.parse(f.read(), filename=file_path)
+    except Exception:
+        return None
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+
+        target_names = [
+            t.id for t in node.targets if isinstance(t, ast.Name) and hasattr(t, "id")
+        ]
+        if variable_name not in target_names:
+            continue
+
+        value = node.value
+        if isinstance(value, ast.List):
+            out = []
+            for elt in value.elts:
+                if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                    out.append(elt.value)
+            return out
+
+        if isinstance(value, ast.Set):
+            out = []
+            for elt in value.elts:
+                if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                    out.append(elt.value)
+            return out
+
+        if isinstance(value, ast.Dict):
+            out = []
+            for key in value.keys:
+                if isinstance(key, ast.Constant) and isinstance(key.value, str):
+                    out.append(key.value)
+            return out
+
+    return None
+
+
+def check_schema_sync(repo_path, fix=False):
+    print_header("Checking PRISM Modality Sync")
+
+    schema_dir = os.path.join(repo_path, "app", "schemas", "stable")
+    schema_manager_file = os.path.join(repo_path, "app", "src", "schema_manager.py")
+    validator_file = os.path.join(repo_path, "app", "src", "validator.py")
+    project_manager_file = os.path.join(repo_path, "app", "src", "project_manager.py")
+    index_html_file = os.path.join(repo_path, "app", "templates", "index.html")
+
+    if not os.path.isdir(schema_dir):
+        print_error("Missing app/schemas/stable directory.")
+        return
+
+    excluded_schema_stems = {
+        "dataset_description",
+        "project",
+        "recipe.survey",
+        "tool-limesurvey",
+    }
+    schema_modalities = set()
+    for path in Path(schema_dir).glob("*.schema.json"):
+        stem = path.name.replace(".schema.json", "")
+        if stem in excluded_schema_stems:
+            continue
+        schema_modalities.add(stem)
+
+    manager_modalities_raw = _extract_assignment_values(
+        schema_manager_file, "modalities"
+    )
+    validator_modalities_raw = _extract_assignment_values(
+        validator_file, "MODALITY_PATTERNS"
+    )
+    project_modalities_raw = _extract_assignment_values(
+        project_manager_file, "PRISM_MODALITIES"
+    )
+
+    if manager_modalities_raw is None:
+        print_error("Could not parse modalities list in app/src/schema_manager.py")
+        return
+    if validator_modalities_raw is None:
+        print_error("Could not parse MODALITY_PATTERNS in app/src/validator.py")
+        return
+    if project_modalities_raw is None:
+        print_error("Could not parse PRISM_MODALITIES in app/src/project_manager.py")
+        return
+
+    aliases = {"physiological": "physio"}
+
+    def normalize_modalities(values):
+        normalized = set()
+        for value in values:
+            if value in {"dataset_description"}:
+                continue
+            normalized.add(aliases.get(value, value))
+        return normalized
+
+    manager_modalities = normalize_modalities(manager_modalities_raw)
+    validator_modalities = normalize_modalities(validator_modalities_raw)
+    project_modalities = normalize_modalities(project_modalities_raw)
+
+    if schema_modalities != manager_modalities:
+        missing = sorted(schema_modalities - manager_modalities)
+        extra = sorted(manager_modalities - schema_modalities)
+        print_error(
+            "schema_manager modalities are out of sync with app/schemas/stable."
+        )
+        if missing:
+            print(f"  Missing in schema_manager: {', '.join(missing)}")
+        if extra:
+            print(f"  Extra in schema_manager: {', '.join(extra)}")
+
+    if schema_modalities != validator_modalities:
+        missing = sorted(schema_modalities - validator_modalities)
+        extra = sorted(validator_modalities - schema_modalities)
+        print_error("validator MODALITY_PATTERNS are out of sync with schemas.")
+        if missing:
+            print(f"  Missing in MODALITY_PATTERNS: {', '.join(missing)}")
+        if extra:
+            print(f"  Extra in MODALITY_PATTERNS: {', '.join(extra)}")
+
+    if schema_modalities != project_modalities:
+        missing = sorted(schema_modalities - project_modalities)
+        extra = sorted(project_modalities - schema_modalities)
+        print_error("project_manager PRISM_MODALITIES are out of sync with schemas.")
+        if missing:
+            print(f"  Missing in PRISM_MODALITIES: {', '.join(missing)}")
+        if extra:
+            print(f"  Extra in PRISM_MODALITIES: {', '.join(extra)}")
+
+    if os.path.exists(index_html_file):
+        try:
+            html = Path(index_html_file).read_text(encoding="utf-8", errors="ignore")
+            ui_modalities = set(
+                re.findall(r"<code>([a-zA-Z]+)\/</code>", html, flags=re.IGNORECASE)
+            )
+            ui_modalities = {aliases.get(m.lower(), m.lower()) for m in ui_modalities}
+            unknown = sorted(m for m in ui_modalities if m not in schema_modalities)
+            if unknown:
+                print_warning(
+                    "UI modality list contains entries not present in schemas: "
+                    + ", ".join(unknown)
+                )
+        except Exception as e:
+            print_warning(f"Could not parse UI modality list: {e}")
+
+    if CURRENT_CHECK_ERRORS == 0:
+        print_success("Schema modality touchpoints are in sync.")
+
+
+def check_bids_compat_smoke(repo_path, fix=False):
+    print_header("Checking BIDS Compatibility Smoke")
+
+    bids_integration_file = os.path.join(repo_path, "app", "src", "bids_integration.py")
+    if not os.path.exists(bids_integration_file):
+        print_error("Missing app/src/bids_integration.py")
+        return
+
+    try:
+        content = Path(bids_integration_file).read_text(
+            encoding="utf-8", errors="ignore"
+        )
+    except Exception as e:
+        print_error(f"Could not read bids integration module: {e}")
+        return
+
+    required_symbols = [
+        "STANDARD_BIDS_FOLDERS",
+        "EXTRA_BIDSIGNORE_RULES",
+        "check_and_update_bidsignore",
+    ]
+    missing_symbols = [sym for sym in required_symbols if sym not in content]
+    if missing_symbols:
+        print_error(
+            "bids_integration.py is missing required compatibility symbols: "
+            + ", ".join(missing_symbols)
+        )
+
+    python_cmd = TARGET_PYTHON if TARGET_PYTHON else sys.executable
+    finder_cmd = "where bids-validator" if os.name == "nt" else "which bids-validator"
+    cli_probe = run_command(finder_cmd, cwd=repo_path)
+    has_cli = bool(cli_probe and cli_probe.returncode == 0)
+
+    has_python_pkg = importlib.util.find_spec("bids_validator") is not None
+
+    if has_cli:
+        version_result = run_command("bids-validator --version", cwd=repo_path)
+        if version_result and version_result.returncode == 0:
+            ver = (version_result.stdout or "").strip().splitlines()[:1]
+            if ver:
+                print_success(f"bids-validator available: {ver[0]}")
+            else:
+                print_success("bids-validator available.")
+
+        with tempfile.TemporaryDirectory(prefix="prism_bids_smoke_") as tmpdir:
+            dataset_description = {
+                "Name": "PRISM BIDS smoke",
+                "BIDSVersion": "1.10.1",
+                "DatasetType": "raw",
+            }
+            Path(tmpdir, "dataset_description.json").write_text(
+                json.dumps(dataset_description), encoding="utf-8"
+            )
+
+            smoke_result = run_command(
+                f'bids-validator "{tmpdir}" --ignoreNiftiHeaders', cwd=repo_path
+            )
+            if smoke_result and smoke_result.returncode == 0:
+                print_success("BIDS validator smoke run succeeded on minimal dataset.")
+            else:
+                print_warning(
+                    "BIDS validator smoke run did not pass (check local validator environment/version)."
+                )
+                if smoke_result:
+                    snippet = "\n".join((smoke_result.stdout or "").splitlines()[:20])
+                    if snippet:
+                        print(snippet)
+    elif has_python_pkg:
+        fallback_result = run_command(
+            (
+                f'"{python_cmd}" -c "'
+                "from bids_validator import BIDSValidator;"
+                "v=BIDSValidator();"
+                "assert v.is_bids('/sub-01/anat/sub-01_T1w.nii.gz');"
+                "assert not v.is_bids('/sub_01/anat/sub_01_T1w.nii.gz');"
+                "print('python bids_validator fallback smoke passed')"
+                '"'
+            ),
+            cwd=repo_path,
+        )
+        if fallback_result and fallback_result.returncode == 0:
+            print_success(
+                "Python bids_validator fallback smoke succeeded (CLI not required)."
+            )
+        else:
+            print_warning("Python bids_validator fallback smoke did not pass.")
+            if fallback_result and fallback_result.stdout:
+                print("\n".join(fallback_result.stdout.splitlines()[:20]))
+    else:
+        print_warning(
+            "Neither bids-validator CLI nor Python bids_validator package is available."
+        )
+        MISSING_TOOLS["bids-validator"] = (
+            "Install bids-validator (npm i -g bids-validator)"
+        )
+
+    if CURRENT_CHECK_ERRORS == 0 and CURRENT_CHECK_WARNINGS == 0:
+        print_success("BIDS compatibility smoke checks passed.")
+
+
+def check_entrypoints_smoke(repo_path, fix=False):
+    print_header("Checking CLI Entrypoint Smoke")
+
+    python_cmd = TARGET_PYTHON if TARGET_PYTHON else sys.executable
+    commands = [
+        (f'"{python_cmd}" prism.py --help', "prism.py --help"),
+        (f'"{python_cmd}" prism-studio.py --help', "prism-studio.py --help"),
+    ]
+
+    for command, label in commands:
+        result = run_command(command, cwd=repo_path)
+        if result and result.returncode == 0:
+            print_success(f"{label} succeeded.")
+        else:
+            print_error(f"{label} failed.")
+            if result and result.stdout:
+                print("\n".join(result.stdout.splitlines()[:20]))
+
+
+def check_cross_platform_path_hygiene(repo_path, fix=False):
+    print_header("Checking Cross-Platform Path Hygiene")
+
+    target_dirs = [
+        os.path.join(repo_path, "app", "src", "web"),
+    ]
+    risky_patterns = [
+        r"os\.path\.join\(",
+        r"os\.path\.normpath\(",
+        r"\\\\",
+    ]
+
+    found = False
+    for target_dir in target_dirs:
+        if not os.path.isdir(target_dir):
+            continue
+        for file_path in Path(target_dir).rglob("*.py"):
+            rel_file = os.path.relpath(str(file_path), repo_path).replace("\\", "/")
+            if rel_file.endswith("cross_platform.py"):
+                continue
+            try:
+                content = file_path.read_text(encoding="utf-8", errors="ignore")
+            except Exception:
+                continue
+            has_risky = any(re.search(pattern, content) for pattern in risky_patterns)
+            if not has_risky:
+                continue
+            uses_helper = (
+                "safe_path_join" in content
+                or "normalize_path" in content
+                or "CrossPlatformFile" in content
+            )
+            if not uses_helper:
+                print_warning(
+                    f"{rel_file} uses direct path operations without cross-platform helpers."
+                )
+                found = True
+
+    if not found:
+        print_success("No obvious cross-platform path hygiene issues found.")
+
+
+def check_system_file_filtering(repo_path, fix=False):
+    print_header("Checking System File Filtering Usage")
+
+    scan_dirs = [
+        os.path.join(repo_path, "app", "src", "web"),
+    ]
+    found = False
+
+    for scan_dir in scan_dirs:
+        if not os.path.isdir(scan_dir):
+            continue
+        for file_path in Path(scan_dir).rglob("*.py"):
+            rel_file = os.path.relpath(str(file_path), repo_path).replace("\\", "/")
+            try:
+                content = file_path.read_text(encoding="utf-8", errors="ignore")
+            except Exception:
+                continue
+
+            performs_scan = (
+                "os.walk(" in content
+                or ".iterdir(" in content
+                or ".rglob(" in content
+                or "glob(" in content
+            )
+            if not performs_scan:
+                continue
+
+            uses_filter = (
+                "filter_system_files" in content
+                or "is_system_file" in content
+                or "should_validate_file" in content
+            )
+            if not uses_filter:
+                print_warning(
+                    f"{rel_file} scans files without explicit system-file filtering helper usage."
+                )
+                found = True
+
+    if not found:
+        print_success("File scan paths appear to use system-file filtering helpers.")
+
+
+def check_report_artifacts(repo_path, fix=False):
+    print_header("Checking for Tracked Report Artifacts")
+
+    if not os.path.isdir(os.path.join(repo_path, ".git")):
+        print_info("Not a git repository. Skipping tracked report artifact check.")
+        return
+
+    result = run_command('git ls-files "*_report_*.txt"', cwd=repo_path)
+    if result and result.returncode == 0:
+        tracked = [
+            line.strip() for line in (result.stdout or "").splitlines() if line.strip()
+        ]
+        if tracked:
+            print_error("Report artifacts are tracked in git:")
+            for item in tracked:
+                print(f"  - {item}")
+        else:
+            print_success("No tracked *_report_*.txt artifacts found.")
+    else:
+        print_warning("Could not query tracked report artifacts with git ls-files.")
+
+
 CHECKS = {
     "git-status": check_git_status,
+    "schema-sync": check_schema_sync,
+    "report-artifacts": check_report_artifacts,
+    "entrypoints-smoke": check_entrypoints_smoke,
+    "bids-compat-smoke": check_bids_compat_smoke,
+    "path-hygiene": check_cross_platform_path_hygiene,
+    "system-file-filtering": check_system_file_filtering,
     "sensitive-files": check_sensitive_files,
     "large-files": check_large_files,
     "github-actions": check_github_actions,
@@ -1085,6 +1472,9 @@ CHECKS_SUPPORT_FIX = {
 
 NON_BLOCKING_WARNING_CHECKS = {
     "git-status",
+    "bids-compat-smoke",
+    "path-hygiene",
+    "system-file-filtering",
     "mypy",
     "pip-audit",
     "todos",
