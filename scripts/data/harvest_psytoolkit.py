@@ -6,9 +6,9 @@ This script fetches psychological questionnaires from psytoolkit.org and
 converts them into PRISM's bilingual JSON schema format.
 
 Usage:
-    python scripts/harvest_psytoolkit.py --all
-    python scripts/harvest_psytoolkit.py --survey phq9 gad7
-    python scripts/harvest_psytoolkit.py --list
+    python scripts/data/harvest_psytoolkit.py --all
+    python scripts/data/harvest_psytoolkit.py --survey phq9 gad7
+    python scripts/data/harvest_psytoolkit.py --list
 """
 
 import argparse

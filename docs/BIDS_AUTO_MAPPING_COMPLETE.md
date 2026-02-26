@@ -75,7 +75,7 @@
 - **Files Created**:
   1. `docs/BIDS_COMPLIANCE_IMPLEMENTATION.md` - Complete specification with all mappings
   2. `docs/METADATA_AUDIT.md` - Field-by-field mapping audit (from prior session)
-  3. `scripts/test_bids_compliance.py` - Validation test suite
+  3. `scripts/ci/test_bids_compliance.py` - Validation test suite
 
 ---
 
@@ -115,7 +115,7 @@
 | `app/src/web/blueprints/projects.py` | CITATION.cff precedence enforcement; auto-defaults for RECOMMENDED fields; backend validation | 707-768 | API endpoint for dataset description save |
 | `app/src/project_manager.py` | `update_citation_cff()` method | (method added) | CITATION.cff auto-generation/sync |
 | `docs/BIDS_COMPLIANCE_IMPLEMENTATION.md` | Full specification document | 300+ lines | Implementation documentation |
-| `scripts/test_bids_compliance.py` | Validation test suite | 200+ lines | Field conversion & round-trip tests |
+| `scripts/ci/test_bids_compliance.py` | Validation test suite | 200+ lines | Field conversion & round-trip tests |
 
 ---
 
@@ -287,7 +287,7 @@
 ### Run Validation Tests
 ```bash
 cd /path/to/psycho-validator
-python3 scripts/test_bids_compliance.py
+python3 scripts/ci/test_bids_compliance.py
 ```
 Expected: All tests pass (✓ marks on all test cases)
 
@@ -333,7 +333,7 @@ Expected: All tests pass (✓ marks on all test cases)
 For questions about the BIDS compliance implementation:
 1. Check [BIDS_COMPLIANCE_IMPLEMENTATION.md](BIDS_COMPLIANCE_IMPLEMENTATION.md) for detailed specifications
 2. Review [QUICK_REFERENCE_BIDS.md](QUICK_REFERENCE_BIDS.md) for field mapping tables
-3. Run `python3 scripts/test_bids_compliance.py` to validate your system
+3. Run `python3 scripts/ci/test_bids_compliance.py` to validate your system
 4. Refer to official BIDS specification: https://bids-specification.readthedocs.io/
 
 ---
