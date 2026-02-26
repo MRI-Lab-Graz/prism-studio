@@ -1010,6 +1010,26 @@ def check_testing(repo_path, fix=False):
         print_warning("No obvious tests found (tests/ folder or test_*.py files).")
 
 
+def check_pytest(repo_path, fix=False):
+    print_header("Running Pytest")
+
+    tests_dir = os.path.join(repo_path, "tests")
+    if not os.path.isdir(tests_dir):
+        print_warning("No tests/ directory found. Skipping pytest run.")
+        return
+
+    python_cmd = TARGET_PYTHON if TARGET_PYTHON else sys.executable
+    result = run_command(f'"{python_cmd}" -m pytest -q tests', cwd=repo_path)
+
+    if result and result.returncode == 0:
+        print_success("Pytest passed.")
+        return
+
+    print_error("Pytest failed.")
+    if result and result.stdout:
+        print(result.stdout)
+
+
 def check_documentation(repo_path, fix=False):
     print_header("Checking Documentation")
     readme_files = list(Path(repo_path).glob("README*"))
@@ -1439,6 +1459,7 @@ CHECKS = {
     "unsafe-patterns": check_unsafe_patterns,
     "linting": check_linting,
     "ruff": check_ruff,
+    "pytest": check_pytest,
     "mypy": check_mypy,
     "semgrep": check_semgrep,
     "codespell": check_codespell,
