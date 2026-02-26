@@ -43,6 +43,7 @@ try:
         list_plugins,
     )
     from template_validator import validate_templates
+    from environment.builder import build_environment_tsv
 except ImportError as e:
     print(f"❌ Import error: {e}")
     print("Make sure you're running from the project root directory")
@@ -63,6 +64,7 @@ Examples:
   %(prog)s /path/to/dataset --fix --dry-run
   %(prog)s --schema-info image
   %(prog)s --validate-templates /path/to/library/survey
+    %(prog)s --build-environment --scans-tsv /path/sub-01_scans.tsv --environment-tsv /path/sub-01_environment.tsv --lat 47.07 --lon 15.44
         """,
     )
 
@@ -163,9 +165,84 @@ Examples:
         metavar="PATH",
         help="Validate survey/biometrics templates in a library directory",
     )
+    parser.add_argument(
+        "--build-environment",
+        action="store_true",
+        help="Build *_environment.tsv from scans.tsv and privacy-safe temporal anchors",
+    )
+    parser.add_argument(
+        "--scans-tsv",
+        metavar="PATH",
+        help="Input scans TSV containing filename and prism_time_anchor",
+    )
+    parser.add_argument(
+        "--environment-tsv",
+        metavar="PATH",
+        help="Output *_environment.tsv path",
+    )
+    parser.add_argument(
+        "--lat",
+        type=float,
+        help="Site latitude for environment enrichment",
+    )
+    parser.add_argument(
+        "--lon",
+        type=float,
+        help="Site longitude for environment enrichment",
+    )
+    parser.add_argument(
+        "--environment-providers",
+        nargs="*",
+        default=["weather", "pollen", "air_quality"],
+        help="Environment providers to enable: weather pollen air_quality",
+    )
+    parser.add_argument(
+        "--environment-cache",
+        metavar="PATH",
+        default=".prism/environment_cache.json",
+        help="Cache path for environment provider results",
+    )
     parser.add_argument("--version", action="version", version="PRISM 1.7.1")
 
     args = parser.parse_args()
+
+    # Handle environment builder mode
+    if args.build_environment:
+        required_flags = {
+            "--scans-tsv": args.scans_tsv,
+            "--environment-tsv": args.environment_tsv,
+            "--lat": args.lat,
+            "--lon": args.lon,
+        }
+        missing = [flag for flag, value in required_flags.items() if value is None]
+        if missing:
+            parser.error(
+                "Missing required arguments for --build-environment: "
+                + ", ".join(missing)
+            )
+
+        if not os.path.exists(args.scans_tsv):
+            print(f"❌ scans TSV not found: {args.scans_tsv}")
+            sys.exit(1)
+
+        try:
+            output_path = build_environment_tsv(
+                scans_tsv=args.scans_tsv,
+                output_tsv=args.environment_tsv,
+                lat=args.lat,
+                lon=args.lon,
+                enabled_providers=args.environment_providers,
+                cache_path=args.environment_cache,
+            )
+            print(f"✅ Environment TSV created: {output_path}")
+            sys.exit(0)
+        except Exception as e:
+            print(f"❌ Environment build failed: {e}")
+            if args.verbose:
+                import traceback
+
+                traceback.print_exc()
+            sys.exit(2)
 
     # Handle template validation request
     if args.validate_templates:

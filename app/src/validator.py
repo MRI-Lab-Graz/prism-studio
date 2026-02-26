@@ -6,6 +6,7 @@ import os
 import re
 import json
 import csv
+import gzip
 from pathlib import Path
 from datetime import datetime
 from jsonschema import validate, ValidationError
@@ -23,6 +24,7 @@ from cross_platform import (
 PRISM_MODALITIES = {
     "survey",
     "biometrics",
+    "environment",
     "events",
     "physio",
     "physiological",
@@ -38,6 +40,7 @@ MODALITY_PATTERNS = {
     # PRISM survey/biometrics must carry explicit suffixes
     "survey": r".+_survey\.(tsv|json)$",
     "biometrics": r".+_biometrics\.(tsv|json)$",
+    "environment": r".+_environment\.(tsv|tsv\.gz|json)$",
     "events": r".+_events\.tsv$",
     "physio": r".+(_recording-(ecg|cardiac|puls|resp|eda|ppg|emg|temp|bp|spo2|trigger|[a-zA-Z0-9]+))?_physio\.(tsv|tsv\.gz|json|edf)$",
     "physiological": r".+(_recording-(ecg|cardiac|puls|resp|eda|ppg|emg|temp|bp|spo2|trigger|[a-zA-Z0-9]+))?_physio\.(tsv|tsv\.gz|json|edf)$",
@@ -58,6 +61,66 @@ MRI_SUFFIX_REGEX = re.compile(
 
 # File extensions that need special handling
 COMPOUND_EXTS = (".nii.gz", ".tsv.gz", ".edf.gz")
+
+ENV_REQUIRED_COLUMNS = {
+    "subject_id",
+    "session_id",
+    "filename",
+    "relative_time",
+    "hour_bin",
+    "season_code",
+    "sun_phase",
+    "sun_hours_today",
+    "hours_since_sun",
+    "temp_c",
+    "humidity_pct",
+    "pressure_hpa",
+    "precip_mm",
+    "wind_speed_ms",
+    "cloud_cover_pct",
+    "weather_regime",
+    "aqi",
+    "pm25_ug_m3",
+    "pm10_ug_m3",
+    "no2_ug_m3",
+    "o3_ug_m3",
+    "pollen_total",
+    "pollen_birch",
+    "pollen_grass",
+    "pollen_risk_bin",
+}
+
+ENV_FORBIDDEN_COLUMNS = {
+    "date",
+    "datetime",
+    "timestamp",
+    "acquisition_datetime",
+    "acquisition_time",
+    "acquisition_date",
+    "latitude",
+    "longitude",
+    "lat",
+    "lon",
+}
+
+ENV_NUMERIC_COLUMNS = {
+    "sun_hours_today",
+    "hours_since_sun",
+    "temp_c",
+    "humidity_pct",
+    "pressure_hpa",
+    "precip_mm",
+    "wind_speed_ms",
+    "cloud_cover_pct",
+    "aqi",
+    "pm25_ug_m3",
+    "pm10_ug_m3",
+    "no2_ug_m3",
+    "o3_ug_m3",
+    "pollen_total",
+    "pollen_birch",
+    "pollen_grass",
+}
 
 
 def split_compound_ext(filename):
@@ -502,6 +565,9 @@ class DatasetValidator:
         """Validate data content against constraints in sidecar (with BIDS inheritance)"""
         issues = []
 
+        if modality == "environment":
+            return self._validate_environment_content(file_path)
+
         # Only validate content for tabular data modalities
         if modality not in ["survey", "biometrics"]:
             return issues
@@ -601,6 +667,154 @@ class DatasetValidator:
                 (
                     "ERROR",
                     f"Error validating content of {os.path.basename(file_path)}: {str(e)}",
+                )
+            )
+
+        return issues
+
+    def _validate_environment_content(self, file_path):
+        issues = []
+        file_name = os.path.basename(file_path)
+
+        try:
+            if os.path.getsize(file_path) == 0:
+                return [
+                    (
+                        "ERROR",
+                        f"File {file_name} is empty. If data is missing, please delete the file.",
+                    )
+                ]
+
+            opener = gzip.open if file_path.endswith(".tsv.gz") else open
+            with opener(file_path, "rt", newline="", encoding="utf-8") as tsvfile:
+                reader = csv.DictReader(tsvfile, delimiter="\t")
+                if not reader.fieldnames:
+                    return [
+                        (
+                            "ERROR",
+                            f"File {file_name} is not a valid TSV (no header found).",
+                        )
+                    ]
+
+                headers = [h.strip() for h in reader.fieldnames if h]
+                header_set = set(headers)
+                header_lower = {h.lower() for h in header_set}
+
+                missing = sorted(ENV_REQUIRED_COLUMNS - header_set)
+                if missing:
+                    issues.append(
+                        (
+                            "ERROR",
+                            f"{file_name}: Missing required environment columns: {', '.join(missing)}",
+                        )
+                    )
+
+                forbidden = sorted(header_lower.intersection(ENV_FORBIDDEN_COLUMNS))
+                if forbidden:
+                    issues.append(
+                        (
+                            "ERROR",
+                            f"{file_name}: Forbidden privacy-sensitive columns found: {', '.join(forbidden)}",
+                        )
+                    )
+
+                row_count = 0
+                for row_idx, row in enumerate(reader, start=2):
+                    row_count += 1
+
+                    if all(v is None or str(v).strip() == "" for v in row.values()):
+                        issues.append(
+                            (
+                                "WARNING",
+                                f"{file_name} line {row_idx}: Row contains only empty values.",
+                            )
+                        )
+                        continue
+
+                    hour_bin = (row.get("hour_bin") or "").strip()
+                    if hour_bin and hour_bin not in {
+                        "night",
+                        "morning",
+                        "afternoon",
+                        "evening",
+                        "unknown",
+                    }:
+                        issues.append(
+                            (
+                                "ERROR",
+                                f"{file_name} line {row_idx}: Invalid hour_bin '{hour_bin}'",
+                            )
+                        )
+
+                    season = (row.get("season_code") or "").strip()
+                    if season and season not in {
+                        "spring",
+                        "summer",
+                        "autumn",
+                        "winter",
+                        "unknown",
+                    }:
+                        issues.append(
+                            (
+                                "ERROR",
+                                f"{file_name} line {row_idx}: Invalid season_code '{season}'",
+                            )
+                        )
+
+                    pollen_risk = (row.get("pollen_risk_bin") or "").strip()
+                    if pollen_risk and pollen_risk not in {
+                        "low",
+                        "medium",
+                        "high",
+                        "very_high",
+                    }:
+                        issues.append(
+                            (
+                                "ERROR",
+                                f"{file_name} line {row_idx}: Invalid pollen_risk_bin '{pollen_risk}'",
+                            )
+                        )
+
+                    weather_regime = (row.get("weather_regime") or "").strip()
+                    if weather_regime and weather_regime not in {
+                        "hochdruck",
+                        "tiefdruck",
+                        "frontal",
+                    }:
+                        issues.append(
+                            (
+                                "ERROR",
+                                f"{file_name} line {row_idx}: Invalid weather_regime '{weather_regime}'",
+                            )
+                        )
+
+                    for column_name in ENV_NUMERIC_COLUMNS:
+                        value = (row.get(column_name) or "").strip()
+                        if not value:
+                            continue
+                        try:
+                            float(value)
+                        except ValueError:
+                            issues.append(
+                                (
+                                    "ERROR",
+                                    f"{file_name} line {row_idx}: Column '{column_name}' must be numeric (got '{value}')",
+                                )
+                            )
+
+                if row_count == 0:
+                    issues.append(
+                        (
+                            "WARNING",
+                            f"File {file_name} contains no data rows. If data is missing, please delete the file.",
+                        )
+                    )
+
+        except Exception as e:
+            issues.append(
+                (
+                    "ERROR",
+                    f"Error validating content of {file_name}: {str(e)}",
                 )
             )
 
