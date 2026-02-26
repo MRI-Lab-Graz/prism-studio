@@ -10,7 +10,7 @@ This roadmap targets backend/script modularization while preserving PRISM's core
 - Organize `scripts/` by purpose and lifecycle.
 - Keep Web UI behavior based on the same backend core path.
 
-## Phase 1 — Contract Lock (started)
+## Phase 1 — Contract Lock (completed)
 
 - Add CLI contract tests for help surfaces and key subcommands.
 - Ensure CI catches accidental command/argument regressions.
@@ -19,7 +19,7 @@ This roadmap targets backend/script modularization while preserving PRISM's core
 Deliverable:
 - `tests/test_prism_tools_cli_contract.py`
 
-## Phase 2 — CLI Package Skeleton
+## Phase 2 — CLI Package Skeleton (completed)
 
 Target structure:
 
@@ -49,15 +49,15 @@ Principles:
 - One command domain per module.
 - Shared logic moved to `services/`.
 
-## Phase 3 — Incremental Extraction
+## Phase 3 — Incremental Extraction (in progress)
 
 Recommended order (lowest risk first):
 
-1. `library` + `dataset` handlers
-2. `convert` + `anonymize` handlers
-3. `biometrics` handlers
-4. `survey` handlers
-5. `recipes` handlers
+1. `library` + `dataset` handlers ✅
+2. `convert` + `anonymize` handlers ✅
+3. `biometrics` handlers ✅
+4. `survey` handlers ✅ (support handlers)
+5. `recipes` handlers ✅
 
 After each extraction:
 - Run contract tests + targeted functional tests.
@@ -88,7 +88,29 @@ Migration rules:
 - Add import boundary checks (no command module reaches unrelated domains).
 - Update developer docs for new layout and contribution flow.
 
+## Progress Log
+
+- Added CLI contract tests to lock command/help surface.
+- Created `app/src/cli/` scaffold (`parser.py`, `dispatch.py`, `commands/`, `services/`).
+- Extracted command modules:
+  - `commands/library.py`
+  - `commands/dataset.py`
+  - `commands/convert.py`
+  - `commands/anonymize.py`
+  - `commands/biometrics.py`
+  - `commands/survey.py` (safe support handlers)
+  - `commands/recipes.py`
+- Kept compatibility by delegating from `app/prism_tools.py` wrappers.
+
+## Learned Lessions
+
+- Start with contract tests before moving code: refactoring speed increases and risk drops.
+- Use wrapper delegation first, then remove legacy code only after a full extraction cycle.
+- Keep extraction batches small and domain-focused (`library`, `dataset`, etc.) to simplify review.
+- Validate after every batch with targeted CLI tests plus repository safety checks.
+- Keep BIDS compatibility constraints explicit in refactor decisions.
+
 ## Immediate next step
 
-- Create `app/src/cli/` skeleton and wire `app/prism_tools.py` as thin entrypoint,
-  while preserving full existing CLI behavior.
+- Extract the remaining `survey convert` handler into `commands/survey.py`,
+  then centralize parser/dispatch wiring in `app/src/cli/parser.py` + `dispatch.py`.
