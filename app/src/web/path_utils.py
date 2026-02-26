@@ -91,6 +91,7 @@ def strip_temp_path(
                 "anat",
                 "func",
                 "survey",
+                "environment",
                 "eyetracking",
                 "dwi",
                 "fmap",

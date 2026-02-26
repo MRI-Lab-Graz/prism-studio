@@ -149,7 +149,7 @@
                                             PRISM Only
                                         </label>
                                         <div class="text-muted small ms-4">
-                                            Only validates PRISM-specific modalities (survey, biometrics, etc.) and structure.
+                                            Only validates PRISM-specific modalities (survey, biometrics, environment, etc.) and structure.
                                         </div>
                                     </div>
                                     <div class="form-check mb-2">
@@ -271,7 +271,8 @@
 ├── sub-01/
 │   ├── ses-001/ (optional)
 │   │   ├── survey/
-│   │   └── biometrics/
+│   │   ├── biometrics/
+│   │   └── environment/
 │   └── anat/
 └── sub-02/
     └── ...</code></pre>
@@ -281,6 +282,7 @@
                         <ul class="list-unstyled">
                             <li><i class="fas fa-chart-line text-success me-2"></i><code>survey/</code> - Survey/Behavioral responses</li>
                             <li><i class="fas fa-heartbeat text-success me-2"></i><code>biometrics/</code> - Biometric assessments (VO2max, planks)</li>
+                            <li><i class="fas fa-cloud-sun text-success me-2"></i><code>environment/</code> - Privacy-safe environmental enrichment data</li>
                             <li><i class="fas fa-wave-square text-success me-2"></i><code>physiological/</code> - Standard BIDS physio</li>
                         </ul>
                     </div>
