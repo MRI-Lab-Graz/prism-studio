@@ -38,7 +38,14 @@ from src.readme_generator import ReadmeGenerator
 from jsonschema import Draft7Validator
 
 # Available PRISM modalities
-PRISM_MODALITIES = ["survey", "biometrics", "physio", "eyetracking", "events"]
+PRISM_MODALITIES = [
+    "survey",
+    "biometrics",
+    "environment",
+    "physio",
+    "eyetracking",
+    "events",
+]
 
 # Valid project name pattern (no spaces, filesystem-safe)
 PROJECT_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")

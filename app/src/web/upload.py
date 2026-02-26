@@ -49,6 +49,7 @@ RESTRICTED_FOLDER_NAMES = {
     "audio",
     "movie",
     "survey",
+    "environment",
     "eyetracking",
     "physiological",
     "physio",
