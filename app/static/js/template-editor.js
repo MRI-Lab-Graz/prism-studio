@@ -1,4 +1,3 @@
-<script>
 (function() {
   const modalityEl = document.getElementById('modality');
   const schemaEl = document.getElementById('schemaVersion');
@@ -2975,4 +2974,3 @@
     }
   })();
 })();
-</script>

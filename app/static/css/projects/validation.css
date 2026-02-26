@@ -1,0 +1,45 @@
+.validation-result {
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+.validation-result.valid {
+    background-color: #d1e7dd;
+    border: 1px solid #badbcc;
+}
+.validation-result.invalid {
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+}
+.validation-result.warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffecb5;
+}
+.issue-item {
+    padding: 10px 15px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    background-color: #fff;
+    border-left: 4px solid;
+}
+.issue-item.fixable {
+    border-left-color: #ffc107;
+}
+.issue-item.not-fixable {
+    border-left-color: #dc3545;
+}
+/* Required field validation states */
+.form-control.required-field-empty {
+    border-color: #dc3545;
+}
+.form-control.required-field-filled {
+    border-color: #198754;
+}
+.form-control:focus.required-field-empty {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+.form-control:focus.required-field-filled {
+    border-color: #198754;
+    box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+}

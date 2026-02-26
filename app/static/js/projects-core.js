@@ -292,6 +292,12 @@ function selectProjectType(type) {
     });
     document.getElementById('section-' + type).classList.add('active');
 
+    // Show/hide the create project submit button
+    const createBtnContainer = document.getElementById('createProjectButtonContainer');
+    if (createBtnContainer) {
+        createBtnContainer.style.display = (type === 'create') ? 'block' : 'none';
+    }
+
     if (type === 'create') {
         const createResult = document.getElementById('createResult');
         if (createResult) {
@@ -387,8 +393,9 @@ if (projectNameInput) {
 // Create Project Form
 const createProjectFormEl = document.getElementById('createProjectForm');
 if (createProjectFormEl) {
-    createProjectFormEl.addEventListener('submit', async function(e) {
-        e.preventDefault();
+    // Handle form submission (triggered by external button click)
+    async function handleCreateProjectSubmit(e) {
+        if (e) e.preventDefault();
 
         const projectName = document.getElementById('projectName').value.trim();
         const projectPath = document.getElementById('projectPath').value.trim();
@@ -410,7 +417,7 @@ if (createProjectFormEl) {
             return;
         }
 
-        const btn = this.querySelector('button[type="submit"]');
+        const btn = document.getElementById('createProjectSubmitBtn');
         const originalText = setButtonLoading(btn, true, 'Creating...');
 
         const separator = projectPath.includes('/') ? '/' : '\\';
@@ -552,7 +559,16 @@ if (createProjectFormEl) {
         } finally {
             setButtonLoading(btn, false, null, originalText);
         }
-    });
+    }
+    
+    // Add event listener to the submit button
+    const createProjectSubmitBtn = document.getElementById('createProjectSubmitBtn');
+    if (createProjectSubmitBtn) {
+        createProjectSubmitBtn.addEventListener('click', handleCreateProjectSubmit);
+    }
+    
+    // Also handle form submit (e.g., when pressing Enter in a field)
+    createProjectFormEl.addEventListener('submit', handleCreateProjectSubmit);
 }
 
 // Open Project Form
