@@ -69,6 +69,7 @@ def resolve_effective_library_path() -> Path:
     Returns the resolved Path to the library root.
     Raises an error if no valid library is found.
     """
+
     def _safe_resolve(path: Path) -> Path:
         """Safely resolve path, handling network drives."""
         try:
@@ -76,7 +77,7 @@ def resolve_effective_library_path() -> Path:
         except (OSError, ValueError):
             # For network paths that can't be resolved, return as-is
             return path
-    
+
     def _safe_expand(path_str: str) -> Path:
         """Safely expand path, handling network drives."""
         try:
@@ -86,7 +87,7 @@ def resolve_effective_library_path() -> Path:
             return candidate
         except (OSError, ValueError):
             return Path(path_str)
-    
+
     from src.web.blueprints.projects import get_current_project
 
     # Try project library first, then project official templates
@@ -133,7 +134,7 @@ def resolve_effective_library_path() -> Path:
         base_dir = base_dir.parent.resolve()
     except (OSError, ValueError):
         base_dir = base_dir.parent
-    
+
     lib_paths = get_effective_library_paths(app_root=str(base_dir))
 
     if lib_paths.get("global_library_path"):

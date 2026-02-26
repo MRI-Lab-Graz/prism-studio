@@ -931,11 +931,80 @@ def check_documentation(repo_path, fix=False):
             print_error("No README found! Please add one.")
 
 
+CHECKS = {
+    "git-status": check_git_status,
+    "sensitive-files": check_sensitive_files,
+    "large-files": check_large_files,
+    "github-actions": check_github_actions,
+    "secrets": check_secrets,
+    "gitignore": check_gitignore,
+    "python-security": check_python_security,
+    "unsafe-patterns": check_unsafe_patterns,
+    "linting": check_linting,
+    "ruff": check_ruff,
+    "mypy": check_mypy,
+    "semgrep": check_semgrep,
+    "codespell": check_codespell,
+    "dependencies": check_dependencies,
+    "pip-audit": check_pip_audit,
+    "licensing": check_licensing,
+    "testing": check_testing,
+    "todos": check_todos,
+    "documentation": check_documentation,
+}
+
+
+CHECKS_SUPPORT_FIX = {
+    "secrets",
+    "gitignore",
+    "python-security",
+    "unsafe-patterns",
+    "linting",
+    "ruff",
+    "mypy",
+    "semgrep",
+    "codespell",
+    "dependencies",
+    "pip-audit",
+    "licensing",
+    "testing",
+    "todos",
+    "documentation",
+}
+
+
+def parse_selected_checks(check_args):
+    """Parse --check args that can be repeated and/or comma-separated."""
+    selected = []
+    for raw_value in check_args or []:
+        parts = [item.strip() for item in raw_value.split(",") if item.strip()]
+        selected.extend(parts)
+
+    # De-duplicate while preserving order
+    seen = set()
+    deduped = []
+    for check_name in selected:
+        if check_name not in seen:
+            seen.add(check_name)
+            deduped.append(check_name)
+    return deduped
+
+
+def run_check(check_name, check_fn, repo_path, fix):
+    """Run a single check function with the proper signature."""
+    if check_name in CHECKS_SUPPORT_FIX:
+        check_fn(repo_path, fix)
+    else:
+        check_fn(repo_path)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="AI Code Safety & Pre-Upload Checklist"
     )
-    parser.add_argument("path", help="Path to the repository to check")
+    parser.add_argument(
+        "path", nargs="?", default=".", help="Path to the repository to check"
+    )
     parser.add_argument(
         "--fix",
         action="store_true",
@@ -945,7 +1014,40 @@ def main():
     parser.add_argument(
         "--no-fix", action="store_false", dest="fix", help="Disable automatic fixes"
     )
+    parser.add_argument(
+        "--check",
+        action="append",
+        default=[],
+        help=(
+            "Run only specific checks (repeatable or comma-separated), "
+            "e.g. --check git-status --check linting,mypy"
+        ),
+    )
+    parser.add_argument(
+        "--list-checks",
+        action="store_true",
+        help="List available checks and exit",
+    )
+    parser.add_argument(
+        "--spellcheck",
+        action="store_true",
+        help="Enable codespell check (disabled by default)",
+    )
     args = parser.parse_args()
+
+    if args.list_checks:
+        print("Available checks:")
+        for check_name in CHECKS:
+            print(f"  - {check_name}")
+        sys.exit(0)
+
+    requested_checks = parse_selected_checks(args.check)
+    if requested_checks:
+        invalid = [name for name in requested_checks if name not in CHECKS]
+        if invalid:
+            print_error(f"Unknown check(s): {', '.join(invalid)}")
+            print_info("Run with --list-checks to see valid names.")
+            sys.exit(1)
 
     repo_path = os.path.abspath(args.path)
 
@@ -976,25 +1078,20 @@ def main():
                 if args.fix:
                     print_info("Fix mode enabled. Will attempt to auto-fix issues.")
 
-                check_git_status(repo_path)
-                check_sensitive_files(repo_path)
-                check_large_files(repo_path)
-                check_github_actions(repo_path)
-                check_secrets(repo_path, args.fix)
-                check_gitignore(repo_path, args.fix)
-                check_python_security(repo_path, args.fix)
-                check_unsafe_patterns(repo_path, args.fix)
-                check_linting(repo_path, args.fix)
-                check_ruff(repo_path, args.fix)
-                check_mypy(repo_path, args.fix)
-                check_semgrep(repo_path, args.fix)
-                check_codespell(repo_path, args.fix)
-                check_dependencies(repo_path, args.fix)
-                check_pip_audit(repo_path, args.fix)
-                check_licensing(repo_path, args.fix)
-                check_testing(repo_path, args.fix)
-                check_todos(repo_path, args.fix)
-                check_documentation(repo_path, args.fix)
+                if requested_checks:
+                    checks_to_run = requested_checks
+                else:
+                    checks_to_run = [name for name in CHECKS if name != "codespell"]
+
+                if args.spellcheck and "codespell" not in checks_to_run:
+                    checks_to_run.append("codespell")
+
+                print_info(
+                    f"Running checks: {', '.join(checks_to_run) if checks_to_run else 'none'}"
+                )
+
+                for check_name in checks_to_run:
+                    run_check(check_name, CHECKS[check_name], repo_path, args.fix)
 
                 print_header("Summary")
                 if MISSING_TOOLS:
