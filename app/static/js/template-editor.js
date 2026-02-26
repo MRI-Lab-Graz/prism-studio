@@ -1,0 +1,2978 @@
+<script>
+(function() {
+  const modalityEl = document.getElementById('modality');
+  const schemaEl = document.getElementById('schemaVersion');
+  const projectTemplateSelectEl = document.getElementById('projectTemplateSelect');
+  const globalTemplateSelectEl = document.getElementById('globalTemplateSelect');
+  const projectLibraryStatusEl = document.getElementById('projectLibraryStatus');
+  const topLevelFormEl = document.getElementById('topLevelForm');
+  const itemFormEl = document.getElementById('itemForm');
+  const bulkEditFormEl = document.getElementById('bulkEditForm');
+  const toolPropertiesFormEl = document.getElementById('toolPropertiesForm');
+  const btnImportTemplateSource = document.getElementById('btnImportTemplateSource');
+  const templateImportInput = document.getElementById('templateImportInput');
+  const itemListEl = document.getElementById('itemList');
+  const selectAllItemsEl = document.getElementById('selectAllItems');
+  const newItemIdEl = document.getElementById('newItemId');
+  const btnAddItem = document.getElementById('btnAddItem');
+  const selectedItemIdEl = document.getElementById('selectedItemId');
+  const selectedItemCollapseEl = document.getElementById('collapseItem');
+  const alertAreaEl = document.getElementById('alertArea');
+  const missingSummaryEl = document.getElementById('missingSummaryArea');
+  const btnToggleDiff = document.getElementById('btnToggleDiff');
+  const jsonDiffContainer = document.getElementById('jsonDiffContainer');
+  const btnNew = document.getElementById('btnNew');
+  const btnLoad = document.getElementById('btnLoad');
+  const btnValidate = document.getElementById('btnValidate');
+  const btnSave = document.getElementById('btnSave');
+  const btnDownload = document.getElementById('btnDownload');
+  const languageBarEl = document.getElementById('languageBar');
+  const langBadgesEl = document.getElementById('langBadges');
+  const langPrimaryBadgeEl = document.getElementById('langPrimaryBadge');
+  const langWarningEl = document.getElementById('langWarningIndicator');
+  const languageBarInnerEl = document.getElementById('languageBarInner');
+  const btnAddLang = document.getElementById('btnAddLang');
+  const btnRemoveLang = document.getElementById('btnRemoveLang');
+  const editorViewEl = document.getElementById('editorView');
+  const previewViewEl = document.getElementById('previewView');
+  const previewContentEl = document.getElementById('previewContent');
+  const previewLangSelectEl = document.getElementById('previewLangSelect');
+  const previewLangCountEl = document.getElementById('previewLangCount');
+  const tabEditorEl = document.getElementById('tabEditor');
+  const tabPreviewEl = document.getElementById('tabPreview');
+  const editorHintEl = document.getElementById('editorHint');
+
+  const RESERVED_TOPLEVEL = new Set([
+    'Technical', 'Study', 'Metadata', 'I18n', 'LimeSurvey', 'Scoring', 'Normative'
+  ]);
+
+  const LS_QUESTION_TYPES = {
+    'L': 'List (Radio)',
+    '!': 'List (Dropdown)',
+    'O': 'List with Comment',
+    'G': 'Gender',
+    'Y': 'Yes/No',
+    'I': 'Language Switch',
+    'M': 'Multiple Choice',
+    'P': 'Multiple Choice with Comments',
+    'S': 'Short Free Text',
+    'T': 'Long Free Text',
+    'U': 'Huge Free Text',
+    'Q': 'Multiple Short Text',
+    'N': 'Numerical Input',
+    'K': 'Multiple Numerical Input',
+    'D': 'Date/Time',
+    'A': 'Array (5 Point)',
+    'B': 'Array (10 Point)',
+    'C': 'Array (Yes/Uncertain/No)',
+    'E': 'Array (Increase/Same/Decrease)',
+    'F': 'Array (Flexible Labels)',
+    'H': 'Array by Column',
+    ';': 'Array (Texts)',
+    ':': 'Array (Numbers)',
+    '1': 'Array Dual Scale',
+    'R': 'Ranking',
+    'X': 'Text Display (Boilerplate)',
+    '*': 'Equation',
+    '|': 'File Upload',
+  };
+
+  let currentSchema = null;
+  let currentTemplate = null;
+  let originalTemplate = null; // snapshot of loaded file for diff
+  let selectedItemId = null;
+  let checkedItemIds = new Set();
+  let projectLibraryRoot = null;
+  let projectLibraryExists = false;
+
+  function enableTooltips() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      // eslint-disable-next-line no-undef
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  }
+
+  function openSelectedItemPanel() {
+    try {
+      if (!selectedItemCollapseEl) return;
+      // eslint-disable-next-line no-undef
+      const collapse = bootstrap.Collapse.getOrCreateInstance(selectedItemCollapseEl, { toggle: false });
+      collapse.show();
+    } catch {
+      // ignore if bootstrap isn't available
+    }
+  }
+
+  function showAlert(kind, text) {
+    // kind: 'success' | 'danger' | 'warning' | 'info'
+    alertAreaEl.innerHTML = `
+      <div class="alert alert-${kind}" role="alert">
+        ${text}
+      </div>
+    `;
+  }
+
+  function clearAlert() {
+    alertAreaEl.innerHTML = '';
+  }
+
+  function cloneDeep(obj) {
+    return obj === undefined ? undefined : JSON.parse(JSON.stringify(obj));
+  }
+
+  function isMissingValue(val, fieldSchema) {
+    if (val === undefined || val === null) return true;
+    const t = Array.isArray(fieldSchema?.type) ? fieldSchema.type : fieldSchema?.type;
+    if (t === 'string') return String(val).trim() === '';
+    if (t === 'array') return Array.isArray(val) && val.length === 0;
+    if (t === 'object') return val && typeof val === 'object' && Object.keys(val).length === 0;
+    // Fallback: treat empty string and empty arrays/objects as missing
+    if (typeof val === 'string') return val.trim() === '';
+    if (Array.isArray(val)) return val.length === 0;
+    if (val && typeof val === 'object') return Object.keys(val).length === 0;
+    return false;
+  }
+
+  function focusField(path) {
+    if (!path) return;
+    const parts = String(path).split('/');
+    const section = parts[0];
+    const name = parts[1];
+    // Expand section accordion
+    try {
+      const body = document.getElementById(`tlBody_${section}`);
+      if (body) {
+        // eslint-disable-next-line no-undef
+        const coll = bootstrap.Collapse.getOrCreateInstance(body, { toggle: false });
+        coll.show();
+      }
+    } catch {}
+    // Focus input
+    const inp = document.getElementById(`field_${section}_${name}`);
+    if (inp) {
+      inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      inp.focus();
+      inp.classList.add('border-warning');
+      setTimeout(() => inp.classList.remove('border-warning'), 1500);
+    }
+  }
+
+  function recomputeMissingFields() {
+    const sections = ['Technical','Study','Metadata','I18n'];
+    const missing = [];
+    for (const s of sections) {
+      const sch = getSectionSchema(s);
+      if (!sch || !sch.properties) continue;
+      const required = sch.required || [];
+      const obj = (currentTemplate && currentTemplate[s]) || {};
+      for (const name of required) {
+        const fs = sch.properties[name] || {};
+        const val = obj[name];
+        if (isMissingValue(val, fs)) missing.push({ section: s, name, path: `${s}/${name}` });
+      }
+    }
+    return missing;
+  }
+
+  function renderMissingSummary() {
+    // Removed: Missing fields are already shown in validation errors
+    // No need to duplicate this information
+    if (missingSummaryEl) {
+      missingSummaryEl.innerHTML = '';
+    }
+  }
+
+  function calculateCompletion() {
+    if (!currentTemplate || typeof currentTemplate !== 'object') return 0;
+
+    // Count filled fields in general information sections
+    const sections = ['Technical', 'Study', 'Metadata', 'I18n'];
+    let filledCount = 0;
+    let totalCount = 0;
+
+    sections.forEach(s => {
+      const sch = getSectionSchema(s);
+      if (!sch || !sch.properties) return;
+
+      Object.entries(sch.properties).forEach(([key, fieldSchema]) => {
+        totalCount++;
+        const value = currentTemplate[s]?.[key];
+        if (value !== null && value !== undefined && value !== '' && 
+            !(Array.isArray(value) && value.length === 0) &&
+            !(typeof value === 'object' && Object.keys(value).length === 0)) {
+          filledCount++;
+        }
+      });
+    });
+
+    if (totalCount === 0) return 0;
+    return Math.round((filledCount / totalCount) * 100);
+  }
+
+  function renderCompletionBar() {
+    const completionBarContainer = document.getElementById('completionBarContainer');
+    const completionBarFill = document.getElementById('completionBarFill');
+    const completionBarText = document.getElementById('completionBarText');
+
+    // Only show if a template is loaded and it has required sections
+    if (!currentTemplate || typeof currentTemplate !== 'object' || !hasUserInteracted) {
+      if (completionBarContainer) completionBarContainer.style.display = 'none';
+      return;
+    }
+
+    const percentage = calculateCompletion();
+    if (completionBarContainer) {
+      completionBarContainer.style.display = 'flex';
+      completionBarFill.style.width = percentage + '%';
+      completionBarText.textContent = percentage + '%';
+      
+      // Change color based on completion
+      if (percentage >= 80) {
+        completionBarFill.style.background = 'linear-gradient(90deg, #28a745 0%, #20c997 100%)';
+      } else if (percentage >= 50) {
+        completionBarFill.style.background = 'linear-gradient(90deg, #17a2b8 0%, #20c997 100%)';
+      } else {
+        completionBarFill.style.background = 'linear-gradient(90deg, #ffc107 0%, #ff9800 100%)';
+      }
+    }
+  }
+
+  function diffObjects(base, curr, path, out) {
+    const baseKeys = new Set(Object.keys(base || {}));
+    const currKeys = new Set(Object.keys(curr || {}));
+
+    for (const k of baseKeys) {
+      const p = path ? `${path}/${k}` : k;
+      if (!currKeys.has(k)) {
+        out.missing.push(p);
+        continue;
+      }
+      const bv = base[k];
+      const cv = curr[k];
+      if (bv && typeof bv === 'object' && cv && typeof cv === 'object') {
+        diffObjects(bv, cv, p, out);
+      } else if (JSON.stringify(bv) !== JSON.stringify(cv)) {
+        out.changed.push(p);
+      }
+    }
+
+    for (const k of currKeys) {
+      if (baseKeys.has(k)) continue;
+      const p = path ? `${path}/${k}` : k;
+      out.added.push(p);
+    }
+  }
+
+  function renderJsonDiff() {
+    if (!jsonDiffContainer) return;
+    if (!originalTemplate) {
+      jsonDiffContainer.innerHTML = '<div class="text-muted">No baseline loaded (new template).</div>';
+      return;
+    }
+    const out = { missing: [], added: [], changed: [] };
+    diffObjects(originalTemplate, currentTemplate || {}, '', out);
+
+    if (!out.missing.length && !out.added.length && !out.changed.length) {
+      jsonDiffContainer.innerHTML = '<div class="text-success"><i class="fas fa-check me-1"></i>No differences from loaded file.</div>';
+      return;
+    }
+
+    const renderList = (arr, cls, label) => arr.length ? `<div class="mb-2"><strong>${label} (${arr.length})</strong><ul class="mb-0 ${cls}">${arr.map(p => `<li>${p}</li>`).join('')}</ul></div>` : '';
+    jsonDiffContainer.innerHTML = `
+      ${renderList(out.missing, 'text-warning', 'Missing in current')}
+      ${renderList(out.added, 'text-info', 'Added in current')}
+      ${renderList(out.changed, 'text-danger', 'Changed')}
+      <div class="mt-2 small text-muted">Diff is path-based; deep content differences show as "Changed".</div>
+    `;
+  }
+
+  function updateProjectLibraryStatus() {
+    if (!projectLibraryStatusEl) return;
+    projectLibraryStatusEl.className = 'form-text mt-1';
+    projectLibraryStatusEl.innerHTML = '';
+    if (projectLibraryRoot) {
+      if (projectLibraryExists) {
+        projectLibraryStatusEl.classList.add('text-success');
+        projectLibraryStatusEl.textContent = 'Project library active (saves go to project/code/library/{modality}).';
+      } else {
+        projectLibraryStatusEl.classList.add('text-info');
+        projectLibraryStatusEl.textContent = 'Project selected; writable project library will be created on first save.';
+      }
+    } else {
+      projectLibraryStatusEl.classList.add('text-warning');
+      projectLibraryStatusEl.textContent = 'No project selected. Saving to project library is disabled.';
+    }
+  }
+
+  function sanitizeTaskNameForFilename(name) {
+    const raw = (name || '').toString().trim().toLowerCase();
+    const safe = raw.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    return safe || 'template';
+  }
+
+  async function apiGet(url) {
+    const res = await fetch(url, { method: 'GET' });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || `Request failed (${res.status})`);
+    }
+    return data;
+  }
+
+  async function apiPost(url, body) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || `Request failed (${res.status})`);
+    }
+    return data;
+  }
+
+  function schemaExample(sch) {
+    if (!sch || typeof sch !== 'object') return null;
+    if (Array.isArray(sch.examples) && sch.examples.length) return sch.examples[0];
+    if (sch.default !== undefined) return sch.default;
+    if (Array.isArray(sch.enum) && sch.enum.length) {
+      const nonEmpty = sch.enum.find(v => v !== '');
+      return nonEmpty !== undefined ? nonEmpty : sch.enum[0];
+    }
+    let t = sch.type;
+    if (Array.isArray(t)) {
+      const pref = ['string', 'integer', 'number', 'boolean', 'object', 'array', 'null'];
+      t = pref.find(x => t.includes(x)) || t[0];
+    }
+    if (t === 'object' || (!t && sch.properties)) {
+      const out = {};
+      if (sch.properties && typeof sch.properties === 'object') {
+        for (const k of Object.keys(sch.properties)) {
+          out[k] = schemaExample(sch.properties[k]);
+        }
+      }
+      return out;
+    }
+    if (t === 'array') {
+      return [schemaExample(sch.items || {})];
+    }
+    if (t === 'integer') return 0;
+    if (t === 'number') return 0;
+    if (t === 'boolean') return false;
+    if (t === 'null') return null;
+    return '';
+  }
+
+  async function refreshSchema() {
+    const modality = modalityEl.value;
+    const schema_version = schemaEl.value;
+    const data = await apiGet(`/api/template-editor/schema?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schema_version)}`);
+    currentSchema = data.schema;
+  }
+
+  function unwrapSchemaVariants(schema) {
+    if (!schema || typeof schema !== 'object') return schema;
+    const candidates = [];
+    if (Array.isArray(schema.oneOf)) candidates.push(...schema.oneOf);
+    if (Array.isArray(schema.anyOf)) candidates.push(...schema.anyOf);
+    if (Array.isArray(schema.allOf)) candidates.push(...schema.allOf);
+    if (!candidates.length) return schema;
+
+    const withProps = candidates.find(c => c && typeof c === 'object' && c.properties);
+    return withProps || candidates[0];
+  }
+
+  function getItemSchema() {
+    if (!currentSchema) return null;
+    const schema = currentSchema.additionalProperties || null;
+    return unwrapSchemaVariants(schema);
+  }
+
+  function getSectionSchema(sectionKey) {
+    if (!currentSchema || !currentSchema.properties) return null;
+    return currentSchema.properties[sectionKey] || null;
+  }
+
+  function sortedFieldNames(props, required) {
+    const keys = Object.keys(props || {});
+    return keys.sort((a, b) => {
+      const ar = required.includes(a) ? 0 : 1;
+      const br = required.includes(b) ? 0 : 1;
+      if (ar !== br) return ar - br;
+      return a.localeCompare(b);
+    });
+  }
+
+  function infoHtml(fieldSchema) {
+    const parts = [];
+    if (fieldSchema.description) parts.push(fieldSchema.description);
+    
+    if (fieldSchema.type) {
+      const t = Array.isArray(fieldSchema.type) ? fieldSchema.type.join(' | ') : fieldSchema.type;
+      parts.push('Type: ' + t);
+    }
+
+    if (Array.isArray(fieldSchema.enum)) parts.push('Allowed: ' + fieldSchema.enum.filter(v => v !== '').join(', '));
+    if (fieldSchema.pattern) parts.push('Pattern: ' + fieldSchema.pattern);
+    const ex = schemaExample(fieldSchema);
+    if (ex !== null && ex !== undefined) {
+      const exStr = (typeof ex === 'object') ? JSON.stringify(ex) : String(ex);
+      parts.push('Example: ' + exStr);
+    }
+    return parts.join('\n');
+  }
+
+  function makeLabel(name, fieldSchema, isRequired) {
+    const label = document.createElement('label');
+    label.className = 'form-label';
+    label.textContent = name;
+
+    const hint = document.createElement('span');
+    hint.className = 'ms-2 text-muted schema-hint';
+    hint.setAttribute('data-bs-toggle', 'tooltip');
+    hint.setAttribute('data-bs-placement', 'right');
+    hint.setAttribute('title', infoHtml(fieldSchema));
+    hint.textContent = 'ⓘ';
+    label.appendChild(hint);
+
+    if (isRequired) {
+      const star = document.createElement('span');
+      star.className = 'ms-1 text-danger';
+      star.textContent = '*';
+      label.appendChild(star);
+    }
+    return label;
+  }
+
+  function normalizeValueForSchema(fieldSchema, rawValue, schemaTypesArg) {
+    if (rawValue === undefined || rawValue === null || !fieldSchema) return rawValue;
+    const schemaTypes = schemaTypesArg || (Array.isArray(fieldSchema.type) ? fieldSchema.type : (fieldSchema.type ? [fieldSchema.type] : []));
+    const prefersInteger = schemaTypes.includes('integer');
+    const prefersNumber = schemaTypes.includes('number');
+    const allowsString = schemaTypes.includes('string');
+    if (!(prefersInteger || prefersNumber) || typeof rawValue !== 'string') return rawValue;
+    const trimmed = rawValue.trim();
+    if (!trimmed || trimmed.toLowerCase() === 'null') {
+      return allowsString ? '' : null;
+    }
+    const integerPattern = /^-?\d+$/;
+    if (prefersInteger && !prefersNumber) {
+      return integerPattern.test(trimmed) ? parseInt(trimmed, 10) : rawValue;
+    }
+    if (prefersInteger && prefersNumber && integerPattern.test(trimmed)) {
+      return parseInt(trimmed, 10);
+    }
+    const floatVal = parseFloat(trimmed);
+    return Number.isNaN(floatVal) ? rawValue : floatVal;
+  }
+
+  function normalizeDataInPlace(value, schema) {
+    if (value === undefined || value === null || !schema || schema === true || schema === false) return value;
+    const schemaTypes = Array.isArray(schema.type) ? schema.type : (schema.type ? [schema.type] : []);
+    const allowsObject = schemaTypes.includes('object') || schema.properties || schema.additionalProperties;
+
+    if (allowsObject && typeof value === 'object' && !Array.isArray(value)) {
+      const props = schema.properties || {};
+      for (const key of Object.keys(value)) {
+        const propSchema = props[key] || schema.additionalProperties;
+        value[key] = normalizeDataInPlace(value[key], propSchema);
+      }
+      return value;
+    }
+
+    if (schemaTypes.includes('array') && Array.isArray(value)) {
+      const itemsSchema = schema.items;
+      for (let i = 0; i < value.length; i++) {
+        value[i] = normalizeDataInPlace(value[i], itemsSchema);
+      }
+      return value;
+    }
+
+    if (schemaTypes.includes('integer') || schemaTypes.includes('number')) {
+      return normalizeValueForSchema(schema, value);
+    }
+
+    return value;
+  }
+
+  function ensureTemplateNormalized() {
+    if (!currentSchema || !currentTemplate) return;
+    normalizeDataInPlace(currentTemplate, currentSchema);
+    pruneStudyOptionalFields(currentTemplate);
+  }
+
+  function pruneStudyOptionalFields(template) {
+    if (!template || typeof template !== 'object') return;
+    const study = template.Study;
+    if (!study || typeof study !== 'object') return;
+
+    const checkRange = (section) => {
+      if (!section || typeof section !== 'object') return false;
+      const minValid = Number.isFinite(section.min);
+      const maxValid = Number.isFinite(section.max);
+      return minValid && maxValid;
+    };
+
+    if (!checkRange(study.AgeRange)) {
+      delete study.AgeRange;
+    }
+    if (!checkRange(study.AdministrationTime)) {
+      delete study.AdministrationTime;
+    }
+    if (!checkRange(study.ScoringTime)) {
+      delete study.ScoringTime;
+    }
+  }
+
+  function createInput(fieldSchema, value, onChange, fieldName = '') {
+    // Special handling for Description and Instructions - use textarea for better UX
+    if (['Description', 'Instructions'].includes(fieldName)) {
+      const schemaTypes = Array.isArray(fieldSchema.type) ? fieldSchema.type : (fieldSchema.type ? [fieldSchema.type] : []);
+      const allowsObject = schemaTypes.includes('object');
+      const allowsString = schemaTypes.includes('string');
+
+      // If it's a translation object, render translation table
+      if (allowsObject && isTranslationObject(value)) {
+        const container = document.createElement('div');
+        const translationTable = document.createElement('div');
+        const langEntries = Object.entries(value || {});
+
+        for (const [lang, text] of langEntries) {
+          const row = document.createElement('div');
+          row.className = 'row g-2 align-items-start mb-3';
+
+          const langCol = document.createElement('div');
+          langCol.className = 'col-auto';
+          const langLabel = document.createElement('span');
+          langLabel.className = 'form-control-plaintext fw-bold mono';
+          langLabel.textContent = lang;
+          langCol.appendChild(langLabel);
+
+          const textCol = document.createElement('div');
+          textCol.className = 'col';
+          const textArea = document.createElement('textarea');
+          textArea.className = 'form-control';
+          textArea.rows = 4;
+          textArea.value = text || '';
+          textArea.addEventListener('input', () => {
+            value[lang] = textArea.value;
+            onChange(Object.assign({}, value));
+          });
+          textCol.appendChild(textArea);
+          row.appendChild(langCol);
+          row.appendChild(textCol);
+          translationTable.appendChild(row);
+        }
+
+        const addLangBtn = document.createElement('button');
+        addLangBtn.type = 'button';
+        addLangBtn.className = 'btn btn-sm btn-outline-secondary mt-1';
+        addLangBtn.innerHTML = '<i class="fas fa-plus me-1"></i>Add language';
+        addLangBtn.addEventListener('click', () => {
+          const newLang = prompt('Enter language code (e.g., en, de):');
+          if (!newLang || !/^[a-z]{2}(-[A-Z]{2})?$/.test(newLang.trim())) {
+            if (newLang !== null) alert('Invalid language code.');
+            return;
+          }
+          const lang = newLang.trim();
+          if (value[lang] !== undefined) {
+            alert('Language already exists.');
+            return;
+          }
+          value[lang] = '';
+          onChange(Object.assign({}, value));
+          // Re-render
+          const parentCol = container.closest('[data-field-path]');
+          if (parentCol) {
+            const path = parentCol.getAttribute('data-field-path');
+            const parts = path.split('/');
+            if (parts.length === 2) {
+              const sectionKey = parts[0];
+              const mount = parentCol.closest('.row')?.parentElement;
+              if (mount && currentTemplate[sectionKey]) {
+                const sch = getSectionSchema(sectionKey);
+                if (sch) renderSection(sectionKey, currentTemplate[sectionKey], sch, mount);
+                enableTooltips();
+              }
+            }
+          }
+        });
+
+        container.appendChild(translationTable);
+        container.appendChild(addLangBtn);
+        return container;
+      }
+
+      // String|object hybrid - render as textarea with convert button
+      if (allowsObject && allowsString && !isTranslationObject(value)) {
+        const container = document.createElement('div');
+        const ta = document.createElement('textarea');
+        ta.className = 'form-control';
+        ta.rows = 6;
+        ta.value = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
+        ta.placeholder = '— Not set —';
+        ta.addEventListener('input', () => onChange(ta.value));
+        container.appendChild(ta);
+
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
+        toggleBtn.innerHTML = '<i class="fas fa-globe me-1"></i>Convert to multilingual';
+        toggleBtn.addEventListener('click', () => {
+          const currentVal = ta.value || '';
+          const lang = (currentTemplate && currentTemplate.Technical && currentTemplate.Technical.Language) || 'en';
+          const translationObj = {};
+          translationObj[lang] = currentVal;
+          onChange(translationObj);
+          // Replace by re-rendering the parent section
+          const parentCol = container.closest('[data-field-path]');
+          if (parentCol) {
+            const path = parentCol.getAttribute('data-field-path');
+            const parts = path.split('/');
+            if (parts.length === 2) {
+              const sectionKey = parts[0];
+              const mount = parentCol.closest('.row')?.parentElement;
+              if (mount && currentTemplate[sectionKey]) {
+                const sch = getSectionSchema(sectionKey);
+                if (sch) renderSection(sectionKey, currentTemplate[sectionKey], sch, mount);
+                enableTooltips();
+              }
+            }
+          }
+        });
+        container.appendChild(toggleBtn);
+        return container;
+      }
+    }
+
+    // Special handling for Language field - dropdown with de-AT and en-UK
+    if (fieldName === 'Language' && !Array.isArray(fieldSchema.enum)) {
+      const sel = document.createElement('select');
+      sel.className = 'form-select';
+      const languages = [
+        { value: 'de-AT', label: 'de-AT (German - Austria)' },
+        { value: 'en-UK', label: 'en-UK (English - United Kingdom)' },
+        { value: 'en', label: 'en (English)' },
+        { value: 'de', label: 'de (German)' },
+        { value: 'fr', label: 'fr (French)' },
+        { value: 'es', label: 'es (Spanish)' },
+        { value: 'it', label: 'it (Italian)' },
+        { value: 'pt', label: 'pt (Portuguese)' },
+        { value: 'pt-BR', label: 'pt-BR (Portuguese - Brazil)' },
+        { value: '', label: '(empty)' }
+      ];
+      
+      for (const lang of languages) {
+        const opt = document.createElement('option');
+        opt.value = lang.value;
+        opt.textContent = lang.label;
+        sel.appendChild(opt);
+      }
+      sel.value = (value === undefined || value === null) ? '' : String(value);
+      sel.addEventListener('change', () => onChange(sel.value));
+      return sel;
+    }
+
+    // Special handling for CreationDate field - date picker
+    if (fieldName === 'CreationDate') {
+      const inp = document.createElement('input');
+      inp.type = 'date';
+      inp.className = 'form-control';
+      // Convert YYYY-MM-DD string to date value if needed
+      if (value && typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        inp.value = value;
+      } else {
+        inp.value = '';
+      }
+      inp.addEventListener('change', () => {
+        onChange(inp.value || null);
+      });
+      return inp;
+    }
+
+    // Enums
+    if (Array.isArray(fieldSchema.enum)) {
+      const sel = document.createElement('select');
+      sel.className = 'form-select';
+      // Add explicit placeholder when value is not set and schema doesn't already allow empty
+      const hasEmptyEnum = fieldSchema.enum.includes('');
+      if (!hasEmptyEnum) {
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = '— Not set —';
+        sel.appendChild(placeholder);
+      }
+      for (const v of fieldSchema.enum) {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v === '' ? '(empty)' : String(v);
+        sel.appendChild(opt);
+      }
+      sel.value = (value === undefined || value === null) ? '' : String(value);
+      sel.addEventListener('change', () => onChange(sel.value));
+      return sel;
+    }
+
+    const schemaTypes = Array.isArray(fieldSchema.type) ? fieldSchema.type : (fieldSchema.type ? [fieldSchema.type] : []);
+    value = normalizeValueForSchema(fieldSchema, value, schemaTypes);
+    const prefersInteger = schemaTypes.includes('integer');
+    const prefersNumber = schemaTypes.includes('number');
+
+    // Bool
+    if (schemaTypes.includes('boolean')) {
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.className = 'form-check-input';
+      chk.checked = value === true;
+      chk.addEventListener('change', () => onChange(chk.checked));
+      return chk;
+    }
+
+    // Numeric
+    if (prefersInteger || prefersNumber) {
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.className = 'form-control';
+      inp.value = (value === undefined || value === null) ? '' : String(value);
+      inp.placeholder = (value === undefined || value === null) ? '— Not set —' : (schemaExample(fieldSchema) ? String(schemaExample(fieldSchema)) : '');
+      inp.addEventListener('input', () => {
+        const raw = inp.value;
+        if (raw === '') return onChange(null);
+        if (prefersInteger && !prefersNumber) {
+          onChange(parseInt(raw, 10));
+        } else if (!prefersInteger && prefersNumber) {
+          onChange(parseFloat(raw));
+        } else {
+          // both integer and number allowed -> keep integer when possible
+          const parsed = parseInt(raw, 10);
+          if (!Number.isNaN(parsed) && String(parsed) === raw) {
+            onChange(parsed);
+          } else {
+            onChange(parseFloat(raw));
+          }
+        }
+      });
+      return inp;
+    }
+
+    // Arrays/objects
+    const t = fieldSchema.type;
+    const multi = Array.isArray(t) ? t : [t].filter(Boolean);
+    const allowsObject = multi.includes('object') || (!multi.length && !!fieldSchema.properties);
+    const allowsArray = multi.includes('array');
+    const allowsString = multi.includes('string') || !multi.length;
+
+    // Arrays of primitives: provide bracket-free editing
+    if (allowsArray || t === 'array') {
+      const items = fieldSchema.items || {};
+      const itemsType = items.type;
+      const isPrimitive = ['string', 'integer', 'number'].includes(itemsType);
+      let currentVal = Array.isArray(value) ? [...value] : (value === undefined || value === null ? [] : [value]);
+
+      // Enum arrays -> multi-select
+      if (isPrimitive && Array.isArray(items.enum) && items.enum.length) {
+        const sel = document.createElement('select');
+        sel.className = 'form-select';
+        sel.multiple = true;
+        for (const v of items.enum) {
+          const opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v === '' ? '(empty)' : String(v);
+          sel.appendChild(opt);
+        }
+        // set selected
+        const selectedSet = new Set(currentVal.map(x => String(x)));
+        Array.from(sel.options).forEach(opt => {
+          opt.selected = selectedSet.has(opt.value);
+        });
+        sel.addEventListener('change', () => {
+          const out = Array.from(sel.selectedOptions).map(o => {
+            if (itemsType === 'integer') return parseInt(o.value, 10);
+            if (itemsType === 'number') return parseFloat(o.value);
+            return o.value;
+          });
+          onChange(out);
+        });
+        return sel;
+      }
+
+      // Freeform primitive arrays -> add/remove rows
+      if (isPrimitive && !items.properties && !items.oneOf && !items.anyOf && !items.allOf) {
+        const container = document.createElement('div');
+
+        const list = document.createElement('div');
+        container.appendChild(list);
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'btn btn-sm btn-outline-primary mt-2';
+        addBtn.textContent = 'Add entry';
+        container.appendChild(addBtn);
+
+        function coerce(raw) {
+          if (itemsType === 'integer') {
+            const v = parseInt(raw, 10);
+            return Number.isNaN(v) ? null : v;
+          }
+          if (itemsType === 'number') {
+            const v = parseFloat(raw);
+            return Number.isNaN(v) ? null : v;
+          }
+          return raw;
+        }
+
+        function render() {
+          list.innerHTML = '';
+          if (!currentVal.length) {
+            const p = document.createElement('div');
+            p.className = 'text-muted small';
+            p.textContent = 'No entries (not set).';
+            list.appendChild(p);
+          }
+
+          currentVal.forEach((val, idx) => {
+            const row = document.createElement('div');
+            row.className = 'input-group mb-2';
+
+            const inp = document.createElement('input');
+            inp.type = (itemsType === 'integer' || itemsType === 'number') ? 'number' : 'text';
+            inp.className = 'form-control';
+            inp.value = (val === undefined || val === null) ? '' : String(val);
+
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'btn btn-outline-danger';
+            delBtn.textContent = 'Remove';
+
+            function sync() {
+              const coerced = coerce(inp.value);
+              currentVal[idx] = coerced;
+              const out = (itemsType === 'integer' || itemsType === 'number')
+                ? currentVal.filter(x => x !== null && x !== undefined)
+                : currentVal;
+              onChange([...out]);
+            }
+
+            inp.addEventListener('input', sync);
+            delBtn.addEventListener('click', () => {
+              currentVal.splice(idx, 1);
+              const out = (itemsType === 'integer' || itemsType === 'number')
+                ? currentVal.filter(x => x !== null && x !== undefined)
+                : currentVal;
+              onChange([...out]);
+              render();
+            });
+
+            row.appendChild(inp);
+            row.appendChild(delBtn);
+            list.appendChild(row);
+          });
+        }
+
+        addBtn.addEventListener('click', () => {
+          currentVal.push(itemsType === 'string' ? '' : 0);
+          const out = (itemsType === 'integer' || itemsType === 'number')
+            ? currentVal.filter(x => x !== null && x !== undefined)
+            : currentVal;
+          onChange([...out]);
+          render();
+        });
+
+        render();
+        return container;
+      }
+
+      // Arrays of structured objects (e.g., References) -> card-based add/remove editor
+      if (items.type === 'object' && items.properties) {
+        const container = document.createElement('div');
+        const list = document.createElement('div');
+        container.appendChild(list);
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'btn btn-sm btn-outline-primary mt-2';
+        addBtn.textContent = 'Add entry';
+        container.appendChild(addBtn);
+
+        function renderObjectArray() {
+          list.innerHTML = '';
+          if (!currentVal.length) {
+            const p = document.createElement('div');
+            p.className = 'text-muted small';
+            p.textContent = 'No entries. Click "Add entry" to add one.';
+            list.appendChild(p);
+          }
+
+          currentVal.forEach((entry, idx) => {
+            const card = document.createElement('div');
+            card.className = 'border rounded p-2 mb-2 bg-light';
+
+            const header = document.createElement('div');
+            header.className = 'd-flex justify-content-between align-items-center mb-2';
+            const title = document.createElement('span');
+            title.className = 'fw-bold small';
+            // Show a summary from the first string field or index
+            const summaryField = Object.keys(items.properties).find(k => {
+              const s = items.properties[k];
+              const st = Array.isArray(s.type) ? s.type : [s.type];
+              return st.includes('string') && entry[k];
+            });
+            title.textContent = summaryField ? `#${idx + 1}: ${String(entry[summaryField]).substring(0, 40)}` : `Entry #${idx + 1}`;
+
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'btn btn-sm btn-outline-danger';
+            delBtn.textContent = 'Remove';
+            delBtn.addEventListener('click', () => {
+              currentVal.splice(idx, 1);
+              onChange([...currentVal]);
+              renderObjectArray();
+            });
+            header.appendChild(title);
+            header.appendChild(delBtn);
+            card.appendChild(header);
+
+            const itemRequired = items.required || [];
+            const fieldNames = sortedFieldNames(items.properties, itemRequired);
+            for (const fname of fieldNames) {
+              const fSchema = items.properties[fname];
+              const fieldDiv = document.createElement('div');
+              fieldDiv.className = 'mb-2';
+
+              const fLabel = makeLabel(fname, fSchema, itemRequired.includes(fname));
+              fieldDiv.appendChild(fLabel);
+
+              if (entry[fname] === undefined) {
+                entry[fname] = schemaExample(fSchema);
+              }
+              const fInput = createInput(fSchema, entry[fname], (v) => {
+                entry[fname] = v;
+                onChange([...currentVal]);
+                // Update the summary title
+                const newSummary = summaryField ? `#${idx + 1}: ${String(entry[summaryField] || '').substring(0, 40)}` : `Entry #${idx + 1}`;
+                title.textContent = newSummary;
+              });
+              fieldDiv.appendChild(fInput);
+              card.appendChild(fieldDiv);
+            }
+
+            list.appendChild(card);
+          });
+          enableTooltips();
+        }
+
+        addBtn.addEventListener('click', () => {
+          currentVal.push(schemaExample(items) || {});
+          onChange([...currentVal]);
+          renderObjectArray();
+        });
+
+        renderObjectArray();
+        return container;
+      }
+    }
+
+    // Detect if value is a translation table (object with lang keys like "de", "en", etc.)
+    function isTranslationObject(val) {
+      if (!val || typeof val !== 'object' || Array.isArray(val)) return false;
+      const keys = Object.keys(val);
+      if (keys.length === 0) return false;
+      // If all keys are 2-letter lang codes (optionally with region) → translation table
+      const langPattern = /^[a-z]{2}(-[A-Z]{2})?$/;
+      return keys.every(k => langPattern.test(k));
+    }
+
+    // Range objects: {min: number, max: number} — e.g., AgeRange, AdministrationTime, ScoringTime
+    if (allowsObject && fieldSchema.properties && fieldSchema.properties.min && fieldSchema.properties.max
+        && Object.keys(fieldSchema.properties).length === 2) {
+      const container = document.createElement('div');
+      container.className = 'input-group';
+
+      const currentObj = (typeof value === 'object' && value && !Array.isArray(value)) ? value : {};
+
+      const minLabel = document.createElement('span');
+      minLabel.className = 'input-group-text';
+      minLabel.textContent = 'Min';
+      container.appendChild(minLabel);
+
+      const minInp = document.createElement('input');
+      minInp.type = 'number';
+      minInp.className = 'form-control';
+      minInp.placeholder = '—';
+      minInp.value = (currentObj.min != null) ? String(currentObj.min) : '';
+      container.appendChild(minInp);
+
+      const sep = document.createElement('span');
+      sep.className = 'input-group-text';
+      sep.textContent = 'to';
+      container.appendChild(sep);
+
+      const maxLabel = document.createElement('span');
+      maxLabel.className = 'input-group-text';
+      maxLabel.textContent = 'Max';
+      container.appendChild(maxLabel);
+
+      const maxInp = document.createElement('input');
+      maxInp.type = 'number';
+      maxInp.className = 'form-control';
+      maxInp.placeholder = '—';
+      maxInp.value = (currentObj.max != null) ? String(currentObj.max) : '';
+      container.appendChild(maxInp);
+
+      function syncRange() {
+        const minVal = minInp.value !== '' ? parseFloat(minInp.value) : null;
+        const maxVal = maxInp.value !== '' ? parseFloat(maxInp.value) : null;
+        if (minVal !== null && maxVal !== null) {
+          onChange({ min: minVal, max: maxVal });
+        } else if (minVal === null && maxVal === null) {
+          onChange(null);
+        } else {
+          onChange({ min: minVal, max: maxVal });
+        }
+      }
+      minInp.addEventListener('input', syncRange);
+      maxInp.addEventListener('input', syncRange);
+      return container;
+    }
+
+    // Special: string|object fields that can hold translations (Description, etc.)
+    // Trigger if: allows both string and object AND (has patternProperties OR value is already a translation object)
+    if (allowsObject && allowsString && (fieldSchema.patternProperties || isTranslationObject(value))) {
+      const container = document.createElement('div');
+      container.className = 'border rounded p-2';
+
+      const table = document.createElement('div');
+      container.appendChild(table);
+      const addRowBtn = document.createElement('button');
+      addRowBtn.type = 'button';
+      addRowBtn.className = 'btn btn-sm btn-outline-primary mt-2';
+      addRowBtn.textContent = 'Add language';
+      container.appendChild(addRowBtn);
+
+      // Internal state for table keys (fixed once added)
+      let tableData = {};
+
+      function renderTable(obj) {
+        table.innerHTML = '';
+        tableData = Object.assign({}, obj || {});
+        const entries = Object.entries(tableData);
+        if (!entries.length) {
+          // Start with default languages
+          tableData = { de: '', en: '' };
+          onChange(Object.assign({}, tableData));
+        }
+        for (const [k, v] of Object.entries(tableData)) {
+          const row = document.createElement('div');
+          row.className = 'row g-2 align-items-center mb-1';
+
+          // Key: fixed, non-editable
+          const colK = document.createElement('div');
+          colK.className = 'col-2';
+          const keyLabel = document.createElement('span');
+          keyLabel.className = 'form-control-plaintext mono fw-bold';
+          keyLabel.textContent = k;
+          colK.appendChild(keyLabel);
+
+          // Value: editable
+          const colV = document.createElement('div');
+          colV.className = 'col-9';
+          const valInp = document.createElement('input');
+          valInp.type = 'text';
+          valInp.className = 'form-control';
+          valInp.value = (v === undefined || v === null) ? '' : String(v);
+          valInp.addEventListener('input', () => {
+            tableData[k] = valInp.value;
+            onChange(Object.assign({}, tableData));
+          });
+          colV.appendChild(valInp);
+
+          // Remove button
+          const colX = document.createElement('div');
+          colX.className = 'col-1 d-grid';
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'btn btn-sm btn-outline-danger';
+          delBtn.textContent = '×';
+          delBtn.addEventListener('click', () => {
+            delete tableData[k];
+            onChange(Object.assign({}, tableData));
+            renderTable(tableData);
+          });
+          colX.appendChild(delBtn);
+
+          row.appendChild(colK);
+          row.appendChild(colV);
+          row.appendChild(colX);
+          table.appendChild(row);
+        }
+      }
+
+      addRowBtn.addEventListener('click', () => {
+        const newLang = prompt('Enter language code (e.g., en, de, fr):');
+        if (!newLang || !/^[a-z]{2}(-[A-Z]{2})?$/.test(newLang.trim())) {
+          if (newLang !== null) alert('Invalid language code. Use format like "en" or "de-AT".');
+          return;
+        }
+        const lang = newLang.trim();
+        if (tableData[lang] !== undefined) {
+          alert('Language already exists.');
+          return;
+        }
+        tableData[lang] = '';
+        onChange(Object.assign({}, tableData));
+        renderTable(tableData);
+      });
+
+      // Initialize with existing data or defaults
+      const initVal = (typeof value === 'object' && value && !Array.isArray(value)) ? value : { de: '', en: '' };
+      renderTable(initVal);
+      return container;
+    }
+
+    // Structured objects with defined properties (like Translation, References items, etc.)
+    if (allowsObject && fieldSchema.properties && !allowsString && !allowsArray) {
+      const container = document.createElement('div');
+      container.className = 'border rounded p-2 bg-light';
+
+      const props = fieldSchema.properties;
+      const required = fieldSchema.required || [];
+      const names = sortedFieldNames(props, required);
+
+      // Ensure value is an object
+      let objVal = (typeof value === 'object' && value && !Array.isArray(value)) ? value : {};
+
+      for (const name of names) {
+        const subSchema = props[name];
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'mb-2';
+
+        const isReq = required.includes(name);
+        fieldDiv.appendChild(makeLabel(name, subSchema, isReq));
+
+        if (objVal[name] === undefined) {
+          objVal[name] = schemaExample(subSchema);
+        }
+
+        const subInput = createInput(subSchema, objVal[name], (v) => {
+          objVal[name] = v;
+          onChange(Object.assign({}, objVal));
+        });
+        fieldDiv.appendChild(subInput);
+        container.appendChild(fieldDiv);
+      }
+
+      return container;
+    }
+
+    // Special: Levels object - nested structure {"0": {"de": "...", "en": "..."}, "1": {...}, ...}
+    // Detect by: object with numeric-ish keys where values are objects or strings
+    function isLevelsObject(val) {
+      if (!val || typeof val !== 'object' || Array.isArray(val)) return false;
+      const keys = Object.keys(val);
+      if (keys.length === 0) return false;
+      // Keys are typically "0", "1", "2", etc. or could be any short code
+      return keys.every(k => typeof val[k] === 'object' || typeof val[k] === 'string');
+    }
+
+    if (allowsObject && fieldSchema.patternProperties && isLevelsObject(value)) {
+      const container = document.createElement('div');
+      container.className = 'border rounded p-2';
+
+      const levelsTable = document.createElement('div');
+      container.appendChild(levelsTable);
+
+      const addLevelBtn = document.createElement('button');
+      addLevelBtn.type = 'button';
+      addLevelBtn.className = 'btn btn-sm btn-outline-primary mt-2';
+      addLevelBtn.textContent = 'Add level';
+      container.appendChild(addLevelBtn);
+
+      let levelsData = Object.assign({}, value || {});
+
+      function renderLevels() {
+        levelsTable.innerHTML = '';
+        const entries = Object.entries(levelsData);
+        if (!entries.length) {
+          const p = document.createElement('div');
+          p.className = 'text-muted small';
+          p.textContent = 'No levels defined. Click "Add level" to add response options.';
+          levelsTable.appendChild(p);
+          return;
+        }
+
+        for (const [levelKey, levelVal] of entries) {
+          const levelBlock = document.createElement('div');
+          levelBlock.className = 'mb-3 p-2 bg-light rounded';
+
+          // Level key header (non-editable)
+          const header = document.createElement('div');
+          header.className = 'd-flex justify-content-between align-items-center mb-2';
+          const keyLabel = document.createElement('span');
+          keyLabel.className = 'fw-bold mono';
+          keyLabel.textContent = `Level ${levelKey}`;
+          const delBtn = document.createElement('button');
+          delBtn.type = 'button';
+          delBtn.className = 'btn btn-sm btn-outline-danger';
+          delBtn.textContent = 'Remove';
+          delBtn.addEventListener('click', () => {
+            delete levelsData[levelKey];
+            onChange(Object.assign({}, levelsData));
+            renderLevels();
+          });
+          header.appendChild(keyLabel);
+          header.appendChild(delBtn);
+          levelBlock.appendChild(header);
+
+          // If levelVal is an object (translations), render each language
+          if (typeof levelVal === 'object' && levelVal !== null) {
+            const langEntries = Object.entries(levelVal);
+            for (const [lang, text] of langEntries) {
+              const row = document.createElement('div');
+              row.className = 'row g-2 align-items-center mb-1';
+
+              const colLang = document.createElement('div');
+              colLang.className = 'col-2';
+              const langLabel = document.createElement('span');
+              langLabel.className = 'form-control-plaintext mono small';
+              langLabel.textContent = lang;
+              colLang.appendChild(langLabel);
+
+              const colVal = document.createElement('div');
+              colVal.className = 'col-10';
+              const valInp = document.createElement('input');
+              valInp.type = 'text';
+              valInp.className = 'form-control';
+              valInp.value = text || '';
+              valInp.addEventListener('input', () => {
+                levelsData[levelKey][lang] = valInp.value;
+                onChange(Object.assign({}, levelsData));
+              });
+              colVal.appendChild(valInp);
+
+              row.appendChild(colLang);
+              row.appendChild(colVal);
+              levelBlock.appendChild(row);
+            }
+
+            // Add language button for this level
+            const addLangBtn = document.createElement('button');
+            addLangBtn.type = 'button';
+            addLangBtn.className = 'btn btn-sm btn-outline-secondary mt-1';
+            addLangBtn.textContent = '+ Language';
+            addLangBtn.addEventListener('click', () => {
+              const newLang = prompt('Enter language code (e.g., en, de):');
+              if (!newLang || !/^[a-z]{2}(-[A-Z]{2})?$/.test(newLang.trim())) {
+                if (newLang !== null) alert('Invalid language code.');
+                return;
+              }
+              const lang = newLang.trim();
+              if (levelsData[levelKey][lang] !== undefined) {
+                alert('Language already exists for this level.');
+                return;
+              }
+              levelsData[levelKey][lang] = '';
+              onChange(Object.assign({}, levelsData));
+              renderLevels();
+            });
+            levelBlock.appendChild(addLangBtn);
+          } else {
+            // Simple string value
+            const row = document.createElement('div');
+            row.className = 'row g-2 align-items-center';
+            const colVal = document.createElement('div');
+            colVal.className = 'col-12';
+            const valInp = document.createElement('input');
+            valInp.type = 'text';
+            valInp.className = 'form-control';
+            valInp.value = levelVal || '';
+            valInp.addEventListener('input', () => {
+              levelsData[levelKey] = valInp.value;
+              onChange(Object.assign({}, levelsData));
+            });
+            colVal.appendChild(valInp);
+            row.appendChild(colVal);
+            levelBlock.appendChild(row);
+          }
+
+          levelsTable.appendChild(levelBlock);
+        }
+      }
+
+      addLevelBtn.addEventListener('click', () => {
+        const newKey = prompt('Enter level key (e.g., 0, 1, 2, or a code):');
+        if (!newKey) return;
+        const key = newKey.trim();
+        if (levelsData[key] !== undefined) {
+          alert('Level already exists.');
+          return;
+        }
+        // Default to object with common languages
+        levelsData[key] = { de: '', en: '' };
+        onChange(Object.assign({}, levelsData));
+        renderLevels();
+      });
+
+      renderLevels();
+      return container;
+    }
+
+    // String|object hybrid fields that are currently plain strings (Construct, Description, Instructions, etc.)
+    // Render as text input with a "Convert to multilingual" toggle
+    if (allowsObject && allowsString && !isTranslationObject(value)) {
+      const container = document.createElement('div');
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'form-control';
+      inp.value = (value === undefined || value === null || typeof value === 'object') ? '' : String(value);
+      inp.placeholder = '— Not set —';
+      if (fieldSchema.pattern) inp.pattern = fieldSchema.pattern;
+      inp.addEventListener('input', () => onChange(inp.value));
+      container.appendChild(inp);
+
+      const toggleBtn = document.createElement('button');
+      toggleBtn.type = 'button';
+      toggleBtn.className = 'btn btn-sm btn-outline-secondary mt-1';
+      toggleBtn.innerHTML = '<i class="fas fa-globe me-1"></i>Convert to multilingual';
+      toggleBtn.addEventListener('click', () => {
+        const currentVal = inp.value || '';
+        const lang = (currentTemplate && currentTemplate.Technical && currentTemplate.Technical.Language) || 'en';
+        const translationObj = {};
+        translationObj[lang] = currentVal;
+        onChange(translationObj);
+        // Replace this container with the translation table by re-rendering the parent section
+        const parentCol = container.closest('[data-field-path]');
+        if (parentCol) {
+          const path = parentCol.getAttribute('data-field-path');
+          const parts = path.split('/');
+          if (parts.length === 2) {
+            // Re-render the whole section to pick up the new translation object
+            const sectionKey = parts[0];
+            const mount = parentCol.closest('.row')?.parentElement;
+            if (mount && currentTemplate[sectionKey]) {
+              const sch = getSectionSchema(sectionKey);
+              if (sch) renderSection(sectionKey, currentTemplate[sectionKey], sch, mount);
+              enableTooltips();
+            }
+          }
+        }
+      });
+      container.appendChild(toggleBtn);
+      return container;
+    }
+
+    if (allowsArray || allowsObject) {
+      // Fallback: complex JSON (kept, but minimized in typical flows)
+      const ta = document.createElement('textarea');
+      ta.className = 'form-control mono';
+      ta.rows = 4;
+      const v = (value === undefined) ? schemaExample(fieldSchema) : value;
+      ta.value = (v === undefined || v === null) ? '' : JSON.stringify(v, null, 2);
+      ta.addEventListener('input', () => {
+        const raw = ta.value.trim();
+        if (!raw) return onChange(allowsArray ? [] : {});
+        try {
+          onChange(JSON.parse(raw));
+        } catch {
+          // keep invalid until validate; do not throw on each keystroke
+        }
+      });
+      return ta;
+    }
+
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'form-control';
+
+    // Auto-strip DOI URL prefixes for fields with a DOI pattern
+    const isDOI = fieldSchema.pattern && /^\^.*10\\\.\\d/.test(fieldSchema.pattern);
+    function stripDOIPrefix(v) {
+      if (!isDOI || typeof v !== 'string') return v;
+      return v.replace(/^https?:\/\/(?:dx\.)?doi\.org\//, '');
+    }
+
+    const initVal = (value === undefined || value === null) ? '' : stripDOIPrefix(String(value));
+    inp.value = initVal;
+    inp.placeholder = (value === undefined || value === null) ? '— Not set —' : (schemaExample(fieldSchema) ? String(schemaExample(fieldSchema)) : '');
+    if (fieldSchema.pattern) inp.pattern = fieldSchema.pattern;
+    inp.addEventListener('input', () => {
+      const cleaned = stripDOIPrefix(inp.value);
+      if (cleaned !== inp.value) inp.value = cleaned;
+      onChange(inp.value);
+    });
+    if (isDOI && initVal !== String(value || '')) onChange(initVal);
+    return inp;
+  }
+
+  // Sub-group definitions for the Technical section
+  const TECHNICAL_GROUPS = [
+    { label: null, fields: new Set(['Language', 'Respondent', 'AdministrationMethod']) },
+    { label: 'Data Collection Software', fields: new Set(['SoftwarePlatform', 'SoftwareVersion']) },
+    { label: 'Equipment & Location', fields: new Set(['Equipment', 'EquipmentManufacturer', 'EquipmentModel', 'CalibrationDate', 'Supervisor', 'Location']) },
+  ];
+
+  function renderFieldInRow(sectionKey, name, fieldSchema, required, targetObj, row) {
+    const col = document.createElement('div');
+    // Make Description and Instructions full-width for better UX
+    const isFullWidth = ['Description', 'Instructions'].includes(name);
+    col.className = isFullWidth ? 'col-12' : 'col-md-6';
+
+    const isRequired = required.includes(name);
+    col.appendChild(makeLabel(name, fieldSchema, isRequired));
+
+    const isMissing = (targetObj[name] === undefined || targetObj[name] === null);
+    targetObj[name] = normalizeValueForSchema(fieldSchema, targetObj[name]);
+
+    const input = createInput(fieldSchema, targetObj[name], (v) => {
+      targetObj[name] = v;
+      btnDownload.disabled = true;
+      renderMissingSummary();
+      renderJsonDiff();
+    }, name);
+    input.id = `field_${sectionKey}_${name}`;
+    input.setAttribute('data-field-path', `${sectionKey}/${name}`);
+
+    if (input.classList.contains('form-check-input')) {
+      const wrap = document.createElement('div');
+      wrap.className = 'form-check';
+      wrap.appendChild(input);
+      col.appendChild(wrap);
+    } else {
+      col.appendChild(input);
+    }
+
+    if (fieldSchema.description) {
+      const helpText = document.createElement('div');
+      helpText.className = 'form-text text-muted small';
+      helpText.textContent = fieldSchema.description;
+      col.appendChild(helpText);
+    }
+
+    if (isMissing && isRequired) {
+      const hint = document.createElement('div');
+      hint.className = 'form-text text-warning';
+      hint.textContent = 'Required';
+      col.appendChild(hint);
+    }
+
+    row.appendChild(col);
+  }
+
+  function renderSection(sectionKey, targetObj, sectionSchema, mountEl) {
+    mountEl.innerHTML = '';
+    if (!sectionSchema || !sectionSchema.properties) {
+      const p = document.createElement('div');
+      p.className = 'text-muted';
+      p.textContent = 'No schema information available.';
+      mountEl.appendChild(p);
+      return;
+    }
+
+    const props = sectionSchema.properties;
+    const required = sectionSchema.required || [];
+    const names = sortedFieldNames(props, required);
+
+    // For Technical section, render in sub-groups with dividers
+    if (sectionKey === 'Technical') {
+      const usedFields = new Set();
+      for (const group of TECHNICAL_GROUPS) {
+        const groupFields = names.filter(n => group.fields.has(n));
+        if (!groupFields.length) continue;
+
+        if (group.label) {
+          const divider = document.createElement('div');
+          divider.className = 'col-12 mt-3 mb-1';
+          divider.innerHTML = `<hr class="mb-1"><small class="text-muted fw-bold text-uppercase">${group.label}</small>`;
+          mountEl.appendChild(divider);
+        }
+
+        const row = document.createElement('div');
+        row.className = 'row g-3';
+        for (const name of groupFields) {
+          usedFields.add(name);
+          renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
+        }
+        mountEl.appendChild(row);
+      }
+      // Render any remaining fields not in any group
+      // Filter out FileFormat and StimulusType as they should not be edited in the template editor
+      const remaining = names.filter(n => !usedFields.has(n) && !['FileFormat', 'StimulusType'].includes(n));
+      if (remaining.length) {
+        const row = document.createElement('div');
+        row.className = 'row g-3 mt-2';
+        for (const name of remaining) {
+          renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
+        }
+        mountEl.appendChild(row);
+      }
+      renderMissingSummary();
+      return;
+    }
+
+    const row = document.createElement('div');
+    row.className = 'row g-3';
+    for (const name of names) {
+      renderFieldInRow(sectionKey, name, props[name], required, targetObj, row);
+    }
+    mountEl.appendChild(row);
+    renderMissingSummary();
+  }
+
+  function itemKeysFromTemplate(tpl) {
+    if (!tpl || typeof tpl !== 'object') return [];
+    return Object.keys(tpl).filter(k => !RESERVED_TOPLEVEL.has(k));
+  }
+
+  function renderItemList() {
+    itemListEl.innerHTML = '';
+    const keys = itemKeysFromTemplate(currentTemplate);
+    if (!keys.length) {
+      const p = document.createElement('div');
+      p.className = 'text-muted small p-2';
+      p.textContent = 'No items yet.';
+      itemListEl.appendChild(p);
+      selectAllItemsEl.checked = false;
+      return;
+    }
+
+    // Update Select All checkbox state
+    const allChecked = keys.every(k => checkedItemIds.has(k));
+    selectAllItemsEl.checked = allChecked && keys.length > 0;
+
+    keys.sort().forEach(k => {
+      const item = document.createElement('div');
+      item.className = 'list-group-item list-group-item-action' + (k === selectedItemId ? ' active' : '');
+      
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.className = 'form-check-input';
+      chk.checked = checkedItemIds.has(k);
+      chk.addEventListener('click', (e) => {
+        e.stopPropagation(); // Don't select the item for editing when checking the box
+        if (chk.checked) {
+          checkedItemIds.add(k);
+        } else {
+          checkedItemIds.delete(k);
+        }
+        renderItemList();
+      });
+
+      const name = document.createElement('span');
+      name.className = 'item-name';
+      name.textContent = k;
+
+      item.appendChild(chk);
+      item.appendChild(name);
+
+      item.addEventListener('click', () => {
+        selectedItemId = k;
+        renderItemList();
+        renderSelectedItem();
+        renderToolProperties();
+        openSelectedItemPanel();
+      });
+      itemListEl.appendChild(item);
+    });
+  }
+
+  function renderSelectedItem() {
+    selectedItemIdEl.value = selectedItemId || '';
+    itemFormEl.innerHTML = '';
+    if (!selectedItemId) {
+      const p = document.createElement('div');
+      p.className = 'text-muted';
+      p.textContent = 'Select an item to edit its values.';
+      itemFormEl.appendChild(p);
+      return;
+    }
+    const itemSchema = getItemSchema();
+    if (!itemSchema || !itemSchema.properties) {
+      const p = document.createElement('div');
+      p.className = 'text-muted';
+      p.textContent = 'No item schema available.';
+      itemFormEl.appendChild(p);
+      return;
+    }
+    if (!currentTemplate[selectedItemId] || typeof currentTemplate[selectedItemId] !== 'object') {
+      currentTemplate[selectedItemId] = {};
+    }
+    renderSection('ITEM', currentTemplate[selectedItemId], itemSchema, itemFormEl);
+    enableTooltips();
+  }
+
+  function renderBulkEdit() {
+    bulkEditFormEl.innerHTML = '';
+    const itemSchema = getItemSchema();
+    if (!itemSchema || !itemSchema.properties) {
+      bulkEditFormEl.innerHTML = '<div class="text-muted">No item schema available.</div>';
+      return;
+    }
+
+    const props = itemSchema.properties;
+    const names = sortedFieldNames(props, []);
+    const bulkValues = {};
+
+    const row = document.createElement('div');
+    row.className = 'row g-3';
+
+    for (const name of names) {
+      const fieldSchema = props[name];
+      const col = document.createElement('div');
+      col.className = 'col-md-12 border-bottom pb-3';
+
+      const label = makeLabel(name, fieldSchema, false);
+      col.appendChild(label);
+
+      const inputGroup = document.createElement('div');
+      inputGroup.className = 'input-group';
+
+      const input = createInput(fieldSchema, undefined, (v) => {
+        bulkValues[name] = v;
+      }, name);
+      input.classList.add('flex-grow-1');
+      
+      // Initialize bulkValues with the starting value of the input
+      if (input.tagName === 'SELECT' || input.tagName === 'INPUT') {
+        if (input.type === 'checkbox') {
+          bulkValues[name] = input.checked;
+        } else if (input.value !== undefined) {
+          bulkValues[name] = normalizeValueForSchema(fieldSchema, input.value);
+        }
+      }
+
+      inputGroup.appendChild(input);
+
+      const applyBtn = document.createElement('button');
+      applyBtn.className = 'btn btn-outline-primary';
+      applyBtn.type = 'button';
+      applyBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Apply to Selected';
+      applyBtn.addEventListener('click', () => {
+        const val = bulkValues[name];
+        const normalized = normalizeValueForSchema(fieldSchema, val);
+        if (val === undefined) {
+          showAlert('warning', `Please enter a value for ${name} first.`);
+          return;
+        }
+        
+        const allKeys = itemKeysFromTemplate(currentTemplate);
+        const targetKeys = checkedItemIds.size > 0 
+          ? allKeys.filter(k => checkedItemIds.has(k))
+          : allKeys;
+
+        if (!targetKeys.length) {
+          showAlert('warning', 'No items selected to update.');
+          return;
+        }
+
+        targetKeys.forEach(k => {
+          if (typeof currentTemplate[k] !== 'object') currentTemplate[k] = {};
+          currentTemplate[k][name] = JSON.parse(JSON.stringify(normalized)); // deep copy
+        });
+
+        renderSelectedItem();
+        renderToolProperties();
+        btnDownload.disabled = true;
+        btnSave.disabled = true;
+        const scope = checkedItemIds.size > 0 ? 'selected' : 'all';
+        showAlert('success', `Updated ${name} for ${scope} ${targetKeys.length} items.`);
+      });
+      inputGroup.appendChild(applyBtn);
+
+      col.appendChild(inputGroup);
+      row.appendChild(col);
+    }
+
+    // --- Tool Properties Bulk Edit Section ---
+    const toolHeader = document.createElement('div');
+    toolHeader.className = 'col-md-12 border-bottom pb-2 mt-4';
+    const toolH = document.createElement('h6');
+    toolH.className = 'text-info';
+    toolH.innerHTML = '<i class="fas fa-cogs me-1"></i>Tool Properties (LimeSurvey)';
+    toolHeader.appendChild(toolH);
+    row.appendChild(toolHeader);
+
+    // Bulk: Question Type
+    const bulkQtCol = document.createElement('div');
+    bulkQtCol.className = 'col-md-12 border-bottom pb-3';
+    const bulkQtLabel = document.createElement('label');
+    bulkQtLabel.className = 'form-label fw-bold';
+    bulkQtLabel.textContent = 'Question Type';
+    bulkQtCol.appendChild(bulkQtLabel);
+    const bulkQtGroup = document.createElement('div');
+    bulkQtGroup.className = 'input-group';
+    const bulkQtSelect = document.createElement('select');
+    bulkQtSelect.className = 'form-select';
+    const bulkQtPlaceholder = document.createElement('option');
+    bulkQtPlaceholder.value = '';
+    bulkQtPlaceholder.textContent = '— Select type —';
+    bulkQtSelect.appendChild(bulkQtPlaceholder);
+    for (const [code, label] of Object.entries(LS_QUESTION_TYPES)) {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = `${code} — ${label}`;
+      bulkQtSelect.appendChild(opt);
+    }
+    bulkQtGroup.appendChild(bulkQtSelect);
+    const bulkQtBtn = document.createElement('button');
+    bulkQtBtn.className = 'btn btn-outline-primary';
+    bulkQtBtn.type = 'button';
+    bulkQtBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Apply';
+    bulkQtBtn.addEventListener('click', () => {
+      const val = bulkQtSelect.value;
+      if (!val) { showAlert('warning', 'Select a question type first.'); return; }
+      const allKeys = itemKeysFromTemplate(currentTemplate);
+      const targetKeys = checkedItemIds.size > 0 ? allKeys.filter(k => checkedItemIds.has(k)) : allKeys;
+      if (!targetKeys.length) { showAlert('warning', 'No items to update.'); return; }
+      targetKeys.forEach(k => {
+        if (typeof currentTemplate[k] !== 'object') currentTemplate[k] = {};
+        if (!currentTemplate[k].LimeSurvey) currentTemplate[k].LimeSurvey = {};
+        currentTemplate[k].LimeSurvey.questionType = val;
+        currentTemplate[k].LimeSurvey.questionTypeName = LS_QUESTION_TYPES[val] || '';
+      });
+      renderSelectedItem();
+      renderToolProperties();
+      const scope = checkedItemIds.size > 0 ? 'selected' : 'all';
+      showAlert('success', `Set questionType=${val} for ${scope} ${targetKeys.length} items.`);
+    });
+    bulkQtGroup.appendChild(bulkQtBtn);
+    bulkQtCol.appendChild(bulkQtGroup);
+    row.appendChild(bulkQtCol);
+
+    // Bulk: Mandatory
+    const bulkMandCol = document.createElement('div');
+    bulkMandCol.className = 'col-md-6 border-bottom pb-3';
+    const bulkMandLabel = document.createElement('label');
+    bulkMandLabel.className = 'form-label fw-bold';
+    bulkMandLabel.textContent = 'Mandatory';
+    bulkMandCol.appendChild(bulkMandLabel);
+    const bulkMandGroup = document.createElement('div');
+    bulkMandGroup.className = 'input-group';
+    const bulkMandSelect = document.createElement('select');
+    bulkMandSelect.className = 'form-select';
+    const mOpt1 = document.createElement('option');
+    mOpt1.value = 'true'; mOpt1.textContent = 'Yes (mandatory)';
+    const mOpt2 = document.createElement('option');
+    mOpt2.value = 'false'; mOpt2.textContent = 'No (optional)';
+    bulkMandSelect.appendChild(mOpt1);
+    bulkMandSelect.appendChild(mOpt2);
+    bulkMandGroup.appendChild(bulkMandSelect);
+    const bulkMandBtn = document.createElement('button');
+    bulkMandBtn.className = 'btn btn-outline-primary';
+    bulkMandBtn.type = 'button';
+    bulkMandBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Apply';
+    bulkMandBtn.addEventListener('click', () => {
+      const val = bulkMandSelect.value === 'true';
+      const allKeys = itemKeysFromTemplate(currentTemplate);
+      const targetKeys = checkedItemIds.size > 0 ? allKeys.filter(k => checkedItemIds.has(k)) : allKeys;
+      if (!targetKeys.length) { showAlert('warning', 'No items to update.'); return; }
+      targetKeys.forEach(k => {
+        if (typeof currentTemplate[k] !== 'object') currentTemplate[k] = {};
+        if (!currentTemplate[k].LimeSurvey) currentTemplate[k].LimeSurvey = {};
+        currentTemplate[k].LimeSurvey.mandatory = val;
+      });
+      renderSelectedItem();
+      renderToolProperties();
+      const scope = checkedItemIds.size > 0 ? 'selected' : 'all';
+      showAlert('success', `Set mandatory=${val} for ${scope} ${targetKeys.length} items.`);
+    });
+    bulkMandGroup.appendChild(bulkMandBtn);
+    bulkMandCol.appendChild(bulkMandGroup);
+    row.appendChild(bulkMandCol);
+
+    // Bulk: Input Width
+    const bulkIwCol = document.createElement('div');
+    bulkIwCol.className = 'col-md-6 border-bottom pb-3';
+    const bulkIwLabel = document.createElement('label');
+    bulkIwLabel.className = 'form-label fw-bold';
+    bulkIwLabel.textContent = 'Input Width (1-12)';
+    bulkIwCol.appendChild(bulkIwLabel);
+    const bulkIwGroup = document.createElement('div');
+    bulkIwGroup.className = 'input-group';
+    const bulkIwInput = document.createElement('input');
+    bulkIwInput.type = 'number';
+    bulkIwInput.className = 'form-control';
+    bulkIwInput.min = '1';
+    bulkIwInput.max = '12';
+    bulkIwInput.placeholder = '1-12';
+    bulkIwGroup.appendChild(bulkIwInput);
+    const bulkIwBtn = document.createElement('button');
+    bulkIwBtn.className = 'btn btn-outline-primary';
+    bulkIwBtn.type = 'button';
+    bulkIwBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Apply';
+    bulkIwBtn.addEventListener('click', () => {
+      const val = bulkIwInput.value ? parseInt(bulkIwInput.value, 10) : null;
+      if (val === null) { showAlert('warning', 'Enter an input width value first.'); return; }
+      const allKeys = itemKeysFromTemplate(currentTemplate);
+      const targetKeys = checkedItemIds.size > 0 ? allKeys.filter(k => checkedItemIds.has(k)) : allKeys;
+      if (!targetKeys.length) { showAlert('warning', 'No items to update.'); return; }
+      targetKeys.forEach(k => {
+        if (typeof currentTemplate[k] !== 'object') currentTemplate[k] = {};
+        if (!currentTemplate[k].LimeSurvey) currentTemplate[k].LimeSurvey = {};
+        currentTemplate[k].LimeSurvey.inputWidth = val;
+      });
+      renderSelectedItem();
+      renderToolProperties();
+      const scope = checkedItemIds.size > 0 ? 'selected' : 'all';
+      showAlert('success', `Set inputWidth=${val} for ${scope} ${targetKeys.length} items.`);
+    });
+    bulkIwGroup.appendChild(bulkIwBtn);
+    bulkIwCol.appendChild(bulkIwGroup);
+    row.appendChild(bulkIwCol);
+
+    bulkEditFormEl.appendChild(row);
+    enableTooltips();
+  }
+
+  function renderToolProperties() {
+    if (!toolPropertiesFormEl) return;
+    toolPropertiesFormEl.innerHTML = '';
+
+    if (!selectedItemId || !currentTemplate || !currentTemplate[selectedItemId]) {
+      const p = document.createElement('div');
+      p.className = 'text-muted';
+      p.textContent = 'Select an item to view or edit its tool properties.';
+      toolPropertiesFormEl.appendChild(p);
+      return;
+    }
+
+    const itemData = currentTemplate[selectedItemId];
+
+    // Ensure LimeSurvey dict exists (users can add it to any template)
+    if (!itemData.LimeSurvey || typeof itemData.LimeSurvey !== 'object') {
+      itemData.LimeSurvey = {};
+    }
+    const ls = itemData.LimeSurvey;
+
+    const form = document.createElement('div');
+    form.className = 'row g-3';
+
+    // --- Question Type dropdown ---
+    const qtCol = document.createElement('div');
+    qtCol.className = 'col-md-6';
+    const qtLabel = document.createElement('label');
+    qtLabel.className = 'form-label fw-bold';
+    qtLabel.textContent = 'Question Type';
+    qtCol.appendChild(qtLabel);
+    const qtSelect = document.createElement('select');
+    qtSelect.className = 'form-select';
+    const qtPlaceholder = document.createElement('option');
+    qtPlaceholder.value = '';
+    qtPlaceholder.textContent = '— Not set —';
+    qtSelect.appendChild(qtPlaceholder);
+    for (const [code, label] of Object.entries(LS_QUESTION_TYPES)) {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = `${code} — ${label}`;
+      qtSelect.appendChild(opt);
+    }
+    qtSelect.value = ls.questionType || '';
+    qtSelect.addEventListener('change', () => {
+      ls.questionType = qtSelect.value || null;
+      ls.questionTypeName = LS_QUESTION_TYPES[qtSelect.value] || '';
+    });
+    qtCol.appendChild(qtSelect);
+    if (ls.questionTypeName) {
+      const hint = document.createElement('div');
+      hint.className = 'form-text text-muted';
+      hint.textContent = ls.questionTypeName;
+      qtCol.appendChild(hint);
+    }
+    form.appendChild(qtCol);
+
+    // --- Input Width ---
+    const iwCol = document.createElement('div');
+    iwCol.className = 'col-md-6';
+    const iwLabel = document.createElement('label');
+    iwLabel.className = 'form-label fw-bold';
+    iwLabel.textContent = 'Input Width (1-12)';
+    iwCol.appendChild(iwLabel);
+    const iwInput = document.createElement('input');
+    iwInput.type = 'number';
+    iwInput.className = 'form-control';
+    iwInput.min = '1';
+    iwInput.max = '12';
+    iwInput.placeholder = '— Not set —';
+    iwInput.value = (ls.inputWidth != null) ? String(ls.inputWidth) : '';
+    iwInput.addEventListener('input', () => {
+      ls.inputWidth = iwInput.value ? parseInt(iwInput.value, 10) : null;
+    });
+    iwCol.appendChild(iwInput);
+    const iwHint = document.createElement('div');
+    iwHint.className = 'form-text text-muted';
+    iwHint.textContent = 'LimeSurvey numeric scale: 1=smallest, 12=full width';
+    iwCol.appendChild(iwHint);
+    form.appendChild(iwCol);
+
+    // --- Mandatory checkbox ---
+    const mandCol = document.createElement('div');
+    mandCol.className = 'col-md-4';
+    const mandCheck = document.createElement('div');
+    mandCheck.className = 'form-check mt-4';
+    const mandInput = document.createElement('input');
+    mandInput.type = 'checkbox';
+    mandInput.className = 'form-check-input';
+    mandInput.id = 'lsMandatory';
+    mandInput.checked = Boolean(ls.mandatory);
+    mandInput.addEventListener('change', () => { ls.mandatory = mandInput.checked; });
+    const mandLabel = document.createElement('label');
+    mandLabel.className = 'form-check-label fw-bold';
+    mandLabel.htmlFor = 'lsMandatory';
+    mandLabel.textContent = 'Mandatory';
+    mandCheck.appendChild(mandInput);
+    mandCheck.appendChild(mandLabel);
+    mandCol.appendChild(mandCheck);
+    form.appendChild(mandCol);
+
+    // --- Hidden checkbox ---
+    const hidCol = document.createElement('div');
+    hidCol.className = 'col-md-4';
+    const hidCheck = document.createElement('div');
+    hidCheck.className = 'form-check mt-4';
+    const hidInput = document.createElement('input');
+    hidInput.type = 'checkbox';
+    hidInput.className = 'form-check-input';
+    hidInput.id = 'lsHidden';
+    hidInput.checked = Boolean(ls.hidden);
+    hidInput.addEventListener('change', () => { ls.hidden = hidInput.checked; });
+    const hidLabel = document.createElement('label');
+    hidLabel.className = 'form-check-label fw-bold';
+    hidLabel.htmlFor = 'lsHidden';
+    hidLabel.textContent = 'Hidden';
+    hidCheck.appendChild(hidInput);
+    hidCheck.appendChild(hidLabel);
+    hidCol.appendChild(hidCheck);
+    form.appendChild(hidCol);
+
+    // --- Other checkbox ---
+    const othCol = document.createElement('div');
+    othCol.className = 'col-md-4';
+    const othCheck = document.createElement('div');
+    othCheck.className = 'form-check mt-4';
+    const othInput = document.createElement('input');
+    othInput.type = 'checkbox';
+    othInput.className = 'form-check-input';
+    othInput.id = 'lsOther';
+    othInput.checked = Boolean(ls.other);
+    othInput.addEventListener('change', () => { ls.other = othInput.checked; });
+    const othLabel = document.createElement('label');
+    othLabel.className = 'form-check-label fw-bold';
+    othLabel.htmlFor = 'lsOther';
+    othLabel.textContent = 'Has "Other" option';
+    othCheck.appendChild(othInput);
+    othCheck.appendChild(othLabel);
+    othCol.appendChild(othCheck);
+    form.appendChild(othCol);
+
+    // --- Help Text ---
+    const helpCol = document.createElement('div');
+    helpCol.className = 'col-md-12';
+    const helpLabel = document.createElement('label');
+    helpLabel.className = 'form-label fw-bold';
+    helpLabel.textContent = 'Help Text';
+    helpCol.appendChild(helpLabel);
+    const helpInput = document.createElement('input');
+    helpInput.type = 'text';
+    helpInput.className = 'form-control';
+    helpInput.placeholder = 'Optional help text shown to participants';
+    // Display first language value or empty
+    const helpObj = ls.helpText || {};
+    const helpLangs = Object.keys(helpObj);
+    helpInput.value = helpLangs.length ? (helpObj[helpLangs[0]] || '') : '';
+    helpInput.addEventListener('input', () => {
+      const lang = helpLangs[0] || (currentTemplate.Technical?.Language) || 'en';
+      if (!ls.helpText || typeof ls.helpText !== 'object') ls.helpText = {};
+      ls.helpText[lang] = helpInput.value;
+    });
+    helpCol.appendChild(helpInput);
+    if (helpLangs.length > 1) {
+      const helpHint = document.createElement('div');
+      helpHint.className = 'form-text text-info';
+      helpHint.textContent = `Multilingual: ${helpLangs.join(', ')} (editing primary)`;
+      helpCol.appendChild(helpHint);
+    }
+    form.appendChild(helpCol);
+
+    // --- Relevance ---
+    const relCol = document.createElement('div');
+    relCol.className = 'col-md-6';
+    const relLabel = document.createElement('label');
+    relLabel.className = 'form-label fw-bold';
+    relLabel.textContent = 'Relevance Expression';
+    relCol.appendChild(relLabel);
+    const relInput = document.createElement('input');
+    relInput.type = 'text';
+    relInput.className = 'form-control mono';
+    relInput.placeholder = '1 (always shown)';
+    relInput.value = ls.relevance || '';
+    relInput.addEventListener('input', () => { ls.relevance = relInput.value || '1'; });
+    relCol.appendChild(relInput);
+    form.appendChild(relCol);
+
+    // --- Display Rows ---
+    const drCol = document.createElement('div');
+    drCol.className = 'col-md-6';
+    const drLabel = document.createElement('label');
+    drLabel.className = 'form-label fw-bold';
+    drLabel.textContent = 'Display Rows';
+    drCol.appendChild(drLabel);
+    const drInput = document.createElement('input');
+    drInput.type = 'number';
+    drInput.className = 'form-control';
+    drInput.min = '1';
+    drInput.max = '20';
+    drInput.placeholder = '— Not set —';
+    drInput.value = (ls.displayRows != null) ? String(ls.displayRows) : '';
+    drInput.addEventListener('input', () => {
+      ls.displayRows = drInput.value ? parseInt(drInput.value, 10) : null;
+    });
+    drCol.appendChild(drInput);
+    form.appendChild(drCol);
+
+    // --- Equation ---
+    const eqCol = document.createElement('div');
+    eqCol.className = 'col-md-12';
+    const eqLabel = document.createElement('label');
+    eqLabel.className = 'form-label fw-bold';
+    eqLabel.textContent = 'Equation';
+    eqCol.appendChild(eqLabel);
+    const eqInput = document.createElement('input');
+    eqInput.type = 'text';
+    eqInput.className = 'form-control mono';
+    eqInput.placeholder = 'For equation-type questions only';
+    eqInput.value = ls.equation || '';
+    eqInput.addEventListener('input', () => { ls.equation = eqInput.value || null; });
+    eqCol.appendChild(eqInput);
+    form.appendChild(eqCol);
+
+    // --- Validation group ---
+    const valHeader = document.createElement('div');
+    valHeader.className = 'col-12 mt-2';
+    const valH = document.createElement('h6');
+    valH.className = 'text-muted border-bottom pb-1';
+    valH.textContent = 'Validation';
+    valHeader.appendChild(valH);
+    form.appendChild(valHeader);
+
+    if (!ls.validation || typeof ls.validation !== 'object') {
+      ls.validation = { min: null, max: null, integerOnly: false };
+    }
+
+    // Min
+    const minCol = document.createElement('div');
+    minCol.className = 'col-md-4';
+    const minLabel = document.createElement('label');
+    minLabel.className = 'form-label';
+    minLabel.textContent = 'Min Value';
+    minCol.appendChild(minLabel);
+    const minInput = document.createElement('input');
+    minInput.type = 'number';
+    minInput.className = 'form-control';
+    minInput.placeholder = '— Not set —';
+    minInput.value = (ls.validation.min != null) ? String(ls.validation.min) : '';
+    minInput.addEventListener('input', () => {
+      ls.validation.min = minInput.value ? parseFloat(minInput.value) : null;
+    });
+    minCol.appendChild(minInput);
+    form.appendChild(minCol);
+
+    // Max
+    const maxCol = document.createElement('div');
+    maxCol.className = 'col-md-4';
+    const maxLabel = document.createElement('label');
+    maxLabel.className = 'form-label';
+    maxLabel.textContent = 'Max Value';
+    maxCol.appendChild(maxLabel);
+    const maxInput = document.createElement('input');
+    maxInput.type = 'number';
+    maxInput.className = 'form-control';
+    maxInput.placeholder = '— Not set —';
+    maxInput.value = (ls.validation.max != null) ? String(ls.validation.max) : '';
+    maxInput.addEventListener('input', () => {
+      ls.validation.max = maxInput.value ? parseFloat(maxInput.value) : null;
+    });
+    maxCol.appendChild(maxInput);
+    form.appendChild(maxCol);
+
+    // Integer Only
+    const intCol = document.createElement('div');
+    intCol.className = 'col-md-4';
+    const intCheck = document.createElement('div');
+    intCheck.className = 'form-check mt-4';
+    const intInput = document.createElement('input');
+    intInput.type = 'checkbox';
+    intInput.className = 'form-check-input';
+    intInput.id = 'lsIntOnly';
+    intInput.checked = Boolean(ls.validation.integerOnly);
+    intInput.addEventListener('change', () => { ls.validation.integerOnly = intInput.checked; });
+    const intLabel = document.createElement('label');
+    intLabel.className = 'form-check-label';
+    intLabel.htmlFor = 'lsIntOnly';
+    intLabel.textContent = 'Integer Only';
+    intCheck.appendChild(intInput);
+    intCheck.appendChild(intLabel);
+    intCol.appendChild(intCheck);
+    form.appendChild(intCol);
+
+    toolPropertiesFormEl.appendChild(form);
+  }
+
+  function renderTopLevel() {
+    topLevelFormEl.innerHTML = '';
+    const sections = ['Technical', 'Study', 'Metadata', 'I18n'];
+    
+    // Map section names to user-friendly labels and icons
+    const sectionLabels = {
+      'Technical': { label: 'Technical Details', icon: 'fa-gear' },
+      'Study': { label: 'Study Information', icon: 'fa-book' },
+      'Metadata': { label: 'Version & Dates', icon: 'fa-calendar' },
+      'I18n': { label: 'Internationalization', icon: 'fa-globe' }
+    };
+
+    const acc = document.createElement('div');
+    acc.className = 'accordion';
+    acc.id = 'topLevelAccordion';
+
+    sections.forEach((s, idx) => {
+      const sch = getSectionSchema(s);
+      if (!sch) return;
+      if (!currentTemplate[s] || typeof currentTemplate[s] !== 'object') currentTemplate[s] = {};
+
+      const item = document.createElement('div');
+      item.className = 'accordion-item';
+
+      const h = document.createElement('h2');
+      h.className = 'accordion-header';
+      h.id = `tlHead_${s}`;
+
+      const btn = document.createElement('button');
+      btn.className = 'accordion-button' + (idx === 0 ? '' : ' collapsed');
+      btn.type = 'button';
+      btn.setAttribute('data-bs-toggle', 'collapse');
+      btn.setAttribute('data-bs-target', `#tlBody_${s}`);
+      btn.setAttribute('aria-expanded', idx === 0 ? 'true' : 'false');
+      btn.setAttribute('aria-controls', `tlBody_${s}`);
+      
+      // Create button content with icon and label
+      btn.innerHTML = `<i class="fas ${sectionLabels[s].icon} me-2" style="color: #6c757d;"></i>${sectionLabels[s].label}`;
+      h.appendChild(btn);
+
+      const bodyWrap = document.createElement('div');
+      bodyWrap.id = `tlBody_${s}`;
+      bodyWrap.className = 'accordion-collapse collapse' + (idx === 0 ? ' show' : '');
+      bodyWrap.setAttribute('aria-labelledby', `tlHead_${s}`);
+      bodyWrap.setAttribute('data-bs-parent', '#topLevelAccordion');
+
+      const body = document.createElement('div');
+      body.className = 'accordion-body';
+      const mount = document.createElement('div');
+      body.appendChild(mount);
+      renderSection(s, currentTemplate[s], sch, mount);
+      bodyWrap.appendChild(body);
+
+      item.appendChild(h);
+      item.appendChild(bodyWrap);
+      acc.appendChild(item);
+    });
+
+    topLevelFormEl.appendChild(acc);
+    enableTooltips();
+    renderMissingSummary();
+  }
+
+  // ── Language detection & overview bar ──────────────────────────────
+  const LANG_CODE_RE = /^[a-z]{2}(-[A-Z]{2})?$/;
+
+  function detectLanguagesFromTemplate(tpl) {
+    if (!tpl || typeof tpl !== 'object') return [];
+    const langSet = new Set();
+    const items = itemKeysFromTemplate(tpl);
+    for (const key of items) {
+      const item = tpl[key];
+      if (!item || typeof item !== 'object') continue;
+      // Check Description
+      if (item.Description && typeof item.Description === 'object' && !Array.isArray(item.Description)) {
+        for (const k of Object.keys(item.Description)) {
+          if (LANG_CODE_RE.test(k)) langSet.add(k);
+        }
+      }
+      // Check Levels values
+      if (item.Levels && typeof item.Levels === 'object') {
+        for (const lv of Object.values(item.Levels)) {
+          if (lv && typeof lv === 'object' && !Array.isArray(lv)) {
+            for (const k of Object.keys(lv)) {
+              if (LANG_CODE_RE.test(k)) langSet.add(k);
+            }
+          }
+        }
+      }
+    }
+    return Array.from(langSet).sort();
+  }
+
+  function renderLanguageBar() {
+    if (!currentTemplate) {
+      languageBarEl.style.display = 'none';
+      return;
+    }
+    const langs = detectLanguagesFromTemplate(currentTemplate);
+    const primaryLang = currentTemplate.Technical?.Language || null;
+
+    // Always show when template is loaded
+    languageBarEl.style.display = '';
+
+    // Render badges
+    if (langs.length === 0) {
+      langBadgesEl.innerHTML = '<span class="badge bg-secondary">none detected</span>';
+    } else {
+      langBadgesEl.innerHTML = langs.map(l =>
+        `<span class="badge bg-info text-dark">${l}</span>`
+      ).join(' ');
+    }
+
+    // Primary language badge
+    if (primaryLang) {
+      langPrimaryBadgeEl.innerHTML = `<span class="badge bg-primary">Primary: ${primaryLang}</span>`;
+    } else {
+      langPrimaryBadgeEl.innerHTML = '<span class="badge bg-warning text-dark">No primary language set</span>';
+    }
+
+    // Warning indicator: mismatch between Technical.Language and detected keys
+    let showWarning = false;
+    if (primaryLang && langs.length > 0 && !langs.includes(primaryLang)) {
+      showWarning = true;
+      langWarningEl.title = `Technical.Language is '${primaryLang}' but content uses: ${langs.join(', ')}`;
+    }
+    langWarningEl.style.display = showWarning ? '' : 'none';
+    languageBarInnerEl.classList.toggle('lang-bar-warn', showWarning);
+  }
+
+  // Add Language: adds a language key to ALL question Descriptions and Levels
+  btnAddLang.addEventListener('click', () => {
+    if (!currentTemplate) return;
+    const newLang = prompt('Enter language code to add (e.g., en, de, fr):');
+    if (!newLang || !LANG_CODE_RE.test(newLang.trim())) {
+      if (newLang !== null) alert('Invalid language code. Use format like "en" or "de-AT".');
+      return;
+    }
+    const lang = newLang.trim();
+    const items = itemKeysFromTemplate(currentTemplate);
+    const primaryLang = currentTemplate.Technical?.Language || 'en';
+
+    for (const key of items) {
+      const item = currentTemplate[key];
+      if (!item || typeof item !== 'object') continue;
+
+      // Convert plain string Description to multilingual dict
+      if (typeof item.Description === 'string') {
+        const text = item.Description;
+        item.Description = {};
+        item.Description[primaryLang] = text;
+      }
+      // Add language key to Description if it's a dict
+      if (item.Description && typeof item.Description === 'object' && !Array.isArray(item.Description)) {
+        if (!(lang in item.Description)) {
+          item.Description[lang] = '';
+        }
+      }
+
+      // Add language key to each Levels value
+      if (item.Levels && typeof item.Levels === 'object') {
+        for (const [lk, lv] of Object.entries(item.Levels)) {
+          if (typeof lv === 'string') {
+            // Convert plain string level to multilingual dict
+            item.Levels[lk] = {};
+            item.Levels[lk][primaryLang] = lv;
+            item.Levels[lk][lang] = '';
+          } else if (lv && typeof lv === 'object' && !Array.isArray(lv)) {
+            if (!(lang in lv)) {
+              lv[lang] = '';
+            }
+          }
+        }
+      }
+    }
+
+    // Update I18n.Languages if it exists
+    if (currentTemplate.I18n && Array.isArray(currentTemplate.I18n.Languages)) {
+      if (!currentTemplate.I18n.Languages.includes(lang)) {
+        currentTemplate.I18n.Languages.push(lang);
+      }
+    }
+
+    // If no primary language set and this is the first, set it
+    if (!currentTemplate.Technical?.Language && items.length > 0) {
+      if (!currentTemplate.Technical) currentTemplate.Technical = {};
+      currentTemplate.Technical.Language = lang;
+    }
+
+    renderAll();
+  });
+
+  // Remove Language: strips a language key from ALL question Descriptions and Levels
+  btnRemoveLang.addEventListener('click', () => {
+    if (!currentTemplate) return;
+    const langs = detectLanguagesFromTemplate(currentTemplate);
+    if (langs.length === 0) {
+      alert('No languages detected in this template.');
+      return;
+    }
+    const lang = prompt(`Enter language code to remove (detected: ${langs.join(', ')}):`);
+    if (!lang || !LANG_CODE_RE.test(lang.trim())) {
+      if (lang !== null) alert('Invalid language code.');
+      return;
+    }
+    const code = lang.trim();
+    if (!langs.includes(code)) {
+      alert(`Language '${code}' not found in template content.`);
+      return;
+    }
+    if (!confirm(`Remove language '${code}' from ALL question Descriptions and Levels?`)) return;
+
+    const items = itemKeysFromTemplate(currentTemplate);
+    for (const key of items) {
+      const item = currentTemplate[key];
+      if (!item || typeof item !== 'object') continue;
+
+      // Remove from Description
+      if (item.Description && typeof item.Description === 'object' && !Array.isArray(item.Description)) {
+        delete item.Description[code];
+        // If only one key left, convert back to plain string
+        const remaining = Object.keys(item.Description);
+        if (remaining.length === 1) {
+          item.Description = item.Description[remaining[0]];
+        } else if (remaining.length === 0) {
+          item.Description = '';
+        }
+      }
+
+      // Remove from Levels
+      if (item.Levels && typeof item.Levels === 'object') {
+        for (const [lk, lv] of Object.entries(item.Levels)) {
+          if (lv && typeof lv === 'object' && !Array.isArray(lv)) {
+            delete lv[code];
+            const remaining = Object.keys(lv);
+            if (remaining.length === 1) {
+              item.Levels[lk] = lv[remaining[0]];
+            } else if (remaining.length === 0) {
+              item.Levels[lk] = '';
+            }
+          }
+        }
+      }
+    }
+
+    // Update I18n.Languages if it exists
+    if (currentTemplate.I18n && Array.isArray(currentTemplate.I18n.Languages)) {
+      currentTemplate.I18n.Languages = currentTemplate.I18n.Languages.filter(l => l !== code);
+    }
+
+    renderAll();
+  });
+
+  // ── View tab switching (Editor / Preview) ───────────────────────────
+  let currentView = 'editor';
+
+  function switchView(view) {
+    currentView = view;
+    tabEditorEl.classList.toggle('active', view === 'editor');
+    tabPreviewEl.classList.toggle('active', view === 'preview');
+    editorViewEl.style.display = view === 'editor' ? '' : 'none';
+    previewViewEl.style.display = view === 'preview' ? '' : 'none';
+    editorHintEl.style.display = view === 'editor' ? '' : 'none';
+    if (view === 'preview') renderPreview();
+  }
+
+  tabEditorEl.addEventListener('click', (e) => { e.preventDefault(); switchView('editor'); });
+  tabPreviewEl.addEventListener('click', (e) => { e.preventDefault(); switchView('preview'); });
+
+  // ── Preview rendering ───────────────────────────────────────────────
+  function renderPreview() {
+    previewContentEl.innerHTML = '';
+    if (!currentTemplate) {
+      previewContentEl.innerHTML = '<div class="text-muted">No template loaded.</div>';
+      return;
+    }
+
+    const langs = detectLanguagesFromTemplate(currentTemplate);
+    const primaryLang = currentTemplate.Technical?.Language || 'en';
+
+    // Populate language switcher
+    previewLangSelectEl.innerHTML = '';
+    const displayLangs = langs.length > 0 ? langs : [primaryLang];
+    for (const l of displayLangs) {
+      const opt = document.createElement('option');
+      opt.value = l;
+      opt.textContent = l;
+      if (l === primaryLang) opt.selected = true;
+      previewLangSelectEl.appendChild(opt);
+    }
+    previewLangCountEl.textContent = langs.length > 0 ? `${langs.length} language(s)` : 'No multilingual content';
+
+    renderPreviewQuestions(previewLangSelectEl.value);
+  }
+
+  previewLangSelectEl.addEventListener('change', () => {
+    renderPreviewQuestions(previewLangSelectEl.value);
+  });
+
+  function getLocalizedText(val, lang) {
+    if (!val) return { text: '', missing: true };
+    if (typeof val === 'string') return { text: val, missing: false };
+    if (typeof val === 'object' && !Array.isArray(val)) {
+      if (lang in val) return { text: val[lang], missing: false };
+      // Fallback to any available language
+      const keys = Object.keys(val);
+      if (keys.length > 0) return { text: val[keys[0]], missing: true };
+      return { text: '', missing: true };
+    }
+    return { text: String(val), missing: false };
+  }
+
+  function renderPreviewQuestions(lang) {
+    previewContentEl.innerHTML = '';
+    const items = itemKeysFromTemplate(currentTemplate);
+    if (!items.length) {
+      previewContentEl.innerHTML = '<div class="text-muted">No questions in this template.</div>';
+      return;
+    }
+
+    items.sort().forEach(key => {
+      const item = currentTemplate[key];
+      if (!item || typeof item !== 'object') return;
+
+      const card = document.createElement('div');
+      card.className = 'preview-question-card';
+
+      // Question code
+      const codeEl = document.createElement('div');
+      codeEl.className = 'q-code';
+      let codeText = key;
+      // Badges
+      if (item.Reversed === true) codeText += ' <span class="badge preview-badge-reversed ms-1">Reversed</span>';
+      const isMandatory = item.LimeSurvey?.mandatory === true || item.Required === true;
+      if (isMandatory) codeText += ' <span class="badge preview-badge-mandatory ms-1">Required</span>';
+      codeEl.innerHTML = codeText;
+      card.appendChild(codeEl);
+
+      // Description
+      const descEl = document.createElement('div');
+      descEl.className = 'q-desc';
+      const desc = getLocalizedText(item.Description, lang);
+      if (desc.missing && desc.text) {
+        descEl.innerHTML = `<span class="preview-missing-translation" title="No '${lang}' translation">${desc.text}</span>`;
+      } else if (desc.missing) {
+        descEl.innerHTML = `<span class="preview-missing-translation">No translation for '${lang}'</span>`;
+      } else {
+        descEl.textContent = desc.text || '(no description)';
+      }
+      card.appendChild(descEl);
+
+      // Instructions (if present)
+      if (item.Instructions) {
+        const instrEl = document.createElement('div');
+        instrEl.className = 'text-muted small mb-2';
+        const instr = getLocalizedText(item.Instructions, lang);
+        instrEl.innerHTML = `<em>${instr.text || ''}</em>`;
+        card.appendChild(instrEl);
+      }
+
+      // Response options
+      if (item.Levels && typeof item.Levels === 'object' && Object.keys(item.Levels).length > 0) {
+        const optionsDiv = document.createElement('div');
+        optionsDiv.className = 'ps-2';
+        const sortedKeys = Object.keys(item.Levels).sort((a, b) => Number(a) - Number(b));
+        for (const lk of sortedKeys) {
+          const lv = item.Levels[lk];
+          const row = document.createElement('div');
+          row.className = 'form-check mb-1';
+
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.className = 'form-check-input';
+          radio.name = `preview_${key}`;
+          radio.disabled = true;
+
+          const label = document.createElement('label');
+          label.className = 'form-check-label';
+          const lvText = getLocalizedText(lv, lang);
+          if (lvText.missing && lvText.text) {
+            label.innerHTML = `<span class="text-muted">${lk}:</span> <span class="preview-missing-translation" title="No '${lang}' translation">${lvText.text}</span>`;
+          } else if (lvText.missing) {
+            label.innerHTML = `<span class="text-muted">${lk}:</span> <span class="preview-missing-translation">No translation</span>`;
+          } else {
+            label.innerHTML = `<span class="text-muted">${lk}:</span> ${lvText.text}`;
+          }
+
+          row.appendChild(radio);
+          row.appendChild(label);
+          optionsDiv.appendChild(row);
+        }
+        card.appendChild(optionsDiv);
+      } else {
+        // Free text question
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'form-control form-control-sm';
+        input.placeholder = 'Free text response';
+        input.disabled = true;
+        card.appendChild(input);
+      }
+
+      previewContentEl.appendChild(card);
+    });
+  }
+
+  function renderAll() {
+    renderTopLevel();
+    renderItemList();
+    renderSelectedItem();
+    renderToolProperties();
+    renderBulkEdit();
+    renderJsonDiff();
+    renderLanguageBar();
+    renderCompletionBar();
+    if (currentView === 'preview') renderPreview();
+  }
+
+  // Store template metadata for source-aware loading
+  let templateMetadata = {};
+  let hasUserInteracted = false; // Track if user has interacted (loaded/edited/validated)
+
+  async function refreshTemplateList() {
+    const modality = modalityEl.value;
+    clearAlert();
+    btnDownload.disabled = true;
+    btnSave.disabled = true;
+    templateMetadata = {};
+
+    const data = await apiGet(`/api/template-editor/list-merged?modality=${encodeURIComponent(modality)}`);
+
+    const projectTemplates = (data.templates || []).filter(t => t.source === 'project');
+    const globalTemplates = (data.templates || []).filter(t => t.source !== 'project');
+
+    projectTemplateSelectEl.innerHTML = '<option value="">(none in project)</option>';
+    for (const t of projectTemplates) {
+      const expectedPrefix = `${modality}-`;
+      if (!t.filename.startsWith(expectedPrefix) && t.filename !== 'participants_mapping.json') {
+        continue;
+      }
+      if (modality === 'survey' && t.filename === 'participants_mapping.json') {
+        continue;
+      }
+      const opt = document.createElement('option');
+      opt.value = t.filename;
+      opt.textContent = t.filename;
+      opt.dataset.source = t.source;
+      opt.dataset.path = t.path;
+      opt.dataset.readonly = t.readonly;
+      projectTemplateSelectEl.appendChild(opt);
+      templateMetadata[t.filename] = t;
+    }
+
+    globalTemplateSelectEl.innerHTML = '<option value="">(select one)</option>';
+    for (const t of globalTemplates) {
+      const expectedPrefix = `${modality}-`;
+      if (!t.filename.startsWith(expectedPrefix)) {
+        continue;
+      }
+      const opt = document.createElement('option');
+      opt.value = t.filename;
+      opt.textContent = t.filename;
+      opt.dataset.source = t.source;
+      opt.dataset.path = t.path;
+      opt.dataset.readonly = t.readonly;
+      globalTemplateSelectEl.appendChild(opt);
+      templateMetadata[t.filename] = t;
+    }
+
+    projectLibraryRoot = data.sources?.project_library_path || null;
+    projectLibraryExists = Boolean(data.sources?.project_library_exists);
+
+    updateProjectLibraryStatus();
+  }
+
+  async function loadSelectedTemplate() {
+    const modality = modalityEl.value;
+    const schema_version = schemaEl.value;
+    const filename = projectTemplateSelectEl.value || globalTemplateSelectEl.value;
+
+    if (!filename) {
+      showAlert('warning', 'Select a template to load.');
+      return;
+    }
+
+    clearAlert();
+    btnDownload.disabled = true;
+    btnSave.disabled = true;
+
+    await refreshSchema();
+
+    const meta = templateMetadata[filename];
+    const qp = new URLSearchParams({ modality, schema_version, filename });
+
+    if (meta && meta.path) {
+      const normalizedPath = meta.path.replace(/\\/g, '/');
+      const pathParts = normalizedPath.split('/');
+      const modalityIdx = pathParts.lastIndexOf(modality);
+      if (modalityIdx > 0) {
+        const libraryPath = pathParts.slice(0, modalityIdx).join('/');
+        if (libraryPath) {
+          qp.set('library_path', libraryPath);
+        }
+      }
+    }
+
+    const data = await apiGet(`/api/template-editor/load?${qp.toString()}`);
+    currentTemplate = data.template;
+    originalTemplate = cloneDeep(data.template);
+    checkedItemIds.clear();
+    selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
+    hasUserInteracted = true;
+    renderAll();
+    renderJsonDiff();
+    await validateCurrent();
+  }
+
+  async function loadNewTemplate() {
+    const modality = modalityEl.value;
+    const schema_version = schemaEl.value;
+    clearAlert();
+    btnDownload.disabled = true;
+    btnSave.disabled = true;
+
+    await refreshSchema();
+
+    const data = await apiGet(`/api/template-editor/new?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schema_version)}`);
+    currentTemplate = data.template;
+    originalTemplate = null; // no baseline for new templates
+    checkedItemIds.clear();
+    selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
+    renderAll();
+    renderJsonDiff();
+    // Don't validate empty template on initial load - only validate after user edits
+  }
+
+  async function validateCurrent() {
+    const modality = modalityEl.value;
+    const schema_version = schemaEl.value;
+
+    const obj = currentTemplate;
+    if (!obj || typeof obj !== 'object') {
+      btnDownload.disabled = true;
+      showAlert('danger', 'No template loaded');
+      return;
+    }
+
+    hasUserInteracted = true; // User is now validating
+    const data = await apiPost('/api/template-editor/validate', {
+      modality,
+      schema_version,
+      template: obj
+    });
+
+    // Build language warnings HTML (always shown, regardless of schema validity)
+    const langWarnings = data.language_warnings || [];
+    let langWarnHtml = '';
+    if (langWarnings.length > 0) {
+      const items = langWarnings.map(w =>
+        `<li><i class="fas fa-globe text-warning me-1"></i>${w.message}${w.details ? ` <small class="text-muted">(${w.details})</small>` : ''}</li>`
+      ).join('');
+      langWarnHtml = `<div class="alert alert-warning mt-2 mb-0"><strong>Language warnings:</strong><ul class="mb-0">${items}</ul></div>`;
+    }
+
+    if (data.ok) {
+      btnDownload.disabled = false;
+      const successMessage = projectLibraryRoot
+        ? `✅ Valid template! Ready to save to <code>${projectLibraryRoot}/${modalityEl.value}/</code>`
+        : '⚠️ Valid template, but <strong>no project selected</strong>. Select a project to enable saving, or download the JSON.';
+      btnSave.disabled = !projectLibraryRoot;
+      showAlert(projectLibraryRoot ? 'success' : 'warning', successMessage + langWarnHtml);
+    } else {
+      btnDownload.disabled = true;
+      btnSave.disabled = true;
+      const errs = (data.errors || []).slice(0, 50);
+      const list = errs.map(e => {
+        const p = e.path || '(root)';
+        const link = `<a href=\"#\" class=\"error-link\" data-path=\"${p}\"><code>${p}</code></a>`;
+        return `<li>${link}: ${e.message}</li>`;
+      }).join('');
+      const extra = (data.errors || []).length > errs.length ? `<div class=\"mt-2 text-muted small\">(showing first ${errs.length} errors)</div>` : '';
+      showAlert('danger', `❌ Validation failed.<ul class=\"mb-0\">${list}</ul>${extra}` + langWarnHtml);
+      // Wire clicks to focus fields
+      alertAreaEl.querySelectorAll('.error-link').forEach(a => {
+        a.addEventListener('click', (ev) => { ev.preventDefault(); focusField(a.dataset.path); });
+      });
+      renderMissingSummary();
+    }
+  }
+
+  async function saveCurrent() {
+    const obj = currentTemplate;
+    if (!obj || typeof obj !== 'object') {
+      showAlert('danger', 'No template loaded');
+      return;
+    }
+
+    const modality = modalityEl.value;
+    if (!projectLibraryRoot) {
+      showAlert('danger', '<strong>No project selected!</strong><br>All template saves go to <code>project/code/library/{modality}/</code><br>Please select or create a project first.');
+      return;
+    }
+
+    // Generate filename from template TaskName (try Metadata first, then Study)
+    const templateName = (obj.Metadata && obj.Metadata.TaskName) || (obj.Study && obj.Study.TaskName) || 'template';
+    const filename = `survey-${templateName.toLowerCase().replace(/\\s+/g, '-')}.json`;
+
+    ensureTemplateNormalized();
+    try {
+      const data = await apiPost('/api/template-editor/save', {
+        modality,
+        filename,
+        template: obj,
+      });
+      showAlert('success', `✅ Saved to project library: <code>${projectLibraryRoot}/${modality}/${filename}</code><br><small>This overwrites any previous version with the same name.</small>`);
+      await refreshTemplateList();
+    } catch (e) {
+      showAlert('danger', `Save failed: ${e.message}`);
+    }
+  }
+
+  async function downloadCurrent() {
+    const obj = currentTemplate;
+    if (!obj || typeof obj !== 'object') {
+      showAlert('danger', 'No template loaded');
+      return;
+    }
+
+    ensureTemplateNormalized();
+    
+    // Generate filename from template TaskName (try Metadata first, then Study)
+    const templateName = (obj.Metadata && obj.Metadata.TaskName) || (obj.Study && obj.Study.TaskName) || 'template';
+    const filename = `survey-${templateName.toLowerCase().replace(/\\s+/g, '-')}.json`;
+
+    const res = await fetch('/api/template-editor/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename, template: obj })
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || `Download failed (${res.status})`);
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename.toLowerCase().endsWith('.json') ? filename : (filename + '.json');
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  }
+
+  btnImportTemplateSource.addEventListener('click', () => {
+    templateImportInput.click();
+  });
+
+  templateImportInput.addEventListener('change', async () => {
+    const file = templateImportInput.files[0];
+    if (!file) return;
+    templateImportInput.value = '';
+
+    clearAlert();
+    btnDownload.disabled = true;
+    btnSave.disabled = true;
+
+    try {
+      await refreshSchema();
+
+      const lowerName = (file.name || '').toLowerCase();
+      const isLsqOrLsg = lowerName.endsWith('.lsq') || lowerName.endsWith('.lsg');
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      let data;
+      if (isLsqOrLsg) {
+        const res = await fetch('/api/template-editor/import-lsq-lsg', {
+          method: 'POST',
+          body: formData,
+        });
+        data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || `Import failed (${res.status})`);
+        }
+        currentTemplate = data.template;
+      } else {
+        const nameWithoutExt = (file.name || 'imported')
+          .replace(/\.[^.]+$/, '')
+          .trim();
+        formData.append('mode', 'combined');
+        if (nameWithoutExt) {
+          formData.append('task_name', sanitizeTaskNameForFilename(nameWithoutExt));
+        }
+
+        const res = await fetch('/api/limesurvey-to-prism', {
+          method: 'POST',
+          body: formData,
+        });
+        data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || `Template import failed (${res.status})`);
+        }
+
+        if (!data.prism_json || typeof data.prism_json !== 'object') {
+          throw new Error('No PRISM template returned by generator.');
+        }
+        currentTemplate = data.prism_json;
+      }
+
+      originalTemplate = null;
+      checkedItemIds.clear();
+      selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
+      renderAll();
+
+      const source = (file.name.split('.').pop() || '').toLowerCase().toUpperCase();
+      const itemCount = data.item_count || data.question_count || itemKeysFromTemplate(currentTemplate).length;
+      showAlert('success', `<strong>Imported ${file.name}</strong> (${source})<br>${itemCount} item(s) extracted.`);
+
+      await validateCurrent();
+    } catch (e) {
+      showAlert('danger', `Template import failed: ${e.message}`);
+    }
+  });
+
+  // Wire events
+  modalityEl.addEventListener('change', async () => {
+    try {
+      await refreshTemplateList();
+      await loadNewTemplate();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  selectAllItemsEl.addEventListener('change', () => {
+    const keys = itemKeysFromTemplate(currentTemplate);
+    if (selectAllItemsEl.checked) {
+      keys.forEach(k => checkedItemIds.add(k));
+    } else {
+      checkedItemIds.clear();
+    }
+    renderItemList();
+  });
+
+  schemaEl.addEventListener('change', async () => {
+    try {
+      btnDownload.disabled = true;
+      btnSave.disabled = true;
+      await loadNewTemplate();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  btnNew.addEventListener('click', async () => {
+    try {
+      await loadNewTemplate();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  projectTemplateSelectEl.addEventListener('change', () => {
+    if (projectTemplateSelectEl.value) {
+      globalTemplateSelectEl.value = '';
+    }
+  });
+
+  globalTemplateSelectEl.addEventListener('change', () => {
+    if (globalTemplateSelectEl.value) {
+      projectTemplateSelectEl.value = '';
+    }
+  });
+
+  btnLoad.addEventListener('click', async () => {
+    try {
+      await loadSelectedTemplate();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  btnValidate.addEventListener('click', async () => {
+    try {
+      await validateCurrent();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  btnSave.addEventListener('click', async () => {
+    try {
+      await saveCurrent();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  btnDownload.addEventListener('click', async () => {
+    try {
+      await downloadCurrent();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  btnAddItem.addEventListener('click', () => {
+    try {
+      if (!currentTemplate) {
+        showAlert('warning', 'Load or create a template first.');
+        return;
+      }
+      const id = (newItemIdEl.value || '').trim();
+      if (!id) {
+        showAlert('warning', 'Enter an item ID (e.g., pss_01).');
+        return;
+      }
+      if (RESERVED_TOPLEVEL.has(id)) {
+        showAlert('danger', 'That ID is reserved.');
+        return;
+      }
+      if (currentTemplate[id]) {
+        showAlert('warning', 'That item already exists.');
+        return;
+      }
+      const itemSchema = getItemSchema();
+      if (!itemSchema) {
+        showAlert('danger', 'Item schema not loaded.');
+        return;
+      }
+      currentTemplate[id] = schemaExample(itemSchema);
+      selectedItemId = id;
+      newItemIdEl.value = '';
+      renderAll();
+      openSelectedItemPanel();
+      btnDownload.disabled = true;
+      btnSave.disabled = true;
+      showAlert('success', `Added item ${id}.`);
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  });
+
+  // Initial load
+  (async () => {
+    try {
+      await refreshSchema();
+      await refreshTemplateList();
+      await loadNewTemplate();
+    } catch (e) {
+      showAlert('danger', e.message);
+    }
+  })();
+})();
+</script>
