@@ -39,10 +39,12 @@ EXTRA_BIDSIGNORE_RULES = {
     "*_biometrics.*",  # Ignore any biometrics related data/sidecars
     "*_physio.*",  # Ignore any custom physio data/sidecars
     "*_eyetrack.*",  # Ignore any custom eyetracking data/sidecars
+    "*_environment.*",  # Ignore environment enrichment outputs/sidecars
     "task-*_survey.json",  # Root task templates
     "task-*_biometrics.json",
     "task-*_physio.json",
     "task-*_eyetrack.json",
+    "task-*_environment.json",
 }
 
 
@@ -93,6 +95,7 @@ def check_and_update_bidsignore(dataset_root, supported_modalities):
         "physio",
         "survey",
         "biometrics",
+        "environment",
         "eeg",
         "metadata",
         "events",
