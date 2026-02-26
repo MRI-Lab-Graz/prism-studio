@@ -108,6 +108,9 @@ Migration rules:
   - moved duplicate-diagnostics scripts to `scripts/dev/`
   - retained old paths as wrappers to avoid workflow breakage
 - Moved environment-build scripts to `scripts/data/` and kept old entry paths as wrappers.
+- Moved additional scripts with wrappers:
+  - `scripts/maintenance/generate_recipes.py`
+  - `scripts/data/harvest_psytoolkit.py`
 
 ## Learned Lessions
 
@@ -123,7 +126,8 @@ Migration rules:
 - Keeping the compatibility launcher minimal helps detect accidental logic drift and prevents stale helper code from lingering in entry scripts.
 - Script reorganization is safest when done in small batches with old-path wrappers so docs/automation do not break immediately.
 - Wrapping moved scripts with runpy keeps behavior and arguments identical while allowing immediate folder cleanup.
+- Categorizing by script purpose (`dev`, `data`, `maintenance`) creates a clearer contributor mental model without immediate disruption.
 
 ## Immediate next step
 
-- Continue script-folder reorganization in batches (`scripts/release`, `scripts/maintenance`) with compatibility wrappers, then update docs/automation references incrementally.
+- Continue script-folder reorganization in batches (`scripts/release` and remaining root scripts) with compatibility wrappers, then update docs/automation references incrementally.
