@@ -111,6 +111,9 @@ Migration rules:
 - Moved additional scripts with wrappers:
   - `scripts/maintenance/generate_recipes.py`
   - `scripts/data/harvest_psytoolkit.py`
+- Moved CI helper scripts with wrappers:
+  - `scripts/ci/test_bids_compliance.py`
+  - `scripts/ci/test_sav_anonymization.py`
 
 ## Learned Lessions
 
@@ -127,6 +130,7 @@ Migration rules:
 - Script reorganization is safest when done in small batches with old-path wrappers so docs/automation do not break immediately.
 - Wrapping moved scripts with runpy keeps behavior and arguments identical while allowing immediate folder cleanup.
 - Categorizing by script purpose (`dev`, `data`, `maintenance`) creates a clearer contributor mental model without immediate disruption.
+- When moving scripts, replace location-dependent path logic with repo-root relative resolution to keep wrappers and canonical paths consistent.
 
 ## Immediate next step
 
