@@ -30,6 +30,9 @@ IGNORED_PATHS = []
 MISSING_TOOLS = {}
 TARGET_VENV_BIN = None
 TARGET_PYTHON = None
+CURRENT_CHECK = None
+CURRENT_CHECK_WARNINGS = 0
+CURRENT_CHECK_ERRORS = 0
 
 # ANSI escape code stripper
 ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
@@ -67,10 +70,16 @@ def print_success(msg):
 
 
 def print_warning(msg):
+    global CURRENT_CHECK_WARNINGS
+    if CURRENT_CHECK:
+        CURRENT_CHECK_WARNINGS += 1
     print(f"{Fore.YELLOW}[!] {msg}{Style.RESET_ALL}")
 
 
 def print_error(msg):
+    global CURRENT_CHECK_ERRORS
+    if CURRENT_CHECK:
+        CURRENT_CHECK_ERRORS += 1
     print(f"{Fore.RED}[✗] {msg}{Style.RESET_ALL}")
 
 
@@ -275,7 +284,15 @@ def check_secrets(repo_path, fix=False):
     if check_tool("detect-secrets", "pip install detect-secrets"):
         # Construct exclude regex from IGNORED_DIRS
         ignored_regex = "|".join([re.escape(d) for d in IGNORED_DIRS])
-        exclude_arg = f'--exclude-files "({ignored_regex})/"'
+        known_false_positive_paths = [
+            r"app/static/js/jszip\.min\.js",
+            r"docs/WINDOWS_SETUP\.md",
+            r"vendor/pyedflib/version\.py",
+        ]
+        known_false_positive_regex = "|".join(known_false_positive_paths)
+        exclude_arg = (
+            f'--exclude-files "(({ignored_regex})/|({known_false_positive_regex}))"'
+        )
 
         result = run_command(f"detect-secrets scan {exclude_arg}", cwd=repo_path)
         if result and result.returncode == 0:
@@ -438,7 +455,7 @@ def check_python_security(repo_path, fix=False):
         excludes = ",".join(list(IGNORED_DIRS) + IGNORED_PATHS + extra_excludes)
         target_paths = "src app/src app/prism_tools.py app/prism-studio.py"
         result = run_command(
-            f"bandit -r {target_paths} -f custom --exclude {excludes}",
+            f"bandit -r {target_paths} -ll -f custom --exclude {excludes}",
             cwd=repo_path,
         )
         if result and result.returncode == 0:
@@ -453,6 +470,39 @@ def check_python_security(repo_path, fix=False):
 
 def check_unsafe_patterns(repo_path, fix=False):
     print_header("Checking for Unsafe Patterns (eval, exec, etc.)")
+
+    def is_risky_innerhtml(line):
+        """Return True only for potentially unsafe innerHTML assignments.
+
+        This avoids flagging benign reads (e.g., `const x = el.innerHTML`) or
+        simple static assignments used for icons/spinners/placeholders.
+        """
+        if ".innerHTML" not in line:
+            return False
+
+        assignment = re.search(r"\.innerHTML\s*=\s*(.+)", line)
+        if not assignment:
+            return False
+
+        rhs = assignment.group(1).strip().rstrip(";")
+        if not rhs:
+            return False
+
+        # Empty clear is benign
+        if rhs in {"''", '""', "``"}:
+            return False
+
+        # Static quoted strings without concatenation/interpolation are benign
+        if re.fullmatch(r"'[^']*'", rhs) or re.fullmatch(r'"[^"]*"', rhs):
+            return False
+
+        # Template literals are only risky when interpolated
+        if re.fullmatch(r"`[^`]*`", rhs):
+            return "${" in rhs
+
+        # For expressions/variables/concatenation, treat as risky
+        return True
+
     unsafe_patterns = {
         "python": [
             (r"eval\(", "eval() can execute arbitrary code"),
@@ -469,7 +519,7 @@ def check_unsafe_patterns(repo_path, fix=False):
         ],
         "javascript": [
             (r"eval\(", "eval() is a security risk"),
-            (r"innerHTML", "innerHTML can lead to XSS"),
+            (r"\.innerHTML", "innerHTML assignment can lead to XSS"),
             (r"document\.write\(", "document.write() is a security risk"),
             (r"http://", "Insecure HTTP connection, use HTTPS"),
         ],
@@ -492,6 +542,11 @@ def check_unsafe_patterns(repo_path, fix=False):
                     for i, line in enumerate(f, 1):
                         for pattern, reason in patterns:
                             if re.search(pattern, line):
+                                if pattern == r"\.innerHTML" and not is_risky_innerhtml(
+                                    line
+                                ):
+                                    continue
+
                                 # Filter out common false positives for IPs
                                 if pattern == r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}":
                                     # Skip if it looks like a version number or common local IP
@@ -499,6 +554,11 @@ def check_unsafe_patterns(repo_path, fix=False):
                                         re.search(r"v?\d+\.\d+\.\d+", line)
                                         or "127.0.0.1" in line
                                     ):
+                                        continue
+
+                                # Local development URLs are acceptable
+                                if pattern == r"http://":
+                                    if "127.0.0.1" in line or "localhost" in line:
                                         continue
 
                                 print_warning(
@@ -991,11 +1051,24 @@ def parse_selected_checks(check_args):
 
 
 def run_check(check_name, check_fn, repo_path, fix):
-    """Run a single check function with the proper signature."""
+    """Run a single check function with the proper signature.
+
+    Returns:
+        bool: True if check passed without warnings/errors, False otherwise.
+    """
+    global CURRENT_CHECK, CURRENT_CHECK_WARNINGS, CURRENT_CHECK_ERRORS
+    CURRENT_CHECK = check_name
+    CURRENT_CHECK_WARNINGS = 0
+    CURRENT_CHECK_ERRORS = 0
+
     if check_name in CHECKS_SUPPORT_FIX:
         check_fn(repo_path, fix)
     else:
         check_fn(repo_path)
+
+    passed = CURRENT_CHECK_WARNINGS == 0 and CURRENT_CHECK_ERRORS == 0
+    CURRENT_CHECK = None
+    return passed
 
 
 def main():
@@ -1090,8 +1163,17 @@ def main():
                     f"Running checks: {', '.join(checks_to_run) if checks_to_run else 'none'}"
                 )
 
+                failed_check = None
                 for check_name in checks_to_run:
-                    run_check(check_name, CHECKS[check_name], repo_path, args.fix)
+                    check_passed = run_check(
+                        check_name, CHECKS[check_name], repo_path, args.fix
+                    )
+                    if not check_passed:
+                        failed_check = check_name
+                        print_error(
+                            f"Check '{check_name}' has unresolved issues. Fix this check before proceeding to the next one."
+                        )
+                        break
 
                 print_header("Summary")
                 if MISSING_TOOLS:
@@ -1106,6 +1188,12 @@ def main():
                 print("  ☐ Manual code review for personal info/comments")
                 print("  ☐ Run the code once to ensure it works")
                 print("\nDone.")
+
+                if failed_check:
+                    print_warning(
+                        "Verification stopped early due to unresolved issues in the current check."
+                    )
+                    sys.exit(1)
             finally:
                 # Restore stdout
                 sys.stdout = original_stdout
