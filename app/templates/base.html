@@ -246,28 +246,79 @@
                     : 'If PRISM is still running, return to the terminal and press Ctrl+C.';
                 
                 try {
+                    // Show shutdown message while waiting
+                    document.body.innerHTML = `
+                        <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f8f9fa;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;">
+                            <div style="text-align:center;">
+                                <div style="font-size:3rem;color:#6c757d;margin-bottom:1rem;">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </div>
+                                <h2 style="color:#212529;margin-bottom:0.5rem;">Closing PRISM Studio...</h2>
+                                <p style="color:#6c757d;font-size:1rem;">Please wait...</p>
+                            </div>
+                        </div>
+                    `;
+                    
                     const response = await fetch('/shutdown', { method: 'POST' });
                     const result = await response.json().catch(() => ({ success: response.ok }));
+                    
                     if (response.ok && result.success) {
+                        // Show success message
                         document.body.innerHTML = `
                             <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f8f9fa;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;">
                                 <div style="text-align:center;">
-                                    <div style="font-size:4rem;color:#dc3545;margin-bottom:1rem;"><i class="fas fa-power-off"></i></div>
+                                    <div style="font-size:4rem;color:#28a745;margin-bottom:1rem;"><i class="fas fa-check-circle"></i></div>
                                     <h1 style="color:#212529;margin-bottom:0.5rem;">PRISM Studio is closed</h1>
-                                    <p style="color:#6c757d;font-size:1.2rem;">You can safely close this tab now.</p>
+                                    <p style="color:#6c757d;font-size:1.1rem;">You can safely close this tab now.</p>
                                 </div>
                             </div>
                         `;
+                        
+                        // For compiled exe: try to close after delay
+                        // For browser: connection will drop when process exits
                         setTimeout(() => {
-                            window.open('', '_self');
-                            window.close();
+                            try {
+                                window.close();
+                            } catch (e) {
+                                console.log('Window close attempted');
+                            }
                         }, 800);
+                        
+                        // Fallback: check if connection is lost and notify user
+                        setTimeout(() => {
+                            try {
+                                fetch('/health', { signal: AbortSignal.timeout(2000) })
+                                    .catch(() => {
+                                        // Server is down, app successfully exited
+                                        document.body.innerHTML = `
+                                            <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f8f9fa;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;">
+                                                <div style="text-align:center;">
+                                                    <div style="font-size:4rem;color:#28a745;margin-bottom:1rem;"><i class="fas fa-power-off"></i></div>
+                                                    <h1 style="color:#212529;margin-bottom:0.5rem;">PRISM Studio closed successfully</h1>
+                                                    <p style="color:#6c757d;font-size:1.1rem;">All processes terminated. Safe to close this window.</p>
+                                                </div>
+                                            </div>
+                                        `;
+                                    });
+                            } catch (e) {
+                                console.log('Health check failed (expected)');
+                            }
+                        }, 1500);
                     } else {
                         throw new Error('Shutdown endpoint did not confirm success');
                     }
                 } catch (error) {
                     console.error('Shutdown failed:', error);
-                    alert(`Could not shut down automatically. ${manualHint}`);
+                    document.body.innerHTML = `
+                        <div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#f8f9fa;flex-direction:column;font-family:system-ui,-apple-system,sans-serif;padding:2rem;">
+                            <div style="text-align:center;max-width:600px;">
+                                <div style="font-size:4rem;color:#dc3545;margin-bottom:1rem;"><i class="fas fa-exclamation-circle"></i></div>
+                                <h2 style="color:#212529;margin-bottom:1rem;">Shutdown Failed</h2>
+                                <p style="color:#6c757d;font-size:1rem;margin-bottom:1.5rem;white-space:pre-wrap;font-family:monospace;">${manualHint}</p>
+                                <p style="color:#999;font-size:0.9rem;">You may need to manually close the application.</p>
+                            </div>
+                        </div>
+                    `;
                 }
             });
         });

@@ -815,12 +815,12 @@ class TestEdfWriter(unittest.TestCase):
             f.setSignalHeader(0, channel_info1)
             f.setSignalHeader(1, channel_info2)
             data = np.ones(100) * 0.1
-            assert f.writePhysicalSamples(data) == 0, (
-                "error while writing physical sample"
-            )
-            assert f.writePhysicalSamples(data) == 0, (
-                "error while writing physical sample"
-            )
+            assert (
+                f.writePhysicalSamples(data) == 0
+            ), "error while writing physical sample"
+            assert (
+                f.writePhysicalSamples(data) == 0
+            ), "error while writing physical sample"
             del f
 
             f = pyedflib.EdfReader(self.edf_data_file)
@@ -845,12 +845,12 @@ class TestEdfWriter(unittest.TestCase):
             f.setSignalHeader(0, channel_info1)
             f.setSignalHeader(1, channel_info2)
             data = np.ones(100) * 0.1
-            assert f.writePhysicalSamples(data) == 0, (
-                "error while writing physical sample"
-            )
-            assert f.writePhysicalSamples(data) == 0, (
-                "error while writing physical sample"
-            )
+            assert (
+                f.writePhysicalSamples(data) == 0
+            ), "error while writing physical sample"
+            assert (
+                f.writePhysicalSamples(data) == 0
+            ), "error while writing physical sample"
             del f
 
             f = pyedflib.EdfReader(self.edf_data_file)

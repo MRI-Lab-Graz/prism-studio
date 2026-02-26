@@ -257,7 +257,7 @@ def _build_survey_metadata(recipe: dict, lang: str = "en") -> dict:
     if recipe.get("Kind"):
         meta["kind"] = recipe["Kind"]
 
-        sidecar_meta: Optional[dict] = None,
+        sidecar_meta: Optional[dict] = (None,)
     survey_info = recipe.get("Survey") or {}
     if survey_info.get("Name"):
         meta["survey_name"] = get_i18n_text(survey_info["Name"], lang)
@@ -593,7 +593,9 @@ def _calculate_derived_variables(
                 if not any_missing:
                     try:
                         # Use SAFE_GLOBALS to prevent code injection
-                        d_result = eval(expr, SAFE_GLOBALS, {})  # nosec B307 - sandboxed with SAFE_GLOBALS
+                        d_result = eval(
+                            expr, SAFE_GLOBALS, {}
+                        )  # nosec B307 - sandboxed with SAFE_GLOBALS
                     except Exception:
                         d_result = None
 
@@ -655,7 +657,9 @@ def _calculate_scores(
                     expr = expr.replace(f"{{{item_id}}}", val_str)
                 try:
                     # Use SAFE_GLOBALS to prevent code injection
-                    result = eval(expr, SAFE_GLOBALS, {})  # nosec B307 - sandboxed with SAFE_GLOBALS
+                    result = eval(
+                        expr, SAFE_GLOBALS, {}
+                    )  # nosec B307 - sandboxed with SAFE_GLOBALS
                 except Exception:
                     result = None
         elif method == "map":

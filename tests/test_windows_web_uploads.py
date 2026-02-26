@@ -61,9 +61,9 @@ class TestWindowsWebUpload:
                     print(f"    OK {path} -> {normalized}")
             except Exception as e:
                 print(f"    FAIL Failed to normalize: {path}: {e}")
-                return False
+                raise AssertionError(f"Failed to normalize path {path}: {e}") from e
 
-        return True
+        return
 
     def test_upload_with_drive_letter(self):
         """Test handling when Windows drive letters appear in upload paths"""
@@ -87,7 +87,7 @@ class TestWindowsWebUpload:
             except Exception as e:
                 print(f"    WARN {path}: {e}")
 
-        return True
+        return
 
     def test_metadata_path_json_format(self):
         """Test the metadata_paths_json format used for large uploads"""
@@ -120,11 +120,11 @@ class TestWindowsWebUpload:
             )
             print(f"    OK Filtered to {len(filtered)} valid files")
 
-            return True
+            return
 
         except Exception as e:
             print(f"    FAIL Failed: {e}")
-            return False
+            raise AssertionError(f"Metadata path JSON handling failed: {e}") from e
 
     def test_batch_file_upload_simulation(self):
         """Simulate batch upload of 5000+ files"""
@@ -175,11 +175,11 @@ class TestWindowsWebUpload:
             normalized = [normalize_path(p) for p in parsed[:10]]  # Test first 10
             print("    OK Path normalization successful")
 
-            return True
+            return
 
         except Exception as e:
             print(f"    FAIL Failed: {e}")
-            return False
+            raise AssertionError(f"Batch upload simulation failed: {e}") from e
 
     def test_datalab_style_upload(self):
         """Test DataLad-style upload (metadata only, skip large files)"""
@@ -229,9 +229,9 @@ class TestWindowsWebUpload:
             # Verify system files were skipped
             if "Thumbs.db" in [os.path.basename(f) for f in upload_files]:
                 print("    FAIL System file not filtered")
-                return False
+                assert False, "System file not filtered"
 
-            return True
+            return
 
 
 class TestWindowsSessionManagement:
@@ -260,14 +260,14 @@ class TestWindowsSessionManagement:
 
                 # Verify structure
                 if os.path.exists(session_dir):
-                    return True
+                    return
                 else:
                     print("    FAIL Directory not created")
-                    return False
+                    assert False, "Session directory not created"
 
             except Exception as e:
                 print(f"    FAIL Failed: {e}")
-                return False
+                raise AssertionError(f"Temp directory creation failed: {e}") from e
 
     def test_session_cleanup(self):
         """Test session directory cleanup"""
@@ -299,14 +299,14 @@ class TestWindowsSessionManagement:
                 remaining = [s for s in sessions if os.path.exists(s)]
                 if remaining:
                     print(f"    FAIL {len(remaining)} sessions not cleaned")
-                    return False
+                    assert False, f"{len(remaining)} sessions not cleaned"
 
                 print("    OK All sessions cleaned up")
-                return True
+                return
 
             except Exception as e:
                 print(f"    FAIL Cleanup failed: {e}")
-                return False
+                raise AssertionError(f"Session cleanup failed: {e}") from e
 
     def test_concurrent_session_isolation(self):
         """Test that concurrent sessions don't interfere"""
@@ -336,14 +336,14 @@ class TestWindowsSessionManagement:
 
                     if data["session"] != session_id:
                         print(f"    FAIL Session data mixed: {session_id}")
-                        return False
+                        assert False, f"Session data mixed: {session_id}"
 
                 print(f"    OK {len(sessions)} sessions properly isolated")
-                return True
+                return
 
             except Exception as e:
                 print(f"    FAIL Failed: {e}")
-                return False
+                raise AssertionError(f"Concurrent session isolation failed: {e}") from e
 
 
 class TestWindowsFileSecurity:
@@ -384,7 +384,7 @@ class TestWindowsFileSecurity:
                     # Exception is acceptable for malicious paths
                     print(f"    OK Blocked: {path}")
 
-        return True
+        return
 
     def test_filename_injection_prevention(self):
         """Test prevention of filename injection attacks"""
@@ -410,7 +410,7 @@ class TestWindowsFileSecurity:
                 else:
                     print(f"    OK Clean: {repr(name)}")
 
-        return True
+        return
 
     def test_hidden_file_handling(self):
         """Test handling of hidden files on Windows"""
@@ -437,7 +437,7 @@ class TestWindowsFileSecurity:
                 else:
                     print(f"    OK {filename}: {'system' if is_sys else 'normal'}")
 
-        return True
+        return
 
 
 def run_all_tests():
@@ -471,7 +471,8 @@ def run_all_tests():
             method = getattr(instance, method_name)
 
             try:
-                if method():
+                result = method()
+                if result is not False:
                     total_passed += 1
                 else:
                     print(f"    FAIL {method_name} failed")

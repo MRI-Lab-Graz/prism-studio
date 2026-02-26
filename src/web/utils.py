@@ -74,11 +74,20 @@ try:
         get_filename_from_path as _import_get_filename_from_path,
     )
 except ImportError:
-    _import_strip_temp_path = None
-    _import_strip_temp_path_from_message = None
-    _import_extract_path_from_message = None
-    _import_shorten_path = None
-    _import_get_filename_from_path = None
+    try:
+        from app.src.web.path_utils import (
+            strip_temp_path as _import_strip_temp_path,
+            strip_temp_path_from_message as _import_strip_temp_path_from_message,
+            extract_path_from_message as _import_extract_path_from_message,
+            shorten_path as _import_shorten_path,
+            get_filename_from_path as _import_get_filename_from_path,
+        )
+    except ImportError:
+        _import_strip_temp_path = None
+        _import_strip_temp_path_from_message = None
+        _import_extract_path_from_message = None
+        _import_shorten_path = None
+        _import_get_filename_from_path = None
 
 try:
     from src.web.reporting_utils import (
@@ -86,15 +95,26 @@ try:
         sanitize_jsonable as _import_sanitize_jsonable,
     )
 except ImportError:
-    _import_format_validation_results = None
-    _import_sanitize_jsonable = None
+    try:
+        from app.src.web.reporting_utils import (
+            format_validation_results as _import_format_validation_results,
+            sanitize_jsonable as _import_sanitize_jsonable,
+        )
+    except ImportError:
+        _import_format_validation_results = None
+        _import_sanitize_jsonable = None
 
 try:
     from src.web.survey_utils import (
         list_survey_template_languages as _import_list_survey_template_languages,
     )
 except ImportError:
-    _import_list_survey_template_languages = None
+    try:
+        from app.src.web.survey_utils import (
+            list_survey_template_languages as _import_list_survey_template_languages,
+        )
+    except ImportError:
+        _import_list_survey_template_languages = None
 
 
 def strip_temp_path(path: str) -> str:
@@ -115,17 +135,24 @@ def extract_path_from_message(message: str) -> str:
     return ""
 
 
-def shorten_path(path: str, max_len: int = 80) -> str:
+def shorten_path(path: str, max_parts: int = 3) -> str:
     if _import_shorten_path is not None:
-        return _import_shorten_path(path, max_len=max_len)
-    if len(path) <= max_len:
-        return path
-    return "..." + path[-(max_len - 3) :]
+        return _import_shorten_path(path, max_parts=max_parts)
+    if not path:
+        return "General"
+    import os
+
+    parts = path.replace("\\", os.sep).split(os.sep)
+    if len(parts) <= max_parts:
+        return os.sep.join(parts)
+    return "..." + os.sep + os.sep.join(parts[-max_parts:])
 
 
 def get_filename_from_path(path: str) -> str:
     if _import_get_filename_from_path is not None:
         return _import_get_filename_from_path(path)
+    if not path:
+        return "General"
     try:
         import os
 

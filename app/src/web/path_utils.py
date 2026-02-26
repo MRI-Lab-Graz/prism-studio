@@ -62,7 +62,7 @@ def strip_temp_path(
     # Windows: C:\Users\...\AppData\Local\Temp\, C:\Temp\, etc.
     # Note: These temp directories are used for validation only (read-only operations)
     temp_patterns = [
-        "/tmp/",
+        "/tmp/",  # nosec B108 - path pattern matching only
         "/T/prism_validator_",
         "/var/folders/",
         "prism_validator_",
@@ -137,7 +137,7 @@ def strip_temp_path_from_message(msg: str, dataset_path: Optional[str] = None) -
         p in msg
         for p in [
             "/var/folders/",
-            "/tmp/prism_",
+            "/tmp/prism_",  # nosec B108 - path pattern matching only
             "/prism_validator_",
             "\\AppData\\",
             "\\Temp\\",
@@ -172,7 +172,7 @@ def strip_temp_path_from_message(msg: str, dataset_path: Optional[str] = None) -
     # Note: These are pattern matches only for display purposes, no file operations
     temp_patterns = [
         r"/var/folders/[^/\s,:]+/[^/\s,:]+/T/prism_validator_[^/\s,:]+/",
-        r"/tmp/prism_validator_[^/\s,:]+/",
+        r"/tmp/prism_validator_[^/\s,:]+/",  # nosec B108 - regex redaction only
         r"prism_validator_[^/\s,:]+/",
         r"renamed_files[^/\s,:]*/",
         r"[A-Z]:\\\\Users\\\\[^\\\\\s,:]+\\\\AppData\\\\Local\\\\Temp\\\\[^\\\\\s,:]+\\\\",  # Windows temp

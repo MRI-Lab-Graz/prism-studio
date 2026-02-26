@@ -99,7 +99,7 @@ class TestWindowsDatasetStructure:
             else:
                 print("    WARN Not on Windows, case-sensitive behavior")
 
-            return True
+            return
 
     def test_mixed_case_subject_folders(self):
         """Test handling of subject folders with mixed case"""
@@ -135,7 +135,7 @@ class TestWindowsDatasetStructure:
             ):
                 print("    OK Case-sensitive folder creation (expected on Unix)")
 
-            return True
+            return
 
     def test_windows_path_validation(self):
         """Test validation with Windows-style paths"""
@@ -171,7 +171,7 @@ class TestWindowsDatasetStructure:
             else:
                 print("    OK All paths normalized to forward slashes")
 
-            return True
+            return
 
     def test_system_file_filtering_in_dataset(self):
         """Test that system files are filtered during validation"""
@@ -214,11 +214,11 @@ class TestWindowsDatasetStructure:
             for sys_file in expected_system:
                 if sys_file in filtered:
                     print(f"    FAIL System file not filtered: {sys_file}")
-                    return False
+                    assert False, f"System file not filtered: {sys_file}"
                 else:
                     print(f"    OK Filtered: {sys_file}")
 
-            return True
+            return
 
 
 class TestWindowsFileHandling:
@@ -244,7 +244,7 @@ class TestWindowsFileHandling:
                     print("    OK Can read file while open for reading")
                 except Exception as e:
                     print(f"    WARN Read failed: {e}")
-                    return False
+                    raise AssertionError(f"Read failed: {e}") from e
 
             # Try exclusive write
             try:
@@ -252,9 +252,9 @@ class TestWindowsFileHandling:
                 print("    OK Can write after file closed")
             except Exception as e:
                 print(f"    FAIL Write failed: {e}")
-                return False
+                raise AssertionError(f"Write failed: {e}") from e
 
-            return True
+            return
 
     def test_long_filename_paths(self):
         """Test handling of paths exceeding 260 character limit"""
@@ -289,14 +289,14 @@ class TestWindowsFileHandling:
                     print("    OK Can read long path")
                 else:
                     print("    FAIL File not created")
-                    return False
+                    assert False, "Long path file not created"
 
             except Exception as e:
                 print(f"    WARN Long path error: {e}")
                 if sys.platform.startswith("win"):
                     print("    INFO May need long path support enabled in Windows")
 
-            return True
+            return
 
     def test_special_characters_in_content(self):
         """Test files with special characters in content"""
@@ -328,9 +328,9 @@ class TestWindowsFileHandling:
 
                 except Exception as e:
                     print(f"    FAIL {filename}: {e}")
-                    return False
+                    raise AssertionError(f"{filename} failed: {e}") from e
 
-            return True
+            return
 
     def test_readonly_file_handling(self):
         """Test handling of read-only files"""
@@ -354,7 +354,7 @@ class TestWindowsFileHandling:
                     print("    OK Can read read-only file")
                 except Exception as e:
                     print(f"    FAIL Cannot read read-only: {e}")
-                    return False
+                    raise AssertionError(f"Cannot read read-only file: {e}") from e
 
                 # Try to write (should fail gracefully)
                 try:
@@ -368,7 +368,7 @@ class TestWindowsFileHandling:
             else:
                 print("    WARN Not on Windows, skipping")
 
-            return True
+            return
 
 
 class TestWindowsBIDSCompatibility:
@@ -413,7 +413,7 @@ Desktop.ini
             print("    OK Created test structure with .bidsignore")
             print(f"    OK {len(test_files)} test files")
 
-            return True
+            return
 
     def test_cross_platform_dataset_sharing(self):
         """Test dataset that might be shared between Windows and Unix"""
@@ -438,10 +438,10 @@ Desktop.ini
 
             if len(filtered) == 0:
                 print("    OK All cross-platform system files filtered")
-                return True
+                return
             else:
                 print(f"    FAIL Some system files not filtered: {filtered}")
-                return False
+                assert False, f"Some system files not filtered: {filtered}"
 
 
 def run_all_tests():
@@ -475,7 +475,8 @@ def run_all_tests():
             method = getattr(instance, method_name)
 
             try:
-                if method():
+                result = method()
+                if result is not False:
                     total_passed += 1
                 else:
                     print(f"    FAIL {method_name} failed")

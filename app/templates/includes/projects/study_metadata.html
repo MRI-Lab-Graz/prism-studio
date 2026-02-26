@@ -1,0 +1,557 @@
+    <!-- Study Metadata Card -->
+    <div class="card shadow-sm mt-4" id="studyMetadataCard" style="display: none;">
+        <div class="card-header bg-info bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#studyMetadataSection"
+             role="button" aria-expanded="false" aria-controls="studyMetadataSection">
+            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-flask text-info me-2"></i>Study Metadata</span>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="progress" style="width: 120px; height: 8px;" id="smHeaderProgress">
+                        <div class="progress-bar" role="progressbar" id="smHeaderProgressBar" style="width: 0%"></div>
+                    </div>
+                    <span class="badge bg-secondary" id="smHeaderBadge">0%</span>
+                    <i class="fas fa-chevron-down text-muted" id="studyMetadataChevron"></i>
+                </div>
+            </h5>
+        </div>
+        <div class="collapse" id="studyMetadataSection">
+        <div class="card-body">
+            <!-- Completeness Panel -->
+            <div class="mb-3 p-3 bg-light rounded" id="smCompletenessPanel">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <strong class="small text-uppercase text-muted">Methods Readiness</strong>
+                    <div class="progress flex-grow-1" style="height: 12px;">
+                        <div class="progress-bar" role="progressbar" id="smMainProgressBar" style="width: 0%"></div>
+                    </div>
+                    <span class="fw-bold" id="smMainScore">0%</span>
+                </div>
+                <div id="smSectionDots"></div>
+            </div>
+
+            <div class="alert alert-info border-0 bg-info bg-opacity-10 py-2 mb-3">
+                <i class="fas fa-info-circle me-2"></i>
+                This edits study methodology in <code>project.json</code> and dataset description in <code>dataset_description.json</code> at project root. 
+                Saving this form auto-generates an ANC-compliant README from this metadata.
+            </div>
+
+            <form id="studyMetadataForm" novalidate>
+                <!-- Basics (BIDS) Section -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smBasics">
+                        <i class="fas fa-tags me-1"></i> Basics (BIDS)
+                        <span class="float-end" id="smBasicsBadge"></span>
+                    </button>
+                    <div class="collapse show" id="smBasics">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <!-- Metadata Validation Feedback -->
+                            <div id="metadataValidationFeedback" class="mb-3" style="display: none;"></div>
+                            <div class="alert alert-info border-0 bg-info bg-opacity-10">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>BIDS Compliance:</strong> This edits <code>dataset_description.json</code> (BIDS standard).
+                                Syncs to <code>CITATION.cff</code>. Legend:
+                                <span class="badge bg-danger">REQUIRED</span>
+                                <span class="badge bg-warning text-dark">RECOMMENDED</span>
+                                <span class="badge bg-secondary">OPTIONAL</span>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-danger">REQUIRED</span> Dataset Name
+                                    </label>
+                                    <input type="text" class="form-control form-control-sm" id="metadataName" required>
+                                    <small class="text-muted">BIDS: Name field. Also used in CITATION.cff.</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-danger">REQUIRED</span> Authors
+                                    </label>
+                                    <div id="metadataAuthorsList" class="d-flex flex-column gap-2"></div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addAuthorRow">
+                                        <i class="fas fa-user-plus me-1"></i>Add Author
+                                    </button>
+                                    <small class="text-muted d-block">At least one author is required.</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-warning text-dark">RECOMMENDED</span> License
+                                    </label>
+                                    <select class="form-select form-select-sm" id="metadataLicense">
+                                        <option value="">Select a license...</option>
+                                        <option value="CC0">CC0 (Public Domain)</option>
+                                        <option value="CC BY 4.0">CC BY 4.0</option>
+                                        <option value="CC BY-SA 4.0">CC BY-SA 4.0</option>
+                                        <option value="CC BY-NC 4.0">CC BY-NC 4.0</option>
+                                        <option value="CC BY-NC-SA 4.0">CC BY-NC-SA 4.0</option>
+                                        <option value="ODbL 1.0">Open Database License (ODbL)</option>
+                                        <option value="PDDL 1.0">Public Domain Dedication and License (PDDL)</option>
+                                        <option value="Other">Other/Proprietary</option>
+                                    </select>
+                                    <small class="text-muted">If CITATION.cff exists, omitted from dataset_description.json.</small>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                        <span class="badge bg-secondary">OPTIONAL</span> Acknowledgements
+                                    </label>
+                                    <textarea class="form-control form-control-sm" id="metadataAcknowledgements" rows="2" placeholder="Funding, grants, people to thank..."></textarea>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="mt-3 pt-3 border-top">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> Dataset DOI
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm" id="metadataDOI" placeholder="Example: 10.5281/zenodo.1234567">
+                                                <small class="text-muted">Example only (placeholder). Enter your DOI only if available; syncs to CITATION.cff.</small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-warning text-dark">RECOMMENDED</span> Dataset Type
+                                                </label>
+                                                <select class="form-select form-select-sm" id="metadataType">
+                                                    <option value="raw" selected>raw</option>
+                                                    <option value="derivative">derivative</option>
+                                                    <option value="study">study</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> Ethics Approvals
+                                                </label>
+                                                <div class="mb-2">
+                                                    <input type="hidden" id="metadataEthicsApproved" value="no">
+                                                    <div class="btn-group btn-group-sm" role="group" aria-label="Ethics approvals">
+                                                        <button type="button" class="btn btn-outline-primary" id="metadataEthicsYes" onclick="setEthicsChoice('yes')">Yes</button>
+                                                        <button type="button" class="btn btn-primary" id="metadataEthicsNo" onclick="setEthicsChoice('no')">No</button>
+                                                    </div>
+                                                </div>
+                                                <div id="ethicsDetailsSection" style="display: none; margin-top: 12px;">
+                                                    <div class="row g-2">
+                                                        <div class="col-md-6">
+                                                            <input type="text" class="form-control form-control-sm" id="metadataEthicsCommittee" placeholder="Example: Ethics Committee Name" required>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <input type="text" class="form-control form-control-sm" id="metadataEthicsVotum" placeholder="Example: EK-2026-014" required>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <small class="text-muted">Example format: Committee name, Reference number. Placeholder text is not saved.</small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-warning text-dark">RECOMMENDED</span> HED Version
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm" id="metadataHED" placeholder="Example: 8.2.0">
+                                                <small class="text-muted">Example only (placeholder). Leave empty if HED is not used in your data.</small>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-danger">REQUIRED</span> Keywords (comma-separated)
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm" id="metadataKeywords" placeholder="psychology, experiment, PRISM">
+                                                <small class="text-muted">Enter at least 3 keywords for schema compliance and discoverability.</small>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> Funding
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm" id="metadataFunding" placeholder="National Science Foundation (NSF) Grant #1234567, Other funding sources">
+                                                <small class="text-muted">Grant agency and numbers separated by commas.</small>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> How to Acknowledge
+                                                </label>
+                                                <textarea class="form-control form-control-sm" id="metadataHowToAcknowledge" rows="2" placeholder="Please cite the following paper..."></textarea>
+                                                <small class="text-muted">Stored in CITATION.cff. Omitted from dataset_description.json if CITATION.cff exists (per BIDS spec).</small>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">
+                                                    <span class="badge bg-secondary">OPTIONAL</span> References &amp; Links
+                                                </label>
+                                                <textarea class="form-control form-control-sm" id="metadataReferences" rows="2" placeholder="https://doi.org/..., https://example.com/..." ></textarea>
+                                                <small class="text-muted">URLs or citations separated by commas. Stored in CITATION.cff. Omitted from dataset_description.json if CITATION.cff exists (per BIDS spec).</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overview Section -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smOverview">
+                        <i class="fas fa-file-alt me-1"></i> Overview
+                        <span class="float-end" id="smOverviewBadge"></span>
+                    </button>
+                    <div class="collapse show" id="smOverview">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Dataset Overview
+                                    </label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewMain" rows="4"
+                                              placeholder="A brief paragraph describing the goals, purpose, and unique value of this dataset..."></textarea>
+                                    <small class="text-muted">Include: Why was this dataset created? What makes it unique and valuable?</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Independent Variables</label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewIV" rows="3"
+                                              placeholder="One per line (e.g., pleasant vs. unpleasant images)"></textarea>
+                                    <small class="text-muted">Condition variables that were manipulated</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Dependent Variables</label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewDV" rows="3"
+                                              placeholder="One per line (e.g., reaction times, BOLD signal)"></textarea>
+                                    <small class="text-muted">Response variables that were measured</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Control Variables</label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewCV" rows="3"
+                                              placeholder="One per line (e.g., age, sex, reading performance)"></textarea>
+                                    <small class="text-muted">Aspects that were explicitly controlled</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Quality Assessment</label>
+                                    <textarea class="form-control form-control-sm" id="smOverviewQA" rows="3"
+                                              placeholder="Link to quality report or brief quality notes"></textarea>
+                                    <small class="text-muted">Reference to quality control measures</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Study Design -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smStudyDesign">
+                        <i class="fas fa-drafting-compass me-1"></i> Study Design
+                        <span class="float-end" id="smStudyDesignBadge"></span>
+                    </button>
+                    <div class="collapse show" id="smStudyDesign">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Study Design Type
+                                    </label>
+                                    <select class="form-select form-select-sm" id="smSDType" onchange="toggleExperimentalFields()">
+                                        <option value="">-- Select --</option>
+                                        <option value="cross-sectional">Cross-sectional</option>
+                                        <option value="longitudinal">Longitudinal</option>
+                                        <option value="randomized-controlled-trial">Randomized Controlled Trial</option>
+                                        <option value="quasi-experimental">Quasi-experimental</option>
+                                        <option value="case-control">Case-control</option>
+                                        <option value="cohort">Cohort</option>
+                                        <option value="single-case">Single-case</option>
+                                        <option value="mixed-methods">Mixed methods</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small">Condition Type</label>
+                                    <select class="form-select form-select-sm" id="smSDConditionType">
+                                        <option value="">-- N/A --</option>
+                                        <option value="between-subjects">Between-subjects</option>
+                                        <option value="within-subjects">Within-subjects</option>
+                                        <option value="mixed">Mixed</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small">Type Description</label>
+                                    <input type="text" class="form-control form-control-sm" id="smSDTypeDesc"
+                                           placeholder="e.g. 2x2 factorial design">
+                                </div>
+                                <div class="col-12" id="smExperimentalFields" style="display: none;">
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small">Blinding</label>
+                                            <select class="form-select form-select-sm" id="smSDBlinding">
+                                                <option value="">-- None --</option>
+                                                <option value="none">None</option>
+                                                <option value="single-blind">Single-blind</option>
+                                                <option value="double-blind">Double-blind</option>
+                                                <option value="triple-blind">Triple-blind</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small">Randomization</label>
+                                            <input type="text" class="form-control form-control-sm" id="smSDRandomization"
+                                                   placeholder="Randomization procedure">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small">Control Condition</label>
+                                            <input type="text" class="form-control form-control-sm" id="smSDControl"
+                                                   placeholder="Control condition">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recruitment -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smRecruitment">
+                        <i class="fas fa-users me-1"></i> Recruitment
+                        <span class="float-end" id="smRecruitmentBadge"></span>
+                    </button>
+                    <div class="collapse" id="smRecruitment">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Method
+                                    </label>
+                                    <select class="form-select form-select-sm" id="smRecMethod" multiple>
+                                        <option value="">-- Select --</option>
+                                        <option value="online-ads">Online ads</option>
+                                        <option value="email-lists">University mailing lists</option>
+                                        <option value="participant-pool">Participant pool</option>
+                                        <option value="clinical-referral">Clinical referral</option>
+                                        <option value="community-outreach">Community outreach</option>
+                                        <option value="school-recruitment">School recruitment</option>
+                                        <option value="social-media">Social media</option>
+                                        <option value="flyers-posters">Flyers/posters</option>
+                                        <option value="snowball">Snowball sampling</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                    <small class="text-muted">Hold Cmd/Ctrl to select multiple.</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Location
+                                    </label>
+                                    <div id="smRecLocationList" class="d-flex flex-column gap-2"></div>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" id="smRecLocationOnlineOnly">
+                                        <label class="form-check-label small" for="smRecLocationOnlineOnly">
+                                            Online-only recruitment
+                                        </label>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addRecLocationRow">
+                                        <i class="fas fa-plus me-1"></i>Add Location
+                                    </button>
+                                    <small class="text-muted d-block">Country is required; city is optional.</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Period Start
+                                    </label>
+                                    <div class="d-flex gap-2">
+                                        <select class="form-select form-select-sm" id="smRecPeriodStartYear" required></select>
+                                        <select class="form-select form-select-sm" id="smRecPeriodStartMonth" required></select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Period End
+                                    </label>
+                                    <div class="d-flex gap-2">
+                                        <select class="form-select form-select-sm" id="smRecPeriodEndYear" required></select>
+                                        <select class="form-select form-select-sm" id="smRecPeriodEndMonth" required></select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Financial Compensation
+                                    </label>
+                                    <select class="form-select form-select-sm" id="smRecCompensation" required>
+                                        <option value="">-- Select --</option>
+                                        <option value="Financial compensation">Yes</option>
+                                        <option value="No financial compensation">No</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Eligibility -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smEligibility">
+                        <i class="fas fa-user-check me-1"></i> Eligibility
+                        <span class="float-end" id="smEligibilityBadge"></span>
+                    </button>
+                    <div class="collapse" id="smEligibility">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Inclusion Criteria
+                                    </label>
+                                    <textarea class="form-control form-control-sm" id="smEligInclusion" rows="3"
+                                              placeholder="One criterion per line"></textarea>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Exclusion Criteria
+                                    </label>
+                                    <textarea class="form-control form-control-sm" id="smEligExclusion" rows="3"
+                                              placeholder="One criterion per line"></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold small">Target Sample Size</label>
+                                    <input type="number" class="form-control form-control-sm" id="smEligSampleSize"
+                                           min="1" placeholder="N">
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label fw-bold small">Power Analysis</label>
+                                    <input type="text" class="form-control form-control-sm" id="smEligPower"
+                                           placeholder="e.g. G*Power, medium effect size d=0.5, alpha=.05, power=.80">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Procedure -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smProcedure">
+                        <i class="fas fa-list-ol me-1"></i> Procedure
+                        <span class="float-end" id="smProcedureBadge"></span>
+                    </button>
+                    <div class="collapse" id="smProcedure">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">
+                                        <span class="badge bg-danger">REQUIRED</span> Overview
+                                    </label>
+                                    <textarea class="form-control form-control-sm" id="smProcOverview" rows="3"
+                                              placeholder="Narrative overview of the study procedure..."></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#smProcMore">
+                                        <i class="fas fa-chevron-down me-1"></i>More Fields
+                                    </button>
+                                    <div class="collapse mt-2" id="smProcMore">
+                                        <div class="row g-3">
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small">Informed Consent</label>
+                                                <textarea class="form-control form-control-sm" id="smProcConsent" rows="2"
+                                                          placeholder="How was informed consent obtained?"></textarea>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <label class="form-label fw-bold small">Quality Control</label>
+                                                <textarea class="form-control form-control-sm" id="smProcQC" rows="2"
+                                                          placeholder="One measure per line (e.g. Attention checks)"></textarea>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small">Missing Data Handling</label>
+                                                <input type="text" class="form-control form-control-sm" id="smProcMissing"
+                                                       placeholder="How was missing data handled?">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold small">Debriefing</label>
+                                                <textarea class="form-control form-control-sm" id="smProcDebriefing" rows="2"
+                                                          placeholder="Debriefing procedure"></textarea>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label fw-bold small">Additional Data Acquired</label>
+                                                <textarea class="form-control form-control-sm" id="smProcAdditionalData" rows="2"
+                                                          placeholder="Other data collected (questionnaires, swabs, clinical info, etc.)"></textarea>
+                                                <small class="text-muted">Especially relevant if not included in dataset</small>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label fw-bold small">Notes</label>
+                                                <textarea class="form-control form-control-sm" id="smProcNotes" rows="2"
+                                                          placeholder="Additional information about the procedure..."></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Missing Data & Issues -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smMissingData">
+                        <i class="fas fa-exclamation-triangle me-1"></i> Missing Data & Known Issues
+                        <span class="float-end" id="smMissingDataBadge"></span>
+                    </button>
+                    <div class="collapse" id="smMissingData">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="alert alert-info py-2 mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Fill this section after data acquisition. Leave empty when starting a study.
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">Missing Data Description</label>
+                                    <textarea class="form-control form-control-sm" id="smMissingDesc" rows="3"
+                                              placeholder="General description of missing or problematic data..."></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">Missing Files (Table)</label>
+                                    <textarea class="form-control form-control-sm" id="smMissingFiles" rows="3"
+                                              placeholder="Format: sub-001 | T1w, task-rest&#10;sub-002 | ses-2 functional scans"></textarea>
+                                    <small class="text-muted">One entry per line: SubjectID | What's missing</small>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">Known Issues (Table)</label>
+                                    <textarea class="form-control form-control-sm" id="smKnownIssues" rows="3"
+                                              placeholder="Format: sub-001_task-nback_bold.nii | Shorter scan&#10;sub-002_T1w.nii | Resolution differs"></textarea>
+                                    <small class="text-muted">One entry per line: Filename | Issue description</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- References -->
+                <div class="mb-3">
+                    <button class="btn btn-sm btn-outline-secondary w-100 text-start" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#smReferences">
+                        <i class="fas fa-book me-1"></i> References
+                        <span class="float-end" id="smReferencesBadge"></span>
+                    </button>
+                    <div class="collapse" id="smReferences">
+                        <div class="card card-body border-0 bg-light mt-1">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">References</label>
+                                    <textarea class="form-control form-control-sm" id="smReferences" rows="4"
+                                              placeholder="One reference per line or formatted citations..."></textarea>
+                                    <small class="text-muted">References used within the README</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-save me-1"></i>Save Study Metadata
+                    </button>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-info-circle me-1"></i>Saving will auto-generate README.md
+                    </small>
+                </div>
+            </form>
+        </div>
+        </div>
+        
+        <!-- Create Project Button (shown at bottom when creating new project) -->
+        <div class="text-center mt-4" id="createProjectButtonContainer" style="display: none;">
+            <button type="button" class="btn btn-success btn-lg" id="createProjectSubmitBtn">
+                <i class="fas fa-folder-plus me-2"></i>Create Project
+            </button>
+        </div>
+    </div>

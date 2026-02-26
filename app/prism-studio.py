@@ -11,12 +11,12 @@ This module has been refactored to use modular components from src/web/:
 
 import os
 import sys
-import signal
 import time
 import webbrowser
 import threading
 import socket
 import uuid
+import atexit
 from pathlib import Path
 from typing import Any, Dict
 from flask import (
@@ -144,6 +144,29 @@ if getattr(sys, "frozen", False):
     app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
 else:
     app = Flask(__name__)
+
+# Global shutdown flag to signal graceful termination
+_shutdown_requested = threading.Event()
+
+
+def cleanup_and_exit(exit_code=0):
+    """Cleanup resources and exit the entire process (not just Flask)."""
+    try:
+        print("🛑 Cleaning up resources...")
+        # Signal shutdown
+        _shutdown_requested.set()
+        # Give threads a moment to clean up
+        time.sleep(0.2)
+    except Exception as e:
+        print(f"[WARN]  Error during cleanup: {e}")
+    finally:
+        # Force exit the entire Python process
+        # This is necessary for the compiled exe to fully terminate
+        os._exit(exit_code)
+
+
+# Register cleanup on normal exit
+atexit.register(lambda: cleanup_and_exit(0))
 
 # Secret key for session management
 # In production, set PRISM_SECRET_KEY environment variable
@@ -414,43 +437,45 @@ def specifications():
     return render_template("specifications.html")
 
 
+@app.route("/health", methods=["GET"])
+def health_check():
+    """Health check endpoint - returns 200 if server is running."""
+    return jsonify({"status": "ok", "running": True}), 200
+
+
 @app.route("/shutdown", methods=["POST"])
 def shutdown():
-    """Shutdown the server"""
+    """Shutdown the server and exit the entire application process."""
 
-    def terminate_process():
-        time.sleep(0.35)
-        print("🛑 Shutting down server...")
+    def terminate_app():
+        """Terminate the Flask server and exit the process."""
+        # Brief delay to allow response to be sent
+        time.sleep(0.3)
 
-        for shutdown_signal in (
-            getattr(signal, "SIGINT", None),
-            getattr(signal, "SIGTERM", None),
-        ):
-            if shutdown_signal is None:
-                continue
-            try:
-                os.kill(os.getpid(), shutdown_signal)
-                return
-            except Exception:
-                continue
+        try:
+            print("🛑 Shutdown request received, terminating application...")
 
-        time.sleep(0.4)
-        os._exit(0)
+            # Try Werkzeug shutdown first (works in Flask dev server)
+            func = request.environ.get("werkzeug.server.shutdown")
+            if callable(func):
+                try:
+                    print("  → Stopping Werkzeug server...")
+                    func()
+                    time.sleep(0.2)
+                except Exception as e:
+                    print(f"  [INFO]  Werkzeug shutdown: {e}")
+        except Exception as e:
+            print(f"  [INFO]  Could not access werkzeug shutdown: {e}")
+        finally:
+            # Force exit the entire process
+            # This ensures the exe/process completely terminates, not just the server
+            cleanup_and_exit(0)
 
-    # Try Werkzeug shutdown first (works in Flask dev server)
-    func = request.environ.get("werkzeug.server.shutdown")
-    if callable(func):
+    # Start termination in a background thread so we can send the response first
+    term_thread = threading.Thread(target=terminate_app, daemon=False)
+    term_thread.start()
 
-        def werkzeug_shutdown():
-            time.sleep(0.15)
-            func()
-
-        threading.Thread(target=werkzeug_shutdown, daemon=True).start()
-    else:
-        # Fallback for Waitress/Production
-        threading.Thread(target=terminate_process, daemon=True).start()
-
-    return jsonify({"success": True, "message": "Server is shutting down..."})
+    return jsonify({"success": True, "message": "Application is shutting down..."})
 
 
 # Note: Validation, Conversion, Library, and Tools routes are now handled by blueprints.
@@ -495,7 +520,7 @@ def main():
 
     args = parser.parse_args()
 
-    host = "0.0.0.0" if args.public else args.host
+    host = "0.0.0.0" if args.public else args.host  # nosec B104
 
     # Find a free port if the default one is taken
     port = args.port
@@ -505,7 +530,8 @@ def main():
             print(f"[INFO]  Port {args.port} is in use, using {port} instead")
 
     display_host = "localhost" if host == "127.0.0.1" else host
-    url = f"http://{display_host}:{port}"
+    scheme = "http"
+    url = f"{scheme}://{display_host}:{port}"
 
     print("Starting PRISM Studio")
     print(f"URL: {url}")
@@ -527,6 +553,7 @@ def main():
         and sys.platform.startswith("win")
         and not args.no_browser
     ):
+
         def show_startup_dialog():
             """Show startup notification with proper DPI scaling using tkinter"""
             try:
@@ -536,10 +563,10 @@ def main():
                 root = tk.Tk()
                 root.withdraw()  # Hide main window
                 root.attributes("-topmost", True)  # Bring to front
-                
+
                 messagebox.showinfo(
                     "PRISM Studio",
-                    f"PRISM Studio is starting...\n\nOpening browser at:\n{url}\n\nIf browser doesn't open automatically,\nplease visit the URL manually."
+                    f"PRISM Studio is starting...\n\nOpening browser at:\n{url}\n\nIf browser doesn't open automatically,\nplease visit the URL manually.",
                 )
                 root.destroy()
             except Exception as e:
