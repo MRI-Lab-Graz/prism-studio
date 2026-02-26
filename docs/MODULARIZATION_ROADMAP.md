@@ -124,6 +124,11 @@ Migration rules:
   - `scripts/ci/test_participants_mapping.py`
 - Updated selected docs/comments to canonical script paths while retaining old-path wrappers:
   - vendor pyedflib docs now reference `scripts/ci/*` and `scripts/release/*`
+- Completed a broader canonical-path migration pass for moved scripts:
+  - BIDS docs now reference `scripts/ci/test_bids_compliance.py`
+  - CLI/environment examples now reference `scripts/data/*`
+  - moved data scripts now advertise canonical invocation paths in their usage headers
+- Audited non-doc automation hooks (workflows/config/helper surfaces) for legacy root-script paths; no remaining references found for moved scripts.
 
 ## Learned Lessions
 
@@ -144,7 +149,9 @@ Migration rules:
 - Keep platform-specific wrappers minimal and native (`.sh` exec, `.bat` call) so behavior remains predictable across OSes.
 - Workshop/platform utility scripts fit best under `scripts/setup/`; keeping root path wrappers avoids breaking onboarding documentation.
 - Canonical-path doc updates can happen incrementally right after each move as long as wrappers remain available.
+- A single regex scan over all moved root scripts is an efficient way to catch remaining stale path references after each reorg batch.
+- Separating path-audit scans into docs and non-doc automation scopes makes it easy to confirm migration completeness without unnecessary edits.
 
 ## Immediate next step
 
-- Continue scanning docs/automation for remaining old script-path references and migrate them to canonical paths.
+- Keep wrappers for one release cycle, then plan a cleanup PR that removes wrappers and updates any remaining external references in one controlled step.

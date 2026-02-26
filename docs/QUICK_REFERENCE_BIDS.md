@@ -197,7 +197,7 @@ document.getElementById('metadataNewField').value = desc.NewField || '';
 
 ### 5. **Test**
 ```bash
-python3 scripts/test_bids_compliance.py
+python3 scripts/ci/test_bids_compliance.py
 ```
 
 ---
@@ -206,7 +206,7 @@ python3 scripts/test_bids_compliance.py
 
 ### Unit Test
 ```bash
-python3 scripts/test_bids_compliance.py
+python3 scripts/ci/test_bids_compliance.py
 ```
 
 ### Manual Test
@@ -276,7 +276,7 @@ cat <project_path>/dataset_description.json | python3 -m json.tool
 cat <project_path>/CITATION.cff
 
 # Run validation tests
-python3 scripts/test_bids_compliance.py
+python3 scripts/ci/test_bids_compliance.py
 
 # Check Flask logs
 grep -i "dataset_description\|citation" prism-studio.log

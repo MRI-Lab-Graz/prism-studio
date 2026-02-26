@@ -8,7 +8,7 @@ scanner-bound. It queries Open-Meteo hourly APIs and writes one-row
 
 Usage:
   source .venv/bin/activate
-  python scripts/build_environment_from_survey.py \
+    python scripts/data/build_environment_from_survey.py \
     --timestamp 2026-02-26T14:30:00 \
     --lat 47.0707 \
     --lon 15.4395 \
