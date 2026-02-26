@@ -26,13 +26,21 @@ export {
 } from '../../shared/dom.js';
 export { getLocalStorage, setLocalStorage, removeLocalStorage } from '../../shared/storage.js';
 
-// Import and re-export converter-specific modules
-// (Will be populated as converter.js is split into modality-specific modules)
-// export * from './core.js';
-// export * from './biometrics.js';
-// export * from './eyetracking.js';
-// export * from './participants.js';
-// export * from './physio.js';
-// export * from './survey.js';
+import { initLimeSurveyQuickImport } from './survey.js';
 
-console.log('Converter module loaded');
+function initConverterModules() {
+    const isConverterPage = document.getElementById('converterTabs');
+    if (!isConverterPage) {
+        return;
+    }
+
+    initLimeSurveyQuickImport();
+
+    import('../../converter.js');
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initConverterModules);
+} else {
+    initConverterModules();
+}

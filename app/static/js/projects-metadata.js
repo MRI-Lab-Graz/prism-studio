@@ -337,7 +337,9 @@ function validateAllMandatoryFields() {
 }
 
 function updateCreateProjectButton() {
-    const createBtn = document.querySelector('#createProjectForm button[type="submit"]');
+    const createBtn = document.getElementById('createProjectSubmitBtn');
+    if (!createBtn) return;
+    
     const validation = validateAllMandatoryFields();
 
     if (validation.isValid) {
@@ -514,9 +516,9 @@ function displayMetadataIssues(issues) {
 
     feedbackDiv.style.display = 'block';
     let html = `
-        <div class="alert alert-warning py-2 mb-0">
+        <div class="alert alert-danger py-2 mb-0">
             <div class="fw-bold mb-1 small text-uppercase">
-                <i class="fas fa-exclamation-triangle me-2"></i>Dataset Description Issues (${issues.length})
+                <i class="fas fa-times-circle me-2"></i>Dataset Description Issues (${issues.length})
             </div>
             <ul class="mb-0 ps-3 small">
     `;

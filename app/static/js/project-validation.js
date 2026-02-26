@@ -5,22 +5,35 @@ function validateProjectField(fieldId) {
     
     const isValid = field.value.trim() !== '';
     
+    let isPatternValid = true;
+
     // For projectName, also validate pattern
     if (fieldId === 'projectName' && isValid) {
-        const isValidPattern = /^[a-zA-Z0-9_-]+$/.test(field.value.trim());
-        if (!isValidPattern) {
+        isPatternValid = /^[a-zA-Z0-9_-]+$/.test(field.value.trim());
+        if (!isPatternValid) {
             field.classList.remove('required-field-filled');
             field.classList.add('required-field-empty');
-            return;
         }
     }
     
-    if (isValid) {
+    if (isValid && isPatternValid) {
         field.classList.remove('required-field-empty');
         field.classList.add('required-field-filled');
     } else {
         field.classList.remove('required-field-filled');
         field.classList.add('required-field-empty');
+    }
+
+    const label = document.querySelector(`label[for="${fieldId}"]`);
+    const badge = label ? label.querySelector('.badge') : null;
+    if (badge) {
+        if (isValid && isPatternValid) {
+            badge.classList.remove('bg-danger');
+            badge.classList.add('bg-success');
+        } else {
+            badge.classList.remove('bg-success');
+            badge.classList.add('bg-danger');
+        }
     }
 }
 

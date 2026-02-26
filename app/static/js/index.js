@@ -1,5 +1,3 @@
-<script src="{{ url_for('static', filename='js/jszip.min.js') }}"></script>
-<script>
 // File upload handling
 document.addEventListener('DOMContentLoaded', function() {
     // Validation Mode Toggles
@@ -287,4 +285,3 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Browser does not support folder upload. webkitdirectory not available.');
     }
 });
-</script>
