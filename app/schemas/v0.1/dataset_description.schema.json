@@ -9,7 +9,8 @@
     "Name",
     "BIDSVersion",
     "DatasetType",
-    "Authors"
+    "Authors",
+    "Keywords"
   ],
   "properties": {
     "Name": {

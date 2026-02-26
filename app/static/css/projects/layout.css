@@ -1,0 +1,32 @@
+.form-section {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+.form-section.active {
+    display: block;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+.stat-item {
+    text-align: center;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+.stat-item .stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #0d6efd;
+}
+.stat-item .stat-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+}

@@ -121,7 +121,15 @@ def run_bids_validator(
 
         # Run Deno validator
         process = subprocess.run(
-            ["deno", "run", "-ERWN", DENO_BIDS_VALIDATOR_SPEC, root_dir, "--json"],
+            [
+                "deno",
+                "run",
+                "-ERWN",
+                "--allow-sys",
+                DENO_BIDS_VALIDATOR_SPEC,
+                root_dir,
+                "--json",
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
