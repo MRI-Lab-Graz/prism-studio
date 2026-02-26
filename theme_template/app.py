@@ -41,7 +41,8 @@ if __name__ == "__main__":
     # Configuration
     port = 5001  # Or use find_free_port()
     host = "127.0.0.1"
-    url = f"http://{host}:{port}"
+    scheme = "http"
+    url = f"{scheme}://{host}:{port}"
 
     print(f" * Starting server at {url}")
 
