@@ -28,35 +28,66 @@ def _default_library_root_for_templates(*, modality: str) -> Path:
     return (Path(current_app.root_path) / "survey_library").resolve()
 
 
+def _safe_expand_path(path_str: str) -> Path:
+    """Safely expand path, handling network drives."""
+    try:
+        candidate = Path(path_str)
+        # Try expanduser first for ~ paths
+        if "~" in path_str:
+            candidate = candidate.expanduser()
+        # For other cases, just return the path
+        return candidate
+    except (OSError, ValueError):
+        # If expanduser fails (e.g., network path), just return the path as-is
+        return Path(path_str)
+
+
 def _global_survey_library_root() -> Path | None:
     """Get the global survey library path from configuration."""
     base_dir = Path(current_app.root_path)
 
     official_candidates = [
-        (base_dir / "official" / "library").resolve(),
-        (base_dir.parent / "official" / "library").resolve(),
+        base_dir / "official" / "library",
+        base_dir.parent / "official" / "library",
     ]
     for candidate in official_candidates:
-        if candidate.exists() and candidate.is_dir():
-            return candidate
+        try:
+            candidate = candidate.resolve()
+            if candidate.exists() and candidate.is_dir():
+                return candidate
+        except (OSError, ValueError):
+            # Handle paths that can't be resolved (e.g., network paths)
+            if candidate.exists() and candidate.is_dir():
+                return candidate
 
     from src.config import get_effective_library_paths
 
     lib_paths = get_effective_library_paths(app_root=str(base_dir))
 
     if lib_paths["global_library_path"]:
-        candidate = Path(lib_paths["global_library_path"]).expanduser()
+        candidate = _safe_expand_path(lib_paths["global_library_path"])
         # Resolve relative paths against app root
         if not candidate.is_absolute():
-            candidate = (base_dir / candidate).resolve()
+            try:
+                candidate = (base_dir / candidate).resolve()
+            except (OSError, ValueError):
+                candidate = base_dir / candidate
         if candidate.exists() and candidate.is_dir():
             return candidate
 
-    preferred = (base_dir / "library" / "survey_i18n").resolve()
+    preferred = base_dir / "library" / "survey_i18n"
+    try:
+        preferred = preferred.resolve()
+    except (OSError, ValueError):
+        pass
     if preferred.exists() and any(preferred.glob("survey-*.json")):
         return preferred
 
-    fallback = (base_dir / "survey_library").resolve()
+    fallback = base_dir / "survey_library"
+    try:
+        fallback = fallback.resolve()
+    except (OSError, ValueError):
+        pass
     return fallback if fallback.exists() else None
 
 
@@ -68,10 +99,13 @@ def _global_recipes_root() -> Path | None:
     lib_paths = get_effective_library_paths(app_root=str(base_dir))
 
     if lib_paths["global_recipe_path"]:
-        candidate = Path(lib_paths["global_recipe_path"]).expanduser()
+        candidate = _safe_expand_path(lib_paths["global_recipe_path"])
         # Resolve relative paths against app root
         if not candidate.is_absolute():
-            candidate = (base_dir / candidate).resolve()
+            try:
+                candidate = (base_dir / candidate).resolve()
+            except (OSError, ValueError):
+                candidate = base_dir / candidate
         if candidate.exists() and candidate.is_dir():
             return candidate
     return None
@@ -79,13 +113,20 @@ def _global_recipes_root() -> Path | None:
 
 def _resolve_library_root(library_path: str | None) -> Path:
     if library_path:
-        p = Path(library_path).expanduser().resolve()
+        p = _safe_expand_path(library_path)
+        try:
+            p = p.resolve()
+        except (OSError, ValueError):
+            pass  # Use unresolved path for network drives
         if p.exists() and p.is_dir():
             return p
         raise FileNotFoundError(f"Invalid library folder: {library_path}")
     default_root = _default_library_root_for_templates(modality="survey")
     if default_root:
-        return default_root.resolve()
+        try:
+            return default_root.resolve()
+        except (OSError, ValueError):
+            return default_root
     raise FileNotFoundError("No default library root found")
 
 

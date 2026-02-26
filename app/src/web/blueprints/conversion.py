@@ -911,29 +911,61 @@ def api_survey_languages():
     """List available languages for the selected survey template library folder."""
     library_path = (request.args.get("library_path") or "").strip()
     base_dir = Path(current_app.root_path)
+    
     if not library_path:
         project_path = (session.get("current_project_path") or "").strip()
         if project_path:
             # Check for standard PRISM library location (code/library)
-            candidate = (Path(project_path) / "code" / "library").expanduser()
+            candidate = Path(project_path) / "code" / "library"
+            try:
+                candidate = candidate.expanduser().resolve()
+            except (OSError, ValueError):
+                # Handle network paths that expanduser might not support
+                candidate = Path(project_path).resolve() / "code" / "library"
+            
             if candidate.exists() and candidate.is_dir():
                 library_path = str(candidate)
             else:
                 # Check legacy location
-                candidate = (Path(project_path) / "library").expanduser()
+                candidate = Path(project_path) / "library"
+                try:
+                    candidate = candidate.expanduser().resolve()
+                except (OSError, ValueError):
+                    candidate = Path(project_path).resolve() / "library"
+                
                 if candidate.exists() and candidate.is_dir():
                     library_path = str(candidate)
 
     if not library_path:
-        preferred = (base_dir / "library" / "survey_i18n").resolve()
-        fallback = (base_dir / "survey_library").resolve()
-        if preferred.exists() and any(preferred.glob("survey-*.json")):
-            library_path = str(preferred)
-        else:
-            library_path = str(fallback)
+        # Check multiple library locations in order of preference
+        candidates = [
+            base_dir / "library" / "survey_i18n",
+            base_dir / "official" / "library",
+            base_dir.parent / "official" / "library",
+            base_dir / "survey_library",
+        ]
+        
+        for candidate_path in candidates:
+            try:
+                candidate_path = candidate_path.resolve()
+                if candidate_path.exists() and (any(candidate_path.glob("survey-*.json")) or any(candidate_path.glob("*/survey-*.json"))):
+                    library_path = str(candidate_path)
+                    break
+            except (OSError, ValueError):
+                # Skip paths that can't be resolved (e.g., network paths with issues)
+                continue
+        
+        # Final fallback if none found above
+        if not library_path:
+            library_path = str((base_dir / "survey_library").resolve())
 
     # Check structure of library root
-    library_root = Path(library_path)
+    try:
+        library_root = Path(library_path).resolve()
+    except (OSError, ValueError):
+        # Fallback for network paths that can't be resolved normally
+        library_root = Path(library_path)
+    
     structure_info = {
         "has_survey_folder": False,
         "has_biometrics_folder": False,
@@ -942,15 +974,32 @@ def api_survey_languages():
     }
 
     # Check for expected items - handle official/library/survey structure
-    if (library_root / "library" / "survey").is_dir():
-        survey_dir = library_root / "library" / "survey"
-    else:
-        survey_dir = library_root / "survey"
+    # Try multiple possible structures
+    survey_dir = None
+    for survey_candidate in [
+        library_root / "library" / "survey",
+        library_root / "survey",
+        library_root,  # In case it IS the survey directory
+    ]:
+        if survey_candidate.exists() and survey_candidate.is_dir():
+            if any(survey_candidate.glob("survey-*.json")):
+                survey_dir = survey_candidate
+                break
+    
+    if not survey_dir:
+        survey_dir = library_root / "survey"  # Default for error reporting
 
-    if (library_root / "library" / "biometrics").is_dir():
-        biometrics_dir = library_root / "library" / "biometrics"
-    else:
-        biometrics_dir = library_root / "biometrics"
+    biometrics_dir = None
+    for biometrics_candidate in [
+        library_root / "library" / "biometrics",
+        library_root / "biometrics",
+    ]:
+        if biometrics_candidate.exists() and biometrics_candidate.is_dir():
+            biometrics_dir = biometrics_candidate
+            break
+    
+    if not biometrics_dir:
+        biometrics_dir = library_root / "biometrics"  # Default for error reporting
 
     participant_candidates = _participant_json_candidates(library_root)
 
@@ -974,6 +1023,18 @@ def api_survey_languages():
         effective_survey_dir = str(survey_dir)
     else:
         effective_survey_dir = library_path
+
+    # DEBUG: Log the library resolution
+    print(f"[PRISM DEBUG] /api/survey-languages resolved library:")
+    print(f"  - library_path: {library_path}")
+    print(f"  - survey_dir: {survey_dir}")
+    print(f"  - effective_survey_dir: {effective_survey_dir}")
+    if survey_dir.is_dir():
+        try:
+            surveys = list(survey_dir.glob("survey-*.json"))
+            print(f"  - found {len(surveys)} survey templates")
+        except Exception as e:
+            print(f"  - error listing surveys: {e}")
 
     langs, default, template_count, i18n_count = list_survey_template_languages(
         effective_survey_dir

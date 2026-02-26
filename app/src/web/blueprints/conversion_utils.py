@@ -69,19 +69,44 @@ def resolve_effective_library_path() -> Path:
     Returns the resolved Path to the library root.
     Raises an error if no valid library is found.
     """
+    def _safe_resolve(path: Path) -> Path:
+        """Safely resolve path, handling network drives."""
+        try:
+            return path.resolve()
+        except (OSError, ValueError):
+            # For network paths that can't be resolved, return as-is
+            return path
+    
+    def _safe_expand(path_str: str) -> Path:
+        """Safely expand path, handling network drives."""
+        try:
+            candidate = Path(path_str)
+            if "~" in path_str:
+                candidate = candidate.expanduser()
+            return candidate
+        except (OSError, ValueError):
+            return Path(path_str)
+    
     from src.web.blueprints.projects import get_current_project
 
     # Try project library first, then project official templates
     project = get_current_project()
     project_path = project.get("path")
     if project_path:
-        project_root = Path(project_path).expanduser().resolve()
+        project_root = _safe_expand(project_path)
+        try:
+            project_root = _safe_resolve(project_root)
+        except Exception:
+            pass
 
         def _has_survey_templates(path: Path) -> bool:
             if not path.exists() or not path.is_dir():
                 return False
             survey_dir = path / "survey" if (path / "survey").is_dir() else path
-            return bool(list(survey_dir.glob("survey-*.json")))
+            try:
+                return bool(list(survey_dir.glob("survey-*.json")))
+            except (OSError, ValueError):
+                return False
 
         # Preferred: project code/library
         project_library = project_root / "code" / "library"
@@ -103,11 +128,20 @@ def resolve_effective_library_path() -> Path:
     from src.config import get_effective_library_paths
 
     # current_app.root_path points to /app directory, we need to go up one level to get to the workspace root
-    base_dir = Path(current_app.root_path).parent.resolve()
+    base_dir = Path(current_app.root_path)
+    try:
+        base_dir = base_dir.parent.resolve()
+    except (OSError, ValueError):
+        base_dir = base_dir.parent
+    
     lib_paths = get_effective_library_paths(app_root=str(base_dir))
 
     if lib_paths.get("global_library_path"):
-        global_lib = Path(lib_paths["global_library_path"]).expanduser().resolve()
+        global_lib = _safe_expand(lib_paths["global_library_path"])
+        try:
+            global_lib = _safe_resolve(global_lib)
+        except Exception:
+            pass
         if global_lib.exists() and global_lib.is_dir():
             return global_lib
 
@@ -119,8 +153,11 @@ def resolve_effective_library_path() -> Path:
     ]
 
     for location in default_locations:
-        if location.exists() and location.is_dir():
-            return location
+        try:
+            if location.exists() and location.is_dir():
+                return location
+        except (OSError, ValueError):
+            continue
 
     raise FileNotFoundError(
         "No survey library found. Please provide templates in project /code/library (preferred), project /official/library, or configure a global library."
