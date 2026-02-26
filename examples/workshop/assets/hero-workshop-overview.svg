@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="560" viewBox="0 0 1600 560" role="img" aria-labelledby="title desc">
+  <title id="title">PRISM Workshop Overview</title>
+  <desc id="desc">Hero graphic for 2-hour PRISM workshop with seven steps.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="560" fill="url(#bg)"/>
+  <rect x="64" y="64" width="1472" height="432" rx="24" fill="#ffffff" opacity="0.08"/>
+  <text x="96" y="150" fill="#ffffff" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="56" font-weight="700">PRISM STUDIO WORKSHOP</text>
+  <text x="96" y="200" fill="#bfdbfe" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30" font-weight="500">Fast onboarding in 2 hours</text>
+
+  <g font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24" fill="#e2e8f0" font-weight="600">
+    <text x="96" y="280">1 Setup</text>
+    <text x="300" y="280">2 Project</text>
+    <text x="520" y="280">3 Participants</text>
+    <text x="820" y="280">4 Survey</text>
+    <text x="1030" y="280">5 Errors</text>
+    <text x="1210" y="280">6 Recipes</text>
+    <text x="1400" y="280">7 Templates</text>
+  </g>
+
+  <g stroke="#93c5fd" stroke-width="6" fill="none" opacity="0.9">
+    <line x1="100" y1="320" x2="1490" y2="320"/>
+  </g>
+
+  <g fill="#f8fafc">
+    <circle cx="110" cy="320" r="14"/>
+    <circle cx="315" cy="320" r="14"/>
+    <circle cx="560" cy="320" r="14"/>
+    <circle cx="840" cy="320" r="14"/>
+    <circle cx="1050" cy="320" r="14"/>
+    <circle cx="1240" cy="320" r="14"/>
+    <circle cx="1480" cy="320" r="14"/>
+  </g>
+
+  <text x="96" y="420" fill="#cbd5e1" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24">BIDS-compatible workflow: import → validate → score → reuse</text>
+</svg>

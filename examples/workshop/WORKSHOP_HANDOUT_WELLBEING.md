@@ -96,15 +96,15 @@ This structure enables version control, reproducibility, and collaboration.
 2. **Create New Project**
    - Project Name: `Wellbeing_Study_Workshop`
    - Location: Choose your preferred folder (Desktop, Documents, etc.)
-   - Template: **YODA Structure** (if option exists)
+  - YODA layout is used by default (no template selection needed)
 
 3. **Required Before Create: Fill Study Metadata (13 fields)**
   - Open the **Study Metadata** section in the form
   - Complete all required fields until no missing-field warning remains
   - If you see **"Complete Study Metadata (13 fields missing)"**, continue filling fields first
 
-4. **Create & Activate**
-  - Click **Create & Activate** only after all 13 metadata fields are complete
+4. **Create Project**
+  - Click **Create Project** only after all mandatory metadata fields are complete (button enabled)
 
 5. **Verify Structure**
    Your project should have:

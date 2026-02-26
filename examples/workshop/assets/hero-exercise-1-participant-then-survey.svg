@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="520" viewBox="0 0 1600 520" role="img" aria-labelledby="title desc">
+  <title id="title">Exercise 1: Participants then Survey</title>
+  <desc id="desc">Hero image showing two-step import from one wellbeing file: participant tab first, survey tab second.</desc>
+  <rect width="1600" height="520" fill="#0f172a"/>
+  <text x="80" y="90" fill="#ffffff" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="50" font-weight="700">Exercise 1: One File, Two Imports</text>
+  <text x="80" y="132" fill="#93c5fd" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="26">Import socio-demographics first, then questionnaire data</text>
+
+  <rect x="80" y="190" width="620" height="180" rx="18" fill="#1d4ed8"/>
+  <text x="118" y="250" fill="#ffffff" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="34" font-weight="700">1) Participants Tab</text>
+  <text x="118" y="294" fill="#dbeafe" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24">Create/update participants.tsv</text>
+  <text x="118" y="330" fill="#dbeafe" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24">Map: participant_id, sex, age, education...</text>
+
+  <rect x="900" y="190" width="620" height="180" rx="18" fill="#2563eb"/>
+  <text x="938" y="250" fill="#ffffff" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="34" font-weight="700">2) Survey Tab</text>
+  <text x="938" y="294" fill="#dbeafe" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24">Convert questionnaire items only</text>
+  <text x="938" y="330" fill="#dbeafe" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24">Output: sub-*_ses-*_task-wellbeing_survey.tsv</text>
+
+  <g stroke="#bfdbfe" stroke-width="8" fill="none">
+    <line x1="730" y1="280" x2="870" y2="280"/>
+  </g>
+
+  <text x="80" y="445" fill="#cbd5e1" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24">Why split? Most studies store socio-demographics + questionnaires in one source file.</text>
+</svg>

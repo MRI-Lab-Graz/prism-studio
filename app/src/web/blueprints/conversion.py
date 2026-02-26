@@ -381,6 +381,13 @@ _PARTICIPANT_RELEVANT_KEYWORDS = {
     "center",
     "cohort",
     "condition",
+    "session",
+    "visit",
+    "timepoint",
+    "time_point",
+    "wave",
+    "date",
+    "completion",
 }
 
 _DEFAULT_NEUROBAGEL_KEYS = {
@@ -395,6 +402,12 @@ _DEFAULT_NEUROBAGEL_KEYS = {
     "diagnosis",
     "education",
     "ethnicity",
+    "session",
+    "session_id",
+    "visit",
+    "timepoint",
+    "completion_date",
+    "date",
 }
 
 _PARTICIPANT_FILTER_CONFIG = {
@@ -3182,7 +3195,7 @@ def api_physio_rename():
 
 @conversion_bp.route("/api/save-participant-mapping", methods=["POST"])
 def save_participant_mapping():
-    """Save additional-variables mapping JSON file to the project survey library directory.
+    """Save additional-variables mapping JSON file to the project library directory.
 
     Priority:
     1. Save to project library if available
@@ -3209,9 +3222,7 @@ def save_participant_mapping():
         # Priority 1: Use project library if available
         if project_path:
             try:
-                project_lib = (
-                    Path(str(project_path)).resolve() / "code" / "library" / "survey"
-                )
+                project_lib = Path(str(project_path)).resolve() / "code" / "library"
                 # Create the library folder if it doesn't exist
                 project_lib.mkdir(parents=True, exist_ok=True)
                 target_lib_path = project_lib
@@ -3281,7 +3292,10 @@ def save_participant_mapping():
                 "status": "success",
                 "file_path": str(mapping_file),
                 "library_source": used_source,
-                "message": f"Additional variables mapping saved to {mapping_file.name}",
+                "message": (
+                    f"Saved {mapping_file.name}. "
+                    "This mapping is applied when you run Extract & Convert."
+                ),
             }
         )
     except Exception as e:
@@ -3757,6 +3771,109 @@ def api_participants_convert():
                             "INFO",
                             f"Using explicit participant mapping for {len(mapping.get('mappings', {}))} columns",
                         )
+
+                # Ensure mapping is additive: merge auto-detected participant-relevant
+                # columns so "Add Additional Variables" does not replace the default set.
+                try:
+                    import pandas as pd
+                    from src.converters.id_detection import (
+                        detect_id_column as _detect_id,
+                        has_prismmeta_columns as _has_pm_cols,
+                    )
+
+                    suffix = input_path.suffix.lower()
+                    if suffix == ".xlsx":
+                        sheet = request.form.get("sheet", "0").strip() or "0"
+                        try:
+                            sheet_arg = int(sheet) if sheet.isdigit() else sheet
+                        except (ValueError, TypeError):
+                            sheet_arg = 0
+                        df_for_merge = pd.read_excel(input_path, sheet_name=sheet_arg, dtype=str)
+                    elif suffix == ".csv":
+                        df_for_merge = pd.read_csv(input_path, sep=",", dtype=str)
+                    elif suffix == ".tsv":
+                        df_for_merge = pd.read_csv(input_path, sep="\t", dtype=str)
+                    elif suffix == ".lsa":
+                        from src.converters.survey import _read_lsa_as_dataframe
+
+                        df_for_merge = _read_lsa_as_dataframe(input_path)
+                    else:
+                        df_for_merge = pd.read_csv(input_path, sep=None, engine="python", dtype=str)
+
+                    explicit_id_col = request.form.get("id_column", "").strip() or None
+                    source_fmt = "lsa" if suffix == ".lsa" else "xlsx"
+                    detected_id_col = _detect_id(
+                        list(df_for_merge.columns),
+                        source_fmt,
+                        explicit_id_column=explicit_id_col,
+                        has_prismmeta=_has_pm_cols(list(df_for_merge.columns)),
+                    )
+                    if not detected_id_col and explicit_id_col in df_for_merge.columns:
+                        detected_id_col = explicit_id_col
+                    if not detected_id_col and len(df_for_merge.columns) > 0:
+                        detected_id_col = str(df_for_merge.columns[0])
+
+                    effective_library_path = _resolve_effective_library_path()
+                    participant_filter_config = _load_project_participant_filter_config(
+                        session.get("current_project_path")
+                    )
+                    auto_columns = _filter_participant_relevant_columns(
+                        df_for_merge,
+                        id_column=detected_id_col,
+                        library_path=effective_library_path,
+                        participant_filter_config=participant_filter_config,
+                    )
+
+                    if not isinstance(mapping, dict):
+                        mapping = {"version": "1.0", "mappings": {}}
+                    mapping.setdefault("version", "1.0")
+                    mapping_block = mapping.setdefault("mappings", {})
+
+                    used_sources = {
+                        str(spec.get("source_column")).strip()
+                        for spec in mapping_block.values()
+                        if isinstance(spec, dict) and spec.get("source_column")
+                    }
+                    used_targets = {
+                        str(spec.get("standard_variable")).strip()
+                        for spec in mapping_block.values()
+                        if isinstance(spec, dict) and spec.get("standard_variable")
+                    }
+
+                    added_auto = 0
+                    for col in auto_columns:
+                        source_col = str(col).strip()
+                        if not source_col:
+                            continue
+
+                        standard_var = (
+                            "participant_id"
+                            if detected_id_col and source_col == detected_id_col
+                            else source_col
+                        )
+
+                        if source_col in used_sources or standard_var in used_targets:
+                            continue
+
+                        mapping_block[standard_var] = {
+                            "source_column": source_col,
+                            "standard_variable": standard_var,
+                            "type": "string",
+                        }
+                        used_sources.add(source_col)
+                        used_targets.add(standard_var)
+                        added_auto += 1
+
+                    if added_auto:
+                        log_msg(
+                            "INFO",
+                            f"Added {added_auto} auto-detected participant columns to mapping (additive merge)",
+                        )
+                except Exception as merge_error:
+                    log_msg(
+                        "WARNING",
+                        f"Could not merge auto-detected participant columns into mapping: {merge_error}",
+                    )
 
                 # Convert using the uploaded file
                 success, df, messages = converter.convert_participant_data(
