@@ -47,7 +47,7 @@ def test_converter():
         print(f"  Mappings defined: {list(mapping.get('mappings', {}).keys())}")
     else:
         print("✗ Failed to load mapping")
-        return False
+        assert False, "Failed to load mapping"
     print()
 
     if mapping:
@@ -56,7 +56,7 @@ def test_converter():
         print(f"  Mappings defined: {list(mapping.get('mappings', {}).keys())}")
     else:
         print("✗ Failed to load mapping")
-        return False
+        assert False, "Failed to load mapping"
     print()
 
     # Test 2: Validate mapping
@@ -69,7 +69,7 @@ def test_converter():
         print("✗ Validation errors:")
         for error in errors:
             print(f"  - {error}")
-        return False
+        assert False, "Mapping validation failed"
     print()
 
     # Test 3: Convert participant data
@@ -84,7 +84,7 @@ def test_converter():
 
     if not success:
         print("✗ Conversion failed")
-        return False
+        assert False, "Conversion failed"
 
     print()
     print("📊 Conversion Results:")
@@ -113,7 +113,7 @@ def test_converter():
         )
     else:
         print(f"✗ Output file not created: {output_path}")
-        return False
+        assert False, "Output file not created"
     print()
 
     # Test 5: Template generation
@@ -135,13 +135,13 @@ def test_converter():
     print("=" * 70)
     print("✓ All tests passed!")
     print("=" * 70)
-    return True
+    return
 
 
 if __name__ == "__main__":
     try:
-        success = test_converter()
-        sys.exit(0 if success else 1)
+        test_converter()
+        sys.exit(0)
     except Exception as e:
         print(f"\n✗ Test failed with error: {e}")
         import traceback
