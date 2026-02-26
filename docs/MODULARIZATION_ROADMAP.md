@@ -104,6 +104,10 @@ Migration rules:
 - Centralized CLI dispatch routing in `app/src/cli/dispatch.py` and wired `app/prism_tools.py` to it.
 - Centralized CLI parser construction in `app/src/cli/parser.py` and wired `app/prism_tools.py` main to it.
 - Introduced `app/src/cli/entrypoint.py` for runtime wiring and reduced `app/prism_tools.py` to a thin compatibility launcher.
+- Started script-folder reorganization with compatibility wrappers:
+  - moved duplicate-diagnostics scripts to `scripts/dev/`
+  - retained old paths as wrappers to avoid workflow breakage
+- Moved environment-build scripts to `scripts/data/` and kept old entry paths as wrappers.
 
 ## Learned Lessions
 
@@ -117,7 +121,9 @@ Migration rules:
 - Moving dispatch first (before full parser migration) reduces risk and makes final parser extraction straightforward.
 - Returning both root parser and named subgroup parser handles from the parser module keeps help fallbacks stable during dispatch migration.
 - Keeping the compatibility launcher minimal helps detect accidental logic drift and prevents stale helper code from lingering in entry scripts.
+- Script reorganization is safest when done in small batches with old-path wrappers so docs/automation do not break immediately.
+- Wrapping moved scripts with runpy keeps behavior and arguments identical while allowing immediate folder cleanup.
 
 ## Immediate next step
 
-- Add targeted tests for the new runtime entrypoint path and begin script-folder reorganization (`scripts/dev`, `scripts/data`, `scripts/release`) with compatibility wrappers.
+- Continue script-folder reorganization in batches (`scripts/release`, `scripts/maintenance`) with compatibility wrappers, then update docs/automation references incrementally.
