@@ -43,7 +43,7 @@ def test_platform_detection():
     print(f"   Path separator: '{info['path_separator']}'")
     print(f"   Line separator: {repr(info['line_separator'])}")
 
-    return True
+    return
 
 
 def test_path_handling():
@@ -66,7 +66,7 @@ def test_path_handling():
     joined = safe_path_join("dataset", "sub-01", "func", "file.nii.gz")
     print(f"   Joined path: '{joined}'")
 
-    return True
+    return
 
 
 def test_filename_validation():
@@ -88,7 +88,7 @@ def test_filename_validation():
         for issue in issues:
             print(f"      • {issue}")
 
-    return True
+    return
 
 
 def test_file_operations():
@@ -105,7 +105,7 @@ def test_file_operations():
             print("   OK File writing works")
         except Exception as e:
             print(f"   FAIL File writing failed: {e}")
-            return False
+            raise AssertionError(f"File writing failed: {e}") from e
 
         # Test reading
         try:
@@ -114,9 +114,9 @@ def test_file_operations():
             print(f"      Content length: {len(read_content)} chars")
         except Exception as e:
             print(f"   FAIL File reading failed: {e}")
-            return False
+            raise AssertionError(f"File reading failed: {e}") from e
 
-    return True
+    return
 
 
 def test_case_sensitivity():
@@ -141,10 +141,10 @@ def test_case_sensitivity():
         else:
             print("   OK Case sensitivity detection matches expected platform behavior")
 
-        return True
+        return
     except Exception as e:
         print(f"   FAIL Case sensitivity test failed: {e}")
-        return False
+        raise AssertionError(f"Case sensitivity test failed: {e}") from e
 
 
 def test_import_compatibility():
@@ -168,14 +168,14 @@ def test_import_compatibility():
         import reporting
 
         print("   OK All core modules import successfully")
-        return True
+        return
     except ImportError as e:
         print(f"   WARN Import warning: {e}")
         print("   INFO This is expected when running outside the package context")
-        return True  # Don't fail the test for this
+        return  # Don't fail the test for this
     except Exception as e:
         print(f"   FAIL Unexpected error: {e}")
-        return False
+        raise AssertionError(f"Unexpected error: {e}") from e
 
 
 def test_json_handling():
@@ -210,13 +210,13 @@ def test_json_handling():
                     print(f"   OK {filename}")
                 else:
                     print(f"   FAIL {filename} - data mismatch")
-                    return False
+                    assert False, f"{filename} data mismatch"
 
             except Exception as e:
                 print(f"   FAIL {filename} - error: {e}")
-                return False
+                raise AssertionError(f"{filename} error: {e}") from e
 
-    return True
+    return
 
 
 def main():
@@ -241,7 +241,8 @@ def main():
         print(f"\nSECTION {test_name}")
         print("-" * 30)
         try:
-            if test_func():
+            result = test_func()
+            if result is not False:
                 passed += 1
             else:
                 print(f"   FAIL {test_name} failed")

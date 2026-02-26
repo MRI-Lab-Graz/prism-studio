@@ -1,0 +1,253 @@
+    <!-- Data Export/Share Card -->
+    <div class="card shadow-sm mt-4" id="exportProjectCard" style="display: none;">
+        <div class="card-header bg-warning bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#exportSection"
+             role="button" aria-expanded="false" aria-controls="exportSection">
+            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-share-alt text-warning me-2"></i>Data Export / Share</span>
+                <i class="fas fa-chevron-down text-muted" id="exportChevron"></i>
+            </h5>
+        </div>
+        <div class="collapse" id="exportSection">
+            <div class="card-body">
+                <div class="alert alert-warning border-warning mb-4">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Important:</strong> Before sharing data publicly, consider copyright (survey questions) and anonymity (participant IDs).
+                    This tool helps you create a shareable, anonymized version of your dataset.
+                </div>
+
+                <form id="exportProjectForm">
+                    <div class="row g-3">
+                        <!-- Anonymization Options -->
+                        <div class="col-12">
+                            <h6 class="mb-3"><i class="fas fa-user-secret me-2"></i>Anonymization</h6>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="exportAnonymize" checked>
+                                <label class="form-check-label fw-bold" for="exportAnonymize">
+                                    Randomize Participant IDs
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Transform subject codes (e.g., sub-001 → sub-R7X2K9) throughout the entire dataset.
+                                A secure mapping file will be included in the export for re-identification if needed.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="exportIdLength" class="form-label">Random ID Length</label>
+                            <select class="form-select form-select-sm" id="exportIdLength">
+                                <option value="6">6 characters (64K combinations)</option>
+                                <option value="8" selected>8 characters (2.8M combinations)</option>
+                                <option value="10">10 characters (100M combinations)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="exportMaskQuestions">
+                                <label class="form-check-label fw-bold" for="exportMaskQuestions">
+                                    Mask Copyrighted Question Text
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Strip original question descriptions from JSON sidecars (survey/biometrics).
+                                Replaces with generic labels like "Question 1", "Question 2", etc.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="exportDeterministic" checked>
+                                <label class="form-check-label" for="exportDeterministic">
+                                    Deterministic Mapping
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Same input always generates same random IDs (useful for reproducibility).
+                            </div>
+                        </div>
+
+                        <!-- Content Options -->
+                        <div class="col-12 mt-4">
+                            <hr>
+                            <h6 class="mb-3"><i class="fas fa-archive me-2"></i>Export Content</h6>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Include in Export:</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportRawdata" checked disabled>
+                                <label class="form-check-label" for="exportRawdata">
+                                    Dataset root files and <code>sub-*/</code> folders - Raw experimental data
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportDerivatives" checked>
+                                <label class="form-check-label" for="exportDerivatives">
+                                    <code>derivatives/</code> - Processed data
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportCode" checked>
+                                <label class="form-check-label" for="exportCode">
+                                    <code>code/</code> - Analysis scripts and recipes
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportAnalysis">
+                                <label class="form-check-label" for="exportAnalysis">
+                                    <code>analysis/</code> - Results and reports
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Metadata:</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="exportMetadata" checked disabled>
+                                <label class="form-check-label" for="exportMetadata">
+                                    Project metadata files (dataset_description.json, README, etc.)
+                                </label>
+                            </div>
+                            <div class="form-text small text-muted ms-4">
+                                Mapping file will always be included if anonymization is enabled.
+                            </div>
+                        </div>
+
+                        <!-- AND Export Section -->
+                        <div class="col-12 mt-4">
+                            <hr>
+                            <h6 class="mb-3">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>AND (Austrian NeuroCloud) Export
+                                <span class="badge bg-info ms-2">New</span>
+                            </h6>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="alert alert-info border-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>AND Export:</strong> Converts your PRISM dataset to AND-compatible format with required files 
+                                (README, CITATION.cff, .bids-validator-config.json) for submission to Austrian NeuroCloud.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="ancEnableExport">
+                                <label class="form-check-label fw-bold" for="ancEnableExport">
+                                    Enable AND Export
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Prepare dataset for AND submission with all required metadata files.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6" id="ancOptionsGroup" style="display: none;">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="ancConvertGitLfs">
+                                <label class="form-check-label" for="ancConvertGitLfs">
+                                    Convert to Git LFS
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Create .gitattributes for Git LFS (if required by AND). Default: DataLad-compatible.
+                            </div>
+                        </div>
+
+                        <div class="col-md-6" id="ancOptionsGroup2" style="display: none;">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="ancIncludeCiExamples">
+                                <label class="form-check-label" for="ancIncludeCiExamples">
+                                    Include CI/CD Examples
+                                </label>
+                            </div>
+                            <div class="form-text ms-4">
+                                Add example GitLab CI and GitHub Actions workflows for dataset validation.
+                            </div>
+                        </div>
+
+                        <div class="col-12" id="ancMetadataSection" style="display: none;">
+                            <button type="button" class="btn btn-sm btn-outline-info mb-3" data-bs-toggle="collapse" 
+                                    data-bs-target="#ancMetadataForm" aria-expanded="false">
+                                <i class="fas fa-edit me-1"></i>Edit AND Metadata (Optional)
+                            </button>
+                            <div class="collapse" id="ancMetadataForm">
+                                <div class="card border-info">
+                                    <div class="card-body">
+                                        <div class="row g-2">
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold">Dataset Title</label>
+                                                <input type="text" class="form-control form-control-sm" id="ancDatasetTitle" 
+                                                       placeholder="Filled from dataset_description.json">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold">Contact Email</label>
+                                                <input type="email" class="form-control form-control-sm" id="ancContactEmail" 
+                                                       placeholder="contact@university.edu">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold">Author First Name</label>
+                                                <input type="text" class="form-control form-control-sm" id="ancAuthorGiven" 
+                                                       placeholder="John">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold">Author Last Name</label>
+                                                <input type="text" class="form-control form-control-sm" id="ancAuthorFamily" 
+                                                       placeholder="Doe">
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label small fw-bold">Dataset Description</label>
+                                                <textarea class="form-control form-control-sm" id="ancDatasetDescription" 
+                                                          rows="2" placeholder="Brief description of your dataset..."></textarea>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="form-text small">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Leave fields empty to use values from dataset_description.json. 
+                                                    Full metadata can be edited after export.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Export Buttons -->
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-warning btn-lg me-2">
+                                <i class="fas fa-download me-2"></i>Standard Export & Download
+                            </button>
+                            <button type="button" class="btn btn-info btn-lg" id="ancExportButton" style="display: none;">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>Export for AND
+                            </button>
+                            <div class="form-text mt-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Standard export creates a shareable ZIP. AND export creates a submission-ready dataset folder.
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Export Progress -->
+                <div id="exportProgress" class="mt-4" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-spinner fa-spin me-2"></i>
+                        <span id="exportStatusText">Preparing export...</span>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" id="exportProgressBar" style="width: 0%">
+                            <span id="exportProgressText">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Result -->
+                <div id="exportResult" class="mt-4" style="display: none;"></div>
+            </div>
+        </div>
+    </div>

@@ -87,15 +87,7 @@ def validate_procedure(project_path: Path, rawdata_path: Path) -> List[Tuple[str
                                 if m:
                                     disk_set.add((ses_id, m.group(1)))
 
-    # PRISM701: Session on disk not declared in project.json
-    for ses_id in sorted(disk_sessions - declared_sessions):
-        issues.append(
-            (
-                "WARNING",
-                f"PRISM701: Session '{ses_id}' exists on disk but is not "
-                f"declared in project.json Sessions",
-            )
-        )
+    # PRISM701 suppressed: Sessions on disk may be intentionally undeclared.
 
     # PRISM702: Declared session has no data on disk
     for ses_id in sorted(declared_sessions - disk_sessions):

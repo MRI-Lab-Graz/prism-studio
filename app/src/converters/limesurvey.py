@@ -1883,9 +1883,9 @@ def convert_lsa_to_dataset(
             # or update schema unit to seconds.
             # Let's update schema to seconds for precision.
             t_schema["SurveyDuration"]["Unit"] = "seconds"
-            t_schema["SurveyDuration"]["Description"] = (
-                f"Duration for task {t_name} (derived from group timing)"
-            )
+            t_schema["SurveyDuration"][
+                "Description"
+            ] = f"Duration for task {t_name} (derived from group timing)"
             task_df["SurveyDuration"] = task_df[granular_col]
 
             # Debug: Compare durations

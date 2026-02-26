@@ -40,7 +40,7 @@ This document provides a complete overview of all Windows-specific testing and c
    - System file filtering
    - BIDS compatibility
 
-4. **`tests/test_github_signing.py`** (461 lines) ⭐ NEW
+4. **`tests/github_signing_check.py`** (461 lines) ⭐ NEW
    - GitHub Actions signing configuration
    - SignPath.io integration verification
    - Secrets management validation
@@ -177,11 +177,11 @@ If secrets aren't configured:
 ### Code Signing
 | Feature | Test File | Status |
 |---------|-----------|--------|
-| Workflow configuration | test_github_signing.py | ✅ |
-| SignPath integration | test_github_signing.py | ✅ |
-| Secrets management | test_github_signing.py | ✅ |
-| Build order validation | test_github_signing.py | ✅ |
-| Security checks | test_github_signing.py | ✅ |
+| Workflow configuration | github_signing_check.py | ✅ |
+| SignPath integration | github_signing_check.py | ✅ |
+| Secrets management | github_signing_check.py | ✅ |
+| Build order validation | github_signing_check.py | ✅ |
+| Security checks | github_signing_check.py | ✅ |
 
 ---
 
@@ -211,7 +211,7 @@ python tests/test_windows_datasets.py
 python tests/test_windows_compatibility.py
 
 # Code signing configuration
-python tests/test_github_signing.py
+python tests/github_signing_check.py
 ```
 
 ### Expected Output

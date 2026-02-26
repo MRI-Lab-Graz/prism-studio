@@ -1,0 +1,61 @@
+    <!-- Generate Methods Section Card -->
+    <div class="card shadow-sm mt-4" id="methodsSectionCard" style="display: none;">
+        <div class="card-header bg-success bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#methodsSectionBody"
+             role="button" aria-expanded="false" aria-controls="methodsSectionBody">
+            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-file-alt text-success me-2"></i>Generate Methods Section</span>
+                <i class="fas fa-chevron-down text-muted" id="methodsSectionChevron"></i>
+            </h5>
+        </div>
+        <div class="collapse" id="methodsSectionBody">
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    Create a publication-ready methods section from your project metadata.
+                    Uses data from <code>project.json</code>, <code>dataset_description.json</code>, and linked templates.
+                </p>
+                <div class="row align-items-end mb-3 g-2">
+                    <div class="col-auto">
+                        <label for="methodsLanguage" class="form-label fw-bold mb-1">Language</label>
+                        <select class="form-select form-select-sm" id="methodsLanguage" style="width: 140px;">
+                            <option value="en" selected>English</option>
+                            <option value="de">German</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <label for="methodsDetailLevel" class="form-label fw-bold mb-1">Detail Level</label>
+                        <select class="form-select form-select-sm" id="methodsDetailLevel" style="width: 150px;">
+                            <option value="brief">Brief</option>
+                            <option value="standard" selected>Standard</option>
+                            <option value="detailed">Detailed</option>
+                        </select>
+                    </div>
+                    <div class="col-auto d-flex align-items-end">
+                        <div class="form-check mb-1">
+                            <input class="form-check-input" type="checkbox" id="methodsContinuous">
+                            <label class="form-check-label" for="methodsContinuous">Continuous text</label>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-success" id="generateMethodsBtn" onclick="generateMethodsSection()">
+                            <i class="fas fa-magic me-1"></i>Generate
+                        </button>
+                    </div>
+                </div>
+
+                <div id="methodsResult" style="display: none;">
+                    <div id="methodsSectionsBadges" class="mb-2"></div>
+                    <div id="methodsPreview" class="border rounded p-3 bg-white mb-3" style="max-height: 500px; overflow-y: auto;"></div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="downloadMethods('md')">
+                            <i class="fas fa-download me-1"></i>Download .md
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="downloadMethods('html')">
+                            <i class="fas fa-download me-1"></i>Download .html
+                        </button>
+                    </div>
+                </div>
+
+                <div id="methodsError" style="display: none;"></div>
+            </div>
+        </div>
+    </div>

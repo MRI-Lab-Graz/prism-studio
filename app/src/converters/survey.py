@@ -19,11 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import csv
 import zipfile
-
-try:
-    import defusedxml.ElementTree as ET
-except ImportError:
-    import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from copy import deepcopy
 import re
 from typing import Iterable

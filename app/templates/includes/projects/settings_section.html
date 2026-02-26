@@ -1,0 +1,99 @@
+    <!-- Global Settings Card (Last Section) -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-secondary bg-opacity-10" data-bs-toggle="collapse" data-bs-target="#settingsSection"
+             role="button" aria-expanded="false" aria-controls="settingsSection">
+            <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-cog text-secondary me-2"></i>Global Settings</span>
+                <i class="fas fa-chevron-down text-muted" id="settingsChevron"></i>
+            </h5>
+        </div>
+        <div class="collapse" id="settingsSection">
+            <div class="card-body">
+                <form id="globalSettingsForm">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="globalLibraryPath" class="form-label fw-bold">
+                                <i class="fas fa-database me-1"></i>Global Survey Template Library
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="globalLibraryPath"
+                                       placeholder="Path to folder containing survey/ subfolder">
+                                <button class="btn btn-outline-secondary" type="button" id="browseGlobalLibrary">
+                                    <i class="fas fa-folder-open"></i> Browse
+                                </button>
+                            </div>
+                            <small class="text-muted">
+                                Root folder for survey templates. Must contain a <code>survey/</code> subfolder with JSON templates.
+                                <br>Default: App's built-in <code>survey_library/</code> folder. Can be changed to a shared location (Nextcloud, GitLab, etc.).
+                                <br>Projects can override this with <code>templateLibraryPath</code> in <code>.prismrc.json</code>.
+                            </small>
+                        </div>
+                        <div class="col-12">
+                            <label for="globalRecipesPath" class="form-label fw-bold">
+                                <i class="fas fa-utensils me-1"></i>Global Recipe Library
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="globalRecipesPath"
+                                       placeholder="Path to folder containing recipe/ subfolder">
+                                <button class="btn btn-outline-secondary" type="button" id="browseGlobalRecipes">
+                                    <i class="fas fa-folder-open"></i> Browse
+                                </button>
+                            </div>
+                            <small class="text-muted">
+                                Root folder for survey recipes. Must contain a <code>recipe/</code> subfolder with recipe JSON files.
+                                <br>Default: <code>official/recipe/</code> folder. Can be changed to a shared location.
+                                <br>Recipes are automatically used in the "Dataset Recipes & Scoring" tool.
+                            </small>
+                        </div>
+                        <div class="col-12">
+                            <div id="libraryStatusMessage"></div>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="fas fa-save me-2"></i>Save Settings
+                            </button>
+                            <button type="button" class="btn btn-outline-info ms-2" onclick="useDefaultLibrary()">
+                                <i class="fas fa-undo me-1"></i>Use Default
+                            </button>
+                            <button type="button" class="btn btn-outline-danger ms-2" onclick="clearGlobalLibrary()">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Library Info Panel -->
+                <div id="libraryInfoPanel" class="mt-4 p-3 bg-light rounded" style="display: none;">
+                    <h6 class="mb-3"><i class="fas fa-info-circle me-2"></i>Survey Template Locations</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-2">
+                                <div class="card-body py-2">
+                                    <small class="text-muted">Global Survey Templates (Read-only)</small>
+                                    <div id="globalLibraryInfo" class="text-truncate">
+                                        <span class="text-muted">Not configured</span>
+                                    </div>
+                                    <small class="text-muted">Path: <code>*/survey/*.json</code></small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-2">
+                                <div class="card-body py-2">
+                                    <small class="text-muted">Project Survey Templates (Editable)</small>
+                                    <div id="projectLibraryInfo" class="text-truncate">
+                                        <span class="text-muted">Select a project</span>
+                                    </div>
+                                    <small class="text-muted">Path: <code>project/library/survey/*.json</code> (Root level)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        <i class="fas fa-lightbulb me-1"></i>
+                        Survey templates from both locations are merged. Project templates take priority over global templates with the same name.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>

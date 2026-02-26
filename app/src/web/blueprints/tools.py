@@ -311,6 +311,17 @@ def _validate_against_schema(*, instance: object, schema: dict) -> list[dict]:
     return errors
 
 
+def _strip_template_editor_internal_keys(template: dict) -> dict:
+    """Remove editor-internal metadata keys that are not part of PRISM schemas."""
+    if not isinstance(template, dict):
+        return template
+
+    cleaned = dict(template)
+    cleaned.pop("_aliases", None)
+    cleaned.pop("_reverse_aliases", None)
+    return cleaned
+
+
 @tools_bp.route("/survey-generator")
 def survey_generator():
     """Survey generator page – library is auto-loaded via the merged API."""
@@ -1053,6 +1064,8 @@ def api_template_editor_validate():
     if not isinstance(template, dict):
         return jsonify({"error": "Template must be a JSON object"}), 400
 
+    template = _strip_template_editor_internal_keys(template)
+
     try:
         schema = _load_prism_schema(modality=modality, schema_version=schema_version)
         errors = _validate_against_schema(instance=template, schema=schema)
@@ -1111,6 +1124,8 @@ def api_template_editor_download():
     if not isinstance(template, dict):
         return jsonify({"error": "Template must be a JSON object"}), 400
 
+    template = _strip_template_editor_internal_keys(template)
+
     data = json.dumps(template, indent=2, ensure_ascii=False).encode("utf-8")
     return send_file(
         io.BytesIO(data),
@@ -1135,6 +1150,8 @@ def api_template_editor_save():
         filename += ".json"
     if not isinstance(template, dict):
         return jsonify({"error": "Template must be a JSON object"}), 400
+
+    template = _strip_template_editor_internal_keys(template)
 
     try:
         folder = _project_template_folder(modality=modality)
@@ -1183,6 +1200,8 @@ def api_template_editor_import_lsq_lsg():
 
         if template is None:
             return jsonify({"error": "Failed to parse XML file"}), 400
+
+        template = _strip_template_editor_internal_keys(template)
 
         # Determine item count and languages
 
@@ -1646,9 +1665,7 @@ def api_recipes_surveys():
             msg += "\n⚠️  No output files with participant_id were anonymized"
         if mask_questions:
             msg += "\n🔒 Masked copyrighted question text"
-        msg += (
-            f"\n⚠️  SECURITY: Keep mapping file secure: {os.path.basename(mapping_file)}"
-        )
+        msg += f"\n⚠️  SECURITY: Keep mapping file secure: {os.path.basename(mapping_file)}"
 
     return jsonify(
         {

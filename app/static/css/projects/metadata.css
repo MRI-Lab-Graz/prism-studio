@@ -1,0 +1,19 @@
+/* Study Metadata completeness */
+.completeness-dots { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.completeness-dot {
+    width: 12px; height: 12px; border-radius: 50%; display: inline-block;
+}
+.completeness-dot.full { background-color: #198754; }
+.completeness-dot.partial { background-color: #ffc107; }
+.completeness-dot.empty { background-color: #dee2e6; }
+.section-completeness-row {
+    display: flex; align-items: center; gap: 8px; padding: 4px 0;
+}
+.section-completeness-row .section-label {
+    min-width: 140px; font-size: 0.85rem; font-weight: 500;
+}
+.section-completeness-row .section-badge {
+    font-size: 0.75rem;
+}
+.sm-hint-badge { transition: opacity 0.2s; }
+.sm-hint-badge:hover { opacity: 0.8; }

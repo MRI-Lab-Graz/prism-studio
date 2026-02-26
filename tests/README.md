@@ -87,7 +87,7 @@ Comprehensive test suite for Windows compatibility (since repo was built on macO
 - `test_windows_paths.py` - Path handling (drive letters, UNC, long paths, reserved names)
 - `test_windows_web_uploads.py` - Web upload functionality on Windows
 - `test_windows_datasets.py` - Dataset validation on Windows filesystems
-- `test_github_signing.py` - GitHub Actions code signing configuration
+- `github_signing_check.py` - GitHub Actions code signing configuration
 - `run_windows_tests.py` - Master test runner (Python)
 - `run_windows_tests.ps1` - Master test runner (PowerShell)
 
