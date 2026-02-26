@@ -257,7 +257,7 @@ def _build_survey_metadata(recipe: dict, lang: str = "en") -> dict:
     if recipe.get("Kind"):
         meta["kind"] = recipe["Kind"]
 
-        sidecar_meta: Optional[dict] = None,
+        sidecar_meta: Optional[dict] = (None,)
     survey_info = recipe.get("Survey") or {}
     if survey_info.get("Name"):
         meta["survey_name"] = get_i18n_text(survey_info["Name"], lang)

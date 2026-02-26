@@ -42,7 +42,8 @@
   const editorHintEl = document.getElementById('editorHint');
 
   const RESERVED_TOPLEVEL = new Set([
-    'Technical', 'Study', 'Metadata', 'I18n', 'LimeSurvey', 'Scoring', 'Normative'
+    'Technical', 'Study', 'Metadata', 'I18n', 'LimeSurvey', 'Scoring', 'Normative',
+    '_aliases', '_reverse_aliases'
   ]);
 
   const LS_QUESTION_TYPES = {
@@ -120,6 +121,13 @@
     return obj === undefined ? undefined : JSON.parse(JSON.stringify(obj));
   }
 
+  function stripInternalTemplateKeys(template) {
+    if (!template || typeof template !== 'object') return template;
+    delete template._aliases;
+    delete template._reverse_aliases;
+    return template;
+  }
+
   function isMissingValue(val, fieldSchema) {
     if (val === undefined || val === null) return true;
     const t = Array.isArray(fieldSchema?.type) ? fieldSchema.type : fieldSchema?.type;
@@ -148,13 +156,32 @@
       }
     } catch {}
     // Focus input
-    const inp = document.getElementById(`field_${section}_${name}`);
+    const inp = name ? document.getElementById(`field_${section}_${name}`) : null;
     if (inp) {
       inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
       inp.focus();
       inp.classList.add('border-warning');
       setTimeout(() => inp.classList.remove('border-warning'), 1500);
+      return;
     }
+
+    const sectionBody = document.getElementById(`tlBody_${section}`);
+    const firstInput = sectionBody ? sectionBody.querySelector('input, select, textarea, button') : null;
+    if (firstInput) {
+      firstInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (typeof firstInput.focus === 'function') firstInput.focus();
+    }
+  }
+
+  function deriveFocusPath(path, message) {
+    const rawPath = String(path || '');
+    const rawMessage = String(message || '');
+    const requiredMatch = rawMessage.match(/'([^']+)'\s+is a required property/);
+    if (requiredMatch && requiredMatch[1]) {
+      const missingProp = requiredMatch[1];
+      return rawPath ? `${rawPath}/${missingProp}` : missingProp;
+    }
+    return rawPath;
   }
 
   function recomputeMissingFields() {
@@ -2623,8 +2650,8 @@
     }
 
     const data = await apiGet(`/api/template-editor/load?${qp.toString()}`);
-    currentTemplate = data.template;
-    originalTemplate = cloneDeep(data.template);
+    currentTemplate = stripInternalTemplateKeys(data.template);
+    originalTemplate = cloneDeep(currentTemplate);
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
     hasUserInteracted = true;
@@ -2643,7 +2670,7 @@
     await refreshSchema();
 
     const data = await apiGet(`/api/template-editor/new?modality=${encodeURIComponent(modality)}&schema_version=${encodeURIComponent(schema_version)}`);
-    currentTemplate = data.template;
+    currentTemplate = stripInternalTemplateKeys(data.template);
     originalTemplate = null; // no baseline for new templates
     checkedItemIds.clear();
     selectedItemId = itemKeysFromTemplate(currentTemplate)[0] || null;
@@ -2693,7 +2720,8 @@
       const errs = (data.errors || []).slice(0, 50);
       const list = errs.map(e => {
         const p = e.path || '(root)';
-        const link = `<a href=\"#\" class=\"error-link\" data-path=\"${p}\"><code>${p}</code></a>`;
+        const focusPath = deriveFocusPath(e.path, e.message);
+        const link = `<a href=\"#\" class=\"error-link\" data-path=\"${focusPath}\"><code>${p}</code></a>`;
         return `<li>${link}: ${e.message}</li>`;
       }).join('');
       const extra = (data.errors || []).length > errs.length ? `<div class=\"mt-2 text-muted small\">(showing first ${errs.length} errors)</div>` : '';
@@ -2804,7 +2832,7 @@
         if (!res.ok) {
           throw new Error(data.error || `Import failed (${res.status})`);
         }
-        currentTemplate = data.template;
+        currentTemplate = stripInternalTemplateKeys(data.template);
       } else {
         const nameWithoutExt = (file.name || 'imported')
           .replace(/\.[^.]+$/, '')
@@ -2826,7 +2854,7 @@
         if (!data.prism_json || typeof data.prism_json !== 'object') {
           throw new Error('No PRISM template returned by generator.');
         }
-        currentTemplate = data.prism_json;
+        currentTemplate = stripInternalTemplateKeys(data.prism_json);
       }
 
       originalTemplate = null;

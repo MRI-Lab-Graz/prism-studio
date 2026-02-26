@@ -911,7 +911,7 @@ def api_survey_languages():
     """List available languages for the selected survey template library folder."""
     library_path = (request.args.get("library_path") or "").strip()
     base_dir = Path(current_app.root_path)
-    
+
     if not library_path:
         project_path = (session.get("current_project_path") or "").strip()
         if project_path:
@@ -922,7 +922,7 @@ def api_survey_languages():
             except (OSError, ValueError):
                 # Handle network paths that expanduser might not support
                 candidate = Path(project_path).resolve() / "code" / "library"
-            
+
             if candidate.exists() and candidate.is_dir():
                 library_path = str(candidate)
             else:
@@ -932,7 +932,7 @@ def api_survey_languages():
                     candidate = candidate.expanduser().resolve()
                 except (OSError, ValueError):
                     candidate = Path(project_path).resolve() / "library"
-                
+
                 if candidate.exists() and candidate.is_dir():
                     library_path = str(candidate)
 
@@ -944,17 +944,20 @@ def api_survey_languages():
             base_dir.parent / "official" / "library",
             base_dir / "survey_library",
         ]
-        
+
         for candidate_path in candidates:
             try:
                 candidate_path = candidate_path.resolve()
-                if candidate_path.exists() and (any(candidate_path.glob("survey-*.json")) or any(candidate_path.glob("*/survey-*.json"))):
+                if candidate_path.exists() and (
+                    any(candidate_path.glob("survey-*.json"))
+                    or any(candidate_path.glob("*/survey-*.json"))
+                ):
                     library_path = str(candidate_path)
                     break
             except (OSError, ValueError):
                 # Skip paths that can't be resolved (e.g., network paths with issues)
                 continue
-        
+
         # Final fallback if none found above
         if not library_path:
             library_path = str((base_dir / "survey_library").resolve())
@@ -965,7 +968,7 @@ def api_survey_languages():
     except (OSError, ValueError):
         # Fallback for network paths that can't be resolved normally
         library_root = Path(library_path)
-    
+
     structure_info = {
         "has_survey_folder": False,
         "has_biometrics_folder": False,
@@ -985,7 +988,7 @@ def api_survey_languages():
             if any(survey_candidate.glob("survey-*.json")):
                 survey_dir = survey_candidate
                 break
-    
+
     if not survey_dir:
         survey_dir = library_root / "survey"  # Default for error reporting
 
@@ -997,7 +1000,7 @@ def api_survey_languages():
         if biometrics_candidate.exists() and biometrics_candidate.is_dir():
             biometrics_dir = biometrics_candidate
             break
-    
+
     if not biometrics_dir:
         biometrics_dir = library_root / "biometrics"  # Default for error reporting
 
@@ -1025,7 +1028,7 @@ def api_survey_languages():
         effective_survey_dir = library_path
 
     # DEBUG: Log the library resolution
-    print(f"[PRISM DEBUG] /api/survey-languages resolved library:")
+    print("[PRISM DEBUG] /api/survey-languages resolved library:")
     print(f"  - library_path: {library_path}")
     print(f"  - survey_dir: {survey_dir}")
     print(f"  - effective_survey_dir: {effective_survey_dir}")
@@ -3849,7 +3852,9 @@ def api_participants_convert():
                             sheet_arg = int(sheet) if sheet.isdigit() else sheet
                         except (ValueError, TypeError):
                             sheet_arg = 0
-                        df_for_merge = pd.read_excel(input_path, sheet_name=sheet_arg, dtype=str)
+                        df_for_merge = pd.read_excel(
+                            input_path, sheet_name=sheet_arg, dtype=str
+                        )
                     elif suffix == ".csv":
                         df_for_merge = pd.read_csv(input_path, sep=",", dtype=str)
                     elif suffix == ".tsv":
@@ -3859,7 +3864,9 @@ def api_participants_convert():
 
                         df_for_merge = _read_lsa_as_dataframe(input_path)
                     else:
-                        df_for_merge = pd.read_csv(input_path, sep=None, engine="python", dtype=str)
+                        df_for_merge = pd.read_csv(
+                            input_path, sep=None, engine="python", dtype=str
+                        )
 
                     explicit_id_col = request.form.get("id_column", "").strip() or None
                     source_fmt = "lsa" if suffix == ".lsa" else "xlsx"

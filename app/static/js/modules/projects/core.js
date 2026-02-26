@@ -24,9 +24,15 @@ let currentProjectName = '';
 const recentProjectsKey = 'prism_recent_projects';
 
 const projectsRoot = document.getElementById('projectsRoot');
+const globalProjectPath = typeof window.currentProjectPath === 'string' ? window.currentProjectPath : '';
+const globalProjectName = typeof window.currentProjectName === 'string' ? window.currentProjectName : '';
+
 if (projectsRoot) {
-    currentProjectPath = projectsRoot.dataset.currentProjectPath || '';
-    currentProjectName = projectsRoot.dataset.currentProjectName || '';
+    currentProjectPath = projectsRoot.dataset.currentProjectPath || globalProjectPath || '';
+    currentProjectName = projectsRoot.dataset.currentProjectName || globalProjectName || '';
+} else {
+    currentProjectPath = globalProjectPath;
+    currentProjectName = globalProjectName;
 }
 
 window.currentProjectPath = currentProjectPath;

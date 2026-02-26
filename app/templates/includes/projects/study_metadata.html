@@ -63,13 +63,13 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                        <span class="badge bg-secondary">OPTIONAL</span> Authors
+                                        <span class="badge bg-danger">REQUIRED</span> Authors
                                     </label>
                                     <div id="metadataAuthorsList" class="d-flex flex-column gap-2"></div>
                                     <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="addAuthorRow">
                                         <i class="fas fa-user-plus me-1"></i>Add Author
                                     </button>
-                                    <small class="text-muted d-block">If CITATION.cff exists, omitted per BIDS spec (use CITATION.cff authors instead).</small>
+                                    <small class="text-muted d-block">At least one author is required.</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small text-muted text-uppercase mb-1">
@@ -146,10 +146,10 @@
                                             </div>
                                             <div class="col-md-12">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
-                                                    <span class="badge bg-warning text-dark">RECOMMENDED</span> Keywords (comma-separated)
+                                                    <span class="badge bg-danger">REQUIRED</span> Keywords (comma-separated)
                                                 </label>
                                                 <input type="text" class="form-control form-control-sm" id="metadataKeywords" placeholder="psychology, experiment, PRISM">
-                                                <small class="text-muted">PRISM recommends at least 3 keywords for FAIR compliance and discoverability.</small>
+                                                <small class="text-muted">Enter at least 3 keywords for schema compliance and discoverability.</small>
                                             </div>
                                             <div class="col-md-12">
                                                 <label class="form-label fw-bold small text-muted text-uppercase mb-1">
