@@ -103,6 +103,7 @@ Migration rules:
 - Kept compatibility by delegating from `app/prism_tools.py` wrappers.
 - Centralized CLI dispatch routing in `app/src/cli/dispatch.py` and wired `app/prism_tools.py` to it.
 - Centralized CLI parser construction in `app/src/cli/parser.py` and wired `app/prism_tools.py` main to it.
+- Introduced `app/src/cli/entrypoint.py` for runtime wiring and reduced `app/prism_tools.py` to a thin compatibility launcher.
 
 ## Learned Lessions
 
@@ -115,8 +116,8 @@ Migration rules:
 - Keep temporary lifecycle objects (`TemporaryDirectory`) scoped exactly as in legacy behavior during migration.
 - Moving dispatch first (before full parser migration) reduces risk and makes final parser extraction straightforward.
 - Returning both root parser and named subgroup parser handles from the parser module keeps help fallbacks stable during dispatch migration.
+- Keeping the compatibility launcher minimal helps detect accidental logic drift and prevents stale helper code from lingering in entry scripts.
 
 ## Immediate next step
 
-- Reduce `app/prism_tools.py` to a thin compatibility entrypoint by moving handler wrappers into a dedicated CLI entry module,
-  while preserving command names and help output.
+- Add targeted tests for the new runtime entrypoint path and begin script-folder reorganization (`scripts/dev`, `scripts/data`, `scripts/release`) with compatibility wrappers.
