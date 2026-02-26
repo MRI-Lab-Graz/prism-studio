@@ -5,6 +5,16 @@ All notable changes to the PRISM project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-02-26
+
+### Added
+- **Examples in Build Distribution**: Examples folder now included in PyInstaller bundles for Windows/macOS/Linux distributions. Users get sample datasets immediately upon extraction.
+- **Decimal Separator Support**: Enhanced numeric parsing to better support different decimal separators in survey data and participant information across locales.
+
+### Fixed
+- **Settings Management**: Corrected last project path and name persistence in application settings.
+- **ANC Export Metadata**: Fixed date format handling in ANC export for better compatibility with external tools.
+
 ## [1.10.1] - 2026-02-25
 
 ### Fixed
