@@ -55,9 +55,9 @@ class TestWindowsPaths:
             except Exception as e:
                 if should_work:
                     print(f"    FAIL Failed to normalize {path}: {e}")
-                    return False
+                    raise AssertionError(f"Failed to normalize {path}: {e}") from e
 
-        return True
+        return
 
     def test_unc_paths(self):
         """Test UNC (network) path handling"""
@@ -77,7 +77,7 @@ class TestWindowsPaths:
             except Exception:
                 print(f"    WARN UNC path may not be fully supported: {path}")
 
-        return True
+        return
 
     def test_long_paths(self):
         """Test long path support (>260 characters)"""
@@ -103,7 +103,7 @@ class TestWindowsPaths:
             except Exception as e:
                 print(f"    WARN Long path handling: {e}")
 
-        return True
+        return
 
     def test_mixed_separators(self):
         """Test paths with mixed forward/backward slashes"""
@@ -125,9 +125,11 @@ class TestWindowsPaths:
                     print(f"    OK {path} -> {normalized}")
             except Exception as e:
                 print(f"    FAIL Failed: {e}")
-                return False
+                raise AssertionError(
+                    f"Failed to normalize mixed path {path}: {e}"
+                ) from e
 
-        return True
+        return
 
     def test_relative_paths_windows(self):
         """Test Windows-style relative paths"""
@@ -145,9 +147,11 @@ class TestWindowsPaths:
                 print(f"    OK {path} -> {normalized}")
             except Exception as e:
                 print(f"    FAIL Failed: {e}")
-                return False
+                raise AssertionError(
+                    f"Failed to normalize relative path {path}: {e}"
+                ) from e
 
-        return True
+        return
 
     def test_special_windows_chars(self):
         """Test handling of Windows special characters in paths"""
@@ -166,9 +170,9 @@ class TestWindowsPaths:
                 print(f"    OK {path}")
             except Exception as e:
                 print(f"    FAIL Failed on valid path: {e}")
-                return False
+                raise AssertionError(f"Failed on valid path {path}: {e}") from e
 
-        return True
+        return
 
 
 class TestWindowsFilenames:
@@ -194,7 +198,7 @@ class TestWindowsFilenames:
             if sys.platform.startswith("win"):
                 if not issues:
                     print(f"    FAIL Should detect reserved name: {filename}")
-                    return False
+                    assert False, f"Should detect reserved name: {filename}"
                 print(f"    OK Detected: {filename} - {issues[0]}")
             else:
                 print(f"    WARN Not on Windows, skipping: {filename}")
@@ -208,7 +212,7 @@ class TestWindowsFilenames:
         print("    INFO Note: Reserved names with compound extensions (.nii.gz)")
         print("        may not be detected by splitext - this is a known limitation")
 
-        return True
+        return
 
     def test_invalid_characters(self):
         """Test Windows invalid filename characters"""
@@ -223,12 +227,12 @@ class TestWindowsFilenames:
             if sys.platform.startswith("win"):
                 if not issues:
                     print(f"    FAIL Should detect invalid char '{char}'")
-                    return False
+                    assert False, f"Should detect invalid char '{char}'"
                 print(f"    OK Detected invalid char '{char}' in {filename}")
             else:
                 print(f"    WARN Not on Windows, char '{char}' may be valid")
 
-        return True
+        return
 
     def test_trailing_spaces_dots(self):
         """Test filenames with trailing spaces or dots"""
@@ -245,14 +249,14 @@ class TestWindowsFilenames:
             if sys.platform.startswith("win"):
                 if not issues:
                     print(f"    FAIL Should detect invalid: {repr(filename)}")
-                    return False
+                    assert False, f"Should detect invalid filename: {repr(filename)}"
                 print(f"    OK Detected: {repr(filename)}")
 
         # Test case with space before extension - this is valid on Windows
         # The space is part of the base name, not trailing
         print("    INFO Note: 'file .json' has space before extension (valid)")
 
-        return True
+        return
 
     def test_filename_length(self):
         """Test maximum filename length"""
@@ -267,14 +271,14 @@ class TestWindowsFilenames:
 
         if short_issues:
             print("    FAIL 200 char filename should be valid")
-            return False
+            assert False, "200 char filename should be valid"
 
         if not long_issues:
             print("    FAIL 260 char filename should be invalid")
-            return False
+            assert False, "260 char filename should be invalid"
 
         print("    OK Filename length validation working")
-        return True
+        return
 
 
 class TestWindowsSystemFiles:
@@ -295,10 +299,10 @@ class TestWindowsSystemFiles:
         for filename in system_files:
             if not is_system_file(filename):
                 print(f"    FAIL Should detect system file: {filename}")
-                return False
+                assert False, f"Should detect system file: {filename}"
             print(f"    OK Detected: {filename}")
 
-        return True
+        return
 
     def test_macos_system_files(self):
         """Test detection of macOS system files (for cross-platform datasets)"""
@@ -316,10 +320,10 @@ class TestWindowsSystemFiles:
         for filename in macos_files:
             if not is_system_file(filename):
                 print(f"    FAIL Should detect macOS system file: {filename}")
-                return False
+                assert False, f"Should detect macOS system file: {filename}"
             print(f"    OK Detected: {filename}")
 
-        return True
+        return
 
     def test_filter_mixed_list(self):
         """Test filtering a mixed list of files"""
@@ -346,10 +350,10 @@ class TestWindowsSystemFiles:
         if filtered != expected:
             print(f"    FAIL Expected: {expected}")
             print(f"    FAIL Got: {filtered}")
-            return False
+            assert False, "System file filtering output mismatch"
 
         print(f"    OK Filtered {len(file_list) - len(filtered)} system files")
-        return True
+        return
 
 
 class TestWindowsFileOperations:
@@ -380,15 +384,15 @@ class TestWindowsFileOperations:
                             print(f"    OK {filename}")
                         else:
                             print(f"    FAIL Content mismatch: {filename}")
-                            return False
+                            assert False, f"Content mismatch: {filename}"
                     else:
                         print(f"    FAIL File not created: {filename}")
-                        return False
+                        assert False, f"File not created: {filename}"
 
                 except Exception as e:
                     print(f"    WARN {filename}: {e}")
 
-        return True
+        return
 
     def test_line_endings(self):
         """Test line ending handling (CRLF vs LF)"""
@@ -417,13 +421,13 @@ class TestWindowsFileOperations:
                         )
                     else:
                         print(f"    FAIL {name}: empty after read")
-                        return False
+                        assert False, f"{name}: empty after read"
 
                 except Exception as e:
                     print(f"    FAIL {name}: {e}")
-                    return False
+                    raise AssertionError(f"{name}: {e}") from e
 
-        return True
+        return
 
     def test_encoding_handling(self):
         """Test different text encodings"""
@@ -448,7 +452,7 @@ class TestWindowsFileOperations:
                 except Exception as e:
                     print(f"    WARN {encoding_name}: {e}")
 
-        return True
+        return
 
     def test_file_locking(self):
         """Test file operations with potential lock conflicts"""
@@ -472,14 +476,14 @@ class TestWindowsFileOperations:
 
                 if content1 != content2:
                     print("    OK File operations without lock conflicts")
-                    return True
+                    return
                 else:
                     print("    FAIL File not updated properly")
-                    return False
+                    assert False, "File not updated properly"
 
             except Exception as e:
                 print(f"    FAIL Lock conflict: {e}")
-                return False
+                raise AssertionError(f"Lock conflict: {e}") from e
 
 
 def run_all_tests():
@@ -514,7 +518,8 @@ def run_all_tests():
             method = getattr(instance, method_name)
 
             try:
-                if method():
+                result = method()
+                if result is not False:
                     total_passed += 1
                 else:
                     print(f"    FAIL {method_name} failed")

@@ -30,17 +30,17 @@ def test_streamlined_version():
 
         if result.returncode == 0 and "PRISM" in result.stdout:
             print("✅ Main validator help works")
-            return True
+            return
         else:
             print("❌ Main validator help failed")
             print(f"Return code: {result.returncode}")
             print(f"Output: {result.stdout}")
             print(f"Error: {result.stderr}")
-            return False
+            assert False, "Main validator help failed"
 
     except Exception as e:
         print(f"❌ Error testing main validator: {e}")
-        return False
+        raise AssertionError(f"Error testing main validator: {e}") from e
 
 
 def test_module_imports():
@@ -67,17 +67,17 @@ def test_module_imports():
 
         if len(stats.subjects) == 1 and len(stats.modalities) == 1:
             print("✅ Basic stats functionality works")
-            return True
+            return
         else:
             print("❌ Stats functionality failed")
-            return False
+            assert False, "Stats functionality failed"
 
     except ImportError as e:
         print(f"❌ Import error: {e}")
-        return False
+        raise AssertionError(f"Import error: {e}") from e
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
-        return False
+        raise AssertionError(f"Unexpected error: {e}") from e
 
 
 def test_directory_structure():
@@ -104,13 +104,13 @@ def test_directory_structure():
 
     if not missing_dirs and not missing_files:
         print("✅ Directory structure is correct")
-        return True
+        return
     else:
         if missing_dirs:
             print(f"❌ Missing directories: {missing_dirs}")
         if missing_files:
             print(f"❌ Missing files: {missing_files}")
-        return False
+        assert False, "Directory structure is incorrect"
 
 
 def main():
@@ -129,8 +129,14 @@ def main():
     for test_name, test_func in tests:
         print(f"\n📋 {test_name}")
         print("-" * 30)
-        if test_func():
-            passed += 1
+        try:
+            result = test_func()
+            if result is not False:
+                passed += 1
+            else:
+                print(f"❌ {test_name} failed")
+        except Exception as e:
+            print(f"❌ {test_name} failed: {e}")
         print()
 
     print("=" * 50)

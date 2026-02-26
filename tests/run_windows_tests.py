@@ -74,7 +74,7 @@ def main():
         ("test_windows_paths.py", "Windows Path & Filename Handling"),
         ("test_windows_web_uploads.py", "Windows Web Interface Uploads"),
         ("test_windows_datasets.py", "Windows Dataset Validation"),
-        ("test_github_signing.py", "GitHub Actions Code Signing"),
+        ("github_signing_check.py", "GitHub Actions Code Signing"),
     ]
 
     results = {}
