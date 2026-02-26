@@ -10,7 +10,7 @@ Workflow:
 
 Usage:
   source .venv/bin/activate
-  python scripts/build_environment_from_dicom.py \
+    python scripts/data/build_environment_from_dicom.py \
     --dicom /path/to/file.dcm \
         --dataset-root /path/to/bids_dataset \
     --subject-id sub-01 \
