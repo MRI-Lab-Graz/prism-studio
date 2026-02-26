@@ -4,7 +4,6 @@ import sys
 import os
 import shutil
 import json
-import hashlib
 from pathlib import Path
 
 # Enforce running from the repo-local virtual environment (skip for frozen/packaged apps)
@@ -31,21 +30,9 @@ from src.utils.io import (
     write_json as _write_json,
 )  # noqa: E402
 
-from helpers.physio.convert_varioport import convert_varioport  # noqa: E402
-from src.library_validator import check_uniqueness  # noqa: E402
-from src.converters.limesurvey import (
-    convert_lsa_to_prism,
-    batch_convert_lsa,
-)  # noqa: E402
-from src.converters.excel_to_survey import process_excel  # noqa: E402
-from src.converters.excel_to_biometrics import process_excel_biometrics  # noqa: E402
-from src.reporting import generate_methods_text  # noqa: E402
 from src.library_i18n import (
     compile_survey_template,
-    migrate_survey_template_to_i18n,
 )  # noqa: E402
-from src.recipes_surveys import compute_survey_recipes  # noqa: E402
-from src.config import get_effective_library_paths  # noqa: E402
 from src.cli.commands.dataset import (  # noqa: E402
     cmd_dataset_build_biometrics_smoketest as _cmd_dataset_build_biometrics_smoketest,
 )
@@ -54,6 +41,31 @@ from src.cli.commands.library import (  # noqa: E402
     cmd_library_sync as _cmd_library_sync,
     cmd_library_catalog as _cmd_library_catalog,
     cmd_library_fill as _cmd_library_fill,
+)
+from src.cli.commands.convert import (  # noqa: E402
+    sanitize_id as _sanitize_id,
+    get_json_hash as _get_json_hash,
+    consolidate_sidecars as _consolidate_sidecars,
+    cmd_convert_physio as _cmd_convert_physio,
+)
+from src.cli.commands.anonymize import (  # noqa: E402
+    cmd_anonymize as _cmd_anonymize,
+)
+from src.cli.commands.biometrics import (  # noqa: E402
+    cmd_biometrics_import_excel as _cmd_biometrics_import_excel,
+)
+from src.cli.commands.survey import (  # noqa: E402
+    cmd_survey_import_excel as _cmd_survey_import_excel,
+    cmd_survey_validate as _cmd_survey_validate,
+    cmd_survey_import_limesurvey as _cmd_survey_import_limesurvey,
+    parse_session_map as _parse_session_map,
+    cmd_survey_import_limesurvey_batch as _cmd_survey_import_limesurvey_batch,
+    cmd_survey_i18n_migrate as _cmd_survey_i18n_migrate,
+    cmd_survey_i18n_build as _cmd_survey_i18n_build,
+)
+from src.cli.commands.recipes import (  # noqa: E402
+    cmd_recipes_surveys as _cmd_recipes_surveys,
+    cmd_recipes_biometrics as _cmd_recipes_biometrics,
 )
 
 
@@ -96,365 +108,29 @@ def _parse_numeric_cell(val: str | None) -> float | None:
         return None
     s = str(val).strip()
     if not s or s.lower() == "n/a":
-        return None
-    try:
-        # Support both periods and commas as decimal separators (EU locales use commas)
-        return float(s.replace(",", "."))
-    except ValueError:
-        return None
-
-
-def _format_numeric_cell(val: float | None) -> str:
-    if val is None:
-        return "n/a"
-    if float(val).is_integer():
-        return str(int(val))
-    return str(val)
-
-
-def cmd_recipes_surveys(args):
-    prism_root = Path(args.prism).resolve()
-    if not prism_root.exists() or not prism_root.is_dir():
-        print(f"Error: --prism is not a directory: {prism_root}")
-        sys.exit(1)
-
-    # Use global library paths if --repo not specified
-    if hasattr(args, "repo") and args.repo:
-        repo_root = Path(args.repo).resolve()
-    else:
-        # Get global recipe path from configuration
-        lib_paths = get_effective_library_paths(app_root=str(project_root))
-        if lib_paths["global_library_root"]:
-            repo_root = Path(lib_paths["global_library_root"]).resolve()
-            print(f"ℹ️  Using global library: {repo_root}")
-        else:
-            # Fallback to current directory
-            repo_root = Path(project_root).resolve()
-            print(f"ℹ️  Using default repository root: {repo_root}")
-
-    if not repo_root.exists() or not repo_root.is_dir():
-        print(f"Error: --repo is not a directory: {repo_root}")
-        sys.exit(1)
-
-    out_format = str(getattr(args, "format", "flat") or "flat").strip().lower()
-    recipe_dir = (
-        str(args.recipes).strip() if getattr(args, "recipes", None) else ""
-    ) or None
-    survey_filter = (
-        str(args.survey).strip() if getattr(args, "survey", None) else ""
-    ) or None
-    sessions_filter = (
-        str(args.sessions).strip() if getattr(args, "sessions", None) else ""
-    ) or None
-    lang = str(getattr(args, "lang", "en") or "en").strip().lower()
-    layout = str(getattr(args, "layout", "long") or "long").strip().lower()
-    include_raw = bool(getattr(args, "include_raw", False))
-    boilerplate = bool(getattr(args, "boilerplate", False))
-
-    try:
-        result = compute_survey_recipes(
-            prism_root=prism_root,
-            repo_root=repo_root,
-            recipe_dir=recipe_dir,
-            survey=survey_filter,
-            sessions=sessions_filter,
-            out_format=out_format,
-            modality="survey",
-            lang=lang,
-            layout=layout,
-            include_raw=include_raw,
-            boilerplate=boilerplate,
-        )
-        print(f"Survey recipe scoring complete: {result.written_files} file(s) written")
-        if result.flat_out_path:
-            print(f"   Flat output: {result.flat_out_path}")
-        if result.boilerplate_path:
-            print(f"   Methods boilerplate (MD):   {result.boilerplate_path}")
-        if result.boilerplate_html_path:
-            print(f"   Methods boilerplate (HTML): {result.boilerplate_html_path}")
-        if result.fallback_note:
-            print(f"   Note: {result.fallback_note}")
-        if result.nan_report:
-            print("   Columns with all n/a:")
-            for key, cols in result.nan_report.items():
-                joined = ", ".join(sorted(cols))
-                print(f"     - {key}: {joined}")
-    except Exception as e:
+        _cmd_recipes_surveys(args)
         print(f"Error: {e}")
         sys.exit(1)
 
 
 def cmd_recipes_biometrics(args):
-    prism_root = Path(args.prism).resolve()
-    if not prism_root.exists() or not prism_root.is_dir():
-        print(f"Error: --prism is not a directory: {prism_root}")
-        sys.exit(1)
-
-    # Use global library paths if --repo not specified
-    if hasattr(args, "repo") and args.repo:
-        repo_root = Path(args.repo).resolve()
-    else:
-        # Get global recipe path from configuration
-        lib_paths = get_effective_library_paths(app_root=str(project_root))
-        if lib_paths["global_library_root"]:
-            repo_root = Path(lib_paths["global_library_root"]).resolve()
-            print(f"ℹ️  Using global library: {repo_root}")
-        else:
-            # Fallback to current directory
-            repo_root = Path(project_root).resolve()
-            print(f"ℹ️  Using default repository root: {repo_root}")
-
-    if not repo_root.exists() or not repo_root.is_dir():
-        print(f"Error: --repo is not a directory: {repo_root}")
-        sys.exit(1)
-
-    out_format = str(getattr(args, "format", "flat") or "flat").strip().lower()
-    recipe_dir = (
-        str(args.recipes).strip() if getattr(args, "recipes", None) else ""
-    ) or None
-    biometric_filter = (
-        str(args.biometric).strip() if getattr(args, "biometric", None) else ""
-    ) or None
-    sessions_filter = (
-        str(args.sessions).strip() if getattr(args, "sessions", None) else ""
-    ) or None
-    lang = str(getattr(args, "lang", "en") or "en").strip().lower()
-    layout = str(getattr(args, "layout", "long") or "long").strip().lower()
-
-    try:
-        result = compute_survey_recipes(
-            prism_root=prism_root,
-            repo_root=repo_root,
-            recipe_dir=recipe_dir,
-            survey=biometric_filter,
-            sessions=sessions_filter,
-            out_format=out_format,
-            modality="biometrics",
-            lang=lang,
-            layout=layout,
-        )
-        print(
-            f"✅ Biometric recipe scoring complete: {result.written_files} file(s) written"
-        )
-        if result.flat_out_path:
-            print(f"   Flat output: {result.flat_out_path}")
-        if result.fallback_note:
-            print(f"   Note: {result.fallback_note}")
-        if result.nan_report:
-            print("   Columns with all n/a:")
-            for key, cols in result.nan_report.items():
-                joined = ", ".join(sorted(cols))
-                print(f"     - {key}: {joined}")
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        sys.exit(1)
+    _cmd_recipes_biometrics(args)
 
 
 def sanitize_id(id_str):
-    """
-    Sanitizes subject/session IDs by replacing German umlauts and special characters.
-    """
-    if not id_str:
-        return id_str
-    replacements = {
-        "ä": "ae",
-        "ö": "oe",
-        "ü": "ue",
-        "Ä": "Ae",
-        "Ö": "Oe",
-        "Ü": "Ue",
-        "ß": "ss",
-    }
-    for char, repl in replacements.items():
-        id_str = id_str.replace(char, repl)
-    return id_str
+    return _sanitize_id(id_str)
 
 
 def get_json_hash(json_path):
-    """Calculates hash of a JSON file's semantic content."""
-    try:
-        with open(json_path, "r", encoding="utf-8") as f:
-            obj = json.load(f)
-        canonical = json.dumps(
-            obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-        )
-        return hashlib.md5(
-            usedforsecurity=(
-                False
-                if hasattr(hashlib, "md5")
-                and "usedforsecurity" in hashlib.md5.__code__.co_varnames
-                else canonical.encode("utf-8")
-            )
-        ).hexdigest()
-    except Exception:
-        # Fallback: raw bytes hash
-        with open(json_path, "rb") as f:
-            return hashlib.md5(
-                usedforsecurity=(
-                    False
-                    if hasattr(hashlib, "md5")
-                    and "usedforsecurity" in hashlib.md5.__code__.co_varnames
-                    else f.read()
-                )
-            ).hexdigest()
+    return _get_json_hash(json_path)
 
 
 def consolidate_sidecars(output_dir, task, suffix):
-    """
-    Consolidates identical JSON sidecars into a single file in the root directory.
-    """
-    print("\nConsolidating JSON sidecars...")
-    # Find all generated JSONs for this task/suffix
-    # Pattern: sub-*/ses-*/physio/*_task-<task>_<suffix>.json
-    pattern = f"sub-*/ses-*/physio/*_task-{task}_{suffix}.json"
-    json_files = list(output_dir.glob(pattern))
-
-    if not json_files:
-        print("No sidecars found to consolidate.")
-        return
-
-    first_json = json_files[0]
-    first_hash = get_json_hash(first_json)
-
-    all_identical = True
-    for jf in json_files[1:]:
-        if get_json_hash(jf) != first_hash:
-            all_identical = False
-            break
-
-    if all_identical:
-        print(f"All {len(json_files)} sidecars are identical. Consolidating to root.")
-        # Create root sidecar name: task-<task>_<suffix>.json
-        root_json_name = f"task-{task}_{suffix}.json"
-        root_json_path = output_dir / root_json_name
-
-        # Copy first json to root
-        shutil.copy(first_json, root_json_path)
-        print(f"Created root sidecar: {root_json_path}")
-
-        # Delete individual sidecars
-        for jf in json_files:
-            jf.unlink()
-        print("Deleted individual sidecars.")
-    else:
-        print("Sidecars differ. Keeping individual files.")
+    return _consolidate_sidecars(output_dir, task, suffix)
 
 
 def cmd_convert_physio(args):
-    """
-    Handles the 'convert physio' command.
-    """
-    input_dir = Path(args.input)
-    output_dir = Path(args.output)
-
-    if not input_dir.exists():
-        print(f"Error: Input directory '{input_dir}' does not exist.")
-        sys.exit(1)
-
-    print(f"Scanning {input_dir} for raw physio files...")
-
-    # Expected structure: sourcedata/sub-XXX/ses-YYY/physio/filename.raw
-    # We search recursively for the raw files
-    # The pattern should be flexible but ideally match the BIDS-like structure
-
-    # Find all files matching the pattern
-    # We assume files end with .raw or .RAW (case insensitive check later if needed)
-    # But glob is case sensitive on Linux.
-    files = list(input_dir.rglob("*.[rR][aA][wW]"))
-
-    if not files:
-        print("No .raw files found in input directory.")
-        return
-
-    print(f"Found {len(files)} files to process.")
-
-    success_count = 0
-    error_count = 0
-
-    for raw_file in files:
-        # Infer subject and session from path or filename
-        # Expected filename: sub-<id>_ses-<id>_physio.raw
-        filename = raw_file.name
-
-        # Simple parsing logic
-        parts = raw_file.stem.split("_")
-        sub_id = None
-        ses_id = None
-
-        for part in parts:
-            if part.startswith("sub-"):
-                sub_id = part
-            elif part.startswith("ses-"):
-                ses_id = part
-
-        # Fallback: try to get from parent folders if not in filename
-        if not sub_id:
-            for parent in raw_file.parents:
-                if parent.name.startswith("sub-"):
-                    sub_id = parent.name
-                    break
-
-        if not ses_id:
-            for parent in raw_file.parents:
-                if parent.name.startswith("ses-"):
-                    ses_id = parent.name
-                    break
-
-        if not sub_id or not ses_id:
-            print(f"Skipping {filename}: Could not determine subject or session ID.")
-            continue
-
-        # Sanitize IDs
-        sub_id = sanitize_id(sub_id)
-        ses_id = sanitize_id(ses_id)
-
-        # Construct output path
-        # rawdata/sub-XXX/ses-YYY/physio/
-        target_dir = output_dir / sub_id / ses_id / "physio"
-        target_dir.mkdir(parents=True, exist_ok=True)
-
-        # Construct output filename
-        # sub-XXX_ses-YYY_task-<task>_<suffix>.edf
-        out_base = f"{sub_id}_{ses_id}_task-{args.task}_{args.suffix}"
-        out_edf = target_dir / f"{out_base}.edf"
-
-        # Root sidecar for BIDS inheritance
-        out_root_json = output_dir / f"task-{args.task}_{args.suffix}.json"
-
-        print(f"Converting {filename} -> {out_base}.edf")
-
-        try:
-            convert_varioport(
-                str(raw_file),
-                str(out_edf),
-                str(out_root_json),
-                task_name=args.task,
-                base_freq=args.sampling_rate,
-            )
-
-            # Check file size
-            if out_edf.exists():
-                size_kb = out_edf.stat().st_size / 1024
-                if size_kb < 10:  # Warn if smaller than 10KB
-                    print(
-                        f"⚠️  WARNING: Output file is suspiciously small ({size_kb:.2f} KB): {out_edf}"
-                    )
-                else:
-                    print(f"✅ Created {out_edf.name} ({size_kb:.2f} KB)")
-            else:
-                print(f"❌ Error: Output file was not created: {out_edf}")
-                error_count += 1
-                continue
-
-            success_count += 1
-        except Exception as e:
-            print(f"Error converting {filename}: {e}")
-            error_count += 1
-
-    # BIDS inheritance is now handled directly by writing to root during conversion
-    # consolidate_sidecars(output_dir, args.task, args.suffix)
-
-    print(f"\nConversion finished. Success: {success_count}, Errors: {error_count}")
+    _cmd_convert_physio(args)
 
 
 def cmd_demo_create(args):
@@ -478,26 +154,7 @@ def cmd_demo_create(args):
 
 
 def cmd_survey_import_excel(args):
-    """
-    Imports survey library from Excel.
-    """
-    print(f"Importing survey library from {args.excel}...")
-    try:
-        if getattr(args, "library_root", None):
-            output_dir = Path(args.library_root) / "survey"
-        else:
-            output_dir = Path(args.output)
-            if output_dir.name != "survey":
-                output_dir = output_dir / "survey"
-
-        output_dir_str = str(_ensure_dir(output_dir))
-        process_excel(args.excel, output_dir_str)
-
-        print("\nValidating imported files...")
-        check_uniqueness(output_dir_str)
-    except Exception as e:
-        print(f"Error importing Excel: {e}")
-        sys.exit(1)
+    _cmd_survey_import_excel(args)
 
 
 def cmd_survey_convert(args):
@@ -881,35 +538,7 @@ def cmd_survey_convert(args):
 
 
 def cmd_biometrics_import_excel(args):
-    """Imports biometrics templates/library from Excel."""
-    print(f"Importing biometrics library from {args.excel} (sheet={args.sheet})...")
-    try:
-        sheet = (
-            int(args.sheet)
-            if isinstance(args.sheet, str) and args.sheet.isdigit()
-            else args.sheet
-        )
-        if getattr(args, "library_root", None):
-            output_dir = Path(args.library_root) / "biometrics"
-        else:
-            output_dir = Path(args.output)
-            if output_dir.name != "biometrics":
-                output_dir = output_dir / "biometrics"
-
-        output_dir_str = str(_ensure_dir(output_dir))
-        process_excel_biometrics(
-            args.excel,
-            output_dir_str,
-            sheet_name=sheet,
-            equipment=args.equipment,
-            supervisor=args.supervisor,
-        )
-
-        print("\nValidating imported files...")
-        check_uniqueness(output_dir_str)
-    except Exception as e:
-        print(f"Error importing Excel: {e}")
-        sys.exit(1)
+    _cmd_biometrics_import_excel(args)
 
 
 def cmd_dataset_build_biometrics_smoketest(args):
@@ -917,149 +546,27 @@ def cmd_dataset_build_biometrics_smoketest(args):
 
 
 def cmd_survey_validate(args):
-    """
-    Validates the survey library.
-    """
-    print(f"Validating survey library at {args.library}...")
-    if check_uniqueness(args.library):
-        sys.exit(0)
-    else:
-        sys.exit(1)
+    _cmd_survey_validate(args)
 
 
 def cmd_survey_import_limesurvey(args):
-    """
-    Imports LimeSurvey structure.
-    """
-    print(f"Importing LimeSurvey structure from {args.input}...")
-    try:
-        convert_lsa_to_prism(args.input, args.output, task_name=args.task)
-
-        print("\nValidating imported files...")
-        check_uniqueness(args.output)
-    except Exception as e:
-        print(f"Error importing LimeSurvey: {e}")
-        sys.exit(1)
+    _cmd_survey_import_limesurvey(args)
 
 
 def parse_session_map(map_str):
-    mapping = {}
-    for item in map_str.split(","):
-        token = item.strip()
-        if not token:
-            continue
-        sep = ":" if ":" in token else ("=" if "=" in token else None)
-        if not sep:
-            # allow shorthand like t1_ses-1
-            if "_" in token:
-                raw, mapped = token.split("_", 1)
-            else:
-                continue
-        else:
-            raw, mapped = token.split(sep, 1)
-        mapping[raw.strip().lower()] = mapped.strip()
-    return mapping
+    return _parse_session_map(map_str)
 
 
 def cmd_survey_import_limesurvey_batch(args):
-    """Batch convert LimeSurvey archives with session mapping (t1/t2/t3 -> ses-1/2/3)."""
-    session_map = parse_session_map(args.session_map)
-    if not session_map:
-        print("No valid session mapping provided. Example: t1:ses-1,t2:ses-2,t3:ses-3")
-        sys.exit(1)
-    try:
-        batch_convert_lsa(
-            args.input_dir,
-            args.output_dir,
-            session_map,
-            library_path=args.library,
-            task_fallback=args.task,
-            id_column=args.subject_id_col,
-            id_map_file=args.id_map,
-        )
-
-        print("\nValidating imported files...")
-        check_uniqueness(args.output_dir)
-    except Exception as e:
-        print(f"Error importing LimeSurvey: {e}")
-        sys.exit(1)
+    _cmd_survey_import_limesurvey_batch(args)
 
 
 def cmd_survey_i18n_migrate(args):
-    """Create i18n-capable source files from single-language survey templates.
-
-    This does NOT translate content; it wraps existing strings into the detected language
-    and creates empty-string placeholders for other languages.
-    """
-
-    src_dir = Path(args.src).resolve()
-    dst_dir = _ensure_dir(Path(args.dst).resolve())
-    languages = [p.strip() for p in str(args.languages).replace(";", ",").split(",")]
-    languages = [p for p in languages if p]
-    if not languages:
-        languages = ["de", "en"]
-
-    if not src_dir.exists() or not src_dir.is_dir():
-        print(f"Error: --src is not a directory: {src_dir}")
-        sys.exit(1)
-
-    files = sorted(src_dir.glob("survey-*.json"))
-    if not files:
-        print(f"Error: No survey-*.json files found in: {src_dir}")
-        sys.exit(1)
-
-    written = 0
-    for p in files:
-        try:
-            data = _read_json(p)
-        except Exception as e:
-            print(f"Warning: Skipping unreadable JSON {p.name}: {e}")
-            continue
-
-        migrated = migrate_survey_template_to_i18n(data, languages=languages)
-        out_path = dst_dir / p.name
-        _write_json(out_path, migrated)
-        written += 1
-
-    print(f"✅ Migrated {written} template(s) into i18n source format")
-    print(f"   Output: {dst_dir}")
+    _cmd_survey_i18n_migrate(args)
 
 
 def cmd_survey_i18n_build(args):
-    """Compile i18n-capable survey templates into PRISM schema-compatible templates."""
-
-    src_dir = Path(args.src).resolve()
-    out_dir = _ensure_dir(Path(args.out).resolve())
-    lang = str(args.lang).strip()
-    fallback = str(args.fallback).strip() if getattr(args, "fallback", None) else ""
-    fallback_langs = [fallback] if fallback else []
-
-    if not src_dir.exists() or not src_dir.is_dir():
-        print(f"Error: --src is not a directory: {src_dir}")
-        sys.exit(1)
-
-    files = sorted(src_dir.glob("survey-*.json"))
-    if not files:
-        print(f"Error: No survey-*.json files found in: {src_dir}")
-        sys.exit(1)
-
-    written = 0
-    for p in files:
-        try:
-            data = _read_json(p)
-        except Exception as e:
-            print(f"Warning: Skipping unreadable JSON {p.name}: {e}")
-            continue
-
-        compiled = compile_survey_template(
-            data, lang=lang, fallback_langs=fallback_langs
-        )
-        out_path = out_dir / p.name
-        _write_json(out_path, compiled)
-        written += 1
-
-    print(f"✅ Built {written} template(s) for lang='{lang}'")
-    print(f"   Output: {out_dir}")
+    _cmd_survey_i18n_build(args)
 
 
 def cmd_library_generate_methods_text(args):
@@ -1079,140 +586,7 @@ def cmd_library_fill(args):
 
 
 def cmd_anonymize(args):
-    """Anonymize a dataset for sharing."""
-    from src.anonymizer import create_participant_mapping, anonymize_tsv_file
-    import csv
-
-    dataset_path = Path(args.dataset).resolve()
-    output_path = (
-        Path(args.output).resolve()
-        if args.output
-        else dataset_path.parent / f"{dataset_path.name}_anonymized"
-    )
-    mapping_file = (
-        Path(args.mapping).resolve()
-        if args.mapping
-        else output_path / "code" / "anonymization_map.json"
-    )
-
-    if not dataset_path.exists() or not dataset_path.is_dir():
-        print(f"Error: Dataset path not found: {dataset_path}")
-        sys.exit(1)
-
-    print(f"Anonymizing dataset: {dataset_path}")
-    print(f"Output will be saved to: {output_path}")
-    print()
-
-    # Step 1: Collect all participant IDs
-    participant_ids = set()
-    # Check rawdata/ first (PRISM/YODA structure), then root (BIDS)
-    participants_tsv = dataset_path / "rawdata" / "participants.tsv"
-    if not participants_tsv.exists():
-        participants_tsv = dataset_path / "participants.tsv"
-
-    if participants_tsv.exists():
-        with open(participants_tsv, "r", encoding="utf-8") as f:
-            reader = csv.DictReader(f, delimiter="\t")
-            for row in reader:
-                pid = row.get("participant_id", "")
-                if pid:
-                    participant_ids.add(pid)
-    else:
-        # Scan for subject folders
-        for sub_dir in dataset_path.glob("sub-*"):
-            if sub_dir.is_dir():
-                participant_ids.add(sub_dir.name)
-
-    if not participant_ids:
-        print("Error: No participants found in dataset")
-        sys.exit(1)
-
-    print(f"Found {len(participant_ids)} participants")
-
-    # Step 2: Create or load mapping
-    if mapping_file.exists() and not args.force:
-        print(f"Loading existing mapping from: {mapping_file}")
-        with open(mapping_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            participant_mapping = data.get("mapping", {})
-    else:
-        print("Creating new participant ID mapping...")
-        participant_mapping = create_participant_mapping(
-            list(participant_ids),
-            mapping_file,
-            id_length=args.id_length,
-            deterministic=not args.random,
-        )
-        print(f"✓ Mapping saved to: {mapping_file}")
-        print("  ⚠️  KEEP THIS FILE SECURE! It allows re-identification.")
-
-    print()
-    print("Sample mappings:")
-    for i, (orig, anon) in enumerate(list(participant_mapping.items())[:3]):
-        print(f"  {orig} → {anon}")
-    print()
-
-    # Step 3: Copy dataset structure
-    output_path.mkdir(parents=True, exist_ok=True)
-
-    # Copy and anonymize participants.tsv
-    if participants_tsv.exists():
-        print("Anonymizing participants.tsv...")
-        output_participants = output_path / "participants.tsv"
-        anonymize_tsv_file(participants_tsv, output_participants, participant_mapping)
-        print(f"  ✓ {output_participants}")
-
-    # Step 4: Copy and anonymize survey/biometric data
-    print("Anonymizing data files...")
-    for tsv_file in dataset_path.rglob("*.tsv"):
-        if tsv_file.name == "participants.tsv":
-            continue  # Already handled
-
-        # Calculate relative path and update with anonymized IDs
-        rel_path = tsv_file.relative_to(dataset_path)
-        new_rel_path_str = str(rel_path)
-
-        # Replace participant IDs in path
-        for orig_id, anon_id in participant_mapping.items():
-            new_rel_path_str = new_rel_path_str.replace(orig_id, anon_id)
-
-        output_file = output_path / new_rel_path_str
-        anonymize_tsv_file(tsv_file, output_file, participant_mapping)
-        print(f"  ✓ {rel_path} → {new_rel_path_str}")
-
-    # Step 5: Copy JSON sidecars (with optional question masking)
-    print("Copying metadata files...")
-    for json_file in dataset_path.rglob("*.json"):
-        rel_path = json_file.relative_to(dataset_path)
-
-        # Skip the mapping file itself
-        if json_file == mapping_file:
-            continue
-
-        # Replace participant IDs in path
-        new_rel_path_str = str(rel_path)
-        for orig_id, anon_id in participant_mapping.items():
-            new_rel_path_str = new_rel_path_str.replace(orig_id, anon_id)
-
-        output_file = output_path / new_rel_path_str
-        output_file.parent.mkdir(parents=True, exist_ok=True)
-
-        # TODO: If mask_questions flag is set, process survey sidecars to mask question text
-        import shutil
-
-        shutil.copy2(json_file, output_file)
-
-    print()
-    print("=" * 70)
-    print("✅ Anonymization complete!")
-    print(f"   Anonymized dataset: {output_path}")
-    print(f"   Mapping file: {mapping_file}")
-    print()
-    print("⚠️  IMPORTANT:")
-    print("   - Keep the mapping file secure and separate from shared data")
-    print("   - The mapping allows re-identification of participants")
-    print("   - Review the output before sharing to ensure anonymization")
-    print("=" * 70)
+    _cmd_anonymize(args)
 
 
 def main():
