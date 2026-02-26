@@ -363,28 +363,50 @@ export function initSurveyConvert(elements) {
                         if (data.is_prism_data && data.suggested_id_column) {
                             idColumnSelect.value = data.suggested_id_column;
                             if (idColumnStatus) {
-                                idColumnStatus.innerHTML = `<span class="text-success"><i class="fas fa-check me-1"></i>PRISM data (${data.columns.length} columns)</span>`;
+                                idColumnStatus.textContent = `PRISM data (${data.columns.length} columns)`;
+                                idColumnStatus.className = 'text-success';
                             }
                             if (idColumnHelp) {
-                                idColumnHelp.innerHTML = `<i class="fas fa-check-circle me-1 text-success"></i>PRISM ID column detected: <strong>${data.suggested_id_column}</strong>`;
+                                idColumnHelp.replaceChildren();
+                                const icon = document.createElement('i');
+                                icon.className = 'fas fa-check-circle me-1 text-success';
+                                idColumnHelp.appendChild(icon);
+                                idColumnHelp.appendChild(document.createTextNode('PRISM ID column detected: '));
+                                const strong = document.createElement('strong');
+                                strong.textContent = data.suggested_id_column;
+                                idColumnHelp.appendChild(strong);
                             }
                         } else if (!data.is_prism_data) {
                             idColumnSelect.querySelector('option[value="auto"]').textContent = '-- Select ID column --';
                             idColumnSelect.value = 'auto';
                             if (idColumnStatus) {
-                                idColumnStatus.innerHTML = `<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>${data.columns.length} columns</span>`;
+                                idColumnStatus.textContent = `${data.columns.length} columns`;
+                                idColumnStatus.className = 'text-warning';
                             }
                             if (idColumnHelp) {
                                 idColumnHelp.innerHTML = '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>No PRISM ID column found. Please select the participant ID column manually.';
                             }
                         } else {
                             if (idColumnStatus) {
-                                idColumnStatus.innerHTML = `<span class="text-success"><i class="fas fa-check me-1"></i>${data.columns.length} columns</span>`;
+                                idColumnStatus.textContent = `${data.columns.length} columns`;
+                                idColumnStatus.className = 'text-success';
                             }
                             if (idColumnHelp) {
-                                idColumnHelp.innerHTML = data.suggested_id_column
-                                    ? `<i class="fas fa-lightbulb me-1 text-warning"></i>Suggested: <strong>${data.suggested_id_column}</strong>`
-                                    : '<i class="fas fa-exclamation-triangle me-1 text-warning"></i>No common ID column found. Please select manually.';
+                                idColumnHelp.replaceChildren();
+                                if (data.suggested_id_column) {
+                                    const icon = document.createElement('i');
+                                    icon.className = 'fas fa-lightbulb me-1 text-warning';
+                                    idColumnHelp.appendChild(icon);
+                                    idColumnHelp.appendChild(document.createTextNode('Suggested: '));
+                                    const strong = document.createElement('strong');
+                                    strong.textContent = data.suggested_id_column;
+                                    idColumnHelp.appendChild(strong);
+                                } else {
+                                    const icon = document.createElement('i');
+                                    icon.className = 'fas fa-exclamation-triangle me-1 text-warning';
+                                    idColumnHelp.appendChild(icon);
+                                    idColumnHelp.appendChild(document.createTextNode('No common ID column found. Please select manually.'));
+                                }
                             }
                             if (data.suggested_id_column) {
                                 idColumnSelect.value = data.suggested_id_column;
@@ -397,7 +419,10 @@ export function initSurveyConvert(elements) {
                     try {
                         const err = await response.json();
                         console.error('Server returned error:', response.status, err);
-                        if (idColumnStatus) idColumnStatus.innerHTML = `<span class="text-danger">${err.error || 'Error'}</span>`;
+                        if (idColumnStatus) {
+                            idColumnStatus.textContent = err.error || 'Error';
+                            idColumnStatus.className = 'text-danger';
+                        }
                     } catch (jsonError) {
                         console.error('Failed to parse error response:', response.status, jsonError);
                         if (idColumnStatus) idColumnStatus.innerHTML = `<span class="text-danger">Server error (${response.status})</span>`;
@@ -541,7 +566,11 @@ convertError.classList.remove('d-none');
 
         const timestamp = new Date().toLocaleTimeString();
         const color = colors[type] || colors.info;
-        targetLog.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+        const line = document.createElement('span');
+        line.style.color = color;
+        line.textContent = `[${timestamp}] ${String(message)}`;
+        targetLog.appendChild(line);
+        targetLog.appendChild(document.createTextNode('\n'));
         targetLog.scrollTop = targetLog.scrollHeight;
     }
 
@@ -884,9 +913,13 @@ convertError.classList.remove('d-none');
     }
 
     function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+        if (text === null || text === undefined) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     function downloadCurrentZip() {
@@ -1006,7 +1039,11 @@ convertError.classList.remove('d-none');
             matchDiv.className = 'alert alert-info py-2 mt-2 mb-0';
             const srcLabel = m.source === 'project' ? 'project template' : 'library template';
             const srcIcon = m.source === 'project' ? 'fa-folder' : 'fa-globe';
-            matchDiv.innerHTML = `<i class="fas ${icon} me-1"></i><span class="badge ${badgeClass} me-2">${m.confidence}</span>Matches ${srcLabel}: <strong>${m.template_key}</strong> <span class="badge bg-light text-dark border ms-1"><i class="fas ${srcIcon} me-1"></i>${m.source === 'project' ? 'project' : 'library'}</span> (${details.join(', ')})${actionLabel ? ` &mdash; <em>${actionLabel}</em>` : ''}`;
+            const safeTemplateKey = escapeHtml(m.template_key || '');
+            const safeConfidence = escapeHtml(m.confidence || 'unknown');
+            const safeDetails = escapeHtml(details.join(', '));
+            const safeActionLabel = actionLabel ? escapeHtml(actionLabel) : '';
+            matchDiv.innerHTML = `<i class="fas ${icon} me-1"></i><span class="badge ${badgeClass} me-2">${safeConfidence}</span>Matches ${srcLabel}: <strong>${safeTemplateKey}</strong> <span class="badge bg-light text-dark border ms-1"><i class="fas ${srcIcon} me-1"></i>${m.source === 'project' ? 'project' : 'library'}</span> (${safeDetails})${safeActionLabel ? ` &mdash; <em>${safeActionLabel}</em>` : ''}`;
             container.querySelector('.alert')?.after(matchDiv);
         } else if (m === null) {
             const matchDiv = document.createElement('div');
@@ -1088,17 +1125,22 @@ convertError.classList.remove('d-none');
                     // Show "Use Library" button for exact/high matches (but not for participants matches)
                     const sourceLabel = m.source === 'project' ? 'project' : 'library';
                     const sourceIcon = m.source === 'project' ? 'fa-folder' : 'fa-globe';
+                    const safeName = escapeHtml(name || '');
+                    const safeTemplateKey = escapeHtml(m.template_key || '');
+                    const safeDetailStr = escapeHtml(detailStr);
+                    const safeSourceLabel = escapeHtml(sourceLabel);
+                    const safeConfidence = escapeHtml(m.confidence || 'unknown');
                     // Don't show "Use library version" for participants matches - there's no participants template in the library
                     const useLibBtn = (m.suggested_action === 'use_library' && !m.is_participants)
-                        ? `<button class="btn btn-sm btn-outline-primary use-library-btn mt-1" data-name="${name}" data-template-key="${m.template_key}" data-is-participants="${m.is_participants || false}"><i class="fas fa-book me-1"></i>Use ${sourceLabel} version</button>`
+                        ? `<button class="btn btn-sm btn-outline-primary use-library-btn mt-1" data-name="${safeName}" data-template-key="${safeTemplateKey}" data-is-participants="${m.is_participants || false}"><i class="fas fa-book me-1"></i>Use ${safeSourceLabel} version</button>`
                         : '';
                     matchHtml = `
                         <div class="mt-1 pt-1 border-top">
-                            <span class="badge ${badgeClass}" title="${detailStr}">
-                                <i class="fas ${icon} me-1"></i>${m.confidence} match: ${m.template_key}
+                            <span class="badge ${badgeClass}" title="${safeDetailStr}">
+                                <i class="fas ${icon} me-1"></i>${safeConfidence} match: ${safeTemplateKey}
                             </span>
-                            <span class="badge bg-light text-dark border ms-1" title="Matched from ${sourceLabel}">
-                                <i class="fas ${sourceIcon} me-1"></i>${sourceLabel}
+                            <span class="badge bg-light text-dark border ms-1" title="Matched from ${safeSourceLabel}">
+                                <i class="fas ${sourceIcon} me-1"></i>${safeSourceLabel}
                             </span>
                             ${diffHtml}
                             ${useLibBtn}
@@ -1114,15 +1156,17 @@ convertError.classList.remove('d-none');
                     `;
                 }
 
+                const safeName = escapeHtml(name || '');
+                const safeQuestionCount = escapeHtml(String(info.question_count ?? ''));
                 card.innerHTML = `
                     <div class="card h-100">
                         <div class="card-body py-2">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <strong>${name}</strong>
-                                    <small class="d-block text-muted">${info.question_count} questions</small>
+                                    <strong>${safeName}</strong>
+                                    <small class="d-block text-muted">${safeQuestionCount} questions</small>
                                 </div>
-                                <button class="btn btn-sm btn-outline-success download-template-btn" data-name="${name}">
+                                <button class="btn btn-sm btn-outline-success download-template-btn" data-name="${safeName}">
                                     <i class="fas fa-download"></i>
                                 </button>
                             </div>
@@ -1150,9 +1194,11 @@ convertError.classList.remove('d-none');
                             // Update the card visually
                             const card = btn.closest('.card');
                             const matchDiv = btn.closest('.border-top');
+                            const safeTemplateKey = escapeHtml(templateKey || '');
+                            const safeFilename = escapeHtml(result.filename || '');
                             matchDiv.innerHTML = `
-                                <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Using library: ${templateKey}</span>
-                                <small class="d-block text-muted mt-1">${result.filename}</small>
+                                <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Using library: ${safeTemplateKey}</span>
+                                <small class="d-block text-muted mt-1">${safeFilename}</small>
                             `;
                         } else {
                             btn.disabled = false;
@@ -1234,7 +1280,10 @@ convertError.classList.remove('d-none');
             for (const [groupName, groupInfo] of Object.entries(data.by_group || {})) {
                 const groupDiv = document.createElement('div');
                 groupDiv.className = 'col-12 mb-2';
-                groupDiv.innerHTML = `<h6 class="text-muted">${groupName}</h6>`;
+                const heading = document.createElement('h6');
+                heading.className = 'text-muted';
+                heading.textContent = groupName;
+                groupDiv.appendChild(heading);
                 listEl.appendChild(groupDiv);
 
                 for (const q of groupInfo.questions || []) {
@@ -1243,15 +1292,18 @@ convertError.classList.remove('d-none');
 
                     const card = document.createElement('div');
                     card.className = 'col-md-3';
+                    const safeCode = escapeHtml(q.code || '');
+                    const safeType = escapeHtml(q.type || '');
+                    const safeItemCount = escapeHtml(String(q.item_count ?? ''));
                     card.innerHTML = `
                         <div class="card h-100">
                             <div class="card-body py-2">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
-                                        <strong>${q.code}</strong>
-                                        <small class="d-block text-muted">${q.type} (${q.item_count} items)</small>
+                                        <strong>${safeCode}</strong>
+                                        <small class="d-block text-muted">${safeType} (${safeItemCount} items)</small>
                                     </div>
-                                    <button class="btn btn-sm btn-outline-success download-q-btn" data-code="${q.code}">
+                                    <button class="btn btn-sm btn-outline-success download-q-btn" data-code="${safeCode}">
                                         <i class="fas fa-download"></i>
                                     </button>
                                 </div>
@@ -1422,20 +1474,25 @@ convertError.classList.remove('d-none');
         let html = '<div class="list-group list-group-flush">';
         for (const field of allFields) {
             const suggestedMapping = suggestBidsMapping(field.code);
+            const safeCode = escapeHtml(field.code || '');
+            const safeDescription = escapeHtml(field.description || '');
+            const safeType = escapeHtml(field.type || 'text');
+            const safeGroup = field.group ? escapeHtml(field.group) : '';
+            const safeSuggestedMapping = suggestedMapping ? escapeHtml(suggestedMapping) : '';
             html += `
                 <label class="list-group-item list-group-item-action py-2 d-flex align-items-center">
                     <input type="checkbox" class="form-check-input me-2 participant-field-checkbox"
-                           data-code="${field.code}" data-description="${field.description || ''}"
-                           data-type="${field.type || 'text'}">
+                           data-code="${safeCode}" data-description="${safeDescription}"
+                           data-type="${safeType}">
                     <div class="flex-grow-1">
-                        <code class="me-2">${field.code}</code>
-                        <small class="text-muted">${field.description || field.type || ''}</small>
-                        ${field.group ? `<span class="badge bg-light text-dark ms-2">${field.group}</span>` : ''}
+                        <code class="me-2">${safeCode}</code>
+                        <small class="text-muted">${safeDescription || safeType || ''}</small>
+                        ${safeGroup ? `<span class="badge bg-light text-dark ms-2">${safeGroup}</span>` : ''}
                     </div>
                     ${suggestedMapping ? `
-                        <select class="form-select form-select-sm bids-mapping-select" style="width: 140px;" data-code="${field.code}">
+                        <select class="form-select form-select-sm bids-mapping-select" style="width: 140px;" data-code="${safeCode}">
                             <option value="">Map to...</option>
-                            <option value="${suggestedMapping}" selected>${suggestedMapping}</option>
+                            <option value="${safeSuggestedMapping}" selected>${safeSuggestedMapping}</option>
                             <option value="participant_id">participant_id</option>
                             <option value="age">age</option>
                             <option value="sex">sex</option>
@@ -1443,7 +1500,7 @@ convertError.classList.remove('d-none');
                             <option value="custom">Custom name</option>
                         </select>
                     ` : `
-                        <select class="form-select form-select-sm bids-mapping-select" style="width: 140px;" data-code="${field.code}">
+                        <select class="form-select form-select-sm bids-mapping-select" style="width: 140px;" data-code="${safeCode}">
                             <option value="">Map to...</option>
                             <option value="participant_id">participant_id</option>
                             <option value="age">age</option>
@@ -1641,12 +1698,33 @@ convertError.classList.remove('d-none');
                     const result = await response.json();
 
                     if (result.success) {
-                        statusDiv.innerHTML = `<span class="text-success"><i class="fas fa-check-circle me-1"></i>Saved ${Object.keys(schema).length} fields to participants.json!</span>`;
+                        statusDiv.replaceChildren();
+                        const text = document.createElement('span');
+                        text.className = 'text-success';
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-check-circle me-1';
+                        text.appendChild(icon);
+                        text.appendChild(document.createTextNode(`Saved ${Object.keys(schema).length} fields to participants.json!`));
+                        statusDiv.appendChild(text);
                     } else {
-                        statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>${result.error}</span>`;
+                        statusDiv.replaceChildren();
+                        const text = document.createElement('span');
+                        text.className = 'text-danger';
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-exclamation-circle me-1';
+                        text.appendChild(icon);
+                        text.appendChild(document.createTextNode(result.error || 'Failed to save participants schema'));
+                        statusDiv.appendChild(text);
                     }
                 } catch (e) {
-                    statusDiv.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-circle me-1"></i>${e.message}</span>`;
+                    statusDiv.replaceChildren();
+                    const text = document.createElement('span');
+                    text.className = 'text-danger';
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-exclamation-circle me-1';
+                    text.appendChild(icon);
+                    text.appendChild(document.createTextNode(e.message || 'Error'));
+                    statusDiv.appendChild(text);
                 } finally {
                     saveBtn.disabled = false;
                     saveBtn.innerHTML = '<i class="fas fa-save me-1"></i>Save to participants.json';
@@ -2019,16 +2097,19 @@ convertError.classList.remove('d-none');
             const fieldCode = typeof item === 'object' ? item.field_code : item;
             const description = typeof item === 'object' ? (item.description || '') : '';
             const inferReason = typeof item === 'object' ? (item.infer_reason || '') : '';
+            const safeFieldCode = escapeHtml(fieldCode || '');
+            const safeDescription = escapeHtml(description || '');
+            const safeInferReason = escapeHtml(String(inferReason || ''));
             const inferIcon = inferReason
-                ? `<i class="fas fa-circle-info text-muted ms-1" title="${String(inferReason).replace(/"/g, '&quot;')}"></i>`
+                ? `<i class="fas fa-circle-info text-muted ms-1" title="${safeInferReason}"></i>`
                 : '';
             
             html += `
                 <div class="form-check mb-2">
-                    <input class="form-check-input col-selector" type="checkbox" id="col_${idx}" value="${fieldCode}" data-description="${description}">
+                    <input class="form-check-input col-selector" type="checkbox" id="col_${idx}" value="${safeFieldCode}" data-description="${safeDescription}">
                     <label class="form-check-label" for="col_${idx}">
-                        <strong>${fieldCode}</strong>${inferIcon}
-                        ${description ? `<br><small class="text-muted">→ ${description}</small>` : ''}
+                        <strong>${safeFieldCode}</strong>${inferIcon}
+                        ${safeDescription ? `<br><small class="text-muted">→ ${safeDescription}</small>` : ''}
                     </label>
                 </div>
             `;
@@ -2124,10 +2205,20 @@ convertError.classList.remove('d-none');
         document.getElementById('mappingColumnsContainer').classList.add('d-none');
         document.getElementById('mappingSuccess').classList.remove('d-none');
         document.getElementById('mappingError').classList.add('d-none');
-        document.getElementById('mappingFilePath').innerHTML = `
-            <strong>File created:</strong> <code>${filePath}</code><br>
-            <span class="text-muted">Run <strong>2. Extract &amp; Convert</strong> to apply these variables to participants.tsv.</span>
-        `;
+        const mappingFilePathEl = document.getElementById('mappingFilePath');
+        mappingFilePathEl.replaceChildren();
+        const strong = document.createElement('strong');
+        strong.textContent = 'File created:';
+        const code = document.createElement('code');
+        code.textContent = filePath;
+        const hint = document.createElement('span');
+        hint.className = 'text-muted';
+        hint.textContent = 'Run 2. Extract & Convert to apply these variables to participants.tsv.';
+        mappingFilePathEl.appendChild(strong);
+        mappingFilePathEl.appendChild(document.createTextNode(' '));
+        mappingFilePathEl.appendChild(code);
+        mappingFilePathEl.appendChild(document.createElement('br'));
+        mappingFilePathEl.appendChild(hint);
         
         // Hide the Save and Cancel buttons, show the Close button
         document.getElementById('saveMappingBtn').classList.add('d-none');
