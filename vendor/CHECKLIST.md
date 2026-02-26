@@ -103,8 +103,8 @@ Documentation:
 - `docs/INSTALLATION.md` – User-facing docs
 
 Scripts:
-- `scripts/test_pyedflib.bat` – Windows test script
-- `scripts/test_pyedflib.sh` – Mac/Linux test script
+- `scripts/ci/test_pyedflib.bat` – Windows test script
+- `scripts/ci/test_pyedflib.sh` – Mac/Linux test script
 - `vendor/verify_structure.py` – Verify bundle
 
 System:
@@ -125,7 +125,7 @@ A: ~1-2 MB. Negligible.
 A: No. They can install normally. The vendor/ is a fallback.
 
 **Q: What if I don't have a Windows VM?**
-A: Use the download script: `python scripts/bundle_pyedflib.py`
+A: Use the download script: `python scripts/release/bundle_pyedflib.py`
 
 **Q: Is this standard practice?**
 A: Yes! Many Python packages vendor dependencies for platforms where compilation is difficult.

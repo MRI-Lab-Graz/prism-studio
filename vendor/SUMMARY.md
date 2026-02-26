@@ -26,8 +26,8 @@
 - `docs/INSTALLATION.md` – Updated with EDF support info
 
 ### 4. Added Test Scripts
-- `scripts/test_pyedflib.bat` (Windows)
-- `scripts/test_pyedflib.sh` (Mac/Linux)
+- `scripts/ci/test_pyedflib.bat` (Windows)
+- `scripts/ci/test_pyedflib.sh` (Mac/Linux)
 - Users can verify EDF support status
 
 ---

@@ -114,6 +114,16 @@ Migration rules:
 - Moved CI helper scripts with wrappers:
   - `scripts/ci/test_bids_compliance.py`
   - `scripts/ci/test_sav_anonymization.py`
+- Moved additional release/CI scripts with wrappers:
+  - `scripts/release/bundle_pyedflib.py`
+  - `scripts/ci/test_pyedflib.sh`
+  - `scripts/ci/test_pyedflib.bat`
+- Moved remaining root scripts with wrappers:
+  - `scripts/data/anonymize_sav_files.py`
+  - `scripts/setup/windows_workshop_preflight.ps1`
+  - `scripts/ci/test_participants_mapping.py`
+- Updated selected docs/comments to canonical script paths while retaining old-path wrappers:
+  - vendor pyedflib docs now reference `scripts/ci/*` and `scripts/release/*`
 
 ## Learned Lessions
 
@@ -131,7 +141,10 @@ Migration rules:
 - Wrapping moved scripts with runpy keeps behavior and arguments identical while allowing immediate folder cleanup.
 - Categorizing by script purpose (`dev`, `data`, `maintenance`) creates a clearer contributor mental model without immediate disruption.
 - When moving scripts, replace location-dependent path logic with repo-root relative resolution to keep wrappers and canonical paths consistent.
+- Keep platform-specific wrappers minimal and native (`.sh` exec, `.bat` call) so behavior remains predictable across OSes.
+- Workshop/platform utility scripts fit best under `scripts/setup/`; keeping root path wrappers avoids breaking onboarding documentation.
+- Canonical-path doc updates can happen incrementally right after each move as long as wrappers remain available.
 
 ## Immediate next step
 
-- Continue script-folder reorganization in batches (`scripts/release` and remaining root scripts) with compatibility wrappers, then update docs/automation references incrementally.
+- Continue scanning docs/automation for remaining old script-path references and migrate them to canonical paths.

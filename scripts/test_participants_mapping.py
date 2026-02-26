@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-"""Deprecated shim. Use tests/test_participants_mapping.py instead."""
+"""Compatibility wrapper for moved script."""
 
 import os
+import runpy
 import sys
 
 
 def main():
     target = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "tests",
+        os.path.dirname(os.path.abspath(__file__)),
+        "ci",
         "test_participants_mapping.py",
     )
-    if os.path.exists(target):
-        os.execv(sys.executable, [sys.executable, target] + sys.argv[1:])
-    print("Moved to tests/test_participants_mapping.py")
-    sys.exit(1)
+    if not os.path.exists(target):
+        print(f"Moved script not found: {target}")
+        sys.exit(1)
+    sys.path.insert(0, os.path.dirname(target))
+    runpy.run_path(target, run_name="__main__")
 
 
 if __name__ == "__main__":
