@@ -136,6 +136,22 @@ Deliverables:
 
 ## Progress Log
 
+- Phase 6 Python extraction slice (batch 8) completed:
+  - extracted preview-generation helper block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_preview.py`
+  - preserved compatibility using thin wrapper delegation in `survey.py`
+- Post-extraction validation:
+  - preview helper wiring smoke-check passed (`_generate_participants_preview`, `_generate_dry_run_preview`)
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+
+- Phase 6 Python extraction slice (batch 7) completed:
+  - extracted LimeSurvey metadata inference helper block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_lsa_metadata.py`
+  - preserved compatibility using thin wrapper delegation in `survey.py`
+- Post-extraction validation:
+  - wrapper smoke-check passed (`infer_lsa_metadata`, `_infer_lsa_language_and_tech` fallback behavior)
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+
 - Phase 6 Python extraction slice (batch 6) completed:
   - extracted missing-token/technical-override helper block from `app/src/converters/survey.py`
   - new module: `app/src/converters/survey_technical.py`
