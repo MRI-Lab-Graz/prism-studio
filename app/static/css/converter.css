@@ -35,6 +35,19 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+#converterTabs .converter-workflow-divider {
+    border-top: 1px solid #cfd4da;
+    margin: 8px 6px 6px;
+}
+
+#converterTabs .converter-modality-header {
+    color: #6c757d;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin: 0 8px;
+}
+
 /* Survey tab - Yellow */
 #survey-tab.active {
     background-color: #ffc107;
