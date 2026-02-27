@@ -75,7 +75,7 @@ try:
     )
 except ImportError:
     try:
-        from app.src.web.path_utils import (
+        from web.path_utils import (
             strip_temp_path as _import_strip_temp_path,
             strip_temp_path_from_message as _import_strip_temp_path_from_message,
             extract_path_from_message as _import_extract_path_from_message,
@@ -96,7 +96,7 @@ try:
     )
 except ImportError:
     try:
-        from app.src.web.reporting_utils import (
+        from web.reporting_utils import (
             format_validation_results as _import_format_validation_results,
             sanitize_jsonable as _import_sanitize_jsonable,
         )
@@ -110,7 +110,7 @@ try:
     )
 except ImportError:
     try:
-        from app.src.web.survey_utils import (
+        from web.survey_utils import (
             list_survey_template_languages as _import_list_survey_template_languages,
         )
     except ImportError:

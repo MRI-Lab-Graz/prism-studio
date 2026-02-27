@@ -26,11 +26,16 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 try:
-    from app.src.readme_generator import ReadmeGenerator
+    from src.readme_generator import ReadmeGenerator
 
     HAS_README_GENERATOR = True
 except ImportError:
-    HAS_README_GENERATOR = False
+    try:
+        from readme_generator import ReadmeGenerator
+
+        HAS_README_GENERATOR = True
+    except ImportError:
+        HAS_README_GENERATOR = False
 
 logger = logging.getLogger(__name__)
 

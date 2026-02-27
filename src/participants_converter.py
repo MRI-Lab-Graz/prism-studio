@@ -42,7 +42,7 @@ import pandas as pd
 try:
     from src.cross_platform import CrossPlatformFile
 except ImportError:
-    from app.src.cross_platform import CrossPlatformFile
+    from cross_platform import CrossPlatformFile
 
 
 logger = logging.getLogger(__name__)

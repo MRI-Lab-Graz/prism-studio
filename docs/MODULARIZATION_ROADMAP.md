@@ -21,6 +21,34 @@ Secondary scope: frontend hardening work that supports safe Web UI behavior with
 - Frontend hardening slice for converter unsafe-pattern issues has reached a clean baseline.
 - Remaining high-value work is decomposition of large Python modules in `app/src/`.
 
+## Execution Track — Repository Modularity Hardening (2026-02-27)
+
+This execution track operationalizes the architecture assessment into four points and enforces a strict loop:
+
+1. modify,
+2. validate using `tests/verify_repo.py` (targeted checks),
+3. log result and lessons learned,
+4. continue to next point.
+
+### Point Checklist
+
+- [x] **Point 1:** Canonical source direction (`app/src` authoritative, remove `app.src.*` cross-import patterns)
+- [ ] **Point 2:** Blueprint split preparation (route modules leaner, helper extraction from monolith blueprints)
+- [ ] **Point 3:** Service layer preparation (extract business-flow helpers out of route files)
+- [ ] **Point 4:** CI guardrails for import boundaries (fail fast on forbidden cross-tree imports)
+
+### Validation Policy for this Track
+
+- Use targeted verify checks after each point via:
+  - `python tests/verify_repo.py --check entrypoints-smoke,path-hygiene,testing --no-fix`
+- Run focused pytest suites for touched areas.
+- Keep behavior and BIDS compatibility unchanged.
+
+### Lessons Learned (rolling)
+
+- 2026-02-27: Running `python tests/verify_repo.py --list-checks` first reduces accidental long-running checks and enables fast iteration.
+- 2026-02-27: Import fallback chains across `src/` and `app/src/` are the primary source of modularity ambiguity; removing `app.src.*` imports is a low-risk, high-value first slice.
+
 ## Phase 1 — Contract Lock (completed)
 
 - Add CLI contract tests for help surfaces and key subcommands.
