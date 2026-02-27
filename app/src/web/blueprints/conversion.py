@@ -410,6 +410,17 @@ _DEFAULT_NEUROBAGEL_KEYS = {
     "date",
 }
 
+_DEFAULT_PARTICIPANT_STANDARD_ALIASES = {
+    "age": {"age"},
+    "sex": {"sex", "biologicalsex"},
+    "gender": {"gender", "genderidentity"},
+    "education": {"education", "educationlevel"},
+    "handedness": {"handedness", "hand"},
+    "group": {"group"},
+    "diagnosis": {"diagnosis", "diagnosticgroup", "diagnosisgroup"},
+    "ethnicity": {"ethnicity", "race"},
+}
+
 _PARTICIPANT_FILTER_CONFIG = {
     # Minimum number of columns like PREFIX01/PREFIX02 needed to treat PREFIX*
     # as questionnaire-item style columns.
@@ -654,6 +665,33 @@ def _filter_participant_relevant_columns(
                 continue
             fallback.append(col_str)
         return fallback if fallback else list(df.columns)
+
+    return selected
+
+
+def _collect_default_participant_columns(df, id_column: str | None) -> list[str]:
+    """Collect default participant columns (core standards only)."""
+    if df is None or getattr(df, "empty", True):
+        return []
+
+    selected: list[str] = []
+    if id_column and id_column in df.columns:
+        selected.append(str(id_column))
+
+    alias_values = {
+        _normalize_column_name(alias)
+        for aliases in _DEFAULT_PARTICIPANT_STANDARD_ALIASES.values()
+        for alias in aliases
+    }
+
+    for col in df.columns:
+        col_str = str(col)
+        if id_column and col_str == id_column:
+            continue
+
+        normalized = _normalize_column_name(col_str)
+        if normalized in alias_values and col_str not in selected:
+            selected.append(col_str)
 
     return selected
 
@@ -3402,6 +3440,73 @@ def api_participants_check():
     )
 
 
+@conversion_bp.route("/api/participants-detect-id", methods=["POST"])
+def api_participants_detect_id():
+    """Detect participant ID column for an uploaded participant file."""
+    try:
+        import pandas as pd
+    except ImportError as e:
+        return jsonify({"error": f"Required module not available: {str(e)}"}), 500
+
+    uploaded_file = request.files.get("file")
+    if not uploaded_file or not uploaded_file.filename:
+        return jsonify({"error": "Missing input file"}), 400
+
+    filename = secure_filename(uploaded_file.filename)
+    suffix = Path(filename).suffix.lower()
+
+    if suffix not in {".xlsx", ".csv", ".tsv", ".lsa"}:
+        return jsonify({"error": "Supported formats: .xlsx, .csv, .tsv, .lsa"}), 400
+
+    tmp_dir = tempfile.mkdtemp(prefix="prism_participants_detect_id_")
+    try:
+        tmp_path = Path(tmp_dir)
+        input_path = tmp_path / filename
+        uploaded_file.save(str(input_path))
+
+        sheet = request.form.get("sheet", "0").strip() or "0"
+        try:
+            sheet_arg = int(sheet) if sheet.isdigit() else sheet
+        except (ValueError, TypeError):
+            sheet_arg = 0
+
+        if suffix == ".xlsx":
+            df = pd.read_excel(input_path, sheet_name=sheet_arg, dtype=str)
+        elif suffix in {".csv", ".tsv"}:
+            sep = "\t" if suffix == ".tsv" else ","
+            df = pd.read_csv(input_path, sep=sep, dtype=str)
+        else:
+            from src.converters.survey import _read_lsa_as_dataframe
+
+            df = _read_lsa_as_dataframe(input_path)
+
+        from src.converters.id_detection import (
+            detect_id_column as _detect_id,
+            has_prismmeta_columns as _has_pm_cols,
+        )
+
+        source_fmt = "lsa" if suffix == ".lsa" else "xlsx"
+        detected_id = _detect_id(
+            list(df.columns),
+            source_fmt,
+            explicit_id_column=None,
+            has_prismmeta=_has_pm_cols(list(df.columns)),
+        )
+
+        return jsonify(
+            {
+                "status": "success",
+                "id_found": bool(detected_id),
+                "id_column": detected_id,
+                "columns": [str(c) for c in df.columns],
+            }
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
 @conversion_bp.route("/api/participants-preview", methods=["POST"])
 def api_participants_preview():
     """Preview participant data extraction from uploaded file."""
@@ -3505,70 +3610,22 @@ def api_participants_preview():
                 )
             ]
 
-            # SIMULATE CONVERSION: Show what the OUTPUT will look like
-            # Check if participants.json exists in library to determine expected schema
-            participants_json_path = library_path / "participants.json"
+            # SIMULATE CONVERSION: show default output columns (core standards only).
+            output_columns = _collect_default_participant_columns(df, id_column)
 
-            # Build expected output columns based on participants.json if available
-            expected_columns = []
-            if participants_json_path.exists():
-                try:
-                    with open(participants_json_path, "r") as f:
-                        schema = json.load(f)
-                        expected_columns = list(schema.keys())
-                except (OSError, json.JSONDecodeError, KeyError):
-                    pass
-
-            # If no schema, use common participant columns
-            if not expected_columns:
-                expected_columns = [
-                    "participant_id",
-                    "age",
-                    "sex",
-                    "handedness",
-                    "group",
-                ]
-
-            # Filter to only columns that exist in the source data
-            output_columns = [id_column]  # Always include ID column first
-            for col in expected_columns:
-                if col != id_column and col in df.columns:
-                    output_columns.append(col)
-
-            # Always merge in additional participant-relevant columns from source.
-            # This prevents valid demographics (e.g., education) from being hidden
-            # when participants.json is missing, outdated, or minimal.
-            filtered_columns = _filter_participant_relevant_columns(
-                df,
-                id_column=id_column,
-                library_path=library_path,
-                participant_filter_config=participant_filter_config,
-            )
-            for col in filtered_columns:
-                if col not in output_columns:
-                    output_columns.append(col)
-
-            # If still empty (no matching columns), show a limited set from source
+            # If no standard variables are found, show a minimal fallback.
             if len(output_columns) <= 1:
-                filtered_columns = _filter_participant_relevant_columns(
-                    df,
-                    id_column=id_column,
-                    library_path=library_path,
-                    participant_filter_config=participant_filter_config,
-                )
-                if len(filtered_columns) > 1:
-                    output_df = df[filtered_columns]
-                    simulation_note = "No participants.json schema found. Applied smart participant-variable filtering."
+                if id_column in df.columns:
+                    output_df = df[[id_column]]
+                    simulation_note = "Detected participant ID only. Additional variables can be added via Add Additional Variables."
                 else:
                     output_df = df[list(df.columns)]
-                    simulation_note = (
-                        "No participants.json schema found. Showing raw file structure."
-                    )
+                    simulation_note = "Could not detect a participant ID column. Showing raw file structure."
             else:
                 # Show only the columns that will be in participants.tsv
                 output_df = df[output_columns]
                 simulation_note = (
-                    f"Simulated output with {len(output_columns)} participant columns."
+                    f"Simulated output with {len(output_columns)} default participant columns."
                 )
 
             # Preview first 20 rows
@@ -3805,12 +3862,12 @@ def api_participants_convert():
                                     "source_column": col,
                                     "standard_variable": "age",
                                 }
-                            elif col_lower in ["sex", "biological_sex"]:
+                            elif col_lower in ["sex", "biological_sex", "biologicalsex"]:
                                 mapping["mappings"]["sex"] = {
                                     "source_column": col,
                                     "standard_variable": "sex",
                                 }
-                            elif col_lower in ["gender"]:
+                            elif col_lower in ["gender", "gender_identity", "genderidentity"]:
                                 mapping["mappings"]["gender"] = {
                                     "source_column": col,
                                     "standard_variable": "gender",
@@ -3819,6 +3876,11 @@ def api_participants_convert():
                                 mapping["mappings"]["handedness"] = {
                                     "source_column": col,
                                     "standard_variable": "handedness",
+                                }
+                            elif col_lower in ["education", "education_level", "educationlevel"]:
+                                mapping["mappings"]["education"] = {
+                                    "source_column": col,
+                                    "standard_variable": "education",
                                 }
 
                         if mapping["mappings"]:
@@ -3836,8 +3898,8 @@ def api_participants_convert():
                             f"Using explicit participant mapping for {len(mapping.get('mappings', {}))} columns",
                         )
 
-                # Ensure mapping is additive: merge auto-detected participant-relevant
-                # columns so "Add Additional Variables" does not replace the default set.
+                # Ensure mapping always includes default core participant variables.
+                # Non-core columns remain opt-in through participants_mapping.json.
                 try:
                     import pandas as pd
                     from src.converters.id_detection import (
@@ -3881,15 +3943,8 @@ def api_participants_convert():
                     if not detected_id_col and len(df_for_merge.columns) > 0:
                         detected_id_col = str(df_for_merge.columns[0])
 
-                    effective_library_path = _resolve_effective_library_path()
-                    participant_filter_config = _load_project_participant_filter_config(
-                        session.get("current_project_path")
-                    )
-                    auto_columns = _filter_participant_relevant_columns(
-                        df_for_merge,
-                        id_column=detected_id_col,
-                        library_path=effective_library_path,
-                        participant_filter_config=participant_filter_config,
+                    auto_columns = _collect_default_participant_columns(
+                        df_for_merge, detected_id_col
                     )
 
                     if not isinstance(mapping, dict):
@@ -3935,12 +3990,12 @@ def api_participants_convert():
                     if added_auto:
                         log_msg(
                             "INFO",
-                            f"Added {added_auto} auto-detected participant columns to mapping (additive merge)",
+                            f"Added {added_auto} default participant columns to mapping (additive merge)",
                         )
                 except Exception as merge_error:
                     log_msg(
                         "WARNING",
-                        f"Could not merge auto-detected participant columns into mapping: {merge_error}",
+                        f"Could not merge default participant columns into mapping: {merge_error}",
                     )
 
                 # Convert using the uploaded file

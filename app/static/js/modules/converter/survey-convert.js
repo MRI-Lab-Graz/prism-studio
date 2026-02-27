@@ -54,6 +54,42 @@ export function initSurveyConvert(elements) {
         populateSessionPickers
     } = elements;
 
+    const convertAdvancedToggle = document.getElementById('convertAdvancedToggle');
+
+    function isAdvancedOptionsEnabled() {
+        return Boolean(convertAdvancedToggle && convertAdvancedToggle.checked);
+    }
+
+    function applyAdvancedOptionsState() {
+        const enabled = isAdvancedOptionsEnabled();
+
+        if (convertDatasetName) {
+            convertDatasetName.disabled = !enabled;
+            if (!enabled) convertDatasetName.value = '';
+        }
+
+        if (convertLanguage) {
+            convertLanguage.disabled = !enabled;
+            if (!enabled) convertLanguage.value = 'auto';
+        }
+
+        if (convertIdMapFile) {
+            convertIdMapFile.disabled = !enabled;
+            if (!enabled) {
+                convertIdMapFile.value = '';
+                clearIdMapFileBtn?.classList.add('d-none');
+            }
+        }
+
+        if (clearIdMapFileBtn) {
+            clearIdMapFileBtn.disabled = !enabled;
+        }
+    }
+
+    if (convertAdvancedToggle) {
+        convertAdvancedToggle.addEventListener('change', applyAdvancedOptionsState);
+    }
+
     // ID Map file handlers
     if (convertIdMapFile) {
         const updateIdMapClearButtonState = () => {
@@ -78,6 +114,8 @@ export function initSurveyConvert(elements) {
 
         updateIdMapClearButtonState();
     }
+
+    applyAdvancedOptionsState();
 
     // Library path browser
     if (convertBrowseLibraryBtn && convertLibraryPathInput) {
@@ -1860,7 +1898,7 @@ convertError.classList.remove('d-none');
         }
 
         // Validate ID map before sending
-        const idMap = convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
+        const idMap = isAdvancedOptionsEnabled() && convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
         if (idMap) {
             if (idMap.size === 0) {
                 convertError.classList.remove('d-none');
@@ -1894,7 +1932,9 @@ convertError.classList.remove('d-none');
         }
 
         // Library path is now resolved automatically (project first, then global)
-        formData.append('dataset_name', convertDatasetName.value.trim());
+        if (isAdvancedOptionsEnabled() && convertDatasetName && convertDatasetName.value.trim()) {
+            formData.append('dataset_name', convertDatasetName.value.trim());
+        }
 
         // Show log container
         conversionLogContainer.classList.remove('d-none');
@@ -1919,7 +1959,7 @@ convertError.classList.remove('d-none');
         formData.append('session', sessionVal);
         appendLog(`Forcing session ID: ${sessionVal}`, 'step');
 
-        formData.append('language', convertLanguage ? convertLanguage.value : 'auto');
+        formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
         formData.append('validate', 'true');  // Request validation
 
         convertBtn.disabled = true;
@@ -2069,6 +2109,7 @@ convertError.classList.remove('d-none');
                 const p = window.lastParticipantsPreviewData;
                 const idCol = p.id_column;
                 const schema = p.neurobagel_schema || {};
+                const defaultPreviewCols = new Set(Array.isArray(p.columns) ? p.columns : []);
                 const participantColumns = Array.isArray(p.source_columns) && p.source_columns.length > 0
                     ? p.source_columns
                     : p.columns;
@@ -2107,7 +2148,7 @@ convertError.classList.remove('d-none');
                 }
 
                 mappingCandidates = participantColumns
-                    .filter(col => col !== idCol && !excludedQuestionnaireCols.has(col))
+                    .filter(col => col !== idCol && !excludedQuestionnaireCols.has(col) && !defaultPreviewCols.has(col))
                     .map(col => ({
                         field_code: col,
                         description: schema[col]?.Description || '',
@@ -2302,7 +2343,7 @@ convertError.classList.remove('d-none');
         }
 
         // Validate ID map before sending
-        const idMap = convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
+        const idMap = isAdvancedOptionsEnabled() && convertIdMapFile && convertIdMapFile.files && convertIdMapFile.files[0];
         if (idMap) {
             // Just check that a file is selected; don't read it (avoids stream issues)
             console.log(`[CLIENT DEBUG] ID map file selected: ${idMap.name} (size: ${idMap.size} bytes, type: ${idMap.type})`);
@@ -2345,7 +2386,7 @@ convertError.classList.remove('d-none');
             formData.append('session', sessionVal);
         }
 
-        formData.append('language', convertLanguage ? convertLanguage.value : 'auto');
+        formData.append('language', (isAdvancedOptionsEnabled() && convertLanguage) ? convertLanguage.value : 'auto');
 
         // Default: run validation in preview
         formData.append('validate', 'true');
