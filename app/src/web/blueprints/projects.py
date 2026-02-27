@@ -127,6 +127,23 @@ def get_bids_file_path(project_path: Path, filename: str) -> Path:
     return project_path / filename
 
 
+def _resolve_project_root_path(project_path_value: str) -> Path | None:
+    if not project_path_value:
+        return None
+
+    path_obj = Path(project_path_value)
+    if not path_obj.exists():
+        return None
+
+    if path_obj.is_file() and path_obj.name == "project.json":
+        return path_obj.parent
+
+    if path_obj.is_dir():
+        return path_obj
+
+    return None
+
+
 _DEFAULT_CITATION_MESSAGE = "If you use this dataset, please cite it."
 
 
@@ -1485,10 +1502,11 @@ def export_project():
             return jsonify({"error": "No data provided"}), 400
 
         project_path = data.get("project_path")
-        if not project_path or not os.path.exists(project_path):
+        resolved_project_path = _resolve_project_root_path(project_path)
+        if resolved_project_path is None:
             return jsonify({"error": "Invalid project path"}), 400
 
-        project_path = Path(project_path)
+        project_path = resolved_project_path
 
         # Get export options
         anonymize = bool(data.get("anonymize", True))
@@ -1568,10 +1586,11 @@ def anc_export_project():
             return jsonify({"success": False, "error": "No data provided"}), 400
 
         project_path = data.get("project_path")
-        if not project_path or not os.path.exists(project_path):
+        resolved_project_path = _resolve_project_root_path(project_path)
+        if resolved_project_path is None:
             return jsonify({"success": False, "error": "Invalid project path"}), 400
 
-        project_path = Path(project_path)
+        project_path = resolved_project_path
 
         # Import AND exporter
         from src.converters.anc_export import ANCExporter
