@@ -45,77 +45,46 @@ from .survey_columns import (
     _parse_run_from_column,
     _group_columns_by_run,
 )
+from .survey_helpers import (
+    _NON_ITEM_TOPLEVEL_KEYS,
+    _STYLING_KEYS,
+    _extract_template_structure,
+    _compare_template_structures,
+    _build_bids_survey_filename,
+    _determine_task_runs,
+)
+from .survey_participants import (
+    _load_participants_mapping,
+    _get_mapped_columns,
+    _load_participants_template,
+    _is_participant_template,
+    _normalize_participant_template_dict,
+    _participants_json_from_template,
+)
 
-_NON_ITEM_TOPLEVEL_KEYS = {
-    "Technical",
-    "Study",
-    "Metadata",
-    "Normative",
-    "Scoring",
-    # Template metadata (not survey response columns)
-    "I18n",
-    "LimeSurvey",
-    "_aliases",
-    "_reverse_aliases",
-    "_prismmeta",
-}
-
-# Keys that are considered "styling" or metadata, not structural
-_STYLING_KEYS = {
-    "Description",
-    "Levels",
-    "MinValue",
-    "MaxValue",
-    "Units",
-    "HelpText",
-    "Aliases",
-    "AliasOf",
-    "Derivative",
-    "TermURL",
-}
-
-
-def _extract_template_structure(template: dict) -> set[str]:
-    """Extract the structural signature of a template (item keys only).
-
-    This ignores styling/metadata and only looks at what items exist.
-    Used to compare if two templates are structurally equivalent.
-
-    Args:
-        template: The template dictionary
-
-    Returns:
-        Set of item keys (excluding non-item keys like Study, Technical, etc.)
-    """
-    return {
-        k
-        for k in template.keys()
-        if k not in _NON_ITEM_TOPLEVEL_KEYS and isinstance(template.get(k), dict)
-    }
-
-
-def _compare_template_structures(
-    template_a: dict, template_b: dict
-) -> tuple[bool, set[str], set[str]]:
-    """Compare two templates structurally.
-
-    Args:
-        template_a: First template
-        template_b: Second template
-
-    Returns:
-        Tuple of (is_equivalent, only_in_a, only_in_b)
-        - is_equivalent: True if templates have the same item keys
-        - only_in_a: Item keys only in template_a
-        - only_in_b: Item keys only in template_b
-    """
-    struct_a = _extract_template_structure(template_a)
-    struct_b = _extract_template_structure(template_b)
-
-    only_in_a = struct_a - struct_b
-    only_in_b = struct_b - struct_a
-
-    return (len(only_in_a) == 0 and len(only_in_b) == 0), only_in_a, only_in_b
+# Compatibility re-exports for external imports that still reference helpers
+# from this module during the incremental decomposition phase.
+_COMPAT_SURVEY_HELPER_EXPORTS = (
+    _RUN_SUFFIX_PATTERNS,
+    LIMESURVEY_SYSTEM_COLUMNS,
+    _LS_TIMING_PATTERN,
+    _is_limesurvey_system_column,
+    _extract_limesurvey_columns,
+    _parse_run_from_column,
+    _group_columns_by_run,
+    _NON_ITEM_TOPLEVEL_KEYS,
+    _STYLING_KEYS,
+    _extract_template_structure,
+    _compare_template_structures,
+    _build_bids_survey_filename,
+    _determine_task_runs,
+    _load_participants_mapping,
+    _get_mapped_columns,
+    _load_participants_template,
+    _is_participant_template,
+    _normalize_participant_template_dict,
+    _participants_json_from_template,
+)
 
 
 def _load_global_library_path() -> Path | None:
@@ -728,276 +697,6 @@ class SurveyResponsesConverter:
             skip_participants=skip_participants,
             project_path=project_path,
         )
-
-
-def _build_bids_survey_filename(
-    sub_id: str, ses_id: str, task: str, run: int | None = None, extension: str = "tsv"
-) -> str:
-    """Build a BIDS-compliant survey filename.
-
-    Args:
-        sub_id: Subject ID (e.g., 'sub-001')
-        ses_id: Session ID (e.g., 'ses-01')
-        task: Task name (e.g., 'panas')
-        run: Run number (1, 2, 3...) or None if single occurrence
-        extension: File extension without dot (default: 'tsv')
-
-    Returns:
-        Filename like 'sub-001_ses-01_task-panas_survey.tsv' (no run)
-        or 'sub-001_ses-01_task-panas_run-01_survey.tsv' (with run)
-    """
-    parts = [sub_id, ses_id, f"task-{task}"]
-    if run is not None:
-        parts.append(f"run-{run:02d}")
-    parts.append("survey")  # Add suffix without extension
-    return "_".join(parts) + f".{extension}"
-
-
-def _determine_task_runs(
-    tasks_with_data: set[str], task_occurrences: dict[str, int]
-) -> dict[str, int | None]:
-    """Determine which tasks need run numbers based on occurrence count.
-
-    Args:
-        tasks_with_data: Set of task names that have data
-        task_occurrences: Dict mapping task name to number of occurrences in session
-
-    Returns:
-        Dict mapping task name to max run number (None if single occurrence)
-    """
-    task_runs: dict[str, int | None] = {}
-    for task in tasks_with_data:
-        count = task_occurrences.get(task, 1)
-        if count > 1:
-            task_runs[task] = count
-        else:
-            task_runs[task] = None
-    return task_runs
-
-
-def _load_participants_mapping(output_root: Path, log_fn=None) -> dict | None:
-    """Load participants_mapping.json from the project.
-
-    The mapping file specifies which source columns should be included in
-    participants.tsv and how they map to standard variable names.
-
-    Args:
-        output_root: Path to the dataset root (where participants.tsv will be created)
-        log_fn: Optional logging function (callable taking message string)
-
-    Returns:
-        Mapping dict if found, None otherwise
-    """
-    # output_root is the dataset root
-    project_root = output_root
-
-    # Search locations for participants_mapping.json
-    candidates = [
-        project_root / "participants_mapping.json",
-        project_root / "code" / "participants_mapping.json",
-        project_root / "code" / "library" / "participants_mapping.json",
-        project_root / "code" / "library" / "survey" / "participants_mapping.json",
-    ]
-
-    for p in candidates:
-        if p.exists() and p.is_file():
-            try:
-                mapping = _read_json(p)
-                if log_fn:
-                    log_fn(f"Loaded participants_mapping.json from: {p}")
-                return mapping
-            except Exception as e:
-                if log_fn:
-                    log_fn(f"Warning: Failed to load {p}: {e}")
-                continue
-
-    if log_fn:
-        log_fn("No participants_mapping.json found (using template columns only)")
-    return None
-
-
-def _get_mapped_columns(
-    mapping: dict | None,
-) -> tuple[set[str], dict[str, str], dict[str, dict]]:
-    """Extract column information from participants mapping.
-
-    Args:
-        mapping: The participants_mapping.json content
-
-    Returns:
-        Tuple of:
-        - allowed_columns: Set of source column names that should be included
-        - column_renames: Dict mapping source_column -> standard_variable
-        - value_mappings: Dict mapping standard_variable -> {source_val: target_val}
-    """
-    if not mapping or "mappings" not in mapping:
-        return set(), {}, {}
-
-    allowed_columns: set[str] = set()
-    column_renames: dict[str, str] = {}
-    value_mappings: dict[str, dict] = {}
-
-    for var_name, spec in mapping.get("mappings", {}).items():
-        if not isinstance(spec, dict):
-            continue
-        source_col = spec.get("source_column")
-        standard_var = spec.get("standard_variable", var_name)
-
-        if source_col:
-            allowed_columns.add(source_col.lower())
-            column_renames[source_col.lower()] = standard_var
-
-            if "value_mapping" in spec:
-                value_mappings[standard_var] = spec["value_mapping"]
-
-    return allowed_columns, column_renames, value_mappings
-
-
-def _load_participants_template(library_dir: Path) -> dict | None:
-    """Load a participant template from the survey library, if present.
-
-    We prioritize a library-level `participants.json` (sibling of the survey/
-    folder) and fall back to legacy names `survey-participants.json` and
-    `survey-participant.json` placed alongside the survey templates.
-
-    Finally, we fall back to the official participants template as a global reference.
-    """
-
-    library_dir = library_dir.resolve()
-    candidates: list[Path] = []
-    if library_dir.name == "survey":
-        candidates.append(library_dir.parent / "participants.json")
-
-    candidates.extend(
-        [
-            library_dir / "participants.json",
-            library_dir / "survey-participants.json",
-            library_dir / "survey-participant.json",
-        ]
-    )
-
-    # Also try a few ancestor folders (code/library -> project root) for participants.json
-    for ancestor in library_dir.parents[:3]:
-        candidates.append(ancestor / "participants.json")
-
-    # Add the official template as a fallback
-    try:
-        app_root = Path(__file__).parent.parent.parent.resolve()  # app/
-        repo_root = app_root.parent.resolve()  # prism-studio/
-        candidates.append(app_root / "official" / "participants.json")
-        candidates.append(repo_root / "official" / "participants.json")
-    except Exception:
-        pass
-
-    seen: set[Path] = set()
-    for p in candidates:
-        if p in seen:
-            continue
-        seen.add(p)
-        if p.exists() and p.is_file():
-            try:
-                return _read_json(p)
-            except Exception:
-                return None
-    return None
-
-
-def _is_participant_template(path: Path) -> bool:
-    stem = path.stem.lower()
-    return stem in {"survey-participant", "survey-participants"}
-
-
-def _normalize_participant_template_dict(template: dict | None) -> dict | None:
-    """Extract column definitions from a participant template structure."""
-
-    if not isinstance(template, dict):
-        return None
-    if "Columns" in template and isinstance(template.get("Columns"), dict):
-        return template.get("Columns")
-    return template
-
-
-def _participants_json_from_template(
-    *,
-    columns: list[str],
-    template: dict | None,
-    extra_descriptions: dict[str, str] | None = None,
-) -> dict:
-    """Create a BIDS/NeuroBagel-compatible participants.json for the given TSV columns.
-
-    All columns in the output TSV must be documented in participants.json.
-    This function ensures NeuroBagel compatibility by:
-    - Including full metadata from the official template (with semantic annotations)
-    - Adding descriptions for extra columns from participants_mapping.json
-
-    Args:
-        columns: List of column names in the output TSV
-        template: The official participants template (from official/participants.json)
-        extra_descriptions: Additional descriptions from participants_mapping.json
-                           for columns not in the template
-
-    Returns:
-        Dict suitable for writing as participants.json
-    """
-    template = _normalize_participant_template_dict(template)
-    extra_descriptions = extra_descriptions or {}
-    out: dict[str, dict] = {}
-
-    def _template_meta(col: str) -> dict:
-        if not template:
-            return {}
-        if col not in template:
-            return {}
-        v = template.get(col)
-        if not isinstance(v, dict):
-            return {}
-        meta: dict[str, object] = {}
-
-        # Copy all relevant metadata fields for NeuroBagel compatibility
-        desc = v.get("Description")
-        if desc:
-            meta["Description"] = desc
-        levels = v.get("Levels")
-        if isinstance(levels, dict) and levels:
-            meta["Levels"] = levels
-        units = v.get("Units") or v.get("Unit")
-        if units:
-            meta["Units"] = units
-        # Include additional metadata for NeuroBagel
-        for key in ("DataType", "VariableType", "MinValue", "MaxValue", "Annotations"):
-            if key in v:
-                meta[key] = v[key]
-        return meta
-
-    for col in columns:
-        if col == "participant_id":
-            out[col] = {
-                "Description": "Participant identifier (BIDS subject label)",
-            }
-            continue
-
-        # Try to get metadata from official template first
-        meta = _template_meta(col)
-
-        if not meta:
-            # Column not in template - check for description from mapping
-            if col in extra_descriptions:
-                meta = {"Description": extra_descriptions[col]}
-            else:
-                # Minimal fallback - column must still be documented
-                meta = {"Description": col}
-                # Add sensible defaults for common columns
-                if col == "age":
-                    meta["Description"] = "Age of participant"
-                    meta["Units"] = "years"
-                elif col == "sex":
-                    meta["Description"] = "Biological sex"
-                elif col == "gender":
-                    meta["Description"] = "Gender identity"
-
-        out[col] = dict(meta)
-
-    return out
 
 
 def _normalize_language(lang: str | None) -> str | None:

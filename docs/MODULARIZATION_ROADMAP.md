@@ -136,6 +136,25 @@ Deliverables:
 
 ## Progress Log
 
+- Phase 6 Python extraction slice (batch 3) completed:
+  - extracted participant mapping/template helper block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_participants.py`
+  - preserved compatibility by importing helper symbols back into `survey.py`
+  - added explicit compatibility re-export tuple in `survey.py` to avoid drift during migration
+- Post-extraction validation:
+  - participant helper smoke-check passed (`_is_participant_template`, mapping/template helpers)
+  - downstream import compatibility check passed (`template_matcher` path)
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+
+- Phase 6 Python extraction slice (batch 2) completed:
+  - extracted template-structure and survey-filename/run helpers from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_helpers.py`
+  - preserved compatibility by importing extracted helper symbols back into `survey.py`
+- Post-extraction validation:
+  - helper smoke-check passed (template structure extraction + filename/run helpers)
+  - downstream import compatibility check passed (`template_matcher` import path)
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+
 - Phase 6 Python extraction slice (batch 1) completed:
   - extracted survey column/run parsing helpers from `app/src/converters/survey.py`
   - new module: `app/src/converters/survey_columns.py`
