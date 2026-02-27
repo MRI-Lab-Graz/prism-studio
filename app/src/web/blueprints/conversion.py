@@ -11,7 +11,6 @@ import tempfile
 import warnings
 import zipfile
 import base64
-import unicodedata
 from pathlib import Path
 from typing import Any
 from flask import Blueprint, request, jsonify, send_file, current_app, session
@@ -30,23 +29,12 @@ from .conversion_utils import (
     participant_json_candidates,
     log_file_head,
     resolve_effective_library_path,
+    normalize_filename,
+    should_retry_with_official_library,
+    is_project_code_library,
+    extract_tasks_from_output,
 )
-
-
-def _normalize_filename(name: str) -> str:
-    """Normalize filename to ASCII-safe characters (e.g., remove umlauts)."""
-    dash_map = {
-        ord("–"): "-",  # en dash
-        ord("—"): "-",  # em dash
-        ord("‑"): "-",  # non-breaking hyphen
-        ord("−"): "-",  # minus sign
-        ord("‐"): "-",  # hyphen
-    }
-    normalized = name.translate(dash_map)
-    normalized = unicodedata.normalize("NFKD", normalized)
-    normalized = normalized.encode("ascii", "ignore").decode("ascii")
-    normalized = re.sub(r"\s+", "_", normalized)
-    return normalized
+from src.web.services.project_registration import register_session_in_project
 
 
 # Import conversion logic
@@ -108,12 +96,11 @@ _batch_convert_jobs: dict[str, Any] = {}
 _participant_json_candidates = participant_json_candidates
 _log_file_head = log_file_head
 _resolve_effective_library_path = resolve_effective_library_path
-
-
-def _should_retry_with_official_library(err: Exception) -> bool:
-    return isinstance(err, ValueError) and (
-        "no survey item columns matched" in str(err).lower()
-    )
+_normalize_filename = normalize_filename
+_should_retry_with_official_library = should_retry_with_official_library
+_is_project_code_library = is_project_code_library
+_extract_tasks_from_output = extract_tasks_from_output
+_register_session_in_project = register_session_in_project
 
 
 def _resolve_official_survey_dir(project_path: str | None) -> Path | None:
@@ -174,19 +161,6 @@ def _copy_official_templates_to_project(
         else:
             print(f"[PRISM DEBUG] {msg}")
 
-
-def _is_project_code_library(library_dir: str | Path, project_path: str | None) -> bool:
-    if not project_path:
-        return False
-    project_root = Path(project_path).expanduser().resolve()
-    if project_root.is_file():
-        project_root = project_root.parent
-
-    library_dir = Path(library_dir).expanduser().resolve()
-    code_library = project_root / "code" / "library"
-    return library_dir in {code_library, code_library / "survey"}
-
-
 def _run_survey_with_official_fallback(
     converter_fn,
     *,
@@ -227,104 +201,6 @@ def _run_survey_with_official_fallback(
             else:
                 print(f"[PRISM DEBUG] {msg}")
         raise
-
-
-def _extract_tasks_from_output(output_root: Path) -> list:
-    """Extract unique task names from BIDS-style filenames in output directory."""
-    tasks = set()
-    for f in output_root.rglob("*"):
-        if f.is_file() and "_task-" in f.name:
-            m = re.search(r"_task-([a-zA-Z0-9]+)", f.name)
-            if m:
-                tasks.add(m.group(1))
-    return sorted(tasks)
-
-
-def _register_session_in_project(
-    project_path: Path,
-    session_id: str,
-    tasks: list,
-    modality: str,
-    source_file: str,
-    converter: str,
-):
-    """Register conversion output in project.json Sessions/TaskDefinitions.
-
-    This is a backend-side helper called after save-to-project file copy.
-    It mirrors the logic in the /api/projects/sessions/register endpoint
-    so that registrations happen even when the client-side JS call doesn't fire.
-    """
-    if not session_id or not tasks:
-        return
-
-    pj_path = project_path / "project.json"
-    if not pj_path.exists():
-        return
-
-    try:
-        with open(pj_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except (json.JSONDecodeError, OSError):
-        return
-
-    if "Sessions" not in data:
-        data["Sessions"] = []
-    if "TaskDefinitions" not in data:
-        data["TaskDefinitions"] = {}
-
-    # Normalize session_id with zero-padding for numeric values
-    if not session_id.startswith("ses-"):
-        session_id = f"ses-{session_id}"
-    # Ensure zero-padding for numeric session IDs
-    num_part = session_id[4:]  # Strip "ses-" prefix
-    try:
-        n = int(num_part)
-        session_id = f"ses-{n:02d}"
-    except ValueError:
-        pass  # Non-numeric labels pass through as-is
-
-    # Find or create session
-    target = None
-    for s in data["Sessions"]:
-        if s.get("id") == session_id:
-            target = s
-            break
-    if target is None:
-        target = {"id": session_id, "label": session_id, "tasks": []}
-        data["Sessions"].append(target)
-    if "tasks" not in target:
-        target["tasks"] = []
-
-    from datetime import date
-
-    today = date.today().isoformat()
-    source_obj = {
-        "file": source_file,
-        "converter": converter,
-        "convertedAt": today,
-    }
-
-    for task_name in tasks:
-        existing = next(
-            (t for t in target["tasks"] if t.get("task") == task_name), None
-        )
-        if existing:
-            existing["source"] = source_obj
-        else:
-            target["tasks"].append({"task": task_name, "source": source_obj})
-
-        if task_name not in data["TaskDefinitions"]:
-            data["TaskDefinitions"][task_name] = {"modality": modality}
-
-    try:
-        from src.cross_platform import CrossPlatformFile
-
-        CrossPlatformFile.write_text(
-            str(pj_path), json.dumps(data, indent=2, ensure_ascii=False)
-        )
-    except Exception:
-        pass  # Don't fail conversion if registration fails
-
 
 def _format_unmatched_groups_response(uge, log_messages=None):
     """Build the JSON response dict for an UnmatchedGroupsError."""

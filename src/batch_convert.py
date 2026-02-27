@@ -817,16 +817,12 @@ def batch_convert_folder(
             try:
                 # Import the utility function
                 try:
-                    from app.src.utils.io import update_participants_tsv
+                    from src.utils.io import update_participants_tsv
                 except ImportError:
                     # Fallback if running from different location
-                    import sys
-
-                    app_src = Path(__file__).parent.parent / "app" / "src"
-                    if app_src.exists():
-                        sys.path.insert(0, str(app_src.parent))
-                        from src.utils.io import update_participants_tsv
-                    else:
+                    try:
+                        from utils.io import update_participants_tsv
+                    except ImportError:
                         update_participants_tsv = None
 
                 if update_participants_tsv:
