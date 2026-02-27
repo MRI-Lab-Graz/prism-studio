@@ -136,6 +136,21 @@ Deliverables:
 
 ## Progress Log
 
+- Phase 6 Python extraction slice (batch 10) completed:
+  - extracted template-loading/preprocessing helper block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_template_loading.py`
+  - preserved compatibility using thin wrapper delegation in `survey.py`
+- Post-extraction validation:
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+
+- Phase 6 Python extraction slice (batch 9) completed:
+  - extracted row-processing/validation helper block from `app/src/converters/survey.py`
+  - new module: `app/src/converters/survey_row_processing.py`
+  - preserved compatibility using thin wrapper delegation in `survey.py`
+- Post-extraction validation:
+  - row helper wiring smoke-check passed (`_process_survey_row`, `_process_survey_row_with_run`, `_validate_survey_item_value`)
+  - CLI contract tests passed: `pytest tests/test_prism_tools_cli_contract.py -q` (`5 passed`)
+
 - Phase 6 Python extraction slice (batch 8) completed:
   - extracted preview-generation helper block from `app/src/converters/survey.py`
   - new module: `app/src/converters/survey_preview.py`
