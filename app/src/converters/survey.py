@@ -95,6 +95,8 @@ from . import survey_sidecars as _survey_sidecars
 from . import survey_response_writing as _survey_response_writing
 from . import survey_id_mapping as _survey_id_mapping
 from . import survey_lsa_preprocess as _survey_lsa_preprocess
+from . import survey_value_normalization as _survey_value_normalization
+from . import survey_id_resolution as _survey_id_resolution
 from .survey_lsa_metadata import (
     _infer_lsa_language_and_tech,
     infer_lsa_metadata,
@@ -1880,19 +1882,10 @@ def _convert_survey_dataframe_to_prism_dataset(
 
 
 def _normalize_item_value(val) -> str:
-    from pandas import isna
-
-    if isna(val) or (isinstance(val, str) and str(val).strip() == ""):
-        return _MISSING_TOKEN
-    if isinstance(val, bool):
-        return str(val).lower()
-    if isinstance(val, int):
-        return str(int(val))
-    if isinstance(val, float):
-        if val.is_integer():
-            return str(int(val))
-        return str(val)
-    return str(val)
+    return _survey_value_normalization._normalize_item_value(
+        val,
+        missing_token=_MISSING_TOKEN,
+    )
 
 
 def _resolve_id_and_session_cols(
@@ -1903,46 +1896,14 @@ def _resolve_id_and_session_cols(
     source_format: str = "xlsx",
     has_prismmeta: bool = False,
 ) -> tuple[str, str | None]:
-    """Helper to determine participant ID and session columns from dataframe.
-
-    Delegates ID detection to the central id_detection module.
-
-    Auto-detect priority:
-    1. Explicit id_column parameter
-    2. participant_id / participantid (PRISM primary, handles LS code mangling)
-    3. prism_participant_id / prismparticipantid (PRISM alternative)
-    4. token / id (LSA + PRISMMETA only)
-    5. None found → IdColumnNotDetectedError (manual selection required)
-    """
-    from .id_detection import detect_id_column, IdColumnNotDetectedError
-
-    resolved_id = detect_id_column(
-        df_columns=list(df.columns),
+    return _survey_id_resolution._resolve_id_and_session_cols(
+        df=df,
+        id_column=id_column,
+        session_column=session_column,
+        participants_template=participants_template,
         source_format=source_format,
-        explicit_id_column=id_column,
         has_prismmeta=has_prismmeta,
     )
-    if not resolved_id:
-        raise IdColumnNotDetectedError(list(df.columns), source_format)
-
-    def _find_col(candidates: set[str]) -> str | None:
-        lower_map = {str(c).strip().lower(): str(c).strip() for c in df.columns}
-        for c in candidates:
-            if c in lower_map:
-                return lower_map[c]
-        return None
-
-    resolved_ses: str | None
-    if session_column:
-        if session_column not in df.columns:
-            raise ValueError(
-                f"session_column '{session_column}' not found in input columns"
-            )
-        resolved_ses = session_column
-    else:
-        resolved_ses = _find_col({"session", "ses", "visit", "timepoint"})
-
-    return str(resolved_id), resolved_ses
 
 
 @dataclass
