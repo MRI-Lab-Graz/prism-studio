@@ -24,6 +24,29 @@ let currentProjectName = '';
 const recentProjectsKey = 'prism_recent_projects';
 const recentProjectStatusCache = new Map();
 
+function syncRecentProjectsToServer(list) {
+    fetch('/api/projects/recent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projects: list })
+    }).catch(() => {
+        // localStorage remains fallback source
+    });
+}
+
+function loadRecentProjectsFromServer() {
+    fetch('/api/projects/recent')
+        .then(response => response.json())
+        .then(data => {
+            if (!data || !data.success || !Array.isArray(data.projects)) return;
+            localStorage.setItem(recentProjectsKey, JSON.stringify(data.projects.slice(0, 6)));
+            renderRecentProjects();
+        })
+        .catch(() => {
+            // keep local fallback
+        });
+}
+
 const projectsRoot = document.getElementById('projectsRoot');
 const globalProjectPath = typeof window.currentProjectPath === 'string' ? window.currentProjectPath : '';
 const globalProjectName = typeof window.currentProjectName === 'string' ? window.currentProjectName : '';
@@ -52,11 +75,13 @@ export function getRecentProjects() {
 }
 
 export function saveRecentProjects(list) {
+    const limited = list.slice(0, 6);
     try {
-        localStorage.setItem(recentProjectsKey, JSON.stringify(list.slice(0, 6)));
+        localStorage.setItem(recentProjectsKey, JSON.stringify(limited));
     } catch (err) {
         console.warn('Could not save recent projects', err);
     }
+    syncRecentProjectsToServer(limited);
 }
 
 export function addRecentProject(name, path) {
@@ -66,6 +91,12 @@ export function addRecentProject(name, path) {
     list.unshift({ name: safeName, path: path });
     recentProjectStatusCache.delete(path);
     saveRecentProjects(list);
+    renderRecentProjects();
+}
+
+function clearRecentProjects() {
+    recentProjectStatusCache.clear();
+    saveRecentProjects([]);
     renderRecentProjects();
 }
 
@@ -120,11 +151,9 @@ export function renderRecentProjects() {
         if (!availableProjects.length) {
             block.style.display = 'none';
             listEl.innerHTML = '';
-            saveRecentProjects(availableProjects);
             return;
         }
 
-        saveRecentProjects(availableProjects);
         block.style.display = 'block';
         listEl.innerHTML = availableProjects.map((p, idx) => {
         const label = p.name || p.path;
@@ -796,7 +825,7 @@ if (openProjectForm) {
                             <i class="fas fa-file-import me-1"></i>Import Templates
                         </a>
                         <a href="/survey-generator" class="btn btn-sm btn-outline-info">
-                            <i class="fas fa-poll-h me-1"></i>Survey & Boilerplate
+                            <i class="fas fa-poll-h me-1"></i>Survey Export
                         </a>
                         <a href="/validate" class="btn btn-sm btn-outline-primary">
                             <i class="fas fa-check-circle me-1"></i>Validate Dataset
@@ -934,6 +963,7 @@ document.addEventListener('DOMContentLoaded', function() {
     showExportCard();
     showMethodsCard();
     renderRecentProjects();
+    loadRecentProjectsFromServer();
 
     if (currentProjectPath) {
         addRecentProject(currentProjectName, currentProjectPath);
@@ -971,6 +1001,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 selectProjectType('open');
                 document.getElementById('openProjectForm').dispatchEvent(new Event('submit'));
             }
+        });
+    }
+
+    const clearRecentBtn = document.getElementById('clearRecentProjectsBtn');
+    if (clearRecentBtn) {
+        clearRecentBtn.addEventListener('click', () => {
+            if (!confirm('Clear recent projects list?')) return;
+            clearRecentProjects();
         });
     }
 });
