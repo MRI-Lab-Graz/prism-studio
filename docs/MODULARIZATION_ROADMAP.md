@@ -50,6 +50,13 @@ This execution track operationalizes the architecture assessment into four point
 - 2026-02-27: Import fallback chains across `src/` and `app/src/` are the primary source of modularity ambiguity; removing `app.src.*` imports is a low-risk, high-value first slice.
 - 2026-02-27: Blueprint decomposition is safer when starting with pure helper extraction and compatibility aliases (no route signature changes).
 - 2026-02-27: A dedicated boundary check in `verify_repo.py` gives immediate regression protection for architecture drift.
+- 2026-02-27: With split `src/` and `app/src/` trees, deterministic test collection requires explicit package-path bridging to prevent import-order flakiness.
+- 2026-02-27: A two-tier CI strategy (fast PR + nightly deep checks) gives better signal-to-noise than one monolithic pipeline.
+- 2026-02-27: For giant Flask blueprints, extracting tightly scoped helper families (e.g., participant-filter + schema generation) in one move keeps call sites stable and simplifies verification.
+- 2026-02-27: Citation/metadata parsing logic can be moved out of route modules without API changes when helper signatures stay identical.
+- 2026-02-27: Blueprint decomposition can proceed safely by moving coherent route clusters (settings/library endpoints) into a dedicated blueprint and registering both during transition.
+- 2026-02-27: Route-family blueprint extraction works best when grouped by UI domain (e.g., template-editor surface) so endpoint contracts remain unchanged while module ownership gets clearer.
+- 2026-02-27: For conversion monoliths, participants-specific endpoints (`/api/participants*`, mapping save) form a stable extraction boundary with low coupling risk.
 
 ### Execution Progress (2026-02-27)
 
@@ -73,6 +80,35 @@ This execution track operationalizes the architecture assessment into four point
   - added `import-boundaries` check to `tests/verify_repo.py`
   - guardrail blocks runtime `app.src.*` imports inside `app/src` and `src`
   - validation: `python tests/verify_repo.py --check entrypoints-smoke,path-hygiene,testing,import-boundaries --no-fix` (pass; boundary check passed)
+
+- Broad release-readiness sweep executed (user-requested):
+  - `python tests/verify_repo.py --check pytest,linting,ruff,mypy --no-fix`
+  - status: **not fully green** (stops at `pytest` check)
+  - pytest blocker: existing import-layout mismatch in tests expecting `src.web.*` modules (`src.web.export_project`, `src.web.blueprints.projects`) that are not present in top-level `src/`
+  - independent check results:
+    - `linting`: not green (Black formatting check reports pending formatting)
+    - `ruff`: green
+    - `mypy`: not green (pre-existing type issues across app/src, src, vendor, scripts)
+
+- Deterministic pytest-import setup implemented:
+  - added symmetric package path bridging in `src/__init__.py` and `app/src/__init__.py` so mixed `src.*` imports can resolve across split trees
+  - rerun: `python tests/verify_repo.py --check pytest --no-fix` → **passed**
+  - rerun broad sweep: `python tests/verify_repo.py --check pytest,linting,ruff,mypy --no-fix`
+    - `pytest`: green
+    - `linting`: not green (Black formatting check)
+    - `ruff`: green (confirmed in separate check)
+    - `mypy`: not green (pre-existing repository type issues)
+
+- Verification policy adjustment (requested):
+  - relaxed `linting` to non-blocking warnings in `tests/verify_repo.py`
+  - broad sweep now continues through `ruff` and `mypy` even when Black check reports formatting drift
+
+- CI matrix added:
+  - new workflow: `.github/workflows/ci.yml`
+  - **Fast PR checks** (pull requests and non-scheduled pushes):
+    - `entrypoints-smoke`, `import-boundaries`, `pytest`, `linting`, `ruff`, `mypy`
+  - **Nightly deep checks** (scheduled + manual dispatch):
+    - expanded repo health and security checks (`bids-compat-smoke`, `path-hygiene`, `python-security`, `unsafe-patterns`, `dependencies`, `pip-audit`, plus core quality checks)
 
 ## Phase 1 — Contract Lock (completed)
 
@@ -188,6 +224,49 @@ Deliverables:
 - Further frontend cleanup can continue opportunistically, but it is no longer the roadmap driver.
 
 ## Progress Log
+
+- Phase 6 Python extraction slice (batch 29) completed:
+  - performed blueprint-level split for conversion participants route cluster from `app/src/web/blueprints/conversion.py`
+  - new module: `app/src/web/blueprints/conversion_participants_blueprint.py`
+  - moved routes: `/api/save-participant-mapping`, `/api/participants-check`, `/api/participants-detect-id`, `/api/participants-preview`, `/api/participants-convert`
+  - wired blueprint registration in `app/prism-studio.py` and removed moved handlers from `conversion.py`
+- Post-extraction validation:
+  - targeted participants/web tests passed: `pytest -q tests/test_participants_mapping.py tests/test_web_anonymization.py tests/test_web_formatting.py` (`16 passed`)
+  - repo checks passed: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`
+
+- Phase 6 Python extraction slice (batch 28) completed:
+  - performed blueprint-level split for template-editor route cluster from `app/src/web/blueprints/tools.py`
+  - new module: `app/src/web/blueprints/tools_template_editor_blueprint.py`
+  - moved routes: `/template-editor` and all `/api/template-editor/*` endpoints
+  - wired blueprint registration in `app/prism-studio.py` and removed moved handlers from `tools.py`
+- Post-extraction validation:
+  - targeted web/projects tests passed: `pytest -q tests/test_web_anonymization.py tests/test_web_formatting.py tests/test_projects_export_paths.py tests/test_projects_export_mapping_exclusion.py` (`20 passed`)
+  - repo checks passed: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`
+
+- Phase 6 Python extraction slice (batch 27) completed:
+  - performed blueprint-level split for project library/settings route cluster
+  - new module: `app/src/web/blueprints/projects_library_blueprint.py`
+  - moved routes: `/api/projects/modalities`, `/api/settings/global-library` (GET/POST), `/api/projects/library-path`
+  - wired new blueprint registration in `app/prism-studio.py` and removed moved handlers from `app/src/web/blueprints/projects.py`
+- Post-extraction validation:
+  - targeted projects/web tests passed: `pytest -q tests/test_projects_export_paths.py tests/test_projects_export_mapping_exclusion.py tests/test_web_formatting.py` (`17 passed`)
+  - repo checks passed: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`
+
+- Phase 6 Python extraction slice (batch 26) completed:
+  - extracted recruitment validation and CITATION.cff parsing/merge helpers from `app/src/web/blueprints/projects.py`
+  - new module: `app/src/web/blueprints/projects_citation_helpers.py`
+  - preserved compatibility via direct helper imports in `projects.py` with no route/API signature changes
+- Post-extraction validation:
+  - targeted projects/web tests passed: `pytest -q tests/test_projects_export_paths.py tests/test_projects_export_mapping_exclusion.py tests/test_web_formatting.py` (`17 passed`)
+  - repo checks passed: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`
+
+- Phase 6 Python extraction slice (batch 25) completed:
+  - extracted participant-filtering and NeuroBagel participant-schema helpers from `app/src/web/blueprints/conversion.py`
+  - new module: `app/src/web/blueprints/conversion_participants_helpers.py`
+  - preserved compatibility by importing helpers into `conversion.py` without route/API contract changes
+- Post-extraction validation:
+  - targeted web/participants tests passed: `pytest -q tests/test_web_formatting.py tests/test_web_anonymization.py tests/test_participants_mapping.py` (`16 passed`)
+  - repo checks passed: `python tests/verify_repo.py --check entrypoints-smoke,import-boundaries,pytest --no-fix`
 
 - Phase 6 Python extraction slice (batch 24) completed:
   - extracted ID/session column resolution helper from `app/src/converters/survey.py`
