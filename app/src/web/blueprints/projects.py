@@ -433,6 +433,36 @@ def validate_project():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@projects_bp.route("/api/projects/path-status", methods=["POST"])
+def project_path_status():
+    """Return lightweight availability info for a project.json path."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "No data provided"}), 400
+
+        path = data.get("path")
+        if not isinstance(path, str) or not path.strip():
+            return jsonify({"success": False, "error": "Path is required"}), 400
+
+        path_obj = Path(path)
+        exists = path_obj.exists()
+        is_file = path_obj.is_file()
+        is_project_json = is_file and path_obj.name == "project.json"
+
+        return jsonify(
+            {
+                "success": True,
+                "exists": exists,
+                "is_file": is_file,
+                "is_project_json": is_project_json,
+                "available": bool(exists and is_project_json),
+            }
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @projects_bp.route("/api/projects/fix", methods=["POST"])
 def fix_project():
     """

@@ -3,7 +3,6 @@
 {% block title %}PRISM Studio - Survey Customizer{% endblock %}
 
 {% block styles %}
-{% block styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/survey-customizer.css') }}">
 {% endblock %}
 {% block content %}
@@ -478,5 +477,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="{{ url_for('static', filename='js/survey-customizer.js') }}"></script>
 {% endblock %}

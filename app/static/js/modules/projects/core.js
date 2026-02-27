@@ -22,6 +22,7 @@ import { showExportCard } from './export.js';
 let currentProjectPath = '';
 let currentProjectName = '';
 const recentProjectsKey = 'prism_recent_projects';
+const recentProjectStatusCache = new Map();
 
 const projectsRoot = document.getElementById('projectsRoot');
 const globalProjectPath = typeof window.currentProjectPath === 'string' ? window.currentProjectPath : '';
@@ -63,8 +64,37 @@ export function addRecentProject(name, path) {
     const safeName = name && name.trim() ? name.trim() : path.split(/[\/]/).pop();
     const list = getRecentProjects().filter(p => p.path !== path);
     list.unshift({ name: safeName, path: path });
+    recentProjectStatusCache.delete(path);
     saveRecentProjects(list);
     renderRecentProjects();
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+async function isRecentProjectAvailable(path) {
+    if (!path) return false;
+    if (recentProjectStatusCache.has(path)) {
+        return recentProjectStatusCache.get(path);
+    }
+
+    const statusPromise = fetch('/api/projects/path-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path })
+    })
+        .then(response => response.json())
+        .then(data => Boolean(data && data.success && data.available))
+        .catch(() => false);
+
+    recentProjectStatusCache.set(path, statusPromise);
+    return statusPromise;
 }
 
 export function renderRecentProjects() {
@@ -79,14 +109,36 @@ export function renderRecentProjects() {
         return;
     }
 
-    block.style.display = 'block';
-    listEl.innerHTML = list.map(p => {
+    Promise.all(list.map(async (project) => ({
+        project,
+        available: await isRecentProjectAvailable(project.path)
+    }))).then(results => {
+        const availableProjects = results
+            .filter(({ available }) => available)
+            .map(({ project }) => project);
+
+        if (!availableProjects.length) {
+            block.style.display = 'none';
+            listEl.innerHTML = '';
+            saveRecentProjects(availableProjects);
+            return;
+        }
+
+        saveRecentProjects(availableProjects);
+        block.style.display = 'block';
+        listEl.innerHTML = availableProjects.map((p, idx) => {
         const label = p.name || p.path;
+        const safeLabel = escapeHtml(label);
+        const safePath = escapeHtml(p.path || '');
         return `
-            <button type="button" class="btn btn-outline-secondary btn-sm recent-project-btn" data-path="${p.path}" data-name="${label}">
-                <i class="fas fa-clock me-1"></i>${label}
+            <button type="button" class="btn btn-outline-secondary btn-sm recent-project-btn" data-path="${safePath}" data-name="${safeLabel}" data-recent-id="${idx}" title="${safePath}">
+                <i class="fas fa-clock me-1"></i>${safeLabel}
             </button>`;
-    }).join('');
+        }).join('');
+    }).catch(() => {
+        block.style.display = 'none';
+        listEl.innerHTML = '';
+    });
 }
 
 // Load global library settings
@@ -840,7 +892,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') > -1;
     const existingPathInput = document.getElementById('existingPath');
     const projectPathInput = document.getElementById('projectPath');
-    const pathHelpText = document.getElementById('pathHelp');
+    const pathHelpTooltip = document.getElementById('pathHelpTooltip');
 
     if (existingPathInput) {
         if (isWindows) {
@@ -862,11 +914,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    if (pathHelpText) {
+    if (pathHelpTooltip) {
         const osExample = isWindows ? "C:\\Users\\YourName\\Documents\\MyProject\\project.json" :
             isMac ? "/Users/YourName/Documents/MyProject/project.json" :
             "/home/username/Documents/MyProject/project.json";
-        pathHelpText.innerHTML = `Type the full path to your <code>project.json</code> file (e.g., <code>${osExample}</code>), or click Browse to select it. <strong>Only project.json files are supported.</strong>`;
+        const tooltipTitle = `Type the full path to your <code>project.json</code> file (e.g., <code>${osExample}</code>), or click Browse to select it. <strong>Only project.json files are supported.</strong>`;
+
+        pathHelpTooltip.setAttribute('title', tooltipTitle);
+        pathHelpTooltip.setAttribute('data-bs-original-title', tooltipTitle);
+
+        if (window.bootstrap && typeof window.bootstrap.Tooltip === 'function') {
+            window.bootstrap.Tooltip.getOrCreateInstance(pathHelpTooltip);
+        }
     }
 
     loadGlobalSettings();
