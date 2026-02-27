@@ -85,6 +85,8 @@ from . import survey_row_processing as _survey_row_processing
 from . import survey_template_loading as _survey_template_loading
 from . import survey_global_templates as _survey_global_templates
 from . import survey_template_assignment as _survey_template_assignment
+from . import survey_lsa_analysis as _survey_lsa_analysis
+from . import survey_lsa_unmatched as _survey_lsa_unmatched
 from .survey_lsa_metadata import (
     _infer_lsa_language_and_tech,
     infer_lsa_metadata,
@@ -659,69 +661,11 @@ def _analyze_lsa_structure(
     input_path: Path,
     project_path: str | Path | None = None,
 ) -> dict | None:
-    """Parse .lss structure from .lsa and match groups against template library.
-
-    Extracts the .lss XML embedded in a LimeSurvey .lsa archive, parses it
-    into per-group PRISM templates, and matches each group against both
-    global and project template libraries.
-
-    Args:
-        input_path: Path to the .lsa archive file.
-        project_path: Optional project root to also check project templates.
-
-    Returns:
-        Dict with:
-          - groups: dict[group_name -> {prism_json, match, item_codes}]
-          - column_to_group: dict[column_name -> group_name]
-        Or None if .lss extraction or parsing fails.
-    """
-    from .limesurvey import parse_lss_xml_by_groups
-    from .template_matcher import match_groups_against_library
-
-    # Extract .lss XML from the .lsa archive
-    try:
-        with zipfile.ZipFile(str(input_path), "r") as z:
-            lss_names = [n for n in z.namelist() if n.endswith(".lss")]
-            if not lss_names:
-                return None
-            xml_lss = z.read(lss_names[0])
-    except Exception:
-        return None
-
-    # Parse .lss into per-group PRISM templates
-    parsed_groups = parse_lss_xml_by_groups(xml_lss, use_standard_format=True)
-    if not parsed_groups:
-        return None
-
-    # Match each group against global + project libraries
-    matches = match_groups_against_library(parsed_groups, project_path=project_path)
-
-    # Build structured result
-    groups: dict[str, dict] = {}
-    column_to_group: dict[str, str] = {}
-
-    for group_name, prism_json in parsed_groups.items():
-        # Collect item codes (keys that are not metadata sections)
-        item_codes = {
-            k
-            for k in prism_json.keys()
-            if k not in _NON_ITEM_TOPLEVEL_KEYS and isinstance(prism_json.get(k), dict)
-        }
-
-        groups[group_name] = {
-            "prism_json": prism_json,
-            "match": matches.get(group_name),
-            "item_codes": item_codes,
-        }
-
-        # Map each item code to the group it belongs to
-        for code in item_codes:
-            column_to_group[code] = group_name
-
-    return {
-        "groups": groups,
-        "column_to_group": column_to_group,
-    }
+    """Parse .lss structure from .lsa and match groups against template library."""
+    return _survey_lsa_analysis._analyze_lsa_structure(
+        input_path=input_path,
+        project_path=project_path,
+    )
 
 
 def _add_ls_code_aliases(sidecar: dict, imported_codes: list[str]) -> None:
@@ -1653,54 +1597,13 @@ def _convert_survey_dataframe_to_prism_dataset(
                 # single "resiliencebrs" entry so the user saves ONE
                 # base template that matches all runs.
                 from ..utils.naming import sanitize_task_name
-                from .template_matcher import (
-                    _strip_run_from_group_name,
-                    _normalize_item_codes,
+                _survey_lsa_unmatched._collect_unmatched_lsa_group(
+                    group_name=group_name,
+                    group_info=group_info,
+                    unmatched_groups=unmatched_groups,
+                    non_item_toplevel_keys=_NON_ITEM_TOPLEVEL_KEYS,
+                    sanitize_task_name_fn=sanitize_task_name,
                 )
-
-                task_key = sanitize_task_name(group_name).lower()
-                if not task_key:
-                    task_key = group_name.lower().replace(" ", "")
-
-                # Strip run suffix from task_key to get the base name
-                base_key = _strip_run_from_group_name(task_key)
-                if not base_key:
-                    base_key = task_key
-
-                # Strip run suffixes from item codes in prism_json so
-                # the saved template uses base codes (BRS01 not BRS01run02)
-                raw_codes = group_info["item_codes"]
-                base_codes, _ = _normalize_item_codes(
-                    raw_codes if isinstance(raw_codes, set) else set(raw_codes)
-                )
-                base_prism = {}
-                for k, v in group_info["prism_json"].items():
-                    if k in _NON_ITEM_TOPLEVEL_KEYS or not isinstance(v, dict):
-                        base_prism[k] = v
-                    else:
-                        from .template_matcher import _strip_run_suffix
-
-                        stripped, _ = _strip_run_suffix(k)
-                        if stripped not in base_prism:
-                            base_prism[stripped] = v
-
-                # Check if we already collected a group with this base key
-                existing = next(
-                    (g for g in unmatched_groups if g["task_key"] == base_key),
-                    None,
-                )
-                if existing is None:
-                    unmatched_groups.append(
-                        {
-                            "group_name": group_name,
-                            "task_key": base_key,
-                            "item_codes": base_codes,
-                            "prism_json": base_prism,
-                        }
-                    )
-                else:
-                    # Merge: add any new base codes from this run group
-                    existing["item_codes"] = existing["item_codes"] | base_codes
 
                 if match:
                     conversion_warnings.append(
