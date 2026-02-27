@@ -89,15 +89,8 @@ def validate_procedure(project_path: Path, rawdata_path: Path) -> List[Tuple[str
 
     # PRISM701 suppressed: Sessions on disk may be intentionally undeclared.
 
-    # PRISM702: Declared session has no data on disk
-    for ses_id in sorted(declared_sessions - disk_sessions):
-        issues.append(
-            (
-                "WARNING",
-                f"PRISM702: Session '{ses_id}' is declared in project.json "
-                f"but has no data on disk",
-            )
-        )
+    # Session presence is determined strictly from on-disk structure (sub-*/ses-*).
+    # Declared-only sessions in project.json are ignored here.
 
     # PRISM703: Task on disk not declared in session
     for ses_id, task_name in sorted(disk_set - declared):

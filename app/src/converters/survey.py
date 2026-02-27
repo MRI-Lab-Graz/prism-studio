@@ -2214,7 +2214,7 @@ def _write_survey_description(
         "Name": name or "PRISM Survey Dataset",
         "BIDSVersion": "1.10.1",
         "DatasetType": "raw",
-        "Authors": authors or ["PRISM Survey Converter"],
+        "Authors": authors or [],
         "Acknowledgements": "This dataset was created using the PRISM framework.",
         "HowToAcknowledge": "Please cite the original survey publication and the PRISM framework.",
         "Keywords": ["psychology", "survey", "PRISM"],

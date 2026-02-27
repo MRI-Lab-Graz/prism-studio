@@ -479,7 +479,7 @@ class ProjectManager:
             "Description": config.get("description")
             or "A PRISM-compatible dataset for psychological research.",
             "License": config.get("license", "CC0"),
-            "Authors": config.get("authors", ["TODO: Add author names"]),
+            "Authors": config.get("authors") or [],
             "Acknowledgements": config.get("acknowledgements", ""),
             "HowToAcknowledge": config.get(
                 "how_to_acknowledge",

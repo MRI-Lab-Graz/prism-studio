@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Scripts Canonicalization**: Reorganized utility scripts into domain folders (`scripts/ci`, `scripts/data`, `scripts/dev`, `scripts/maintenance`, `scripts/release`, `scripts/setup`) and updated internal docs/examples to canonical paths.
 - **Setup Test Script Placement**: Moved setup-related test utilities to `scripts/ci/` and retained setup-path compatibility wrappers for transition.
+- **Procedure Validation Session Source**: Session existence checks now rely only on on-disk dataset structure (`sub-*/ses-*`). `PRISM702` is deprecated and retained only for backward compatibility in the issue catalog.
 
 ### Added
 - **Wrapper Retirement Playbook**: Added `docs/WRAPPER_CLEANUP_CHECKLIST.md` with explicit exit criteria, removal sequence, validation commands, and rollback plan for controlled wrapper removal.

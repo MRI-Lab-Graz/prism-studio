@@ -124,7 +124,7 @@ def cmd_dataset_build_biometrics_smoketest(args) -> None:
         "Name": args.name,
         "BIDSVersion": "1.8.0",
         "DatasetType": "raw",
-        "Authors": args.authors or ["PRISM smoketest"],
+        "Authors": args.authors or [],
     }
     _write_json(output_root / "dataset_description.json", dataset_description)
 

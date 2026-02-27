@@ -201,8 +201,8 @@ ERROR_CODES: Dict[str, Dict[str, str]] = {
         "fix_hint": "Add this session to the Sessions array in project.json, or use the session picker in the converter",
     },
     "PRISM702": {
-        "message": "Declared session has no data on disk",
-        "fix_hint": "Convert data for this session, or remove it from project.json if it was added by mistake",
+        "message": "Deprecated: session presence is inferred from on-disk sub-*/ses-* structure",
+        "fix_hint": "No action required. PRISM702 is retained for backward compatibility and is not emitted in current validation",
     },
     "PRISM703": {
         "message": "Task on disk not declared in session",
